@@ -153,7 +153,7 @@ INT     storeVectorBS( BLOCKVECTOR *bv, INT x_comp, GRID *grid )
 
   /* the number of copied elements must be equal the number of vectors
           stored in the blockvector for them the memory is allocated */
-  assert( ( mem - BACKUP_MEM(bv) ) == BVNUMBEROFVECTORS( bv ) );
+  ASSERT( ( mem - BACKUP_MEM(bv) ) == BVNUMBEROFVECTORS( bv ) );
 
   return NUM_OK;
 }
@@ -167,7 +167,7 @@ INT     restoreVectorBS( BLOCKVECTOR *bv, INT x_comp )
 
   mem = BACKUP_MEM( bv );
 
-  assert( mem != NULL );
+  ASSERT( mem != NULL );
 
   end_v = BVENDVECTOR( bv );
   BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), end_v )
@@ -184,7 +184,7 @@ static INT HasDirichletNeighbour( const VECTOR *v )
   register LINK *link;
   register VERTEX *nb_vertex;
 
-  assert(FALSE); /* neues boundary konzept einbauen */
+  ASSERT(FALSE);       /* neues boundary konzept einbauen */
   return 1;
 
   register VSEGMENT *vseg;
@@ -195,7 +195,7 @@ static INT HasDirichletNeighbour( const VECTOR *v )
   INT type;
 
   /* only node vectors are considered */
-  assert( VTYPE(v) == NODEVECTOR );
+  ASSERT( VTYPE(v) == NODEVECTOR );
 
   my_node = (NODE*)VOBJECT( v );
 
@@ -562,7 +562,7 @@ DOUBLE FFMeshwidthOfGrid( GRID *grid )
   link = START( FIRSTNODE( grid ) );
   do
   {
-    assert( link != NULL );
+    ASSERT( link != NULL );
     nb = NBNODE( link );
     vertex2 = MYVERTEX( nb );
     link = NEXT( link );
@@ -640,9 +640,9 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 
   /* check consistency of the blockvector structure */
   bv_inner = GFIRSTBV( grid );
-  assert( !BV_IS_LEAF_BV( bv_inner ) );
-  assert( BV_IS_LEAF_BV( BVSUCC(bv_inner) ) );      /* blockvector for the boundary vectors */
-  assert( BVSUCC(BVSUCC(bv_inner)) == NULL );       /* the boundary vectors are the last */
+  ASSERT( !BV_IS_LEAF_BV( bv_inner ) );
+  ASSERT( BV_IS_LEAF_BV( BVSUCC(bv_inner) ) );      /* blockvector for the boundary vectors */
+  ASSERT( BVSUCC(BVSUCC(bv_inner)) == NULL );       /* the boundary vectors are the last */
   BVD_INIT( &bvd_dirichlet );
   BVD_PUSH_ENTRY( &bvd_dirichlet, BVNUMBER( BVSUCC(bv_inner) ), bvdf );
 
@@ -774,7 +774,7 @@ void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, D
   for ( ; bv != bv_glob_end; bv = BVSUCC(bv) )       /* over all lines resp. planes */
   {
 #ifdef __TWODIM__
-    assert( BVDOWNTYPE(bv) == BVDOWNTYPEVECTOR );
+    ASSERT( BVDOWNTYPE(bv) == BVDOWNTYPEVECTOR );
     length = BVNUMBEROFVECTORS(bv) + 1;
     hkpi = pos = ( PI * wavenr ) / (DOUBLE)length;
     end_v = BVENDVECTOR( bv );
@@ -784,7 +784,7 @@ void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, D
       pos += hkpi;
     }
 #else
-    assert( BVDOWNTYPE(bv) == BVDOWNTYPEBV );
+    ASSERT( BVDOWNTYPE(bv) == BVDOWNTYPEBV );
     bv_i = BVDOWNBV(bv);
     bv_end = BVDOWNBVEND(bv);
 
@@ -807,6 +807,71 @@ void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, D
     }
 #endif
   }
+}
+
+/****************************************************************************/
+/*D
+   MeshwidthForFFConstructTestvector_loc - calculate meshwodth an other variables
+
+   SYNOPSIS:
+   void MeshwidthForFFConstructTestvector_loc( const VECTOR *v,
+             const VECTOR *vn, DOUBLE *meshwidth, DOUBLE *pos );
+
+   PARAMETERS:
+   .  v - first vector
+   .  vn - second vector
+   .  meshwidth - meshwidth between 1. and 2. vector
+   .  coord - coordinate in the line of the 1. vector relative to the begining
+
+   DESCRIPTION:
+   Determines weather the 2 vectors are horizontal or vertical neighbours
+   (the coordinates are considered). The distance along the (horizontal
+   or vertical) line is returned as 'meshwidth'.
+
+   Also the 'coord' is returned as the distance of the first vector from the
+   beginning of its line (the line is assumed to be in a unit square/cube,
+   i.e. the line is [0,1]).
+
+   RESTRICTIONS:
+   The grid must be ordered lexicographically by a blockvector structure
+   as created by 'CreateBVStripe2D'/'3D'.
+
+   The grid should be regular (i.e. each line/plane contains the same number of
+   vectors) and part of the unit square/cube.
+
+   SEE ALSO:
+   FFConstructTestvector_loc, CreateBVStripe2D, CreateBVStripe3D
+
+   RETURN VALUE:
+   .n   void
+   D*/
+/*************************************************************************/
+static void MeshwidthForFFConstructTestvector_loc( const VECTOR *v, const VECTOR *vn, DOUBLE *meshwidth, DOUBLE *coord )
+{
+  DOUBLE pos1[DIM], pos2[DIM];
+
+  VectorPosition(v,pos1);
+  VectorPosition(vn,pos2);
+
+  *coord = pos1[0];
+  /* on the same horizontal line? */
+  if( (*meshwidth = fabs( *coord - pos2[0] )) > 1e-6 )
+  {
+    /* assert that the 2 points are on the same vertical line */
+    ASSERT( fabs(pos1[1] - pos2[1]) <= 1e-6 );
+  }
+  else
+  {
+    *coord = pos1[1];
+    if( (*meshwidth = fabs( *coord - pos2[1] )) <= 1e-6 )
+    {
+      /* if not on the same vertical line then an error */
+      ASSERT( FALSE );
+    }
+  }
+
+  if( *coord > 0.5 )
+    *coord = 1.0 - *coord;
 }
 
 /****************************************************************************/
@@ -860,11 +925,10 @@ void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, D
 
 void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D )
 {
-  register DOUBLE hkpi, pos, plane_pos, tensor;
+  register DOUBLE tensor, pos, hkpi, plane_hkpi, plane_pos;
   register VECTOR *v, *end_v;
   register BLOCKVECTOR *bv_i, *bv_end;
-  INT length, plane_length;
-  DOUBLE plane_hkpi;
+  DOUBLE meshwidth, coord, line_pos;
 
   if ( BV_IS_LEAF_BV( bv ) )
   /* 2D block */
@@ -883,8 +947,11 @@ void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE waven
             return;
      */
 
-    length = BVNUMBEROFVECTORS(bv) + 1;
-    hkpi = pos = ( PI * wavenr ) / (DOUBLE)length;
+    v = BVFIRSTVECTOR(bv);
+    MeshwidthForFFConstructTestvector_loc( v, SUCCVC(v), &meshwidth, &coord );
+    hkpi = PI * wavenr * meshwidth;
+    pos = PI * coord * wavenr;
+
     end_v = BVENDVECTOR( bv );
     BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), end_v )                /* over all points in the line */
     {
@@ -896,20 +963,26 @@ void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE waven
   else
   /* 3D block */
   {
-    assert( BVDOWNTYPE(bv) == BVDOWNTYPEBV );
+    ASSERT( BVDOWNTYPE(bv) == BVDOWNTYPEBV );
     bv_i = BVDOWNBV(bv);
     bv_end = BVDOWNBVEND(bv);
+    v = BVFIRSTVECTOR(bv_i);
 
-    plane_length = BVNUMBER(BVDOWNBVLAST(bv)) - BVNUMBER(bv_i) + 2;
-    plane_hkpi = plane_pos = (PI * wavenr_3D) / (double)plane_length;
-    tensor = sin ( plane_pos );
+    /* planewise */
+    MeshwidthForFFConstructTestvector_loc( v, BVFIRSTVECTOR(BVSUCC(bv_i)), &meshwidth, &coord );
+    plane_hkpi = PI * wavenr * meshwidth;
+    plane_pos = PI * coord * wavenr;
+    tensor = sin( plane_pos );
+
+    /* linewise */
+    MeshwidthForFFConstructTestvector_loc( v, SUCCVC(v), &meshwidth, &coord );
+    hkpi = PI * wavenr * meshwidth;
+    line_pos = PI * coord * wavenr;
 
     for ( ; bv_i != bv_end; bv_i = BVSUCC(bv_i) )               /* over all lines */
     {
-      length = BVNUMBEROFVECTORS(bv_i) + 1;
-      hkpi = pos = ( PI * wavenr ) / (DOUBLE)length;
+      pos = line_pos;
       end_v = BVENDVECTOR( bv_i );
-      /*printf("tensor %g\n", tensor );*/
       BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv_i), end_v )                    /* over all points in the line */
       {
         VVALUE( v, tv_comp ) = tensor * sin( pos );
@@ -1201,7 +1274,7 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
 
   /* solve upper triangular matrix; the last block is already calculated */
   /* v := (T^-1*U + I )^-1 * aux */
-  assert( bv_i == BVDOWNBVLAST(bv) );
+  ASSERT( bv_i == BVDOWNBVLAST(bv) );
   SWAP( bvd_i, bvd_ip1, bvd_temp );
   BVD_DEC_LAST_ENTRY( bvd_i, 2, bvdf );
   bv_stop = BVPRED( BVDOWNBV(bv) );
