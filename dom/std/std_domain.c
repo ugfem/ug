@@ -133,40 +133,41 @@ static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global);
 
 /* Marc specials */
 
-/*
-   #define LARGE_MARC
- */
-
+#define MAX_LEN         200
 #define PRISM_MOD
+
+static char theLine[MAX_LEN+1];
+static INT nCorners,nBndP,nElem,nPPatch,nLPatch,nTPatch,nPri,nFound;
+static INT Marc_Extended;
 
 static INT ExpandLine (char *theLine)
 {
   INT i,j,k,l;
 
-    #ifdef LARGE_MARC
-  i = 76;
-  j = 69;
-  for (l=0; l<3; l++) {
-    theLine[i] = ' ';
-    i--;
-    theLine[i] = theLine[j];
-    i--;
-    j--;
-    theLine[i] = theLine[j];
-    i--;
-    j--;
-    theLine[i] = 'e';
-    i--;
-    for (k=0; k<18; k++) {
+  if (Marc_Extended) {
+    i = 76;
+    j = 69;
+    for (l=0; l<3; l++) {
+      theLine[i] = ' ';
+      i--;
       theLine[i] = theLine[j];
       i--;
       j--;
+      theLine[i] = theLine[j];
+      i--;
+      j--;
+      theLine[i] = 'e';
+      i--;
+      for (k=0; k<18; k++) {
+        theLine[i] = theLine[j];
+        i--;
+        j--;
+      }
     }
+    theLine[i] = ' ';
+    /*printf("%s",theLine); */
+    return(0);
   }
-  theLine[i] = ' ';
-  /*printf("%s",theLine); */
-  return(0);
-    #endif
 
   i = 41;
   j = 34;
@@ -191,11 +192,6 @@ static INT ExpandLine (char *theLine)
 
   return(0);
 }
-
-#define MAX_LEN         200
-
-static char theLine[MAX_LEN+1];
-static INT nCorners,nBndP,nElem,nPPatch,nLPatch,nTPatch,nPri,nFound;
 
 static INT file_readline (FILE *f, char *key)
 {
@@ -222,77 +218,75 @@ static INT file_elements (FILE *f)
 
     if (strlen(theLine) < 3) continue;
 
-#ifndef LARGE_MARC
-
-    theLine[66] = 0;
-    theLine[65] = ' ';
-    theLine[64] = theLine[54];
-    theLine[63] = theLine[53];
-    theLine[62] = theLine[52];
-    theLine[61] = theLine[51];
-    theLine[60] = theLine[50];
-    theLine[59] = ' ';
-    theLine[58] = theLine[49];
-    theLine[57] = theLine[48];
-    theLine[56] = theLine[47];
-    theLine[55] = theLine[46];
-    theLine[54] = theLine[45];
-    theLine[53] = ' ';
-    theLine[52] = theLine[44];
-    theLine[51] = theLine[43];
-    theLine[50] = theLine[42];
-    theLine[49] = theLine[41];
-    theLine[48] = theLine[40];
-    theLine[47] = ' ';
-    theLine[46] = theLine[39];
-    theLine[45] = theLine[38];
-    theLine[44] = theLine[37];
-    theLine[43] = theLine[36];
-    theLine[42] = theLine[35];
-    theLine[41] = ' ';
-    theLine[40] = theLine[34];
-    theLine[39] = theLine[33];
-    theLine[38] = theLine[32];
-    theLine[37] = theLine[31];
-    theLine[36] = theLine[30];
-    theLine[35] = ' ';
-    theLine[34] = theLine[29];
-    theLine[33] = theLine[28];
-    theLine[32] = theLine[27];
-    theLine[31] = theLine[26];
-    theLine[30] = theLine[25];
-    theLine[29] = ' ';
-    theLine[28] = theLine[24];
-    theLine[27] = theLine[23];
-    theLine[26] = theLine[22];
-    theLine[25] = theLine[21];
-    theLine[24] = theLine[20];
-    theLine[23] = ' ';
-    theLine[22] = theLine[19];
-    theLine[21] = theLine[18];
-    theLine[20] = theLine[17];
-    theLine[19] = theLine[16];
-    theLine[18] = theLine[15];
-    theLine[17] = ' ';
-    theLine[16] = theLine[14];
-    theLine[15] = theLine[13];
-    theLine[14] = theLine[12];
-    theLine[13] = theLine[11];
-    theLine[12] = theLine[10];
-    theLine[11] = ' ';
-    theLine[10] = theLine[9];
-    theLine[9] = theLine[8];
-    theLine[8] = theLine[7];
-    theLine[7] = theLine[6];
-    theLine[6] = theLine[5];
-    theLine[5] = ' ';
-    theLine[4] = theLine[4];
-    theLine[3] = theLine[3];
-    theLine[2] = theLine[2];
-    theLine[1] = theLine[1];
-    theLine[0] = theLine[0];
-
-#endif
+    if (Marc_Extended == 0) {
+      theLine[66] = 0;
+      theLine[65] = ' ';
+      theLine[64] = theLine[54];
+      theLine[63] = theLine[53];
+      theLine[62] = theLine[52];
+      theLine[61] = theLine[51];
+      theLine[60] = theLine[50];
+      theLine[59] = ' ';
+      theLine[58] = theLine[49];
+      theLine[57] = theLine[48];
+      theLine[56] = theLine[47];
+      theLine[55] = theLine[46];
+      theLine[54] = theLine[45];
+      theLine[53] = ' ';
+      theLine[52] = theLine[44];
+      theLine[51] = theLine[43];
+      theLine[50] = theLine[42];
+      theLine[49] = theLine[41];
+      theLine[48] = theLine[40];
+      theLine[47] = ' ';
+      theLine[46] = theLine[39];
+      theLine[45] = theLine[38];
+      theLine[44] = theLine[37];
+      theLine[43] = theLine[36];
+      theLine[42] = theLine[35];
+      theLine[41] = ' ';
+      theLine[40] = theLine[34];
+      theLine[39] = theLine[33];
+      theLine[38] = theLine[32];
+      theLine[37] = theLine[31];
+      theLine[36] = theLine[30];
+      theLine[35] = ' ';
+      theLine[34] = theLine[29];
+      theLine[33] = theLine[28];
+      theLine[32] = theLine[27];
+      theLine[31] = theLine[26];
+      theLine[30] = theLine[25];
+      theLine[29] = ' ';
+      theLine[28] = theLine[24];
+      theLine[27] = theLine[23];
+      theLine[26] = theLine[22];
+      theLine[25] = theLine[21];
+      theLine[24] = theLine[20];
+      theLine[23] = ' ';
+      theLine[22] = theLine[19];
+      theLine[21] = theLine[18];
+      theLine[20] = theLine[17];
+      theLine[19] = theLine[16];
+      theLine[18] = theLine[15];
+      theLine[17] = ' ';
+      theLine[16] = theLine[14];
+      theLine[15] = theLine[13];
+      theLine[14] = theLine[12];
+      theLine[13] = theLine[11];
+      theLine[12] = theLine[10];
+      theLine[11] = ' ';
+      theLine[10] = theLine[9];
+      theLine[9] = theLine[8];
+      theLine[8] = theLine[7];
+      theLine[7] = theLine[6];
+      theLine[6] = theLine[5];
+      theLine[5] = ' ';
+      theLine[4] = theLine[4];
+      theLine[3] = theLine[3];
+      theLine[2] = theLine[2];
+      theLine[1] = theLine[1];
+      theLine[0] = theLine[0];
+    }
 
     if (sscanf(theLine,"%d %d",&id,&n) != 2) return(0);
 
@@ -322,23 +316,21 @@ static INT file_corners (FILE *f)
 
   /* printf("%s",theLine);  */
 
-#ifndef LARGE_MARC
-
-  theLine[12] = 0;
-  theLine[11] = ' ';
-  theLine[10] = theLine[9];
-  theLine[9] = theLine[8];
-  theLine[8] = theLine[7];
-  theLine[7] = theLine[6];
-  theLine[6] = theLine[5];
-  theLine[5] = ' ';
-  theLine[4] = theLine[4];
-  theLine[3] = theLine[3];
-  theLine[2] = theLine[2];
-  theLine[1] = theLine[1];
-  theLine[0] = theLine[0];
-
-#endif
+  if (Marc_Extended == 0) {
+    theLine[12] = 0;
+    theLine[11] = ' ';
+    theLine[10] = theLine[9];
+    theLine[9] = theLine[8];
+    theLine[8] = theLine[7];
+    theLine[7] = theLine[6];
+    theLine[6] = theLine[5];
+    theLine[5] = ' ';
+    theLine[4] = theLine[4];
+    theLine[3] = theLine[3];
+    theLine[2] = theLine[2];
+    theLine[1] = theLine[1];
+    theLine[0] = theLine[0];
+  }
 
   if (sscanf(theLine,"%d %d",&N,&n) != 2) return(1);
 
@@ -454,77 +446,75 @@ static INT file_elements_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
     fgets(theLine, MAX_LEN, f);
     if (strlen(theLine) < 3) continue;
 
-#ifndef LARGE_MARC
-
-    theLine[66] = 0;
-    theLine[65] = ' ';
-    theLine[64] = theLine[54];
-    theLine[63] = theLine[53];
-    theLine[62] = theLine[52];
-    theLine[61] = theLine[51];
-    theLine[60] = theLine[50];
-    theLine[59] = ' ';
-    theLine[58] = theLine[49];
-    theLine[57] = theLine[48];
-    theLine[56] = theLine[47];
-    theLine[55] = theLine[46];
-    theLine[54] = theLine[45];
-    theLine[53] = ' ';
-    theLine[52] = theLine[44];
-    theLine[51] = theLine[43];
-    theLine[50] = theLine[42];
-    theLine[49] = theLine[41];
-    theLine[48] = theLine[40];
-    theLine[47] = ' ';
-    theLine[46] = theLine[39];
-    theLine[45] = theLine[38];
-    theLine[44] = theLine[37];
-    theLine[43] = theLine[36];
-    theLine[42] = theLine[35];
-    theLine[41] = ' ';
-    theLine[40] = theLine[34];
-    theLine[39] = theLine[33];
-    theLine[38] = theLine[32];
-    theLine[37] = theLine[31];
-    theLine[36] = theLine[30];
-    theLine[35] = ' ';
-    theLine[34] = theLine[29];
-    theLine[33] = theLine[28];
-    theLine[32] = theLine[27];
-    theLine[31] = theLine[26];
-    theLine[30] = theLine[25];
-    theLine[29] = ' ';
-    theLine[28] = theLine[24];
-    theLine[27] = theLine[23];
-    theLine[26] = theLine[22];
-    theLine[25] = theLine[21];
-    theLine[24] = theLine[20];
-    theLine[23] = ' ';
-    theLine[22] = theLine[19];
-    theLine[21] = theLine[18];
-    theLine[20] = theLine[17];
-    theLine[19] = theLine[16];
-    theLine[18] = theLine[15];
-    theLine[17] = ' ';
-    theLine[16] = theLine[14];
-    theLine[15] = theLine[13];
-    theLine[14] = theLine[12];
-    theLine[13] = theLine[11];
-    theLine[12] = theLine[10];
-    theLine[11] = ' ';
-    theLine[10] = theLine[9];
-    theLine[9] = theLine[8];
-    theLine[8] = theLine[7];
-    theLine[7] = theLine[6];
-    theLine[6] = theLine[5];
-    theLine[5] = ' ';
-    theLine[4] = theLine[4];
-    theLine[3] = theLine[3];
-    theLine[2] = theLine[2];
-    theLine[1] = theLine[1];
-    theLine[0] = theLine[0];
-
-#endif
+    if (Marc_Extended == 0) {
+      theLine[66] = 0;
+      theLine[65] = ' ';
+      theLine[64] = theLine[54];
+      theLine[63] = theLine[53];
+      theLine[62] = theLine[52];
+      theLine[61] = theLine[51];
+      theLine[60] = theLine[50];
+      theLine[59] = ' ';
+      theLine[58] = theLine[49];
+      theLine[57] = theLine[48];
+      theLine[56] = theLine[47];
+      theLine[55] = theLine[46];
+      theLine[54] = theLine[45];
+      theLine[53] = ' ';
+      theLine[52] = theLine[44];
+      theLine[51] = theLine[43];
+      theLine[50] = theLine[42];
+      theLine[49] = theLine[41];
+      theLine[48] = theLine[40];
+      theLine[47] = ' ';
+      theLine[46] = theLine[39];
+      theLine[45] = theLine[38];
+      theLine[44] = theLine[37];
+      theLine[43] = theLine[36];
+      theLine[42] = theLine[35];
+      theLine[41] = ' ';
+      theLine[40] = theLine[34];
+      theLine[39] = theLine[33];
+      theLine[38] = theLine[32];
+      theLine[37] = theLine[31];
+      theLine[36] = theLine[30];
+      theLine[35] = ' ';
+      theLine[34] = theLine[29];
+      theLine[33] = theLine[28];
+      theLine[32] = theLine[27];
+      theLine[31] = theLine[26];
+      theLine[30] = theLine[25];
+      theLine[29] = ' ';
+      theLine[28] = theLine[24];
+      theLine[27] = theLine[23];
+      theLine[26] = theLine[22];
+      theLine[25] = theLine[21];
+      theLine[24] = theLine[20];
+      theLine[23] = ' ';
+      theLine[22] = theLine[19];
+      theLine[21] = theLine[18];
+      theLine[20] = theLine[17];
+      theLine[19] = theLine[16];
+      theLine[18] = theLine[15];
+      theLine[17] = ' ';
+      theLine[16] = theLine[14];
+      theLine[15] = theLine[13];
+      theLine[14] = theLine[12];
+      theLine[13] = theLine[11];
+      theLine[12] = theLine[10];
+      theLine[11] = ' ';
+      theLine[10] = theLine[9];
+      theLine[9] = theLine[8];
+      theLine[8] = theLine[7];
+      theLine[7] = theLine[6];
+      theLine[6] = theLine[5];
+      theLine[5] = ' ';
+      theLine[4] = theLine[4];
+      theLine[3] = theLine[3];
+      theLine[2] = theLine[2];
+      theLine[1] = theLine[1];
+      theLine[0] = theLine[0];
+    }
 
     if (sscanf(theLine,"%d %d",&id,&n) != 2) return(0);
 
@@ -682,23 +672,21 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
   fgets(theLine, MAX_LEN, f);
   /* printf("%s",theLine); */
 
-#ifndef LARGE_MARC
-
-  theLine[12] = 0;
-  theLine[11] = ' ';
-  theLine[10] = theLine[9];
-  theLine[9] = theLine[8];
-  theLine[8] = theLine[7];
-  theLine[7] = theLine[6];
-  theLine[6] = theLine[5];
-  theLine[5] = ' ';
-  theLine[4] = theLine[4];
-  theLine[3] = theLine[3];
-  theLine[2] = theLine[2];
-  theLine[1] = theLine[1];
-  theLine[0] = theLine[0];
-
-#endif
+  if (Marc_Extended == 0) {
+    theLine[12] = 0;
+    theLine[11] = ' ';
+    theLine[10] = theLine[9];
+    theLine[9] = theLine[8];
+    theLine[8] = theLine[7];
+    theLine[7] = theLine[6];
+    theLine[6] = theLine[5];
+    theLine[5] = ' ';
+    theLine[4] = theLine[4];
+    theLine[3] = theLine[3];
+    theLine[2] = theLine[2];
+    theLine[1] = theLine[1];
+    theLine[0] = theLine[0];
+  }
 
   if (sscanf(theLine,"%d %d",&N,&n) != 2) return(1);
 
@@ -931,6 +919,14 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   if (stream == NULL) {
     PrintErrorMessage('F',"Init_MarcBVP","could not open file");
     REP_ERR_RETURN_PTR(NULL);
+  }
+  if (file_readline(stream,"extended")) {
+    Marc_Extended = 0;
+    fclose(stream);
+    stream = fileopen(theBVP->mesh_file,"r");
+  }
+  else {
+    Marc_Extended = 1;
   }
   if (file_readline(stream,"connectivity")) {
     PrintErrorMessage('F',"Init_MarcBVP","could not read connectivity");
@@ -1341,10 +1337,13 @@ static INT M_BNDS_Global (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
     if (flag)
     {
       DOUBLE q =  global[0]* global[0]+ global[1]*global[1];
-      DOUBLE s = sqrt(0.25*(r[0]+r[1]+r[2]+r[3])/q);
 
-      global[0] *=  s;
-      global[1] *=  s;
+      if (q > 0.000001) {
+        DOUBLE s = sqrt(0.25*(r[0]+r[1]+r[2]+r[3])/q);
+
+        global[0] *=  s;
+        global[1] *=  s;
+      }
     }
   }
     #endif
@@ -1365,8 +1364,12 @@ static INT M_BNDS_BndCond (BNDS *theBndS, DOUBLE *local,
     INT i;
     M2_PATCH *patch = (M2_PATCH *)currBVP->patches[p->patch_id];
 
+
+
+
     type[0] = patch->c;
     M_BNDS_Global(theBndS,local,global);
+
     if (in == NULL)
       return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
 
