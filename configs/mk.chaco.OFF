@@ -1,4 +1,4 @@
 # this file is for internal ug configuration. don't change it!
 
-GRAPE_CFLAGS = -DGRAPEF
-GRAPE_LFLAGS =
+CHACO_CFLAGS = -DCHACOF
+CHACO_LFLAGS =

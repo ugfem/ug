@@ -1,4 +1,4 @@
 # this file is for internal ug configuration. don't change it!
 
-GRAPE_CFLAGS = -DCHACOT
-GRAPE_LFLAGS = $(UGROOT)/lib/libcp.a
+CHACO_CFLAGS = -DCHACOT
+CHACO_LFLAGS = $(UGROOT)/lib/libcp.a
