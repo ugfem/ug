@@ -1244,7 +1244,6 @@ extern CONTROL_ENTRY
 /*																			*/
 /* links and edges:                                                                                                             */
 /* LOFFSET	 |0     | | |*| | | |position of link in links array			*/
-/* EXTRA	 |1     | | |*| | | |set to 1 if edge is no triangulation edge	*/
 /* NOOFELEM  |2-9	| | |*| | | |nb. of elem. the edge is part of			*/
 /* AUXEDGE	 |10	|														*/
 /*																			*/
@@ -1299,40 +1298,30 @@ extern CONTROL_ENTRY
 #define OBJ_LEN                                         5
 #define OBJT(p)                                         CW_READ(p,OBJ_CE)
 #define SETOBJT(p,n)                            CW_WRITE(p,OBJ_CE,n)
-#define PAROBJT(p)                                      CW_READ(p,OBJ_CE)
-#define PARSETOBJT(p,n)                         CW_WRITE(p,OBJ_CE,n)
 
 #define USED_CE                                         21
 #define USED_SHIFT                                      23
 #define USED_LEN                                        1
 #define USED(p)                                         CW_READ(p,USED_CE)
 #define SETUSED(p,n)                            CW_WRITE(p,USED_CE,n)
-#define PARUSED(p)                                      CW_READ(p,USED_CE)
-#define PARSETUSED(p,n)                         CW_WRITE(p,USED_CE,n)
 
 #define TAG_CE                                          42
 #define TAG_SHIFT                                       24
 #define TAG_LEN                                         3
 #define TAG(p)                                          CW_READ(p,TAG_CE)
 #define SETTAG(p,n)                             CW_WRITE(p,TAG_CE,n)
-#define PARTAG(p)                                               CW_READ(p,TAG_CE)
-#define PARSETTAG(p,n)                          CW_WRITE(p,TAG_CE,n)
 
 #define LEVEL_CE                                        22
 #define LEVEL_SHIFT                             17
 #define LEVEL_LEN                                       5
 #define LEVEL(p)                                        CW_READ(p,LEVEL_CE)
 #define SETLEVEL(p,n)                           CW_WRITE(p,LEVEL_CE,n)
-#define PARLEVEL(p)                                     CW_READ(p,LEVEL_CE)
-#define PARSETLEVEL(p,n)                        CW_WRITE(p,LEVEL_CE,n)
 
 #define THEFLAG_CE                                      23
 #define THEFLAG_SHIFT                           16
 #define THEFLAG_LEN                             1
 #define THEFLAG(p)                                      CW_READ(p,THEFLAG_CE)
 #define SETTHEFLAG(p,n)                         CW_WRITE(p,THEFLAG_CE,n)
-#define PARTHEFLAG(p)                           CW_READ(p,THEFLAG_CE)
-#define PARSETTHEFLAG(p,n)                      CW_WRITE(p,THEFLAG_CE,n)
 
 /* use this to allocate space for general flags in all control words */
 /* of geometric objects                                                                                          */
@@ -1513,12 +1502,6 @@ extern CONTROL_ENTRY
 #define EDGE_GEN                                        34
 
 #define EOFFSET_CE                                      35 /* same as in link ! */
-
-#define EXTRA_CE                                        36
-#define EXTRA_SHIFT                             1
-#define EXTRA_LEN                                       1
-#define EXTRA(p)                                        CW_READ(p,EXTRA_CE)
-#define SETEXTRA(p,n)                           CW_WRITE(p,EXTRA_CE,n)
 
 #define NOOFELEM_CE                             37
 #define NOOFELEM_SHIFT                          2
@@ -1925,8 +1908,8 @@ NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT 
 /*INT			GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
 /* moving nodes */
-INT             MoveInnerNode                   (MULTIGRID *theMG, NODE *theNode, COORD *newPos);
-INT             MoveBoundaryNode                (MULTIGRID *theMG, NODE *theNode, INT segid, COORD *newPos);
+INT         MoveNode                (MULTIGRID *theMG, NODE *theNode, COORD *newPos);
+INT         MoveMidNode             (MULTIGRID *theMG, NODE *Node0, NODE *Node1, NODE *MidNode, COORD lambda);
 INT             SmoothMultiGrid                 (MULTIGRID *theMG, INT niter, INT bdryFlag);
 
 /* handling struct blockvector_description_format (BV_DESC_FORMAT) */

@@ -143,7 +143,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
 
   {1,EDGE_GEN,            EDGE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
   {1,EOFFSET_CE,          EDGE_CW,        LOFFSET_SHIFT,          LOFFSET_LEN             },
-  {1,EXTRA_CE,            EDGE_CW,        EXTRA_SHIFT,            EXTRA_LEN               },
+  {0,0,0,0,0},
   {1,NOOFELEM_CE,         EDGE_CW,        NOOFELEM_SHIFT,         NOOFELEM_LEN    },
   {1,AUXEDGE_CE,          EDGE_CW,        AUXEDGE_SHIFT,          AUXEDGE_LEN             },
   {1,PATTERN_CE,          EDGE_CW,        PATTERN_SHIFT,          PATTERN_LEN             },
@@ -194,6 +194,8 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
 }; /* last entry used: 72 for XFERLINK_CE */
+
+/* free entry: 36 (EXTRA for edge does not exist any more) */
 
 /****************************************************************************/
 /*                                                                          */

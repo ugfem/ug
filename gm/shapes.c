@@ -104,6 +104,8 @@
 #define U6  nodal_values[6]
 #define U7  nodal_values[7]
 
+#define SQ(x) (x)*(x)
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -643,6 +645,69 @@ INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
 	}
 	
 	return (0);	
+}
+
+/****************************************************************************/
+/*D
+   SurfaceElement - compute surface element for surface integral of first kind
+
+   SYNOPSIS:
+   INT SurfaceElement (INT dim, INT nc, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
+       DOUBLE ip_local[DIM], DOUBLE *result)
+
+   PARAMETERS:
+.  dim - space dimension of mapped element (i.e. 2 and 3 are allowed)
+.  nc - number of corners
+.  co_global - global coordintes of corners of the element
+.  ip_local - point in coordinates of the reference element where surfel should be evaluated
+
+   DESCRIPTION:
+   The reference elements in 1D and 2D are mapped to an arbitrary element in the
+   next higher dimension, e.g. the unit quadrilateral to a general quadrilateral
+   in 3D space. This function computes the surface integral for the
+   surface integral of the first kind (see Bronstein 20. Auflage Kap. 3.1.12.2).
+
+   RETURN VALUES:
+   0 is ok else error
+
+   SEE ALSO:
+
+D*/
+/****************************************************************************/
+
+INT SurfaceElement (INT dim, INT nc, 
+					DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
+					DOUBLE ip_local[DIM], DOUBLE *result)
+{
+	DOUBLE E,G,F;
+	
+	if (dim==2)
+	{
+		*result = sqrt((X1-X0)*(X1-X0)+(Y1-Y0)*(Y1-Y0));
+		return(0);
+	}
+	if (dim==3)
+	{
+		switch (nc)
+		{
+			case 3:
+				E = (X1-X0)*(X1-X0) + (Y1-Y0)*(Y1-Y0) + (Z1-Z0)*(Z1-Z0);
+				G = (X2-X0)*(X2-X0) + (Y2-Y0)*(Y2-Y0) + (Z2-Z0)*(Z2-Z0);
+				F = (X1-X0)*(X2-X0) + (Y1-Y0)*(Y2-Y0) + (Z1-Z0)*(Z2-Z0);
+				*result = sqrt(E*G-F*F);
+				return(0);
+				
+			case 4:
+				E = SQ((X0-X1)*(1-Eta)+(X2-X3)*Eta) + SQ((Y0-Y1)*(1-Eta)+(Y2-Y3)*Eta) + SQ((Z0-Z1)*(1-Eta)+(Z2-Z3)*Eta);
+				G = SQ((X3-X0)*(1-Xi )+(X2-X1)*Xi ) + SQ((Y3-Y0)*(1-Xi )+(Y2-Y1)*Xi ) + SQ((Z3-Z0)*(1-Xi )+(Z2-Z1)*Xi );
+				F = ((X0-X1)*(1-Eta)+(X2-X3)*Eta)*((X3-X0)*(1-Xi )+(X2-X1)*Xi )
+				  + ((Y0-Y1)*(1-Eta)+(Y2-Y3)*Eta)*((Y3-Y0)*(1-Xi )+(Y2-Y1)*Xi )
+				  + ((Z0-Z1)*(1-Eta)+(Z2-Z3)*Eta)*((Z3-Z0)*(1-Xi )+(Z2-Z1)*Xi );
+				*result = sqrt(E*G-F*F);
+				return(0);
+		}
+	}
+	return(1);			
 }
 
 /****************************************************************************/

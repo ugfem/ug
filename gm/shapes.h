@@ -586,8 +586,9 @@ INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], DOUBLE Jinv[DIM]
  * result		pointer where to place result (a vector)
  */
 
-
-
+INT SurfaceElement (INT dim, INT nc, 
+					DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
+					DOUBLE ip_local[DIM], DOUBLE *result);
 
 #ifdef __TWODIM__
 DOUBLE	N				(INT n, INT i, DOUBLE s, DOUBLE t);
