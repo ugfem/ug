@@ -49,6 +49,7 @@
 
 #define SELECTION_AMG 1
 #define CLUSTER_AMG 2
+#define FAMG 3
 
 #define DISPLAY_NP_AMG_STRING "Level  NVectors   NMatrices  NIMats (to finer level)\n"
 #define DISPLAY_NP_AMG_FORMAT "%3d   %8d   %8d   %8d\n"
@@ -142,5 +143,6 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 INT AMGTransferExecute    (NP_BASE *theNP, INT argc , char **argv);
 
 INT InitAMGTransfer       (void);
+INT AMGTransferConstruct  (NP_BASE *theNP);
 
 #endif

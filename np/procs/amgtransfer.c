@@ -1147,7 +1147,7 @@ INT AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
-static INT AMGTransferConstruct (NP_BASE *theNP)
+INT AMGTransferConstruct (NP_BASE *theNP)
 {
   NP_TRANSFER *np;
 
