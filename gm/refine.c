@@ -3358,7 +3358,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	qsort(NbSortTable,Sons_of_NbSide,sizeof(COMPARE_RECORD *), compare_nodes);
 
 	#ifdef ModelP
-	if (Sons_of_NbSide<Sons_of_Side) Sons_of_Side = Sons_of_NbSide;
+	if (!ioflag && Sons_of_NbSide!=Sons_of_Side) ASSERT(0);
 	#endif
 
 	#ifdef Debug
@@ -3449,7 +3449,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 		for (i=0; i<Sons_of_Side; i++)
 		{
 			Entry = ElemSortTable[i];
-			for (k=nbson; k<Sons_of_NbSide; k++)
+			for (k=0; k<Sons_of_NbSide; k++)
 			{
 				NbEntry = NbSortTable[k];
 			
@@ -3463,7 +3463,6 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 							   NbSortTable[k]->elem);
 					SET_NBELEM(NbSortTable[k]->elem,NbSortTable[k]->side,
 							   ElemSortTable[i]->elem);					
-					nbson = k+1;
 				}
 			}
 		}
