@@ -301,8 +301,8 @@ enum Priorities
 
 /* dummy defines for serial case according to parallel defines in parallel.h */
 /* dummies for elements */
-#define EMASTER(p)      1
-#define EGHOST(p)       0
+#define EMASTER(p)              1
+#define EGHOST(p)               0
 #define SETEPRIO(p,i)   ;
 #define EMASTERPRIO(p)  1
 #define EPROCLIST(p)    (&_proclist_)
@@ -310,10 +310,10 @@ enum Priorities
 #define PARTITION(p)    _partition_
 
 /* dummies for nodes, vectors, edges */
-#define MASTER(p)       1
-#define GHOST(p)        0
+#define MASTER(p)               1
+#define GHOST(p)                0
 #define SETPRIO(p,i)    ;
-#define PROCLIST(p)     (&_proclist_)
+#define PROCLIST(p)             (&_proclist_)
 #define NCOPIES(p)              1
 
 /* ddd dummies */
