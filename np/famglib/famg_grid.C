@@ -1266,7 +1266,6 @@ int FAMGGrid::Construct(FAMGGrid *fg)
     }
 #endif
 	
-
     if(GetMatrix()->ConstructGalerkinMatrix(*fg)) 
 		RETURN(1);
 	
@@ -1311,8 +1310,9 @@ int FAMGGrid::ConstructTransfer()
     // test
     // FGSSmoothTV();
     
-	GetTmpMatrix()->MarkStrongLinks(*this);
-
+	if( FAMGGetParameter()->Gettype() == 6 )
+		GetTmpMatrix()->MarkStrongLinks(*this);	// needed only for type 6 in the moment
+	
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
@@ -1632,6 +1632,7 @@ int FAMGGrid::Reorder()
 #ifdef ModelP
 
 void CountOverlap (GRID *g)	// only for testing; TODO: remove 
+// destroys VINDEX
 {
 	VECTOR *vec, *nb;
 	MATRIX *mat;
