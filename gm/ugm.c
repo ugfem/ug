@@ -5911,11 +5911,17 @@ ELEMENT *NeighbourElement (ELEMENT *t, INT side)
       if (nb != NULL) break;
     }
   }
-  else if (NSONS(nb) == 1)
-  {
+  else if (NSONS(nb) == 1) {
+                #ifdef ModelP
+    if (SON(nb,0) == NULL) return(nb);
+                #endif
     nb = SON(nb,0);
-    if (NSONS(nb) == 1)
+    if (NSONS(nb) == 1) {
+            #ifdef ModelP
+      if (SON(nb,0) == NULL) return(nb);
+                #endif
       nb = SON(nb,0);
+    }
   }
 
   return(nb);
