@@ -27,7 +27,6 @@
 /*									                                                                                */
 /****************************************************************************/
 
-
 /* ugview is a program for displaying ug metafont files on sun workstations */
 /* with color screen.							    */
 
@@ -35,6 +34,7 @@
 /* general header files */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <malloc.h>
 #include <X11/Intrinsic.h>
 #include <X11/Vendor.h>
@@ -76,6 +76,8 @@
 
 #define VERBOSE 0
 
+#define MAX_FILES       5
+
 /* needed only for CRAY C90!!					*/
 /* because there is in error in fread() for short */
 #define short long
@@ -110,6 +112,8 @@
 #define STD_LONG 4
 #define STD_SHORT 2
 
+#define XUGV_MAX(a,b) ((a)<(b)) ? (b) : (a)
+#define XUGV_MIN(a,b) ((a)<(b)) ? (a) : (b)
 
 /* defines for windowsize */
 #define WIN_HEIGHT              600
@@ -136,9 +140,12 @@ Widget applShell,                               /* Widgets */
        picture;
 Pixmap pixmap;                 /* pixmap to store picture */
 FILE     *stream;
+FILE *mstream[MAX_FILES];
 char     *newfile;
 char     *option;
 short fx, fy;          /* dimensions of drawing object */
+short mfx[MAX_FILES], mfy[MAX_FILES];   /* dimensions of drawing object */
+short fx_max, fy_max;
 int error;
 int expose;
 Cardinal n;
@@ -156,6 +163,8 @@ char outext[80];
 int through=0;
 int stoploop = 0;
 int count = 0;
+int n_pic, i_pic, f_offset, nbreak;
+char *mfile[MAX_FILES];
 
 static int littleEndian = 1; /* needed for check LITTLE/BIG-ENDIAN */
 
@@ -1024,6 +1033,538 @@ FILE *stream;
 }
 
 
+/* RasterizeFile reads the file to draw and executes the */
+/* drawing commands.					 */
+int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
+{
+  char *buffer;                         /* input buffer */
+  long blockSize;                     /* METABUFFERSIZE */
+  long blockUsed;                     /* actual buffer size used */
+  long itemCounter;                         /* number of commands in buffer */
+  char *data;                             /* data pointer in buffer */
+  short fx, fy;                          /* file screen size */
+  int i,error,j,k,size;
+  char opCode;
+  short xx[SIZE],yy[SIZE];
+  short x_cur, y_cur, x, y,r,g,b,n,lw,ts,m,ms,w,x1,y1,x2,y2;
+  XPoint xy[SIZE];
+  char s[CSIZE];
+  unsigned char c,ac;
+  long l;
+  char *fn;
+  char string[10];
+  char **list;
+  unsigned long cells[CSIZE];
+  XGCValues gcv;
+  XColor color;
+  XColor colors[CSIZE];
+  XFontStruct *font=NULL;
+
+  if (VERBOSE)
+    printf("RasterizeFile():");
+
+  /* get file parameters */
+  rewind(stream);
+  error = fread(&blockSize,STD_LONG,1,stream);
+  STD2NAT(blockSize,STD_LONG);
+  if (error!=1) return(1);                    /* block size */
+  error = fread(&fx,STD_SHORT,1,stream);
+  STD2NAT(fx,STD_SHORT);
+  if (error!=1) return(1);                    /* x size */
+  error = fread(&fy,STD_SHORT,1,stream);
+  STD2NAT(fy,STD_SHORT);
+  if (error!=1) return(1);                    /* y size */
+
+  /* default values */
+  lw = 1;
+  ts = 12;
+  m = 0;
+  ms = 6;
+  fn = string;
+
+
+  /* allocate input buffer */
+  buffer = malloc(blockSize);
+  if (buffer==NULL) return(1);
+
+  /* loop through the blocks */
+  while (!feof(stream))
+  {
+    /* read block parameters */
+    error = fread(&blockUsed,STD_LONG,1,stream);
+    STD2NAT(blockUsed,STD_LONG);
+    if (error!=1) {free(buffer); return(1);}
+    error = fread(&itemCounter,STD_LONG,1,stream);
+    STD2NAT(itemCounter,STD_LONG);
+    if (error!=1) {free(buffer); return(1);}
+    error = fread(buffer,blockUsed,1,stream);
+    if (error!=1) {free(buffer); return(1);}
+
+    /* init pointer to next item */
+    data = buffer;
+
+    /* for all items */
+    for (i=0; i<itemCounter; i++)
+    {
+      /* get op code */
+      opCode = *(data++);
+      switch (opCode)
+      {
+      case opMove :
+        memcpy(&x_cur,data,STD_SHORT);
+        STD2NAT(x_cur,STD_SHORT);
+        x_cur += x_offset;
+        data += STD_SHORT;
+        memcpy(&y_cur,data,STD_SHORT);
+        STD2NAT(y_cur,STD_SHORT);
+        y_cur = fy - y_cur;
+        y_cur += y_offset;
+        data += STD_SHORT;
+        break;
+
+      case opDraw :
+        memcpy(&x,data,STD_SHORT);
+        STD2NAT(x,STD_SHORT);
+        x += x_offset;
+        data += STD_SHORT;
+        memcpy(&y,data,STD_SHORT);
+        STD2NAT(y,STD_SHORT);
+        y = fy - y;
+        y += y_offset;
+        data += STD_SHORT;
+
+        XDrawLine(display, pixmap, gc,
+                  x_cur, y_cur, x, y);
+        x_cur = x;
+        y_cur = y;
+        break;
+
+      case opPolyline :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=SIZE) {free(buffer); return(STD_SHORT);}
+        size = n;
+        for (k=0; k<n; k++)
+        {
+          memcpy(xx+k,data,STD_SHORT);
+          STD2NAT(xx[k],STD_SHORT);
+          xx[k] += x_offset;
+          data += STD_SHORT;
+        }
+        for (k=0; k<n; k++)
+        {
+          memcpy(yy+k,data,STD_SHORT);
+          STD2NAT(yy[k],STD_SHORT);
+          yy[k] += y_offset;
+          data += STD_SHORT;
+        }
+
+        for (j=1; j<n; j++)
+          XDrawLine(display, pixmap, gc,
+                    xx[j-1],yy[j-1],
+                    fy-yy[j],fy-yy[j]);
+        x_cur = xx[n-1];
+        y_cur = fy-yy[n-1];
+        break;
+
+      case opPolygon :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=SIZE) {free(buffer); return(2);}
+        size = n;
+        for (k=0; k<n; k++)
+        {
+          memcpy(xx+k,data,STD_SHORT);
+          STD2NAT(xx[k],STD_SHORT);
+          xx[k] += x_offset;
+          data += STD_SHORT;
+        }
+        for (k=0; k<n; k++)
+        {
+          memcpy(yy+k,data,STD_SHORT);
+          STD2NAT(yy[k],STD_SHORT);
+          yy[k] += y_offset;
+          data += STD_SHORT;
+        }
+
+        if (n<3) break;
+        for (j=0; j<n; j++) {
+          xy[j].x = xx[j];
+          xy[j].y = fy-yy[j];
+        }
+
+        XFillPolygon(display, pixmap, gc,
+                     xy, n, Convex, CoordModeOrigin);
+        x_cur = xy[n-1].x;
+        y_cur = xy[n-1].y;
+        break;
+
+      case opPolymark :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=SIZE) {free(buffer); return(2);}
+        size = n;
+        for (k=0; k<n; k++)
+        {
+          memcpy(xx+k,data,STD_SHORT);
+          STD2NAT(xx[k],STD_SHORT);
+          xx[k] += x_offset;
+          data += STD_SHORT;
+        }
+        for (k=0; k<n; k++)
+        {
+          memcpy(yy+k,data,STD_SHORT);
+          STD2NAT(yy[k],STD_SHORT);
+          yy[k] += y_offset;
+          data += STD_SHORT;
+        }
+
+        for (j=0; j<n; j++) Marker(m,ms,xx[j],fy-yy[j]);
+        x_cur = xx[n-1];
+        y_cur = fy-yy[n-1];
+
+        break;
+
+      case opText :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=CSIZE-1) {free(buffer); return(2);}
+        memcpy(s,data,n);
+        s[n] = 0;
+        data += n;
+        XDrawString( display, pixmap, gc,
+                     x_cur, y_cur, s, n);
+        break;
+
+      case opCenteredText :
+        memcpy(&x,data,STD_SHORT);
+        STD2NAT(x,STD_SHORT);
+        x += x_offset;
+        data += STD_SHORT;
+        memcpy(&y,data,STD_SHORT);
+        STD2NAT(y,STD_SHORT);
+        y = fy - y;
+        y += y_offset;
+        data += STD_SHORT;
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=CSIZE-1) {free(buffer); return(2);}
+        memcpy(s,data,n);
+        s[n] = 0;
+        data += n;
+
+        w = XTextWidth( font, s, n);
+        x_cur = x - w/2;
+        y_cur = y + ts/2;
+        XDrawString( display, pixmap, gc,
+                     x_cur, y_cur, s, n);
+        break;
+
+      case opSetLineWidth :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        lw = n;
+        gcv.line_width = n;
+        XChangeGC( display, gc, GCLineWidth, &gcv);
+        break;
+
+      case opSetTextSize :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        ts = n;
+
+        fn = "?x";
+        if (n<10) string[4] = 0;else string[5] = 0;
+        list = XListFonts(display, "?x", 1, &k);
+        if (NULL != list) XLoadFont(display, list[0]);
+
+        break;
+
+      case opSetMarker :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        m = n;
+        break;
+
+
+
+      case opSetMarkerSize :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        ms = n;
+        break;
+
+      case opSetColor :
+        ac = *((unsigned char *)data);
+        data++;
+        gcv.foreground = colortable[ac].pixel;
+        XChangeGC( display, gc, GCForeground, &gcv);
+        break;
+
+      case opSetEntry :
+        c = *((unsigned char *)data);
+        data++;
+        r = (short) (*((unsigned char *)data));
+        data++;
+        g = (short) (*((unsigned char *)data));
+        data++;
+        b = (short) (*((unsigned char *)data));
+        data++;
+        color.pixel = 0xffff;
+        color.red = r<<8;
+        color.green = g<<8;
+        color.blue = b<<8;
+        color.flags = DoRed|DoGreen|DoBlue;
+        if (!ignore) createColors(&color, c, c);
+        break;
+
+      case opSetPalette :
+        x = (short) (*((unsigned char *)data));
+        data++;
+        y = (unsigned short) (*((unsigned char *)data));
+        data++;
+
+        for (j=x; j<=y; j++)
+        {
+          r = (unsigned short) (*((unsigned char *)data));
+          data++;
+          g = (unsigned short) (*((unsigned char *)data));
+          data++;
+          b = (unsigned short) (*((unsigned char *)data));
+          data++;
+          colors[j].pixel = 0;
+          colors[j].red = r<<8;
+          colors[j].green = g<<8;
+          colors[j].blue = b<<8;
+          colors[j].flags = DoRed|DoGreen|DoBlue;
+        }
+
+        if (!ignore) createColors(colors, x, y);
+        break;
+
+      case opNewLine :
+        lw = (short) *((unsigned char *)data);
+        data++;
+        c = *((unsigned char *)data);
+        data++;
+        memcpy(&x1,data,STD_SHORT);
+        STD2NAT(x1,STD_SHORT);
+        x1 += x_offset;
+        data += STD_SHORT;
+        memcpy(&y1,data,STD_SHORT);
+        STD2NAT(y1,STD_SHORT);
+        y1 = fy - y1;
+        y1 += y_offset;
+        data += STD_SHORT;
+        memcpy(&x2,data,STD_SHORT);
+        STD2NAT(x2,STD_SHORT);
+        x2 += x_offset;
+        data += STD_SHORT;
+        memcpy(&y2,data,STD_SHORT);
+        STD2NAT(y2,STD_SHORT);
+        y2 = fy - y2;
+        y2 += y_offset;
+        data += STD_SHORT;
+        gcv.line_width = lw;
+        gcv.foreground = colortable[c].pixel;
+        XChangeGC( display, gc,
+                   (GCForeground|GCLineWidth), &gcv);
+        XDrawLine( display, pixmap, gc, x1, y1, x2, y2);
+        x_cur = x2;
+        y_cur = y2;
+        break;
+
+      case opNewPolyline :
+        lw = (short) *((unsigned char *)data);
+        data++;
+        c = *((unsigned char *)data);
+        data++;
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=SIZE) {free(buffer); return(2);}
+        size = n;
+        for (k=0; k<n; k++)
+        {
+          memcpy(xx+k,data,STD_SHORT);
+          STD2NAT(xx[k],STD_SHORT);
+          xx[k] += x_offset;
+          data += STD_SHORT;
+        }
+        for (k=0; k<n; k++)
+        {
+          memcpy(yy+k,data,STD_SHORT);
+          STD2NAT(yy[k],STD_SHORT);
+          yy[k] += y_offset;
+          data += STD_SHORT;
+        }
+        gcv.line_width = lw;
+        gcv.foreground = colortable[c].pixel;
+        XChangeGC( display, gc,
+                   (GCForeground|GCLineWidth),  &gcv);
+        gcv.foreground = 0;
+        XGetGCValues(display, gc, GCForeground, &gcv);
+
+        for (j=1; j<n; j++)
+          XDrawLine(display, pixmap, gc,
+                    xx[j-1],fy-yy[j-1],xx[j],fy-yy[j]);
+        x_cur = xx[n-1];
+        y_cur = fy-yy[n-1];
+        break;
+
+      case opNewPolygon :
+        c = *((unsigned char *)data);
+        data++;
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=SIZE) {free(buffer); return(2);}
+        size = n;
+        for (k=0; k<n; k++)
+        {
+          memcpy(xx+k,data,STD_SHORT);
+          STD2NAT(xx[k],STD_SHORT);
+          xx[k] += x_offset;
+          data += STD_SHORT;
+        }
+        for (k=0; k<n; k++)
+        {
+          memcpy(yy+k,data,STD_SHORT);
+          STD2NAT(yy[k],STD_SHORT);
+          yy[k] += y_offset;
+          data += STD_SHORT;
+        }
+        if (n<3) break;
+
+        gcv.line_width = lw;
+        gcv.foreground = colortable[c].pixel;
+        gcv.fill_style = FillSolid;
+        XChangeGC( display, gc,
+                   GCForeground|GCLineWidth|GCFillStyle, &gcv);
+
+        for (j=0; j<n; j++) {
+          xy[j].x = xx[j];
+          xy[j].y = fy-yy[j];
+        }
+
+        XFillPolygon(display, pixmap, gc,
+                     xy, n, Convex, CoordModeOrigin);
+        x_cur = xy[n-1].x;
+        y_cur = xy[n-1].y;
+        break;
+
+      case opNewPolymark :
+        m = (short) *((unsigned char *)data);
+        data++;
+        ms = (short) *((unsigned char *)data);
+        data++;
+        c = *((unsigned char *)data);
+        data++;
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=SIZE) {free(buffer); return(2);}
+        size = n;
+        for (k=0; k<n; k++)
+        {
+          memcpy(xx+k,data,STD_SHORT);
+          STD2NAT(xx[k],STD_SHORT);
+          xx[k] += x_offset;
+          data += STD_SHORT;
+        }
+        for (k=0; k<n; k++)
+        {
+          memcpy(yy+k,data,STD_SHORT);
+          STD2NAT(yy[k],STD_SHORT);
+          yy[k] += y_offset;
+          data += STD_SHORT;
+        }
+        gcv.line_width = lw;
+        gcv.foreground =colortable[c].pixel;
+        XChangeGC( display, gc,
+                   (GCForeground|GCLineWidth), &gcv);
+        for (j=0; j<n; j++) Marker(m,ms,xx[j],fy-yy[j]);
+        x_cur = xx[n-1];
+        y_cur = fy-yy[n-1];
+
+        break;
+
+      case opNewText :
+        ts = (short) *((unsigned char *)data);
+        data++;
+        c = *((unsigned char *)data);
+        data++;
+        memcpy(&x,data,STD_SHORT);
+        STD2NAT(x,STD_SHORT);
+        x += x_offset;
+        data += STD_SHORT;
+        memcpy(&y,data,STD_SHORT);
+        STD2NAT(y,STD_SHORT);
+        y = fy - y;
+        y += y_offset;
+        data += STD_SHORT;
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=CSIZE-1) {free(buffer); return(2);}
+        memcpy(s,data,n);
+        s[n] = 0;
+        data += n;
+        gcv.foreground =colortable[c].pixel;
+        XChangeGC( display, gc,
+                   GCForeground, &gcv);
+        XDrawString( display, pixmap, gc,
+                     x_cur, y_cur, s, n);
+        break;
+
+      case opNewCenteredText :
+        ts = (short) *((unsigned char *)data);
+        data++;
+        c = *((unsigned char *)data);
+        data++;
+        memcpy(&x,data,STD_SHORT);
+        STD2NAT(x,STD_SHORT);
+        x += x_offset;
+        data += STD_SHORT;
+        memcpy(&y,data,STD_SHORT);
+        STD2NAT(y,STD_SHORT);
+        y = fy - y;
+        y += y_offset;
+        data += STD_SHORT;
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=CSIZE-1) {free(buffer); return(2);}
+        memcpy(s,data,n);
+        s[n] = 0;
+        data += n;
+        gcv.foreground =colortable[c].pixel;
+        XChangeGC( display, gc,
+                   GCForeground , &gcv);
+        w = XTextWidth( font, s, n);
+        x_cur = x - w/2;
+        y_cur = y + ts/2;
+        XDrawString( display, pixmap, gc,
+                     x_cur, y_cur, s, n);
+        break;
+
+      default :
+        break;
+      }
+    }
+  }
+  fclose(stream);
+  return(0);
+}
 
 
 int GetFileScreen (stream, fx, fy)
@@ -1172,6 +1713,7 @@ static Boolean run_film (void)
   Cardinal n;
   int j;
   char command[200];
+  short xshift, yshift;
 
 
   /* the first frame has already been displayed by main() */
@@ -1214,20 +1756,18 @@ static Boolean run_film (void)
         printf("\n");
     }
   }
-  sprintf(frame,"%s.%04d",file,frame_number);
 
-  if ( NULL == (stream = fopen( frame, "r")) ) {
-    printf("Can't open file %s\n", frame);
-    return(False);
+  for (i_pic=0; i_pic<n_pic; i_pic++)
+  {
+    sprintf(frame,"%s.%04d",mfile[i_pic],frame_number);
+    mstream[i_pic] = fopen(frame,"r");
+    if (mstream[i_pic]==NULL)
+      exit(-1);
   }
 
-  GetFileScreen(stream, &fx, &fy);
-
-  /* check size  */
-  if ((fx>pwidth)||(fy>pheight))
+  for (i_pic=0; i_pic<n_pic; i_pic++)
   {
-    printf("frame %d too large\n",frame_number);
-    return(False);
+    GetFileScreen (mstream[i_pic], mfx+i_pic, mfy+i_pic);
   }
 
   /* create graphic context */
@@ -1247,8 +1787,22 @@ static Boolean run_film (void)
 
   XFillPolygon(display, pixmap, gc, edges, 4, Convex, CoordModeOrigin);
 
-  RasterizeFile(stream);
-  fclose(stream);
+  /* draw picture into pixmap */
+  xshift = 0; yshift = -fy_max;
+  for (i_pic=0; i_pic<n_pic; i_pic++)
+  {
+    if (i_pic%nbreak == 0)
+    {
+      xshift = 0;
+      yshift += fy_max;
+    }
+    else
+      xshift += fx_max;
+
+    stream = mstream[i_pic];
+    RasterizePositionedFile(stream,xshift,yshift);
+    fclose(stream);
+  }
 
   XCopyArea(display, pixmap, XtWindow(picture), gc, 0, 0, pwidth, pheight , 0, 0);
 
@@ -1267,7 +1821,8 @@ char* argv[];
   char*       string;    /* string array */
   int colors;            /* number of available colors */
   long bs;                   /* maximum blocksize */
-  int i;
+  short xshift, yshift;
+  int i, nopt;
   XtWorkProcId film_work_id;
 
   /* check for little/big endian storage type */
@@ -1295,18 +1850,29 @@ char* argv[];
   }
 
   if (argc < 2) {
-    printf("usage: xugv file [-v[n]] [-f first last] [-q increment] [-o extension] [-c] [-s]\n");
+    printf("usage: xugv [<nb of files>] file [file2] [file3] ... [-v[n]] [-f first last] [-q increment] [-o extension] [-c] [-s] [-N <nBreak>]\n");
     exit(-1);
   }
 
   /* for (i=0; i<argc; i++) printf("%d %s\n",i,argv[i]); */
 
+  if (sscanf(argv[1],"%d",&n_pic)!=1)
+  {
+    i = 2;
+    n_pic = 1;
+    f_offset = 1;
+  }
+  else
+  {
+    i = 2+n_pic;
+    f_offset = 2;
+  }
   file = argv[1];
   film=0;
   option = "";
-  i = 2;
   count = 0;
   stoploop = 0;
+  nopt = 0;
   while (i<argc)
   {
     if (argv[i][1]=='v') {option = argv[i]; i++; continue;}
@@ -1345,17 +1911,53 @@ char* argv[];
       i+=2;
       continue;
     }
+    if (argv[i][1]=='N')
+    {
+      if (i+1>=argc) {
+        printf("not enough arguments for n option\n");
+        exit(-1);
+      }
+      sscanf(argv[i+1],"%d",&nbreak);
+      if (nbreak<1) {
+        printf("N must be > 0\n");
+        exit(-1);
+      }
+      nopt=1;
+      i+=2;
+      continue;
+    }
     i++;
   }
+  if (!nopt) nbreak=n_pic;
 
   if (!film)
   {
-    if ( NULL == (stream = fopen( file, "r")) ) {
-      printf("Can't open file %s", file);
+    i_pic=0;
+    while (NULL!=(mstream[i_pic]=fopen (argv[f_offset+i_pic],"r"))) i_pic++;
+    if (i_pic<1)
+    {
+      printf("Can't open file %s\n", file);
       exit(-1);
     }
+    if (n_pic != i_pic)
+    {
+      printf("cannot open %s files\n", n_pic);
+      exit(-1);
+    }
+    if (i_pic>1)
+    {
+      printf("opened %d files\n", n_pic);
+    }
 
-    GetFileScreen (stream, &fx, &fy);
+    fx_max = 0; fy_max = 0;
+    for (i_pic=0; i_pic<n_pic; i_pic++)
+    {
+      GetFileScreen (mstream[i_pic], mfx+i_pic, mfy+i_pic);
+      fx_max = (fx_max > mfx[i_pic]) ? (fx_max) : (mfx[i_pic]);
+      fy_max = (fy_max > mfy[i_pic]) ? (fy_max) : (mfy[i_pic]);
+    }
+    pwidth = nbreak * fx_max;
+    pheight = ceil((float)n_pic/(float)nbreak) * fy_max;
 
     /* initialize viewport window */
     n = 0;
@@ -1369,8 +1971,8 @@ char* argv[];
     viewport = XtCreateManagedWidget ("viewport", viewportWidgetClass,
                                       applShell, args, n);
 
-    pwidth = (fx < WIN_WIDTH) ? WIN_WIDTH : fx;
-    pheight = (fy < WIN_HEIGHT) ? WIN_HEIGHT : fy;
+    pwidth = XUGV_MAX(pwidth,WIN_WIDTH);
+    pheight = XUGV_MAX(pheight,WIN_HEIGHT);
 
     /* set size of drawing widget */
     n = 0;
@@ -1426,22 +2028,61 @@ char* argv[];
     createGraphics();
 
     /* draw picture into pixmap */
-    RasterizeFile(stream);
-    fclose(stream);
+    xshift = 0; yshift = -fy_max;
+    for (i_pic=0; i_pic<n_pic; i_pic++)
+    {
+      if (i_pic%nbreak == 0)
+      {
+        xshift = 0;
+        yshift += fy_max;
+      }
+      else
+        xshift += fx_max;
+
+      stream = mstream[i_pic];
+      RasterizePositionedFile(stream,xshift,yshift);
+      fclose(stream);
+      ignore = 1;
+    }
 
     /* main loop for event processing */
     XtAppMainLoop (kontext);
   }
   else
   {
-    sprintf(frame,"%s.%04d",file,first);
-
-    if ( NULL == (stream = fopen( frame, "r")) ) {
-      printf("Can't open file %s", frame);
+    i_pic=0;
+    while (1)
+    {
+      sprintf(frame,"%s.%04d",argv[f_offset+i_pic],first);
+      mfile[i_pic] = argv[f_offset+i_pic];
+      mstream[i_pic] = fopen(frame,"r");
+      if (mstream[i_pic]==NULL) break;
+      i_pic++;
+    }
+    if (i_pic<1)
+    {
+      printf("Can't open file %s\n", file);
       exit(-1);
     }
+    if (n_pic != i_pic)
+    {
+      printf("cannot open %s files\n", n_pic);
+      exit(-1);
+    }
+    if (i_pic>1)
+    {
+      printf("opened %d files\n", n_pic);
+    }
 
-    GetFileScreen (stream, &fx, &fy);
+    fx_max = 0; fy_max = 0;
+    for (i_pic=0; i_pic<n_pic; i_pic++)
+    {
+      GetFileScreen (mstream[i_pic], mfx+i_pic, mfy+i_pic);
+      fx_max = (fx_max > mfx[i_pic]) ? (fx_max) : (mfx[i_pic]);
+      fy_max = (fy_max > mfy[i_pic]) ? (fy_max) : (mfy[i_pic]);
+    }
+    pwidth = nbreak * fx_max;
+    pheight = ceil((float)n_pic/(float)nbreak) * fy_max;
 
     /* initialize viewport window */
     n = 0;
@@ -1455,8 +2096,8 @@ char* argv[];
     viewport = XtCreateManagedWidget ("viewport", viewportWidgetClass,
                                       applShell, args, n);
 
-    pwidth =  fx;
-    pheight = fy;
+    pwidth = XUGV_MAX(pwidth,WIN_WIDTH);
+    pheight = XUGV_MAX(pheight,WIN_HEIGHT);
 
     /* set size of drawing widget */
     n = 0;
@@ -1497,9 +2138,22 @@ char* argv[];
     createGraphics();
 
     /* draw picture into pixmap */
-    RasterizeFile(stream);
-    fclose(stream);
-    frame_number=first;
+    xshift = 0; yshift = -fy_max;
+    for (i_pic=0; i_pic<n_pic; i_pic++)
+    {
+      if (i_pic%nbreak == 0)
+      {
+        xshift = 0;
+        yshift += fy_max;
+      }
+      else
+        xshift += fx_max;
+
+      stream = mstream[i_pic];
+      RasterizePositionedFile(stream,xshift,yshift);
+      fclose(stream);
+      ignore = 1;
+    }
 
     /* ignore color maps in subsequent frames */
     ignore = 1;
