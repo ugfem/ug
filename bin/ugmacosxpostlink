@@ -13,7 +13,8 @@
 #
 # Only needed for MacOS X
 #
-if ( $ENV{'OSTYPE'}!='rhapsody' )
+
+if ( ($ENV{'OSTYPE'} ne 'rhapsody') && ($ENV{'OSTYPE'} ne 'darwin') )
 {
     print "ugmacosxpostlink is only needed for MacOS X systems\n";
     exit 0;
@@ -29,10 +30,6 @@ $ENV{'UGROOT'} or die "define environment variable 'UGROOT'\n";
 # We need an argument (the programs name)
 #
 if (!@ARGV) {die "usage: ugmacosxpostlink <application>\n";} 
-
-
-$n=@ARGV;
-
 
 #
 # Get the program name. It may be either the first or the second argument 
@@ -75,12 +72,21 @@ if ( ! ( -e "$appdir/Resources/English.lproj" && -d "$appdir/Resources/English.l
 print "    cp $progname $appdir\n";
 system("cp $progname $appdir");
 
+$iconheaderfile = $progname . ".iconheader";
+print "    Updating $iconheaderfile\n";
+open PLIST, "> $iconheaderfile";
+print PLIST "F \t$progname.app\t$progname\tapp\n";
+print PLIST "F \t$progname\t$progname\tapp\n";
+close(PLIST);
+
 $plistfile = $appdir . "/Resources/Info-nextstep.plist";
 print "    Updating $plistfile\n";
 open PLIST, "> $plistfile";
 print PLIST "{\n";
 print PLIST "    NOTE = \"Created by ugmacosxpostlink\";\n";
 print PLIST "    NSExecutable = $progname;\n";
+#print PLIST "    NSExtensions = {.scr = {NSIcon = UGScriptIcon.tiff; }; };\n";
+#print PLIST "    NSIcon = UGApplicationIcon.tiff;\n";
 print PLIST "    NSMainNibFile = UG_MacOSXServer.nib;\n";
 print PLIST "    NSPrincipalClass = NSApplication;\n";
 print PLIST "}\n";
