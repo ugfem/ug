@@ -5,7 +5,7 @@ use Exporter;
 $VERSION = 1.0;
 @ISA = qw(Exporter);
 
-@EXPORT = qw(la_add la_mv la_inv la_p la_spec la_norm la_scale la_spec_z);
+@EXPORT = qw(la_tr la_add la_mv la_mm la_inv la_p la_spec la_norm la_scale la_spec_z);
 @EXPORT_OK = qw();
 %EXPORT_TAGS = qw();
 
@@ -52,6 +52,43 @@ sub la_mv
 		}
 	}
 	return $out;
+}
+
+sub la_mm
+{
+	my ($m1,$m2,$n,$i,$j,$k,$out);
+
+	$m1=shift;
+	$m2=shift;
+    $n=$#{$m1}+1;
+	for ($i=0; $i<$n; $i++)
+    {
+        for ($j=0; $j<$n; $j++)
+        {
+			$out->[$i][$j]=0;
+        	for ($k=0; $k<$n; $k++)
+        	{
+				$out->[$i][$j]+=$m1->[$i][$k]*$m2->[$k][$j];
+			}
+		}
+	}
+	return $out;
+}
+
+sub la_tr
+{
+    my ($m,$n,$i,$j,$out);
+
+    $m=shift;
+    $n=$#{$m}+1;
+    for ($i=0; $i<$n; $i++)
+    {
+        for ($j=0; $j<$n; $j++)
+        {
+            $out->[$i][$j]=$m->[$j][$i];
+        }
+    }
+    return $out;
 }
 
 sub la_inv
@@ -117,7 +154,7 @@ sub la_p
     	{
 			for ($j=0; $j<$n; $j++)
 			{
-				$ret.=sprintf ("%32.16e ",$m->[$i][$j]);
+				$ret.=sprintf ("%16.8e ",$m->[$i][$j]);
 			}
 			$ret.="\n";
 		}
@@ -126,7 +163,7 @@ sub la_p
 	{
         for ($i=0; $i<$n; $i++)
         {
-			$ret.=sprintf ("%32.16e\n",$m->[$i]);
+			$ret.=sprintf ("%16.8e\n",$m->[$i]);
 		}
 	}
 	$ret.="\n";
