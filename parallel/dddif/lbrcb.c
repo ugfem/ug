@@ -268,7 +268,7 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
 /*                                                                          */
 /****************************************************************************/
 
-static void XferGridWithOverlap (GRID *theGrid)
+void XferGridWithOverlap (GRID *theGrid)
 {
   ELEMENT *elem;
   NODE *node;
