@@ -1024,6 +1024,22 @@ int FAMGGrid::Reorder()
 // *****************************************************************************
 
 #ifdef ModelP
+
+/*
+	Das Problem bei dieser Methode ist zur Zeit, dass beim Zielknoten VINDEX und 
+	VCCOARSE ueberschrieben werden, bevor noch geeignete Ueberpruefungen (VCCOARSE)
+	oder Verhinderungen (VINDEX) stattfinden koennen. 
+	Wenn VINDEX richtig waere, koennte man uden zugehoerigen Knoten fingen und so 
+	das Problem mit VCCOARSE umgehen. VINDEX geht aber verloren.
+	Man koennte hinterher den Index (da die Verkettung unveraendert geblieben ist)
+	wieder richtig setzen, dann ist es aber zu spaet, weil die geschickten 
+	I-Matrizen nur waehrend des Haenfdleraufrufs fuer den einzelnen
+	Knoten verfuegbar sind.
+	So ist das Vorgehen also nicht praktikabel.
+	
+	Im derzeit vorhandenen Code fehlen auch noch die Aenderungsarbeiten an 
+	der FAMG Datenstruktur (Nodes, Listen).
+*/
 void FAMGVectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 // derived from dddif/handler.c/VectorXferCopy()
 {
@@ -1274,4 +1290,33 @@ void FAMGGrid::CommunicateNodeStatus()
 	DDD_SetHandlerXFERGATHERX      (TypeVector, VectorGatherMatX);
 	DDD_SetHandlerXFERSCATTERX     (TypeVector, VectorScatterConnX);
 }
+#endif
+
+
+#ifdef ModelPQQQQ
+
+/*
+	2. Version
+*/
+static int Gather_VectorComp (DDD_OBJ obj, void *data)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	INT i,type;
+	const SHORT *Comp;	
+
+}
+
+static int Scatter_VectorComp (DDD_OBJ obj, void *data)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	INT i,type,vecskip;
+	const SHORT *Comp;	
+}
+
+void FAMGGrid::CommunicateNodeStatus()
+{
+	DDD_IFAExchange( OuterVectorSymmIF, GRID_ATTR(mygrid), sizeof(),
+					, );
+}
+
 #endif

@@ -121,7 +121,7 @@ static void FAMGReadArgvParameter(INT argc, char **argv)
     char *str;
 	
 	if (ReadArgvINT("h",&(famg_parameter.heap),argc,argv))
-        famg_parameter.heap = 1e+7;
+        famg_parameter.heap = (int)1e+7;
 	if (ReadArgvINT("n1",&(famg_parameter.n1),argc,argv))
 		famg_parameter.n1 = 1;
 	if (ReadArgvINT("n2",&(famg_parameter.n2),argc,argv))

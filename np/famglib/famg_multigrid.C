@@ -46,8 +46,8 @@ int FAMGMultiGrid::Init(const FAMGSystem &system)
     for(i = 0; i < FAMGMAXGRIDS; i++) grid[i] = NULL;
 
     grid0 = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
-    if(grid0 == 0)
-		return(NULL);
+    if(grid0 == NULL)
+		return(0);
 
     if( grid0->InitLevel0(system))
 		return 1;
