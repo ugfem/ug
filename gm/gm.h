@@ -806,6 +806,7 @@ struct multigrid {
   INT elemIdCounter;                                    /* count objects in that multigrid		*/
   INT topLevel;                                         /* depth of the element tree			*/
   INT currentLevel;                                     /* level we are working on				*/
+  INT bottomLevel;                                      /* depth of the element tree			*/
   BVP *theBVP;                                          /* pointer to BndValProblem				*/
   struct format *theFormat;                     /* pointer to format definition                 */
   HEAP *theHeap;                                        /* associated heap structure			*/
@@ -814,7 +815,7 @@ struct multigrid {
   DATA_RESERVATION dr;              /* memory management for vectors|matrix */
 
   /* pointers */
-  struct grid *grids[MAXLEVEL];         /* pointers to the grids				*/
+  struct grid *Grids[2*MAXLEVEL];       /* pointers to the grids				*/
 
   /* NodeElementPointerArray used for an O(n) InsertElement               */
   union element ***ndelemptrarray;                      /* pointer to the node element blocks   */
@@ -2128,7 +2129,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MGNOOFCORNERS(p)                ((p)->numOfCorners)
 #define MGHEAP(p)                               ((p)->theHeap)
 #define MG_NPROPERTY(p)                 ((p)->nProperty)
-#define GRID_ON_LEVEL(p,i)              ((p)->grids[i])
+#define GRID_ON_LEVEL(p,i)              ((p)->Grids[i+MAXLEVEL])
 /* macros for the NodeElementsBlockArray . . .  */
 #define ELEMS_OF_NODE_MAX               75
 #define NDELEM_BLKS_MAX                 100

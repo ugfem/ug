@@ -1189,7 +1189,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap);
   if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (CreateNewLevel(theMG)==NULL)                                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (CreateNewLevel(theMG,0)==NULL)                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   theHeap = MGHEAP(theMG);
   theBVP = MG_BVP(theMG);
   if (theBVP==NULL)                                                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
@@ -1312,7 +1312,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
 
   /* create grids */
   for (i=1; i<mg_general.nLevel; i++)
-    if (CreateNewLevel(theMG)==NULL)                                                                {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    if (CreateNewLevel(theMG,0)==NULL)                                                              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read hierarchical elements */
   theGrid = GRID_ON_LEVEL(theMG,0); max=0;
@@ -1446,7 +1446,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
   nv = ne = 0;
   for (k=0; k<=j; k++)
   {
-    theGrid = theMG->grids[k];
+    theGrid = GRID_ON_LEVEL(theMG,k);
     for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
     {
       nv++;
@@ -1467,7 +1467,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
   min = MAX_D; max = -MAX_D;
   for (k=0; k<=j; k++)
   {
-    theGrid = theMG->grids[k];
+    theGrid = GRID_ON_LEVEL(theMG,k);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       if ((k==j)||LEAFELEM(theElement))
       {
@@ -1494,7 +1494,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
   id = 0;
   for (k=0; k<=j; k++)
   {
-    theGrid = theMG->grids[k];
+    theGrid = GRID_ON_LEVEL(theMG,k);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       if ((k==j)||LEAFELEM(theElement))
         for (i=0; i<TAG(theElement); i++)
@@ -1514,7 +1514,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
   id = 0;
   for (k=0; k<=j; k++)
   {
-    theGrid = theMG->grids[k];
+    theGrid = GRID_ON_LEVEL(theMG,k);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       if ((k==j)||LEAFELEM(theElement))
         for (i=0; i<TAG(theElement); i++)
@@ -1533,7 +1533,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
   fprintf(stream,">E\n");
   for (k=0; k<=j; k++)
   {
-    theGrid = theMG->grids[k];
+    theGrid = GRID_ON_LEVEL(theMG,k);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       if ((k==j)||LEAFELEM(theElement))
       {
@@ -1550,7 +1550,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
   id = 0;
   for (k=0; k<=j; k++)
   {
-    theGrid = theMG->grids[k];
+    theGrid = GRID_ON_LEVEL(theMG,k);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       if ((k==j)||LEAFELEM(theElement))
       {

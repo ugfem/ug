@@ -1447,7 +1447,7 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
    CreateNewLevel - Return pointer to new grid structure
 
    SYNOPSIS:
-   GRID *CreateNewLevel (MULTIGRID *theMG);
+   GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic);
 
    PARAMETERS:
 .  theMG - multigrid structure
@@ -1463,14 +1463,15 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 D*/
 /****************************************************************************/
 
-GRID *CreateNewLevel (MULTIGRID *theMG)
+GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
 {
 	GRID *theGrid;
 	INT l;
-	
+
+	if (theMG->bottomLevel>theMG->topLevel && algebraic)	return (NULL);
 	if (theMG->topLevel+1>=MAXLEVEL) return(NULL);
-	
-	l = theMG->topLevel+1;
+	if (algebraic) l = theMG->bottomLevel-1;	
+	else l = theMG->topLevel+1;
 
 	/* allocate grid object */
 	theGrid = GetMemoryForObject(theMG,sizeof(GRID),GROBJ);
@@ -1497,16 +1498,29 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
 	GLASTBV(theGrid) = NULL;
 	if (l>0)
 	{
-		theGrid->coarser = theMG->grids[l-1];
-		theMG->grids[l-1]->finer = theGrid;
+		DOWNGRID(theGrid) = GRID_ON_LEVEL(theMG,l-1);
+		UPGRID(GRID_ON_LEVEL(theMG,l-1)) = theGrid;
+		UPGRID(theGrid) = NULL;
+	}
+	else if (l==0)
+	{
+		DOWNGRID(theGrid) = NULL;
+		UPGRID(theGrid) = NULL;
 	}
 	else
-		theGrid->coarser = NULL;
-	theGrid->finer = NULL;
+	{
+		UPGRID(theGrid) = GRID_ON_LEVEL(theMG,l+1);
+		DOWNGRID(theGrid) = NULL;
+		DOWNGRID(GRID_ON_LEVEL(theMG,l+1)) = theGrid;
+	}
 	theGrid->mg = theMG;
-	theMG->grids[l] = theGrid;
-	theMG->topLevel = l;
-	theMG->currentLevel = l;
+	GRID_ON_LEVEL(theMG,l) = theGrid;
+	if (algebraic) theMG->bottomLevel = l;
+	else
+	{
+		theMG->topLevel = l;
+		theMG->currentLevel = l;
+	}
 	
 	return(theGrid);
 }
@@ -1768,6 +1782,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
 	theMG->nodeIdCounter = 0;
 	theMG->elemIdCounter = 0;
 	theMG->topLevel = -1;
+	theMG->bottomLevel = 0;
 	MG_BVP(theMG) = theBVP;
 	#if defined(CAD) && defined(__THREEDIM__)
 	MG_NPROPERTY(theMG) = 1;
@@ -1780,7 +1795,10 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
 	theMG->theHeap = theHeap;
 	SELECTIONSIZE(theMG) = 0;
 	for (i=0; i<MAXLEVEL; i++) 
-	  theMG->grids[i] = NULL;
+	{
+		GRID_ON_LEVEL(theMG,i) = NULL;
+		GRID_ON_LEVEL(theMG,-i-1) = NULL;
+	}
 
   	/* CAD */
 /*
@@ -1805,7 +1823,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
 	/* CAD */
 
 	/* allocate level 0 grid */
-	theGrid = CreateNewLevel(theMG);
+	theGrid = CreateNewLevel(theMG,0);
 	if (theGrid==NULL)
 	  {
 		DisposeMultiGrid(theMG);
@@ -2502,9 +2520,10 @@ INT DisposeTopLevel (MULTIGRID *theMG)
 	/* level 0 can not be deleted */
 	l = theMG->topLevel;
 	if (l<=0) return(2);
-	theGrid = theMG->grids[l];
+	theGrid = GRID_ON_LEVEL(theMG,l);
 	
 	/* is level empty */
+	if (theMG->bottomLevel<0) return(2);
 	if (FIRSTELEMENT(theGrid)!=NULL) 
 	  return(2);
 	if (FIRSTVERTEX(theGrid)!=NULL) 
@@ -2513,8 +2532,8 @@ INT DisposeTopLevel (MULTIGRID *theMG)
 	  return(2);
 	
 	/* remove from grids array */
-	theMG->grids[l] = NULL;
-	theMG->grids[l-1]->finer = NULL;
+	GRID_ON_LEVEL(theMG,l) = NULL;
+	GRID_ON_LEVEL(theMG,l-1)->finer = NULL;
 	(theMG->topLevel)--;
 	if (theMG->currentLevel>theMG->topLevel) 
 	  theMG->currentLevel = theMG->topLevel;
@@ -2552,8 +2571,15 @@ INT DisposeGrid (GRID *theGrid)
 	if (theGrid == NULL)
 	  return(0);
 
+	theMG = MYMG(theGrid);
+
+	if (GLEVEL(theGrid)<0)
+		return (1);
+
 	if (theGrid->finer != NULL)
 	  return(1);
+
+	if (GLEVEL(theGrid)==0 && theMG->bottomLevel<0) return (1);
 
 	/* clear level */
 	while (FIRSTELEMENT(theGrid)!=NULL) 
@@ -2568,14 +2594,12 @@ INT DisposeGrid (GRID *theGrid)
 	  if (DisposeVertex(theGrid,FIRSTVERTEX(theGrid)))
 		return(4);
 
-	theMG = MYMG(theGrid);
-
 	/* level 0 can not be deleted */
 	if (GLEVEL(theGrid) > 0)
 	  return(DisposeTopLevel(theMG));
 	
 	/* remove from grids array */
-	theMG->grids[0] = NULL;
+	GRID_ON_LEVEL(theMG,0) = NULL;
 	theMG->currentLevel = theMG->topLevel = -1;
 	theMG->nodeIdCounter = 0;
 	theMG->vertIdCounter = 0;
@@ -2658,7 +2682,7 @@ INT RenumberMultiGrid (MULTIGRID *theMG)
 	j = theMG->topLevel;
 	for (k=0; k<=j; k++)
 	{
-		theGrid = theMG->grids[k];
+		theGrid = GRID_ON_LEVEL(theMG,k);
 		
 		/* vertices */
 		for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))

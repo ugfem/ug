@@ -2343,7 +2343,7 @@ INT MGCreateConnection (MULTIGRID *theMG)
 
   for (i=0; i<=theMG->topLevel; i++)
   {
-    theGrid = theMG->grids[i];
+    theGrid = GRID_ON_LEVEL(theMG,i);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       SETEBUILDCON(theElement,1);
     if (GridCreateConnection(theGrid)) RETURN (1);
@@ -4506,12 +4506,12 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
   if (theAlgDep!=NULL)
     for (i=baselevel; i<=currlevel; i++)
     {
-      theGrid = theMG->grids[i];
+      theGrid = GRID_ON_LEVEL(theMG,i);
       if ((*DependencyProc)(theGrid,dep_options)) RETURN(GM_ERROR);
     }
   for (i=baselevel; i<=currlevel; i++)
   {
-    theGrid = theMG->grids[i];
+    theGrid = GRID_ON_LEVEL(theMG,i);
     if (OrderVectorAlgebraic(theGrid,mode,PutSkipFirst,SkipPat)) RETURN(GM_ERROR);
   }
 
@@ -5168,7 +5168,7 @@ INT LineOrderVectors (MULTIGRID *theMG, INT levels, const char *dependency, cons
     baselevel = currlevel;
   for (i=baselevel; i<=currlevel; i++)
   {
-    theGrid = theMG->grids[i];
+    theGrid = GRID_ON_LEVEL(theMG,i);
     if ((*DependencyProc)(theGrid,dep_options))
     {
       PrintErrorMessage('E',"LineOrderVectors","DependencyProc failed");

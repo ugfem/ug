@@ -102,12 +102,8 @@ static MGIO_GE_ELEMENT lge[MGIO_TAGS];
 
 #ifdef __MGIO_USE_IN_UG__
 
-/* RCS string */
-#ifdef __MGIO_USE_IN_UG__
-
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-#endif
 #endif
 
 /****************************************************************************/

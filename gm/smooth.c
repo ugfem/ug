@@ -1210,7 +1210,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
   {
     for (l=0; l<=theMG->topLevel; l++)
     {
-      theGrid=theMG->grids[l];
+      theGrid=GRID_ON_LEVEL(theMG,l);
 
       /* update global coordinates of new nodes */
       if (l!=0)

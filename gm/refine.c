@@ -4484,7 +4484,7 @@ SYNOPSIS:
                    if ( (r>0) && (k==j) )
 
                      newlevel = 1;
-                   if (CreateNewLevel(theMG)==NULL)
+                   if (CreateNewLevel(theMG,0)==NULL)
                      RETURN(GM_FATAL);
                    FinerGrid = GRID_ON_LEVEL(theMG,j+1);
 
@@ -4540,7 +4540,7 @@ if (CreateAlgebra(theMG) != GM_OK)
   for (k=TOPLEVEL(theMG); k<Max_TopLevel; k++)
   {
     PRINTDEBUG(gm,1,("CreateNewLevel toplevel=%d", TOPLEVEL(theMG)));
-    if (CreateNewLevel(theMG)==NULL)
+    if (CreateNewLevel(theMG,0)==NULL)
       RETURN(GM_FATAL);
   }
 }
