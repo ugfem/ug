@@ -328,9 +328,11 @@ enum Priorities
 #define NCOPIES(p)              1
 
 /* ddd dummies */
+#define DDD_OBJ                 void *
 #define DDD_IdentifyBegin()
 #define DDD_IdentifyEnd()
 #define DDD_IdentifyNumber(o,p,n)
+#define DDD_IFAOneway(p1,p2,p3,p4,p5,p6)
 
 /* ppif dummies */
 #define Broadcast(p,n)  ((int)0)
@@ -348,7 +350,8 @@ enum Priorities
 /* DDD Interfaces */
 extern DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
               ElementVHIF, ElementSymmVHIF;
-extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF;
+extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
+              NodeIF;
 extern DDD_IF BorderVectorIF, BorderVectorSymmIF,
               OuterVectorIF, OuterVectorSymmIF,
               VectorVIF, VectorVAllIF;
