@@ -102,14 +102,13 @@ void DomInitParallel (INT TypeBndP, INT TypeBndS)
 void DomHandlerInit (INT handlerSet)
 {}
 
-static void BElementXferBndS (BNDS **bnds, int n, int proc, int prio)
+void BElementXferBndS (BNDS **bnds, int n, int proc, int prio)
 {
   INT size,i,size0;
 
   size = CEIL(sizeof(INT));
   for (i=0; i<n; i++)
-    if (bnds[i] != NULL)
-    {
+    if (bnds[i] != NULL) {
       size0 = sizeof(BS);
       size += CEIL(size0) + CEIL(sizeof(INT));
     }
@@ -117,13 +116,12 @@ static void BElementXferBndS (BNDS **bnds, int n, int proc, int prio)
   DDD_XferAddData(size,DDD_DOMAIN_DATA);
 }
 
-static void BElementGatherBndS (BNDS **bnds, int n, int cnt, char *data)
+void BElementGatherBndS (BNDS **bnds, int n, int cnt, char *data)
 {
   INT size,i;
 
   for (i=0; i<n; i++)
-    if (bnds[i] != NULL)
-    {
+    if (bnds[i] != NULL) {
       size = sizeof(BS);
       memcpy(data,&i,sizeof(INT));
       data += CEIL(sizeof(INT));
@@ -134,19 +132,17 @@ static void BElementGatherBndS (BNDS **bnds, int n, int cnt, char *data)
   memcpy(data,&i,sizeof(INT));
 }
 
-static void BElementScatterBndS (BNDS **bnds, int n, int cnt, char *data)
+void BElementScatterBndS (BNDS **bnds, int n, int cnt, char *data)
 {
   INT size,i;
   BNDS *bs;
 
   memcpy(&i,data,sizeof(INT));
-  while (i != -1)
-  {
+  while (i != -1) {
     data += CEIL(sizeof(INT));
     bs = (BNDS *) data;
     size = sizeof(BS);
-    if (bnds[i] == NULL)
-    {
+    if (bnds[i] == NULL) {
       bs = (BNDS *) memmgr_AllocOMEM((size_t)size,TypeBndS,0,0);
       memcpy(bs,data,size);
       bnds[i] = bs;
@@ -156,26 +152,25 @@ static void BElementScatterBndS (BNDS **bnds, int n, int cnt, char *data)
   }
 }
 
-static void BVertexXferBndP (BNDP *bndp, int proc, int prio)
+void BVertexXferBndP (BNDP *bndp, int proc, int prio)
 {
   INT size;
 
-  size = sizeof(M_BNDP);
+  size = sizeof(BP);
 
   DDD_XferAddData(size,DDD_DOMAIN_DATA);
 }
 
-static void BVertexGatherBndP (BNDP *bndp, int cnt, char *data)
+void BVertexGatherBndP (BNDP *bndp, int cnt, char *data)
 {
-  ASSERT(cnt == sizeof(M_BNDP));
+  ASSERT(cnt == sizeof(BP));
 
   memcpy(data,bndp,cnt);
 }
 
-static void BVertexScatterBndP (BNDP **bndp, int cnt, char *data)
+void BVertexScatterBndP (BNDP **bndp, int cnt, char *data)
 {
-  if (*bndp == NULL)
-  {
+  if (*bndp == NULL) {
     *bndp = (BNDP *) memmgr_AllocOMEM((size_t)cnt,TypeBndP,0,0);
     memcpy(*bndp,data,cnt);
   }
