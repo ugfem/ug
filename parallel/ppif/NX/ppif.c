@@ -307,7 +307,7 @@ int InitPPIF (int *argcp, char ***argvp)
   DimZ = 1;
   Factor(procs, &DimX, &DimY);
   if (me==master) {
-    printf("DimX=%d, DimY=%d, DimZ=%d\n", DimX, DimY, DimZ);
+    fprintf(stderr, "DimX=%d, DimY=%d, DimZ=%d\n", DimX, DimY, DimZ);
   }
 
   aid = pid_to_aid(me);
