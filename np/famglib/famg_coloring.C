@@ -215,6 +215,7 @@ int ConstructColoring_cm2( void )
 		if( MyWeight < NbWeight )
 		{
 			// receive color
+			PRINTDEBUG(np,2,(PFMT " will recv color from %d (i=%d)\n", me, Nb[i], i));
 			MsgInId[i] = RecvASync( ch, NbColor+i, sizeof(FAMGColor), &res );
 			if( res != 0 )
 			{
@@ -235,6 +236,7 @@ int ConstructColoring_cm2( void )
 		else
 		#endif
 		{
+			PRINTDEBUG(np,2,(PFMT " will send color to %d (i=%d)\n", me, Nb[i], i));
 			Recv[i] = 0;	// don't receive a color message from this neighbor
 			SendQueue[NrSend++] = i;	// to the predecessor pe the color will be sent
 		}
@@ -488,6 +490,7 @@ int ConstructColoring_cm3( void )
 					if( MyWeight < NbWeight[i] )
 					{
 						// receive color
+						PRINTDEBUG(np,2,(PFMT " will recv color from %d (i=%d)\n", me, Nb[i], i));
 						MsgInId[i] = RecvASync( ch, NbColor+i, sizeof(FAMGColor), &res );
 						if( res != 0 )
 						{
@@ -506,8 +509,11 @@ int ConstructColoring_cm3( void )
 						abort();
 					}
 					else
-					#endif						
+					#endif
+					{
+						PRINTDEBUG(np,2,(PFMT " will send color to %d (i=%d)\n", me, Nb[i], i));
 						SendQueue[NrSend++] = i;
+					}
 					
 					if( j==0 )
 						break;					
