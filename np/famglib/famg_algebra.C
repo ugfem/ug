@@ -25,6 +25,7 @@
 #include "famg_algebra.h"
 #include "famg_graph.h"
 #include "famg_grid.h"
+#include "famg_system.h"
 
 /* RCS_ID
 $Header$
