@@ -164,6 +164,12 @@
 #endif
 #endif
 
+#undef __GRAPE_TRUE__
+#ifdef _3
+#ifdef GRAPET
+#define __GRAPE_TRUE__
+#endif
+#endif
 
 /****************************************************************************/
 /*																			*/
