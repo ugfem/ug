@@ -2353,6 +2353,42 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #include "vecfunc.ct"
 
+
+#define T_FUNCNAME      dpdot
+#define T_ARGS          ,const VECDATA_DESC *y
+#define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
+#define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
+#define T_PR_OUT                PRINTVEC(x)
+#define T_ARGS_BV       ,INT yc
+#define T_USE_Y
+#define T_MOD_SCAL      VVALUE(v,xc) *= VVALUE(v,yc);
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) *= VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  VVALUE(v,cx1) *= VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  VVALUE(v,cx2) *= VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                                 \
+    VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))*=              \
+      VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+
+#include "vecfunc.ct"
+
+#define T_FUNCNAME      dm0dot
+#define T_ARGS          ,const VECDATA_DESC *y
+#define T_PR_DBG        (" y=%s",ENVITEM_NAME(y))
+#define T_PR_IN         {PRINTVEC(x); PRINTVEC(y)}
+#define T_PR_OUT        PRINTVEC(x)
+#define T_ARGS_BV       ,INT yc
+#define T_USE_Y
+#define T_MOD_SCAL      VVALUE(v,xc) *= VVALUE(v,yc);
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) *= VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  VVALUE(v,cx1)=VVALUE(v,cx0)*VVALUE(v,cy1)/VVALUE(v,cy0);
+#define T_MOD_VECTOR_3  VVALUE(v,cx2)=VVALUE(v,cx0)*VVALUE(v,cy2)/VVALUE(v,cy0);
+#define T_MOD_VECTOR_N  for (i=ncomp-1; i>=0; i--)                                 \
+    VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))=              \
+      VVALUE(v,VD_CMP_OF_TYPE(x,vtype,0))*VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+
+#include "vecfunc.ct"
+
+
 /****************************************************************************/
 /*D
    dscal - scaling x with a
@@ -2894,6 +2930,29 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #include "vecfunc.ct"
 
+
+
+#define T_FUNCNAME      ddotx_range
+#define T_ARGS          ,const VECDATA_DESC *y,DOUBLE *ll, DOUBLE *ur, VEC_SCALAR a
+#define T_PR_DBG                (" y=%s a=VS",ENVITEM_NAME(y))
+#define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
+#define T_USE_Y
+#define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
+  for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
+#define T_MOD_SCAL      { DOUBLE p[DIM]; VectorPosition(v,p); if (p[0]<ll[0] || p[0]>ur[0] || p[1]<ll[1] || p[1]>ur[1]) continue;a[aoff[VTYPE(v)]] += VVALUE(v,xc) * VVALUE(v,yc); }
+#define T_PREP_SWITCH   value = a+aoff[vtype];
+#define T_MOD_VECTOR_1  value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
+    value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) * \
+                VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+#define T_POST_PAR      if (UG_GlobalSumNDOUBLE_X(VD_NCOMP(x),a))             \
+    REP_ERR_RETURN(NUM_ERROR);
+#define T_NO_BV_FUNC
+
+#include "vecfunc.ct"
+
 /****************************************************************************/
 /*D
    ddotw - weighted scalar product of two vectors
@@ -3273,6 +3332,51 @@ INT dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M)
 #define T_PREP_N       mcomp = nr * nc;
 #define T_MOD_N        for (i=0; i<mcomp; i++)                                 \
     MVALUE(mat,MD_MCMP_OF_RT_CT(M,rtype,ctype,i)) = a;
+
+#define T_SPARSE_CALL \
+  int i, size = 0;\
+  DOUBLE value[MAX_MAT_COMP];\
+  SPARSE_MATRIX *sm;\
+  for (i=0; i<NMATTYPES; i++)\
+    if ((sm=MD_SM(M,i))!=NULL)\
+      size += SM_Compute_Reduced_Size(sm);\
+  for (i=0; i<size; i++) value[i]=a;\
+  if (MG_Matrix_Loop(mg, fl, tl,\
+                     ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_M<<BLAS_LOOP_SHIFT) |\
+                       (MBLAS_ALL<<MBLAS_MTYPE_SHIFT) | (BLAS_M_SET<<BLAS_OP_SHIFT) ),\
+                     M, NULL, NULL, NULL, size, value, NULL)\
+      < 0) REP_ERR_RETURN (-1);
+
+#include "matfunc.ct"
+
+
+#define T_FUNCNAME     dmatscale
+#define T_ARGS         ,const MATDATA_DESC *M,DOUBLE a
+#define T_PR_DBG                (" M=%s a=%e",ENVITEM_NAME(M),(double)a)
+#define T_ARGS_BV      ,INT mc,DOUBLE a
+#define T_MOD_SCAL     MVALUE(mat,mc)*=a;
+#define T_PREP_SWITCH  INT mcomp;
+#define T_MOD_11       MVALUE(mat,m00)*=a;
+#define T_MOD_12       MVALUE(mat,m00)*=a; MVALUE(mat,m01)*=a;
+#define T_MOD_13       MVALUE(mat,m00)*=a; MVALUE(mat,m01)*=a; MVALUE(mat,m02)*=a;
+#define T_MOD_21       MVALUE(mat,m00)*=a;                                      \
+  MVALUE(mat,m10)*=a;
+#define T_MOD_22       MVALUE(mat,m00)*=a; MVALUE(mat,m01)*=a;                   \
+  MVALUE(mat,m10)*=a; MVALUE(mat,m11)*=a;
+#define T_MOD_23       MVALUE(mat,m00)*=a; MVALUE(mat,m01)*=a; MVALUE(mat,m02)*=a;\
+  MVALUE(mat,m10)*=a; MVALUE(mat,m11)*=a; MVALUE(mat,m12)*=a;
+#define T_MOD_31       MVALUE(mat,m00)*=a;                                      \
+  MVALUE(mat,m10)*=a;                                      \
+  MVALUE(mat,m20)*=a;
+#define T_MOD_32       MVALUE(mat,m00)*=a; MVALUE(mat,m01)*=a;                   \
+  MVALUE(mat,m10)*=a; MVALUE(mat,m11)*=a;                   \
+  MVALUE(mat,m20)*=a; MVALUE(mat,m21)*=a;
+#define T_MOD_33       MVALUE(mat,m00)*=a; MVALUE(mat,m01)*=a; MVALUE(mat,m02)*=a;\
+  MVALUE(mat,m10)*=a; MVALUE(mat,m11)*=a; MVALUE(mat,m12)*=a;\
+  MVALUE(mat,m20)*=a; MVALUE(mat,m21)*=a; MVALUE(mat,m22)*=a;
+#define T_PREP_N       mcomp = nr * nc;
+#define T_MOD_N        for (i=0; i<mcomp; i++)                                 \
+    MVALUE(mat,MD_MCMP_OF_RT_CT(M,rtype,ctype,i)) *= a;
 
 #define T_SPARSE_CALL \
   int i, size = 0;\
