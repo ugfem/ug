@@ -38,6 +38,7 @@
 #include "general.h"
 #include "gm.h"
 #include "evm.h"
+#include "shapes.h"
 
 /****************************************************************************/
 /*																			*/
@@ -341,6 +342,22 @@ void ConstructConsistentGrid (GRID *theGrid)
   VERTEX  *theVertex;
 
   SetOverlapPriorities(theGrid);
+
+    #ifdef __TWODIM__
+  for (theVertex = PFIRSTVERTEX(theGrid); theVertex != NULL;
+       theVertex = SUCCV(theVertex))
+    if (OBJT(theVertex) == BVOBJ)
+      if (MOVED(theVertex)) {
+        INT n;
+        DOUBLE *x[MAX_CORNERS_OF_ELEM];
+
+        theElement = VFATHER(theVertex);
+        if (theElement == NULL) continue;
+        CORNER_COORDINATES(theElement,n,x);
+        UG_GlobalToLocal(n,(const DOUBLE **)x,
+                         CVECT(theVertex),LCVECT(theVertex));
+      }
+        #endif
 
         #ifdef __THREEDIM__
   /* reconstruct VFATHER pointers */

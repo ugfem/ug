@@ -1551,16 +1551,6 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
 						  0.5, LOCAL_COORD_OF_ELEM(pe,co1),
 						  LCVECT(theVertex));
 
-			if (OBJT(theVertex) == BVOBJ) 
-			    if (MOVED(theVertex)) {
-				    INT n;
-					DOUBLE *x[MAX_CORNERS_OF_ELEM];
-				
-					CORNER_COORDINATES(pe,n,x);			
-					UG_GlobalToLocal(n,(const DOUBLE **)x,
-									 CVECT(theVertex),LCVECT(theVertex));
-				}
-
 			/* set nfather pointer of midnode */ 
 			ASSERT(ID(MIDNODE(enew)) != -1);
 			SETNFATHER(MIDNODE(enew),(NODE *)enew);
