@@ -165,11 +165,16 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define RED                                     2
 #define BLUE                            3
 #define COARSE                          4
+#ifdef __TWODIM__
 #define BISECTION_1             5
 #define BISECTION_2_Q           6
 #define BISECTION_2_T1          7
 #define BISECTION_2_T2          8
 #define BISECTION_3             9
+#endif
+#ifdef __THREEDIM__
+#define TETRA_RED_HEX           5
+#endif
 
 /* values for element class */
 #define NO_CLASS                0

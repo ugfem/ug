@@ -46,6 +46,12 @@
 /*																			*/
 /****************************************************************************/
 
+/* uncomment this if you want to use the fule rule set for tetrahedra */
+/* -> recompile rm.c refine.c ugm.c                                   */
+/*
+   #define TET_RULESET
+ */
+
 /* defines for edge types */
 #define INNER_EDGE          1
 #define SIDE_EDGE           2
@@ -155,10 +161,22 @@
 #define Q_CLOSE_3_3                     16
 
 #define TET_COPY                        1
+#ifdef TET_RULESET
 #define FULL_REFRULE        Pattern2Rule[TETRAHEDRON][0x3F]
 #define FULL_REFRULE_0_5    (Pattern2Rule[TETRAHEDRON][0x3F]+1)
 #define FULL_REFRULE_1_3    (Pattern2Rule[TETRAHEDRON][0x3F]+2)
 #define FULL_REFRULE_2_4    (Pattern2Rule[TETRAHEDRON][0x3F]+0)
+#else
+#define TET_RED                         2
+#define TET_RED_0_5                     3
+#define TET_RED_1_3                     4
+#define TET_RED_2_4                     2
+#define FULL_REFRULE        TET_RED
+#define FULL_REFRULE_0_5    TET_RED_0_5
+#define FULL_REFRULE_1_3    TET_RED_1_3
+#define FULL_REFRULE_2_4    TET_RED_2_4
+#define TET_RED_HEX                     5
+#endif
 
 #define PYR_COPY                        1
 #define PYR_RED                         2

@@ -125,8 +125,13 @@
 #define MARKED(e)                                       (MARK(theElement)!=NO_REFINEMENT)
 
 /* green marked elements were NEWGREEN is true are refined without rule */
+#ifdef TET_RULESET
 #define NEWGREEN(e)                                     (TAG(e)==HEXAHEDRON || TAG(e)== PRISM || \
                                                          TAG(e)==PYRAMID)
+#else
+#define NEWGREEN(e)                                     (TAG(e)==HEXAHEDRON || TAG(e)== PRISM || \
+                                                         TAG(e)==PYRAMID || TAG(e)== TETRAHEDRON)
+#endif
 
 /* TODO: delete special debug */
 static ELEMENT *debugelem=NULL;
@@ -503,6 +508,7 @@ FIFOSTART:
       /* side is triangle or quadrilateral */
       switch (CORNERS_OF_SIDE(theElement,i))
       {
+#ifdef TET_RULESET
       case 3 :
         if (TAG(theElement) == PYRAMID ||
             TAG(theElement) == PRISM )
@@ -519,6 +525,7 @@ FIFOSTART:
 
         switch (TAG(NbElement))
         {
+
         case TETRAHEDRON :
 
           NbEdgePattern = 0;
@@ -599,6 +606,11 @@ FIFOSTART:
           ASSERT(0);
         }
         break;
+#else
+      case 3 :
+        /* TODO: handle case with 2 edges of the side refined */
+        break;
+#endif
 
       case 4 :
 
@@ -889,7 +901,11 @@ FIFOSTART:
         /* for pyramids, prisms and hexhedra Patterns2Rules returns 0  */
         /* for non red elements, because there is no complete rule set */
         /* switch to mark COPY, because COPY rule refines no edges     */
+#ifdef TET_RULESET
         if (DIM==3 && TAG(theElement) != TETRAHEDRON)
+#else
+        if (DIM==3)
+#endif
         {
 
           /* set to no-empty rule, e.g. COPY rule */
@@ -944,8 +960,10 @@ FIFOSTART:
       if (NODE_OF_RULE(theNeighbor,MARK(theNeighbor),
                        EDGES_OF_ELEM(theNeighbor)+j))
       {
+#ifdef TET_RULESET
         if (TAG(theNeighbor)==TETRAHEDRON)
           printf("ERROR: no side nodes for tetrahedra! side=%d\n",j);
+#endif
         SETMARKCLASS(theElement,GREEN_CLASS);
       }
 
@@ -1142,6 +1160,9 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
     return(GM_OK);
   }
 
+  /*  old style				*/
+  assert(0);
+
         #if defined(ModelP) && defined(__THREEDIM__)
   /* TODO: really ugly more than quick fix */
   /* ghost elements have not all sons, search through element list */
@@ -1196,8 +1217,6 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
                 #endif
 
                 #ifdef __THREEDIM__
-    /*  old style				*/
-    assert(0);
   case (TETRAHEDRON) :
     SonList[0] = SON(theElement,0);
 
@@ -1357,10 +1376,14 @@ static INT RestrictMarks (GRID *theGrid)
                                                                 #endif
                                                                 #ifdef __THREEDIM__
               case TETRAHEDRON :
+#ifdef TET_RULESET
                 if (MARK(theElement)!=RED)
                   /* TODO: Is REFINE always as red */
                   /* rule available?               */
                   SETMARK(theElement,REFINE(theElement));
+#else
+                SETMARK(theElement,TET_RED);
+#endif
                 break;
               case PYRAMID :
                 SETMARK(theElement,PYR_RED);
@@ -1399,6 +1422,7 @@ static INT RestrictMarks (GRID *theGrid)
                                                                 #ifdef __THREEDIM__
 
               case TETRAHEDRON :
+#ifdef TET_RULESET
                 /* theElement is not marked from outside, */
                 /* so find a reg. rule being consistent   */
                 /* with those neighbors of all sons of    */
@@ -1437,6 +1461,9 @@ static INT RestrictMarks (GRID *theGrid)
                    SETMARK(theElement,PATTERN2MARK(theElement,Pattern)); */
                 /* TODO: this would be the quick fix
                    SETMARK(theElement,FULL_REFRULE); */
+#else
+                SETMARK(theElement,TET_RED);
+#endif
                 break;
 
               case PYRAMID :
@@ -1780,7 +1807,9 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
     /* no side nodes for triangular sides yet */
+#ifdef TET_RULESET
     if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
+#endif
 
     toCreate = 0;
     /* is side node needed */
@@ -1863,8 +1892,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
       {
 
         IFDEBUG(gm,3)
-        UserWriteF("            Searching for side node allocated by "
-                   "green neighbor:\n");
+        UserWriteF("            Searching for side node already allocated:\n");
         ENDDEBUG
 
         /* check for side node */
@@ -1872,10 +1900,20 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
         theNode0 = MidNodes[EDGE_OF_SIDE(theElement,i,0)];
         theNode1 = MidNodes[EDGE_OF_SIDE(theElement,i,2)];
         l = 0;
+
         if (theNode0 != NULL && theNode1 != NULL)
           theNode = GetSideNode(theElement,theNode0,theNode1,i);
 
-        SideNodes[i] = theNode;
+        IFDEBUG(gm,3)
+        if (theNode != NULL)
+          UserWriteF("found SideNode=" ID_FMTX " MidNode0=" ID_FMTX " MidNode1=" ID_FMTX "\n",
+                     ID_PRTX(theNode),ID_PRTX(theNode0),ID_PRTX(theNode1));
+        else
+          UserWriteF("NOT found SideNode=NULL MidNode0=" ID_FMTX " MidNode1=" ID_FMTX "\n",
+                     ID_PRTX(theNode0),ID_PRTX(theNode1));
+        ENDDEBUG
+
+          SideNodes[i] = theNode;
       }
 
       if (SideNodes[i] == NULL)
@@ -2003,8 +2041,10 @@ static int NodeContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementCon
               EDGES_OF_ELEM(theElement);
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
+#ifdef TET_RULESET
     /* no side nodes for triangular sides yet */
     if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
+#endif
 
     /* check for side node */
     theNode = NULL;
@@ -2446,8 +2486,9 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
     break;
   }
 
-    /* case RED_CLASS:  */
-    if (0)              /* old style */
+    /* old style           */
+    /*          case RED_CLASS:*/
+    if (0)
     {
       SONDATA *sondata;
 
@@ -2476,8 +2517,8 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
   IFDEBUG(gm,4)
   UserWriteF("Sons_of_Side=%d\n",*Sons_of_Side);
   for (i=0; i<*Sons_of_Side; i++)
-    UserWriteF("son[%d]=%08x/%x\n",i,
-               DDD_InfoGlobalId(PARHDRE(SonList[i])),SonList[i]);
+    UserWriteF("son[%d]=" EID_FMTX " sonside[%d]=%d\n",i,
+               EID_PRTX(SonList[i]),i,SonSides[i]);
   ENDDEBUG
         #endif
 
@@ -2607,13 +2648,6 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
   UserWriteF("Connect_Sons_of_ElementSide: ID(elem)=%d side=%d "
              "Sons_of_Side=%d\n",ID(theElement),side,Sons_of_Side);
   REFINE_ELEMENT_LIST(0,theElement,"theElement:");
-  UserWriteF("Sondata:\n");
-  for (i=0; i<Sons_of_Side; i++)
-    UserWriteF(" %5d",ID(Sons_of_Side_List[i]));
-  UserWriteF("\n");
-  for (i=0; i<Sons_of_Side; i++)
-    UserWriteF(" %5d",SonSides[i]);
-  UserWriteF("\n");
   ENDDEBUG
 
   if (Sons_of_Side <= 0) return(GM_OK);
@@ -2683,6 +2717,12 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
   ASSERT(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0
          && Sons_of_NbSide<6);
 
+  IFDEBUG(gm,2)
+  UserWriteF("Connect_Sons_of_ElementSide: NBID(elem)=%d side=%d "
+             "Sons_of_Side=%d\n",ID(theNeighbor),nbside,Sons_of_NbSide);
+  REFINE_ELEMENT_LIST(0,theNeighbor,"theNeighbor:");
+  ENDDEBUG
+
   /* fill sort and comparison tables */
   Fill_Comp_Table(ElemSortTable,ElemSonTable,Sons_of_Side,Sons_of_Side_List,
                   SonSides);
@@ -2703,13 +2743,15 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
     NbEntry = NbSortTable[i];
 
     if (Entry->nodes != NbEntry->nodes)
-      UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d]"
+      UserWriteF("Connect_Sons_of_ElementSide(): LIST Sorttables[%d]"
                  " eNodes=%d nbNodes=%d\n",
                  i,Entry->nodes,NbEntry->nodes);
     for (j=0; j<Entry->nodes; j++)
-      UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d][%d]"
-                 " eNodePtr=%x nbNodePtr=%x\n",
-                 i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
+      UserWriteF("Connect_Sons_of_ElementSide(): LIST Sorttables[%d][%d]"
+                 " eNodePtr=%d/%8x/%d nbNodePtr=%d/%8x/%d\n",
+                 i,j,
+                 ID(Entry->nodeptr[j]),Entry->nodeptr[j],NTYPE(Entry->nodeptr[j]),
+                 ID(NbEntry->nodeptr[j]),NbEntry->nodeptr[j],NTYPE(NbEntry->nodeptr[j]));
     UserWriteF("\n");
   }
   UserWriteF("\n\n");
@@ -2835,9 +2877,72 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 /*																			*/
 /****************************************************************************/
 
-static INT RefineElementYellow (fineGrid,theElement,theContext)
+static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theContext)
 {
-  RETURN(GM_FATAL);
+  INT i,boundaryelement;
+  NODE    *ElementNodes[MAX_CORNERS_OF_ELEM];
+  ELEMENT *theSon;
+
+  /* check for boundary */
+  if (OBJT(theElement) == BEOBJ)
+    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+    {
+      /* at the boundary */
+      if (SIDE_ON_BND(theElement,i))
+      {
+        boundaryelement = 1;
+        break;
+      }
+    }
+
+        #ifdef Debug
+  /* check son nodes validity */
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+  {
+    HEAPFAULT(theContext[i]);
+    assert (theContext[i] != NULL);
+  }
+        #endif
+
+  /* create son */
+  if (boundaryelement)
+    theSon = CreateElement(theGrid,TAG(theElement),BEOBJ,
+                           theContext,theElement);
+  else
+    theSon = CreateElement(theGrid,TAG(theElement),IEOBJ,
+                           theContext,theElement);
+  if (theSon==NULL) RETURN(GM_ERROR);
+  SETECLASS(theSon,MARKCLASS(theElement));
+
+  /* connect son */
+  IFDEBUG(gm,2)
+  UserWriteF(PFMT "CONNECTING elem=" EID_FMTX "\n",me,EID_PRTX(theElement));
+  ENDDEBUG
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+  {
+    INT j,Sons_of_Side;
+    ELEMENT *Sons_of_Side_List[MAX_SONS];
+    INT SonSides[MAX_SIDE_NODES];
+
+    IFDEBUG(gm,2)
+    UserWriteF(PFMT "  CONNECT side=%i of elem=" EID_FMTX "\n",me,i,EID_PRTX(theElement));
+    ENDDEBUG
+
+    for (j=0; j<MAX_SONS; j++)
+      Sons_of_Side_List[j] = NULL;
+
+    Sons_of_Side = 1;
+    Sons_of_Side_List[0] = theSon;
+    SonSides[0] = i;
+
+    if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
+                                Sons_of_Side_List,SonSides,0)!=GM_OK) RETURN(GM_FATAL);
+
+    if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side,
+                                    Sons_of_Side_List,SonSides)!=GM_OK) RETURN(GM_FATAL);
+  }
+
+  return(GM_OK);
 }
 
 /****************************************************************************/
@@ -3286,29 +3391,85 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
       break;
 
     case 3 :
-      switch (k)
+      if (theNode == NULL)
       {
-      case 0 :
-        sons[nelem].tag = TETRAHEDRON;
-        sons[nelem].corners[tetNode0] = theSideNodes[0];
-        sons[nelem].corners[tetNode1] = theSideNodes[2];
-        sons[nelem].corners[tetNode2] = theSideNodes[4];
-
-        sons[nelem].nb[tetSideNode0Node1] = sides[0];
-        sons[nelem].nb[tetSideNode1Node2] = sides[1];
-        sons[nelem].nb[tetSideNode0Node2] = sides[2];
-        nelem++;
-
-        break;
-
-      case 1 :
-        for (j=0; j<nedges; j++)
+        switch (k)
         {
-          node0 = 2*j+1;
-          if (theSideNodes[node0] != NULL)
+        case 0 :
+          sons[nelem].tag = TETRAHEDRON;
+          sons[nelem].corners[tetNode0] = theSideNodes[0];
+          sons[nelem].corners[tetNode1] = theSideNodes[2];
+          sons[nelem].corners[tetNode2] = theSideNodes[4];
+
+          sons[nelem].nb[tetSideNode0Node1] = sides[0];
+          sons[nelem].nb[tetSideNode1Node2] = sides[1];
+          sons[nelem].nb[tetSideNode0Node2] = sides[2];
+          nelem++;
+
+          break;
+
+        case 1 :
+          for (j=0; j<nedges; j++)
+          {
+            node0 = 2*j+1;
+            if (theSideNodes[node0] != NULL)
+            {
+
+              /* define the son corners and inner side relations */
+              sons[nelem].tag = TETRAHEDRON;
+              sons[nelem].corners[tetNode0] = theSideNodes[node0];
+              sons[nelem].corners[tetNode1] = theSideNodes[(node0+1)%(2*nedges)];
+              sons[nelem].corners[tetNode2] = theSideNodes[(node0+3)%(2*nedges)];
+
+              sons[nelem].nb[tetSideNode0Node1] = sides[j];
+              sons[nelem].nb[tetSideNode1Node2] = sides[(j+1)%nedges];
+              sons[nelem].nb[tetSideNode0Node2] = nelem+1;
+              nelem++;
+
+              sons[nelem].tag = TETRAHEDRON;
+              sons[nelem].corners[tetNode0] = theSideNodes[node0];
+              sons[nelem].corners[tetNode1] = theSideNodes[(node0+3)%(2*nedges)];
+              sons[nelem].corners[tetNode2] = theSideNodes[(node0+5)%(2*nedges)];
+
+              sons[nelem].nb[tetSideNode0Node1] = nelem-1;
+              sons[nelem].nb[tetSideNode1Node2] = sides[(j+2)%nedges];
+              sons[nelem].nb[tetSideNode0Node2] = sides[j];
+              nelem++;
+
+              break;
+            }
+          }
+          break;
+
+        case 2 :
+        {
+          INT node,k;
+          INT maxedge=-1;
+          INT maxid = -1;
+
+          node0 = -1;
+          for (k=0; k<nedges; k++)
+          {
+            node = (2*k+3)%(2*nedges);
+            if (theSideNodes[node] == NULL)
+            {
+              node0 = 2*k+1;
+              j = k;
+            }
+            /*
+               if (EDGE_OF_SIDE(theElement,i,k)>maxedge)
+                    maxedge = 2*k+1;
+             */
+            if (theSideNodes[2*k+1]!=NULL && ID(theSideNodes[2*k+1])>maxid)
+              maxid = ID(theSideNodes[2*k+1]);
+          }
+          assert(maxid != -1);
+          assert(node0 != -1);
+
+          /* if (node0 == maxedge && ((SIDEPATTERN(theElement)&(1<<i)) == 0)) */
+          if (ID(theSideNodes[node0]) == maxid)
           {
 
-            /* define the son corners and inner side relations */
             sons[nelem].tag = TETRAHEDRON;
             sons[nelem].corners[tetNode0] = theSideNodes[node0];
             sons[nelem].corners[tetNode1] = theSideNodes[(node0+1)%(2*nedges)];
@@ -3316,55 +3477,78 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
             sons[nelem].nb[tetSideNode0Node1] = sides[j];
             sons[nelem].nb[tetSideNode1Node2] = sides[(j+1)%nedges];
-            sons[nelem].nb[tetSideNode0Node2] = nelem+1;
+            sons[nelem].nb[tetSideNode0Node2] = nelem+2;
+            nelem++;
+
+            sons[nelem].tag = TETRAHEDRON;
+            sons[nelem].corners[tetNode0] = theSideNodes[node0];
+            sons[nelem].corners[tetNode1] = theSideNodes[(node0+4)%(2*nedges)];
+            sons[nelem].corners[tetNode2] = theSideNodes[(node0+5)%(2*nedges)];
+
+            sons[nelem].nb[tetSideNode0Node1] = nelem+1;
+            sons[nelem].nb[tetSideNode1Node2] = sides[(j+2)%nedges];
+            sons[nelem].nb[tetSideNode0Node2] = sides[j];
             nelem++;
 
             sons[nelem].tag = TETRAHEDRON;
             sons[nelem].corners[tetNode0] = theSideNodes[node0];
             sons[nelem].corners[tetNode1] = theSideNodes[(node0+3)%(2*nedges)];
-            sons[nelem].corners[tetNode2] = theSideNodes[(node0+5)%(2*nedges)];
+            sons[nelem].corners[tetNode2] = theSideNodes[(node0+4)%(2*nedges)];
+
+            sons[nelem].nb[tetSideNode0Node1] = nelem-2;
+            sons[nelem].nb[tetSideNode1Node2] = sides[(j+2)%nedges];
+            sons[nelem].nb[tetSideNode0Node2] = nelem-1;
+            nelem++;
+
+          }
+          else
+          {
+            sons[nelem].tag = TETRAHEDRON;
+            sons[nelem].corners[tetNode0] = theSideNodes[node0];
+            sons[nelem].corners[tetNode1] = theSideNodes[(node0+1)%(2*nedges)];
+            sons[nelem].corners[tetNode2] = theSideNodes[(node0+4)%(2*nedges)];
+
+            sons[nelem].nb[tetSideNode0Node1] = sides[j];
+            sons[nelem].nb[tetSideNode1Node2] = nelem+1;
+            sons[nelem].nb[tetSideNode0Node2] = nelem+2;
+            nelem++;
+
+            sons[nelem].tag = TETRAHEDRON;
+            sons[nelem].corners[tetNode0] = theSideNodes[(node0+4)%(2*nedges)];
+            sons[nelem].corners[tetNode1] = theSideNodes[(node0+1)%(2*nedges)];
+            sons[nelem].corners[tetNode2] = theSideNodes[(node0+3)%(2*nedges)];
 
             sons[nelem].nb[tetSideNode0Node1] = nelem-1;
+            sons[nelem].nb[tetSideNode1Node2] = sides[(j+1)%nedges];
+            sons[nelem].nb[tetSideNode0Node2] = sides[(j+2)%nedges];
+            nelem++;
+
+            sons[nelem].tag = TETRAHEDRON;
+            sons[nelem].corners[tetNode0] = theSideNodes[node0];
+            sons[nelem].corners[tetNode1] = theSideNodes[(node0+4)%(2*nedges)];
+            sons[nelem].corners[tetNode2] = theSideNodes[(node0+5)%(2*nedges)];
+
+            sons[nelem].nb[tetSideNode0Node1] = nelem-2;
             sons[nelem].nb[tetSideNode1Node2] = sides[(j+2)%nedges];
             sons[nelem].nb[tetSideNode0Node2] = sides[j];
             nelem++;
 
-            break;
           }
+
+          break;
         }
-        break;
-
-      case 2 :
-      {
-        INT node,k;
-        INT maxedge=-1;
-
-        node0 = -1;
-        for (k=0; k<nedges; k++)
-        {
-          node = (2*k+3)%(2*nedges);
-          if (theSideNodes[node] == NULL)
-          {
-            node0 = 2*k+1;
-            j = k;
-          }
-          if (EDGE_OF_SIDE(theElement,i,k)>maxedge)
-            maxedge = 2*k+1;
-        }
-        assert(maxedge != -1);
-        assert(node0 != -1);
-
-        if (node0 == maxedge && ((SIDEPATTERN(theElement)&(1<<i)) == 0))
-        {
+        case 3 :
+          j = 0;
+          node0 = 1;
 
           sons[nelem].tag = TETRAHEDRON;
           sons[nelem].corners[tetNode0] = theSideNodes[node0];
           sons[nelem].corners[tetNode1] = theSideNodes[(node0+1)%(2*nedges)];
-          sons[nelem].corners[tetNode2] = theSideNodes[(node0+3)%(2*nedges)];
+          sons[nelem].corners[tetNode2] = theSideNodes[(node0+2)%(2*nedges)];
 
           sons[nelem].nb[tetSideNode0Node1] = sides[j];
           sons[nelem].nb[tetSideNode1Node2] = sides[(j+1)%nedges];
-          sons[nelem].nb[tetSideNode0Node2] = nelem+2;
+          sons[nelem].nb[tetSideNode0Node2] = nelem+3;
           nelem++;
 
           sons[nelem].tag = TETRAHEDRON;
@@ -3372,107 +3556,42 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
           sons[nelem].corners[tetNode1] = theSideNodes[(node0+4)%(2*nedges)];
           sons[nelem].corners[tetNode2] = theSideNodes[(node0+5)%(2*nedges)];
 
-          sons[nelem].nb[tetSideNode0Node1] = nelem+1;
+          sons[nelem].nb[tetSideNode0Node1] = nelem+2;
           sons[nelem].nb[tetSideNode1Node2] = sides[(j+2)%nedges];
           sons[nelem].nb[tetSideNode0Node2] = sides[j];
           nelem++;
 
           sons[nelem].tag = TETRAHEDRON;
-          sons[nelem].corners[tetNode0] = theSideNodes[node0];
+          sons[nelem].corners[tetNode0] = theSideNodes[node0+2];
           sons[nelem].corners[tetNode1] = theSideNodes[(node0+3)%(2*nedges)];
           sons[nelem].corners[tetNode2] = theSideNodes[(node0+4)%(2*nedges)];
 
-          sons[nelem].nb[tetSideNode0Node1] = nelem-2;
+          sons[nelem].nb[tetSideNode0Node1] = sides[(j+1)%nedges];
           sons[nelem].nb[tetSideNode1Node2] = sides[(j+2)%nedges];
-          sons[nelem].nb[tetSideNode0Node2] = nelem-1;
+          sons[nelem].nb[tetSideNode0Node2] = nelem+1;
           nelem++;
 
-        }
-        else
-        {
           sons[nelem].tag = TETRAHEDRON;
           sons[nelem].corners[tetNode0] = theSideNodes[node0];
-          sons[nelem].corners[tetNode1] = theSideNodes[(node0+1)%(2*nedges)];
+          sons[nelem].corners[tetNode1] = theSideNodes[(node0+2)%(2*nedges)];
           sons[nelem].corners[tetNode2] = theSideNodes[(node0+4)%(2*nedges)];
 
-          sons[nelem].nb[tetSideNode0Node1] = sides[j];
-          sons[nelem].nb[tetSideNode1Node2] = nelem+1;
-          sons[nelem].nb[tetSideNode0Node2] = nelem+2;
+          sons[nelem].nb[tetSideNode0Node1] = nelem-3;
+          sons[nelem].nb[tetSideNode1Node2] = nelem-1;
+          sons[nelem].nb[tetSideNode0Node2] = nelem-2;
           nelem++;
 
-          sons[nelem].tag = TETRAHEDRON;
-          sons[nelem].corners[tetNode0] = theSideNodes[(node0+4)%(2*nedges)];
-          sons[nelem].corners[tetNode1] = theSideNodes[(node0+1)%(2*nedges)];
-          sons[nelem].corners[tetNode2] = theSideNodes[(node0+3)%(2*nedges)];
+          break;
 
-          sons[nelem].nb[tetSideNode0Node1] = nelem-1;
-          sons[nelem].nb[tetSideNode1Node2] = sides[(j+1)%nedges];
-          sons[nelem].nb[tetSideNode0Node2] = sides[(j+2)%nedges];
-          nelem++;
-
-          sons[nelem].tag = TETRAHEDRON;
-          sons[nelem].corners[tetNode0] = theSideNodes[node0];
-          sons[nelem].corners[tetNode1] = theSideNodes[(node0+4)%(2*nedges)];
-          sons[nelem].corners[tetNode2] = theSideNodes[(node0+5)%(2*nedges)];
-
-          sons[nelem].nb[tetSideNode0Node1] = nelem-2;
-          sons[nelem].nb[tetSideNode1Node2] = sides[(j+2)%nedges];
-          sons[nelem].nb[tetSideNode0Node2] = sides[j];
-          nelem++;
-
+        default :
+          assert(0);
+          break;
         }
-
-        break;
       }
-      case 3 :
-        j = 0;
-        node0 = 1;
-
-        sons[nelem].tag = TETRAHEDRON;
-        sons[nelem].corners[tetNode0] = theSideNodes[node0];
-        sons[nelem].corners[tetNode1] = theSideNodes[(node0+1)%(2*nedges)];
-        sons[nelem].corners[tetNode2] = theSideNodes[(node0+2)%(2*nedges)];
-
-        sons[nelem].nb[tetSideNode0Node1] = sides[j];
-        sons[nelem].nb[tetSideNode1Node2] = sides[(j+1)%nedges];
-        sons[nelem].nb[tetSideNode0Node2] = nelem+3;
-        nelem++;
-
-        sons[nelem].tag = TETRAHEDRON;
-        sons[nelem].corners[tetNode0] = theSideNodes[node0];
-        sons[nelem].corners[tetNode1] = theSideNodes[(node0+4)%(2*nedges)];
-        sons[nelem].corners[tetNode2] = theSideNodes[(node0+5)%(2*nedges)];
-
-        sons[nelem].nb[tetSideNode0Node1] = nelem+2;
-        sons[nelem].nb[tetSideNode1Node2] = sides[(j+2)%nedges];
-        sons[nelem].nb[tetSideNode0Node2] = sides[j];
-        nelem++;
-
-        sons[nelem].tag = TETRAHEDRON;
-        sons[nelem].corners[tetNode0] = theSideNodes[node0+2];
-        sons[nelem].corners[tetNode1] = theSideNodes[(node0+3)%(2*nedges)];
-        sons[nelem].corners[tetNode2] = theSideNodes[(node0+4)%(2*nedges)];
-
-        sons[nelem].nb[tetSideNode0Node1] = sides[(j+1)%nedges];
-        sons[nelem].nb[tetSideNode1Node2] = sides[(j+2)%nedges];
-        sons[nelem].nb[tetSideNode0Node2] = nelem+1;
-        nelem++;
-
-        sons[nelem].tag = TETRAHEDRON;
-        sons[nelem].corners[tetNode0] = theSideNodes[node0];
-        sons[nelem].corners[tetNode1] = theSideNodes[(node0+2)%(2*nedges)];
-        sons[nelem].corners[tetNode2] = theSideNodes[(node0+4)%(2*nedges)];
-
-        sons[nelem].nb[tetSideNode0Node1] = nelem-3;
-        sons[nelem].nb[tetSideNode1Node2] = nelem-1;
-        sons[nelem].nb[tetSideNode0Node2] = nelem-2;
-        nelem++;
-
-        break;
-
-      default :
+      else
+      {
+        /* this side has sidenode and all midnodes */
         assert(0);
-        break;
       }
 
       break;
@@ -3944,11 +4063,18 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
     }
   }
 
+  IFDEBUG(gm,2)
+  UserWriteF(PFMT "CONNECTING elem=" EID_FMTX "\n",me,EID_PRTX(theElement));
+  ENDDEBUG
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
     INT j,Sons_of_Side;
     ELEMENT *Sons_of_Side_List[MAX_SONS];
     INT SonSides[MAX_SIDE_NODES];
+
+    IFDEBUG(gm,2)
+    UserWriteF(PFMT "  CONNECT side=%i of elem=" EID_FMTX "\n",me,i,EID_PRTX(theElement));
+    ENDDEBUG
 
     for (j=0; j<MAX_SONS; j++)
       Sons_of_Side_List[j] = NULL;
@@ -4067,8 +4193,7 @@ static int RefineGrid (GRID *theGrid)
           }
           break;
         case (YELLOW_CLASS) :
-          if (0) RefineElementYellow(fineGrid,theElement,theContext);
-          if (RefineElementRed(fineGrid,theElement,theContext)!=GM_OK) RETURN(GM_FATAL);
+          if (RefineElementYellow(fineGrid,theElement,theContext)!=GM_OK) RETURN(GM_FATAL);
           break;
         default :
           RETURN(GM_FATAL);

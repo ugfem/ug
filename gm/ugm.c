@@ -5477,7 +5477,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 	{
 		UserWriteF("\nGREEN RULE STATISTICS:\n");
 		UserWriteF("  LEVEL GREENSONS     RULES GREENSONS/RUL");
-		for (j=0; j<8 && j<maxsons; j++) UserWriteF("   %9d",j);
+		for (j=0; j<8 && j<maxsons; j++) UserWriteF("  %1d/%2d/...",j,j+8);
 		UserWriteF("\n");
 
 		for (i=0; i<=TOPLEVEL(theMG); i++)
@@ -5487,8 +5487,8 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 				(mg_greenrules[i]!=0)?((float)mg_greenrulesons[i][MAX_SONS])/mg_greenrules[i]:0);
 			for (j=0; j<maxsons; j++)
 			{
-				UserWriteF("   %9d",mg_greenrulesons[i][j]);
-				if ((j+1)%8 == 0) UserWriteF("\n                              ");
+				UserWriteF(" %9d",mg_greenrulesons[i][j]);
+				if ((j+1)%8 == 0) UserWriteF("\n%41s"," ");
 			}
 			UserWriteF("\n");
 		}
@@ -5497,8 +5497,8 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 			((float)mg_greenrulesons[MAXLEVEL][MAX_SONS])/mg_greenrules[MAXLEVEL]);
 		for (j=0; j<maxsons; j++)
 		{
-			UserWriteF("   %9d",mg_greenrulesons[MAXLEVEL][j]);
-			if ((j+1)%8 == 0) UserWriteF("\n                              ");
+			UserWriteF(" %9d",mg_greenrulesons[MAXLEVEL][j]);
+			if ((j+1)%8 == 0) UserWriteF("\n%41s"," ");
 		}
 		UserWriteF("\n");
 	}
@@ -6850,8 +6850,13 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 	theNode = MIDNODE(theEdge);
 	if (theNode == NULL)
 	{
+#ifdef TET_RULESET
 		if (((REFINE(theElement) == RED) && (TAG(theElement) != TETRAHEDRON))
-		  || ((TAG(theElement) == TETRAHEDRON) && (NSONS(theElement) == 8))) {
+			|| ((TAG(theElement) == TETRAHEDRON) && (NSONS(theElement) == 8)))
+#else
+		if (REFINE(theElement) == RED)
+#endif
+		{
 
         #ifdef ModelP
 		if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost) {
