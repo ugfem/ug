@@ -87,6 +87,8 @@
 #else
 #define NS_PREFIX UG3d::
 #endif
+#else
+#define NS_PREFIX
 #endif
 
 /* offset of additional parameters for boundary condition function call */
