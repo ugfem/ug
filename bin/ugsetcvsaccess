@@ -12,7 +12,7 @@ then
 	exit 1;
 fi
 
-DEFAULT=stefan,klaus,birken,henrik,peter,wieners,christia,niko,ug
+DEFAULT=stefan,klaus,birken,henrik,peter,wieners,christia,niko,ug,df
 ERRORFILE=$UGROOT/bin/cvsaccess
 UG=`dirname $UGROOT`
 
