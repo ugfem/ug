@@ -305,7 +305,8 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   if (Bio_Initialize(stream,BIO_ASCII,'r')) return (1);
 
   /* head always in ACSII */
-  if (Bio_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_TITLE_LINE)!=0) return (1);
+  if (Bio_Read_string(buffer)) return (1);
+  if (strcmp(buffer,MGIO_TITLE_LINE)!=0) return (1);
   if (Bio_Read_mint(1,intList)) return (1);
   mg_general->mode                = intList[0];
 
@@ -333,7 +334,8 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   mg_general->VectorTypes = intList[7];
   mg_general->me                  = intList[8];
   mg_general->nparfiles   = intList[9];
-  if (intList[10]!=MGIO_DEBUG) return (1);                /* check debug-level of file: 0: no debug information */
+  if (intList[10]!=MGIO_DEBUG)
+    RETURN (1);                   /* check debug-level of file: 0: no debug information */
 
   /* init global parameters */
   nparfiles                               = mg_general->nparfiles;
