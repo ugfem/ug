@@ -465,8 +465,10 @@ int placer_Exec (INT *win_geom, int n, DOUBLE *rect_defs, INT *geom)
         sol_best = sol_last;
         CopyOrder(MAX_ORDER, best_order, order);
 
-        printf("openppic: found new best in iteration %d: sol=%f\n",
-               i, sol_best);
+        /*
+           printf("openppic: found new best in iteration %d: sol=%f\n",
+                i, sol_best);
+         */
       }
     }
     else
