@@ -17,12 +17,12 @@
 *	8. Testen von binnew NIGHTLY and EXPERIMENTAL
 *	9. im DartConfiguration.tcl: ConfigureCommand: ..../ugconf_dart
 *	10. extensions for application testing
-		- integration of testing into Makefiles: make test
-		- target test inside Makefile:
-			test:
-				ugconf $UG_BUILD_OPTIONS
-				ug_dart_conf.pl $APPL_DIRECTORY
-		- application developer creates his own DartTestfile
+*		- integration of testing into Makefiles: make test
+*		- target test inside Makefile:
+*			test:
+*				ugconf $UG_BUILD_OPTIONS
+*				ug_dart_conf.pl $APPL_DIRECTORY
+*		- application developer creates his own DartTestfile
 
 20040202:
 *	4. 10. avoids 4.
@@ -56,20 +56,44 @@
 *		new file in UG/ with name DartTestFiles
 *		this allow to switch on and off application tests
 20040310:
-	16. Handling of ConfigureCommand output:
-		- ConfigureCommand is defined in DartConfiguration.tcl
-		- Configure.tcl provides Client-Side functionality
-		- Configure.xsl provides Server-Side functionality
-		--> web documents explaining tcl, xml, tsl easy and short
-		--> Learn TCL, XSLT, XML as necessary
+*	16. Handling of ConfigureCommand output:
+*		- ConfigureCommand is defined in DartConfiguration.tcl
+*		- Configure.tcl provides Client-Side functionality
+*		- Configure.xsl provides Server-Side functionality
+*		--> web documents explaining tcl, xml, tsl easy and short
+*		--> Learn TCL, XSLT, XML as necessary
 20040323:
-	17. Management of all situations:
- 		1. -e lib_all: build ug with all possible configurations
-		2. -e test_all:
-		3. -e all: all tests and all lib
-		4. -e test -c <appl1:<testnames>>
-		5. -e lib -c <lib:<testnames>>
-	18. Extensions to multiple basis libs
-		<CFS> = <LIB1:<CFS1>...<LIBN><CFSN>>
+*	17. Management of all situations:
+* 		1. -e lib_all: build ug with all possible configurations
+*		2. -e test_all:
+*		3. -e all: all tests and all lib
+*		4. -e test -c <appl1:<testnames>>
+*		5. -e lib -c <lib:<testnames>>
+*	18. Extensions to multiple basis libs
+*		<ECFS> = <LIB1:<CFS1>...<LIBN><CFSN>>
+
+20040405:
+*	18. not DONE
+
+20040504:
+*	16. DONE
+*	17. DONE
+*	18. DONE
+*	19. delete README_EXPERIMENTAL-BUILDS.txt, ug_dart_cron_tests.plsave,
+*	    ug_dart_co, ugpart
+*	20. check in new versions of ug_dart_client_test, ug_dart_conf.pl, ug_dart.pl,
+*	    ug_dart_tests.pl, DartCycleTimeline.fig, Dart-UG.fig, README_SETUP.txt,
+*	    README_SCRIPTS.txt
+*	21. add README_TESTS.txt
+	22. overwork all scripts to get a final version
+	23. add a UG logo on the dashboard
+	24. update the scripts on hal and change the bin directory
+	    from /home/ugtest/bin to .../UG/ug/bin
+	25. describe make build in README_TESTS.txt
+	26. enable purify functionality
+
+
+
+
 
 
