@@ -1892,7 +1892,9 @@ static INT NPanisoFldInit(NP_BASE *theNP, INT argc , char **argv)
   NP_ANISO_FIELD *np;
   DOUBLE dval[DIM];
   INT ret;
+#ifdef __THREEDIM__
   INT i;
+#endif
 
   ret = NPGetFieldInit (theNP, argc, argv);
 
