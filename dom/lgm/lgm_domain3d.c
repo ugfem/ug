@@ -76,6 +76,17 @@ static INT VAR_H = 1;
 INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
 INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
 
+static INT Get_NBNDS_Per_Subdomain              (HEAP *Heap, LGM_DOMAIN *theDomain, INT **sizes, DOUBLE h);
+static INT DiscretizeLine                               (HEAP *Heap, LGM_LINE *theLine, MESH *theMesh, DOUBLE h);
+static INT Get_NBNDP                                    (LGM_DOMAIN *theDomain, INT *nBND, DOUBLE h);
+static INT DiscretizeDomain                     (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
+static INT DiscretizeSurface                    (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
+static INT DiscretizeSurfaceold                 (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
+static INT DiscretizeLines                              (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
+static INT TransferLines2Mesh                   (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
+static INT TransferSurfaces2Mesh                (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
+
+
 /* data for CVS */
 /*static char RCS_ID("$Header$",UG_RCS_STRING);
  */
@@ -514,20 +525,723 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
 /* domain interface function: for description see domain.h */
 INT BVP_Check (BVP *aBVP)
 {
-  UserWrite("BVP_Check: not implemented\n");
+  INT i,i2,j,j2,k,p,ret,at_begin,at_left,flags,sbd,sfce,left,right,l,found,m, m2;
+  INT commmonIDs_Counter, tr_index, ntr_index, richtung_TheTria, richtung_TheNgbTria;
+  LGM_POINT **TemporaryPointArray;
+  INT indexesTheTria[2];
+  INT indexesTheNgbTria[2];
+  INT yes[3];
+  LGM_DOMAIN *theD,*lgmd;
+  LGM_SUBDOMAIN *theSD, *theSD2, *lfSD;
+  LGM_LINE *theL,*theL2;
+  LGM_SURFACE *theSF, *theSF2, *lfSF;
+  LGM_TRIANGLE *TheTria, *TheTria2, *TheNgbTria;
+  LGM_POINT *ThePoint, *Point_TheTria, *Point_TheNgbTria;
+  INT CHECKA,CHECKB,CHECKC,CHECKD,CHECKE,CHECKF,CHECKG;
+  INT NachfolgerLine;INT VorgaengerLine;
+  INT memsize_variable, CornerCounter, Lf_Var;
+  INT NewCorners[3];
 
-  return (0);
+
+  CHECKA = 1;
+  /*Check , ob ueberhaupt alles angelegt ist*/
+  /* check subdomains */
+
+  CHECKB = 1;
+  /*Checke die Left/RightInformation aller Surfaces ...*/
+  /*Laufe ueber Subdomains ...*/
+
+  CHECKC = 1;
+  /*laufe ueber die Subdomains und pruefe ob es stimmt dass wirklich nur die referenzierten Sbdms
+     diese Surface besitzen! else {ErrorCase} */
+  /*Laufe ueber Subdomains und dort ueber Surfaces ...*/
+
+  CHECKD = 1;
+  /*CHECK aller Lines, ob sie gar zyklisch sind und ob sie eine Vorgaenger- und eine Nachfolger-Line besitzen*/
+
+  CHECKE = 1;
+  /*laufe ueber Points der Surface und suche zu jedem Point, ob es mind. ein Triangle
+     gibt, das es in dieser Surface gibt, und das diesen Point besitzt.
+     d.h. Pruefe ob die Surface Points besitzt, die von keinem Triangle referenziert werden.
+     =>{ErrorCase}*/
+  /*Laufe ueber alle Subdomains:*/
+
+  CHECKF = 0;       /*macht nur Sinn fuer den Ansyseinlesevorgang not tested yet, 11.7.97*/
+  /*Gebe die 3 NachbarTriangles an und pruefe ob es ueberhaupt ein Nachbartriangle ist und ob
+     die selbe Direction vorliegt! d.h dass die beiden gemeinsamen IDs in der umgekehrten
+     Reihenfolge durchlaufen werden. und pruefe auch ob 3 unterschiedliche CornerIDs vorliegen*/
+  /*NEU: macht nach C.Tapps Aenderugen auch wieder SInn*/
+
+
+  CHECKG = 1;
+  /*Pruefe zu jedem Triangle, ob es nur einmal vorkommt*/
+
+  UserWrite("BVP_Check3D: \n");
+
+  theD = BVP2LGM(aBVP);
+  if (theD==NULL)
+  {
+    UserWriteF("theD = BVP2LGM(aBVP) returned NilPointer\n\n");
+    return (1);
+  }
+
+  UserWrite("Test A:  Do all components exist:");
+
+
+  if(CHECKA ==1)
+  {
+    /*CHECKA*/
+    /*Check , ob ueberhaupt alles angelegt ist*/
+    /* check subdomains */
+    for (i=1; i<=LGM_DOMAIN_NSUBDOM(theD); i++)
+    {
+      /* CHECK[0] */
+      theSD = LGM_DOMAIN_SUBDOM(theD,i);
+      if (theSD==NULL)
+      {
+        if (!ret) UserWrite("\n");
+        UserWriteF("Subdomain %d is not referenced from Domain\n\n",(int)i);
+        ret = 1;
+        return(1);
+      }
+
+      /*Laufe ueber Surfaces*/
+      for (j=0; j<LGM_SUBDOMAIN_NSURFACE(theSD); j++)
+      {
+        theSF = LGM_SUBDOMAIN_SURFACE(theSD,j);
+        /*UserWriteF("The %d . Surface of Sbd %d has got %d Points",(int)j,(int)i,LGM_SURFACE_NPOINT(theSF));*/
+        /*UserWriteF("and has got the ID %d \n",LGM_SURFACE_ID(theSF));*/
+        for (l=0; l<LGM_SURFACE_NLINE(theSF); l++)
+        {
+          theL = LGM_SURFACE_LINE(theSF, l);
+          /*zyklische Line ?*/
+          /*UserWriteF("	The %d . Line :\n Begin: %d , End: %d\n",(int)l,LGM_LINE_BEGIN(theL),LGM_LINE_END(theL));*/
+          /*UserWriteF("	The %d . Line has got the following ID: %d\n",(int)l,LGM_LINE_ID(theL));*/
+        }
+        if (theSF==NULL)
+        {
+          /* CHECK[13] */
+          if (!ret) UserWrite("\n");
+          UserWriteF("Surfcae %d is not referenced from Subdomain %d\n\n",(int)j,(int)i);
+          ret = 1;
+          return(1);
+        }
+
+        /*Laufe ueber Lines ...*/
+        if(LGM_SURFACE_NLINE(theSF) <2)
+        {
+          if (!ret) UserWrite("\n");
+          UserWriteF("Surface %d has less than 2 Lines\n\n",(int)j);
+          ret = 1;
+          return(1);
+        }
+        for (l=0; l<LGM_SURFACE_NLINE(theSF); l++)
+        {
+          theL = LGM_SURFACE_LINE(theSF, l);
+          if (theL==NULL)
+          {
+            /* CHECK[13] */
+            if (!ret) UserWrite("\n");
+            UserWriteF("Line %d is not referenced from Surface %d\n\n",(int)l,(int)j,(int)i);
+            ret = 1;
+            return(1);
+          }
+        }
+        /*Laufe ueber Triangles ...*/
+        for (m=0; m<LGM_SURFACE_NTRIANGLE(theSF); m++)
+        {
+          TheTria = LGM_SURFACE_TRIANGLE(theSF,m);
+          /*UserWriteF("Triangle %d of Surface %d of Subdomain %d\n has got the following neighbour triangles: \n Neighbour_0: %d, Neighbour_1: %d, Neighbour_2: %d\n",(int)m,(int)j,(int)i,(int)(LGM_TRIANGLE_NEIGHBOR(TheTria, 0)),(int)(LGM_TRIANGLE_NEIGHBOR(TheTria, 2)),(int)(LGM_TRIANGLE_NEIGHBOR(TheTria, 2)));*/
+          if (TheTria==NULL)
+          {
+            /* CHECK[5] */
+            if (!ret) UserWrite("\n");
+            UserWriteF("Triangle %d is not referenced from Surface %d\n\n",(int)m,(int)j);
+            ret = 1;
+            return(1);
+          }
+
+          /*laufe ueber die 3CornerIDs und pruefe, ob fuer diese CornerID ueberhaupt ein
+             lokaler Point vorgesehen ist : */
+          /*GOONHERE Wie gross ist eigentlich der rechte Wert?*/
+          /* auskomentiert,da LGM_TRIANGLE_CORNERID die globalen IDs aus dem LGM-File liefert
+                                          if(LGM_TRIANGLE_CORNERID(TheTria,0) >= LGM_SURFACE_NPOINT(theSF))
+                                          {
+                                                  if (!ret) UserWrite("\n");
+                                                  UserWriteF("Triangle %d has the impossible CornerID %d, \n LGM_SURFACE_NPOINT-Value is %d\n\n",(int)m,(int)(LGM_TRIANGLE_CORNERID(TheTria,0)),(int)(LGM_SURFACE_NPOINT(theSF)));
+                                                  ret = 1;
+                                                  return(1);
+                                          }
+                                          if(LGM_TRIANGLE_CORNERID(TheTria,1) >= LGM_SURFACE_NPOINT(theSF))
+                                          {
+                                                  if (!ret) UserWrite("\n");
+                                                  UserWriteF("Triangle %d has the impossible CornerID %d,\n LGM_SURFACE_NPOINT-Value is %d\n\n",(int)m,(int)(LGM_TRIANGLE_CORNERID(TheTria,1)),(int)(LGM_SURFACE_NPOINT(theSF)));
+                                                  ret = 1;
+                                                  return(1);
+                                          }
+                                          if(LGM_TRIANGLE_CORNERID(TheTria,2) >= LGM_SURFACE_NPOINT(theSF))
+                                          {
+                                                  if (!ret) UserWrite("\n");
+                                                  UserWriteF("Triangle %d has the impossible CornerID %d,\n LGM_SURFACE_NPOINT-Value is %d\n\n",(int)m,(int)(LGM_TRIANGLE_CORNERID(TheTria,2)),(int)(LGM_SURFACE_NPOINT(theSF)));
+                                                  ret = 1;
+                                                  return(1);
+                                          }
+           */
+        }
+        /*Laufe ueber die Points*/
+        for(p=0; p<LGM_SURFACE_NPOINT(theSF); p++)
+        {
+          ThePoint = LGM_SURFACE_POINT(theSF,p);
+          if (ThePoint==NULL)
+          {
+            if (!ret) UserWrite("\n");
+            UserWriteF("The %d . Point is not referenced from Surface %d\n\n",(int)p,(int)j);
+            ret = 1;
+            return(1);
+          }
+        }
+      }
+    }
+  }
+  UserWrite(" OK\n");
+  UserWrite("Test B:  LeftRightInformations ofSurfaces:");
+
+
+  if(CHECKB ==1)
+  {
+    /*CHECKB*/
+    /*Checke die Left/RightInformation aller Surfaces ...*/
+    /*Laufe ueber Subdomains ...*/
+    for (i=1; i<=LGM_DOMAIN_NSUBDOM(theD); i++)
+    {
+      theSD = LGM_DOMAIN_SUBDOM(theD,i);
+      /*Laufe ueber Surfaces ...*/
+      for (j=0; j<LGM_SUBDOMAIN_NSURFACE(theSD); j++)
+      {
+
+        theSF = LGM_SUBDOMAIN_SURFACE(theSD,j);
+        if ((LGM_SURFACE_LEFT(theSF) != i) && (LGM_SURFACE_RIGHT(theSF)!=i))
+        {
+          /* CHECK[1] */
+          if (!ret) UserWrite("\n");
+          UserWriteF("Surface %d does not reference Subdomain %d,\n [%d (left), %d (right)]\n\n",(int)LGM_SURFACE_ID(theSF),(int)i,(int)LGM_SURFACE_LEFT(theSF),LGM_SURFACE_RIGHT(theSF));
+          ret = 1;
+          continue;
+        }
+        if ((LGM_SURFACE_LEFT(theSF)==i) && (LGM_SURFACE_RIGHT(theSF)==i))
+        {
+          /* CHECK[1] */
+          if (!ret) UserWrite("\n");
+          UserWriteF("Surface %d references Subdomain %d two times ,\n [%d (left), %d (right)]\n\n",(int)LGM_SURFACE_ID(theSF),(int)i,(int)LGM_SURFACE_LEFT(theSF),LGM_SURFACE_RIGHT(theSF));
+          ret = 1;
+          continue;
+        }
+        /*UserWriteF("Surface %d does reference Subdomain %d,\n [%d (left), %d (right)]\n\n",(int)LGM_SURFACE_ID(theSF),(int)i,(int)LGM_SURFACE_LEFT(theSF),LGM_SURFACE_RIGHT(theSF));*/
+
+      }
+    }
+  }
+  UserWrite(" OK\n");
+  UserWrite("Test C:  Subdomains - Surfaces - Relations:");
+
+
+  if(CHECKC ==1)
+  {
+    /*CHECKC*/
+    /*laufe ueber die Subdomains und pruefe ob es stimmt dass wirklich nur die referenzierten Sbdms
+       diese Surface besitzen! else {ErrorCase} */
+    /*Laufe ueber Subdomains und dort ueber Surfaces ...*/
+    /* CHECK[2]] */
+
+    for (i=1; i<=LGM_DOMAIN_NSUBDOM(theD); i++)
+    {
+      theSD = LGM_DOMAIN_SUBDOM(theD,i);
+      /*Laufe ueber Surfaces ...*/
+      for (j=0; j<LGM_SUBDOMAIN_NSURFACE(theSD); j++)
+      {
+        theSF = LGM_SUBDOMAIN_SURFACE(theSD,j);
+        /* CHECK[2] */
+        /*laufe ueber die Subdomains und pruefe ob es stimmt dass wirklich nur die referenzierten Sbdms
+           diese Surface besitzen! else {ErrorCase} */
+        left = 0; right = 0;
+        for (sbd=1; sbd<=LGM_DOMAIN_NSUBDOM(theD); sbd++)
+        {
+          lfSD = LGM_DOMAIN_SUBDOM(theD,sbd);
+
+          for (sfce=0; sfce<LGM_SUBDOMAIN_NSURFACE(lfSD); sfce++)
+          {
+            lfSF = LGM_SUBDOMAIN_SURFACE(lfSD,sfce);
+
+            if (LGM_SURFACE_ID(lfSF) == LGM_SURFACE_ID(theSF))                              /*Jede Surface wird ja nicht nur einmal abgespeichert ?!*/
+            /*d.h. es genuegt nicht die Adressen zu vergleichen sondern die
+               IDs muessen verglichen werden.?*/
+            {
+              /*eine gefunden*/
+              if(LGM_SURFACE_RIGHT(theSF) == sbd)
+              {
+                /*UserWriteF("Surface %d is referenced by Subdomain %d  , [%d (left), %d (right)]\n\n",(int)LGM_SURFACE_ID(theSF),(int)sbd,(int)LGM_SURFACE_LEFT(theSF),LGM_SURFACE_RIGHT(theSF));*/
+                right ++;
+                if(right >1)
+                {
+                  if (!ret) UserWrite("\n");
+                  UserWriteF("Surface %d is referenced by Subdomain %d  more than one time !!, [%d (left), %d (right)]\n\n",(int)LGM_SURFACE_ID(theSF),(int)sbd,(int)LGM_SURFACE_LEFT(theSF),LGM_SURFACE_RIGHT(theSF));
+                  ret = 1;
+                  continue;
+                }
+              }
+              else if(LGM_SURFACE_LEFT(theSF) == sbd)
+              {
+                /*	UserWriteF("Surface %d is referenced by Subdomain %d  ,[%d (left), %d (right)]\n",(int)LGM_SURFACE_ID(theSF),(int)sbd,(int)LGM_SURFACE_LEFT(theSF),LGM_SURFACE_RIGHT(theSF)); */
+                left ++;
+                if(left >1)
+                {
+                  if (!ret) UserWrite("\n");
+                  UserWriteF("Surface %d is referenced by Subdomain %d  more than one time !!,[%d (left), %d (right)]\n",(int)LGM_SURFACE_ID(theSF),(int)sbd,(int)LGM_SURFACE_LEFT(theSF),LGM_SURFACE_RIGHT(theSF));
+                  ret = 1;
+                  continue;
+                }
+              }
+              else
+              {
+                if (!ret) UserWrite("\n");
+                UserWriteF("Surface %d is referenced by an additional Subdomain %d, \n[%d (left), %d (right)]\n\n",(int)LGM_SURFACE_ID(theSF),(int)sbd,(int)LGM_SURFACE_LEFT(theSF),LGM_SURFACE_RIGHT(theSF));
+                ret = 1;
+                continue;
+              }
+
+            }
+          }
+
+        }
+      }
+
+    }
+  }
+  UserWrite(" OK\n");
+
+  UserWrite("Test D:  PolylineTest:");
+
+
+  if(CHECKD ==1)
+  {
+    /*CHECKD*/
+    /*CHECK aller Lines, ob sie gar zyklisch sind und ob sie eine Vorgaenger- und eine Nachfolger-Line besitzen*/
+    for (i=1; i<=LGM_DOMAIN_NSUBDOM(theD); i++)
+    {
+      theSD = LGM_DOMAIN_SUBDOM(theD,i);
+      /*Laufe ueber Surfaces ...*/
+      for (j=0; j<LGM_SUBDOMAIN_NSURFACE(theSD); j++)
+      {
+        theSF = LGM_SUBDOMAIN_SURFACE(theSD,j);
+        for (l=0; l<LGM_SURFACE_NLINE(theSF); l++)
+        {
+          theL = LGM_SURFACE_LINE(theSF, l);
+          NachfolgerLine =0;VorgaengerLine=0;
+          /*zyklische Line ?*/
+          if (LGM_LINE_BEGIN(theL)==LGM_LINE_END(theL))
+          {
+            if (!ret) UserWrite("\n");
+            UserWriteF("Line %d of Surface %d of Subdomain %d is cyclic\n",(int)LGM_LINE_ID(theL),j,i);
+            ret = 1;
+            continue;
+          }
+          /* VorgaengerLine und NachfolgerLine ?*/
+          for (m=0; m<LGM_SURFACE_NLINE(theSF); m++)
+          {
+            if (m != l)                             /*wenn nicht Line selbst...*/
+            {
+              theL2 = LGM_SURFACE_LINE(theSF, m);
+              if (LGM_LINE_BEGIN(theL)==LGM_LINE_END(theL2))
+              {
+                /* NachfolgerLine gefunden*/
+                VorgaengerLine++;
+              }
+              if (LGM_LINE_BEGIN(theL)==LGM_LINE_BEGIN(theL2))
+              {
+                /* NachfolgerLine gefunden*/
+                VorgaengerLine++;
+              }
+              if (LGM_LINE_END(theL)==LGM_LINE_END(theL2))
+              {
+                /* VorgaengerLine gefunden*/
+                NachfolgerLine++;
+              }
+              if (LGM_LINE_END(theL)==LGM_LINE_BEGIN(theL2))
+              {
+                /* VorgaengerLine gefunden*/
+                NachfolgerLine++;
+              }
+            }
+          }
+          if((VorgaengerLine != 1)||(NachfolgerLine != 1))
+          {
+            if (!ret) UserWrite("\n");
+            UserWriteF("Line %d of Surface %d of Subdomain %d \n has no or too much successor/predescessor-Lines\n\n",(int)LGM_LINE_ID(theL),j,i);
+            ret = 1;
+            continue;
+          }
+        }
+      }
+    }
+  }
+  UserWrite(" OK\n");
+  UserWrite("Test E:  unused surface-Points:");
+
+
+  if(CHECKE ==1)
+  {
+    /*CHECKE*/
+    /*laufe ueber Points der Surface und suche zu jedem Point, ob es mind. ein Triangle
+       gibt, das es in dieser Surface gibt, und das diesen Point besitzt.
+       d.h. Pruefe ob die Surface Points besitzt, die von keinem Triangle referenziert werden.
+       =>{ErrorCase}*/
+    /*Laufe ueber alle Subdomains:*/
+
+    for (i=1; i<=LGM_DOMAIN_NSUBDOM(theD); i++)
+    {
+      theSD = LGM_DOMAIN_SUBDOM(theD,i);
+      /*Laufe ueber Surfaces ...*/
+      for (j=0; j<LGM_SUBDOMAIN_NSURFACE(theSD); j++)
+      {
+        theSF = LGM_SUBDOMAIN_SURFACE(theSD,j);
+        /*Laufe ueber Points*/
+
+        lgmd = (LGM_DOMAIN*)aBVP;
+        MarkTmpMem(lgmd->theHeap);
+
+        memsize_variable = LGM_SURFACE_NPOINT(theSF)*sizeof(LGM_POINT*);
+
+        if ((TemporaryPointArray = GetTmpMem(lgmd->theHeap,memsize_variable))==NULL)
+        {
+          PrintErrorMessage('E',"BVP_Check","  ERROR: No memory for TemporaryPointArray");
+          return(1);
+        }
+        /* Mustermemset(nodeflag_array,0,(statistik[0]+1)*sizeof(INT)); */
+        memset(TemporaryPointArray,NULL,memsize_variable);
+
+
+        /*den allerersten Corner vor der Schleife eintargen*/
+        TemporaryPointArray[0] = LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSF,0),0);
+        CornerCounter = 1;
+        /*laufe ueber alle Dreiecke der Surface*/
+        for(m=0; m<LGM_SURFACE_NTRIANGLE(theSF); m++)
+        {
+          TheTria = LGM_SURFACE_TRIANGLE(theSF,m);
+
+          /*Suche welche Corners bereits existieren*/
+          Lf_Var = 0;
+          NewCorners[0] = 1;
+          NewCorners[1] = 1;
+          NewCorners[2] = 1;
+          while((Lf_Var != LGM_SURFACE_NPOINT(theSF)) &&(TemporaryPointArray[Lf_Var] != NULL))
+          {
+            if(TemporaryPointArray[Lf_Var] == LGM_TRIANGLE_CORNER(TheTria,0))
+            {
+              NewCorners[0] = 0;                                  /*gibt es bereits*/
+            }
+            if(TemporaryPointArray[Lf_Var] == LGM_TRIANGLE_CORNER(TheTria,1))
+            {
+              NewCorners[1] = 0;                                  /*gibt es bereits*/
+            }
+            if(TemporaryPointArray[Lf_Var] == LGM_TRIANGLE_CORNER(TheTria,2))
+            {
+              NewCorners[2] = 0;                                  /*gibt es bereits*/
+            }
+            Lf_Var++;
+          }                      /*end of while*/
+          if(NewCorners[0] == 1)
+          {
+            /*d.h. muss noch eingetragen werden*/
+            if(Lf_Var == LGM_SURFACE_NPOINT(theSF))
+            {
+              if (!ret) UserWrite("\n");
+              UserWriteF("Surface %d of Subdomain %d \n has got more different CornerIDs than available Points !!!\n\n",j,i);
+              ret = 1;
+              continue;
+            }
+            else if(CornerCounter == LGM_SURFACE_NPOINT(theSF))
+            {
+              if (!ret) UserWrite("\n");
+              UserWriteF("CornerCounter too big - Surface %d of Subdomain %d \n has got more different CornerIDs than available Points !!!\n\n",j,i);
+              ret = 1;
+              continue;
+            }
+            else
+            {
+              TemporaryPointArray[CornerCounter++] = LGM_TRIANGLE_CORNER(TheTria,0);
+            }
+          }
+          if(NewCorners[1] == 1)
+          {
+            /*d.h. muss noch eingetragen werden*/
+            if(Lf_Var == LGM_SURFACE_NPOINT(theSF))
+            {
+              if (!ret) UserWrite("\n");
+              UserWriteF("Surface %d of Subdomain %d \n has got more different CornerIDs than available Points !!!\n\n",j,i);
+              ret = 1;
+              continue;
+            }
+            else if(CornerCounter == LGM_SURFACE_NPOINT(theSF))
+            {
+              if (!ret) UserWrite("\n");
+              UserWriteF("CornerCounter too big - Surface %d of Subdomain %d \n has got more different CornerIDs than available Points !!!\n\n",j,i);
+              ret = 1;
+              continue;
+            }
+            else
+            {
+              TemporaryPointArray[CornerCounter++] = LGM_TRIANGLE_CORNER(TheTria,1);
+            }
+          }
+          if(NewCorners[2] == 1)
+          {
+            /*d.h. muss noch eingetragen werden*/
+            if(Lf_Var == LGM_SURFACE_NPOINT(theSF))
+            {
+              if (!ret) UserWrite("\n");
+              UserWriteF("Surface %d of Subdomain %d \n has got more different CornerIDs than available Points !!!\n\n",j,i);
+              ret = 1;
+              continue;
+            }
+            else if(CornerCounter == LGM_SURFACE_NPOINT(theSF))
+            {
+              if (!ret) UserWrite("\n");
+              UserWriteF("CornerCounter too big - Surface %d of Subdomain %d \n has got more different CornerIDs than available Points !!!\n\n",j,i);
+              ret = 1;
+              continue;
+            }
+            else
+            {
+              TemporaryPointArray[CornerCounter++] = LGM_TRIANGLE_CORNER(TheTria,2);
+            }
+          }
+        }
+
+        /*Nun muessen alle CornerIDs gefunden worden sein:*/
+        if(CornerCounter < LGM_SURFACE_NPOINT(theSF))
+        {
+          if (!ret) UserWrite("\n");
+          UserWriteF("Surface %d of Subdomain %d \n has got unused Points !!!\n\n",j,i);
+          ret = 1;
+          continue;
+        }
+        /*Hat ein Point kein Flag erhalten und ist somit in keinem einzigen Dreieck benutzt?*/
+        for(p=0; p<LGM_SURFACE_NPOINT(theSF); p++)
+        {
+          if(TemporaryPointArray[p] == NULL)
+          {
+            if (!ret) UserWrite("\n");
+            UserWriteF("The %d . Point of Surface %d of Subdomain %d \n ist not (!) used in any Triangle of that Surface !!!\n\n",p,j,i);
+            ret = 1;
+            continue;
+          }
+        }
+
+        ReleaseTmpMem(lgmd->theHeap);
+
+      }
+    }
+  }
+  UserWrite(" OK\n");
+
+
+  /**********************/
+  /*Pruefe die  Dreiecke*/
+  /**********************/
+  UserWrite("Test F: TriangleNeighbourhood and -orientation:");
+  if(CHECKF ==1)
+  {
+    /*CHECKF*/
+    /*Gebe die 3 NachbarTriangles an und pruefe ob es ueberhaupt ein Nachbartriangle ist und ob
+       die selbe Direction vorliegt! d.h dass die beiden gemeinsamen IDs in der umgekehrten
+       Reihenfolge durchlaufen werden. und pruefe auch ob 3 unterschiedliche CornerIDs vorliegen*/
+    for (i=1; i<=LGM_DOMAIN_NSUBDOM(theD); i++)
+    {
+      theSD = LGM_DOMAIN_SUBDOM(theD,i);
+      /*Laufe ueber Surfaces ...*/
+      for (j=0; j<LGM_SUBDOMAIN_NSURFACE(theSD); j++)
+      {
+        theSF = LGM_SUBDOMAIN_SURFACE(theSD,j);
+        /*Laufe ueber die Triangles*/
+        for(m=0; m<LGM_SURFACE_NTRIANGLE(theSF); m++)
+        {
+          TheTria = LGM_SURFACE_TRIANGLE(theSF,m);
+          /*Hat Tria 3 unterschiedliche Corner IDs?*/
+          if((LGM_TRIANGLE_CORNER(TheTria,0) == LGM_TRIANGLE_CORNER(TheTria,1)) ||
+             (LGM_TRIANGLE_CORNER(TheTria,1) == LGM_TRIANGLE_CORNER(TheTria,2)) ||
+             (LGM_TRIANGLE_CORNER(TheTria,0) == LGM_TRIANGLE_CORNER(TheTria,2))   )
+          {
+            if (!ret) UserWrite("\n");
+            UserWriteF("The %d . Triangle of Surface %d of Subdomain %d \n doesnt have 3 different CornerIDs !!!\n\n",m,j,i);
+            ret = 1;
+            continue;
+          }
+
+          /*Laufe ueber die Nachbarn*/
+          for(p=0; p<3; p++)
+          {
+            /*wenn ueberhaupt ein Nachbar ...*/
+            if(LGM_TRIANGLE_NEIGHBOR(TheTria, p) != -1)
+            {
+              TheNgbTria = LGM_SURFACE_TRIANGLE(theSF, (LGM_TRIANGLE_NEIGHBOR(TheTria, p)));
+              /*Hat TheNgbTria 3 unterschiedliche Corner IDs?*/
+              if((LGM_TRIANGLE_CORNER(TheNgbTria,0) == LGM_TRIANGLE_CORNER(TheNgbTria,1)) ||
+                 (LGM_TRIANGLE_CORNER(TheNgbTria,1) == LGM_TRIANGLE_CORNER(TheNgbTria,2)) ||
+                 (LGM_TRIANGLE_CORNER(TheNgbTria,0) == LGM_TRIANGLE_CORNER(TheNgbTria,2))   )
+              {
+                if (!ret) UserWrite("\n");
+                UserWriteF("The %d .Triangle of Surface %d of Subdomain %d\n  doesnt have 3 different CornerIDs !!!\n\n",m,j,i);
+                ret = 1;
+                continue;
+              }
+              /*laufe ueber CornerIDs von Tria und suche die beiden gemeinsamen IDS */
+              /*laufe ueber CornerIDs von TheTria*/
+              commmonIDs_Counter = -1;
+              for(tr_index = 0; tr_index<3; tr_index++)
+              {
+                /*laufe ueber CornerIDs von TheNgbTria*/
+                for(ntr_index = 0; ntr_index<3; ntr_index++)
+                {
+                  /*Sind die CornerIDs identisch?*/
+                  if(LGM_TRIANGLE_CORNER(TheTria,tr_index) == LGM_TRIANGLE_CORNER(TheNgbTria,ntr_index))
+                  {
+                    commmonIDs_Counter++;
+                    if(commmonIDs_Counter ==2)
+                    {
+                      if (!ret) UserWrite("\n");
+                      UserWriteF("The %d . Triangle and its negibour the %d . Triangle \n of Surface %d of Subdomain %d \n do have the same CornerIDs !!!\n\n",m,LGM_TRIANGLE_NEIGHBOR(TheTria, p),j,i);
+                      ret = 1;
+                      continue;
+                    }
+                    else
+                    {
+                      /*die beiden Indizes des gemeinsamen COrners merken:*/
+                      indexesTheTria[commmonIDs_Counter] = tr_index;
+                      indexesTheNgbTria[commmonIDs_Counter] = ntr_index;
+                    }
+                  }
+                }
+              }
+              if(commmonIDs_Counter != 1)
+              {
+                if (!ret) UserWrite("\n");
+                UserWriteF("The %d . Triangle and its negibour the %d . Triangle \n of Surface %d of Subdomain %d \n have less than 2 common CornerIDs !!!\n\n",m,LGM_TRIANGLE_NEIGHBOR(TheTria, p),j,i);
+                ret = 1;
+                continue;
+              }
+              else
+              {
+                /*Pruefung der Orientierung der beiden benachbarten Dreiecke*/
+                /*Die beiden gemeinsamen Corneer muessen in unterschiedlicher Reihenfolge vorkommen*/
+
+                /*Reihenfolge der gemeinsamen CornerIDs bei TheTria*/
+                if((indexesTheTria[0] == 0) && (indexesTheTria[1] == 2))
+                {
+                  richtung_TheTria = -1;
+                }
+                else
+                {
+                  richtung_TheTria = 1;
+                }
+                /*Reihenfolge der gemeinsamen CornerIDs bei TheNgbTria*/
+                if( ((indexesTheNgbTria[0] == 0) && (indexesTheNgbTria[1] == 2)) ||
+                    ((indexesTheNgbTria[0] == 1) && (indexesTheNgbTria[1] == 0)) ||
+                    ((indexesTheNgbTria[0] == 2) && (indexesTheNgbTria[1] == 1))
+                    )
+                {
+                  richtung_TheNgbTria = -1;
+                }
+                else
+                {
+                  richtung_TheNgbTria = 1;
+                }
+
+                /*Sind die beiden Durchlaufrichtungen falscherwiese identisch ?*/
+                if(richtung_TheTria==richtung_TheNgbTria)
+                {
+                  if (!ret) UserWrite("\n");
+                  UserWriteF("TriangleOrientationError: The 2 common Corners of the \n  %d . Triangle and its negibour the \n %d . Triangle of Surface %d of Subdomain %d \n have the same direction!!!\n\n",m,LGM_TRIANGLE_NEIGHBOR(TheTria, p),j,i);
+                  ret = 1;
+                  continue;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  UserWrite(" OK if ANSYS-INPUT \n");
+
+  UserWrite("Test G: double triangles:");
+
+  if(CHECKG ==1)
+  {
+    /*CHECKG*/
+    /*Pruefe zu jedem Triangle, ob es nur einmal vorkommt*/
+    for (i=1; i<=LGM_DOMAIN_NSUBDOM(theD); i++)
+    {
+      theSD = LGM_DOMAIN_SUBDOM(theD,i);
+      /*Laufe ueber Surfaces ...*/
+      for (j=0; j<LGM_SUBDOMAIN_NSURFACE(theSD); j++)
+      {
+        theSF = LGM_SUBDOMAIN_SURFACE(theSD,j);
+        /*Laufe ueber die Triangles*/
+        for(m=0; m<LGM_SURFACE_NTRIANGLE(theSF); m++)
+        {
+          TheTria = LGM_SURFACE_TRIANGLE(theSF,m);
+
+          for (i2=1; i2<=LGM_DOMAIN_NSUBDOM(theD); i2++)
+          {
+            theSD2 = LGM_DOMAIN_SUBDOM(theD,i2);
+            /*Laufe ueber Surfaces ...*/
+            for (j2=0; j2<LGM_SUBDOMAIN_NSURFACE(theSD2); j2++)
+            {
+              theSF2 = LGM_SUBDOMAIN_SURFACE(theSD2,j2);
+              /*Laufe ueber die Triangles*/
+              for(m2=0; m2<LGM_SURFACE_NTRIANGLE(theSF2); m2++)
+              {
+                TheTria2 = LGM_SURFACE_TRIANGLE(theSF2,m2);
+                if(TheTria != TheTria2)
+                {
+                  yes[0] = 0;
+                  yes[1] = 0;
+                  yes[2] = 0;
+                  /*laufe ueber die 3 Corners von TheTria*/
+                  for(tr_index=0; tr_index<3; tr_index++)
+                  {
+                    Point_TheTria = LGM_TRIANGLE_CORNER(TheTria,tr_index);
+                    /*laufe ueber die 3 Corners von TheNgbTria*/
+                    for(ntr_index=0; ntr_index<3; ntr_index++)
+                    {
+                      Point_TheNgbTria = LGM_TRIANGLE_CORNER(TheTria2,ntr_index);
+                      if(LGM_POINT_DIST(Point_TheTria,Point_TheNgbTria) < 1E-6)
+                      {
+                        yes[tr_index] = 1;
+                      }
+                    }
+                  }
+                  /*UserWriteF("The %d .Triangle of Surface %d of Subdomain %d and The \n %d . Triangle of Surface %d of Subdomain %d \n have the following yes-array: [0]: %d, [1]: %d, [2]: %d\n\n",m,j,i,m2,j2,i2,yes[0],yes[1],yes[2]); */
+                  if((yes[0] == 1)&&(yes[1] == 1)&&(yes[2] == 1))
+                  {
+                    if (!ret) UserWrite("\n");
+                    UserWriteF("The %d .Triangle of Surface %d of Subdomain %d and The \n %d . Triangle of Surface %d of Subdomain %d \n have identical corners !!!!!\n\n",m,j,i,m2,j2,i2);
+                    ret = 1;
+                    continue;
+                  }
+                }
+              }
+            }
+          }
+
+        }
+      }
+    }
+  }
+
+  UserWrite(" OK\n\n");
+  return (ret);
 }
-
-static INT Get_NBNDS_Per_Subdomain      (HEAP *Heap, LGM_DOMAIN *theDomain, INT **sizes, DOUBLE h);
-static INT DiscretizeLine                       (HEAP *Heap, LGM_LINE *theLine, MESH *theMesh, DOUBLE h);
-static INT Get_NBNDP                            (LGM_DOMAIN *theDomain, INT *nBND, DOUBLE h);
-static INT DiscretizeDomain             (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
-static INT DiscretizeSurface                    (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
-static INT DiscretizeSurfaceold                 (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
-static INT DiscretizeLines                              (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
-static INT TransferLines2Mesh                   (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
-static INT TransferSurfaces2Mesh                (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
 
 /* domain interface function: for description see domain.h */
 MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
