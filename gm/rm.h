@@ -58,8 +58,9 @@
 /* -> recompile rm.c refine.c ugm.c gmcheck.c ../ui/commands.c        */
 /* touch rm.c refine.c ugm.c gmcheck.c ../ui/commands.c; ugmake gm; ugmake ui */
 
+#ifdef ModelP
 #define TET_RULESET
-
+#endif
 
 /* defines for edge types */
 #define INNER_EDGE          1
