@@ -8094,6 +8094,7 @@ static INT EXDisplay (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nv",(int)np->nv);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"count",(int)np->count);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"print decomp time",(int)np->printdecomptime);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"f-mode",(int)np->fmode);
 
   return (0);
 }

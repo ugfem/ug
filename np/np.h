@@ -244,6 +244,23 @@ INT dm0add         (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC 
 INT dmataddunit    (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M,
                     DOUBLE a);
 
+/* blas level 1 (extended vector operations) */
+
+INT deset          (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a);
+INT deadd          (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y);
+INT decopy             (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y);
+INT dedotx         (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y, EVEC_SCALAR a);
+INT denrm2x        (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, EVEC_SCALAR a);
+INT dedotw         (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, const EVECDATA_DESC *y, const EVEC_SCALAR w, DOUBLE *a);
+INT descal         (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a);
+INT deaxpy         (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a, const EVECDATA_DESC *y);
+
+/* blas level 2 (matrix operations) */
+
+INT dematmul_minus (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y);
+INT dematmul       (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y);
+INT dematset       (MULTIGRID *mg, INT fl, INT tl, INT mode, EMATDATA_DESC *M, DOUBLE a);
+
 /* for compatibility only */
 
 #define l_dset(g,x,xclass,a)               dset(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,a)

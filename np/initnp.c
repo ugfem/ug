@@ -58,6 +58,8 @@
 #include "pstep.h"
 #include "project.h"
 #include "reinit.h"
+#include "els.h"
+#include "eiter.h"
 
 #include "initnp.h"
 #include "numproc.h"
@@ -253,6 +255,18 @@ INT InitNumerics ()
 
   /* init slu */
   if ((err=InitSLU())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init els */
+  if ((err=InitELinearSolver())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init eiter */
+  if ((err=InitEIter())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }

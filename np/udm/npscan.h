@@ -110,10 +110,12 @@ INT esc_disp     (EVEC_SCALAR x, const EVECDATA_DESC *theVD, const char *name);
 INT sc_cmp           (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD);
 INT esc_cmp      (EVEC_SCALAR x, const EVEC_SCALAR y, const EVECDATA_DESC *theVD);
 INT sc_eq            (VEC_SCALAR x, const VEC_SCALAR y, DOUBLE ac, const VECDATA_DESC *theVD);
+INT esc_eq           (EVEC_SCALAR x, const EVEC_SCALAR y, DOUBLE ac, const EVECDATA_DESC *theVD);
 INT sc_mul           (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, const VECDATA_DESC *theVD);
 INT esc_mul      (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVECDATA_DESC *theVD);
-INT sc_mul_check (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z,
-                  const VECDATA_DESC *theVD);
+INT sc_mul_check (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, const VECDATA_DESC *theVD);
+INT esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVECDATA_DESC *theVD);
+
 
 /* scanning argument lists                                                  */
 INT ReadArgvDisplay (INT argc, char **argv);

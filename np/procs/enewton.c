@@ -45,6 +45,7 @@
 
 #include "nls.h"
 #include "ls.h"
+#include "els.h"
 #include "assemble.h"
 #include "transfer.h"
 #include "enewton.h"
@@ -90,6 +91,7 @@ typedef struct
   NP_ENL_SOLVER nlsolver;               /* derived from abstract class NP_ENL_SOLVER		*/
 
   /* parameters to be set via npinit */
+  NP_ELINEAR_SOLVER *esolve;            /* uses linear extended solver					*/
   NP_LINEAR_SOLVER *solve;              /* uses linear solver							*/
   NP_TRANSFER *trans;                           /* uses transgrid								*/
   INT displayMode;                              /* for PCR										*/
@@ -131,6 +133,7 @@ typedef struct
 static INT ENonLinearDefect (MULTIGRID *mg, INT level, INT init, EVECDATA_DESC *x, NP_ENEWTON *newton, NP_ENL_ASSEMBLE *ass, EVEC_SCALAR defect, INT *error)
 {
   LRESULT lr;
+  ELRESULT elr;
   INT i,n;
 
   n=VD_NCOMP(x->vd);
@@ -154,7 +157,7 @@ static INT ENonLinearDefect (MULTIGRID *mg, INT level, INT init, EVECDATA_DESC *
 
   /* compute new nonlinear defect */
   CSTART();
-  for (i=0; i<newton->d->n; i++) newton->d->e[i]=0.0;dset(mg,0,level,ALL_VECTORS,newton->d->vd,0.0);
+  for (i=0; i<newton->d->n; i++) EVDD_E(newton->d,level,i)=0.0;dset(mg,0,level,ALL_VECTORS,newton->d->vd,0.0);
   *error = 0;
   if ((*ass->ENLAssembleDefect)(ass,0,level,x,newton->d,newton->J,error))                                                 { *error = __LINE__; REP_ERR_RETURN(*error); }
   if (*error) return(0);
@@ -168,9 +171,17 @@ static INT ENonLinearDefect (MULTIGRID *mg, INT level, INT init, EVECDATA_DESC *
   }
 
   /* compute norm of defect */
-  if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v->vd,newton->d->vd,newton->J->mm,&lr))            { *error = __LINE__; REP_ERR_RETURN(*error); }
-  for (i=0; i<n; i++) defect[i] = lr.last_defect[i];
-  for (i=0; i<x->n; i++) defect[i+n] = ABS(newton->d->e[i]);
+  if (newton->solve!=NULL)
+  {
+    if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v->vd,newton->d->vd,newton->J->mm,&lr))            { *error = __LINE__; REP_ERR_RETURN(*error); }
+    for (i=0; i<n; i++) defect[i] = lr.last_defect[i];
+    for (i=0; i<x->n; i++) defect[i+n] = ABS(EVDD_E(newton->d,level,i));
+  }
+  else
+  {
+    if ((*newton->esolve->Residuum)(newton->esolve,0,level,newton->v,newton->d,newton->J,&elr))             { *error = __LINE__; REP_ERR_RETURN(*error); }
+    for (i=0; i<n+x->n; i++) defect[i] = elr.last_defect[i];
+  }
 
   return (0);
 }
@@ -194,20 +205,41 @@ static INT ENewtonPreProcess  (NP_ENL_SOLVER *solve, INT level, EVECDATA_DESC *x
     UserWrite("Newton: newton->trans->ProjectSolution not defined\n");
     NP_RETURN(1,result[0]);
   }
-  if (newton->solve->base.status < NP_ACTIVE)
+  if (newton->solve!=NULL)
   {
-    UserWrite("Newton: newton->solve not active\n");
-    NP_RETURN(1,result[0]);
+    if (newton->solve->base.status < NP_ACTIVE)
+    {
+      UserWrite("Newton: newton->solve not active\n");
+      NP_RETURN(1,result[0]);
+    }
+    if (newton->solve->Solver==NULL)
+    {
+      UserWrite("Newton: newton->solve->Solver not defined\n");
+      NP_RETURN(1,result[0]);
+    }
+    if (newton->solve->Residuum==NULL)
+    {
+      UserWrite("Newton: newton->solve->Residuum not defined\n");
+      NP_RETURN(1,result[0]);
+    }
   }
-  if (newton->solve->Solver==NULL)
+  else
   {
-    UserWrite("Newton: newton->solve->Solver not defined\n");
-    NP_RETURN(1,result[0]);
-  }
-  if (newton->solve->Residuum==NULL)
-  {
-    UserWrite("Newton: newton->solve->Residuum not defined\n");
-    NP_RETURN(1,result[0]);
+    if (newton->esolve->base.status < NP_ACTIVE)
+    {
+      UserWrite("Newton: newton->esolve not active\n");
+      NP_RETURN(1,result[0]);
+    }
+    if (newton->esolve->Solver==NULL)
+    {
+      UserWrite("Newton: newton->esolve->Solver not defined\n");
+      NP_RETURN(1,result[0]);
+    }
+    if (newton->esolve->Residuum==NULL)
+    {
+      UserWrite("Newton: newton->esolve->Residuum not defined\n");
+      NP_RETURN(1,result[0]);
+    }
   }
   return(0);
 }
@@ -241,6 +273,7 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
   INT bl;                                                               /* baselevel returned by preprocess		*/
   INT error;                                                            /* for return value						*/
   LRESULT lr;                                                           /* result of linear solver				*/
+  ELRESULT elr;                                                 /* result of ext. linear solver			*/
   DOUBLE s_tmp;                         /* tmp norm                             */
   INT use_second;
   DOUBLE eh[EXTENSION_MAX];                 /* extension help vector                */
@@ -329,7 +362,7 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
 
     /* compute jacobian */
     CSTART();
-    for (i=0; i<newton->v->n; i++) newton->v->e[i]=0.0;dset(mg,0,level,ALL_VECTORS,newton->v->vd,0.0);
+    for (i=0; i<newton->v->n; i++) EVDD_E(newton->v,level,i)=0.0;dset(mg,0,level,ALL_VECTORS,newton->v->vd,0.0);
     if ((*ass->ENLAssembleMatrix)(ass,0,level,x,newton->d,newton->v,newton->J,&error))
     {
       res->error_code = __LINE__;
@@ -344,100 +377,154 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
     }
 
     /* prepare and solve linear system */
-    CSTART();
-    for (i=0; i<n_unk; i++) linred[i] = red_factor[i];bl = 0;
-    if (newton->solve->PreProcess!=NULL)
-      if ((*newton->solve->PreProcess)(newton->solve,level,newton->v->vd,newton->d->vd,newton->J->mm,&bl,&error))
+    if (newton->solve!=NULL)
+    {
+      /* solve extended system using schur-complement */
+      CSTART();
+      for (i=0; i<n_unk; i++) linred[i] = red_factor[i];bl = 0;
+      if (newton->solve->PreProcess!=NULL)
+        if ((*newton->solve->PreProcess)(newton->solve,level,newton->v->vd,newton->d->vd,newton->J->mm,&bl,&error))
+        {
+          UserWriteF("ENewtonSolver: solve->PreProcess failed, error code %d\n",error); res->error_code = __LINE__;
+                        #ifndef ModelP
+          REP_ERR_RETURN (res->error_code);
+                                        #endif
+          REP_ERR_INC;
+                                        #ifndef Debug
+          return (res->error_code);
+                                        #endif
+        }
+
+      /* build Schur complement */
+      if (AllocVDFromVD(mg,0,level,x->vd,&(newton->s))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+      for (i=0; i<newton->d->n; i++)
       {
-        UserWriteF("ENewtonSolver: solve->PreProcess failed, error code %d\n",error); res->error_code = __LINE__;
-                #ifndef ModelP
-        REP_ERR_RETURN (res->error_code);
-                                #endif
-        REP_ERR_INC;
-                                #ifndef Debug
-        return (res->error_code);
-                                #endif
+        dcopy(mg,0,level,ALL_VECTORS,newton->s,newton->J->me[i]);
+        dset(mg,0,level,ALL_VECTORS,newton->v->vd,0.0);
+        if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v->vd,newton->s,newton->J->mm,&lr)) { res->error_code = __LINE__; goto exit; }
+        if ((*newton->solve->Solver)(newton->solve,level,newton->v->vd,newton->s,newton->J->mm,newton->solve->abslimit,linred,&lr)) { res->error_code = __LINE__; goto exit; }
+        res->total_linear_iterations += lr.number_of_linear_iterations;
+        res->max_linear_iterations = MAX(res->max_linear_iterations,lr.number_of_linear_iterations);
+        for (j=0; j<newton->d->n; j++)
+        {
+          if (ddot(mg,0,level,ON_SURFACE,newton->J->em[j],newton->v->vd,&(sc[i*newton->d->n+j])))
+          {
+            res->error_code = __LINE__;
+            goto exit;
+          }
+          sc[i*newton->d->n+j]=EMDD_EE(newton->J,level,i*newton->d->n+j)-sc[i*newton->d->n+j];
+        }
       }
 
-    /* build Schur complement */
-    if (AllocVDFromVD(mg,0,level,x->vd,&(newton->s))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
-    for (i=0; i<newton->d->n; i++)
-    {
-      dcopy(mg,0,level,ALL_VECTORS,newton->s,newton->J->me[i]);
+      /* solve */
+      dcopy(mg,0,level,ALL_VECTORS,newton->s,newton->d->vd);
       dset(mg,0,level,ALL_VECTORS,newton->v->vd,0.0);
       if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v->vd,newton->s,newton->J->mm,&lr)) { res->error_code = __LINE__; goto exit; }
-      if ((*newton->solve->Solver)(newton->solve,level,newton->v->vd,newton->s,newton->J->mm,newton->solve->abslimit,linred,&lr)) { res->error_code = __LINE__; goto exit; }
+      if ((*newton->solve->Solver)(newton->solve,level,newton->v->vd,newton->s,newton->J->mm,newton->solve->abslimit,linred,&lr))
+      {
+        res->error_code = __LINE__;
+        goto exit;
+      }
       res->total_linear_iterations += lr.number_of_linear_iterations;
       res->max_linear_iterations = MAX(res->max_linear_iterations,lr.number_of_linear_iterations);
-      for (j=0; j<newton->d->n; j++)
+      for (i=0; i<newton->d->n; i++)
       {
-        if (ddot(mg,0,level,ON_SURFACE,newton->J->em[j],newton->v->vd,&(sc[i*newton->d->n+j])))
+        if (ddot(mg,0,level,ON_SURFACE,newton->J->em[i],newton->v->vd,&(eh[i])))
         {
           res->error_code = __LINE__;
           goto exit;
         }
-        sc[i*newton->d->n+j]=newton->J->ee[i*newton->d->n+j]-sc[i*newton->d->n+j];
+        eh[i]=EVDD_E(newton->d,level,i)-eh[i];
       }
-    }
-
-    /* solve */
-    dcopy(mg,0,level,ALL_VECTORS,newton->s,newton->d->vd);
-    dset(mg,0,level,ALL_VECTORS,newton->v->vd,0.0);
-    if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v->vd,newton->s,newton->J->mm,&lr)) { res->error_code = __LINE__; goto exit; }
-    if ((*newton->solve->Solver)(newton->solve,level,newton->v->vd,newton->s,newton->J->mm,newton->solve->abslimit,linred,&lr))
-    {
-      res->error_code = __LINE__;
-      goto exit;
-    }
-    res->total_linear_iterations += lr.number_of_linear_iterations;
-    res->max_linear_iterations = MAX(res->max_linear_iterations,lr.number_of_linear_iterations);
-    for (i=0; i<newton->d->n; i++)
-    {
-      if (ddot(mg,0,level,ON_SURFACE,newton->J->em[i],newton->v->vd,&(eh[i])))
+      if (SolveFullMatrix(newton->d->n,EVDD_E_PTR(newton->v,level),sc,eh)) { res->error_code = __LINE__; goto exit; }
+      dcopy(mg,0,level,ALL_VECTORS,newton->s,newton->d->vd);
+      for (i=0; i<newton->d->n; i++)
+        if (daxpy(mg,0,level,ALL_VECTORS,newton->s,-1.0*EVDD_E(newton->v,level,i),newton->J->me[i])) { res->error_code = __LINE__; goto exit; }
+      dset(mg,0,level,ALL_VECTORS,newton->v->vd,0.0);
+      if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v->vd,newton->s,newton->J->mm,&lr)) { res->error_code = __LINE__; goto exit; }
+      if ((*newton->solve->Solver)(newton->solve,level,newton->v->vd,newton->s,newton->J->mm,newton->solve->abslimit,linred,&lr))
       {
-        res->error_code = __LINE__;
+        res->error_code = 0;
         goto exit;
       }
-      eh[i]=newton->d->e[i]-eh[i];
-    }
-    if (SolveFullMatrix(newton->d->n,newton->v->e,sc,eh)) { res->error_code = __LINE__; goto exit; }
-    dcopy(mg,0,level,ALL_VECTORS,newton->s,newton->d->vd);
-    for (i=0; i<newton->d->n; i++)
-      if (daxpy(mg,0,level,ALL_VECTORS,newton->s,-1.0*newton->v->e[i],newton->J->me[i])) { res->error_code = __LINE__; goto exit; }
-    dset(mg,0,level,ALL_VECTORS,newton->v->vd,0.0);
-    if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v->vd,newton->s,newton->J->mm,&lr)) { res->error_code = __LINE__; goto exit; }
-    if ((*newton->solve->Solver)(newton->solve,level,newton->v->vd,newton->s,newton->J->mm,newton->solve->abslimit,linred,&lr))
-    {
-      res->error_code = 0;
-      goto exit;
-    }
-    res->total_linear_iterations += lr.number_of_linear_iterations;
-    res->max_linear_iterations = MAX(res->max_linear_iterations,lr.number_of_linear_iterations);
-    if (newton->solve->PostProcess!=NULL)
-      if ((*newton->solve->PostProcess)(newton->solve,level,newton->v->vd,newton->d->vd,newton->J->mm,&error))
-      {
-        res->error_code = __LINE__;
-        REP_ERR_RETURN(res->error_code);
-      }
-    CSTOP(linear_t,linear_c);
-    if (UG_math_error) { UG_math_error = 0; res->error_code = __LINE__; }
-    if (FreeVD(mg,0,level,newton->s)) REP_ERR_RETURN(1);
+      res->total_linear_iterations += lr.number_of_linear_iterations;
+      res->max_linear_iterations = MAX(res->max_linear_iterations,lr.number_of_linear_iterations);
+      if (newton->solve->PostProcess!=NULL)
+        if ((*newton->solve->PostProcess)(newton->solve,level,newton->v->vd,newton->d->vd,newton->J->mm,&error))
+        {
+          res->error_code = __LINE__;
+          REP_ERR_RETURN(res->error_code);
+        }
+      CSTOP(linear_t,linear_c);
+      if (UG_math_error) { UG_math_error = 0; res->error_code = __LINE__; }
+      if (FreeVD(mg,0,level,newton->s)) REP_ERR_RETURN(1);
 
-    /* if linear solver did not converge, return here */
-    if (!lr.converged)
-    {
-      UserWrite("\nLinear solver did not converge in Newton method\n");
-      if (newton->linearRate < 2)
+      /* if linear solver did not converge, return here */
+      if (!lr.converged)
       {
-        res->error_code = 0;                     /* no error but exit */
-        goto exit;
+        UserWrite("\nLinear solver did not converge in Newton method\n");
+        if (newton->linearRate < 2)
+        {
+          res->error_code = 0;                           /* no error but exit */
+          goto exit;
+        }
       }
     }
+    else if (newton->esolve!=NULL)
+    {
+      /* solve extended linear system with extended facilities */
+
+      /* preprocess */
+      CSTART();
+      for (i=0; i<n_unk; i++) linred[i] = red_factor[i];bl = 0;
+      if (newton->esolve->PreProcess!=NULL)
+        if ((*newton->esolve->PreProcess)(newton->esolve,level,newton->v,newton->d,newton->J,&bl,&error))
+        {
+          UserWriteF("ENewtonSolver: esolve->PreProcess failed, error code %d\n",error); res->error_code = __LINE__;
+                        #ifndef ModelP
+          REP_ERR_RETURN (res->error_code);
+                                        #endif
+          REP_ERR_INC;
+                                        #ifndef Debug
+          return (res->error_code);
+                                        #endif
+        }
+
+      /* solve */
+      deset(mg,0,level,ALL_VECTORS,newton->v,0.0);
+      if ((*newton->esolve->Residuum)(newton->esolve,0,level,newton->v,newton->d,newton->J,&elr)) { res->error_code = __LINE__; goto exit; }
+      if ((*newton->esolve->Solver)(newton->esolve,level,newton->v,newton->d,newton->J,newton->esolve->abslimit,linred,&elr)) { res->error_code = __LINE__; goto exit; }
+      res->total_linear_iterations += elr.number_of_linear_iterations;
+      res->max_linear_iterations = MAX(res->max_linear_iterations,elr.number_of_linear_iterations);
+
+      /* postprocess */
+      if (newton->esolve->PostProcess!=NULL)
+        if ((*newton->esolve->PostProcess)(newton->esolve,level,newton->v,newton->d,newton->J,&error))
+        {
+          res->error_code = __LINE__;
+          REP_ERR_RETURN(res->error_code);
+        }
+      CSTOP(linear_t,linear_c);
+      if (UG_math_error) { UG_math_error = 0; res->error_code = __LINE__; }
+
+      /* if linear solver did not converge, return here */
+      if (!elr.converged)
+      {
+        UserWrite("\nLinear solver did not converge in Newton method\n");
+        if (newton->linearRate < 2)
+        {
+          res->error_code = 0;                           /* no error but exit */
+          goto exit;
+        }
+      }
+    }
+    else
+      assert(0);
 
     /* update nonlinear solution */
     daxpy(mg,0,level,ALL_VECTORS,x->vd,-1.0,newton->v->vd);
     for (i=0; i<x->n; i++)
-      x->e[i]-=newton->v->e[i];
+      EVDD_E(x,level,i)-=EVDD_E(newton->v,level,i);
 
     /* print norm of defect */
     if (ENonLinearDefect(mg,level,FALSE,x,newton,ass,defect,&error))
@@ -526,8 +613,12 @@ static INT ENewtonInit (NP_BASE *base, INT argc, char **argv)
   newton->solve = (NP_LINEAR_SOLVER *) ReadArgvNumProc(base->mg,"S",LINEAR_SOLVER_CLASS_NAME,argc,argv);
   if (newton->solve == NULL)
   {
-    PrintErrorMessage('E',"ENewtonInit","cannot read solve num proc");
-    REP_ERR_RETURN(NP_NOT_ACTIVE);
+    newton->esolve = (NP_ELINEAR_SOLVER *) ReadArgvNumProc(base->mg,"S",ELINEAR_SOLVER_CLASS_NAME,argc,argv);
+    if (newton->esolve == NULL)
+    {
+      PrintErrorMessage('E',"ENewtonInit","cannot read neither solve nor esolve num proc");
+      REP_ERR_RETURN(NP_NOT_ACTIVE);
+    }
   }
   if (ReadArgvINT("fi",&(newton->force_iteration),argc,argv)) newton->force_iteration = 0;
   if (ReadArgvINT("maxit",&(newton->maxit),argc,argv)) newton->maxit = 50;
@@ -595,6 +686,8 @@ static INT ENewtonDisplay (NP_BASE *theNumProc)
 
   if (newton->solve != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"S",ENVITEM_NAME(newton->solve));
+  else if (newton->esolve != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"S",ENVITEM_NAME(newton->esolve));
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"S","---");
   if (newton->trans != NULL)

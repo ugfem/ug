@@ -279,6 +279,10 @@ typedef struct {
 
 #define EXTENSION_MAX                   10
 
+#define EVDD_E(v,l,i)                           ((v)->e[l][i])
+#define EVDD_E_PTR(v,l)                         (&EVDD_E(v,l,0))
+#define EVD_NCOMP(v)                (VD_NCOMP((v)->vd)+(v)->n)
+
 typedef struct {
 
   /* fields for environment list variable */
@@ -287,9 +291,12 @@ typedef struct {
   SHORT locked;                         /* locked for dynamic allocation        */
   INT n;                                /* size of extension                    */
   VECDATA_DESC *vd;                     /* vector descriptor                    */
-  DOUBLE e[EXTENSION_MAX];          /* extension                            */
+  DOUBLE e[MAXLEVEL][EXTENSION_MAX];   /* extension                         */
 
 } EVECDATA_DESC;
+
+#define EMDD_EE(m,l,i)                          ((m)->ee[l][i])
+#define EMDD_EE_PTR(m,l)                        (&EMDD_EE(m,l,0))
 
 typedef struct {
 
@@ -301,7 +308,7 @@ typedef struct {
   MATDATA_DESC *mm;                             /* 11-block                     */
   VECDATA_DESC *me[EXTENSION_MAX];              /* 12-block                     */
   VECDATA_DESC *em[EXTENSION_MAX];              /* 21-block                     */
-  DOUBLE ee[EXTENSION_MAX*EXTENSION_MAX];       /* 22-block                     */
+  DOUBLE ee[MAXLEVEL][EXTENSION_MAX*EXTENSION_MAX];       /* 22-block           */
 
 } EMATDATA_DESC;
 

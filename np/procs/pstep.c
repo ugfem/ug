@@ -144,7 +144,7 @@ INT SPS_NLAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u
 
   /* reinit */
   for (i=0; i<sps->pstep.sol_p0->n; i++)
-    if ((*reinit->ReinitProblem)(reinit,sps->name[i],sps->pstep.sol_p1->e[i],&reinit_res)) NP_RETURN(1,*res);
+    if ((*reinit->ReinitProblem)(reinit,sps->name[i],EVDD_E(sps->pstep.sol_p1,tl,i),&reinit_res)) NP_RETURN(1,*res);
 
   return((*tass->TAssembleSolution)(tass,fl,tl,TIME_INFTY,u,res));
 }
@@ -164,7 +164,7 @@ INT SPS_NLAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, 
 
   /* reinit */
   for (i=0; i<sps->pstep.sol_p0->n; i++)
-    if ((*reinit->ReinitProblem)(reinit,sps->name[i],sps->pstep.sol_p1->e[i],&reinit_res)) NP_RETURN(1,*res);
+    if ((*reinit->ReinitProblem)(reinit,sps->name[i],EVDD_E(sps->pstep.sol_p1,tl,i),&reinit_res)) NP_RETURN(1,*res);
 
   /* assemble defect */
   dset(NP_MG(sps),fl,tl,ALL_VECTORS,d,0.0);
@@ -187,7 +187,7 @@ INT SPS_NLAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, 
 
   /* reinit */
   for (i=0; i<sps->pstep.sol_p0->n; i++)
-    if ((*reinit->ReinitProblem)(reinit,sps->name[i],sps->pstep.sol_p1->e[i],&reinit_res)) NP_RETURN(1,*res);
+    if ((*reinit->ReinitProblem)(reinit,sps->name[i],EVDD_E(sps->pstep.sol_p1,tl,i),&reinit_res)) NP_RETURN(1,*res);
 
   return ((*tass->TAssembleMatrix)(tass,fl,tl,TIME_INFTY,-TIME_INFTY,u,d,v,J,res));
 }
@@ -237,13 +237,13 @@ INT SPS_ENLAssembleDefect (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *
 
   /* reinit problem */
   for (i=0; i<u->n; i++)
-    if ((*reinit->ReinitProblem)(reinit,sps->name[i],u->e[i],&reinit_res)) return(1);
+    if ((*reinit->ReinitProblem)(reinit,sps->name[i],EVDD_E(u,tl,i),&reinit_res)) return(1);
 
   /* assemble defect */
   dcopy(NP_MG(sps),fl,tl,ALL_VECTORS,d->vd,x);
   daxpy(NP_MG(sps),fl,tl,ALL_VECTORS,d->vd,-1.0,p);
   ddot(NP_MG(sps),fl,tl,ON_SURFACE,d->vd,t,&r);
-  d->e[0]=r-sps->scale*sps->last_nls_nt;
+  EVDD_E(d,tl,0)=r-sps->scale*sps->last_nls_nt;
 
   dset(NP_MG(sps),fl,tl,ALL_VECTORS,d->vd,0.0);
   if ((*tass->TAssembleDefect)(tass,fl,tl,0.0,-1.0,0.0,current_pstep->sol_p1->vd,d->vd,NULL,res)) NP_RETURN(1,*res);
@@ -286,7 +286,7 @@ static INT l_vector_makeinconsistent_pstep (GRID *g, const VECDATA_DESC *x)
 
 INT SPS_ENLAssembleMatrix (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *u, EVECDATA_DESC *d, EVECDATA_DESC *v, EMATDATA_DESC *J, INT *res)
 {
-  INT i,j;
+  INT i,j,level;
   NP_SPS *sps;
   NP_T_ASSEMBLE *tass;
   NP_REINIT *reinit;
@@ -300,21 +300,21 @@ INT SPS_ENLAssembleMatrix (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *
   assert(sps->n==u->n);
 
   /* assemble matrix */
-  for (i=0; i<u->n; i++) for (j=0; j<u->n; j++) J->ee[i*u->n+j]=0.0;
+  for (level=fl; level<=tl; level++) for (i=0; i<u->n; i++) for (j=0; j<u->n; j++) EMDD_EE(J,level,i*u->n+j)=0.0;
   dset(NP_MG(sps),fl,tl,ALL_VECTORS,J->em[0],0.0);
   for (i=0; i<u->n; i++)
-    if ((*reinit->ReinitProblem)(reinit,sps->name[i],u->e[i],&reinit_res)) return(1);
+    if ((*reinit->ReinitProblem)(reinit,sps->name[i],EVDD_E(u,tl,i),&reinit_res)) return(1);
   if ((*tass->TAssembleDefect)(tass,fl,tl,0.0,-1.0,0.0,u->vd,J->em[0],NULL,res)) NP_RETURN(1,*res);
   if ((*tass->TAssembleDefect)(tass,fl,tl,TIME_INFTY,1.0,-TIME_INFTY,u->vd,J->em[0],NULL,res)) NP_RETURN(1,*res);
   for (i=0; i<u->n; i++)
   {
     dset(NP_MG(sps),fl,tl,ALL_VECTORS,J->me[i],0.0);
-    if ((*reinit->ReinitProblem)(reinit,sps->name[i],(1.0+PARAMETER_EPS)*u->e[i],&reinit_res)) return(1);
+    if ((*reinit->ReinitProblem)(reinit,sps->name[i],(1.0+PARAMETER_EPS)*EVDD_E(u,tl,i),&reinit_res)) return(1);
     if ((*tass->TAssembleDefect)(tass,fl,tl,0.0,-1.0,0.0,u->vd,J->me[i],NULL,res)) return(1);
     if ((*tass->TAssembleDefect)(tass,fl,tl,TIME_INFTY,1.0,-TIME_INFTY,u->vd,J->me[i],NULL,res)) NP_RETURN(1,*res);
-    if ((*reinit->ReinitProblem)(reinit,sps->name[i],u->e[i],&reinit_res)) return(1);
+    if ((*reinit->ReinitProblem)(reinit,sps->name[i],EVDD_E(u,tl,i),&reinit_res)) return(1);
     if (daxpy(NP_MG(sps),fl,tl,ALL_VECTORS,J->me[i],-1.0,J->em[0])) return(1);
-    if (dscal(NP_MG(sps),fl,tl,ALL_VECTORS,J->me[i],1.0/PARAMETER_EPS/u->e[i])) return(1);
+    if (dscal(NP_MG(sps),fl,tl,ALL_VECTORS,J->me[i],1.0/PARAMETER_EPS/EVDD_E(u,tl,i))) return(1);
   }
   for (i=0; i<u->n; i++)
   {
@@ -356,7 +356,7 @@ INT SPS_PreProcess (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, INT *res
   sps->last_enls_scale=2.0;
   sps->last_solve_mode=0;
   for (i=0; i<sol_p0->n; i++)
-    if ((*reinit->GetProblemParameter)(reinit,sps->name[i],&(sol_p0->e[i]))) return(1);
+    if ((*reinit->GetProblemParameter)(reinit,sps->name[i],&(EVDD_E(sol_p0,level,i)))) return(1);
   if (AllocEVDFromEVD(mg,0,level,sol_p0,&(sps->sol_t))) return(1);
 
   return(0);
@@ -441,23 +441,23 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
         {
           for (i=0; i<sps->pstep.sol_p0->n; i++)
           {
-            if (sps->sol_t->e[i]*sps->last_nls_dp[i]>=0.0)
-              sol_p1->e[i]=sps->pstep.sol_p0->e[i]+sps->last_nls_dp[i];
+            if (EVDD_E(sps->sol_t,level,i)*sps->last_nls_dp[i]>=0.0)
+              EVDD_E(sol_p1,level,i)=EVDD_E(sps->pstep.sol_p0,level,i)+sps->last_nls_dp[i];
             else
-              sol_p1->e[i]=sps->pstep.sol_p0->e[i]-sps->last_nls_dp[i];
-            if (sps->raster>0.0 && sol_p1->e[i]>sps->pstep.sol_p0->e[i])
+              EVDD_E(sol_p1,level,i)=EVDD_E(sps->pstep.sol_p0,level,i)-sps->last_nls_dp[i];
+            if (sps->raster>0.0 && EVDD_E(sol_p1,level,i)>EVDD_E(sps->pstep.sol_p0,level,i))
             {
-              n0=floor(sps->pstep.sol_p0->e[i]/sps->raster_size[i]);
-              n1=floor(sol_p1->e[i]/sps->raster_size[i]+0.5);
+              n0=floor(EVDD_E(sps->pstep.sol_p0,level,i)/sps->raster_size[i]);
+              n1=floor(EVDD_E(sol_p1,level,i)/sps->raster_size[i]+0.5);
               if (n0>=n1) n1=n0+1;
-              sol_p1->e[i]=n1*sps->raster_size[i];
+              EVDD_E(sol_p1,level,i)=n1*sps->raster_size[i];
             }
-            else if (sps->raster>0.0 && sol_p1->e[i]<sps->pstep.sol_p0->e[i])
+            else if (sps->raster>0.0 && EVDD_E(sol_p1,level,i)<EVDD_E(sps->pstep.sol_p0,level,i))
             {
-              n0=ceil(sps->pstep.sol_p0->e[i]/sps->raster_size[i]);
-              n1=ceil(sol_p1->e[i]/sps->raster_size[i]+0.5);
+              n0=ceil(EVDD_E(sps->pstep.sol_p0,level,i)/sps->raster_size[i]);
+              n1=ceil(EVDD_E(sol_p1,level,i)/sps->raster_size[i]+0.5);
               if (n0<=n1) n1=n0-1;
-              sol_p1->e[i]=n1*sps->raster_size[i];
+              EVDD_E(sol_p1,level,i)=n1*sps->raster_size[i];
             }
           }
         }
@@ -495,7 +495,7 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
           if (dcopy(mg,0,flevel,ALL_VECTORS,sol_p1->vd,sol_p0->vd)) return(1);
           if (daxpy(mg,0,flevel,ALL_VECTORS,sol_p1->vd,sps->last_nls_nt*s,sps->sol_t->vd)) return(1);
           for (i=0; i<sps->pstep.sol_p0->n; i++)
-            sol_p1->e[i]=sps->pstep.sol_p0->e[i]+s*sps->sol_t->e[i];
+            EVDD_E(sol_p1,flevel,i)=EVDD_E(sps->pstep.sol_p0,flevel,i)+s*EVDD_E(sps->sol_t,flevel,i);
         }
 
         /* prepare nonlinear solver on level k */
@@ -550,8 +550,8 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
     CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(sps),'%',"\n"); UserWrite(text);
     for (i=0; i<sps->pstep.sol_p0->n; i++)
     {
-      UserWriteF("%17s:   %13e\n",sps->name[0],sol_p1->e[0]);
-      UserWriteF("             step:   %13e\n",sol_p1->e[0]-sol_p0->e[0]);
+      UserWriteF("%17s:   %13e\n",sps->name[0],EVDD_E(sol_p1,level,0));
+      UserWriteF("             step:   %13e\n",EVDD_E(sol_p1,level,0)-EVDD_E(sol_p0,level,0));
       if (do_nls==0)
         UserWriteF("            scale:   %13e\n",sps->scale);
     }
@@ -575,14 +575,14 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
     dscal(mg,0,level,ALL_VECTORS,sps->sol_t->vd,1.0/nt);
     for (i=0; i<sps->pstep.sol_p0->n; i++)
     {
-      diff=sps->pstep.sol_p1->e[i]-sps->pstep.sol_p0->e[i];
-      if (diff*sps->sol_t->e[i]<=0.0) sps->last_solve_mode=0;
-      sps->sol_t->e[i]=diff;
+      diff=EVDD_E(sps->pstep.sol_p1,level,i)-EVDD_E(sps->pstep.sol_p0,level,i);
+      if (diff*EVDD_E(sps->sol_t,level,i)<=0.0) sps->last_solve_mode=0;
+      EVDD_E(sps->sol_t,level,i)=diff;
     }
     if (do_nls==1)
     {
       for (i=0; i<sps->pstep.sol_p0->n; i++)
-        sps->last_nls_dp[i]=sps->sol_t->e[i];
+        sps->last_nls_dp[i]=EVDD_E(sps->sol_t,level,i);
       sps->last_nls_nt=nt;
       if (sps->last_solve_mode>0) sps->last_solve_mode++;
       else sps->last_solve_mode=1;
@@ -667,7 +667,7 @@ INT SPS_Init (NP_BASE *base, INT argc, char **argv)
   if (AllocEVDForVD(mg,tmp,1,&(sps->pstep.sol_p0))) ret=NP_ACTIVE;
   if (sps->pstep.sol_p0==NULL) ret=NP_ACTIVE;
   if (ReadArgvChar("n0",sps->name[0],argc,argv)) ret=NP_ACTIVE;
-  if (ReadArgvDOUBLE("p0",&(sps->pstep.sol_p0->e[0]),argc,argv)) ret=NP_ACTIVE;
+  if (ReadArgvDOUBLE("p0",&(EVDD_E(sps->pstep.sol_p0,TOPLEVEL(mg),0)),argc,argv)) ret=NP_ACTIVE;
   sps->n=1;
   sps->scale=1.0;
 
@@ -729,7 +729,7 @@ INT SPS_Display (NP_BASE *theNumProc)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"sol_p1","---");
 
   for (i=0; i<sps->n; i++)
-    UserWriteF(DISPLAY_NP_FORMAT_SF,sps->name[i],(float)sps->pstep.sol_p0->e[i]);
+    UserWriteF(DISPLAY_NP_FORMAT_SF,sps->name[i],(float)EVDD_E(sps->pstep.sol_p0,TOPLEVEL(NP_MG(theNumProc)),i));
 
   return (0);
 }
@@ -782,7 +782,7 @@ static INT PSTEP_Execute (NP_BASE *theNP, INT argc , char **argv)
 
       /* allocate tmp vector */
       if (AllocEVDFromEVD(mg,0,level,pstep->sol_p0,&(pstep->sol_p1))) return (1);
-      pstep->sol_p1->e[0]=pstep->sol_p0->e[0]+dp;
+      EVDD_E(pstep->sol_p1,level,0)=EVDD_E(pstep->sol_p0,level,0)+dp;
 
       /* calculate solution */
       if ((*pstep->Step)(pstep,level,pstep->sol_p0,pstep->sol_p1,&presult))
@@ -799,7 +799,7 @@ static INT PSTEP_Execute (NP_BASE *theNP, INT argc , char **argv)
       {
         dcopy(mg,0,level,ALL_VECTORS,pstep->sol_p0->vd,pstep->sol_p1->vd);
         for (i=0; i<pstep->sol_p0->n; i++)
-          pstep->sol_p0->e[i]=pstep->sol_p1->e[i];
+          EVDD_E(pstep->sol_p0,level,i)=EVDD_E(pstep->sol_p1,level,i);
       }
 
       /* free tmp-vector */

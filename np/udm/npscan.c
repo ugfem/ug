@@ -1104,6 +1104,17 @@ INT sc_eq (VEC_SCALAR x, const VEC_SCALAR y, DOUBLE ac, const VECDATA_DESC *theV
   return (1);
 }
 
+INT esc_eq (EVEC_SCALAR x, const EVEC_SCALAR y, DOUBLE ac, const EVECDATA_DESC *theVD)
+{
+  INT i;
+
+  for (i=0; i<EVD_NCOMP(theVD); i++)
+    if (x[i]<0.0 || y[i]<0.0 || ABS(x[i]-y[i])>ac*SQRT(x[i]*y[i]))
+      return (0);
+
+  return (1);
+}
+
 /****************************************************************************/
 /*D
    sc_mul - x[i] = y[i] * z[i]
@@ -1154,9 +1165,21 @@ INT esc_mul (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVEC
 {
   INT i;
 
-  for (i=0; i<VD_NCOMP(theVD->vd)+theVD->n; i++)
+  for (i=0; i<EVD_NCOMP(theVD); i++)
     x[i] = y[i] * z[i];
 
+  return (NUM_OK);
+}
+
+INT esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVECDATA_DESC *theVD)
+{
+  INT i;
+
+  for (i=0; i<EVD_NCOMP(theVD); i++)
+  {
+    x[i] = y[i] * z[i];
+    if (x[i] == 0.0) x[i] = z[i];
+  }
   return (NUM_OK);
 }
 
@@ -1262,8 +1285,8 @@ INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const c
 
 INT esc_read (EVEC_SCALAR x, const FORMAT *fmt, const EVECDATA_DESC *theVD, const char *name, INT argc, char **argv)
 {
-  if (theVD==NULL) return(1);
-  return(sc_read(x,fmt,theVD->vd,name,argc,argv));
+  if (theVD!=NULL) return(sc_read(x,fmt,theVD->vd,name,argc,argv));
+  else return(sc_read(x,fmt,NULL,name,argc,argv));
 }
 
 /****************************************************************************/
