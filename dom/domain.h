@@ -169,7 +169,7 @@ struct mesh
   INT *nSides;                       /* nb. of boundary sides per subdomain */
   INT **Side_corners;                /* nb. of side corners                 */
   INT ***Side_corner_ids;                /* corner ids                          */
-  INT *nElements;                    /* nb. of element corners              */
+  INT *nElements;                    /* nb. of elements per subdomain       */
   INT **Element_corners;             /* nb. of element corners              */
   INT ***Element_corner_ids;         /* nb. of side corners                 */
   INT ***nbElements;                 /* nb. of side corners                 */
