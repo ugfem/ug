@@ -1909,10 +1909,10 @@ static INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
           /* store global coordinates */
           BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
           if (BND_DATA(ps)==NULL)
-            return (NULL);
+            return (1);
 
           if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
-            return (NULL);
+            return (1);
         }
       }
       n++;
@@ -2048,10 +2048,10 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
           /* store global coordinates */
           BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
           if (BND_DATA(ps)==NULL)
-            return (NULL);
+            return (1);
 
           if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
-            return (NULL);
+            return (1);
         }
       }
       n++;
@@ -2348,10 +2348,10 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
           /* store global coordinates */
           BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
           if (BND_DATA(ps)==NULL)
-            return (NULL);
+            return (1);
 
           if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
-            return (NULL);
+            return (1);
         }
         bndp[nodeid++] = (BNDP *)ps;
 
