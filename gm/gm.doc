@@ -534,31 +534,26 @@ MACROS:
 .vb
 INT PROBLEMID (PROBLEM *p);
 .ve
-
 Extracts the problem identification number from a problem.
 
 .vb
 ConfigProcPtr CONFIGFUNC (PROBLEM *p);
 .ve
-
 Returns a pointer to the configuration function of the problem.
 
 .vb
 INT NUMCOEFF (PROBLEM *p); 
 .ve
-
 Returns the number of coefficient functions defined in the problem description.
 
 .vb
 INT NUMUSERFCT (PROBLEM *p);
 .ve
-
 Returns the number of user functions in the problem description.
 
 .vb
 CoeffProcPtr COEFFFUNC (PROBLEM *p,INT i); 
 .ve
-
 Returns a pointer to the 'i'-th coefficient function of the problem.
 The meaning of coefficient function 'i' is determined by the problem class
 library.
@@ -566,14 +561,13 @@ library.
 .vb
 UserProcPtr USERFUNC (PROBLEM *p,INT i);
 .ve
-
 Returns a pointer to the 'i'-th user function of the problem.
 The meaning of user function 'i' is determined by the problem class
 library.
 
 EXAMPLES:
 
-For a detailed example see the 'appl2d' and 'appl3d' description.
+For a detailed example see the 'diff2d' and 'cd3d' description.
 
 SEE ALSO:
 'BOUNDARY_CONDITION', 'CreateProblem', 'CreateBoundaryCondition'.
@@ -917,7 +911,7 @@ the 'FORMAT' definition.
 
 . father - Pointer to an 'ELEMENT' of the next coarser level. This component is
 used for multigrid interpolation and restriction (see also 'xi' component above).
-For the vertices in the coarsest grid (level 0) this pointer is 'NULL'
+For the vertices in the coarsest grid (level 0) this pointer is 'NULL'.
 
 . topnode - If several 'NODES' share this 'VERTEX' then this pointer refers
 to the 'NODE' on the highest level. This pointer will probably `not` be supported
@@ -931,14 +925,12 @@ MACROS:
 .vb
 INT ID (VERTEX *p);
 .ve
-
 Returns 'VERTEX' id.
 
 .vb
 VERTEX *PREDV (VERTEX *p);
 VERTEX *SUCCV (VERTEX *p);
 .ve
-
 Access to the double linked list. 'NULL' pointers indicate the end of the list
 in both directions.
 
@@ -948,7 +940,6 @@ COORD XC (VERTEX *p);
 COORD YC (VERTEX *p);
 COORD ZC (VERTEX *p);
 .ve
-
 'CVECT' returns the array of global coordinates (i.e. a pointer) and 'XC', 'YC' and
 'ZC' return the individual components. Accessing the `z`-coordinate in a 2D application
 will not lead to an error message!
@@ -959,20 +950,17 @@ COORD XI (VERTEX *p);
 COORD ETA (VERTEX *p);
 COORD NU (VERTEX *p);
 .ve
-
 'LCVECT' returns the array of local coordinates with the father element and the other
 macros return the individual components called 'XI', 'ETA' and 'NU'.
 
 .vb
 void *VDATA (VERTEX *p);
 .ve
-
 Returns the pointer to user data space.
 
 .vb
 ELEMENT *VFATHER (VERTEX *p);
 .ve
-
 Returns the pointer an 'ELEMENT' of the next coarser grid level containing the 
 given 'VERTEX'. A 'NULL' pointer indicates that the 'VERTEX' is on level 0, the
 coarsest level.
@@ -980,7 +968,6 @@ coarsest level.
 .vb
 NODE *TOPNODE (VERTEX *p);
 .ve
-
 Returns pointer to the highest 'NODE' using that 'VERTEX'. The use of this
 component is not recommended since it will not be supported in the future.
 
@@ -989,13 +976,11 @@ component is not recommended since it will not be supported in the future.
 .vb
 VSEGMENT *VSEG (VERTEX *p);
 .ve
-
 Pointer to the first 'VSEGMENT' structure of the list.
 
 .vb
 BNDSEGDESC *FIRSTSEGDESC (VERTEX *p);
 .ve
-
 Returns a pointer to the 'BNDSEGDESC' structure used by the first 'VSEGMENT'
 structure of the list. See the 'BNDSEGDESC' page for more information
 on that structure.
@@ -1004,14 +989,12 @@ on that structure.
 COORD BVLAMBDA (VERTEX *p);
 COORD FIRSTLAMBDA (VERTEX *p);
 .ve
-
 Returns the parameter for the first boundary segment this vertex lies on. Both
-macros do the same thing and 'BVLAMBD' is provided for compatibility reasons.
+macros do the same thing and 'BVLAMBDA' is provided for compatibility reasons.
 
 .vb
 COORD *FIRSTPVECT (VERTEX *p);
 .ve
-
 Returns a pointer to the array containing the parameter for the first boundary
 where this vertex lies on. The first boundary segment is accessible
 via 'FIRSTSEGDESC'.
@@ -1075,13 +1058,13 @@ STRUCTURES:
 .vb
 struct vsegment {
 
-    unsigned INT control;           // object identification, various flags 
-    struct bndsegdesc *segdesc;     // pointer to boundary segment desc     
-    COORD lambda[DIM_OF_BND];       // position of vertex on boundary segmen
+    unsigned INT control;         // object identification, various flags 
+    struct bndsegdesc *segdesc;   // pointer to boundary segment desc     
+    COORD lambda[DIM_OF_BND];     // position of vertex on boundary segmen
 
     #ifdef __TWODIM__
-    COORD zeta;                     // local coord. of vertex  in father edg
-                                    // Def.: l = (1-z)*l0 + z*l1            
+    COORD zeta;                   // local coord. of vertex  in father edg
+                                  // Def.: l = (1-z)*l0 + z*l1            
     #endif
 
     struct vsegment *next;
@@ -1310,7 +1293,7 @@ DESCRIPTION:
 
 Each node of the mesh is represented by a 'NODE' structure. When a mesh is refined
 then new 'NODE' objects are allocated on the new grid level
-even at those position where nodes were already in the coarse mesh. However 'NODE's
+even at those positions where nodes were already in the coarse mesh. However, 'NODE's
 at the same position share a common 'VERTEX' structure.
 A node provides access to all neighboring nodes via the 'LINK' structure. There
 is `no` access from a node to all the elements having the node as a corner!
@@ -2176,9 +2159,8 @@ all degrees of freedom stored in the vector.
 
 . index - Reflects position of the 'VECTOR' in the double linked list.
 
-. skip - Used bitwise to identify components of a 'VECTOR' that have
-Dirichlet boundary conditions. These components have to be treated differently
-in some parts of the solver.
+. skip - Used bitwise to identify components of a 'VECTOR' that have Dirichlet boundary 
+conditions. These components have to be treated differently in some parts of the solver.
 
 . start - Points to first element of the 'MATRIX' list of a 'VECTOR'. This
 list represents the rows of the matrix belonging to degrees of freedom in
@@ -2300,7 +2282,7 @@ SETVDATATYPE (VECTOR *v, INT n);
 VNCLASS (VECTOR *v);                  17  2   Vector class of vector at same
 SETVNCLASS (VECTOR *v, INT n);                position on finer level
 
-VNEW (VECTOR *v);                     19  1   True if VECTOR has been crated
+VNEW (VECTOR *v);                     19  1   True if VECTOR has been created
 SETVNEW (VECTOR *v, INT n);                   in last refinement step.
 
 VCNEW (VECTOR *v);                    20  1   True if VECTOR got a new 
@@ -2715,6 +2697,7 @@ struct multigrid {
     struct problem *theProblem;     // pointer to problem definition        
     struct bndsegdesc *segments;    // array of combined boundary descriptio
     INT numOfSegments;              // number of entries in the array above 
+	INT numOfSubdomains;			// number of subdomains
     union vertex **corners;         // pointer to array of pointers to corne
     INT numOfCorners;               // number of entries in the array above 
     HEAP *theHeap;                  // associated heap structure            
@@ -2773,6 +2756,8 @@ appropriate for the selected problem class.
 
 . numOfSegments - Number of 'BNDSEGDESC' structures accessible in the 'segments'
 array. This corresponds to the number of boundary segments in 'theDomain'.
+
+. numOfSegments - Number of subdomains, used for the grid generator.
 
 . segments - Array of 'BNDSEGDESC' structures. Index `i` in that array corresponds
 to boundary segment `i`.
@@ -2839,94 +2824,82 @@ DOMAIN *MGDOMAIN (MULTIGRID *mg);
 FORMAT *MGFORMAT (MULTIGRID *mg);
 PROBLEM *MGPROBLEM (MULTIGRID *mg);
 .ve
-
 Returns pointer to 'DOMAIN', 'FORMAT' and 'PROBLEM' associated with the 'MULTIGRID'.
 
 .vb
 BOUNDARY_SEGMENT *MG_GEOM_SEGMENT (MULTIGRID *mg,INT i);
 .ve
 
-Return a pointer to the 'i'th boundary segment of the domain.
+Returns a pointer to the 'i'th boundary segment of the domain.
 
 .vb
 BNDSEGDESC *MGBNDSEGDESC (MULTIGRID *mg,INT i);
 .ve
 
-Return a pointer to the 'i'th 'BNDSEGDESC' structure of the 'segments' array.
+Returns a pointer to the 'i'th 'BNDSEGDESC' structure of the 'segments' array.
 
 .vb
 INT MGNOOFSEG (MULTIGRID *mg);
 .ve
 
-Return number of boundary segments of the domain associated with the 'MULTIGRID'.
+Returns number of boundary segments of the domain associated with the 'MULTIGRID'.
 
 .vb
 VERTEX *MGVERTEX (MULTIGRID *mg,k);
 .ve
-
 Returns a pointer to the 'k'th corner 'VERTEX' of the domain.
 
 .vb
 INT MGNOOFCORNERS (MULTIGRID *mg);
 .ve
-
 Returns the number of corners of the domain associated with the 'MULTIGRID'.
 
 .vb
 HEAP *MGHEAP (MULTIGRID *mg);
 .ve
-
 Returns a pointer to the multigrids 'HEAP'.
 
 .vb
 GRID *GRID_ON_LEVEL (MULTIGRID *mg,INT i);
 .ve
-
 Returns a pointer to the 'i'th grid level of the 'MULTIGRID'.
 
 .vb
 INT SELECTIONSIZE (MULTIGRID *mg);
 INT SELECTIONMODE (MULTIGRID *mg);
 .ve
-
 Returns number of objects in the selection buffer and type of these objects.
 
 .vb
 GEOM_OBJECT *SELECTIONOBJECT (MULTIGRID *mg,INT i);
 .ve
-
 Returns a pointer to the 'i'th object in the selection buffer.
 
 .vb
 char *MGNAME (MULTIGRID *mg);
 .ve
-
 Returns the name of the multigrid from the environment item.
 
 .vb
 HEAP *MG_USER_HEAP(MULTIGRID *mg);
 .ve
-
 Returns the multigrid user data heap pointer. The heapsize is determined by the
 'FORMAT' definition.
 
 .vb
 void *GEN_MGUD(MULTIGRID *mg);
 .ve
-
-Returns the address of the gemeral multigrid user data.
+Returns the address of the general multigrid user data.
 
 .vb
 void *GEN_MGUD_ADR(MULTIGRID *mg, MEM offset);
 .ve
-
 Returns the address of a block with a certain offset (in bytes)
-in the gemeral multigrid user data. To be used in conjunction with
+in the general multigrid user data. To be used in conjunction with
 
 .vb
 MEM OFFSET_IN_MGUD(INT BlockID);
 .ve
-
 Returns the offset of a previously allocated block in the general multigrid
 user data.
 

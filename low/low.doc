@@ -142,7 +142,7 @@ D*/
     The environment management of ug provides the possibility to store data in
     a tree structure. The storage is taken from a 'GENERAL_HEAP' allocated at
     initialization time with the size specified by 'envmemory' in the 'defaults'
-    file (if now 'defaults' file is available 'DEFAULTENVSIZE' is used).
+    file (if no 'defaults' file is available 'DEFAULTENVSIZE' is used).
     
     The data structures of the environment allow to create directories and items
     of specified size. Both data structures start with a general head (among

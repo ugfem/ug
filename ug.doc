@@ -116,14 +116,14 @@ MODULAR STRUCTURE OF THE UG KERNEL:
 	For more details see man page gm.
 
 .   'graphics~(graph)' -
-	This module of `ug` realizes a small 2/3D color graphics model. Some features are skalar or vector plots 
+	This module of `ug` realizes a small 2/3D color graphics model. Some features are scalar or vector plots 
 	with arbitrary viewpoint and cutplanes on the viewed domain,solution or grid.
 
 .   'user~interface~(ui)' -
-	The core of 'ui' is a command interpreter which provides a skript languages and gives access to 
+	The core of 'ui' is a command interpreter which provides a script language and gives access to 
 	commands of your application. This allows to type in all commands directly into the command line
-	interface furthermore it is possible to gathe a series of commands and control statements of the skript
-	language in separate file. This skript file can then be executed as one unity.
+	interface furthermore it is possible to combine a series of commands and control statements of the script
+	language in separate file. This script file can then be executed as one unity.
 
 .   'devices~(dev)' -
 	`devices` defines an abstract device interface with a fixed functionality. The drivers for different real 
@@ -136,7 +136,7 @@ MODULAR STRUCTURE OF THE UG KERNEL:
 	This allows a quick and easy formulation of your appropriate solver and rapid prototyping of new ideas.
 
 .   'low~tasks~(low)' -
-	This modules handles low tasks as providing memory management, treating machine architecture and operation system 
+	This module handles low tasks as providing memory management, treating machine architecture and operation system 
 	dependencies. 
 
 
