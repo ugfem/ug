@@ -133,6 +133,49 @@
 										TAG(e)==PYRAMID || TAG(e)== TETRAHEDRON)
 #endif
 
+/* macros for storing sparse data needed in ExchangeClosureInfo() */
+#define MARKCLASSDATA_SHIFT	20
+
+#define GETMARKCLASSDATA(elem,dataadr)                                       \
+		(*dataadr) |= ((MARKCLASS(elem))<<MARKCLASSDATA_SHIFT)
+
+#define SETMARKCLASSDATA(elem,data)                                          \
+		SETMARKCLASS(elem,(data>>MARKCLASSDATA_SHIFT)&((1<<MARKCLASS_LEN)-1))
+		
+
+/* macros to get and set the edgepattern on an element */
+#define GetEdgePattern(elem,patadr)                                          \
+		{                                                                    \
+			INT i;                                                           \
+			EDGE *theEdge;                                                   \
+                                                                             \
+			*patadr = 0;                                                     \
+			for (i=EDGES_OF_ELEM(elem)-1; i>=0; i--)                         \
+			{                                                                \
+				theEdge=GetEdge(CORNER_OF_EDGE_PTR(elem,i,0),                \
+						    	CORNER_OF_EDGE_PTR(elem,i,1));               \
+				ASSERT(theEdge!=NULL);                                       \
+                                                                             \
+				*patadr = (*patadr<<1) | PATTERN(theEdge);                   \
+			}                                                                \
+		}
+
+#define	SetEdgePattern(elem,pat)                                             \
+		{                                                                    \
+			INT i;                                                           \
+			EDGE *theEdge;                                                   \
+                                                                             \
+			for (i=0; i<EDGES_OF_ELEM(elem); i++)                            \
+			{                                                                \
+				theEdge = GetEdge(CORNER_OF_EDGE_PTR(elem,i,0),              \
+								  CORNER_OF_EDGE_PTR(elem,i,1));             \
+				ASSERT(theEdge!=NULL);                                       \
+                                                                             \
+				SETPATTERN(theEdge,PATTERN(theEdge)|(pat&0x1));              \
+				pat >>= 1;                                                   \
+			}                                                                \
+		}
+
 /* TODO: delete special debug */
 static ELEMENT *debugelem=NULL;
 /*
@@ -669,56 +712,39 @@ static INT PrepareGridClosure (GRID *theGrid)
 #ifdef __TWODIM__
 static int Gather_ElemSideandEdgePattern (DDD_OBJ obj, void *data)
 {
-	INT 	i;
+	INT 	i,refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
-	PRINTDEBUG(gm,4,("PFMT Gather_ElemSideandEdgePattern(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,4,(PFMT "Gather_ElemSideandEdgePattern(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 	   
-	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-	{
-		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-						  CORNER_OF_EDGE_PTR(theElement,i,1));
-		ASSERT(theEdge!=NULL);
+	GetEdgePattern(theElement,&refinedata);
+	((INT *)data)[0] = refinedata;
 
-		PRINTDEBUG(gm,4,("PFMT Gather_ElemSideandEdgePattern(): edge=%d pattern=%d\n",
-				 me,i,PATTERN(theEdge)))
-		((INT *)data)[i] = PATTERN(theEdge);
-	}
-
-	PRINTDEBUG(gm,4,("PFMT Gather_ElemSideandEdgePattern(): sidepattern=%d markclass\n",
+	PRINTDEBUG(gm,4,(PFMT "Gather_ElemSideandEdgePattern(): sidepattern=%d markclass=%d\n",
 			 me,SIDEPATTERN(theElement),MARKCLASS(theElement)))
-	((INT *)data)[4] = SIDEPATTERN(theElement);
-	((INT *)data)[5] = MARKCLASS(theElement);
+	SETMARKCLASSDATA(theElement,refinedata);
+	((INT *)data)[0] = refinedata;
 
 	return(GM_OK);
 }
 
 static int Scatter_ElemSideandEdgePattern (DDD_OBJ obj, void *data)
 {
-	INT		i;
+	INT		i,refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
-	PRINTDEBUG(gm,4,("PFMT Scatter_ElemSideandEdgePattern(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,4,(PFMT "Scatter_ElemSideandEdgePattern(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 
-	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-	{
-		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-						  CORNER_OF_EDGE_PTR(theElement,i,1));
-		ASSERT(theEdge!=NULL);
+	refinedata = ((INT *)data)[0];
+	SetEdgePattern(theElement,refinedata);
 
-		PRINTDEBUG(gm,4,("PFMT Scatter_ElemSideandEdgePattern(): edge=%d pattern=%d\n",
-				 me,i,PATTERN(theEdge)))
-		SETPATTERN(theEdge,PATTERN(theEdge)|((INT *)data)[i]);
-	}
-	
-	PRINTDEBUG(gm,4,("PFMT Gather_ElemSideandEdgePattern(): sidepattern=%d markclass\n",
+	PRINTDEBUG(gm,4,(PFMT "Gather_ElemSideandEdgePattern(): sidepattern=%d markclass=%d\n",
 			 me,SIDEPATTERN(theElement),MARKCLASS(theElement)))
-	SETSIDEPATTERN(theElement,SIDEPATTERN(theElement)|((INT *)data)[4]);
-	SETMARKCLASS(theElement,((INT *)data)[5]);
+	GETMARKCLASSDATA(theElement,&refinedata);
 
 	return(GM_OK);
 }
@@ -760,11 +786,11 @@ static int Scatter_ElemSidePattern (DDD_OBJ obj, void *data)
 }
 #endif
 
-static INT ExchangePatterns (GRID *theGrid)
+static INT ExchangeClosureInfo (GRID *theGrid)
 {
 	#ifdef __TWODIM__
 	/* exchange sidepattern of edges */
-	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),6*sizeof(INT),
+	DDD_IFAOneway(ElementIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
 		Gather_ElemSideandEdgePattern, Scatter_ElemSideandEdgePattern);
 	#endif
 
@@ -813,9 +839,8 @@ static INT ComputePatterns (GRID *theGrid)
 					SETPATTERN(theEdge,1);
 				}
 
-			SETSIDEPATTERN(theElement,0);
-
 			#ifdef __THREEDIM__
+			SETSIDEPATTERN(theElement,0);
 			for (i=0;i<SIDES_OF_ELEM(theElement); i++)
 			{
 #ifdef TET_RULESET
@@ -834,18 +859,21 @@ static INT ComputePatterns (GRID *theGrid)
 		}
 		else
 		{
+			#ifdef __THREEDIM__
 			SETSIDEPATTERN(theElement,0);
+			#endif
 			SETMARKCLASS(theElement,NO_CLASS);
 		}
 	}
 
 	#ifdef ModelP
-	if (ExchangePatterns(theGrid) != GM_OK) return(GM_ERROR);
+	if (ExchangeClosureInfo(theGrid) != GM_OK) return(GM_ERROR);
 	#endif
 
 	return(GM_OK);
 }
 
+#ifdef __THREEDIM__
 #ifdef TET_RULESET
 static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *theNeighbor, INT j)
 {
@@ -1036,6 +1064,7 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 
 	return(GM_OK);
 }
+#endif
 
 static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 {
@@ -1052,17 +1081,15 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 		/* TODO: delete special debug */ PRINTELEMID(11668)
 
 		/* compute element pattern */
-		theEdgePattern = 0;
-		for (i=EDGES_OF_ELEM(theElement)-1; i>=0; i--)
-		{
-			theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-						    CORNER_OF_EDGE_PTR(theElement,i,1));
-			ASSERT(theEdge!=NULL);
+		GetEdgePattern(theElement,&theEdgePattern);
 
-			theEdgePattern = (theEdgePattern<<1) | PATTERN(theEdge);
-		}
+		#ifdef __TWODIM__
+		thePattern = theEdgePattern;
+		#endif
+		#ifdef __THREEDIM__
 		theSidePattern = SIDEPATTERN(theElement);
 		thePattern = theSidePattern<<EDGES_OF_ELEM(theElement) | theEdgePattern;
+		#endif
 
 		/* get Mark from pattern */
 		Mark = PATTERN2MARK(theElement,thePattern);
@@ -1396,8 +1423,10 @@ static int GridClosure (GRID *theGrid)
 	/* fifo loop */
 	do
 	{
+		#ifdef __THREEDIM__
 		/* set side patterns on the elements */
 		if (SetElementSidePatterns(theGrid,firstElement) != GM_OK)		RETURN(GM_ERROR);
+		#endif
 
 		/* set rules on the elements */
 		if (SetElementRules(theGrid,firstElement,&cnt) != GM_OK)	RETURN(GM_ERROR);
