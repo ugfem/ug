@@ -2265,7 +2265,7 @@ void FAMGGrid::ConstructOverlap()
 	MATRIX *mat;
 #ifdef XFERTIMING
 	int i1,i2, N1, N2;
-	double t1,t2,t3;
+	double t1,t2,t22,t3;
 #endif
 
 	if(GLEVEL(mygrid)==0)
@@ -2291,16 +2291,16 @@ void FAMGGrid::ConstructOverlap()
 		abort();
 	}
 
-#ifdef XFERTIMING
-	t1 = CURRENT_TIME;
-	N1 = NVEC(mygrid);
-#endif
-
 	DDD_XferBegin();
     #ifdef DDDOBJMGR
     DDD_ObjMgrBegin();
     #endif
 		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToMaster );
+#ifdef XFERTIMING
+	t1 = CURRENT_TIME;
+	XFERTIMING_algtime += t1-XFERTIMING_algtime_start;
+	N1 = NVEC(mygrid);
+#endif
     #ifdef DDDOBJMGR
     DDD_ObjMgrEnd();
     #endif
@@ -2311,7 +2311,7 @@ void FAMGGrid::ConstructOverlap()
 	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), CountInterfaceLengthCB );
 	i1 = LocalNr;
 
-	t2 = CURRENT_TIME;
+	t2 = XFERTIMING_algtime_start = CURRENT_TIME;
 	N2 = NVEC(mygrid);
 #endif
 
@@ -2349,6 +2349,10 @@ void FAMGGrid::ConstructOverlap()
     DDD_ObjMgrBegin();
     #endif
 		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToOverlap1 );
+#ifdef XFERTIMING
+	t22 = CURRENT_TIME;
+	XFERTIMING_algtime += t22 - XFERTIMING_algtime_start;
+#endif
     #ifdef DDDOBJMGR
     DDD_ObjMgrEnd();
     #endif
@@ -2361,6 +2365,8 @@ void FAMGGrid::ConstructOverlap()
 	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), CountInterfaceLengthCB );
 	i2 = LocalNr;
 	t3 = CURRENT_TIME;
+	Synchronize(); // anticipate global sync. following in l_matrix_consistent
+	XFERTIMING_algtime_start = CURRENT_TIME;
 #endif
 
 	// In some cases ghost vectors are left. They disturb the calculations 
@@ -2391,7 +2397,7 @@ void FAMGGrid::ConstructOverlap()
 	}
 
 #ifdef XFERTIMING
-	cout <<me<<": Xfer lev="<<GLEVEL(mygrid)<<' '<<t2-t1<<' '<<t3-t2<<' '<<N1<<' '<<N2<<' '<<i1<<' '<<i2<<endl;
+	cout <<me<<": Xfer lev="<<GLEVEL(mygrid)<<' '<<t2-t1<<' '<<t3-t22<<' '<<N1<<' '<<N2<<' '<<i1<<' '<<i2<<endl;
 #endif
 
 	#ifdef DIAGMATWORKSAFTERPRIOCHANGE

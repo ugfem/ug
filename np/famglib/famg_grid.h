@@ -32,7 +32,11 @@
  */
 
 //additional measurement and output
-#define XFERTIMING
+//#define XFERTIMING
+
+#ifdef XFERTIMING
+extern double XFERTIMING_algtime, XFERTIMING_algtime_start;
+#endif
 
 const int FAMGRHS=0;
 const int FAMGUNKNOWN=1;

@@ -47,6 +47,9 @@ struct leaveinfo
 
 typedef struct leaveinfo FAMGLeaveInfo;
 
+#ifdef XFERTIMING
+double XFERTIMING_algtime, XFERTIMING_algtime_start;
+#endif
 
 // Class FAMGMultigrid
 
@@ -152,6 +155,11 @@ int FAMGMultiGrid::Construct()
 		GlobalLeave( &myleaveinfo );
 #endif
 
+#ifdef XFERTIMING
+		XFERTIMING_algtime = 0.0;
+		XFERTIMING_algtime_start = CURRENT_TIME;
+#endif
+
 		if( myleaveinfo.coarsefrac > mincoarse )
 		{
 			leave = 1;
@@ -252,6 +260,9 @@ int FAMGMultiGrid::Construct()
 		t = CURRENT_TIME;
 		time = t - time;
 		cgtime = t - cgtime;
+#ifdef XFERTIMING
+		XFERTIMING_algtime += t - XFERTIMING_algtime_start;
+#endif
 
 #ifdef ModelP
 		cout << me << ": ";
@@ -260,7 +271,11 @@ int FAMGMultiGrid::Construct()
 		coarsefrac = (double)nnc/nn;
 		if( nnc <= 0 )
 			coarsefrac = 0.000000999;	// dummy
-		cout << "amglevel " << -level << " coarsening rate " << 1.0/coarsefrac << " time "<<time<<" cg "<<cgtime<<endl;
+		cout << "amglevel " << -level << " coarsening rate " << 1.0/coarsefrac << " time "<<time<<' '<<cgtime;
+#ifdef XFERTIMING
+		cout << ' '<<XFERTIMING_algtime;
+#endif
+		cout << endl;
     }
 
 

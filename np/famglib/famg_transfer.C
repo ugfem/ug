@@ -402,6 +402,7 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	
 	#ifdef XFERTIMING
 	time = CURRENT_TIME;
+	XFERTIMING_algtime += time - XFERTIMING_algtime_start;
 	#endif
 
 	DDD_PrioEnd();
@@ -410,7 +411,8 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	#ifdef XFERTIMING
 	LocalNr=0;
 	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid)-1, CountInterfaceLengthCB );
-	time = CURRENT_TIME - time;
+	XFERTIMING_algtime_start = CURRENT_TIME;
+	time = XFERTIMING_algtime_start - time;
 	cout <<me<<": Dest lev="<<GLEVEL(mygrid)<<' '<<time<<' '<<NVEC(mygrid)<<' '<<LocalNr<<endl;
 	#endif
 
