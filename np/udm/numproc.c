@@ -107,7 +107,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct)
+INT CreateClass (const char *classname, INT size, ConstructorProcPtr Construct)
 {
   NP_CONSTRUCTOR *constructor;
 
@@ -195,7 +195,7 @@ NP_CONSTRUCTOR *GetConstructor (const char *classname)
    D*/
 /****************************************************************************/
 
-INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname)
+INT CreateObject (MULTIGRID *theMG, const char *objectname, const char *classname)
 {
   NP_CONSTRUCTOR *constructor;
   NP_BASE *object;
@@ -262,7 +262,7 @@ INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname)
    D*/
 /****************************************************************************/
 
-NP_BASE *GetNumProcByName (MULTIGRID *theMG, char *object_name, char *abstract_class_name)
+NP_BASE *GetNumProcByName (MULTIGRID *theMG, const char *object_name, const char *abstract_class_name)
 {
   ENVITEM *item;
   INT n,m,i;

@@ -94,11 +94,11 @@ typedef struct
 /*																			*/
 /****************************************************************************/
 
-INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct);
+INT CreateClass (const char *classname, INT size, ConstructorProcPtr Construct);
 NP_CONSTRUCTOR *GetConstructor (const char *classname);
-INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname);
+INT CreateObject (MULTIGRID *theMG, const char *objectname, const char *classname);
 
-NP_BASE *GetNumProcByName (MULTIGRID *theMG, char *objectname, char *classname);
+NP_BASE *GetNumProcByName (MULTIGRID *theMG, const char *objectname, const char *classname);
 
 INT InitNumProcManager (void);
 
