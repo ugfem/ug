@@ -34,7 +34,7 @@ $(LIBDIR)/libppif.a : $(PPIF_LOBJ) $(PPIF_PATH)/mk.ppif
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(LIBDIR)/libppif.a $(PPIF_LOBJ)
  
 
-$(PPIF_PATH)/ppif.o:
+$(PPIF_PATH)/ppif.o: $(PPIF_PATH)/ppif.c
 	rm -f $(PPIF_PATH)/ppif.o
 	$(PPIF_CC) $(PPIF_LCFLAGS) $(PPIF_LINCLUDE) -c $(PPIF_PATH)/ppif.c
 	mv -f ppif.o $(PPIF_PATH)/ppif.o
