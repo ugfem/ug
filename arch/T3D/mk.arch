@@ -15,7 +15,8 @@
 ARCH_TYPE     = __T3D__
 
 ARCH_MAKE     = make
-ARCH_CC       = cc -Tcray-t3d
+ARCH_CC       = cc
+ARCH_C++      = CC
 ARCH_LINK     = cc
 ARCH_F77      = cf77
 ARCH_AR       = ar
@@ -29,7 +30,7 @@ ARCH_CFLAGS   = -I /usr/include/mpp -h jump -g   # -g
 #ARCH_CFLAGS  = -hinline2,scalar2
 #ARCH_CFLAGS  = -happrentice
 ARCH_FFLAGS   = -Wf,
-ARCH_C++FLAGS =
+ARCH_C++FLAGS = -h jump
 ARCH_LFLAGS   = -g
 ARCH_ARFLAGS  = ru
 
