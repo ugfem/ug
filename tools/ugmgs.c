@@ -93,18 +93,6 @@
 /*																			*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*																			*/
-/* Function:  MGSetVectorClasses											*/
-/*																			*/
-/* Purpose:   Returns highest vector class of a dof on next level			*/
-/*																			*/
-/* Input:	  *theElement													*/
-/*																			*/
-/* Output:	  INT															*/
-/*																			*/
-/****************************************************************************/
-
 int PrintMGFileInfo (char *filename, int *magic_cookie)
 {
   MGIO_MG_GENERAL mg_general;
