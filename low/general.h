@@ -56,7 +56,7 @@
 #define UGRCSSTRINGAUX(ug_version,arch_version,dim,model,grape,netgen,dom_module,debug_mode)\
   "$" "State: UG_VERSION=" # ug_version " ARCH_VERSION=" # arch_version " DIM=" # dim\
   " GRAPE_SUPPORT=" # grape " MODEL=" # model\
-  " NETGEN=" # netgen " DOM_MODULE=" # dom_module\
+  " NETGEN_SUPPORT=" # netgen " DOM_MODULE=" # dom_module\
   " DEBUG_MODE=" # debug_mode " $"
 
 #define RCSID(header,module_rcs_string) RCSIDAUX(header,module_rcs_string)
