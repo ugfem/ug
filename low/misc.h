@@ -175,16 +175,6 @@ char            *ExpandCShellVars       (char *string);
 int                     matherr                         (struct exception *x);
 #endif
 
-#ifdef __NECSX4__
-/* special high performance time system for NEC SX4 */
-DOUBLE nec_clock( void );
-#endif
-
-#ifdef __AIX__
-/* special long time system for AIX */
-DOUBLE aix_long_clock( void );
-#endif
-
 INT             ReadMemSizeFromString   (const char *s, MEM *mem_size);
 INT                     WriteMemSizeToString    (MEM mem_size, char *s);
 

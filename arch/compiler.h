@@ -258,10 +258,10 @@ extern "C" {
 #define F77SYM(lsym,usym)  lsym
 
 /* current time as DOUBLE value */
+/* special high resolution time system for AIX */
+DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #undef CURRENT_TIME
-#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
-#undef CURRENT_TIME_LONG
-#define CURRENT_TIME_LONG   aix_long_clock()
+#define CURRENT_TIME        aix_highres_clock() /* see misc.c */
 
 #endif
 
@@ -773,8 +773,10 @@ extern "C" {
 #define F77SYM(lsym,usym)  lsym ## _
 
 /* current time as DOUBLE value */
+/* special high performance time system for NEC SX4 */
+DOUBLE nec_clock( void );               /* implementation in mics.c */
 #undef CURRENT_TIME
-#define CURRENT_TIME nec_clock()
+#define CURRENT_TIME nec_clock()        /* see misc.c */
 
 #endif
 

@@ -43,6 +43,7 @@
 #endif
 
 #ifdef __AIX__
+#include <sys/time.h>
 #include <sys/timeb.h>
 #endif
 
@@ -861,6 +862,7 @@ INT MemoryParameters (void)
 
 #ifdef __NECSX4__
 /* special high performance time system for NEC SX4 */
+/* declaration in compiler.h */
 DOUBLE nec_clock( void )
 {
   struct htms timebuf;
@@ -872,12 +874,15 @@ DOUBLE nec_clock( void )
 #endif
 
 #ifdef __AIX__
-/* special long time system for AIX */
-DOUBLE aix_long_clock( void )
+/* special high resolution time system for AIX */
+/* declaration in compiler.h */
+/* time resolution 1e-9 sec; overflow far over 1 year */
+DOUBLE aix_highres_clock( void )
 {
-  struct timeb timebuf;
+  timebasestruct_t timebuf;
 
-  ftime(&timebuf);
-  return (timebuf.time + timebuf.millitm * 1e-3);
+  read_real_time(&timebuf, TIMEBASE_SZ);
+  time_base_to_time(&timebuf, TIMEBASE_SZ);
+  return( timebuf.tb_high + timebuf.tb_low*1e-9 );
 }
 #endif
