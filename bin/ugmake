@@ -7,7 +7,7 @@ then
 	echo " <ugmodule>: the module which you want to compile";
 	echo "             where <ugmodule> is one of ug, dev, meta, xif";
 	echo "             gm, graph, low, numerics, ui, gg, diff2d, diff2da,";
-	echo "             cd3d, cd3da, fem, fema, ns2d, ns2da";
+	echo "             cd, cda, fem, fema, ns2d, ns2da";
 	echo " <makeoptions>: the options which you want to pass to \"make\"";
 	exit 1;
 fi
@@ -63,13 +63,13 @@ then
 		fi				
 	fi			
 			
-	if test "$1" = "cd3d" -o "$1" = "cd3da" 
+	if test "$1" = "cd" -o "$1" = "cda" 
 	then
-		if test -d $UGROOT/../cd3d
+		if test -d $UGROOT/../cd
 		then
-			cd $UGROOT/../cd3d;
+			cd $UGROOT/../cd;
 		else 
-			echo "no directory for cd3d found!";
+			echo "no directory for cd found!";
 			exit 1;
 		fi				
 	fi			
@@ -96,13 +96,13 @@ then
 		fi				
 	fi			
 			
-	if test "$1" = "diff2d" -o "$1" = "cd3d" -o "$1" = "fem" -o "$1" = "ns2d"
+	if test "$1" = "diff2d" -o "$1" = "cd" -o "$1" = "fem" -o "$1" = "ns2d"
 	then
 		cd pclib;
 		shift;
 	fi
 
-	if test "$1" = "diff2da" -o "$1" = "cd3da" -o "$1" = "fema" -o "$1" = "ns2da"
+	if test "$1" = "diff2da" -o "$1" = "cda" -o "$1" = "fema" -o "$1" = "ns2da"
 	then
 		cd appl;
 		shift;

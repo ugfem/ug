@@ -22,9 +22,9 @@ then
 	do
     	rm $i
 	done
-	if test -d $UGROOT/../cd3d/man
+	if test -d $UGROOT/../cd/man
 	then
-		rm $UGROOT/../cd3d/man/*/*
+		rm $UGROOT/../cd/man/*/*
 	fi
 	if test -d $UGROOT/../diff2d/man
 	then
@@ -130,13 +130,13 @@ then
 	cd $UGROOT/../diff2d/appl
 	doctext -quotefmt -mpath $UGROOT/../diff2d/man/manb -ext b -heading diff2d/appl *.c *.h
 
-	#generate man pages for cd3d
-	cd $UGROOT/../cd3d
-	doctext -quotefmt -mpath $UGROOT/../cd3d/man/mana -ext a -heading cd3d *.doc
-	cd $UGROOT/../cd3d/pclib
-	doctext -quotefmt -mpath $UGROOT/../cd3d/man/manc -ext c -heading cd3d/pclib *.c *.h
-	cd $UGROOT/../cd3d/appl
-	doctext -quotefmt -mpath $UGROOT/../cd3d/man/manc -ext c -heading cd3d/appl *.c *.h
+	#generate man pages for cd
+	cd $UGROOT/../cd
+	doctext -quotefmt -mpath $UGROOT/../cd/man/mana -ext a -heading cd *.doc
+	cd $UGROOT/../cd/pclib
+	doctext -quotefmt -mpath $UGROOT/../cd/man/manc -ext c -heading cd/pclib *.c *.h
+	cd $UGROOT/../cd/appl
+	doctext -quotefmt -mpath $UGROOT/../cd/man/manc -ext c -heading cd/appl *.c *.h
 
 	#generate man pages for ns2d
 	cd $UGROOT/../ns2d

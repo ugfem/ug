@@ -135,13 +135,13 @@ then
 	cd $UGROOT/../diff2d/appl
 	doctext -latex -mpath $UGROOT/doc/ug3/diff2d/appl -heading diff2d/appl -quotefmt *.c *.h
 
-	#generate man pages for cd3d
-	cd $UGROOT/../cd3d
-	doctext -latex -mpath $UGROOT/doc/ug3/cd3d/overview -heading cd3d -quotefmt *.doc
-	cd $UGROOT/../cd3d/pclib
-	doctext -latex -mpath $UGROOT/doc/ug3/cd3d/pclib -heading cd3d/pclib -quotefmt *.c *.h
-	cd $UGROOT/../cd3d/appl
-	doctext -latex -mpath $UGROOT/doc/ug3/cd3d/appl -heading cd3d/appl -quotefmt *.c *.h
+	#generate man pages for cd
+	cd $UGROOT/../cd
+	doctext -latex -mpath $UGROOT/doc/ug3/cd/overview -heading cd -quotefmt *.doc
+	cd $UGROOT/../cd/pclib
+	doctext -latex -mpath $UGROOT/doc/ug3/cd/pclib -heading cd/pclib -quotefmt *.c *.h
+	cd $UGROOT/../cd/appl
+	doctext -latex -mpath $UGROOT/doc/ug3/cd/appl -heading cd/appl -quotefmt *.c *.h
 
 	#generate man pages for fem
 	cd $UGROOT/../fem

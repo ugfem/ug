@@ -20,18 +20,17 @@ make
 cp $UGROOT/configs/3TFFF.conf $UGROOT/ug.conf
 ugmake ug -i ifdef
 ugmake ug
-cd $UGROOT/../cd3d/pclib
-make
-cd $UGROOT/../cd3d/appl
-make
+cd $UGROOT/../cd/appl
+make 2d
+make 2d ifdef
+make 3d
 # build 2FTFF lib
 cp $UGROOT/configs/2FTFF.conf $UGROOT/ug.conf
 ugmake ug -i ifdef
 ugmake ug
-cd $UGROOT/../fem/pclib
-make
 cd $UGROOT/../fem/appl
-make
+make nd
+make ed
 # Test is ready
 # restore original state
 mv $UGROOT/ug.conf.orig $UGROOT/ug.conf 
