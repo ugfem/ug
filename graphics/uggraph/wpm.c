@@ -2832,6 +2832,7 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PlotBoundary            = YES;
     theGpo->PlotElemID                      = NO;
     theGpo->PlotNodeID                      = NO;
+    theGpo->PlotNodeType            = NO;
     theGpo->PlotNodes                       = NO;
     theGpo->PlotRefMarks            = NO;
     theGpo->PlotIndMarks            = NO;
@@ -2856,6 +2857,7 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   ReadArgvINT   ("e",&theGpo->PlotElemID,         argc,argv);
   ReadArgvINT   ("S",&theGpo->PlotSubdomain,      argc,argv);
   ReadArgvINT   ("n",&theGpo->PlotNodeID,         argc,argv);
+  ReadArgvINT   ("type",&theGpo->PlotNodeType,argc,argv);
   ReadArgvINT   ("m",&theGpo->PlotNodes,          argc,argv);
 
   vd = ReadArgvVecDesc(PO_MG(thePlotObj),"free",argc,argv);
@@ -2934,6 +2936,7 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SS,"ElemID",                       BOOL_2_YN(theGpo->PlotElemID));
   UserWriteF(DISPLAY_PO_FORMAT_SS,"subdomID",                     BOOL_2_YN(theGpo->PlotSubdomain));
   UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeID",                       BOOL_2_YN(theGpo->PlotNodeID));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeType",                     BOOL_2_YN(theGpo->PlotNodeType));
 
   switch (theGpo->WhichElem)
   {

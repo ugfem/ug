@@ -293,6 +293,7 @@ struct GridPlotObj2D {
   INT PlotRefMarks;                                                     /* YES or NO									*/
   INT PlotIndMarks;                                                     /* YES or NO									*/
   INT PlotNodeID;                                                       /* YES or NO									*/
+  INT PlotNodeType;                                                     /* YES or NO									*/
   INT PlotNodes;                                                        /* YES or NO									*/
   INT PlotBoundary;                                                     /* YES or NO									*/
   INT PlotSubdomain;                                                    /* YES or NO									*/

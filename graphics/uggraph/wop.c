@@ -562,6 +562,7 @@ static long NE_BndMarkerColor;	/* color of bnd marks						*/
 static long NE_CornerMarkerColor;/* color of corner marks					*/
 static long NE_InnerMarkerColor;/* color of inner marks 					*/
 static INT NE_EvalNodeID;		/* 1 if to evaluate 						*/
+static INT NE_EvalNodeType;		/* 1 if to evaluate 						*/
 static INT NE_EvalInnerNode;	/* 1 if to evaluate 						*/
 static INT NE_EvalBndNode;		/* 1 if to evaluate 						*/
 static short NE_InnerMarker;	/* marker for inner nodes					*/
@@ -6419,10 +6420,13 @@ static INT NW_PreProcess_PlotNodes2D (PICTURE *thePicture, WORK *theWork)
 	NE_CornerMarkerSize			= 4;
 	
 	NE_EvalNodeID				= 0;
+	NE_EvalNodeType				= 0;
 	NE_EvalInnerNode			= 0;
 	NE_EvalBndNode				= 0;
 	if (theGpo->PlotNodeID == YES)
 		NE_EvalNodeID			= 1;
+	if (theGpo->PlotNodeType == YES)
+		NE_EvalNodeType			= 1;
 	if (theGpo->PlotNodes == YES)
 	{
 		NE_EvalInnerNode		= 1;
@@ -8045,6 +8049,17 @@ static INT NW_NodesEval2D (NODE *theNode, DRAWINGOBJ *theDO)
 		#else
 			sprintf(DO_2cp(theDO),"%d",(int)ID(theNode)); DO_inc_str(theDO);
 		#endif
+	}
+	if (NE_EvalNodeType)
+	{
+		DO_2c(theDO) = DO_TEXT; DO_inc(theDO) 
+		DO_2l(theDO) = NE_IDColor; DO_inc(theDO)
+		DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO) 
+		DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO) 
+		DO_2s(theDO) = EE2D_TEXTSIZE; DO_inc(theDO);
+		V2_COPY(CVECT(MYVERTEX(theNode)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		sprintf(DO_2cp(theDO),"%d",(int)VTYPE(NVECTOR(theNode))); 
+		DO_inc_str(theDO);
 	}
 
 	DO_2c(theDO) = DO_NO_INST;
