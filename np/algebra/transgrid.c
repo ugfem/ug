@@ -76,6 +76,8 @@
 /*																			*/
 /****************************************************************************/
 
+REP_ERR_FILE;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -1554,7 +1556,7 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
   register DOUBLE sum,*mptr,*cmptr,*imptr,*jmptr,mvalue,imvalue,fac;
   register DOUBLE *imptr0,*imptr1,*jmptr0,*jmptr1,*madjptr,*cmadjptr;
   INT vtype,ivtype,mtype,cmtype,vncomp,wncomp,ivncomp,jvncomp,rmask,cmask;
-  INT myindex,wtype,ivindex;
+  INT vindex,wtype,ivindex,windex;
   register SHORT i,j,k,l,mc,*mcomp,*cmcomp,*madjcomp;
 
   CoarseGrid = DOWNGRID(FineGrid);
@@ -1702,7 +1704,9 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
       VINDEX(v) = ivindex;
       vtype = VTYPE(v);
       for (cm=VSTART(v); cm!=NULL; cm=MNEXT(cm)) {
-        if (ivindex < VINDEX(MDEST(cm))) continue;
+        w = MDEST(cm);
+        if (VNCLASS(w) < 2) continue;
+        if (ivindex < VINDEX(w)) continue;
         mtype = MTP(vtype,MDESTTYPE(cm));
         mptr = MVALUEPTR(cm,MD_MCMP_OF_MTYPE(Mat,mtype,0));
         for (i=0; i<MD_COLS_IN_MTYPE(Mat,mtype)
@@ -1728,21 +1732,22 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
           imptr = MVALUEPTR(im,0);
           for (jm=VISTART(w); jm!= NULL; jm = NEXT(jm)) {
             jv = MDEST(jm);
-            if (ivindex < VINDEX(jv)) continue;
-            GET_MATRIX(iv,jv,cm);
-            if (cm == NULL)
-              cm = CreateExtraConnection(CoarseGrid,iv,jv);
-            if (cm !=NULL) {
-              cmtype = MTP(ivtype,VTYPE(jv));
+            if (iv == jv) {
+              cm = VSTART(iv);
+              if (cm == NULL) {
+                cm = CreateExtraConnection(CoarseGrid,iv,jv);
+                if (cm == NULL)
+                  REP_ERR_RETURN (NUM_ERROR);
+              }
+              cmtype = MTP(ivtype,ivtype);
               cmptr = MVALUEPTR(cm,
                                 MD_MCMP_OF_MTYPE(Mat,cmtype,0));
-              jmptr = MVALUEPTR(jm,0);
               ivncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
-              jvncomp = MD_COLS_IN_MTYPE(Mat,cmtype);
+              jmptr = MVALUEPTR(jm,0);
               imptr1 = imptr;
               for (i=0; i<ivncomp; i++) {
                 jmptr1 = jmptr;
-                for (j=0; j<jvncomp; j++) {
+                for (j=0; j<ivncomp; j++) {
                   sum = 0.0;
                   imptr0 = imptr1;
                   for (k=0; k<vncomp; k++) {
@@ -1754,35 +1759,71 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
                     }
                     imptr0++;
                   }
-                  cmptr[i*jvncomp+j] += sum;
+                  cmptr[i*ivncomp+j] += sum;
                   jmptr1 += wncomp;
                 }
                 imptr1 += vncomp;
               }
             }
-            else {                                     /* connection not in pattern */
-              cm = VSTART(jv);
-              ASSERT(cm !=NULL);
-              cmtype = MTP(VTYPE(jv),VTYPE(jv));
-              jvncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
-              cm = GetMatrix(iv,iv);
-              ASSERT(cm !=NULL);
-              cmtype = MTP(ivtype,ivtype);
-              cmptr = MVALUEPTR(cm,0);
-              cmcomp = MD_MCMPPTR_OF_MTYPE(Mat,cmtype);
-              jmptr = MVALUEPTR(jm,0);
-              ivncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
-              for (i=0; i<ivncomp; i++)
-                for (j=0; j<jvncomp; j++) {
-                  sum = 0.0;
-                  for (k=0; k<vncomp; k++)
-                    for (l=0; l<wncomp; l++) {
-                      sum += imptr[i*vncomp+k]
-                             * mptr[mcomp[k*wncomp+l]]
-                             * jmptr[j*wncomp+l];
+            else {
+              if (VNCLASS(jv) < 2) continue;
+              if (ivindex < VINDEX(jv)) continue;
+              for (cm = VSTART(iv); cm != NULL; cm = NEXT(cm))
+                if (MDEST(cm) == jv) break;
+              if (cm == NULL)
+                cm = CreateExtraConnection(CoarseGrid,iv,jv);
+              if (cm !=NULL) {
+                cmtype = MTP(ivtype,VTYPE(jv));
+                cmptr = MVALUEPTR(cm,
+                                  MD_MCMP_OF_MTYPE(Mat,cmtype,0));
+                jmptr = MVALUEPTR(jm,0);
+                ivncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
+                jvncomp = MD_COLS_IN_MTYPE(Mat,cmtype);
+                imptr1 = imptr;
+                for (i=0; i<ivncomp; i++) {
+                  jmptr1 = jmptr;
+                  for (j=0; j<jvncomp; j++) {
+                    sum = 0.0;
+                    imptr0 = imptr1;
+                    for (k=0; k<vncomp; k++) {
+                      jmptr0 = jmptr1;
+                      for (l=0; l<wncomp; l++) {
+                        sum += *imptr0
+                               * mptr[k*wncomp+l]
+                               * *jmptr0++;
+                      }
+                      imptr0++;
                     }
-                  cmptr[cmcomp[i*ivncomp+i]] += sum;
+                    cmptr[i*jvncomp+j] += sum;
+                    jmptr1 += wncomp;
+                  }
+                  imptr1 += vncomp;
                 }
+              }
+              else {                                           /* connection not in pattern */
+                cm = VSTART(jv);
+                ASSERT(cm !=NULL);
+                cmtype = MTP(VTYPE(jv),VTYPE(jv));
+                jvncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
+                cm = GetMatrix(iv,iv);
+                ASSERT(cm !=NULL);
+                cmtype = MTP(ivtype,ivtype);
+                cmptr = MVALUEPTR(cm,0);
+                cmcomp = MD_MCMPPTR_OF_MTYPE(Mat,cmtype);
+                jmptr = MVALUEPTR(jm,0);
+                ivncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
+                for (i=0; i<ivncomp; i++)
+                  for (j=0; j<jvncomp; j++) {
+                    sum = 0.0;
+                    for (k=0; k<vncomp; k++)
+                      for (l=0; l<wncomp; l++) {
+                        sum += imptr[i*vncomp+k]
+                               * mptr[mcomp[k*wncomp+l]]
+                               * jmptr[j*wncomp+l];
+                      }
+                    cmptr[cmcomp[i*ivncomp+i]] += sum;
+                  }
+              }
             }
           }
         }
@@ -1793,7 +1834,9 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
       vtype = VTYPE(v);
       ivindex = VINDEX(v);
       for (cm=VSTART(v); cm!=NULL; cm=MNEXT(cm)) {
-        if (ivindex <= VINDEX(MDEST(cm))) continue;
+        w = MDEST(cm);
+        if (VNCLASS(w) < 2) continue;
+        if (ivindex < VINDEX(w)) continue;
         wtype = MDESTTYPE(cm);
         mtype = MTP(vtype,wtype);
         mptr = MVALUEPTR(cm,MD_MCMP_OF_MTYPE(Mat,mtype,0));
