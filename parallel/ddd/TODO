@@ -1,0 +1,88 @@
+
+---------------------------------------------------------------------
+
+DDD TODO-LIST
+
+971008 kb  created
+
+Apart from many TODOs spread out in the source code there are
+some more features which are still missing.
+
+---------------------------------------------------------------------
+
+
+
+---------------------------------------------------------------------
+
+1. Dynamic ddd_CplTable.
+ddd_CplTable, ddd_NCplTable and ddd_ObjTable are allocated
+dynamically since 1.8.10. However, the strategy is double-on-overflow,
+which temporarily needs more memory than with double-sized tables.
+There should be an option (at compile-time) to switch the
+strategy to kind-of segmented, i.e., segments of fixed size are
+allocated and freed on demand. Then, accessing the tables will
+be more time-expensive, but we could handle more delicate
+low-memory situations.
+
+---------------------------------------------------------------------
+
+2. DDD_NCopiesPrio().
+Implement a function returning the number of object copies with
+a given priority.
+
+---------------------------------------------------------------------
+
+3. XferCopyObjX and additional bytes.
+XferCopyObjX sends objects which are bigger than their
+declared DDD_TYPE. There should be a way to specify whether the
+additional data bytes are LDATA or GDATA or a mixture of both.
+
+---------------------------------------------------------------------
+
+4. IF-communication and DDD_ATTR.
+In all IF-communication functions there could be an additional
+function with masked DDD_ATTR, i.e. a value and a mask. With this
+feature one could communicate over a set of DDD_ATTR-subinterfaces.
+
+---------------------------------------------------------------------
+
+5. Integration check via DDD_HEADER checksums in debug-mode.
+There should be a debug-mode which allows to detect memory errors
+(bad pointers). In this debug-mode, each DDD_HEADER contains a
+checksum variable, which is a parity-like encoding of the data in the
+DDD_HEADER. Before each time the HEADER data is accessed (i.e.,
+read _and_ write access), the checksum is computed and compared
+with the stored one. Errors according to bad pointers and memory
+faults could be found more easily.
+
+---------------------------------------------------------------------
+
+6. Communicators.
+MPI-like communicators into DDD. This should be supported already
+by PPIF. (i.e. groups of processors execute certain DDD functions,
+like Interface-comm, Xfer, Identify).
+
+---------------------------------------------------------------------
+
+7. Make Notify-module faster.
+Perhaps it is possible to schedule the small messages in Notify not
+only through the PPIF-tree, but also to immediate processor neighbours,
+where this is possible. This possibly can eliminate bottlenecks on
+the master processor.
+
+---------------------------------------------------------------------
+
+8. F_FRONTEND: ARCH_FLINK.
+Introduce ARCH_FLINK definition in all arch subdirectories. This
+could be necessary for the F_FRONTEND production version.
+
+---------------------------------------------------------------------
+
+9. AddData without previous XferCopyObj.
+It should be possible to start the Xfer-communication directly with
+calls to DDD_XferAddData (with previous specification of a
+destination processor). This would enable simple Xfers based on
+objects w/o DDD_HEADER.
+
+---------------------------------------------------------------------
+
