@@ -326,6 +326,7 @@ static INT VM_Marker;                   /* plot markers for Vectors					*/
 static long VN_MarkerColor[4];  /* colors of Markers (VCLASS dependent)		*/
 static INT VM_Type[MAXVECTORS]; /* plot only vectors of TRUE Types			*/
 static long VM_MColor;                  /* color of connections						*/
+static long VM_StrongColor;             /* color of strong connections				*/
 static INT VM_Connections;              /* also plot connections					*/
 static INT VM_MExtra;                   /* also plot extra connections				*/
 static long VM_MExtraColor;             /* color of extra connections				*/
@@ -336,6 +337,7 @@ static long VM_OrderStart;              /* spectrum start for order					*/
 static float VM_OrderDelta;             /* spectrum increment for order				*/
 static INT VM_Dependency;               /* plot dependencies						*/
 static VECTOR *VM_LastVector;   /* preceding vector							*/
+static INT VM_lastind;                  /* remember index of last vector			*/
 static INT VM_ConnectVectors;   /* connect vectors to show order			*/
 static long VM_ConnectColor;    /* color of vector order connections		*/
 static long VM_CutColor;                /* color for cut vectors (order=2)			*/
@@ -350,20 +352,24 @@ static long VM_VecMatColor;             /* color of vector matrix data				*/
 #define MAT_TEXTSIZE                    (8*TextFactor)
 
 static MatrixEvalProcPtr MAT_eval; /* evaluation function (if no symbol)		*/
-static INT MAT_comp;                    /* matrix comp (if symbol)					*/
+static MATDATA_DESC *MAT_md;    /* matrix descriptor (if symbol)			*/
 static INT MAT_conn;                    /* plot connections							*/
 static INT MAT_extra;                   /* plot extra connections					*/
-static INT MAT_rmask;                   /* row type mask							*/
-static INT MAT_cmask;                   /* col type mask							*/
+static INT MAT_rel;                             /* scale values by inverse diagonal entry	*/
 static INT MAT_maxrow;                  /* last row									*/
 static DOUBLE MAT_factor;               /* color spectrum factor					*/
 static long MAT_black;                  /* black for frames and values				*/
+static long MAT_white;                  /* white for frames and values				*/
+static long MAT_dark;                   /* indicate dark colors (color>MAT_dark)	*/
 static INT MAT_frame;                   /* frame colored squares					*/
 static INT MAT_printsize;               /* minimal square size for printing values	*/
 static INT MAT_print;                   /* print values								*/
 static DOUBLE MAT_offset;               /* color spectrum offset					*/
 static INT MAT_log;                             /* take log of absolute values				*/
 static DOUBLE MAT_thresh;               /* don't plot entries with |.|<thresh		*/
+
+static BLOCKVECTOR *BV_theBV;   /* current bockvector						*/
+static long BV_color;                   /* black for seperating lines of blocks		*/
 
 /*---------- working variables of 'EW_ElementBdryEval2D' -------------------*/
 static long EB_ColorGrid;               /* color of the grid plotted with the EScala*/
@@ -3538,8 +3544,8 @@ static INT Draw2D (DRAWINGOBJ *q)
     case DO_TEXT :
       DO_inc(q)
       UgSetColor(DO_2l(q)); DO_inc(q);
-      mode = TEXT_REGULAR; if (DO_2c(q)==TEXT_INVERSE) mode = TEXT_INVERSE;DO_inc(q)
-      centered = 0; if (DO_2c(q)==TEXT_CENTERED) centered = 1;DO_inc(q)
+      mode = DO_2c(q); DO_inc(q)
+      centered = DO_2c(q); DO_inc(q)
       UgSetTextSize(DO_2s(q)); DO_inc(q);
       V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
       (*OBS_ProjectProc)(help,&a);
@@ -3793,8 +3799,8 @@ static INT Draw3D (DRAWINGOBJ *q)
     case DO_TEXT :
       DO_inc(q)
       UgSetColor(DO_2l(q)); DO_inc(q);
-      mode = TEXT_REGULAR; if (DO_2c(q)==TEXT_INVERSE) mode = TEXT_INVERSE;DO_inc(q)
-      centered = 0; if (DO_2c(q) == TEXT_CENTERED) centered = 1;DO_inc(q)
+      mode = DO_2c(q); DO_inc(q)
+      centered = DO_2c(q); DO_inc(q)
       UgSetTextSize(DO_2s(q)); DO_inc(q);
       if ((DO_2c(q)) == TEXT_CENTERED)
         V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help);DO_inc_n(q,3);
@@ -4181,10 +4187,10 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
   OUTPUTDEVICE *theOD;
   MULTIGRID *theMG;
   GRID *theGrid;
-  MATDATA_DESC *theMD;
   COORD_POINT point0,point1;
   COORD x0[2],x1[2],help[2];
   DOUBLE d;
+  INT mtp,n;
 
   theMpo = &(PIC_PO(thePicture)->theMpo);
   theOD  = PIC_OUTPUTDEV(thePicture);
@@ -4194,26 +4200,22 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
   MAT_conn                        = theMpo->conn;
   MAT_extra                       = theMpo->extra;
   MAT_black                       = theOD->black;
+  MAT_white                       = theOD->white;
 
   /* set globals for eval function */
   if (theMpo->Matrix!=NULL)
   {
     MAT_eval                = NULL;
-
-    theMD                   = SYM_MAT_DESC(theMpo->Matrix);
-    MAT_comp                = MD_SCALCMP(theMD);
-    MAT_rmask               = MD_SCAL_RTYPEMASK(theMD);
-    MAT_cmask               = MD_SCAL_CTYPEMASK(theMD);
+    MAT_md                  = SYM_MAT_DESC(theMpo->Matrix);
   }
   else
   {
     MAT_eval                = theMpo->EvalFct->EvalProc;
-    MAT_rmask               = 0xF;
-    MAT_cmask               = 0xF;
   }
   MAT_maxrow                      = theGrid->nVector;
   MAT_log                         = theMpo->log;
   MAT_thresh                      = theMpo->thresh;
+  MAT_rel                         = theMpo->rel;
 
   /* color range */
   if (theMpo->max - theMpo->min < SMALL_D)
@@ -4227,10 +4229,16 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
   else
     MAT_factor = (theOD->spectrumEnd - theOD->spectrumStart)/(theMpo->max - theMpo->min);
   MAT_offset = theOD->spectrumStart - MAT_factor*theMpo->min;
+  MAT_dark   = theOD->spectrumStart + 0.2*(theOD->spectrumEnd - theOD->spectrumStart);
+
+  /* smallest square needed */
+  n = 0;
+  for (mtp=0; mtp<NMATTYPES; mtp++)
+    n = MAX(n,MAX(MD_ROWS_IN_MTYPE(MAT_md,mtp),MD_COLS_IN_MTYPE(MAT_md,mtp)));
 
   /* compute size of squares in pixel coordinates */
-  x0[0] = 0.0; x0[1] = 0.0;
-  x1[0] = 1.0; x1[1] = 0.0;
+  x0[0] = 0.0;                    x0[1] = 0.0;
+  x1[0] = 1.0/(COORD)n;   x1[1] = 0.0;
   V2_TRAFOM3_V2(x0,ObsTrafo,help); (*OBS_ProjectProc)(help,&point0);
   V2_TRAFOM3_V2(x1,ObsTrafo,help); (*OBS_ProjectProc)(help,&point1);
 
@@ -4251,98 +4259,182 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
   return (0);
 }
 
+static INT PlotMatrixEntry (
+  COORD rowi, COORD coli,
+  COORD row, COORD col,
+  COORD w, COORD h,
+  DOUBLE value, DOUBLE printvalue,
+  DRAWINGOBJ **DOhandle)
+{
+  long Color;
+  char valtext[16],*p;
+
+  Color = (long)(MAT_factor*value+MAT_offset);
+  Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
+  if (Color<WOP_OutputDevice->spectrumStart)
+    return (0);
+
+  /* draw */
+  DO_2c(*DOhandle) = DO_POLYGON; DO_inc(*DOhandle)
+  DO_2c(*DOhandle) = 4; DO_inc(*DOhandle)
+  DO_2l(*DOhandle) = Color; DO_inc(*DOhandle);
+  DO_2C(*DOhandle) = col;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
+  DO_2C(*DOhandle) = col+w; DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
+  DO_2C(*DOhandle) = col+w; DO_inc(*DOhandle); DO_2C(*DOhandle) = row+h; DO_inc(*DOhandle);
+  DO_2C(*DOhandle) = col;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row+h; DO_inc(*DOhandle);
+
+  if (MAT_frame)
+  {
+    DO_2c(*DOhandle) = DO_POLYLINE; DO_inc(*DOhandle)
+    DO_2c(*DOhandle) = 5; DO_inc(*DOhandle)
+    DO_2l(*DOhandle) = MAT_black; DO_inc(*DOhandle);
+    DO_2C(*DOhandle) = col;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
+    DO_2C(*DOhandle) = col+w; DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
+    DO_2C(*DOhandle) = col+w; DO_inc(*DOhandle); DO_2C(*DOhandle) = row+h; DO_inc(*DOhandle);
+    DO_2C(*DOhandle) = col;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row+h; DO_inc(*DOhandle);
+    DO_2C(*DOhandle) = col;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
+  }
+  if (MAT_print)
+  {
+    if (Color<MAT_dark)
+      Color = MAT_white;
+    else
+      Color = MAT_black;
+
+    sprintf(valtext,"%.3e",printvalue);
+
+    /* exponent */
+    p = strchr(valtext,'e');
+    DO_2c(*DOhandle) = DO_TEXT; DO_inc(*DOhandle)
+    DO_2l(*DOhandle) = Color; DO_inc(*DOhandle);
+    DO_2c(*DOhandle) = TEXT_REGULAR; DO_inc(*DOhandle)
+    DO_2c(*DOhandle) = TEXT_CENTERED; DO_inc(*DOhandle)
+    DO_2s(*DOhandle) = MAT_TEXTSIZE; DO_inc(*DOhandle);
+    DO_2C(*DOhandle) = col+0.5*w;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row+0.5*h;   DO_inc(*DOhandle);
+    strcpy(DO_2cp(*DOhandle),p); DO_inc_str(*DOhandle);
+
+    /* mantisse */
+    *p = '\0';
+    DO_2c(*DOhandle) = DO_TEXT; DO_inc(*DOhandle)
+    DO_2l(*DOhandle) = Color; DO_inc(*DOhandle);
+    DO_2c(*DOhandle) = TEXT_REGULAR; DO_inc(*DOhandle)
+    DO_2c(*DOhandle) = TEXT_CENTERED; DO_inc(*DOhandle)
+    DO_2s(*DOhandle) = MAT_TEXTSIZE; DO_inc(*DOhandle);
+    DO_2C(*DOhandle) = col+0.5*w;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row+0.75*h;   DO_inc(*DOhandle);
+    strcpy(DO_2cp(*DOhandle),valtext); DO_inc_str(*DOhandle);
+
+    /* index */
+    sprintf(valtext,"%ld,%ld",(long)rowi,(long)coli);
+    DO_2c(*DOhandle) = DO_TEXT; DO_inc(*DOhandle)
+    DO_2l(*DOhandle) = Color; DO_inc(*DOhandle);
+    DO_2c(*DOhandle) = TEXT_REGULAR; DO_inc(*DOhandle)
+    DO_2c(*DOhandle) = TEXT_CENTERED; DO_inc(*DOhandle)
+    DO_2s(*DOhandle) = MAT_TEXTSIZE; DO_inc(*DOhandle);
+    DO_2C(*DOhandle) = col+0.5*w;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row+0.25*h;   DO_inc(*DOhandle);
+    strcpy(DO_2cp(*DOhandle),valtext); DO_inc_str(*DOhandle);
+  }
+
+  return (0);
+}
+
+static PlotPointBlockMatrixEntry (
+  COORD rowi, COORD coli,
+  COORD row, COORD col,
+  INT nr, INT nc,
+  const DOUBLE *values,
+  DOUBLE *min, DOUBLE *max,
+  DRAWINGOBJ **DOhandle)
+{
+  DOUBLE value,printvalue;
+  COORD w,h;
+  INT i,j;
+
+  w = 1.0/(COORD)nc;
+  h = 1.0/(COORD)nr;
+
+  for (i=0; i<nr; i++)
+    for (j=0; j<nc; j++)
+    {
+      printvalue = value = values[i*nc+j];
+
+      if (fabs(value)<=MAT_thresh)
+        continue;
+      if (MAT_log)
+        value = log(fabs(value));
+
+      /* store range */
+      *max = MAX(*max,value);
+      *min = MIN(*min,value);
+
+      PlotMatrixEntry(rowi,coli,row+1-(i+1)*h,col+j*w,w,h,value,printvalue,DOhandle);
+    }
+  if (!MAT_frame)
+    return (0);
+
+  /* frame whole block */
+  DO_2c(*DOhandle) = DO_POLYLINE; DO_inc(*DOhandle)
+  DO_2c(*DOhandle) = 5; DO_inc(*DOhandle)
+  DO_2l(*DOhandle) = MAT_black; DO_inc(*DOhandle);
+  DO_2C(*DOhandle) = col;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
+  DO_2C(*DOhandle) = col+1; DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
+  DO_2C(*DOhandle) = col+1; DO_inc(*DOhandle); DO_2C(*DOhandle) = row+1; DO_inc(*DOhandle);
+  DO_2C(*DOhandle) = col;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row+1; DO_inc(*DOhandle);
+  DO_2C(*DOhandle) = col;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
+
+  return (0);
+}
+
 static INT VW_MatrixEval (VECTOR *vec, DRAWINGOBJ *theDO)
 {
   MATRIX *mat;
-  DOUBLE value,printvalue,min,max;
-  long Color;
-  INT row,col;
-  char valtext[16],*p;
+  DOUBLE values[MAX_MAT_COMP],invdiag[MAX_MAT_COMP],min,max;
+  SHORT *cmp;
+  INT row,col,nr,nc,rt,mtp,i;
+
+  /* origin is UPPER left corner */
   row = MAT_maxrow-VINDEX(vec);
+  rt  = VTYPE(vec);
 
   min =  MAX_D;
   max = -MAX_D;
 
-  if (MAT_rmask & VDATATYPE(vec))
-    for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
-      if (MAT_cmask & VDATATYPE(MDEST(mat)))
-      {
-        if (CEXTRA(MMYCON(mat)))
-        {
-          if (!MAT_extra) continue;
-        }
-        else
-        if (!MAT_conn) continue;
+  for (i=0; i<MAX_MAT_COMP; i++) invdiag[i] = 1.0;
+  for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+  {
+    if (CEXTRA(MMYCON(mat)))
+    {
+      if (!MAT_extra) continue;
+    }
+    else
+    if (!MAT_conn) continue;
 
-        col = VINDEX(MDEST(mat));
+    col = VINDEX(MDEST(mat))-1;                 /* -1 yields correct adjustment */
 
-        if (MAT_eval==NULL)
-          value = MVALUE(mat,MAT_comp);
-        else
-          value = (*MAT_eval)(mat);
+    if (MAT_eval==NULL)
+    {
+      mtp = MTP(rt,VTYPE(MDEST(mat)));
 
-        printvalue = value;
+      if (!MD_ISDEF_IN_MTYPE(MAT_md,mtp)) continue;
 
-        if (fabs(value)<=MAT_thresh)
-          continue;
-        if (MAT_log)
-          value = log(fabs(value));
+      nr  = MD_ROWS_IN_MTYPE(MAT_md,mtp);
+      nc  = MD_COLS_IN_MTYPE(MAT_md,mtp);
+      cmp = MD_MCMPPTR_OF_MTYPE(MAT_md,mtp);
+      if (MDIAG(mat) && MAT_rel)
+        for (i=0; i<nr; i++)
+          invdiag[i] = 1.0/MVALUE(mat,cmp[i*nc+i]);
+      for (i=0; i<nr*nc; i++)
+        values[i] = invdiag[i/nc] * MVALUE(mat,cmp[i]);
+    }
+    else
+    {
+      nr = nc = 1;
+      values[0] = (*MAT_eval)(mat);
+    }
 
-        /* store range */
-        max = MAX(max,value);
-        min = MIN(min,value);
+    PlotPointBlockMatrixEntry(VINDEX(vec),VINDEX(MDEST(mat)),row,col,nr,nc,values,&min,&max,&theDO);
+  }
 
-        Color = (long)(MAT_factor*value+MAT_offset);
-        Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-        if (Color<WOP_OutputDevice->spectrumStart)
-          continue;
-
-        /* draw */
-        DO_2c(theDO) = DO_POLYGON; DO_inc(theDO)
-        DO_2c(theDO) = 4; DO_inc(theDO)
-        DO_2l(theDO) = Color; DO_inc(theDO);
-        DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
-        DO_2C(theDO) = col+1; DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
-        DO_2C(theDO) = col+1; DO_inc(theDO); DO_2C(theDO) = row+1; DO_inc(theDO);
-        DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row+1; DO_inc(theDO);
-
-        if (MAT_frame)
-        {
-          DO_2c(theDO) = DO_POLYLINE; DO_inc(theDO)
-          DO_2c(theDO) = 5; DO_inc(theDO)
-          DO_2l(theDO) = MAT_black; DO_inc(theDO);
-          DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
-          DO_2C(theDO) = col+1; DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
-          DO_2C(theDO) = col+1; DO_inc(theDO); DO_2C(theDO) = row+1; DO_inc(theDO);
-          DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row+1; DO_inc(theDO);
-          DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
-        }
-        if (MAT_print)
-        {
-          sprintf(valtext,"%.3e",printvalue);
-
-          /* exponent */
-          p = strchr(valtext,'e');
-          DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
-          DO_2l(theDO) = MAT_black; DO_inc(theDO);
-          DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO)
-          DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO)
-          DO_2s(theDO) = MAT_TEXTSIZE; DO_inc(theDO);
-          DO_2C(theDO) = col+0.5;   DO_inc(theDO); DO_2C(theDO) = row+0.25;   DO_inc(theDO);
-          strcpy(DO_2cp(theDO),p); DO_inc_str(theDO);
-
-          /* mantisse */
-          *p = '\0';
-          DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
-          DO_2l(theDO) = MAT_black; DO_inc(theDO);
-          DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO)
-          DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO)
-          DO_2s(theDO) = MAT_TEXTSIZE; DO_inc(theDO);
-          DO_2C(theDO) = col+0.5;   DO_inc(theDO); DO_2C(theDO) = row+0.75;   DO_inc(theDO);
-          strcpy(DO_2cp(theDO),valtext); DO_inc_str(theDO);
-        }
-      }
-
+  /* fill range */
   if ((max!=-MAX_D) && (min!=MAX_D))
   {
     DO_2c(theDO) = DO_RANGE; DO_inc(theDO);
@@ -5283,7 +5375,7 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
   GRID *theGrid;
   VECTOR *vec;
   BLOCKVECTOR  *theBV;
-  INT nBV;
+  INT nColors,BVn;
 
   theVmo = &(PIC_PO(thePicture)->theVmo);
   theOD  = PIC_OUTPUTDEV(thePicture);
@@ -5307,6 +5399,7 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
   VM_IdxColor                                     = theOD->blue;
   VM_Order                                        = theVmo->Order;
   VM_Dependency                           = theVmo->Dependency;
+  VM_StrongColor                          = theOD->green;
   VM_ConnectVectors                       = theVmo->ConnectVectors;
   VM_ConnectColor                         = theOD->red;
   VM_CutColor                                     = theOD->black;
@@ -5327,22 +5420,45 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
 
   if (VM_Order)
   {
-    nBV = 0;
-    for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
+    nColors = 0;
+    switch (VM_Order)
     {
-      nBV++;
-      for (vec=BVFIRSTVECTOR(theBV); vec!=BVENDVECTOR(theBV); vec=SUCCVC(vec))
-        VINDEX(vec) = BVNUMBER(theBV);
-    }
-    if (VM_Order!=3)
-      /* calc number of cycles */
-      nBV /= 3;
+    case 1 :
+      for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
+      {
+        for (vec=BVFIRSTVECTOR(theBV); vec!=BVENDVECTOR(theBV); vec=SUCCVC(vec))
+          VINDEX(vec) = nColors;
+        nColors++;
+      }
+      break;
 
-    if (nBV<=0)
+    case 2 :
+      for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
+      {
+        BVn = BVNUMBER(theBV);
+        nColors = MAX(ORD_CYC(BVn),nColors);
+        for (vec=BVFIRSTVECTOR(theBV); vec!=BVENDVECTOR(theBV); vec=SUCCVC(vec))
+          VINDEX(vec) = BVn;
+      }
+      nColors++;
+      break;
+
+    case 3 :
+      for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
+      {
+        BVn = BVNUMBER(theBV);
+        nColors = MAX(ORD_LIN(BVn),nColors);
+        for (vec=BVFIRSTVECTOR(theBV); vec!=BVENDVECTOR(theBV); vec=SUCCVC(vec))
+          VINDEX(vec) = BVn;
+      }
+      break;
+    }
+
+    if (nColors<=0)
       return (1);
 
     VM_OrderStart                   = theOD->spectrumStart;
-    VM_OrderDelta                   = (theOD->spectrumEnd - theOD->spectrumStart) / (float) nBV;
+    VM_OrderDelta                   = (theOD->spectrumEnd - theOD->spectrumStart) / (float) nColors;
   }
 
   return (0);
@@ -5352,6 +5468,7 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
 {
   MATRIX *mat;
   COORD_VECTOR mypos,nbpos;
+  long color;
 
   if (!VM_Type[VTYPE(vec)])
   {
@@ -5364,15 +5481,16 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
   if (VM_ConnectVectors)
   {
     if (VM_LastVector!=NULL)
-    {
-      VectorPosition(VM_LastVector,nbpos);
+      if (!(VM_Order && (VINDEX(VM_LastVector)!=VINDEX(vec))))
+      {
+        VectorPosition(VM_LastVector,nbpos);
 
-      DO_2c(theDO) = DO_LINE; DO_inc(theDO)
-      DO_2l(theDO) = VM_ConnectColor; DO_inc(theDO);
-      V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-      V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+        DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+        DO_2l(theDO) = VM_ConnectColor; DO_inc(theDO);
+        V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+        V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 
-    }
+      }
     VM_LastVector = vec;
   }
   else if (VM_Dependency)
@@ -5385,6 +5503,7 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
 
         VectorPosition(MDEST(mat),nbpos);
 
+        color = MSTRONG(mat) ? VM_StrongColor : VM_MColor;
         if (MDOWN(mat))
         {
           DO_2c(theDO) = DO_DEPEND; DO_inc(theDO)
@@ -5430,9 +5549,10 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
 static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 {
   COORD_VECTOR mypos;
-  INT markertype,cycle,set;
+  INT markertype,cycle,gen,line;
   long color;
   char setchar;
+  static INT number;
 
   if (!VM_Type[VTYPE(vec)])
   {
@@ -5444,11 +5564,12 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 
   if (VM_Order)
   {
-    cycle = VINDEX(vec) / 3;                            /* integer division! */
-    set   = VINDEX(vec) % 3;
-    if              (set==0) setchar = 'F';
-    else if (set==1) setchar = 'L';
-    else if (set==2) setchar = 'C';
+    cycle = ORD_CYC(VINDEX(vec));
+    gen   = ORD_GEN(VINDEX(vec));
+    line  = ORD_LIN(VINDEX(vec));
+    if              (gen==0) setchar = 'F';
+    else if (gen==1) setchar = 'L';
+    else if (gen==2) setchar = 'C';
   }
 
   /* plot markers */
@@ -5461,19 +5582,22 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
       markertype = VTYPE(vec);
       break;
     case 1 :
-      color = VM_OrderStart+cycle*VM_OrderDelta;
-      markertype = set;
+      color = VM_OrderStart+VINDEX(vec)*VM_OrderDelta;
+      markertype = 0;
       break;
     case 2 :
-      if (set<2)
+      if (gen!=BV_GEN_C)
         color = VM_OrderStart+cycle*VM_OrderDelta;
       else
         color = VM_CutColor;
-      markertype = set;
+      markertype = gen;
       break;
     case 3 :
-      color = VM_OrderStart+VINDEX(vec)*VM_OrderDelta;
-      markertype = 0;
+      if (gen!=BV_GEN_C)
+        color = VM_OrderStart+line*VM_OrderDelta;
+      else
+        color = VM_CutColor;
+      markertype = gen;
       break;
     }
 
@@ -5494,10 +5618,8 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
       case 0 :
         DO_2s(theDO) = FILLED_SQUARE_MARKER;
         break;
-      case 1 :
-        DO_2s(theDO) = EMPTY_SQUARE_MARKER;
-        break;
       case 2 :
+      case 3 :
         DO_2s(theDO) = FILLED_SQUARE_MARKER;
         break;
       }
@@ -5511,16 +5633,36 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
   /* plot index */
   if (VM_Idx)
   {
-    DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
-    DO_2l(theDO) = VM_IdxColor; DO_inc(theDO)
-    DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO)
-    DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO)
+    DO_2c(theDO) = DO_TEXT; DO_inc(theDO);
+    DO_2l(theDO) = VM_IdxColor; DO_inc(theDO);
+    if (VM_Order>1)
+      DO_2c(theDO) = TEXT_INDEXED;
+    else
+      DO_2c(theDO) = TEXT_REGULAR;
+    DO_inc(theDO);
+    DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO);
     DO_2s(theDO) = VM_TEXTSIZE; DO_inc(theDO);
     V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-    if (VM_Order && (VM_Order!=3))
-      sprintf(DO_2cp(theDO),"%c%d",(int)setchar,(int)cycle);
-    else
+    switch (VM_Order)
+    {
+    case 0 :
+    case 1 :
       sprintf(DO_2cp(theDO),"%d",(int)VINDEX(vec));
+      break;
+    case 2 :
+      sprintf(DO_2cp(theDO),"%c|/T%d",(int)setchar,(int)cycle);
+      break;
+    case 3 :
+      if (VINDEX(vec)==VM_lastind)
+        number++;
+      else
+      {
+        VM_lastind = VINDEX(vec);
+        number = 0;
+      }
+      sprintf(DO_2cp(theDO),"%c|/T%d,%d/H%d",(int)setchar,(int)cycle,(int)line,(int)number);
+      break;
+    }
     DO_inc_str(theDO);
   }
 
@@ -6308,7 +6450,6 @@ static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
 {
   struct FindRange_Work *FR_Work;
   DOUBLE m,l;
-  INT i;
 
   FR_Work = W_FINDRANGE_WORK(theWork);
 
@@ -6520,7 +6661,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   INT i, j;
   COORD *x[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR MidPoint;
-  INT coe,rule,side;
+  INT coe,rule;
   void *data;
 
   coe = CORNERS_OF_ELEM(theElement);
@@ -6854,7 +6995,6 @@ static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
   struct LinePlotObj2D *theLpo;
   OUTPUTDEVICE *theOD;
   MULTIGRID *theMG;
-  INT i;
 
   theLpo = &(PIC_PO(thePicture)->theLpo);
   theOD  = PIC_OUTPUTDEV(thePicture);
@@ -7481,10 +7621,13 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   INT i, n, m, found;
   COORD_POINT P1, P2;
   const COORD *x[MAX_CORNERS_OF_ELEM];
-  DRAWINGOBJ *p, *range;
+  DRAWINGOBJ *range;
   COORD alpha[MAX_CORNERS_OF_ELEM], beta;
   COORD_VECTOR LocalCoord, P[MAX_CORNERS_OF_ELEM], PEval, A, B;
   DOUBLE v;
+        #ifdef __DO_HEAP_USED__
+  DRAWINGOBJ *p;
+        #endif
 
   n = CORNERS_OF_ELEM(theElement);
 
@@ -7761,6 +7904,27 @@ static INT FindRasterPoints2D (COORD RasterSize, const COORD **Polygon, INT Numb
       if (*RPNumber>=RASTERPOINTS_MAX)
         return (0);
     }
+
+  return (0);
+}
+
+static INT EW_EVectorPreProcess_PlotGridBefore2D (PICTURE *thePicture, WORK *theWork)
+{
+  struct ElemVectorPlotObj2D *theEvpo;
+  OUTPUTDEVICE *theOD;
+  MULTIGRID *theMG;
+
+  theEvpo = &(PIC_PO(thePicture)->theEvpo);
+  theOD  = PIC_OUTPUTDEV(thePicture);
+  theMG  = PO_MG(PIC_PO(thePicture));
+
+  if (!theEvpo->PlotGrid)
+    return (1);
+
+  EB_ColorGrid = theOD->black;
+
+  /* mark surface elements */
+  if (MarkElements2D(theMG,0,CURRENTLEVEL(theMG))) return (1);
 
   return (0);
 }
@@ -8157,7 +8321,7 @@ static DefinePolygon (COORD_VECTOR *Poly, INT Number)
 
 static INT GetPolyElemSideISHalfSpaceTET (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
 {
-  INT i, j, count1, count2, count3, SwitchMode;
+  INT i, j, count1, count2, count3;
   COORD *x[MAX_CORNERS_OF_SIDE], Z[MAX_CORNERS_OF_SIDE];
 
   /* get corners of the element side */
@@ -8760,7 +8924,7 @@ static INT GetLineElemSideISCutPlaneHEX (ELEMENT* theElement, COORD **Corners, C
 
 static INT GetPolyElemISCutPlaneTET (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
 {
-  INT i, j, count1, count2, SwitchMode;
+  INT i, j, count1, count2;
   COORD *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
 
   /* get corners of the element side */
@@ -9730,9 +9894,8 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
   INT i, j, NodeOrder, n;
-  COORD_POINT CornersOfTriangle[MAX_CORNERS_OF_SIDE];
   COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR xs, Polygon[MAX_POINTS_OF_POLY];
+  COORD_VECTOR Polygon[MAX_POINTS_OF_POLY];
   INT Viewable[MAX_SIDES_OF_ELEM];
 
   DO_2c(theDO) = DO_NO_INST;
@@ -10298,7 +10461,6 @@ static void CalcViewableSides (ELEMENT *theElement)
   INT Viewablility;
   INT i,j;
   COORD *x[MAX_CORNERS_OF_ELEM], xc[3], xcs[3];
-  COORD *nz;
   COORD ScalarPrd;
 
   /* load corners of the element */
@@ -10544,7 +10706,7 @@ static void CalcViewableSidesOnGrid (GRID *theGrid)
 
 static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 {
-  INT i, j, Count, nsons, Neighbor;
+  INT i, j, Count, nsons;
   INT LastShellBegin, NewShellBegin, ActualPosition;
   ELEMENT *NbElement, *SonElement, *SonList[MAX_SONS];
 
@@ -11011,7 +11173,6 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 static INT OrderNodes (MULTIGRID *theMG)
 {
   ELEMENT *theElement;
-  GRID *theGrid;
   COORD z[MAX_CORNERS_OF_ELEM], zm;
   INT i, j, order[MAX_CORNERS_OF_ELEM], imax, jm,jj;
 
@@ -11713,8 +11874,8 @@ static INT PlotColorTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COOR
 static INT PlotColorQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2, COORD *QP3,
                                      COORD *LQP0, COORD *LQP1, COORD *LQP2, COORD *LQP3,INT depth, DRAWINGOBJ **theDO)
 {
-  COORD_VECTOR EVP, LEVP, LocalCoord, MP0, MP1, MP2, MP3, LMP0, LMP1, LMP2, LMP3;
-  INT i, j;
+  COORD_VECTOR EVP, LEVP, MP0, MP1, MP2, MP3, LMP0, LMP1, LMP2, LMP3;
+  INT i;
   long Color;
   DOUBLE value;
 
@@ -11893,7 +12054,7 @@ static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem,
                                   COORD *LTP0, COORD *LTP1, COORD *LTP2,
                                   INT depth, DRAWINGOBJ **theDO)
 {
-  COORD_VECTOR LocalCoord, MP0, MP1, MP2, LMP0, LMP1, LMP2,PointMid, Point[3];
+  COORD_VECTOR MP0, MP1, MP2, LMP0, LMP1, LMP2,PointMid, Point[3];
   INT i, j, n, min, max;
   long Color;
   DOUBLE v0, v1, v2, vmin, vmax;
@@ -12141,7 +12302,7 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
   INT i, n, NodeOrder;
   COORD_VECTOR Poly[MAX_POINTS_OF_POLY], PolyLoc[MAX_POINTS_OF_POLY];
-  COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM], loc[3], glob[3];
+  COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
   DRAWINGOBJ *range;
 
   DO_2c(theDO) = DO_NO_INST;
@@ -12469,10 +12630,8 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
    D*/
 /****************************************************************************/
 
-INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT inverse)
+INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT mode)
 {
-  INT mode;
-
   if (PrepareGraphWindow(theWin)) return (1);
 
   /* transform from standard system to device coordinates */
@@ -12485,8 +12644,6 @@ INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT siz
     pos.y = UGW_LLL(theWin)[_Y_] + pos.y;
   else
     pos.y = UGW_LLL(theWin)[_Y_] - pos.y;
-
-  mode = (inverse) ? TEXT_INVERSE : TEXT_REGULAR;
 
   UgSetColor(UGW_OUTPUTDEV(theWin)->black);
   if (size!=0)
@@ -13433,9 +13590,19 @@ INT InitWOP (void)
   if ((thePOH=CreatePlotObjHandling ("EVector"))  == NULL) return (__LINE__);
 
   /* draw work */
-  POH_NBCYCLES(thePOH,DRAW_WORK) = 2;
+  POH_NBCYCLES(thePOH,DRAW_WORK) = 3;
 
   theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
+  WP_WORKMODE(theWP) = ELEMENTWISE;
+  theEWW = WP_ELEMWISE(theWP);
+  theEWW->EW_PreProcessProc                               = EW_EVectorPreProcess_PlotGridBefore2D;
+  theEWW->EW_GetFirstElementProcProc              = EW_GetFirstElement_vert_fw_up_Proc;
+  theEWW->EW_GetNextElementProcProc               = EW_GetNextElement_vert_fw_up_Proc;
+  theEWW->EW_EvaluateProc                                 = EW_ElementBdryEval2D;
+  theEWW->EW_ExecuteProc                                  = Draw2D;
+  theEWW->EW_PostProcessProc                              = NULL;
+
+  theWP = POH_WORKPROGS(thePOH,DRAW_WORK,1);
   WP_WORKMODE(theWP) = ELEMENTWISE;
   theEWW = WP_ELEMWISE(theWP);
   theEWW->EW_PreProcessProc                               = EW_PreProcess_PlotBlackBnd2D;
@@ -13445,7 +13612,7 @@ INT InitWOP (void)
   theEWW->EW_ExecuteProc                                  = Draw2D;
   theEWW->EW_PostProcessProc                              = NULL;
 
-  theWP = POH_WORKPROGS(thePOH,DRAW_WORK,1);
+  theWP = POH_WORKPROGS(thePOH,DRAW_WORK,2);
   WP_WORKMODE(theWP) = ELEMENTWISE;
   theEWW = WP_ELEMWISE(theWP);
   theEWW->EW_PreProcessProc                               = EW_PreProcess_EVector2D;
