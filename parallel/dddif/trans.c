@@ -307,13 +307,6 @@ static int Scatter_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 
 static int ComputeGhostCmds (MULTIGRID *theMG)
 {
-  /*
-          DDD_IFOnewayX(ElementIF, IF_FORWARD, sizeof(int),
-                  Gather_GhostCmd, Scatter_GhostCmd);
-
-          DDD_IFOnewayX(ElementVIF, IF_FORWARD, sizeof(int),
-                  Gather_VGhostCmd, Scatter_VGhostCmd);
-   */
   DDD_IFOnewayX(ElementVHIF, IF_FORWARD, sizeof(int),
                 Gather_VHGhostCmd, Scatter_VHGhostCmd);
 
@@ -482,13 +475,6 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
     if (DisposeAMGLevels(theMG) != 0)
       return 1;
 
-  /* send son elements to destination of father element */
-  if (0)
-    for (e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
-    {
-      InheritPartitionBottomTop(e);
-    }
-
   /* send new destination to ghost elements */
   UpdateGhostDests(theMG);
 
@@ -512,25 +498,6 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
   }
 
   DDD_XferEnd();
-
-
-
-  /* remove all connections for vectors with PrioGhost */
-  if (0)
-  {
-    int g;
-    for(g=TOPLEVEL(theMG); g>=0; g--)
-    {
-      GRID *grid = GRID_ON_LEVEL(theMG,g);
-      VECTOR *vec;
-
-      for(vec=PRIO_LASTVECTOR(grid,PrioGhost); vec!=NULL; vec=PREDVC(vec))
-      {
-        DisposeConnectionFromVector(grid, vec);
-      }
-    }
-  }
-
 
   /* set priorities of border nodes */
   /* TODO this is an extra communication. eventually integrate this
