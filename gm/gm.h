@@ -702,6 +702,7 @@ struct multigrid {
   BVP *theBVP;                                          /* pointer to BndValProblem				*/
   struct format *theFormat;                     /* pointer to format definition                 */
   HEAP *theHeap;                                        /* associated heap structure			*/
+  INT nProperty;                                        /* max nb of properties used in elements*/
 
   /* pointers */
   struct grid *grids[MAXLEVEL];         /* pointers to the grids				*/
@@ -1910,6 +1911,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MGVERTEX(p,k)                   ((p)->corners[k])
 #define MGNOOFCORNERS(p)                ((p)->numOfCorners)
 #define MGHEAP(p)                               ((p)->theHeap)
+#define MG_NPROPERTY(p)                 ((p)->nProperty)
 #define GRID_ON_LEVEL(p,i)              ((p)->grids[i])
 #define SELECTIONSIZE(p)                ((p)->NbOfSelections)
 #define SELECTIONMODE(p)                ((p)->SelectionMode)
