@@ -247,7 +247,7 @@ INT OpenLogFile (const char *name)
 
 INT CloseLogFile (void)
 {
-  if (logFile==NULL) return(0);
+  if (logFile==NULL) return(1);
 
   fclose(logFile);
   logFile = NULL;
