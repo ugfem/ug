@@ -29,6 +29,10 @@ include $(UGROOT)/arch/$(ARCH)/mk.arch
 include $(UGROOT)/configs/mk.model.$(MODEL)
 
 
+# include macro definitions for remote interface
+include $(UGROOT)/configs/mk.rif.$(REMOTE_IF)
+
+
 # include macro definitions for debugging
 include $(UGROOT)/configs/mk.debug.$(DEBUG_MODE)
 
@@ -46,7 +50,8 @@ include $(UGROOT)/configs/mk.grape.$(GRAPE)
 UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(ARCH_CFLAGS) $(PPIF_CFLAGS) $(MODEL_CFLAGS) \
 			$(ARCH_XINCLUDES) $(ENV_CFLAGS) \
-			$(NETGEN_CFLAGS) $(GRAPE_CFLAGS)
+			$(NETGEN_CFLAGS) $(GRAPE_CFLAGS) \
+			$(RIF_CFLAGS)
 
 UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(ARCH_C++FLAGS)
