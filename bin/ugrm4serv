@@ -49,7 +49,7 @@ cd ${UGROOT}/bin;
 rm -f ugmakeref ugrm4serv ugmaketrees ugmakelatex ugtex ugmakelatexrefs;
 rm -f ugprep4serv ugmakeman ugrecurse ugsetcvsaccess ugmakealiases;
 
-if test $# -ge 1 -o "$1" = "-help"
+if test $# -ge 1 -o "$1" != "-help"
 then
 	rm -r -f  ${UGROOT}/include
 	cd ${UGROOT}/doc
@@ -76,4 +76,12 @@ then
 	cp gm.h ${UGROOT}/gm 
 	cp ruler3.cc ${UGROOT}/gm/gg3/netgen/meshing
     cd ..
+fi
+
+if test $# -ge 2 
+then
+	if test "$2" = "CVS"
+	then
+		find  ${UGROOT}/../ -name "CVS" -exec rm -r {} \;
+	fi
 fi

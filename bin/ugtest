@@ -1,20 +1,5 @@
 #!/bin/sh
 
-if test -x $UGROOT/../sc/appl2d/scalar2d
-then
-	cd $UGROOT/../sc/appl2d
-	time ugrun scalar2d 1 model.scr
-fi
-if test -x $UGROOT/../simple/simple
-then
-	cd $UGROOT/../simple
-	time ugrun simple 1 simple.scr
-fi
-if test -x $UGROOT/../diff2d/appl/diff2da
-then
-	cd $UGROOT/../diff2d/appl
-	time ugrun diff2da 1 classic.scr
-fi
 if test -x $UGROOT/../fe/appl/fe2d
 then
 	cd $UGROOT/../fe/appl
@@ -29,6 +14,21 @@ if test -x $UGROOT/../ns/appl2d/ns2d
 then
 	cd $UGROOT/../ns/appl3d
 	time ugrun ns3d 1 ugtest.scr
+fi
+if test -x $UGROOT/../sc/appl2d/scalar2d
+then
+	cd $UGROOT/../sc/appl2d
+	time ugrun scalar2d 1 model.scr
+fi
+if test -x $UGROOT/../simple/simple
+then
+	cd $UGROOT/../simple
+	time ugrun simple 1 simple.scr
+fi
+if test -x $UGROOT/../diff2d/appl/diff2da
+then
+	cd $UGROOT/../diff2d/appl
+	time ugrun diff2da 1 classic.scr
 fi
 
 
