@@ -8,7 +8,7 @@
 #include <math.h>
 #include "../main/defs.h"
 #include "../main/structs.h"
-
+#include "general.h"
 
 /* Check graph for errors */
 
