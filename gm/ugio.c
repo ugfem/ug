@@ -696,24 +696,24 @@ static INT WriteElementProcLists (ELEMENT *theElement, MGIO_PARINFO *pinfo)
   n_max = PROCLISTSIZE-(ActProcListPos-ProcList);
 
   s=0;
-  pinfo->prio_elem = DDD_InfoPriority(PARHDRE(theElement));
-  pinfo->ncopies_elem = DDD_InfoNCopies(PARHDRE(theElement));
+  pinfo->prio_elem = EPRIO(theElement);
+  pinfo->ncopies_elem = ENCOPIES(theElement);
   if (n_max<pinfo->ncopies_elem) RETURN (1);
   if (pinfo->ncopies_elem>0)
   {
-    pl = DDD_InfoProcList(PARHDRE(theElement));
+    pl = EPROCLIST(theElement);
     for (i=0,j=2; i<pinfo->ncopies_elem; i++,j+=2)
       ActProcListPos[s++] = pl[j];
   }
   for (k=0; k<CORNERS_OF_ELEM(theElement); k++)
   {
     theNode = CORNER(theElement,k);
-    pinfo->prio_node[k] = DDD_InfoPriority(PARHDR(theNode));
-    pinfo->ncopies_node[k] = DDD_InfoNCopies(PARHDR(theNode));
+    pinfo->prio_node[k] = PRIO(theNode);
+    pinfo->ncopies_node[k] = NCOPIES(theNode);
     if (n_max<pinfo->ncopies_node[k]+s) RETURN (1);
     if (pinfo->ncopies_node[k]>0)
     {
-      pl = DDD_InfoProcList(PARHDR(theNode));
+      pl = NCOPIES(theNode);
       for (i=0,j=2; i<pinfo->ncopies_node[k]; i++,j+=2)
         ActProcListPos[s++] = pl[j];
     }
@@ -722,12 +722,12 @@ static INT WriteElementProcLists (ELEMENT *theElement, MGIO_PARINFO *pinfo)
   for (k=0; k<EDGES_OF_ELEM(theElement); k++)
   {
     theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
-    pinfo->prio_edge[k] = DDD_InfoPriority(PARHDR(theEdge));
-    pinfo->ncopies_edge[k] = DDD_InfoNCopies(PARHDR(theEdge));
+    pinfo->prio_edge[k] = PRIO(theEdge);
+    pinfo->ncopies_edge[k] = NCOPIES(theEdge);
     if (n_max<pinfo->ncopies_edge[k]+s) RETURN (1);
     if (pinfo->ncopies_edge[k]>0)
     {
-      pl = DDD_InfoProcList(PARHDR(theEdge));
+      pl = PROCLIST(theEdge);
       for (i=0,j=2; i<pinfo->ncopies_edge[k]; i++,j+=2)
         ActProcListPos[s++] = pl[j];
     }
