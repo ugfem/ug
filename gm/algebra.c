@@ -2523,10 +2523,10 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
 
 static INT CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth, INT *MatSize)
 {
-  int i,errors = 0;
+  INT i,errors = 0;
 
   /* is anything to do ? */
-  if (theElement==NULL) return (NULL);
+  if (theElement==NULL) return (0);
 
   /* action */
   if (ActDepth>=0)

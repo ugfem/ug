@@ -366,6 +366,7 @@ static void ddd_DefineTypes (void)
                  /* TODO: value wird noch ausgelassen. feld variabler laenge? */
                  /* bei entscheidung 'value': kein weiteres feld
                          bei ent. 'userdata *': EL_GDATA-feld        */
+                 EL_GDATA,  ELDEF(v.value),
                  EL_END,    &v+1
                  );
 

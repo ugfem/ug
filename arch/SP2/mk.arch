@@ -3,6 +3,12 @@
 #
 #	for IBM AIX SP2 (running with poe)
 #
+#       mpi settings:
+#       MODEL_ENV_CFLAGS = -I$(MPIHOME)/include
+#       MODEL_ENV_LFLAGS = -L$(MPIHOME)/lib -lmpi -lppe
+#       
+#       MPIHOME = /usr/lpp/ppe.poe
+
 
 ARCH_TYPE     = __AIX__
 
