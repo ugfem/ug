@@ -1,0 +1,473 @@
+#!/usr/bin/perl -w
+
+# input
+@ARGV==3 or die "usage: lgmCP <tol> <geometry> <points-file>\n";
+
+# subs
+sub float
+{
+    my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
+    my (@list,$f,$s,$in);
+
+    if (@_==1) { @list=grep /$real/,split /($real)/,$_[0]; }
+    elsif (@_==2)
+    {
+        $in=' '.$_[1];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+    }
+    else
+    {
+        $in=' '.$_[2];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+        if ($_[1]>=@list || $_[1]<0) { return undef;}
+        for ($s=0; $s<$_[1]; $s++) { shift @list; }
+    }
+    return wantarray ? @list : $list[0];
+}
+
+sub nod
+{
+	my @p1=float shift; 
+	my @p2=float shift; 
+
+	@p1==3 or die "Internal error\n";
+	@p2==3 or die "Internal error\n";
+
+	return sqrt(($p1[0]-$p2[0])*($p1[0]-$p2[0])+($p1[1]-$p2[1])*($p1[1]-$p2[1])+($p1[2]-$p2[2])*($p1[2]-$p2[2]));
+}
+
+sub getpid
+{
+	my $ptt=shift;
+	my ($norm,$key); 
+
+	$found=0;
+	for $key (keys %p)
+	{
+		$norm=nod($ptt,$p{$key});
+		if ($norm<=$tol)
+		{
+			$id=$key;
+			$found++;
+		}
+	}
+	if ($found==1) { return $id; }
+	else { return -1; }
+}
+
+sub llpid
+{
+	my $key=shift;
+	my $id=shift;
+	my @a;
+	
+	@a=float $l{$key};
+	for ($i=0; $i<@a; $i++) { if ($id==$a[$i]) { return $i; } }
+	
+	return -1;
+}
+
+sub slpid
+{
+    my $key=shift;
+    my $id=shift;
+
+	my (@a,$tri,$n);
+	
+	@a=float $s{$key};
+	for ($i=0; $i<@a; $i++) 
+	{ 
+		if ($id==$a[$i]) 
+		{ 
+			$n=$i%3;
+			$tri=($i-$n)/3;
+			if ($n==0) { return ($tri,0,0); }
+			if ($n==1) { return ($tri,1,0); }
+			if ($n==2) { return ($tri,0,1); }
+		} 
+	}
+	return (-1,-1,-1);
+}
+
+sub scp
+{
+	my @p1=float shift;
+	my @p2=float shift;
+
+	return ($p1[0]*$p2[0]+$p1[1]*$p2[1]+$p1[2]*$p2[2]);
+}
+
+sub diff
+{
+	my @p1=float shift;
+	my @p2=float shift;
+
+	$p1[0]-=$p2[0];
+	$p1[1]-=$p2[1];
+	$p1[2]-=$p2[2];
+
+	return join ' ',@p1;
+}
+
+sub lcb
+{
+	my @v;
+	my $c1=shift;
+	my @p1=float shift;
+	my $c2=shift;
+	my @p2=float shift;
+
+	$v[0]=$c1*$p1[0]+$c2*$p2[0];
+	$v[1]=$c1*$p1[1]+$c2*$p2[1];
+	$v[2]=$c1*$p1[2]+$c2*$p2[2];
+
+	return join ' ',@v;
+}
+
+sub lpp
+{
+	my $p1=shift;
+	my $p2=shift;
+	my $p=shift;
+
+	my $d=diff($p1,$p2);
+	my $alpha=scp(diff($p1,$p),$d)/scp($d,$d);
+
+	if ($alpha<-$ptol || $alpha>1+$ptol) { return -1; }
+	if ($alpha>1) { $alpha=1; } if ($alpha<0) { $alpha=0; }
+
+	my $q=lcb(1,$p1,-$alpha,$d);
+	my $norm=diff($p,$q); $norm=sqrt(scp($norm,$norm));
+	if ($norm<=$tol) { return $alpha; }
+	return -1;
+}
+
+sub llp
+{
+	my $i;
+	my $key=shift;
+	my @lp=float $l{$key};
+	my $point=shift;
+
+	for ($i=0; $i<@lp-1; $i++)
+	{
+		$loc=lpp($p{$lp[$i]},$p{$lp[$i+1]},$point);
+		if ($loc>=0) { return $loc; }
+	}
+	return -1;
+}
+
+sub spp
+{
+	my $s;
+	my $p1=shift;
+	my $p2=shift;
+	my $p3=shift;
+	my $p=shift;
+
+	my $p2p1=diff($p2,$p1);
+	my $p3p1=diff($p3,$p1);
+	my $pp1=diff($p,$p1);
+
+	my $a11=scp($p2p1,$p3p1);
+	my $a12=scp($p3p1,$p3p1);
+	my $a21=scp($p2p1,$p2p1);
+	my $a22=$a11;
+	my $b1=scp($pp1,$p3p1);
+	my $b2=scp($pp1,$p2p1);
+	
+	my $det=$a11*$a22-$a12*$a21;
+	my $alpha=($a22*$b1-$a12*$b2)/$det;
+	my $beta=($a11*$b2-$a21*$b1)/$det;
+
+	if ($alpha<-$ptol || $alpha>1+$ptol) { return(-1,-1); }
+	if ($alpha>1) { $alpha=1; } if ($alpha<=0) { $alpha=0; }
+	if ($beta<-$ptol || $beta>1+$ptol) { return(-1,-1); }
+	if ($beta>1) { $beta=1; } if ($beta<=0) { $beta=0; }
+	if ($alpha+$beta>1+$ptol) { return(-1,-1); }
+	if ($alpha+$beta>1) { $s=$alpha+$beta; $alpha/=$s; $beta/=$s; }
+
+	my $q=lcb(-1,$pp1,$alpha,$p2p1);
+	$q=lcb(1,$q,$beta,$p3p1);
+	my $norm=scp($q,$q); 
+	if ($norm>$ptol*$ptol) { return(-1,-1); }
+	return ($alpha,$beta);
+}
+
+sub slp
+{
+	my $key=shift;
+	my @sp=float $s{$key};
+	my $point=shift;
+	
+	for ($i=0; $i<@sp; $i+=3)
+    {
+        ($loc1,$loc2)=spp($p{$sp[$i]},$p{$sp[$i+1]},$p{$sp[$i+2]},$point);
+        if ($loc1>=0 && $loc2>=0 && $loc1+$loc2<=1) { return ($i/3,$loc1,$loc2); }
+    }
+    return (-1,-1,-1);
+}
+
+sub cp
+{
+	my ($key,$loc,$tri,$loc1,$loc2,$cpoint);
+	my $point=shift;
+	my $pid=getpid $point;
+	my $suff='';
+	if ($pid>=0)
+	{
+		# lgm-point found
+		for $key (keys %l)
+		{
+			$loc=llpid ($key,$pid);
+			if ($loc>=0) { $suff.=" L $key $loc"; }
+		}
+		for $key (keys %s)
+		{
+			($tri,$loc1,$loc2)=slpid ($key,$pid);
+			if ($tri>=0) { $suff.=" S $key $tri $loc1 $loc2"; }
+		}
+		$cpoint= "B $point$suff";
+	}
+	else
+	{
+		# no lgm-point found
+        for $key (keys %l)
+        {
+            $loc=llp ($key,$point);
+            if ($loc>=0) { $suff.=" L $key $loc"; }
+        }
+		for $key (keys %s)
+		{
+			($tri,$loc1,$loc2)=slp ($key,$point);
+			if ($tri>=0) { $suff.=" S $key $tri $loc1 $loc2"; }
+		}
+		if ($suff eq '') { $cpoint="I $point"; }
+		else { $cpoint="B $point$suff"; }
+	}
+	return $cpoint;
+}
+
+sub sop
+{
+	my $id=shift;
+	my $point=$rcp[$id];
+	my @a=();
+	while($point=~/S\s+(\d+)/)
+	{
+		push @a,$1;
+		$point=~s/S\s+$1//;
+	}
+	return join ' ',@a;
+}
+
+sub fc
+{
+	my @s1=float shift;
+	my @s2=float shift;
+
+	$ret='';
+	for ($i=0; $i<@s1; $i++)
+	{
+		for ($j=0; $j<@s2; $j++)
+		{
+			if ($s1[$i]==$s2[$j]) 
+			{
+				$ret.=" $s1[$i]";
+			}
+		}
+	}
+	$ret=~s/^ //;
+	return $ret;
+}
+
+sub sob
+{
+	if (@_==3)
+	{
+		my $p1=shift;
+		my $p2=shift;
+		my $p3=shift;
+		my $s1=sop $p1;
+		my $s2=sop $p2;
+		my $s3=sop $p3;
+
+		my $c=fc($s1,$s2);
+		$c=fc($c,$s3);
+		
+		if ($c) { return " F $p1 $p2 $p3"; }
+		else { return ''; }
+	}
+	else
+	{
+		my $p1=shift;
+		my $p2=shift;
+		my $p3=shift;
+		my $p4=shift;
+		my $s1=sop $p1;
+		my $s2=sop $p2;
+		my $s3=sop $p3;
+		my $s4=sop $p4;
+
+		my $c=fc($s1,$s2);
+		$c=fc($c,$s3);
+		$c=fc($c,$s4);
+
+		if ($c || $c eq '0') 
+		{ 
+			if (!$sdid) 
+			{ 
+				my $sid=float $c;
+				$sdid=$ssdid{$sid}; 
+			}
+			else 
+			{ 
+				my $sid=float $c;
+				$sdid=fc($sdid,$ssdid{$sid}); 
+			}
+			return " F $p1 $p2 $p3 $p4"; 
+		}
+		else { return ''; }
+	}
+}
+
+
+######################################
+#
+# tolerance
+#
+######################################
+$tol=$ARGV[0];
+$ptol=0.00001;
+
+######################################
+#
+# parse geoemtry
+#
+######################################
+open(IN,$ARGV[1]);
+$pid=-1;
+while($line=<IN>)
+{
+	if ($line=~/^\s*line/)
+	{
+		$key=float $line;
+		$l{$key}=join ' ',float 'points:',$line;
+	}
+	if ($line=~/^\s*surface/)
+	{
+		($key,$left,$right)=float $line;
+		if ($left!=0 && $right!=0) { $ssdid{$key}="$left $right"; }
+		elsif ($left==0 && $right!=0) { $ssdid{$key}="$right"; }
+		elsif ($left!=0 && $right==0) { $ssdid{$key}="$left"; }
+		$s{$key}=join ' ',float 'triangles:',$line;
+	}
+	if ($line=~/^\s*#\s*Point-Info/) { $pid=0; }
+	if ($pid>=0)
+	{
+		@a=float $line;
+		if (@a)
+		{
+			$p{$pid}=join ' ',float $line;
+			$pid++;
+		}
+	}
+}
+
+######################################
+#
+# process input
+#
+######################################
+open(IN,$ARGV[2]);
+$cpid=0;
+while($line=<IN>)
+{
+	if ($line eq "\n") { last; }
+	$cp[$cpid]=cp join ' ',float $line;
+	$cpid++;
+}
+$cip=0;
+for ($i=0; $i<@cp; $i++)
+{
+	if ($cp[$i]=~/^B/)
+	{
+		$rcp[$cip]=$cp[$i];
+		$r2p[$i]=$cip++;
+	}
+}
+for ($i=0; $i<@cp; $i++)
+{
+	if ($cp[$i]=~/^I/)
+	{
+		$rcp[$cip]=$cp[$i];
+		$r2p[$i]=$cip++;
+	}
+}
+$old=$new=0;
+for ($i=0; $i<@rcp; $i++)
+{
+	if ($rcp[$i]=~/^I/) { $new=1; }
+	if ($old!=$new) { print "\n"; }
+	$old=$new;
+	print "$rcp[$i];\n";
+}
+print "\n";
+while($line=<IN>)
+{
+	@ec=float $line;
+	for ($i=0; $i<@ec; $i++)
+	{
+		$ec[$i]=$r2p[$ec[$i]];
+	}
+	$sdid='';
+	SWITCH:
+	{
+		if (@ec==4)
+		{
+			$suff =sob($ec[0],$ec[1],$ec[2]);
+			$suff.=sob($ec[0],$ec[1],$ec[3]);
+			$suff.=sob($ec[0],$ec[2],$ec[3]);
+			$suff.=sob($ec[1],$ec[2],$ec[3]);
+			last SWITCH;
+		}
+		if (@ec==5)
+		{
+			$suff =sob($ec[0],$ec[1],$ec[2],$ec[3]);
+			$suff.=sob($ec[0],$ec[1],$ec[4]);
+			$suff.=sob($ec[1],$ec[2],$ec[4]);
+			$suff.=sob($ec[2],$ec[3],$ec[4]);
+			$suff.=sob($ec[3],$ec[0],$ec[4]);
+			last SWITCH;
+		}
+		if (@ec==6)
+		{
+			$suff =sob($ec[0],$ec[1],$ec[2]);
+			$suff.=sob($ec[3],$ec[4],$ec[5]);
+			$suff.=sob($ec[0],$ec[1],$ec[4],$ec[3]);
+			$suff.=sob($ec[1],$ec[2],$ec[5],$ec[4]);
+			$suff.=sob($ec[0],$ec[2],$ec[5],$ec[3]);
+			last SWITCH;
+		}
+		if (@ec==8)
+		{
+			$suff =sob($ec[0],$ec[1],$ec[2],$ec[3]);
+			$suff.=sob($ec[0],$ec[1],$ec[5],$ec[4]);
+			$suff.=sob($ec[1],$ec[2],$ec[6],$ec[5]);
+			$suff.=sob($ec[2],$ec[3],$ec[7],$ec[6]);
+			$suff.=sob($ec[3],$ec[0],$ec[4],$ec[7]);
+			$suff.=sob($ec[4],$ec[5],$ec[6],$ec[7]);
+			last SWITCH;
+		}
+	}
+	if (!$sdid || $sdid=~/\s/) 	{ print "E ? "; print join ' ',@ec; print "$suff;\n"; }
+	else        				{ print "E $sdid "; print join ' ',@ec; print "$suff;\n"; }
+}
+
+
+
+
+
+
