@@ -29,9 +29,6 @@
 #define FALSE           0
 
 /* Define constants that are needed in various places */
-#ifdef PI
-#undef PI
-#endif
-#define PI      3.141592653589793
+#define PI                       3.141592653589793238462643383279
 #define TWOPI   6.283185307179586
 #define HALFPI  1.570796326794896
