@@ -1,8 +1,9 @@
 #!/usr/bin/perl -w #-d
 # $Header$
-# usage: exo2lgm <filename>
-# 		<filename> - exodus II file with surface triangulation and node 
+# usage: ugexo2lgm <exo2filename> <lgmfilename>
+# 		<exo2filename> - exodus II file with surface triangulation and node 
 #					 assoziativity info
+#       <lgmfilename> - lgm file to create
 
 # basic data types
 #$num = '\d';
@@ -14,21 +15,29 @@ $string = '[a-z"_]\w*';
 
 %cdf = ();
 
-$netcdf = "$ARGV[0]";
+if ($#ARGV != 1)
+{
+	print "usage: ugexo2lgm <exo2filename> <lgmfilename>\n";
+ 	exit;
+}
 
-print "processing $netcdf\n";
+$exo2 = "$ARGV[0]";
+$lgm = "$ARGV[1]";
+
+
+print "processing $exo2\n";
 
 sub	scan_nsets
 {
 	my $nsets = $_[0];
 
-	print "nsets: $nsets\n";
+#	print "nsets: $nsets\n";
 	$nns = 0;
 	$ready = 0;
 	LOOP1: while (1)
 	{
 		if ($nns == $nsets) { last LOOP1; }
-		LOOP: while(<NETCDF>)
+		LOOP: while(<EXO2>)
 		{
 			if ( /^\s($string)/ )
 			{
@@ -68,7 +77,7 @@ sub scan_dimension
 	print "found dimensions block\n";
 
 	$token = 0; 
-	LOOP: while(<NETCDF>)
+	LOOP: while(<EXO2>)
 	{
 		if ( /\s*num_dim\s*=\s*($int)\s*;/ ) { $cdf{num_dim} = $1; $token++;}
 		if ( /\s*num_nodes\s*=\s*($int)\s*;/ ) { $cdf{num_nodes} = $1; $token++;}
@@ -77,14 +86,14 @@ sub scan_dimension
 			$cdf{num_node_sets} = $1; 
  			scan_nsets($cdf{num_node_sets});
 			$token++;
-			print "scan_dimension: $token\n";
+#			print "scan_dimension: $token\n";
 		}
 		if ( /\s*num_el_blk\s*=\s*($int)\s*;/ )
 		{
 			$cdf{num_el_blk} = $1; 
  			scan_nsets(2*$cdf{num_el_blk});
 			$token++;
-			print "scan_dimension: $token\n";
+#			print "scan_dimension: $token\n";
 		}
 		if ($token == 4) { last LOOP; }
 	}
@@ -97,7 +106,7 @@ sub scan_variables
 {
 	print "found variables block\n";
 
-	LOOP: while(<NETCDF>)
+	LOOP: while(<EXO2>)
 	{
 		if ( /\s*num_dim\s*=\s*($int)\s*;/ ) { $cdf{num_dim} = $1; }
 		else {last LOOP; }
@@ -110,7 +119,7 @@ sub scan_globalattributes
 {
 	print "found attributes block\n";
 
-	LOOP: while(<NETCDF>)
+	LOOP: while(<EXO2>)
 	{
 		if ( /\s*num_dim\s*=\s*($int)\s*;/ ) { $cdf{num_dim} = $1; }
 		else {last LOOP; }
@@ -123,7 +132,7 @@ sub scan_coord
 {
 	$i = 0;
 	$dim = 0;
-	LOOP: while(<NETCDF>)
+	LOOP: while(<EXO2>)
 	{
 #		@coordline = split;
 #		print "$_\n";
@@ -145,9 +154,9 @@ sub scan_coord
 			elsif ( /;/ ) 
 			{
 				if ($i != $cdf{num_nodes})
-				{ print "ERROR: scaned coord=$i but num_nodes=$netcdf{num_nodes}\n"; exit;}
+				{ print "ERROR: scaned coord=$i but num_nodes=$cdf{num_nodes}\n"; exit;}
 				if ($dim != $cdf{num_dim})
-				{ print "ERROR: scaned dim=$i but num_dim=$netcdf{num_dim}\n"; exit;}
+				{ print "ERROR: scaned dim=$i but num_dim=$cdf{num_dim}\n"; exit;}
 				last LOOP;
 			} 
 			else { print "ERROR while reading coord\n";}
@@ -158,7 +167,7 @@ sub scan_coord
 sub scan_node_sets
 {
 	# skip ns_status record
-	LOOP2: while(<NETCDF>)
+	LOOP2: while(<EXO2>)
 	{
 		if ( /;/ ) { last LOOP2; }
 	}
@@ -172,7 +181,7 @@ sub scan_data
 	print "found data block\n";
 
 	$found = 0;
-	LOOP: while(<NETCDF>)
+	LOOP: while(<EXO2>)
 	{
 		if ( /\s*coord\s*=\s*/ ) { scan_coord(); $found++}
 		elsif ( /\s*ns_status\s*=\s*/ ) { scan_node_sets(); $found++}
@@ -187,7 +196,7 @@ sub scan_modeldata ()
 	$nunits = 0;
 	$cdf{unitsrev}{0} = 0;
 
-	LOOP: while(<NETCDF>)
+	LOOP: while(<EXO2>)
 	{
 		if ( /Volume\sEntity\s*\(Id\s=\s($int)\)/ )
 		{
@@ -199,7 +208,7 @@ sub scan_modeldata ()
 		if ( /Surface\sEntity\s*\(Id\s=\s($int)\)/ )
 		{
 			$surface = $1;
-			LOOP1: while(<NETCDF>)
+			LOOP1: while(<EXO2>)
 			{
 				$surfacename = sprintf "surface%d",$surface; 
 				if ( /In\sVolume\s*($int)\./ )
@@ -227,32 +236,32 @@ sub scan_modeldata ()
 # read exodus II format
 sub read_exo2()
 {
-	open(NETCDF, "<$netcdf") || die "can't open $netcdf\n";
+	open(EXO2, "<$exo2") || die "can't open $exo2\n";
 
-	BEGIN: while(<NETCDF>)
+	BEGIN: while(<EXO2>)
 	{
 		last BEGIN if ( /^netcdf\s\w+\s\{/ ); 
-		print "$netcdf has no valid netcdf file format!\n";
+		print "$exo2 has no valid netcdf file format!\n";
 		exit;
 	}
 
 	$end = 0;
-	END: while(<NETCDF>)
+	END: while(<EXO2>)
 	{
 		if ( /dimensions:/ ) { scan_dimension(); }
 		if ( /variables:/ ) { scan_variables(); }
 		if ( /global\sattributes:/ ) { scan_globalattributes(); }
 #		if ( /data:/) { scan_data(); }
- 		if ( /data:/) { scan_nsets(-1); }
+ 		if ( /data:/) { print "found data block\n"; scan_nsets(-1); }
 		if ( /\}/ ) { $end = 1; last END; }
 	}
 
-	if ($end == 0) { print "file $netcdf not complete!!\n"} 
+	if ($end == 0) { print "file $exo2 not complete!!\n"} 
 
 	# scan added model data for units and surface left/right
 	scan_modeldata();
 
-	close(NETCDF);
+	close(EXO2);
 
 	return(0);
 }
@@ -261,27 +270,28 @@ sub read_exo2()
 
 sub write_domain
 {
-	print "# Domain-Info\n";
-	print "name = default_name\n";
-	print "problemname = default_problem\n";
-	print "convex = 1\n\n";
+	print LGM "# Domain-Info\n";
+	print LGM "name = default_name\n";
+	print LGM "problemname = default_problem\n";
+	print LGM "convex = 1\n";
+	print LGM "\n";
 }
 
 sub write_unit
 {
-	print "# Unit-Info\n";
+	print LGM "# Unit-Info\n";
 	
 	LOOP: foreach $nus (0 .. $cdf{nunits}-1)
 	{
-		printf "unit %d material%d\n",$nus+1, $nus+1;
+		printf LGM "unit %d material%d\n",$nus+1, $nus+1;
 	}
 
-	print "\n";
+	print LGM "\n";
 }
 
 sub write_line
 {
-	print "# Line-Info\n";
+	print LGM "# Line-Info\n";
 	$nl = 0;
 	foreach $nns (1 .. $cdf{num_node_sets})
 	{
@@ -289,22 +299,22 @@ sub write_line
 		if ( $cdf{ns_prop1}{$nns} =~/\A4($int)/ )
 		{
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
-			printf "line %d:",$nl;
+			printf LGM "line %d:",$nl;
 			$ns = sprintf "node_ns%d",$nns; 
 			$numns = sprintf "num_nod_ns%d",$nns; 
 # 			print "$ns $numns $cdf{$numns}{1}\n";
 
- 			print " points:";
+ 			print LGM " points:";
 			$numnp = sprintf "node_ns%d",$nns; 
 			foreach $np (1 .. $cdf{$numns}{1})
 			{
-				printf " %d",$cdf{$numnp}{$np}-1;
+				printf LGM " %d",$cdf{$numnp}{$np}-1;
 			}
-			print ";\n";
+			print LGM ";\n";
 			$nl++;
 		}
 	}
-	print "\n";
+	print LGM "\n";
 }
 
 sub search_lines
@@ -333,7 +343,7 @@ sub search_lines
 				$found = 0;
 				last LOOP1;
 			}
-			if ($found == 1) { printf " %d",$nl; }
+			if ($found == 1) { printf LGM " %d",$nl; }
 			$nl++;
 		}
 	}
@@ -341,7 +351,7 @@ sub search_lines
 
 sub write_surf
 {
-	print "# Surface-Info\n";
+	print LGM "# Surface-Info\n";
 	$nsurf = 0;
 	foreach $nns (1 .. $cdf{num_node_sets})
 	{
@@ -349,11 +359,11 @@ sub write_surf
 		if ( $cdf{ns_prop1}{$nns} =~/\A3($int)/ )
 		{
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
-			printf "surface %d:",$nsurf;
+			printf LGM "surface %d:",$nsurf;
 			$nsurf++;
 
 			$surfacename = sprintf "surface%d",$1;
-  			printf " left=%d; right=%d;",
+  			printf LGM " left=%d; right=%d;",
   				$cdf{unitsrev}{$cdf{$surfacename}{left}},
   				$cdf{unitsrev}{$cdf{$surfacename}{right}};
 			
@@ -361,19 +371,19 @@ sub write_surf
 			$numns = sprintf "num_nod_ns%d",$nns; 
 # 			print "$ns $numns $cdf{$numns}{1}\n";
 
- 			print " points:";
+ 			print LGM " points:";
 			$numnp = sprintf "node_ns%d",$nns; 
 			foreach $np (1 .. $cdf{$numns}{1})
 			{
-				printf " %d",$cdf{$numnp}{$np}-1;
+				printf LGM " %d",$cdf{$numnp}{$np}-1;
 			}
-			print ";";
+			print LGM ";";
 
- 			print " lines:";
+ 			print LGM " lines:";
 			search_lines($numnp,$numns);
-			print ";";
+			print LGM ";";
 
- 			print " triangles:";
+ 			print LGM " triangles:";
 			# number of triangles in block $1
 			$numnt = sprintf "num_el_in_blk%d",$nsurf; 
 			# hash of triangles
@@ -383,42 +393,45 @@ sub write_surf
 #			printf "\nERROR %s %d\n", $numnt, $cdf{$numnt}{1};
 			foreach $nt (1 .. $cdf{$numnt}{1})
 			{
-				printf " %d", $cdf{$connect}{3*$nt-2}-1;
-				printf " %d", $cdf{$connect}{3*$nt-1}-1;
-				printf " %d;", $cdf{$connect}{3*$nt-0}-1;
+				printf LGM " %d", $cdf{$connect}{3*$nt-2}-1;
+				printf LGM " %d", $cdf{$connect}{3*$nt-1}-1;
+				printf LGM " %d;", $cdf{$connect}{3*$nt-0}-1;
 			}
-			print "\n";
+			print LGM "\n";
 		}
 	}
-	print "\n";
+	print LGM "\n";
 }
 
 sub write_coord
 {
-	print "# Point-Info\n";
+	print LGM "# Point-Info\n";
 #	printf "%d\n",$cdf{num_nodes};
 #	printf "%s %s\n", $cdf{coord}{0},$cdf{coord}{1};
 #	printf "%s\n", $cdf{coord};
 	foreach $nc (1 .. $cdf{num_nodes})
 	{
 #    		printf "%lf, %lf, %lf\n",$cdf{coord}{$nc-1},$cdf{coord}{2*$nc-1},$cdf{coord}{3*$nc-1};
-    		printf "%s %s %s;\n",
+    		printf LGM "%s %s %s;\n",
 				$cdf{coord}{$nc},$cdf{coord}{$nc+$cdf{num_nodes}},$cdf{coord}{$nc+2*$cdf{num_nodes}}; 
 	}	
-	print "\n";
+	print LGM "\n";
 }
 
 
 # write lgm
 sub write_lgm()
 {
-	print "writing geometry in lgm_format\n";
+	print "writing lgm geometry file $lgm\n";
+	open(LGM, ">$lgm") || die "can't open $lgm\n";
 
 	write_domain();
 	write_unit();
 	write_line();
  	write_surf();
  	write_coord();
+
+	close(LGM);
 }
 
 sub main()
