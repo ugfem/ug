@@ -503,7 +503,7 @@ void surfacemeshing :: ProjectPoint (INDEX surfind, Point3d & p) const
      p.X() = np.X() + ep1.X();
      p.Y() = np.Y() + ep1.Y();
      p.Z() = np.Z() + ep1.Z();
-     /*  cout << "projectpoint " << mi << endl;
+     cout << "projectpoint " << mi << endl;
 
      cout << p.X() << "  " << p.Y() << "  " << p.Z() << endl;
      cout << n3.X() << "  " << n3.Y() << "  " << n3.Z() << endl;*/
