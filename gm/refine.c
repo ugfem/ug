@@ -102,6 +102,19 @@
 /*																			*/
 /****************************************************************************/
 
+/* undefine if overlap should be only updated where needed */
+/* This does not work since the connection of the overlap needs the
+   fatherelements on both sides (ghost and master sons) and this is
+   not ensured.
+#define UPDATE_FULLOVERLAP
+*/
+
+/* define for use of DDD_ConsCheck() */
+/*
+#define DDD_CONSCHECK 		if (DDD_ConsCheck()) assert(0);
+*/
+#define DDD_CONSCHECK
+
 #define MINVNCLASS      2           /* determines copies, dep. on discr. !  */
 
 /* defines for side matching of elements 8 bits:                            */
@@ -285,6 +298,12 @@ typedef NODE *ELEMENTCONTEXT[MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
 
 /* information used by the estimator and refine*/ 
 REFINEINFO refine_info;
+
+#ifdef ModelP
+/* control words for identiftication of new nodes and edges */
+INT ce_NEW_NIDENT;
+INT ce_NEW_EDIDENT;
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -3033,6 +3052,9 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		{
 			SONNODE(theNode) = CreateSonNode(theGrid,theNode);
 			if (SONNODE(theNode)==NULL) RETURN(GM_FATAL);
+			#ifdef IDENT_ONLY_NEW
+			SETNEW_NIDENT(SONNODE(theNode),1);
+			#endif
 		}
 		theElementContext[i] = SONNODE(theNode);
 	}
@@ -3090,6 +3112,9 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			{
 				MidNodes[i] = CreateMidNode(theGrid,theElement,NULL,i);
 				if (MidNodes[i]==NULL) RETURN(GM_FATAL);
+				#ifdef IDENT_ONLY_NEW
+				SETNEW_NIDENT(MidNodes[i],1);
+				#endif
 				IFDEBUG(gm,2)
 				UserWriteF(" created ID(MidNode)=%d for edge=%d",ID(MidNodes[i]),i);
 				ENDDEBUG
@@ -5611,10 +5636,11 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
    RefineGrid - refine one level of the grid
 
    SYNOPSIS:
-   static int RefineGrid (GRID *theGrid);
+   static int RefineGrid (GRID *theGrid, INT *nadapted)
 
    PARAMETERS:
 .  theGrid - grid level to refine
+.  nadapted - number elements have been changed
 
    DESCRIPTION:
    This function refines one level of the grid
@@ -5626,7 +5652,7 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
 */
 /****************************************************************************/
 
-static int RefineGrid (GRID *theGrid)
+static int RefineGrid (GRID *theGrid, INT *nadapted)
 {
 	INT modified = 0;
 	ELEMENT *theElement;
@@ -5638,6 +5664,14 @@ static int RefineGrid (GRID *theGrid)
 	if (UpGrid==NULL) RETURN(GM_FATAL);
 
 	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("RefineGrid(%d):\n",GLEVEL(theGrid)),"");
+
+	#ifdef IDENT_ONLY_NEW
+	{
+		NODE *theNode;
+		for (theNode=PFIRSTNODE(UpGrid); theNode!=NULL; theNode=SUCCN(theNode))
+			SETNEW_NIDENT(theNode,0);
+	}
+	#endif
 	
 	/* refine elements */
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
@@ -5708,7 +5742,7 @@ if (0)
 			#endif
 
 			/* this grid is modified */
-			modified = 1;
+			modified++;
 		}
 		else 
 		{
@@ -5717,6 +5751,7 @@ if (0)
 /* TODO: how handle this situation?                       */ 
 /* situation possibly some elements to be coarsened are   */
 /* disconnected from their fathers (970109 s.l.)          */             
+if (0)
 			if (EHGHOST(theElement) && COARSEN(theElement))
 			{
 				if (LEVEL(theElement)>0 && EFATHER(theElement)==NULL)
@@ -5749,6 +5784,8 @@ if (0)
 	}
 	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),
 		("END RefineGrid(%d):\n",GLEVEL(theGrid)),"");
+
+	*nadapted = modified;
 
 	return(GM_OK);
 }
@@ -5785,7 +5822,9 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 	/* update need to be done for all elements with THEFLAG set,  */
 	/* execpt for yellow copies, since their neighbor need not be */
 	/* refined (s.l. 971029)                                      */
+#ifndef UPDATE_FULLOVERLAP
 	if (!THEFLAG(theElement) && REFINECLASS(theElement)!=YELLOW_CLASS) return(GM_OK);
+#endif
 /*
 	if (!THEFLAG(theElement)) return(GM_OK);
 */
@@ -5805,8 +5844,10 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		/* sending of yellow copies is now done in each situation. To send */
 		/* a yellow copy only if needed, THEFLAG(theNeighbor) must be set  */
 		/* properly in RefineGrid() (980114 s.l.)                          */
+		#ifndef UPDATE_FULLOVERLAP
 		if ((REFINECLASS(theElement)==YELLOW_CLASS && !THEFLAG(theElement)) && 
 			!THEFLAG(theNeighbor)) continue;
+		#endif
 
 		PRINTDEBUG(gm,1,("%d: EID=%d side=%d NbID=%d " "NbPARTITION=%d\n",me,
 			ID(theElement),i,ID(theNeighbor), EPROCPRIO(theNeighbor,PrioMaster)))
@@ -5825,11 +5866,28 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 				ID(theSon),LEVEL(theSon), EPROCPRIO(theNeighbor,PrioMaster)))
 
 			HEAPFAULT(theNeighbor);			
-			ASSERT(EPROCPRIO(theNeighbor,PrioMaster)<procs);
+
+			if (EPROCPRIO(theNeighbor,PrioMaster)>=procs) break;
 
 			XFERECOPYX(theSon,EPROCPRIO(theNeighbor,PrioMaster),PrioHGhost,
 				(OBJT(theSon)==BEOBJ)?BND_SIZE_TAG(TAG(theSon)):
 				INNER_SIZE_TAG(TAG(theSon)));
+			/* send son to all elements where theNeighbor is master, vghost or vhghost */
+if (0)
+			{
+				INT *proclist = EPROCLIST(theNeighbor);
+				proclist += 2;
+				while (*proclist != -1)
+				{
+					if (!EHGHOSTPRIO(*(proclist+1)))
+					{
+						XFERECOPYX(theSon,*proclist,PrioHGhost,
+							(OBJT(theSon)==BEOBJ)?BND_SIZE_TAG(TAG(theSon)):
+							INNER_SIZE_TAG(TAG(theSon)));
+					}
+					proclist += 2;
+				}
+			}
 		}
 	}
 
@@ -6210,7 +6268,7 @@ static INT CheckMultiGrid (MULTIGRID *theMG)
 
 INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
 {
-	int level,toplevel,nrefined;
+	int level,toplevel,nrefined,nadapted;
 	int newlevel;
 	NODE *theNode;
 	GRID *theGrid, *FinerGrid;
@@ -6230,6 +6288,7 @@ CheckMultiGrid(theMG);
 	/* check and restrict partitioning of elements */
 	if (CheckPartitioning(theMG))
 	{
+		assert(0);
 		if (RestrictPartitioning(theMG,COARSENED)) RETURN(GM_FATAL);
 if (0)
 		return(GM_OK);
@@ -6354,10 +6413,17 @@ if (0)
 			{
 				for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
 				{
-					ASSERT(EFATHER(theElement) != NULL);
+					ELEMENT *theFather = EFATHER(theElement);
+					ASSERT(theFather != NULL);
+/*
 					if (REFINE(EFATHER(theElement))!=MARK(EFATHER(theElement))) 
+*/
+					if (REFINEMENT_CHANGES(theFather))				
+					{
+						ASSERT(EMASTER(theFather));
 						if (DisposeConnectionsInNeighborhood(FinerGrid,theElement)!=GM_OK)
 							RETURN(GM_FATAL);
+					}
 				}
 			}
 		}
@@ -6385,21 +6451,33 @@ if (0)
 
 
 #ifdef ModelP
+	#ifdef UPDATE_FULLOVERLAP	
+	DDD_XferBegin();
+	{
+		ELEMENT *theElement;
+		for (theElement=PFIRSTELEMENT(FinerGrid);
+			 theElement!=NULL;
+			 theElement=SUCCE(theElement))
+		{
+			 if (EPRIO(theElement) == PrioHGhost) DisposeElement(FinerGrid,theElement,TRUE);
+		}
+	}
+	DDD_XferEnd();
+	#endif
 		DDD_IdentifyBegin();
 		DDD_XferBegin();
 #endif
 
-	DEBUG_TIME(0);
+DDD_CONSCHECK;
 
 		/* now really manipulate the next finer level */		
 		if (level<toplevel || newlevel)
-			if (RefineGrid(theGrid)!=GM_OK)				RETURN(GM_FATAL);
+			if (RefineGrid(theGrid,&nadapted)!=GM_OK)				RETURN(GM_FATAL);
 
 #ifdef ModelP
 		DDD_XferEnd();
 
-
-	DEBUG_TIME(0);
+DDD_CONSCHECK;
 
 { 
 int check=1;
@@ -6410,18 +6488,25 @@ if (1)
 {
 		DDD_IdentifyEnd();
 
+		/* if no grid adaption has occured adapt next level */
+		nadapted = UG_GlobalSumINT(nadapted);
+		if (nadapted == 0) continue;
+
+		/* DDD_JoinBegin(); */
 		DDD_IdentifyBegin();
 }
 
-	DEBUG_TIME(0);
+DDD_CONSCHECK;
 
 		if (Identify_SonNodesAndSonEdges(theGrid))	RETURN(GM_FATAL);
 
 
 
 		DDD_IdentifyEnd();
+		/* DDD_JoinEnd(); */
 
-	DEBUG_TIME(0);
+
+DDD_CONSCHECK;
 
 
 		if (level<toplevel || newlevel)
@@ -6431,13 +6516,13 @@ if (1)
 			if (UpdateGridOverlap(theGrid))				RETURN(GM_FATAL);
 			DDD_XferEnd();
 
-	DEBUG_TIME(0);
+DDD_CONSCHECK;
 
 			DDD_XferBegin();
 			if (ConnectGridOverlap(theGrid))			RETURN(GM_FATAL);
 			DDD_XferEnd();
 
-	DEBUG_TIME(0);
+DDD_CONSCHECK;
 
 			/* this is needed due to special cases while coarsening */
 			/* sample scene: a ghost element is needed as overlap  	*/
@@ -6448,7 +6533,7 @@ if (1)
 			ConstructConsistentGrid(FinerGrid);
 		}
 
-	DEBUG_TIME(0);
+DDD_CONSCHECK;
 
 
 CheckConsistency(theMG,level,debugstart,gmlevel,&check);
@@ -6475,6 +6560,10 @@ CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 		/* TODO: delete special debug */ PRINTELEMID(-1)
 
 	DEBUG_TIME(0);
+
+	#ifdef ModelP
+	CheckGrid(FinerGrid,1,1,1,1);
+	#endif
 
 	}
 
