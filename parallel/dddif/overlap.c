@@ -503,4 +503,122 @@ static INT      ConnectMultiGridOverlap (MULTIGRID *theMG, INT FromLevel)
   return(GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+   ConnectVerticalOverlap - reconstruct fathers and sons of HGHOSTS
+
+   SYNOPSIS:
+   INT	ConnectVerticalOverlap (MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+
+   DESCRIPTION:
+   IO and Loadbalancing to not consider father-son relations of HGHOSTS;
+   here, this information is reconstructed.
+
+   RETURN VALUE:
+   INT
+
+   GM_OK  if ok.
+ */
+/****************************************************************************/
+
+static INT CompareSide (ELEMENT *theElement, INT s, ELEMENT *theFather, INT t)
+{
+  NODE *Nodes[MAX_SIDE_NODES];
+  INT n;
+  INT m = CORNERS_OF_SIDE(theElement,s);
+  INT k = 0;
+  INT i,j;
+
+  GetSonSideNodes(theFather,t,&n,Nodes,0);
+
+  for (i=0; i<m; i++)
+  {
+    NODE *theNode = CORNER(theElement,CORNER_OF_SIDE(theElement,s,i));
+
+    for (j=0; j<MAX_SIDE_NODES; j++)
+      if (theNode == Nodes[j]) {
+        k++;
+        break;
+      }
+  }
+
+  return((k == m));
+}
+
+INT     ConnectVerticalOverlap (MULTIGRID *theMG)
+{
+  INT l;
+
+  for (l=1; l<=TOPLEVEL(theMG); l++)
+  {
+    GRID *theGrid = GRID_ON_LEVEL(theMG,l);
+    ELEMENT     *theElement;
+
+    for (theElement=PFIRSTELEMENT(theGrid);
+         theElement!=NULL; theElement=SUCCE(theElement))
+    {
+      INT prio = EPRIO(theElement);
+      INT i;
+
+      if (prio == PrioMaster) break;
+      if (prio == PrioVGhost) continue;
+      if (EFATHER(theElement) != NULL) continue;
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+      {
+        ELEMENT *theNeighbor = NBELEM(theElement,i);
+
+        if (theNeighbor == NULL) continue;
+        if (EMASTER(theNeighbor))
+        {
+          ELEMENT *theFather = EFATHER(theNeighbor);
+          INT j;
+
+          ASSERT(theFather != NULL);
+          for (j=0; j<SIDES_OF_ELEM(theFather); j++)
+          {
+            ELEMENT *el = NBELEM(theFather,j);
+
+            if (el == NULL) continue;
+            if (EMASTER(el)) continue;
+            if (EVGHOST(el)) continue;
+            if (CompareSide(theElement,i,theFather,j))
+            {
+              INT where = PRIO2INDEX(EPRIO(theElement));
+              PRINTDEBUG(dddif,0,(PFMT " ConnectVerticalOverlap "
+                                  " e=" EID_FMTX
+                                  " n=" EID_FMTX
+                                  " nf=" EID_FMTX
+                                  " f=" EID_FMTX "\n",
+                                  me,
+                                  EID_PRTX(theElement),
+                                  EID_PRTX(theNeighbor),
+                                  EID_PRTX(theFather),
+                                  EID_PRTX(el)));
+              SET_EFATHER(theElement,el);
+              if (NSONS(el) == 0)
+                SET_SON(el,where,theElement);
+              else
+              {
+                ELEMENT *theSon = SON(el,where);
+
+                assert(PRIO2INDEX(EPRIO(theSon)) == where);
+                GRID_UNLINK_ELEMENT(theGrid,theElement);
+                GRID_LINKX_ELEMENT(theGrid,theElement,
+                                   EPRIO(theElement),theSon);
+              }
+              SETNSONS(el,NSONS(el)+1);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return(GM_OK);
+}
+
 #endif
