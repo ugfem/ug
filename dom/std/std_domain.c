@@ -2095,7 +2095,7 @@ LINEAR_SEGMENT *NS_PREFIX
 CreateLinearSegment (char *name,
                      INT left, INT right, INT id,
                      INT n, INT * point,
-                     DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM])
+                     DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM_OF_BND])
 {
   LINEAR_SEGMENT *newSegment;
   INT i, k;
