@@ -487,6 +487,7 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #define F77SYM(lsym,usym) lsym
 
 /* current time as DOUBLE value */
+#include <time.h>
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
