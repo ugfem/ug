@@ -364,33 +364,39 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
                               VECDATA_DESC *r, VECDATA_DESC *t,
                               VECDATA_DESC *q, DOUBLE *a)
 {
+  GRID *theGrid;
   VEC_SCALAR scal1,scal2;
   INT i,bl,tl;
 
   bl = 0;
   tl = CURRENTLEVEL(theMG);
 
-  if (s_dset(theMG,bl,tl,t,0.0))
+  for (i=bl; i<=tl; i++) {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    if (l_dset(theGrid,t,EVERY_CLASS,0.0) != NUM_OK)
+      return(1);
+    if (l_dset(theGrid,q,EVERY_CLASS,0.0) != NUM_OK)
+      return(1);
+    if (l_dmatmul(theGrid,q,EVERY_CLASS,M,x,EVERY_CLASS) != NUM_OK)
+      return(1);
+    if (l_dmatmul(theGrid,t,EVERY_CLASS,M,q,EVERY_CLASS) != NUM_OK)
+      return(1);
+  }
+  if (s_ddot(theMG,bl,tl,t,x,scal1) != NUM_OK)
     return(1);
-
-  if (s_dmatmul (theMG,bl,tl,q,M,x,EVERY_CLASS)!=NUM_OK)
+  if (s_ddot(theMG,bl,tl,r,x,scal2) != NUM_OK)
     return(1);
-
-  if (s_dmatmul (theMG,bl,tl,t,M,q,EVERY_CLASS)!=NUM_OK)
-    return(1);
-
-  if (s_ddot (theMG,bl,tl,t,x,scal1)!=NUM_OK)
-    return(1);
-
-  if (s_ddot (theMG,bl,tl,r,x,scal2)!=NUM_OK)
-    return(1);
-
   a[0] = a[1] = 0.0;
-  for (i=0; i<VD_NCOMP(t); i++)
-  {
+  for (i=0; i<VD_NCOMP(t); i++) {
     a[0] += scal1[i];
     a[1] += scal2[i];
   }
+
+  PRINTDEBUG(np,2,("\ns0 %f s1 %f ",scal1[0],scal1[1]));
+  if (s_ddot(theMG,bl,tl,q,q,scal1) != NUM_OK)
+    return(1);
+  PRINTDEBUG(np,2,("\ns0 %f s1 %f ",scal1[0],scal1[1]));
+
 
   return (0);
 }
@@ -540,6 +546,10 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
         return(1);
     np->assemble = 0;
   }
+  if (np->Quadratic)
+    for (i=bl; i<=level; i++)
+      AssembleTotalDirichletBoundary(GRID_ON_LEVEL(theNP->base.mg,i),
+                                     np->M,ev[0],np->r);
 
   return (0);
 }
@@ -610,13 +620,15 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
     if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,ev[0],np->r,np->M,
                                       &ewresult->error_code))
       return(1);
-    if (s_ddot(theMG,0,level,ev[0],np->r,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
+    if (s_ddot(theMG,0,level,ev[0],np->r,scal) != NUM_OK)
+      NP_RETURN(1,ewresult->error_code);
     a[1] = 0.0;
     for (j=0; j<VD_NCOMP(np->r); j++)
       a[1] += scal[j];
     for (j=0; j<VD_NCOMP(np->r); j++)
       scal[j] = 1.0 / sqrt(a[1]);
-    if (a_dscale(theMG,0,level,ev[0],EVERY_CLASS,scal)) NP_RETURN(1,ewresult->error_code);
+    if (a_dscale(theMG,0,level,ev[0],EVERY_CLASS,scal))
+      NP_RETURN(1,ewresult->error_code);
     ew[0] = 0.0;
     i++;
   }
@@ -625,7 +637,8 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
       UserWriteF("%s:\n",ENVITEM_NAME(ev[i]));
 
     /* orthogonalize iteration vector */
-    if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t)) NP_RETURN(1,ewresult->error_code);
+    if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
+      NP_RETURN(1,ewresult->error_code);
     if (np->Orthogonalize) {
       if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
                                         ev[i],np->t,np->M,
@@ -633,11 +646,13 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         return(1);
     }
     else {
-      if (s_dset(theMG,0,level,np->t,0.0)) NP_RETURN(1,ewresult->error_code);
+      if (s_dset(theMG,0,level,np->t,0.0))
+        NP_RETURN(1,ewresult->error_code);
       if (s_dmatmul (theMG,0,level,np->t,np->M,ev[i],EVERY_CLASS)
           != NUM_OK) NP_RETURN(1,ewresult->error_code);
     }
-    if (Orthogonalize(theMG,level,i,ev,np->t,np->display)) NP_RETURN(1,ewresult->error_code);
+    if (Orthogonalize(theMG,level,i,ev,np->t,np->display))
+      NP_RETURN(1,ewresult->error_code);
     if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
                  &ewresult->error_code))
       return(1);
@@ -692,20 +707,12 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
                    &ewresult->error_code))
         return(1);
       for (j=0; j<VD_NCOMP(np->r); j++)
-        scal[j] = 1.0/rq;
+        scal[j] = rq;
       if (s_dscale(theMG,0,level,np->r,scal) != NUM_OK)
-        NP_RETURN(1,ewresult->error_code);
-      if (FreeVD(theMG,bl,level,np->t))
         NP_RETURN(1,ewresult->error_code);
       /* solve */
       if (np->Quadratic) {
-        if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
-          NP_RETURN(1,ewresult->error_code);
         if (s_dcopy (theMG,bl,level,np->t,ev[i]) != NUM_OK)
-          NP_RETURN(1,ewresult->error_code);
-        for (j=0; j<VD_NCOMP(np->r); j++)
-          scal[j] = 1.0/sqrt(rq);
-        if (a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK)
           NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Defect)(np->LS,level,np->t,np->r,np->M,
                               &ewresult->error_code))
@@ -731,6 +738,8 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
           NP_RETURN(1,ewresult->error_code);
       }
       else {
+        if (FreeVD(theMG,bl,level,np->t))
+          NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Defect)(np->LS,level,ev[i],np->r,np->M,
                               &ewresult->error_code))
           return (1);
@@ -808,14 +817,14 @@ static INT EWPostProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
   for (i=0; i<nev; i++)
     if ((*np->Transfer->ProjectSolution)
           (np->Transfer,bl,level,ev[i],result))
-      return(1);
+      NP_RETURN(1,result[0]);
   if (np->Transfer->PostProcess != NULL)
     if ((*np->Transfer->PostProcess)(np->Transfer,0,level,
                                      ev[0],np->r,np->M,result))
-      return(1);
+      NP_RETURN(1,result[0]);
   if (np->LS->PostProcess != NULL)
     if ((*np->LS->PostProcess)(np->LS,level,ev[0],np->r,np->M,result))
-      return(1);
+      NP_RETURN(1,result[0]);
 
   return (0);
 }
