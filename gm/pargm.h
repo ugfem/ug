@@ -359,6 +359,14 @@ enum Priorities
 /* ppif dummies */
 #define Broadcast(p,n)  ((int)0)
 
+/* dummys for reduction functions implemented in parallel/dddif/support.c */
+#define UG_GlobalSumDOUBLE(x)   x
+#define UG_GlobalSumINT(x)              x
+#define UG_GlobalMaxINT(x)              x
+#define UG_GlobalMinINT(x)              x
+#define UG_GlobalSumNDOUBLE(x,y)
+#define UG_GlobalMaxDOUBLE(x)   x
+#define UG_GlobalMinDOUBLE(x)   x
 #endif
 
 
@@ -390,6 +398,7 @@ extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeAllIF;
 /****************************************************************************/
 
 /* functions implemented in parallel/dddif/support.c */
+#ifdef ModelP
 DOUBLE UG_GlobalSumDOUBLE (DOUBLE);
 INT UG_GlobalSumINT (INT);
 INT UG_GlobalMaxINT (INT);
@@ -397,5 +406,6 @@ INT UG_GlobalMinINT (INT);
 void UG_GlobalSumNDOUBLE (INT, DOUBLE *);
 DOUBLE UG_GlobalMaxDOUBLE (DOUBLE i);
 DOUBLE UG_GlobalMinDOUBLE (DOUBLE i);
+#endif
 
 #endif /* __PARGM_H__ */
