@@ -39,6 +39,10 @@
 
 #import <appkit/Window.h>
 
+/* RCS_ID
+   $Header$
+ */
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/

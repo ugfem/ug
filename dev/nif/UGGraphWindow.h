@@ -30,6 +30,11 @@
 #include "devices.h"
 #endif
 
+/* RCS_ID
+   $Header$
+ */
+
+
 
 @interface UGGraphWindow : Window
 {

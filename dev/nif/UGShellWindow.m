@@ -25,7 +25,7 @@
 #include "general.h"
 
 /* interface includes */
-#include "devices.h"
+#include "ugdevices.h"
 #include "cmdint.h"
 
 
