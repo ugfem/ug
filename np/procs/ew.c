@@ -384,11 +384,13 @@ static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
     {
       SHORT ncomp = VD_NCMPS_IN_TYPE(x,vtype);
       VECTOR *v;
+      DOUBLE_VECTOR pos;
 
       A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass) {
+        VectorPosition(v,pos);
         for (i=0; i<ncomp; i++) {
           VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) =
-            VINDEX(v) + i * 0.3 + 0.1 + index;
+            pos[i] + index;
         }
       }
     }
@@ -1322,6 +1324,7 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
   DOUBLE L[MAX_NUMBER_EW*MAX_NUMBER_EW];
   DOUBLE G[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE E[MAX_NUMBER_EW][MAX_NUMBER_EW];
+  DOUBLE *tmp1, *tmp2;
   DOUBLE* table[MAX_NUMBER_EW];       /* for qsort */
   INT index[MAX_NUMBER_EW];
   INT bl = 0;
@@ -1422,99 +1425,102 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
     for (i=0; i<New; i++)
       E[i][i] = 1.0;
 
+    IFDEBUG(np,1)
+    UserWriteF("A\n");
+    for (i=0; i<New; i++) {
+      for (j=0; j<New; j++)
+        UserWriteF("%8.4f\t",A[i*New+j]);
+      UserWriteF("\n");
+    }
+    UserWriteF("B\n");
+    for (i=0; i<New; i++) {
+      for (j=0; j<New; j++)
+        UserWriteF("%8.4f\t",B[i*New+j]);
+      UserWriteF("\n");
+    }
+    ENDDEBUG
+
     if (np->Orthogonalize) {
-      if (Choleskydecomposition(New,B,L))
-        NP_RETURN(1,ewresult->error_code);
-
-      /* inverse of L */
-      for (i=1; i<New; i++) {
-        for (j=0; j<i; j++)
-        {
-          DOUBLE sum = L[i*New+j] * L[j*New+j];
-
-          for (k=j+1; k<i; k++)
-            sum += L[i*New+k] * L[k*New+j];
-          L[i*New+j] = - sum * L[i*New+i];
-        }
-      }
-
-      /* Left hand side for special Eigenvalue problem */
-      for (i=0; i<New; i++) {
-        for (j=0; j<=i; j++)
-        {
-          DOUBLE sum = 0.0;
-
-          for (k=0; k<=i; k++)
-            for (l=0; l<=j; l++)
-              sum += L[i*New+k] * A[k*New+l] * L[j*New+l];
-          G[i][j] = G[j][i]  = sum;
-        }
-      }
-
-      /* Special Eigenvalue problem  G E_i = lambda E_i */
-
-      SmallEWSolver(New,G,ew,E);
-
-      /* transform back the Eigenvectors */
-      for (i=0; i<New; i++) {
-        for (j=0; j<New; j++)
-        {
-          DOUBLE sum = L[i*New+i]*E[i][j];
-
-          for (k=i+1; k<New; k++)
-            sum += L[k*New+i]*E[k][j];
-          E[i][j]= sum;
-        }
-      }
+      tmp1 = B; tmp2 = A;
     }
     else {
-      if (Choleskydecomposition(New,A,L))
-        NP_RETURN(1,ewresult->error_code);
+      tmp1 = A; tmp2 = B;
+    }
 
-      /* inverse of L */
-      for (i=1; i<New; i++) {
-        for (j=0; j<i; j++)
-        {
-          DOUBLE sum = L[i*New+j] * L[j*New+j];
+    if (Choleskydecomposition(New,tmp1,L))
+      NP_RETURN(1,ewresult->error_code);
 
-          for (k=j+1; k<i; k++)
-            sum += L[i*New+k] * L[k*New+j];
-          L[i*New+j] = - sum * L[i*New+i];
-        }
+    IFDEBUG(np,1)
+    UserWriteF("L\n");
+    for (i=0; i<New; i++) {
+      for (j=0; j<New; j++)
+        UserWriteF("%8.4f\t",L[i*New+j]);
+      UserWriteF("\n");
+    }
+    ENDDEBUG
+
+    /* inverse of L */
+    for (i=1; i<New; i++) {
+      for (j=0; j<i; j++)
+      {
+        DOUBLE sum = L[i*New+j] * L[j*New+j];
+        for (k=j+1; k<i; k++)
+          sum += L[i*New+k] * L[k*New+j];
+        L[i*New+j] = - sum * L[i*New+i];
       }
+    }
 
-      /* Left hand side for special Eigenvalue problem */
-      for (i=0; i<New; i++) {
-        for (j=0; j<=i; j++)
-        {
-          DOUBLE sum = 0.0;
-
-          for (k=0; k<=i; k++)
-            for (l=0; l<=j; l++)
-              sum += L[i*New+k] * B[k*New+l] * L[j*New+l];
-          G[i][j] = G[j][i]  = sum;
-        }
+    /* Left hand side for special Eigenvalue problem */
+    for (i=0; i<New; i++) {
+      for (j=0; j<=i; j++)
+      {
+        DOUBLE sum = 0.0;
+        for (k=0; k<=i; k++)
+          for (l=0; l<=j; l++)
+            sum += L[i*New+k] * tmp2[k*New+l] * L[j*New+l];
+        G[i][j] = G[j][i]  = sum;
       }
+    }
 
-      /* Special Eigenvalue problem  G E_i = lambda E_i */
+    IFDEBUG(np,1)
+    UserWriteF("G\n");
+    for (i=0; i<New; i++) {
+      for (j=0; j<New; j++)
+        UserWriteF("%8.4f\t",G[i][j]);
+      UserWriteF("\n");
+    }
+    ENDDEBUG
 
-      SmallEWSolver(New,G,ew,E);
+    /* Special Eigenvalue problem  G E_i = lambda E_i */
+    SmallEWSolver(New,G,ew,E);
 
-      /* transform back the Eigenvectors */
+    IFDEBUG(np,1)
+    UserWriteF("E\n");
+    for (i=0; i<New; i++) {
+      for (j=0; j<New; j++)
+        UserWriteF("%8.4f\t",E[i][j]);
+      UserWriteF("\n");
+    }
+    ENDDEBUG
+
+    if (!(np->Orthogonalize)) {
       for (i=0; i<New; i++) {
         if (ABS(ew[i]) > SMALL_D)
           ew[i] = 1.0 / ew[i];
-        /* TODO: reorder E[i] ? */
-        for (j=0; j<New; j++)
-        {
-          DOUBLE sum = L[i*New+i]*E[i][j];
-
-          for (k=i+1; k<New; k++)
-            sum += L[k*New+i]*E[k][j];
-          E[i][j]= sum;
-        }
       }
     }
+
+    /* transform back the Eigenvectors */
+    for (i=0; i<New; i++) {
+      for (j=0; j<New; j++)
+      {
+        DOUBLE sum = L[i*New+i]*E[i][j];
+        for (k=i+1; k<New; k++)
+          sum += L[k*New+i]*E[k][j];
+        E[i][j]= sum;
+      }
+    }
+
     for (i=0; i<New; i++) {
       if (AllocVDFromVD(theMG,bl,level,ev[0],&np->e[i]))
         NP_RETURN(1,ewresult->error_code);
@@ -1560,6 +1566,10 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
           NP_RETURN(1,ewresult->error_code);
         if (daxpy(theMG,bl,level,ON_SURFACE,np->t,-ew[i],np->r))
           NP_RETURN(1,ewresult->error_code);
+                #ifdef ModelP
+        if (a_vector_collect(NP_MG(theNP),0,level,np->t) != NUM_OK)
+          NP_RETURN(1,ewresult->error_code);
+                #endif
         if (dnrm2x(theMG,bl,level,ON_SURFACE,np->t,defect))
           NP_RETURN(1,ewresult->error_code);
         if (FreeVD(theMG,bl,level,np->t))
