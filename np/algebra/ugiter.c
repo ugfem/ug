@@ -6643,9 +6643,109 @@ static DOUBLE CheckNorm (MULTIGRID *theMG, INT level,
   return (nrm);
 }
 
+static INT ElementGS (GRID *g, const VECDATA_DESC *v,
+                      const MATDATA_DESC *M, const VECDATA_DESC *d,
+                      INT depth, INT mode, DOUBLE vdamp)
+{
+  ELEMENT *theElement;
+  VECTOR *vec,*vlist[MAX_DEPTH],*w;
+  MATRIX *mat;
+  DOUBLE vval[LOCAL_DIM],dval[LOCAL_DIM];
+  DOUBLE check,nrm;
+  INT cnt,m,i,j,k,l,ncomp,vcnt,vtype,wtype,wncomp;
+  const SHORT *Comp,*VComp;
+
+  PRINTDEBUG(np,1,("l_pgs: l=%d v=%s M=%s d=%s depth=%d mode=%d\n",
+                   (int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),
+                   ENVITEM_NAME(d),(int)depth,(int)mode));
+
+  t = NULL;
+  if (depth > MAX_DEPTH) {
+    UserWriteF("l_pgs: MAX_DEPTH too small\n");
+    REP_ERR_RETURN (__LINE__);
+  }
+
+  dset(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,v,0.0);
+  for (theElement=FIRSTELEMENT(g); theElement!= NULL;
+       theElement=SUCCE(theElement)) {
+    if (ECLASS(theElement) == YELLOW_CLASS) continue;
+    cnt = GetAllVectorsOfElementOfType(theElement,vlist,v);
+    ASSERT(cnt <= MAX_DEPTH);
+    m = GetVlistMValues(cnt,vlist,M,UGI_Mval);
+    if (m != GetVlistVValues(cnt,vlist,d,dval)) {
+      UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
+                 m,GetVlistVValues(cnt,vlist,d,dval));
+      REP_ERR_RETURN (__LINE__);
+    }
+
+
+    /*UserWriteF("element %d\n",ID(theElement));*/
+    if (vdamp > 0.0)
+      for (i=0; i<m; i++)
+      {
+        for (j=0; j<m; j++) {
+          if (   ((i<(DIM+1)*CORNERS_OF_ELEM(theElement)) && (i%(DIM+1)==DIM))
+                 || ((j<(DIM+1)*CORNERS_OF_ELEM(theElement)) && (j%(DIM+1)==DIM)))
+          {
+            /*UserWriteF("P");*/
+          }
+          else if (ABS(UGI_Mval[i*m+j]) < 0.0000000001) {
+            /*
+               UserWriteF("o");
+             */
+          }
+          else {
+            if (i!=j) {
+              UGI_Mval[i*m+j] = 0.0;
+              /*UserWriteF("x");*/
+            }
+            else {
+              /*UserWriteF("D");*/
+              UGI_Mval[i*m+j] *= vdamp;
+            }
+          }
+          /*UserWriteF("%6.1g",UGI_Mval[i*m+j]);*/
+        }
+        /*UserWriteF("\n");*/
+      }
+
+    vcnt = 0;
+    for (i=0; i<cnt; i++) {
+      vtype = VTYPE(vlist[i]);
+      ncomp = VD_NCMPS_IN_TYPE(d,vtype);
+      for (mat=VSTART(vlist[i]); mat!=NULL; mat=MNEXT(mat)) {
+        w = MDEST(mat);
+        wtype = VTYPE(w);
+        Comp = MD_MCMPPTR_OF_MTYPE(M,MTP(vtype,wtype));
+        wncomp = VD_NCMPS_IN_TYPE(d,wtype);
+        VComp = VD_CMPPTR_OF_TYPE(v,wtype);
+        for (k=0; k<ncomp; k++)
+          for (l=0; l<wncomp; l++)
+            dval[vcnt+k] -= MVALUE(mat,Comp[k*wncomp+l])
+                            * VVALUE(w,VComp[l]);
+      }
+      vcnt += ncomp;
+    }
+    if (SolveFullMatrix(m,vval,UGI_Mval,dval)) {
+      UserWriteF("l_pgs: solving on local patch failed\n");
+      REP_ERR_RETURN (__LINE__);
+    }
+    AddVlistVValues(cnt,vlist,v,vval);
+    IFDEBUG(np,1)
+    nrm = 0.0;
+    for (i=0; i<m; i++) nrm += ABS(vval[i]);
+    check = CheckNorm(MYMG(g),GLEVEL(g),v,d,M);
+    UserWriteF("nrm[%d] = %-12.7e  m = %d v = %-12.7e\n",
+               ID(theElement),check,m,nrm);
+    ENDDEBUG
+  }
+
+  return (NUM_OK);
+}
+
 INT l_pgs (GRID *g, const VECDATA_DESC *v,
            const MATDATA_DESC *M, const VECDATA_DESC *d,
-           INT depth, INT mode)
+           INT depth, INT mode, DOUBLE vdamp)
 {
   ELEMENT *theElement;
   VECTOR *vec,*vlist[MAX_DEPTH],*w;
@@ -6656,6 +6756,10 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
   const SHORT *Comp,*VComp;
 
   PRINTDEBUG(np,1,("l_pgs: l=%d v=%s M=%s d=%s depth=%d mode=%d\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d),(int)depth,(int)mode));
+
+
+  if (mode == 10)
+    return(ElementGS(g,v,M,d,depth,mode,vdamp));
 
   t = NULL;
   if (depth > MAX_DEPTH) {
