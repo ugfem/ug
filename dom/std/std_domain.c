@@ -3097,9 +3097,9 @@ INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
    COORD *in, DOUBLE *value, INT *type);
 
    PARAMETERS:
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  time - time parameter or NULL
+   .  aBndP - BNDP structure
+   .  n - number of BNDS
+   .  in - input vector
    .  type - type of bnd cond
    .  value - values
 
