@@ -553,6 +553,8 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
 
   /* check */
   if (theMG==NULL) return (1);
+  theHeap = MGHEAP(theMG);
+  MarkTmpMem(theHeap);
 
 #ifndef __MWCW__
   /* zip if */
@@ -651,8 +653,6 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   /* write coarse grid points */
   if (RenumberNodeElem (theMG)) return (1);
   theGrid = GRID_ON_LEVEL(theMG,0);
-  theHeap = MGHEAP(theMG);
-  MarkTmpMem(theHeap);
   n = NV(theGrid)*sizeof(MGIO_CG_POINT);
   cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,n);
   for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
@@ -1107,6 +1107,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   /* create a virginenal multigrid on the BVP */
   theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize);
   MG_MAGIC_COOKIE(theMG) = mg_general.magic_cookie;
+  theHeap = MGHEAP(theMG);
+  MarkTmpMem(theHeap);
   if (theMG==NULL)                                                                                                        {CloseMGFile (); return (NULL);}
   if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (CreateNewLevel(theMG)==NULL)                                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
@@ -1114,8 +1116,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   theBVP = MG_BVP(theMG);
   if (theBVP==NULL)                                                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (BVP_SetBVPDesc(theBVP,&theBVPDesc))                                                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-
-  MarkTmpMem(theHeap);
 
   /* read general element information */
   if (Read_GE_General(&ge_general))                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
