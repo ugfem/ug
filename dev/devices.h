@@ -70,6 +70,15 @@
 #define heartTool                               5
 #define gnoedelTool                     6
 
+/* tool names */
+#define arrowToolName                   "pointer tool"
+#define crossToolName                   "insert bn tool"
+#define choiceToolName                  "move nd tool"
+#define circleToolName                  "insert in tool"
+#define handToolName                    "select nd tool"
+#define heartToolName                   "select el tool"
+#define gnoedelToolName                 "mark for ref tool"
+
 /* text modes */
 #define TEXT_REGULAR                    0
 #define TEXT_INVERSE                    1
@@ -323,5 +332,9 @@ INT               GetNextUGEvent                        (EVENT *theEvent, INT Ev
 /* mouse functions */
 void              MousePosition                         (INT *ScreenCoord);
 INT               MouseStillDown                        (void);
+
+/* tool name handling */
+INT                       SetToolName                           (INT tool, const char *name);
+const char   *GetToolName                               (INT tool);
 
 #endif
