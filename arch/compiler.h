@@ -686,6 +686,10 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym ## _
 
+/* current time as DOUBLE value */
+#undef CURRENT_TIME
+#define CURRENT_TIME nec_clock()
+
 #endif
 
 
