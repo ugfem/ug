@@ -10923,6 +10923,8 @@ static INT LB4Command (INT argc, char **argv)
    .n					np
    .n					dom
    .n					ui
+   .n                  pclib
+   .n                  appl
    .   $<level>	- assign this level (if omitted display current level for the
                                         specified module)
 
@@ -10956,8 +10958,8 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("np",argv[1])==0) Debugnp             = atoi(argv[2]);
     else if (strcmp("dom",argv[1])==0) Debugdom        = atoi(argv[2]);
     else if (strcmp("ui",argv[1])==0) Debugui                 = atoi(argv[2]);
-    else if (strcmp("appl",argv[1])==0) Debugappl               = atoi(argv[2]);
     else if (strcmp("pclib",argv[1])==0) Debugpclib              = atoi(argv[2]);
+    else if (strcmp("appl",argv[1])==0) Debugappl               = atoi(argv[2]);
     else
     {
       UserWriteF("no debug variable for module %s found!\n",argv[1]);
@@ -10978,8 +10980,8 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("np",argv[1])==0)           {module="np";           l=Debugnp;}
     else if (strcmp("dom",argv[1])==0)          {module="dom";          l=Debugdom;}
     else if (strcmp("ui",argv[1])==0)               {module="ui";           l=Debugui;}
-    else if (strcmp("appl",argv[1])==0)             {module="appl";         l=Debugappl;}
     else if (strcmp("pclib",argv[1])==0)    {module="pclib";        l=Debugpclib;}
+    else if (strcmp("appl",argv[1])==0)             {module="appl";         l=Debugappl;}
     else
     {
       UserWriteF("no debug variable for module %s found!\n",argv[1]);
