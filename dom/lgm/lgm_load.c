@@ -747,9 +747,9 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
       if( ((lgm_mesh_info.BndP_lcoord_left)[i])[j] == -1.0 )
       {
         /*special case*/
-        global_cooordinate[0] = -MAXFLOAT;
-        global_cooordinate[1] = -MAXFLOAT;
-        global_cooordinate[2] = -MAXFLOAT;
+        global_cooordinate[0] = -1e50;
+        global_cooordinate[1] = -1e50;
+        global_cooordinate[2] = -1e50;
       }
       else                                   /*eval global coordinate for left LinePoint*/
       {
@@ -768,9 +768,9 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
       if( ((lgm_mesh_info.BndP_lcoord_right)[i])[j] > 1234567789.0 )
       {
         /*special case*/
-        global_cooordinate[0] = MAXFLOAT;
-        global_cooordinate[1] = MAXFLOAT;
-        global_cooordinate[2] = MAXFLOAT;
+        global_cooordinate[0] = 1e50;
+        global_cooordinate[1] = 1e50;
+        global_cooordinate[2] = 1e50;
       }
       else                                   /*eval global coordinate for right LinePoint*/
       {

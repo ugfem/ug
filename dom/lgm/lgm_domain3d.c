@@ -3367,11 +3367,11 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
           if(local_left>-SMALL)
             Line_Local2GlobalNew(theLine, global_left, local_left);
           else
-            global_left[0] = global_left[1] = global_left[2] = -MAXFLOAT;
+            global_left[0] = global_left[1] = global_left[2] = -1e50;
           if(local_right<12345677890.0)
             Line_Local2GlobalNew(theLine, global_right, local_right);
           else
-            global_right[0] = global_right[1] = global_right[2] = MAXFLOAT;
+            global_right[0] = global_right[1] = global_right[2] = 1e50;
           LGM_BNDP_LINE_GLOBALLEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[0] = global_left[0];
           LGM_BNDP_LINE_GLOBALLEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[1] = global_left[1];
           LGM_BNDP_LINE_GLOBALLEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[2] = global_left[2];
