@@ -56,7 +56,7 @@
 /* valid only for all types of ghost priorities            */
 #define PRIO_CALC(e) ((USED(e) && THEFLAG(e)) ? PrioVHGhost :             \
                       (THEFLAG(e)) ? PrioVGhost : (USED(e)) ?           \
-                      PrioGhost : (assert(0),0))
+                      PrioHGhost : (assert(0),0))
 
 /* macros for setting object priorities with related objects */
 /* macros for setting object priorities with related objects */
@@ -369,7 +369,7 @@ void SetGhostObjectPriorities (GRID *theGrid)
         if (USED(theEdge) || THEFLAG(theEdge))
         {
           PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
-                              " downgrade edge=" EDID_FMTX " from=%d to PrioGhost\n",
+                              " downgrade edge=" EDID_FMTX " from=%d to PrioHGhost\n",
                               me,EDID_PRTX(theEdge),prio));
 
           EDGE_PRIORITY_SET(theGrid,theEdge,PRIO_CALC(theEdge));
@@ -396,7 +396,7 @@ void SetGhostObjectPriorities (GRID *theGrid)
     if (USED(theNode) || THEFLAG(theNode))
     {
       PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
-                          " downgrade node=" ID_FMTX " from=%d to PrioGhost\n",
+                          " downgrade node=" ID_FMTX " from=%d to PrioHGhost\n",
                           me,ID_PRTX(theNode),prio));
 
       /* set node priorities of node to ghost */
@@ -405,7 +405,7 @@ void SetGhostObjectPriorities (GRID *theGrid)
     else if (MODIFIED(theNode) == 0)
     {
       /* this is a node of the boundary without connection to master elements */
-      NODE_PRIORITY_SET(theGrid,theNode,PrioGhost)
+      NODE_PRIORITY_SET(theGrid,theNode,PrioHGhost)
     }
   }
 
@@ -489,9 +489,9 @@ void ConstructConsistentGrid (GRID *theGrid)
 
       /* this is too few for arbitrary load balancing, since
               VFATHER pointer may have changed (970828 s.l.)
-                              if (VFATHER(theVertex)==NULL || EPRIO(VFATHER(theVertex))==PrioGhost)
+                              if (VFATHER(theVertex)==NULL || EPRIO(VFATHER(theVertex))==PrioHGhost)
        */
-      if (VFATHER(theVertex)==NULL || EPRIO(theFather)!=PrioGhost)
+      if (VFATHER(theVertex)==NULL || EPRIO(theFather)!=PrioHGhost)
       {
         switch (NTYPE(theNode))
         {
@@ -705,7 +705,7 @@ INT CheckElementPrio (ELEMENT *theElement)
     prio = 0;
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
     {
-      if (EMASTER(NBELEM(theElement,i))) prio = PrioGhost;
+      if (EMASTER(NBELEM(theElement,i))) prio = PrioHGhost;
     }
     if (GetSons(theElement,SonList) != 0) RETURN(1);
     if (SonList[0] != NULL) prio += PrioVGhost;

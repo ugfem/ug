@@ -359,7 +359,7 @@ static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
 
   proclist = DDD_InfoProcList(PARHDRE(theNeighbor));
 
-  Ident_FctPtr(IdentObjectHdr,1,proclist+2,PrioGhost,IdentHdr,nident);
+  Ident_FctPtr(IdentObjectHdr,1,proclist+2,PrioHGhost,IdentHdr,nident);
 
 }
 #endif
@@ -416,7 +416,7 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
     IdentHdr[nident++] = PARHDR((NODE *)NFATHER(theNode));
 
     Ident_FctPtr(IdentObjectHdr, nobject,
-                 proclist+2, PrioGhost, IdentHdr, nident);
+                 proclist+2, PrioHGhost, IdentHdr, nident);
 
     break;
 
@@ -473,7 +473,7 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
      */
 
     Ident_FctPtr(IdentObjectHdr, nobject,
-                 proclist+2, PrioGhost, IdentHdr, nident);
+                 proclist+2, PrioHGhost, IdentHdr, nident);
 
     break;
   }
@@ -501,7 +501,7 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
 
     /* identify side node */
     Ident_FctPtr(IdentObjectHdr, nobject,
-                 proclist+2, PrioGhost, IdentHdr, nident);
+                 proclist+2, PrioHGhost, IdentHdr, nident);
 
     break;
   }
@@ -634,7 +634,7 @@ static INT IdentifyEdge (GRID *theGrid,
 
   if (nobject > 0)
     Ident_FctPtr(IdentObjectHdr, nobject,
-                 proclist+2, PrioGhost, IdentHdr, nident);
+                 proclist+2, PrioHGhost, IdentHdr, nident);
 
   /* debugging unlocks the edge */
         #ifdef Debug

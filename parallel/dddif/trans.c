@@ -358,7 +358,7 @@ static void XferGridWithOverlap (GRID *theGrid)
         if (PARTITION(theElement)!=PARTITION(theNeighbor))
         {
           /* create Ghost copy */
-          XferElement(theElement, PARTITION(theNeighbor), PrioGhost);
+          XferElement(theElement, PARTITION(theNeighbor), PrioHGhost);
         }
 
         /* remember any local neighbour element */
@@ -408,7 +408,7 @@ static void XferGridWithOverlap (GRID *theGrid)
         switch (overlap_elem)
         {
         case (1) :
-          SETEPRIO(theElement,PrioGhost);
+          SETEPRIO(theElement,PrioHGhost);
           break;
 
         case (2) :
@@ -427,7 +427,7 @@ static void XferGridWithOverlap (GRID *theGrid)
       {
         /* element isn't needed */
         PRINTDEBUG(dddif,2,("%d: XferGridWithOverlap(): XferDel elem=%d to p=%d prio=%d\n",
-                            me,EGID(theElement),PARTITION(theElement),PrioGhost));
+                            me,EGID(theElement),PARTITION(theElement),PrioHGhost));
         XFEREDELETE(theElement);
       }
     }
