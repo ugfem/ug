@@ -773,7 +773,7 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
 {
   MGIO_RR_RULE *theRule;
   INT i,j,n,sonRefined,sonex,nex,refined;
-  ELEMENT *SonSonList[MAX_SONS];
+  /*ELEMENT *SonSonList[MAX_SONS];*/
 
   refinement->refclass = REFINECLASS(theElement);
   refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
@@ -1181,6 +1181,12 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 
   /* check */
   if (theMG==NULL) REP_ERR_RETURN(1);
+  if (!MG_COARSE_FIXED(theMG))
+  {
+    PrintErrorMessage('E',"SaveMultiGrid_SPF","coarse grid not fixed\n");
+    REP_ERR_RETURN(1);
+  }
+
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap,&MarkKey);
 
@@ -1501,7 +1507,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 
   /* save refinement */
   refinement = (MGIO_REFINEMENT *)GetTmpMem(theHeap,(hr_max+1)*MGIO_REFINEMENT_SIZE,MarkKey);                   /* size according to procs==1 or procs>1 (see mgio.h) */
-  if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refinement\n",(int)hr_max*sizeof(MGIO_REFINEMENT)); REP_ERR_RETURN(1);}
+  if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %ld bytes for refinement\n",(long)hr_max*MGIO_REFINEMENT_SIZE); REP_ERR_RETURN(1);}
   if (procs>1) tl=TOPLEVEL(theMG);
   else tl=0;
 
@@ -2253,7 +2259,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     type = IEOBJ;
     if (OBJT(theElement)==BEOBJ)
       for (j=0; j<SIDES_OF_TAG(SonData->tag); j++)
-        if (SonData->nb[j]>=20 && SIDE_ON_BND(theElement,SonData->nb[j]-20))
+        if (SonData->nb[j]>=MGIO_FATHER_SIDE_OFFSET && SIDE_ON_BND(theElement,SonData->nb[j]-MGIO_FATHER_SIDE_OFFSET))
         {
           type = BEOBJ;
           break;
@@ -2280,7 +2286,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     if (MGIO_PARFILE && !((ref->sonex>>i)&1)) continue;
     SonData = theRule->sons+i;
     for (j=0; j<SIDES_OF_TAG(SonData->tag); j++)
-      if (SonData->nb[j]<20 && (!MGIO_PARFILE || ((ref->sonex>>(SonData->nb[j]))&1)))
+      if (SonData->nb[j]<MGIO_FATHER_SIDE_OFFSET && (!MGIO_PARFILE || ((ref->sonex>>(SonData->nb[j]))&1)))
         SET_NBELEM(theSonList[i],j,theSonList[SonData->nb[j]]);
       else
         SET_NBELEM(theSonList[i],j,NULL);
@@ -2613,7 +2619,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (heapSize==0) heapSize = mg_general.heapsize * KBYTE;
 
   /* create a virginenal multigrid on the BVP */
-  theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,TRUE);
+  theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,TRUE,TRUE);
   if (theMG==NULL) {
     UserWrite("ERROR(ugio): cannot create multigrid\n");
     CloseMGFile ();
