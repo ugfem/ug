@@ -75,8 +75,8 @@
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
 
-/* if block vector descriptors are used
- #define __BLOCK_VECTOR_DESC__ */
+/* if block vector descriptors are used*/
+#define __BLOCK_VECTOR_DESC__
 
 /****************************************************************************/
 /*																			*/
@@ -1283,8 +1283,8 @@ extern CONTROL_ENTRY
 #define BVDOWNTYPE_CE                                   67
 #define BVDOWNTYPE_SHIFT                                0
 #define BVDOWNTYPE_LEN                                  1
-#define BVDOWNTYPE(bv)                                  CW_READ(bv,BVDOWNTYPE_CE)
-#define SETBVDOWNTYPE(bv,n)                     CW_WRITE(bv,BVDOWNTYPE_CE,n)
+#define BVDOWNTYPE(bv)                                  CW_READ_STATIC(bv,BVDOWNTYPE_,BLOCKVECTOR_)
+#define SETBVDOWNTYPE(bv,n)                     CW_WRITE_STATIC(bv,BVDOWNTYPE_,BLOCKVECTOR_,n)
 
 /* access to members of struct blockvector */
 #define BVNUMBER(bv)                                    ((bv)->number)
@@ -2255,7 +2255,7 @@ EDGE            *FatherEdge                             (NODE **SideNodes, INT n
 #endif
 EDGE            *GetEdge                                (NODE *from, NODE *to);
 INT             GetSons                                 (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
-INT             VectorPosition                  (VECTOR *theVector, DOUBLE *position);
+INT             VectorPosition                  (const VECTOR *theVector, DOUBLE *position);
 INT             VectorInElement                 (ELEMENT *theElement, VECTOR *theVector);
 INT             MinMaxAngle                     (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax);
 

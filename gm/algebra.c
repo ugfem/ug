@@ -2990,7 +2990,7 @@ INT VectorInElement (ELEMENT *theElement, VECTOR *theVector)
    VectorPosition - Calc coordinate position of vector
 
    SYNOPSIS:
-   INT VectorPosition (VECTOR *theVector, DOUBLE *position);
+   INT VectorPosition (const VECTOR *theVector, DOUBLE *position);
 
    PARAMETERS:
    .  theVector - a given vector
@@ -3007,7 +3007,7 @@ INT VectorInElement (ELEMENT *theElement, VECTOR *theVector)
    D*/
 /****************************************************************************/
 
-INT VectorPosition (VECTOR *theVector, DOUBLE *position)
+INT VectorPosition (const VECTOR *theVector, DOUBLE *position)
 {
   INT i, j;
   EDGE *theEdge;
@@ -6088,6 +6088,7 @@ INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT 
    D*/
 /****************************************************************************/
 
+#ifndef ModelP
 INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
 {
 #ifdef __BLOCK_VECTOR_DESC__
@@ -6139,6 +6140,7 @@ INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
   return(1);
 #endif /* __BLOCK_VECTOR_DESC__ */
 }
+#endif /* ModelP */
 
 #ifdef __BLOCK_VECTOR_DESC__
 /****************************************************************************/
