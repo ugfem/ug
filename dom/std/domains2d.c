@@ -80,7 +80,7 @@ typedef DOUBLE DOUBLE_VECTOR[DIM];
 /*                                                                          */
 /****************************************************************************/
 
-static DOUBLE_VECTOR x_quad[4];
+static DOUBLE_VECTOR x_quad[6];
 
 static DOUBLE Rand[54][2] = {
   {189,22.5},
@@ -226,6 +226,91 @@ static INT InitQuadrilateral (void)
                               northBoundary,NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("west", 0,1,3,0,3,1,0.0,1.0,
                               westBoundary, NULL)==NULL) return(1);
+
+  return(0);
+}
+
+/****************************************************************************/
+/*                                                                          */
+/*  define two quadrilaterals                                               */
+/*                                                                          */
+/****************************************************************************/
+
+static INT south2Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*x_quad[1][0] + lambda*x_quad[4][0];
+  result[1] = (1.0-lambda)*x_quad[1][1] + lambda*x_quad[4][1];
+
+  return(0);
+}
+
+static INT east2Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*x_quad[4][0] + lambda*x_quad[5][0];
+  result[1] = (1.0-lambda)*x_quad[4][1] + lambda*x_quad[5][1];
+
+  return(0);
+}
+
+static INT north2Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*x_quad[2][0] + lambda*x_quad[5][0];
+  result[1] = (1.0-lambda)*x_quad[2][1] + lambda*x_quad[5][1];
+
+  return(0);
+}
+
+static INT InitTwo (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  MidPoint[0] = 0.16666666666*(x_quad[0][0]+x_quad[1][0]
+                               +x_quad[2][0]+x_quad[3][0]
+                               +x_quad[4][0]+x_quad[5][0]);
+  MidPoint[1] = 0.16666666666*(x_quad[0][1]+x_quad[1][1]
+                               +x_quad[2][1]+x_quad[3][1]
+                               +x_quad[4][1]+x_quad[5][1]);
+  radius =            ABS(x_quad[0][0]-MidPoint[0]);
+  radius = MAX(radius,ABS(x_quad[1][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[2][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[3][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[4][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[5][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[0][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[1][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[2][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[3][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[4][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[5][1]-MidPoint[1]));
+  if (CreateDomain("Two",MidPoint,radius,8,8,YES)==NULL) return(1);
+  if (CreateBoundarySegment2D("south", 1,0,0,0,1,1,0.0,1.0,
+                              southBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east",  1,2,1,1,2,1,0.0,1.0,
+                              eastBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north", 1,0,2,2,3,1,0.0,1.0,
+                              northBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west",  0,1,3,0,3,1,0.0,1.0,
+                              westBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south2",2,0,4,6,4,1,0.0,1.0,
+                              south2Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east2", 2,0,5,4,5,1,0.0,1.0,
+                              east2Boundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north2",0,2,6,7,5,1,0.0,1.0,
+                              north2Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east1", 1,2,7,6,7,1,0.0,1.0,
+                              eastBoundary, NULL)==NULL) return(1);
 
   return(0);
 }
@@ -1048,6 +1133,39 @@ INT STD_BVP_Configure (INT argc, char **argv)
       x_quad[3][1] = 1.0;
     }
   }
+  else if (strcmp(DomainName,"Two") == 0)
+  {
+    if (ReadArgvPosition("x0",argc,argv,x_quad[0]))
+    {
+      x_quad[0][0] = 0.0;
+      x_quad[0][1] = 0.0;
+    }
+    if (ReadArgvPosition("x1",argc,argv,x_quad[1]))
+    {
+      x_quad[1][0] = 1.0;
+      x_quad[1][1] = 0.0;
+    }
+    if (ReadArgvPosition("x2",argc,argv,x_quad[2]))
+    {
+      x_quad[2][0] = 1.0;
+      x_quad[2][1] = 1.0;
+    }
+    if (ReadArgvPosition("x3",argc,argv,x_quad[3]))
+    {
+      x_quad[3][0] = 0.0;
+      x_quad[3][1] = 1.0;
+    }
+    if (ReadArgvPosition("x4",argc,argv,x_quad[4]))
+    {
+      x_quad[4][0] = 2.0;
+      x_quad[4][1] = 0.0;
+    }
+    if (ReadArgvPosition("x5",argc,argv,x_quad[5]))
+    {
+      x_quad[5][0] = 2.0;
+      x_quad[5][1] = 1.0;
+    }
+  }
   else if (strcmp(DomainName,"Triangle") == 0)
   {
     if (ReadArgvPosition("x0",argc,argv,x_quad[0]))
@@ -1093,6 +1211,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Quadrilateral") == 0)
     {
       if (InitQuadrilateral())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Two") == 0)
+    {
+      if (InitTwo())
         return(1);
     }
     else if (strcmp(DomainName,"Triangle") == 0)
