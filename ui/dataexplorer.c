@@ -171,15 +171,23 @@ static double clampf(double x)
 
    DESCRIPTION:
    The dataexplorer command writes the grid and multiple vector or scalar
-   grid functions in DataExplorer readable format to a file.
+   grid functions in DataExplorer readable format to a header and a
+   data file. The data file is written as a text file (default) or in
+   binary format. In order to save disk space it is possible to write
+   only the data and not the grid at later time steps (if the grid is
+   not changing).
 
    'dataexplorer <filename> [$ns <nep> $s <vd>]* [$nv <nep> $s <vd>]*
-                                            [$cs <eep> $s <vd>]* [$cv <eep> $s <vd>]*'
+                                            [$cs <eep> $s <vd>]* [$cv <eep> $s <vd>]*
+                                                        [$b 0|1|2]* [$bin]* [$fgrid]*'
 
    .  $ns...			- plot function for scalar nodal values
    .  $nv...			- plot function for vector nodal values
    .  $cs...			- plot function for scalar element values
    .  $cv...			- plot function for vector element values
+   .  $b...            - write boundary data 0=no (default) | 1=inner | 2=all
+   .  $bin...          - write grid and data in binary format
+   .  $fgrid...        - if not initial time step grid is not written
 
    .  <vd>				- vecdata desc
    .  <nep>			- eval proc (nodal values)
@@ -200,18 +208,28 @@ static double clampf(double x)
 
 static INT DataExplorerCommand (INT argc, char **argv)
 {
-  INT i,j,k,v;                                  /* counters etc.							*/
+  INT i,j,k,l,v;                                /* counters etc.							*/
   INT counter;                                  /* for formatting output					*/
+  INT dat_pos;                      /* indicates offset in data file            */
+  INT old_pos;
   char item[1024],it[256];              /* item buffers								*/
+  char out_form[256];
   INT ic=0;                                             /* item length								*/
   VERTEX *vx;                                           /* a vertex pointer							*/
   ELEMENT *el;                                  /* an element pointer						*/
+  NODE *no1, *no2;                  /* two node pointers                        */
+  LINK *li;                         /* a link pointer                           */
 
   MULTIGRID *mg;                                /* our multigrid							*/
   HEAP *heap;
 
-  char filename[NAMESIZE];              /* file name for output file				*/
-  PFILE *pf;                                            /* the output file pointer					*/
+  char filename[NAMESIZE];              /* file name for header file				*/
+  char filename_dat[NAMESIZE];      /* file name for data output file           */
+  char filename_grid[NAMESIZE];      /* file name for grid output file          */
+  char *c_ptr;
+  PFILE *pf;                                            /* the output header file pointer               */
+  PFILE *pf_txt;                    /* file pointer for ascii output            */
+  PFILE_BIN *pf_bin;                /* file pointer for binary output           */
 
   INT ns;                                               /* number of scalar eval procs				*/
   INT nv;                                               /* number of vector eval procs				*/
@@ -242,6 +260,17 @@ static INT DataExplorerCommand (INT argc, char **argv)
   DOUBLE value;                                 /* returned by user eval proc				*/
   DOUBLE x,y,z;                                 /* scalar values							*/
   DOUBLE vval[DIM];                             /* result of vector evaluation function		*/
+
+  INT notOnlyTetra;                 /* flag for tetrahedrons only grids         */
+  INT notOnlyTriang;                /* flag for triangles only boundaries       */
+  INT nibnd;                        /* number of inner boundary faces/lines     */
+  INT nobnd;                        /* number of outer boundary faces/lines     */
+  INT writeBnds=0;                  /* flag: write boundaries? (1=Inner, 2=All) */
+  INT binaryOutput=0;               /* flag: write data in binary? (0=No|1=Yes) */
+  INT writeGrid=1;                  /* flag: write grid? (0=No|1=Yes)           */
+  INT buffer_INT[8];
+  FLOAT buffer_FLOAT[8];
+  INT usedBuf;
 
   time_t ltime;
 
@@ -366,10 +395,24 @@ static INT DataExplorerCommand (INT argc, char **argv)
       nv_cell++;
       continue;
     }
+
+    /* write data in binary format? */
+    if (strncmp(argv[i],"bin",3)==0)
+      binaryOutput=1;
+
+    /* write grid or use existing data file as reference? */
+    if (strncmp(argv[i],"fgrid",5)==0)
+      writeGrid=0;
   }
 
   if (ns==0 && nv==0 && ns_cell==0 && nv_cell==0)
     UserWrite("dataexplorer: no variables given, printing mesh data only\n");
+
+  /* are inner and/or outer boundaries to be written? */
+  if (ReadArgvINT("b",&writeBnds,argc,argv))
+    writeBnds = 0;
+  if (writeBnds>2) writeBnds=2;
+  if (writeBnds<0) writeBnds=0;
 
   /* get file name and open output file	*/
   if (sscanf(argv[0],expandfmt(CONCAT3(" dataexplorer %",NAMELENSTR,"[ -~]")),
@@ -382,6 +425,47 @@ static INT DataExplorerCommand (INT argc, char **argv)
   if (pf==NULL) {
     PrintErrorMessage('E',"dataexplorer","could not open output file");
     return(PARAMERRORCODE);
+  }
+
+  /* on first time step always write grid */
+  if (strstr(filename,"0000")!=NULL)
+    writeGrid=1;
+
+  if (binaryOutput) {
+    strcpy(filename_dat,filename);
+    c_ptr=strrchr(filename_dat,'.');
+    if (c_ptr!=NULL)
+      memset(c_ptr, '\0', 1);
+    strcat(filename_dat, ".bin");
+    pf_bin = pfile_open_bin(filename_dat);
+    if (pf_bin==NULL) {
+      PrintErrorMessage('E',"dataexplorer","could not open data file");
+      return(PARAMERRORCODE);
+    }
+    strcpy(out_form,"binary");
+  } else {
+    strcpy(filename_dat,filename);
+    c_ptr=strrchr(filename_dat,'.');
+    if (c_ptr!=NULL)
+      memset(c_ptr, '\0', 1);
+    strcat(filename_dat, ".dat");
+    pf_txt = pfile_open(filename_dat);
+    if (pf_txt==NULL) {
+      PrintErrorMessage('E',"dataexplorer","could not open data file");
+      return(PARAMERRORCODE);
+    }
+    strcpy(out_form,"text");
+  }
+  if (writeGrid)
+    strcpy(filename_grid, filename_dat);
+  else {
+    strcpy(filename_grid, filename);
+    c_ptr=strchr(filename_grid,'.');
+    memset(c_ptr, '\0', 1);
+    if (binaryOutput)
+      strcat(filename_grid, ".0000.bin");
+    else
+      strcat(filename_grid, ".0000.dat");
   }
 
   /********************************/
@@ -457,10 +541,13 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
   sprintf(it,"\n#\n# positions\n#\n");
   strcpy(item+ic,it); ic+=strlen(it);
-  sprintf(it,"object 1 class array type float rank 1 shape %d items %d"\
-          " data follows\n", DIM, gnumVertices);
+  dat_pos = old_pos = 0;
+  sprintf(it,"object 1 class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
+          DIM, gnumVertices, out_form, filename_grid, dat_pos);
   strcpy(item+ic,it); ic+=strlen(it);
   pfile_master_puts(pf,item); ic=0;
+  if (binaryOutput)
+    dat_pos+=DIM*gnumVertices*sizeof(FLOAT);
 
   /* unmark vertices */
   for (k=0; k<=TOPLEVEL(mg); k++)
@@ -479,9 +566,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
   /* write vertex coordinates */
   counter=0;
-  for (k=0; k<=TOPLEVEL(mg); k++)
+  for (k=0; k<=TOPLEVEL(mg); k++) {
+    if (binaryOutput && !writeGrid) break;
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
       if (!EstimateHere(el)) continue;
+
       for (i=0; i<CORNERS_OF_ELEM(el); i++)
       {
         vx = MYVERTEX(CORNER(el,i));
@@ -492,33 +581,90 @@ static INT DataExplorerCommand (INT argc, char **argv)
         Id2Position[ID(vx)] = counter;
 
         /* write the thing */
+        if (binaryOutput) {
+          buffer_FLOAT[0]=clampf(XC(vx));
+          buffer_FLOAT[1]=clampf(YC(vx));
+          buffer_FLOAT[2]=clampf(ZC(vx));
+        } else {
 #ifdef __TWODIM__
-        sprintf(it,"\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)));
+          sprintf(it,"\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)));
 #else
-        sprintf(it,"\t%g\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)),
-                clampf(ZC(vx)));
+          sprintf(it,"\t%g\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)),
+                  clampf(ZC(vx)));
 #endif
-        pfile_tagged_puts(pf,it,counter+ov);
+        }
+        if (binaryOutput)
+          pfile_tagged_write_FLOAT(pf_bin, buffer_FLOAT, DIM, counter+ov);
+        else {
+          if (writeGrid)
+            pfile_tagged_puts(pf_txt,it,counter+ov);
+          old_pos+=strlen(it);
+        }
         counter++;
       }
     }
+  }
   pfile_sync(pf);
+  if (binaryOutput)
+    pfile_sync_bin(pf_bin);
+  else {
+    pfile_sync(pf_txt);
+#ifdef ModelP
+    dat_pos = UG_GlobalSumINT(old_pos);
+#else
+    dat_pos = old_pos;
+#endif
+    old_pos = 0;
+  }
 
+  /* check if grid consists of tetrahedrons or triangles (in 2D) only */
+  notOnlyTetra=0;
+  for (k=0; k<=TOPLEVEL(mg); k++) {
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
+      if (!EstimateHere(el)) continue;
+#ifdef __TWODIM__
+      if (CORNERS_OF_ELEM(el)!=3) {
+        notOnlyTetra = 1;
+        break;
+      }
+#else
+      if (CORNERS_OF_ELEM(el)!=4) {
+        notOnlyTetra = 1;
+        break;
+      }
+#endif
+    }
+    if (notOnlyTetra) break;
+  }
+
+#ifdef ModelP
+  k = UG_GlobalSumINT(notOnlyTetra);
+  notOnlyTetra = k;
+#endif
 
   /****************************************************************/
-  /*	2. write connections										*/
+  /*	2. write connections for domain								*/
   /****************************************************************/
 
   sprintf(it,"\n#\n# connections\n#\n");
   strcpy(item+ic,it); ic+=strlen(it);
-  pfile_master_puts(pf,item); ic=0;
-  sprintf(it,"object 2 class array type int rank 1 shape %d items %d"\
-          " data follows\n", 4*(DIM-1), gnumElements);
+  if (notOnlyTetra) {
+    sprintf(it,"object 2 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+            4*(DIM-1), gnumElements, out_form, filename_grid, dat_pos);
+    if (binaryOutput)
+      dat_pos+=4*(DIM-1)*gnumElements*sizeof(INT);
+  } else {
+    sprintf(it,"object 2 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+            DIM+1, gnumElements, out_form, filename_grid, dat_pos);
+    if (binaryOutput)
+      dat_pos+=(DIM+1)*gnumElements*sizeof(INT);
+  }
   strcpy(item+ic,it); ic+=strlen(it);
   pfile_master_puts(pf,item); ic=0;
 
   counter = 0;
-  for (k=0; k<=TOPLEVEL(mg); k++)         {
+  for (k=0; k<=TOPLEVEL(mg); k++) {
+    if (binaryOutput && !writeGrid) break;
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
       if (!EstimateHere(el)) continue;
@@ -526,88 +672,509 @@ static INT DataExplorerCommand (INT argc, char **argv)
       switch(CORNERS_OF_ELEM(el))
       {
       case 3 :
-        sprintf(it,"\t%d\t%d\t%d\t%d\n",
-                Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov);
+        if (notOnlyTetra) {                               /* in 2D and NOT only triangles */
+          if (binaryOutput) {
+            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
+            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
+            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+            buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+            usedBuf=4;
+          } else
+            sprintf(it,"\t%d\t%d\t%d\t%d\n",
+                    Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov);
+        } else {                                          /* in 2D and only triangles */
+          if (binaryOutput) {
+            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
+            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
+            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+            usedBuf=3;
+          } else
+            sprintf(it,"\t%d\t%d\t%d\n",
+                    Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov);
+        }
         break;
 
       case 4 :
 #ifdef __TWODIM__
-        sprintf(it,"\t%d\t%d\t%d\t%d\n",
-                Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov);
+        if (binaryOutput) {
+          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
+          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
+          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+          usedBuf=4;
+        } else
+          sprintf(it,"\t%d\t%d\t%d\t%d\n",
+                  Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov);
 #else
-        sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-                Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov);
+        if (notOnlyTetra) {                               /* in 3D and NOT only Tetrahedrons */
+          if (binaryOutput) {
+            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
+            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
+            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+            buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+            buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+            buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+            buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+            buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+            usedBuf=8;
+          } else
+            sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+                    Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov);
+        } else {                                         /* in 3D and only Tetrahedrons in grid */
+          if (binaryOutput) {
+            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
+            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
+            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+            buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+            usedBuf=4;
+          } else
+            sprintf(it,"\t%d\t%d\t%d\t%d\n",
+                    Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov);
+        }
 #endif
         break;
 
       case 5 :
-        sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-                Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov);
+        if (binaryOutput) {
+          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
+          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
+          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+          buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
+          buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
+          buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
+          buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
+          usedBuf=8;
+        } else
+          sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+                  Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov);
         break;
 
       case 6 :
-        sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-                Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov);
+        if (binaryOutput) {
+          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
+          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
+          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+          buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+          buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
+          buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov;
+          buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov;
+          usedBuf=8;
+        } else
+          sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+                  Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov);
         break;
 
       case 8 :
-        sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-                Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,7)))]+ov,
-                Id2Position[ID(MYVERTEX(CORNER(el,6)))]+ov);
+        if (binaryOutput) {
+          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
+          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
+          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+          buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
+          buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov;
+          buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,7)))]+ov;
+          buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,6)))]+ov;
+          usedBuf=8;
+        } else
+          sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+                  Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,7)))]+ov,
+                  Id2Position[ID(MYVERTEX(CORNER(el,6)))]+ov);
         break;
       }
-      strcpy(item+ic,it); ic+=strlen(it);
-      pfile_tagged_puts(pf,item,counter+oe); ic=0;
+      if (binaryOutput)
+        pfile_tagged_write_INT(pf_bin, buffer_INT, usedBuf, counter+oe);
+      else {
+        if (writeGrid)
+          pfile_tagged_puts(pf_txt,it,counter+oe);
+        old_pos+=strlen(it);
+      }
       counter++;
     }
   }
+
   pfile_sync(pf);
+  if (binaryOutput)
+    pfile_sync_bin(pf_bin);
+  else {
+    pfile_sync(pf_txt);
+#ifdef ModelP
+    dat_pos += UG_GlobalSumINT(old_pos);
+#else
+    dat_pos += old_pos;
+#endif
+    old_pos = 0;
+  }
 
 #ifdef __TWODIM__
-  sprintf(it,"attribute \"element type\" string \"quads\"\n");
+  if (notOnlyTetra)
+    sprintf(it,"attribute \"element type\" string \"quads\"\n");
+  else
+    sprintf(it,"attribute \"element type\" string \"triangles\"\n");
 #else
-  sprintf(it,"attribute \"element type\" string \"cubes\"\n");
+  if (notOnlyTetra)
+    sprintf(it,"attribute \"element type\" string \"cubes\"\n");
+  else
+    sprintf(it,"attribute \"element type\" string \"tetrahedra\"\n");
 #endif
   strcpy(item+ic,it); ic+=strlen(it);
   sprintf(it,"attribute \"ref\" string \"positions\"\n\n");
   strcpy(item+ic,it); ic+=strlen(it);
   pfile_master_puts(pf,item); ic=0;
 
+  /**************************************************/
+  /* 2.a write connections for boundaries           */
+  /**************************************************/
+
+  if (writeBnds) {
+    /* unmark all elements */
+    for (k=0; k<=TOPLEVEL(mg); k++)
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+        SETUSED(el,0);
+
+    /* count number of sides on inner/outer boundaries */
+    nibnd=0;
+    nobnd=0;
+    notOnlyTriang=0;
+    for (k=0; k<=TOPLEVEL(mg); k++)         {
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+      {
+        if ((!EstimateHere(el)) || (OBJT(el)!=BEOBJ)) continue;
+
+        SETUSED(el,1);
+        for (i=0; i<SIDES_OF_ELEM(el); i++) {
+          if (NBELEM(el,i)!=NULL && USED(NBELEM(el,i))) continue;
+          if (SIDE_ON_BND(el,i)) {
+            if (NBELEM(el,i)==NULL) nobnd++;
+            else nibnd++;
+#ifdef __TWODIM__
+#else
+            if (CORNERS_OF_SIDE(el,i)!=3) notOnlyTriang=1;
+#endif
+          }
+        }
+      }
+    }
+#ifdef ModelP
+    k = UG_GlobalSumINT(notOnlyTriang);
+    notOnlyTetra = k;
+#endif
+  }
+
+  if (writeBnds) {
+    /* unmark all elements yet again */
+    for (k=0; k<=TOPLEVEL(mg); k++)
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+        SETUSED(el,0);
+
+    /* now writing inner boundary faces or lines */
+    sprintf(it,"\n#\n# connections for inner boundaries\n#\n");
+    strcpy(item+ic,it); ic+=strlen(it);
+#ifdef __TWODIM__
+    sprintf(it,"object 3 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+            2, nibnd, out_form, filename_grid, dat_pos);
+    if (binaryOutput)
+      dat_pos+=2*nibnd*sizeof(INT);
+#else
+    if (notOnlyTriang) {
+      sprintf(it,"object 3 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+              4, nibnd, out_form, filename_grid, dat_pos);
+      if (binaryOutput)
+        dat_pos+=4*nibnd*sizeof(INT);
+    } else {
+      sprintf(it,"object 3 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+              3, nibnd, out_form, filename_grid, dat_pos);
+      if (binaryOutput)
+        dat_pos+=3*nibnd*sizeof(INT);
+    }
+#endif
+    strcpy(item+ic,it); ic+=strlen(it);
+    pfile_master_puts(pf,item); ic=0;
+
+    counter = 0;
+    for (k=0; k<=TOPLEVEL(mg); k++) {
+      if (binaryOutput && !writeGrid) break;
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+      {
+        if ((!EstimateHere(el)) || (OBJT(el)!=BEOBJ)) continue;
+
+        SETUSED(el,1);
+        for (i=0; i<SIDES_OF_ELEM(el); i++) {
+          if (NBELEM(el,i)!=NULL && USED(NBELEM(el,i))) continue;
+          if (SIDE_ON_BND(el,i) && NBELEM(el,i)!=NULL) {
+            switch(CORNERS_OF_SIDE(el,i))
+            {
+            case 2 :                                        /* in 2D sides are edges => only two points */
+              if (binaryOutput) {
+                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
+                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                usedBuf=2;
+              } else
+                sprintf(it,"\t%d\t%d\n",
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov);
+              break;
+            case 3 :                                        /* has to be 3D */
+              if (notOnlyTriang) {                                              /* not only faces with 3 corners */
+                if (binaryOutput) {
+                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
+                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  usedBuf=4;
+                } else
+                  sprintf(it,"\t%d\t%d\t%d\t%d\n",
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+              } else {                                                          /* only triangles as faces */
+                if (binaryOutput) {
+                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
+                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  usedBuf=3;
+                } else
+                  sprintf(it,"\t%d\t%d\t%d\n",
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+              }
+              break;
+            case 4 :                                        /* has to be 3D and quads */
+              if (binaryOutput) {
+                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
+                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))]+ov;
+                buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                usedBuf=4;
+              } else
+                sprintf(it,"\t%d\t%d\t%d\t%d\n",
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))]+ov,
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+              break;
+            }
+            if (binaryOutput)
+              pfile_tagged_write_INT(pf_bin, buffer_INT, usedBuf, counter+oe);
+            else {
+              if (writeGrid)
+                pfile_tagged_puts(pf_txt,it,counter+oe);
+              old_pos+=strlen(it);
+            }
+            counter++;
+          }
+        }
+      }
+    }
+    pfile_sync(pf);
+    if(binaryOutput)
+      pfile_sync_bin(pf_bin);
+    else {
+      pfile_sync(pf_txt);
+#ifdef ModelP
+      dat_pos += UG_GlobalSumINT(old_pos);
+#else
+      dat_pos += old_pos;
+#endif
+      old_pos = 0;
+    }
+
+#ifdef __TWODIM__
+    sprintf(it,"attribute \"element type\" string \"lines\"\n");
+#else
+    if (notOnlyTriang)
+      sprintf(it,"attribute \"element type\" string \"quads\"\n");
+    else
+      sprintf(it,"attribute \"element type\" string \"triangles\"\n");
+#endif
+    strcpy(item+ic,it); ic+=strlen(it);
+    sprintf(it,"attribute \"ref\" string \"positions\"\n\n");
+    strcpy(item+ic,it); ic+=strlen(it);
+    pfile_master_puts(pf,item); ic=0;
+  }
+
+  if (writeBnds==2) {
+    /* unmark all elements again */
+    for (k=0; k<=TOPLEVEL(mg); k++)
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+        SETUSED(el,0);
+
+    /* now writing outer boundary faces or lines */
+    sprintf(it,"\n#\n# connections for outer boundaries\n#\n");
+    strcpy(item+ic,it); ic+=strlen(it);
+#ifdef __TWODIM__
+    sprintf(it,"object 4 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+            2, nobnd, out_form, filename_grid, dat_pos);
+    if (binaryOutput)
+      dat_pos+=2*nobnd*sizeof(INT);
+#else
+    if (notOnlyTriang) {
+      sprintf(it,"object 4 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+              4, nobnd, out_form, filename_grid, dat_pos);
+      if (binaryOutput)
+        dat_pos+=4*nobnd*sizeof(INT);
+    } else {
+      sprintf(it,"object 4 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+              3, nobnd, out_form, filename_grid, dat_pos);
+      if (binaryOutput)
+        dat_pos+=3*nobnd*sizeof(INT);
+    }
+#endif
+    strcpy(item+ic,it); ic+=strlen(it);
+    pfile_master_puts(pf,item); ic=0;
+
+    counter = 0;
+    for (k=0; k<=TOPLEVEL(mg); k++) {
+      if (binaryOutput && !writeGrid) break;
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+      {
+        if ((!EstimateHere(el)) || (OBJT(el)!=BEOBJ)) continue;
+
+        SETUSED(el,1);
+        for (i=0; i<SIDES_OF_ELEM(el); i++) {
+          if (NBELEM(el,i)!=NULL && USED(NBELEM(el,i))) continue;
+          if (SIDE_ON_BND(el,i) && NBELEM(el,i)==NULL) {
+            switch(CORNERS_OF_SIDE(el,i))
+            {
+            case 2 :                                        /* in 2D sides are edges => only two points */
+              if (binaryOutput) {
+                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
+                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                usedBuf=2;
+              } else
+                sprintf(it,"\t%d\t%d\n",
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov);
+              break;
+            case 3 :                                        /* has to be 3D */
+              if (notOnlyTriang) {                                              /* not only faces with 3 corners */
+                if (binaryOutput) {
+                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
+                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  usedBuf=4;
+                } else
+                  sprintf(it,"\t%d\t%d\t%d\t%d\n",
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+              } else {                                                          /* only triangles as faces */
+                if (binaryOutput) {
+                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
+                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  usedBuf=3;
+                } else
+                  sprintf(it,"\t%d\t%d\t%d\n",
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+              }
+              break;
+            case 4 :                                        /* has to be 3D and quads */
+              if (binaryOutput) {
+                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
+                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))]+ov;
+                buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                usedBuf=4;
+              } else
+                sprintf(it,"\t%d\t%d\t%d\t%d\n",
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))]+ov,
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+              break;
+            }
+            if (binaryOutput)
+              pfile_tagged_write_INT(pf_bin, buffer_INT, usedBuf, counter+oe);
+            else {
+              if (writeGrid)
+                pfile_tagged_puts(pf_txt,it,counter+oe);
+              old_pos+=strlen(it);
+            }
+            counter++;
+          }
+        }
+      }
+    }
+    pfile_sync(pf);
+    if (binaryOutput)
+      pfile_sync_bin(pf_bin);
+    else {
+      pfile_sync(pf_txt);
+#ifdef ModelP
+      dat_pos += UG_GlobalSumINT(old_pos);
+#else
+      dat_pos += old_pos;
+#endif
+      old_pos = 0;
+    }
+
+#ifdef __TWODIM__
+    sprintf(it,"attribute \"element type\" string \"lines\"\n");
+#else
+    if (notOnlyTriang)
+      sprintf(it,"attribute \"element type\" string \"quads\"\n");
+    else
+      sprintf(it,"attribute \"element type\" string \"triangles\"\n");
+#endif
+    strcpy(item+ic,it); ic+=strlen(it);
+    sprintf(it,"attribute \"ref\" string \"positions\"\n\n");
+    strcpy(item+ic,it); ic+=strlen(it);
+    pfile_master_puts(pf,item); ic=0;
+  }
+
+
   /* delete map array */
   ReleaseTmpMem(heap, key);
+
+  /* reset data file position counter if grid has not been written */
+  if (!writeGrid)
+    dat_pos=0;
 
   /****************************************************************/
   /*	3. write node data											*/
@@ -623,10 +1190,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
     sprintf(it,"#\n# data block %d\n#\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
-    pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"object %d class array type float rank 0"\
-            " items %d data follows\n", blocks+2, gnumVertices);
+    sprintf(it,"object %d class array type float rank 0 items %d %s\ndata file %s,%d\n",
+            blocks+2+writeBnds, gnumVertices, out_form, filename_grid, dat_pos);
+    if (binaryOutput)
+      dat_pos+=gnumVertices*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
@@ -654,15 +1222,32 @@ static INT DataExplorerCommand (INT argc, char **argv)
           /* scalar components */
           eval_s = es[v]->EvalProc;
           value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
-          sprintf(it,"\t%g\n",clampf(value));
-          strcpy(item+ic,it); ic+=strlen(it);
-          pfile_tagged_puts(pf,item,counter+ov); ic=0;
+          if (binaryOutput) {
+            buffer_FLOAT[0]=clampf(value);
+            pfile_tagged_write_FLOAT(pf_bin, buffer_FLOAT, 1, counter+ov);
+          } else {
+            sprintf(it,"\t%g\n",clampf(value));
+            pfile_tagged_puts(pf_txt,it,counter+ov);
+            old_pos+=strlen(it);
+          }
           counter++;
         }
       }
     }
     pfile_sync(pf);
+    if (binaryOutput)
+      pfile_sync_bin(pf_bin);
+    else {
+      pfile_sync(pf_txt);
+#ifdef ModelP
+      dat_pos += UG_GlobalSumINT(old_pos);
+#else
+      dat_pos += old_pos;
+#endif
+      old_pos = 0;
+    }
 
+    /* domain data fields */
     sprintf(it,"\nobject \"data%d\" class field\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
@@ -675,9 +1260,47 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"data\" value %d\n", blocks+2);
+    sprintf(it,"component \"data\" value %d\n\n", blocks+2+writeBnds);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+
+    if (writeBnds) {
+      /* inner boundaries data fields */
+      sprintf(it,"\nobject \"ibnd%d\" class field\n", blocks);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"positions\" value 1\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"connections\" value 3\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+
+    if (writeBnds==2) {
+      /* outer boundaries data fields */
+      sprintf(it,"\nobject \"obnd%d\" class field\n", blocks);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"positions\" value 1\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"connections\" value 4\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
 
     blocks++;
   }
@@ -690,10 +1313,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
     sprintf(it,"#\n# data block %d\n#\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
-    pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"object %d class array type float rank 1 shape %d items %d"\
-            " data follows\n", blocks+2, DIM, gnumVertices);
+    sprintf(it,"object %d class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
+            blocks+2+writeBnds, DIM, gnumVertices, out_form, filename_grid, dat_pos);
+    if (binaryOutput)
+      dat_pos+=DIM*gnumVertices*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
@@ -721,19 +1345,44 @@ static INT DataExplorerCommand (INT argc, char **argv)
           eval_v = ev[v]->EvalProc;
           eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
 #ifdef __TWODIM__
-          sprintf(it,"\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]));
+          if (binaryOutput) {
+            buffer_FlOAT[0]=clampf(vval[0]);
+            buffer_FLOAT[1]=clampf(vval[1]);
+          } else
+            sprintf(it,"\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]));
 #else
-          sprintf(it,"\t%g\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]),
-                  clampf(vval[2]));
+          if (binaryOutput) {
+            buffer_FLOAT[0]=clampf(vval[0]);
+            buffer_FLOAT[1]=clampf(vval[1]);
+            buffer_FLOAT[2]=clampf(vval[2]);
+          } else
+            sprintf(it,"\t%g\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]),
+                    clampf(vval[2]));
 #endif
-          strcpy(item+ic,it); ic+=strlen(it);
-          pfile_tagged_puts(pf,item,counter+ov); ic=0;
+          if (binaryOutput)
+            pfile_tagged_write_FLOAT(pf_bin, buffer_FLOAT, DIM, counter+ov);
+          else {
+            pfile_tagged_puts(pf_txt,it,counter+ov);
+            old_pos+=strlen(it);
+          }
           counter++;
         }
       }
     }
     pfile_sync(pf);
+    if (binaryOutput)
+      pfile_sync_bin(pf_bin);
+    else {
+      pfile_sync(pf_txt);
+#ifdef ModelP
+      dat_pos += UG_GlobalSumINT(old_pos);
+#else
+      dat_pos += old_pos;
+#endif
+      old_pos = 0;
+    }
 
+    /* domain data fields */
     sprintf(it,"\nobject \"data%d\" class field\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
@@ -746,9 +1395,47 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"data\" value %d\n", blocks+2);
+    sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+
+    if (writeBnds) {
+      /* inner boundaries data fields */
+      sprintf(it,"\nobject \"ibnd%d\" class field\n", blocks);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"positions\" value 1\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"connections\" value 3\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+
+    if (writeBnds==2) {
+      /* outer boundaries data fields */
+      sprintf(it,"\nobject \"obnd%d\" class field\n", blocks);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"positions\" value 1\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"connections\" value 4\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
 
     blocks++;
   }
@@ -765,10 +1452,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
     sprintf(it,"#\n# data block %d\n#\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
-    pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"object %d class array type float rank 0"\
-            " items %d data follows\n", blocks+2, gnumElements);
+    sprintf(it,"object %d class array type float rank 0 items %d %s\ndata file %s,%d\n",
+            blocks+2+writeBnds, gnumElements, out_form, filename_grid, dat_pos);
+    if (binaryOutput)
+      dat_pos+=gnumElements*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
@@ -791,18 +1479,35 @@ static INT DataExplorerCommand (INT argc, char **argv)
         /* scalar component	*/
         eval_s = es_cell[v]->EvalProc;
         value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
-        sprintf(it,"\t%g\n",clampf(value));
-        strcpy(item+ic,it); ic+=strlen(it);
-        pfile_tagged_puts(pf,item,counter+oe); ic=0;
+        if (binaryOutput) {
+          buffer_FLOAT[0]=clampf(value);
+          pfile_tagged_write_FLOAT(pf_bin, buffer_FLOAT, 1, counter+oe);
+        } else {
+          sprintf(it,"\t%g\n",clampf(value));
+          pfile_tagged_puts(pf_txt,it,counter+oe);
+          old_pos+=strlen(it);
+        }
         counter++;
       }
     }
     pfile_sync(pf);
+    if (binaryOutput)
+      pfile_sync_bin(pf_bin);
+    else {
+      pfile_sync(pf_txt);
+#ifdef ModelP
+      dat_pos += UG_GlobalSumINT(old_pos);
+#else
+      dat_pos += old_pos;
+#endif
+      old_pos = 0;
+    }
 
     sprintf(it,"attribute \"dep\" string \"connections\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
+    /* domain data fields */
     sprintf(it,"\nobject \"data%d\" class field\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
@@ -815,9 +1520,47 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"data\" value %d\n", blocks+2);
+    sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+
+    if (writeBnds) {
+      /* inner boundaries data fields */
+      sprintf(it,"\nobject \"ibnd%d\" class field\n", blocks);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"positions\" value 1\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"connections\" value 3\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+
+    if (writeBnds==2) {
+      /* outer boundaries data fields */
+      sprintf(it,"\nobject \"obnd%d\" class field\n", blocks);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"positions\" value 1\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"connections\" value 4\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
 
     blocks++;
   }
@@ -830,10 +1573,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
     sprintf(it,"#\n# data block %d\n#\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
-    pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"object %d class array type float rank 1 shape %d items %d"\
-            " data follows\n", blocks+2, DIM, gnumElements);
+    sprintf(it,"object %d class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
+            blocks+2+writeBnds, DIM, gnumElements, out_form, filename_grid, dat_pos);
+    if (binaryOutput)
+      dat_pos+=DIM*gnumElements*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
@@ -854,23 +1598,47 @@ static INT DataExplorerCommand (INT argc, char **argv)
         eval_v = ev_cell[v]->EvalProc;
         eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
 #ifdef __TWODIM__
-        sprintf(it,"\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]));
+        if (binaryOutput) {
+          buffer_FlOAT[0]=clampf(vval[0]);
+          buffer_FLOAT[1]=clampf(vval[1]);
+        } else
+          sprintf(it,"\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]));
 #else
-        sprintf(it,"\t%g\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]),
-                clampf(vval[2]));
+        if (binaryOutput) {
+          buffer_FLOAT[0]=clampf(vval[0]);
+          buffer_FLOAT[1]=clampf(vval[1]);
+          buffer_FLOAT[2]=clampf(vval[2]);
+        } else
+          sprintf(it,"\t%g\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]),
+                  clampf(vval[2]));
 #endif
-        strcpy(item+ic,it); ic+=strlen(it);
-
-        pfile_tagged_puts(pf,item,counter+oe); ic=0;
+        if (binaryOutput)
+          pfile_tagged_write_FLOAT(pf_bin, buffer_FLOAT, DIM, counter+ov);
+        else {
+          pfile_tagged_puts(pf_txt,it,counter+ov);
+          old_pos+=strlen(it);
+        }
         counter++;
       }
     }
     pfile_sync(pf);
+    if (binaryOutput)
+      pfile_sync_bin(pf_bin);
+    else {
+      pfile_sync(pf_txt);
+#ifdef ModelP
+      dat_pos += UG_GlobalSumINT(old_pos);
+#else
+      dat_pos += old_pos;
+#endif
+      old_pos = 0;
+    }
 
     sprintf(it,"attribute \"dep\" string \"positions\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
+    /* domain data fields */
     sprintf(it,"\nobject \"data%d\" class field\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
@@ -883,9 +1651,47 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"data\" value %d\n", blocks+2);
+    sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+
+    if (writeBnds) {
+      /* inner boundaries data fields */
+      sprintf(it,"\nobject \"ibnd%d\" class field\n", blocks);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"positions\" value 1\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"connections\" value 3\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+
+    if (writeBnds==2) {
+      /* outer boundaries data fields */
+      sprintf(it,"\nobject \"obnd%d\" class field\n", blocks);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"positions\" value 1\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"connections\" value 4\n");
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+
+      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
 
     blocks++;
   }
@@ -903,6 +1709,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
   }
 
   pfile_close(pf);
+  if (binaryOutput)
+    pfile_close_bin(pf_bin);
+  else
+    pfile_close(pf_txt);
 
   return(OKCODE);
 }
