@@ -164,6 +164,7 @@ INT s_dsetnonskip       (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, D
 INT l_dsetskip          (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE a);
 
 INT l_dsetrandom        (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE a);
+INT l_dsetrandom2       (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE from, DOUBLE to, INT skip);
 
 INT l_dsetfunc          (GRID *g,                                               const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc);
 
