@@ -8514,7 +8514,6 @@ static INT SetViewCommand (INT argc, char **argv)
       /* set default cut */
       V3_COPY(PO_MIDPOINT(PIC_PO(thePic)),PlanePoint);
       V3_CLEAR(PlaneNormal);
-      PlaneNormal[_X_] = 1.0;
       CutPoint = PlanePoint;
       CutNormal = PlaneNormal;
       break;
