@@ -1,7 +1,7 @@
 #
-#	ARCH MAKEFILE OPTIONS
+#       ARCH MAKEFILE OPTIONS
 #
-#	for DEC Workstations 
+#       for DEC Workstations
 #
 
 ARCH_TYPE     = __DEC__
@@ -9,24 +9,28 @@ ARCH_TYPE     = __DEC__
 ARCH_MAKE     = make
 #ARCH_CC       = gcc
 ARCH_CC       = cc
-ARCH_C++      = g++
+#ARCH_C++      = g++
+ARCH_C++      = cxx
 #ARCH_LINK     = gcc
-ARCH_LINK     = cc
+#ARCH_LINK     = cc
+ARCH_LINK     = cxx
 ARCH_AR       = ar
-ARCH_SUFFIX   = 
+ARCH_SUFFIX   =
 ARCH_POSTLINK = true
 
+#ARCH_LIBS     = -lm -lc -L/usr/local/lib/gcc-lib/alpha-dec-osf4.0/2.7.2.2 -lgcc
 ARCH_LIBS     = -lm -lc
 #ARCH_PLIBS    = /usr/lib/libV3.a
 
 #ARCH_CFLAGS   = -ansi
+#ARCH_CFLAGS   = -g -ladebug -ansi
 ARCH_CFLAGS   = -std1
-ARCH_C++FLAGS = 
-ARCH_LFLAGS   = 
+#ARCH_C++FLAGS = -ansi
+ARCH_C++FLAGS =
+ARCH_LFLAGS   =
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES = -I/usr/opt/XR6320/X11R6/include/X11
 ARCH_XLIBS     = -L/usr/opt/XR6320/X11R6/lib -lX11 -lXt -lXaw -lXmu -lXext
-
 
 
