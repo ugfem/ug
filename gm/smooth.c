@@ -226,8 +226,8 @@ static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *
   }
   if (found==FALSE)
   {
-    printf("NewPosCenterNodeCurved lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]);
-    printf("center node nacher: xi=%f  eta=%f \n",LocCoord[0],LocCoord[1]);
+    /*        printf("NewPosCenterNodeCurved lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]); */
+    /*        printf("center node nacher: xi=%f  eta=%f \n",LocCoord[0],LocCoord[1]); */
   }
 #endif
   return(0);
@@ -397,17 +397,17 @@ static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES
     }
     if (found==FALSE)
     {
-      printf("father corners %f  %f \n",fatherCorners[0][0],fatherCorners[0][1]);
-      printf("father corners %f  %f \n",fatherCorners[1][0],fatherCorners[1][1]);
-      printf("father corners %f  %f \n",fatherCorners[2][0],fatherCorners[2][1]);
-      printf("father corners %f  %f \n",fatherCorners[3][0],fatherCorners[3][1]);
-      printf("father corners %f  %f \n",CVECT(MYVERTEX(CORNER(fatherElement,co0)))[0],
-             CVECT(MYVERTEX(CORNER(fatherElement,i)))[1]);
+      /*           printf("father corners %f  %f \n",fatherCorners[0][0],fatherCorners[0][1]); */
+      /*           printf("father corners %f  %f \n",fatherCorners[1][0],fatherCorners[1][1]); */
+      /*           printf("father corners %f  %f \n",fatherCorners[2][0],fatherCorners[2][1]); */
+      /*           printf("father corners %f  %f \n",fatherCorners[3][0],fatherCorners[3][1]); */
+      /*           printf("father corners %f  %f \n",CVECT(MYVERTEX(CORNER(fatherElement,co0)))[0], */
+      /*                  CVECT(MYVERTEX(CORNER(fatherElement,i)))[1]); */
       UG_GlobalToLocal(fcorn,(const DOUBLE **)fatherCorners,
                        CVECT(MYVERTEX(CORNER(fatherElement,co0))),lcorn0);
       UG_GlobalToLocal(fcorn,(const DOUBLE **)fatherCorners,
                        CVECT(MYVERTEX(CORNER(fatherElement,co1))),lcorn1);
-      printf("NewPosCenterNode lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]);
+      /*           printf("NewPosCenterNode lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]); */
     }
 #endif
   }
@@ -603,8 +603,8 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
     coord = 0;
   else
   {
-    printf("LambdaFromQuad lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]);
-    printf("center node nacher: xi=%f  eta=%f \n",LocalCoord[0],LocalCoord[1]);
+    /*       printf("LambdaFromQuad lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]); */
+    /*       printf("center node nacher: xi=%f  eta=%f \n",LocalCoord[0],LocalCoord[1]); */
     *lambda = 0.5;
     return(0);
   }
@@ -661,8 +661,8 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
     coord = 0;
   else
   {
-    printf("LambdaFromQuadCurved lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]);
-    printf("center node nacher: xi=%f  eta=%f \n",LocalCoord[0],LocalCoord[1]);
+    /*       printf("LambdaFromQuadCurved lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]); */
+    /*       printf("center node nacher: xi=%f  eta=%f \n",LocalCoord[0],LocalCoord[1]); */
     *lambda = 0.5;
     return(0);
   }
@@ -767,6 +767,7 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
   INT coN,ceN,Eside,nlinks;
 #endif
 
+  INT edge,co0,co1;
   theMG = MYMG(theGrid);
 
   /*    move center nodes of quadrilaterals  */
@@ -837,7 +838,7 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
     if ( (LOCAL_EQUAL(XI(theVertex),(0.5+LimitLocDis)) || LOCAL_EQUAL(XI(theVertex),(0.5-LimitLocDis))) ||
          (LOCAL_EQUAL(ETA(theVertex),(0.5+LimitLocDis)) || LOCAL_EQUAL(ETA(theVertex),(0.5-LimitLocDis))))
     {
-      printf("center-node %ld, father-elem%ld reached limit\n",ID(theNode),ID(fatherElement));
+      /*             printf("center-node %ld, father-elem%ld reached limit\n",ID(theNode),ID(fatherElement)); */
       MoveInfo[2]++;
     }
   }
@@ -856,16 +857,18 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
     theVertex = MYVERTEX(theNode);
 
     /* find the two corner nodes on the same edge and the elements on this edge */
-    coN = 0;
+    fatherElement = VFATHER(theVertex);
+    edge = ONEDGE(theVertex);
+    co0 = CORNER_OF_EDGE(fatherElement,edge,0);
+    co1 = CORNER_OF_EDGE(fatherElement,edge,1);
+    CornerNodes[0] = SONNODE(CORNER(fatherElement,co0));
+    CornerNodes[1] = SONNODE(CORNER(fatherElement,co1));
+
+    /* find the center nodes of the neighbouring elements */
     ceN = 0;
     nlinks = 0;
     for (theLink=START(theNode); theLink!=0; theLink=NEXT(theLink))
     {
-      if (NTYPE(NBNODE(theLink))==CORNER_NODE)
-      {
-        CornerNodes[coN] = NBNODE(theLink);
-        coN++;
-      }
       if (NTYPE(NBNODE(theLink))==CENTER_NODE)
       {
         CenterNodes[ceN] = NBNODE(theLink);
@@ -873,7 +876,6 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
       }
       nlinks++;
     }
-    assert (coN==2);
 
     /* 5 possibilities of element neighbourship relationships */
 
@@ -1006,7 +1008,7 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
     MoveInfo[1]++;
     if (LOCAL_EQUAL(lambda,(0.5+LimitLocDis)) || LOCAL_EQUAL(lambda,(0.5-LimitLocDis)) )
     {
-      printf("mid-node %ld, father-elem%ld reached limit\n",ID(theNode),ID(fatherElement));
+      /*             printf("mid-node %ld, father-elem%ld reached limit\n",ID(theNode),ID(fatherElement)); */
       MoveInfo[3]++;
     }
 #else
