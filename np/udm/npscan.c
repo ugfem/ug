@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:	  nppscan.c	                                                                                                */
+/* File:	  npscan.c	                                                                                                */
 /*																			*/
 /* Purpose:   tools for reading script arguments                                */
 /*																			*/
@@ -205,6 +205,52 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
 
 /****************************************************************************/
 /*D
+   ReadArgvVecDesc - Read command strings
+
+   SYNOPSIS:
+   VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
+                                  INT argc, char **argv);
+
+   PARAMETERS:
+   .  theMG - pointer to a multigrid
+   .  name - name of the argument
+   .  argc - argument counter
+   .  argv - argument vector
+
+   DESCRIPTION:
+   This function reads a symbol name from the command strings and returns
+   a pointer to the corresponding vector descriptor.
+
+   CAUTION: If no template is specified the first vector template is used.
+
+   This call locks the vector descriptor for dynamic allocation.
+
+   SYNTAX:
+   $s <vec desc name>[/<template name>]
+
+   RETURN VALUE:
+   VECDATA_DESC *
+   .n    pointer to vector descriptor
+   .n    NULL if error occurs
+   D*/
+/****************************************************************************/
+
+VEC_TEMPLATE *ReadArgvVecTemplate (MULTIGRID *theMG, const char *name,
+                                   INT argc, char **argv)
+{
+  char value[VALUELEN],vtname[NAMESIZE];
+
+  if (ReadArgvChar(name,value,argc,argv))
+    REP_ERR_RETURN (NULL);
+
+  if (sscanf(value,expandfmt(CONCAT3("%",NAMELENSTR,"[a-zA-Z0-9_]")),vtname)!=1)
+    REP_ERR_RETURN (NULL);
+
+  return(GetVectorTemplate(MGFORMAT(theMG),vtname));
+}
+
+/****************************************************************************/
+/*D
    ReadArgvMatDesc - Read command strings
 
    SYNOPSIS:
@@ -388,7 +434,7 @@ INT ReadVecTypeINTs (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], 
     if (isalpha(*s))
     {
       PrintErrorMessage('E',"ReadVecTypeINTs","two chars for vtype specification is not supported anymore\n"
-                        "please use style of 'newformat' command");
+                        "please read the CHANGES from ug-3.7 to ug-3.8");
       REP_ERR_RETURN (2);
     }
   }
@@ -462,7 +508,7 @@ INT ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECT
       if (isalpha(*s))
       {
         PrintErrorMessage('E',"ReadVecTypeDOUBLEs","two chars for vtype specification is not supported anymore\n"
-                          "please use style of 'newformat' command");
+                          "please read the CHANGES from ug-3.7 to ug-3.8");
         REP_ERR_RETURN (2);
       }
     }
@@ -552,7 +598,7 @@ INT ReadVecTypeOrder (const FORMAT *fmt, char *str, INT n, INT MaxPerType, INT *
     else
     {
       PrintErrorMessage('E',"ReadVecTypeOrder","two chars for vtype specification is not supported anymore\n"
-                        "please use style of 'newformat' command");
+                        "please read the CHANGES from ug-3.7 to ug-3.8");
       REP_ERR_RETURN (3);
     }
   }
@@ -611,7 +657,7 @@ INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, IN
     if (isalpha(*s))
     {
       PrintErrorMessage('E',"ReadVecTypeNUMPROCs","two chars for vtype specification is not supported anymore\n"
-                        "please use style of 'newformat' command");
+                        "please read the CHANGES from ug-3.7 to ug-3.8");
       REP_ERR_RETURN (2);
     }
   }

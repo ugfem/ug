@@ -32,6 +32,7 @@
 #include "scan.h"
 #include "udm.h"
 #include "numproc.h"
+#include "formats.h"
 
 /****************************************************************************/
 /*																			*/
@@ -78,6 +79,8 @@ INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos);
 /* reading VECDESC and MATDESC                                              */
 
 VECDATA_DESC *ReadArgvVecDesc      (MULTIGRID *theMG, const char *name,
+                                    INT argc, char **argv);
+VEC_TEMPLATE *ReadArgvVecTemplate  (MULTIGRID *theMG, const char *name,
                                     INT argc, char **argv);
 MATDATA_DESC *ReadArgvMatDesc      (MULTIGRID *theMG, const char *name,
                                     INT argc, char **argv);
