@@ -52,6 +52,7 @@
 #include "assemble.h"
 
 #include "fas.h"
+#include "iter.h"
 #include "nliter.h"
 
 /****************************************************************************/
@@ -693,7 +694,7 @@ static INT NLGS_Display (NP_BASE *theNumProc)
   nlgs = (NP_NLGS*) theNumProc;
 
   /* general nl_iter display */
-  NPIterDisplay(&(nlgs->smoother));
+  NPNLIterDisplay(&(nlgs->smoother.iter));
 
   if (nlgs->displayMode == PCR_NO_DISPLAY)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");

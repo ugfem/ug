@@ -25,8 +25,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __ITER__
-#define __ITER__
+#ifndef __NLITER__
+#define __NLITER__
 
 #include "np.h"
 #include "assemble.h"
