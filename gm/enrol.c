@@ -978,9 +978,40 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
    D*/
 /****************************************************/
 
-FORMAT *GetFormat (char *name)
+FORMAT *GetFormat (const char *name)
 {
   return((FORMAT *) SearchEnv(name,"/Formats",theFormatDirID,theFormatDirID));
+}
+
+/****************************************************/
+/*D
+   ChangeToFormatDir - change to format directory with name
+
+   SYNOPSIS:
+   INT ChangeToFormatDir (const char *name)
+
+   PARAMETERS:
+   .  name - name of the format
+
+   DESCRIPTION:
+   This function changes to the format directory with name.
+
+   RETURN VALUE:
+   INT
+   .n   0: ok
+   .n   1: could not change to /Formats dir
+   .n   1: could not change to /Formats/<name> dir
+   D*/
+/****************************************************/
+
+INT ChangeToFormatDir (const char *name)
+{
+  if (ChangeEnvDir("/Formats")!=0)
+    return (1);
+  if (ChangeEnvDir(name)!=0)
+    return (2);
+
+  return (0);
 }
 
 
