@@ -66,22 +66,22 @@
 #define SUBM_COMP(s,tp,i)       ((s)->Comps[tp][i])
 
 /* macros for VEC_TEMPLATE */
-#define VF_COMPS(vt)            ((vt)->Comp)
-#define VF_COMP(vt,tp)          ((vt)->Comp[tp])
-#define VF_COMPNAMES(vt)        ((vt)->CompNames)
-#define VF_COMPNAME(vt,i)       ((vt)->CompNames[i])
-#define VF_SUB(vt,i)            ((vt)->SubVec[i])
-#define VF_NSUB(vt)                     ((vt)->nsub)
+#define VT_COMPS(vt)            ((vt)->Comp)
+#define VT_COMP(vt,tp)          ((vt)->Comp[tp])
+#define VT_COMPNAMES(vt)        ((vt)->CompNames)
+#define VT_COMPNAME(vt,i)       ((vt)->CompNames[i])
+#define VT_SUB(vt,i)            ((vt)->SubVec[i])
+#define VT_NSUB(vt)                     ((vt)->nsub)
 
 /* macros for MAT_TEMPLATE */
-#define MF_RCOMPS(mt)           ((mt)->RComp)
-#define MF_RCOMP(mt,tp)         ((mt)->RComp[tp])
-#define MF_CCOMPS(mt)           ((mt)->CComp)
-#define MF_CCOMP(mt,tp)         ((mt)->CComp[tp])
-#define MF_COMPNAMES(mt)        ((mt)->CompNames)
-#define MF_COMPNAME(mt,i)       ((mt)->CompNames[i])
-#define MF_SUB(mt,i)            ((mt)->SubMat[i])
-#define MF_NSUB(mt)                     ((mt)->nsub)
+#define MT_RCOMPS(mt)           ((mt)->RComp)
+#define MT_RCOMP(mt,tp)         ((mt)->RComp[tp])
+#define MT_CCOMPS(mt)           ((mt)->CComp)
+#define MT_CCOMP(mt,tp)         ((mt)->CComp[tp])
+#define MT_COMPNAMES(mt)        ((mt)->CompNames)
+#define MT_COMPNAME(mt,i)       ((mt)->CompNames[i])
+#define MT_SUB(mt,i)            ((mt)->SubMat[i])
+#define MT_NSUB(mt)                     ((mt)->nsub)
 
 /****************************************************************************/
 /*                                                                          */
@@ -89,45 +89,49 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* sub vector of vector template (components form a subset of the template)	*/
 typedef struct {
 
-  char Name[NAMESIZE];
-  SHORT Comp[NVECTYPES];
-  SHORT Comps[NVECTYPES][MAX_VEC_COMP];
+  char Name[NAMESIZE];                                          /* prefix for sub vector name	*/
+  SHORT Comp[NVECTYPES];                                        /* number of comps per type		*/
+  SHORT Comps[NVECTYPES][MAX_VEC_COMP];         /* subsequent comps rel to tplt	*/
 
 } SUBVEC;
 
+/* vector template specifying number of comps per type and comp names */
 typedef struct {
 
-  char Name[NAMESIZE];
-  SHORT RComp[NMATTYPES];
-  SHORT CComp[NMATTYPES];
-  SHORT Comps[NMATTYPES][MAX_MAT_COMP];
+  ENVITEM v;                                                                    /* environment item				*/
 
-} SUBMAT;
+  SHORT Comp[NVECTYPES];                                        /* number of comps per type		*/
+  char CompNames[MAX_VEC_COMP];                         /* comp names (one char each)	*/
 
-typedef struct {
-
-  ENVITEM v;
-
-  SHORT Comp[NVECTYPES];
-  char CompNames[MAX_VEC_COMP];
-
-  SHORT nsub;
-  SUBVEC  *SubVec[MAX_SUB];
+  SHORT nsub;                                                           /* number of sub vectors		*/
+  SUBVEC  *SubVec[MAX_SUB];                                     /* pointers to sub vectors		*/
 
 } VEC_TEMPLATE;
 
+/* sub matrix of matrix template (components form a subset of the template)	*/
 typedef struct {
 
-  ENVITEM v;
+  char Name[NAMESIZE];                                          /* prefix for sub matrix name	*/
+  SHORT RComp[NMATTYPES];                                       /* number of row comps per type	*/
+  SHORT CComp[NMATTYPES];                                       /* number of col comps per type	*/
+  SHORT Comps[NMATTYPES][MAX_MAT_COMP];         /* subsequent comps rel to tplt	*/
 
-  SHORT RComp[NMATTYPES];
-  SHORT CComp[NMATTYPES];
-  char CompNames[2*MAX_MAT_COMP];
+} SUBMAT;
 
-  SHORT nsub;
-  SUBMAT  *SubMat[MAX_SUB];
+/* matrix template specifying number of row/col comps per type and comp names */
+typedef struct {
+
+  ENVITEM v;                                                                    /* environment item				*/
+
+  SHORT RComp[NMATTYPES];                                       /* number of comps per type		*/
+  SHORT CComp[NMATTYPES];                                       /* number of col comps per type	*/
+  char CompNames[2*MAX_MAT_COMP];                       /* comp names (two chars each)	*/
+
+  SHORT nsub;                                                           /* number of sub matrices		*/
+  SUBMAT  *SubMat[MAX_SUB];                                     /* pointers to sub matrices		*/
 
 } MAT_TEMPLATE;
 
@@ -154,8 +158,12 @@ VECDATA_DESC *CreateVecDescOfTemplate   (MULTIGRID *theMG,
 MATDATA_DESC *CreateMatDescOfTemplate   (MULTIGRID *theMG,
                                          const char *name, const char *template);
 
-INT VDsubDescFromVT                                             (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd);
-INT MDsubDescFromVT                                             (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd);
+INT VDmatchesVT                                                 (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt);
+INT MDmatchesMT                                                 (const MATDATA_DESC *md, const MAT_TEMPLATE *mt);
+INT MDmatchesVT                                                 (const MATDATA_DESC *md, const VEC_TEMPLATE *vt);
+
+INT VDsubDescFromVT                                             (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, CONST_VECDATA_DESC_PTR *subvd);
+INT MDsubDescFromVT                                             (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CONST_MATDATA_DESC_PTR *submd);
 
 INT CreateFormatCmd                                             (INT argc, char **argv);
 INT CreateVecDescCmd                            (MULTIGRID *theMG, INT argc, char **argv);
