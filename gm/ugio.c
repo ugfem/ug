@@ -98,7 +98,7 @@
 /*  n_elem = 6+30 (6 h-ghosts, 30 v-ghosts)											*/
 /*  n_edge = 12*30 (12 max_edges_of_elem) (30 probably 30 elements per edge)		*/
 /*  n_node = 100*8 (8 max_node_of_elem) 100 probably elements per node)				*/
-#define PROCLISTSIZE            ELEMPROCLISTSIZE*MAX_SONS
+#define PROCLISTSIZE            ELEMPROCLISTSIZE*MAX_SONS * 2
 
 /* orphan condition for elements */
 #define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
@@ -1062,7 +1062,11 @@ static INT WriteElementParInfo (GRID *theGrid,
   s=0;
   pinfo->prio_elem = EPRIO(theElement);
   pinfo->ncopies_elem = ENCOPIES(theElement);
-  if (n_max<pinfo->ncopies_elem) REP_ERR_RETURN(1);
+  if (n_max<pinfo->ncopies_elem)
+  {
+    PrintErrorMessage('E',"WriteElementParInfo","increase PROCLISTSIZE in gm/ugio.c\n");
+    REP_ERR_RETURN(1);
+  }
   if (pinfo->ncopies_elem>0)
   {
     pl = EPROCLIST(theElement);
@@ -1075,7 +1079,11 @@ static INT WriteElementParInfo (GRID *theGrid,
     theNode = CORNER(theElement,k);
     pinfo->prio_node[k] = PRIO(theNode);
     pinfo->ncopies_node[k] = NCOPIES(theNode);
-    if (n_max<pinfo->ncopies_node[k]+s) REP_ERR_RETURN(1);
+    if (n_max<pinfo->ncopies_node[k]+s)
+    {
+      PrintErrorMessage('E',"WriteElementParInfo","increase PROCLISTSIZE in gm/ugio.c\n");
+      REP_ERR_RETURN(1);
+    }
     if (pinfo->ncopies_node[k]>0)
     {
       pl = PROCLIST(theNode);
@@ -1089,7 +1097,11 @@ static INT WriteElementParInfo (GRID *theGrid,
     theVertex = MYVERTEX(CORNER(theElement,k));
     pinfo->prio_vertex[k] = VXPRIO(theVertex);
     pinfo->ncopies_vertex[k] = VXNCOPIES(theVertex);
-    if (n_max<pinfo->ncopies_vertex[k]+s) REP_ERR_RETURN(1);
+    if (n_max<pinfo->ncopies_vertex[k]+s)
+    {
+      PrintErrorMessage('E',"WriteElementParInfo","increase PROCLISTSIZE in gm/ugio.c\n");
+      REP_ERR_RETURN(1);
+    }
     if (pinfo->ncopies_vertex[k]>0)
     {
       pl = VXPROCLIST(theVertex);
@@ -1109,7 +1121,11 @@ static INT WriteElementParInfo (GRID *theGrid,
       v = EDVECTOR(theEdge);
       pinfo->prio_edge[k] = PRIO(v);
       pinfo->ncopies_edge[k] = NCOPIES(v);
-      if (n_max<pinfo->ncopies_edge[k]+s) REP_ERR_RETURN(1);
+      if (n_max<pinfo->ncopies_edge[k]+s)
+      {
+        PrintErrorMessage('E',"WriteElementParInfo","increase PROCLISTSIZE in gm/ugio.c\n");
+        REP_ERR_RETURN(1);
+      }
       pinfo->ed_ident[k] = GID(v);
       if (pinfo->ncopies_edge[k]>0) {
         pl = PROCLIST(v);
@@ -1127,7 +1143,11 @@ static INT WriteElementParInfo (GRID *theGrid,
                       CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
     pinfo->prio_edge[k] = PRIO(theEdge);
     pinfo->ncopies_edge[k] = NCOPIES(theEdge);
-    if (n_max<pinfo->ncopies_edge[k]+s) REP_ERR_RETURN(1);
+    if (n_max<pinfo->ncopies_edge[k]+s)
+    {
+      PrintErrorMessage('E',"WriteElementParInfo","increase PROCLISTSIZE in gm/ugio.c\n");
+      REP_ERR_RETURN(1);
+    }
     if (pinfo->ncopies_edge[k]>0) {
       pl = PROCLIST(theEdge);
       for (i=0,j=2; i<pinfo->ncopies_edge[k]; i++,j+=2)
