@@ -1794,7 +1794,7 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
     }
   }
 
-#if (defined __MPW32__ || defined __MWCW__)
+#ifdef __MACINTOSH__
   if (plotfront)
   {
     /* plot the old ADVFront */
@@ -1937,7 +1937,7 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
     /*no more here: DisposeFrontList (myfoundFL);*/
   }
 
-#if (defined __MPW32__ || defined __MWCW__)
+#ifdef __MACINTOSH__
   if (plotfront)
   {
 
