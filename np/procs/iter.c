@@ -3037,19 +3037,21 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
               NP_RETURN(1,result[0]);
    */
 
-  if ( PTFFPrepareSolver( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
-  {
-    PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed for ParSim");
-    NP_RETURN(1,result[0]);
-  }
+  /* Next line uncommented to make UG compilable again.  This should be repaired soon
+          if ( PTFFPrepareSolver( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
+          {
+              PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed for ParSim");
+                  NP_RETURN(1,result[0]);
+      } */
 #elif defined FF_PARALLEL_SIMULATION
   if ( NPFF_ParSim(np) )
   {
-    if ( PTFFPrepareSolver( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
-    {
-      PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed for ParSim");
-      NP_RETURN(1,result[0]);
-    }
+    /* Next line uncommented to make UG compilable again.  This should be repaired soon
+                    if ( PTFFPrepareSolver( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
+                    {
+                        PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed for ParSim");
+                            NP_RETURN(1,result[0]);
+                } */
   }
   else
   {
