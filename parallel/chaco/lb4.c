@@ -106,6 +106,10 @@
 /*                                                                          */
 /****************************************************************************/
 
+* RCS string */
+static char RCS_ID("$Header$",UG_RCS_
+STRING);
+
 
 
 /****************************************************************************/
@@ -130,6 +134,7 @@ static int set_cnt;                       /* number of cluster sets stored  */
 static int total_cnt;                     /* total number of clusters stored*/
 static int startid;						  /* startid for unique clusternumb */
 static INT *load;                         /* total load on all levels&proc!!*/
+static INT MarkKeyTop, MarkKeyBottom;     /* mark-keys for mem management   */
 
 /****************************************************************************/
 /*                                                                          */
@@ -158,7 +163,7 @@ static int InitClustering (MULTIGRID *mg, ELEMENT ***elements)
 
 	/* allocate storage for clusters in each processor */
 	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(CLUSTER)));
-	clusters = GetMem(MGHEAP(mg),MAXCLUSTERS*sizeof(CLUSTER),FROM_BOTTOM);
+	clusters = GetMemUsingKey(MGHEAP(mg),MAXCLUSTERS*sizeof(CLUSTER),FROM_BOTTOM,MarkKeyBottom);
 	if (clusters==NULL) return(1);
 	for (i=0; i<MAXSETS; i++)
 	{
@@ -170,7 +175,7 @@ static int InitClustering (MULTIGRID *mg, ELEMENT ***elements)
 
 	/* allocate array of cluster pointers for sorting */
 	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(clusters)));
-	sort_clusters = (CLUSTER **) GetMem(MGHEAP(mg),MAXCLUSTERS*sizeof(clusters),FROM_BOTTOM);
+	sort_clusters = (CLUSTER **) GetMemUsingKey(MGHEAP(mg),MAXCLUSTERS*sizeof(clusters),FROM_BOTTOM,MarkKeyBottom);
 	if (sort_clusters==NULL) return(1);
 
 	/* allocate memory for array of pointers to elements used in load transfer */
@@ -181,7 +186,7 @@ static int InitClustering (MULTIGRID *mg, ELEMENT ***elements)
 		if (GRID_ON_LEVEL(mg,i)!=NULL)
 			ne += NT(GRID_ON_LEVEL(mg,i));
 	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem nitems=%d bytes=%d\n",me,ne,ne*sizeof(ELEMENT *)));
-	*elements = (ELEMENT **) GetMem(MGHEAP(mg),ne*sizeof(ELEMENT *),FROM_TOP);
+	*elements = (ELEMENT **) GetMemUsingKey(MGHEAP(mg),ne*sizeof(ELEMENT *),FROM_TOP,MarkKeyTop);
 	if (*elements==NULL && ne>0) return(1);
 
 	return(0);
@@ -1548,8 +1553,8 @@ int Balance_CCPTM (MULTIGRID *mg,                                 /* data    */
 	/* mark heap, clusters are allocated from bottom, */
 	/* element array for load transfer is allocated   */
 	/* from top.                                      */
-	Mark(MGHEAP(mg),FROM_BOTTOM);
-	Mark(MGHEAP(mg),FROM_TOP);
+	Mark(MGHEAP(mg),FROM_BOTTOM, &MarkKeyBottom);
+	Mark(MGHEAP(mg),FROM_TOP, &MarkKeyTop);
 
 	/* reset error flag and memory error flag*/
 	error = 0;
@@ -1578,15 +1583,15 @@ stage1: /* compute total number of clusters or error */
 	Broadcast(&nc,sizeof(INT));
 	if (nc<0)
 	{
-		Release(MGHEAP(mg),FROM_TOP);
-		Release(MGHEAP(mg),FROM_BOTTOM);
+		Release(MGHEAP(mg),FROM_TOP, MarkKeyTop);
+		Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
 		UserWrite("error in stage 1\n");
 		return(1);
 	}
 	if (nc>=MAXCLUSTERS)
 	{
-		Release(MGHEAP(mg),FROM_TOP);
-		Release(MGHEAP(mg),FROM_BOTTOM);
+		Release(MGHEAP(mg),FROM_TOP, MarkKeyTop);
+		Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
 		sprintf(buf,"Not enough cluster memory: MAXCLUSTERS=%d\n",
                         MAXCLUSTERS);
 		UserWrite(buf);
@@ -1627,7 +1632,7 @@ stage1: /* compute total number of clusters or error */
 	error = SetDestinations(mg,minlevel,elements,&ne);
 
 	/* release memory for clusters */
-	Release(MGHEAP(mg),FROM_BOTTOM);
+	Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
 
 	End = CurrentTime();
 	sprintf(buf,"BALAN: T=%gs\n",End-Begin);
@@ -1642,10 +1647,10 @@ stage1: /* compute total number of clusters or error */
 */
 
 mem_err: /* if memory error has occured leave everything unchanged */
-	if (!MEM_OK) Release(MGHEAP(mg),FROM_BOTTOM);
+	if (!MEM_OK) Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
 	
 	/* release memory for elements array */
-	Release(MGHEAP(mg),FROM_TOP);
+	Release(MGHEAP(mg),FROM_TOP, MarkKeyTop);
 	
 	return(error);
 }
