@@ -673,7 +673,12 @@ INT CheckInterfaces (GRID *theGrid)
   /* set USED flag of master grid objects */
   for (j=0; j<2; j++)
   {
+#ifdef __OVERLAP2__
+    j=1;
+    for (theElement = PFIRSTELEMENT(theGrid);
+#else
     for (theElement =(j==0 ? PFIRSTELEMENT(theGrid) : FIRSTELEMENT(theGrid));
+#endif
          theElement!=NULL;
          theElement=SUCCE(theElement))
     {

@@ -185,9 +185,6 @@ enum HandlerSets
 
 #define GIDFMT                                                  "%08x"
 
-#define GRID_ATTR(g) ((unsigned char) (GLEVEL(g)+32))
-#define ATTR_TO_GLEVEL(i) (i-32)
-
 /* This exchanges in the load balancing the connections too.
  #define __EXCHANGE_CONNECTIONS__                              */
 
@@ -332,6 +329,11 @@ INT             CheckInterfaces                         (GRID *theGrid);
 /* form memmgr.c */
 void    memmgr_Init             (void);
 void    memmgr_Report   (void);
+
+#ifdef __OVERLAP2__
+INT pamgDo( MULTIGRID *theMG, INT level );
+INT pamgCheckDo( MULTIGRID *theMG, INT level );
+#endif
 
 #endif /* ModelP */
 #endif /* __PARALLEL_H__ */

@@ -49,6 +49,7 @@
 #include "rm.h"
 #include "refine.h"
 #include "shapes.h"
+#include "pargm.h"
 
 /****************************************************************************/
 /*																			*/
@@ -234,10 +235,14 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
   PRINTDEBUG(dddif,1,(PFMT " VectorXferCopy(): v=" VINDEX_FMTX " proc=%d "
                       "prio=%d vtype=%d\n",me,VINDEX_PRTX(pv),proc,prio,VTYPE(pv)))
 
+#ifdef __OVERLAP2__
+  flag = 1;             /* for overlap 2 ghost-matrices are required too */
+#else
   flag = (!GHOSTPRIO(prio));
     #ifndef __EXCHANGE_CONNECTIONS__
   flag = (flag && (level < 0));
         #endif
+#endif
 
   if (flag) {
     if (DDD_XferWithAddData()) {
@@ -319,6 +324,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
                       " cnt=%d type=%d veobj=%d vtype=%d\n",\
                       me,VINDEX_PRTX(vec),cnt,type_id,OBJT(vec),VTYPE(vec)))
 
+#ifndef __OVERLAP2__
   if (GHOSTPRIO(prio))
   {
     PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v=" VINDEX_FMTX
@@ -326,6 +332,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
                         me,VINDEX_PRTX(vec)))
     return;
   }
+#endif
 
   if (cnt<=0) return;
 
@@ -346,6 +353,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
       continue;
     }
 
+#ifndef __OVERLAP2__
     if (GHOST(MDEST(mcopy)))
     {
       /* destination vector has only prio Ghost on this processor */
@@ -355,7 +363,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
                           me,VINDEX_PRTX(vec),mcopy,MSIZE(mcopy)))
       continue;
     }
-
+#endif
 
     {
       MATRIX *m,*mat=NULL;
@@ -683,6 +691,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
   }
 
   /* dispose connections for geom levels not for amg levels */
+#ifndef __OVERLAP2__
   if (level>=0)
     if (GHOSTPRIO(new))
     {
@@ -704,6 +713,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
       if (DisposeIMatrixList(theGrid,pv)) assert(0);
                         #endif
     }
+#endif
 
         #ifdef __EXCHANGE_CONNECTIONS__
   IFDEBUG(dddif,1)

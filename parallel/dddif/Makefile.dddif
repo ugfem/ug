@@ -12,7 +12,7 @@ include ../../ug.conf
 
 OBJECTS = initddd.o memmgr.o handler.o lb.o debugger.o lbrcb.o \
 		  gridcons.o support.o identify.o trans.o priority.o \
-	  	  pgmcheck.o overlap.o partition.o
+	  	  pgmcheck.o overlap.o partition.o pamg.o
 
 # local C compiler flags
 LCFLAGS = -I../../include

@@ -88,7 +88,6 @@ enum GhostCmds { GC_Keep, GC_ToMaster, GC_Delete };
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/
@@ -486,6 +485,80 @@ static int ComputeGhostCmds (MULTIGRID *theMG)
 
 /****************************************************************************/
 
+#ifdef __OVERLAP2__
+static int XferNodesForOverlap2 (GRID *theGrid)
+{
+  ELEMENT *theElement;
+  NODE    *theNode;
+  INT i,part;
+  MATRIX  *mat,*mat2;
+  VECTOR  *vec,*dest;
+  INT Size;
+
+  for(theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    /* ensuring the overlap is for all elements necessary, because even for
+       elements remaining on this processor their overlap may have been deleted
+       some lines above */
+
+    part = PARTITION(theElement);
+
+    /* traverse all corner vectors */
+    for(i=0; i<CORNERS_OF_ELEM(theElement); i++)
+    {
+      theNode = CORNER(theElement,i);
+      vec = NVECTOR(theNode);
+
+      PRINTDEBUG(dddif,2,(PFMT " XferGridWithOverlap():  e=" EID_FMTX
+                          " Xfer n=" ID_FMTX " i=%d\n",
+                          me,EID_PRTX(theElement),ID_PRTX(theNode),i))
+
+      /* for master vectors all matrix neighbors within link depth 2
+          must be copied too; the vec itself is automatically copied
+              by the node-copy-handler */
+      for(mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+      {
+        dest = MDEST(mat);
+        if (dest != NULL)
+        {
+          Size = sizeof(VECTOR)-sizeof(DOUBLE)
+                 +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(dest));
+
+          PRINTDEBUG(dddif,2,(PFMT " XferGridWithOverlap(): n=" ID_FMTX
+                              " Xfer NODEVEC=" VINDEX_FMTX " 1. NBvec  "
+                              VINDEX_FMTX " size=%d\n",
+                              me,ID_PRTX(theNode),VINDEX_PRTX(vec),VINDEX_PRTX(dest),Size))
+          /* TODO: only vectors are necessary; only for debugging: send also the corresponding node to have geometric information */
+          SETNO_DELETE_OVERLAP2((NODE*)VOBJECT(dest),1);
+          DDD_XferCopyObj(PARHDR((NODE*)VOBJECT(dest)), part, PrioHGhost);
+          /*DDD_XferCopyObjX(PARHDR(dest), part, PrioHGhost, Size);*/
+        }
+
+        for(mat2=MNEXT(VSTART(dest)); mat2!=NULL; mat2=MNEXT(mat2))
+        {
+          dest = MDEST(mat2);
+          if (dest != NULL)
+          {
+            Size = sizeof(VECTOR)-sizeof(DOUBLE)
+                   +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(dest));
+
+            PRINTDEBUG(dddif,2,(PFMT " XferGridWithOverlap(): n=" ID_FMTX
+                                " Xfer NODEVEC=" VINDEX_FMTX " 2. NBvec  "
+                                VINDEX_FMTX " size=%d\n",
+                                me,ID_PRTX(theNode),VINDEX_PRTX(vec),VINDEX_PRTX(dest),Size))
+
+            /* TODO: only vectors are necessary; only for debugging: send also the corresponding node to have geometric information */
+            SETNO_DELETE_OVERLAP2((NODE*)VOBJECT(dest),1);
+            DDD_XferCopyObj(PARHDR((NODE*)VOBJECT(dest)), part, PrioHGhost);
+            /*DDD_XferCopyObjX(PARHDR(dest), part, PrioHGhost, Size);*/
+          }
+        }
+      }
+    }
+  }
+  return (0);
+}
+#endif
 
 /****************************************************************************/
 /*
@@ -512,7 +585,6 @@ static int XferGridWithOverlap (GRID *theGrid)
   NODE    *theNode;
   INT i,j,overlap_elem,part;
   INT migrated = 0;
-
 
   for(theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
@@ -619,6 +691,10 @@ static int XferGridWithOverlap (GRID *theGrid)
     }
   }
 
+#ifdef __OVERLAP2__
+  if (XferNodesForOverlap2(theGrid)) assert(0);
+#endif
+
   return(migrated);
 }
 
@@ -690,6 +766,18 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
   INT migrated = 0;       /* number of elements moved */
   DOUBLE trans_begin, trans_end, cons_end;
 
+#ifdef __OVERLAP2__
+  NODE *node;
+
+  ASSERT(AllocateControlEntry(NODE_CW,NO_DELETE_OVERLAP2_LEN,&ce_NO_DELETE_OVERLAP2) == GM_OK);
+  for (g=0; g<=TOPLEVEL(theMG); g++)
+  {
+    GRID *theGrid = GRID_ON_LEVEL(theMG,g);
+    for( node=PFIRSTNODE(theGrid); node!= NULL; node=SUCCN(node) )
+      SETNO_DELETE_OVERLAP2(node,0);                    /* reset flag */
+  }
+#endif
+
   trans_begin = CURRENT_TIME;
 
   /* dispose negative levels */
@@ -699,7 +787,6 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
 
   /* send new destination to ghost elements */
   UpdateGhostDests(theMG);
-
 
   /* init transfer */
   ddd_HandlerInit(HSET_XFER);
@@ -723,6 +810,17 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
   DDD_XferEnd();
 
   trans_end = CURRENT_TIME;
+
+#ifdef __OVERLAP2__
+  for (g=0; g<=TOPLEVEL(theMG); g++)
+  {
+    GRID *theGrid = GRID_ON_LEVEL(theMG,g);
+    for( node=PFIRSTNODE(theGrid); node!= NULL; node=SUCCN(node) )
+      SETNO_DELETE_OVERLAP2(node,0);                    /* reset flag */
+  }
+  FreeControlEntry(ce_NO_DELETE_OVERLAP2);
+  ce_NO_DELETE_OVERLAP2 = -1;           /* don't use further NO_DELETE_OVERLAP2 */
+#endif
 
   /* set priorities of border nodes */
   /* TODO this is an extra communication. eventually integrate this
