@@ -35,6 +35,7 @@
 #include "general.h"
 #include "misc.h"
 #include "ugenv.h"
+#include "ugdevices.h" /* TODO: this is a hierarchy conflict, remove. (VR) */
 
 /****************************************************************************/
 /*                                                                          */
