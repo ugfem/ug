@@ -76,6 +76,7 @@
 #include "num.h"
 #include "formats.h"
 #include "disctools.h"
+#include "data_io.h"
 
 /* graph module */
 #include "wpm.h"
@@ -2482,7 +2483,7 @@ static INT OpenCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
-  char *theBVP,*theFormat;
+  char *theBVP,*theFormat,*theMGName;
   unsigned long heapSize;
   INT i;
 
@@ -2494,7 +2495,7 @@ static INT OpenCommand (INT argc, char **argv)
   }
 
   /* get problem, domain and format */
-  theBVP = theFormat = NULL;
+  theBVP = theFormat = theMGName = NULL;
   heapSize = 0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -2523,6 +2524,7 @@ static INT OpenCommand (INT argc, char **argv)
         PrintHelp("open",HELPITEM," (cannot read multigrid specification)");
         return(PARAMERRORCODE);
       }
+      theMGName = Multigrid;
       break;
 
     case 'h' :
@@ -2539,16 +2541,8 @@ static INT OpenCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if (heapSize==0)
-  {
-    PrintErrorMessage('E',"open","heapsize not specified");
-    return(CMDERRORCODE);
-  }
-  if (Multigrid==NULL) strcpy(Multigrid,File);
-
-
   /* allocate the multigrid structure */
-  theMG = LoadMultiGrid(Multigrid,File,theBVP,theFormat,heapSize);
+  theMG = LoadMultiGrid(theMGName,File,theBVP,theFormat,heapSize);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
@@ -2558,6 +2552,21 @@ static INT OpenCommand (INT argc, char **argv)
 
   return(OKCODE);
 }
+
+/****************************************************************************/
+/*D
+   close - close current multigrid
+
+   DESCRIPTION:
+   This command closes the current (or all) open multigrid(s),
+   frees their heaps and closes all the pictures belonging to them,
+   calling 'DisposeMultiGrid' and 'DisposePicture'.
+
+   'close [$a]'
+
+   .   $a                     - close all multigrids
+   D*/
+/****************************************************************************/
 
 /****************************************************************************/
 /*D
@@ -2591,10 +2600,10 @@ static INT OpenCommand (INT argc, char **argv)
    This function saves multigrid structure in a file.
    It saves the current multigrid.
 
-   save [<name>] [$c <comment>]
-
-   .  <name>                  - name to save with (default is the mgname)
-   .  $c <comment>            - optionally specify a comment string
+   save <filename>, <filename> = xxx.asc (ascii)
+                                   xxx.bin (binary)
+                                   xxx.asc.gz (zipped ascii)
+                                   xxx.bin.gz (zipped binary)
 
    RETURN VALUE:
    INT
@@ -2640,6 +2649,106 @@ static INT SaveCommand (INT argc, char **argv)
     }
 
   if (SaveMultiGrid(theMG,Name,Comment)) return (PARAMERRORCODE);
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*
+   SaveDataCommand - Save multigrid data in a file
+
+   SYNOPSIS:
+   static INT SaveDataCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   This function saves multigrid data in a file.
+
+   savedata <filename> $v <vecdatadesc name>
+
+   <filename> = xxx.asc (ascii)
+                xxx.bin (binary)
+                xxx.asc.gz (zipped ascii)
+                xxx.bin.gz (zipped binary)
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT SaveDataCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  char FileName[NAMESIZE],VDName[NAMESIZE];
+  VECDATA_DESC *theVDList[1];
+  INT i,n;
+
+  theMG = currMG;
+  if (theMG==NULL) {PrintErrorMessage('E',"savedata","no open multigrid"); return (CMDERRORCODE);}
+
+  /* scan filename */
+  if (sscanf(argv[0],expandfmt(CONCAT3(" savedata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
+
+  /* get vecdatadesc */
+  theVDList[0] = ReadArgvVecDesc(theMG,"v",argc,argv);
+  if (theVDList[0]==NULL ) {PrintErrorMessage('E',"save","cannot find vecdata desc"); return (CMDERRORCODE);}
+  n = 1;
+  if (SaveData(theMG,FileName,n,theVDList)) return (PARAMERRORCODE);
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*
+   LoadDataCommand - Load multigrid data from a file
+
+   SYNOPSIS:
+   static INT LoadDataCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   This function loads multigrid data from a file.
+
+   loaddata <filename> $v <vecdatadesc name>
+
+   <filename> = xxx.asc (ascii)
+                xxx.bin (binary)
+                xxx.asc.gz (zipped ascii)
+                xxx.bin.gz (zipped binary)
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT LoadDataCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  char FileName[NAMESIZE],VDName[NAMESIZE];
+  VECDATA_DESC *theVDList[1];
+  INT i,n;
+
+  theMG = currMG;
+  if (theMG==NULL) {PrintErrorMessage('E',"loaddata","no open multigrid"); return (CMDERRORCODE);}
+
+  /* scan filename */
+  if (sscanf(argv[0],expandfmt(CONCAT3(" loaddata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
+
+  /* get vecdatadesc */
+  theVDList[0] = ReadArgvVecDesc(theMG,"v",argc,argv);
+  if (theVDList[0]==NULL ) {PrintErrorMessage('E',"loaddata","cannot find vecdata desc"); return (CMDERRORCODE);}
+  n = 1;
+  if (LoadData(theMG,FileName,n,theVDList)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
@@ -12429,6 +12538,8 @@ INT InitCommands ()
   if (CreateCommand("open",                       OpenCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("close",                      CloseCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("save",                       SaveCommand                                     )==NULL) return (__LINE__);
+  if (CreateCommand("savedata",           SaveDataCommand                                 )==NULL) return (__LINE__);
+  if (CreateCommand("loaddata",           LoadDataCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("level",                      LevelCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("renumber",           RenumberMGCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("smooth",             SmoothMGCommand                                 )==NULL) return (__LINE__);
