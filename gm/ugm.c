@@ -4093,7 +4093,7 @@ INT DisposeGrid (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-INT DisposeAMGLevel (MULTIGRID *theMG)
+static INT DisposeAMGLevel (MULTIGRID *theMG)
 {
   int l;
   GRID *theGrid;
@@ -4120,11 +4120,6 @@ INT DisposeAMGLevel (MULTIGRID *theMG)
     if (DisposeVector(theGrid,PFIRSTVECTOR(theGrid)))
       return(1);
   }
-
-        #ifdef ModelP
-  /* stop dangerous mode. from now on DDD will issue warnings again. */
-  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);
-        #endif
 
   /* remove from grids array */
   theMG->grids[l] = NULL;

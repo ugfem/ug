@@ -2665,7 +2665,6 @@ MULTIGRID       *LoadMultiGrid  (char *MultigridName, char *name, char *type,
 INT             SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename);
 INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
-INT         DisposeAMGLevel         (MULTIGRID *theMG);
 INT         DisposeAMGLevels        (MULTIGRID *theMG);
 INT         Collapse                (MULTIGRID *theMG);
 #ifdef __TWODIM__
