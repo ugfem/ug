@@ -1298,7 +1298,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
     SETREFINECLASS(theElement,NO_CLASS);
     SETMARK(theElement,0);
     SETMARKCLASS(theElement,NO_CLASS);
+#if (DIM==2)
     SETSUBDOMAIN(theElement,cg_element[ID(theElement)].subdomain);
+#endif
   }
 
   /* are we ready ? */
