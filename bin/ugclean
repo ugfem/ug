@@ -25,7 +25,7 @@ ugmake ns2da -i clean
 
 if test "$1" = "all"
 then
-	rm -f lib/*.a
+	rm -f $UGROOT/lib/*.a
 	rm -f -r $UGROOT/include
 fi
 
