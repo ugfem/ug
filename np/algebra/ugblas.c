@@ -1058,15 +1058,18 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 				if (masc  & VDATATYPE(MDEST(m))) {
 					if (XFERMATX(m)==0) break;
 					proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
-					for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
-							;
+					for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; 
+						i+=2)
+						;
 				    if (((DDD_PROC)proclist[i])==proc &&
 						((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
-					  *msgbuf = MVALUE(m,mc);
-					  msgbuf++;
+						*msgbuf = MVALUE(m,mc);
+						msgbuf++;
 					}
-					MVALUE(m,mc) = 0.0;
 				}
+			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
+				if (masc  & VDATATYPE(MDEST(m))) 
+					MVALUE(m,mc) = 0.0;
 		}
 		return(0);
 	}
@@ -1082,14 +1085,17 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 			mtype = MTP(vtype,MDESTTYPE(m));
 			Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
 			for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
-					 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++) 
+					 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++) {
 				msgbuf[i] = MVALUE(m,Comp[i]);
-			msgbuf+MaxBlockSize;
+				msgbuf+MaxBlockSize;
+			}
 		}
+	}
+	for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) 
 		for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
 				 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++) 
 			MVALUE(m,Comp[i]) = 0.0;
-	}
+
 
 	return(0);
 }
