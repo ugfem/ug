@@ -24,7 +24,7 @@ OBJECTS = initug.o
 ##############################################################################
 
 # make all
-all: $(OBJECTS) $(MODULES)
+all: include $(OBJECTS) $(MODULES)
 	$(ARCH_AR) $(ARCH_ARFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 	echo "libug, libdom and libdev compiled"
 
@@ -79,7 +79,7 @@ include:
 	ugmakelinks;
 
 # default rule
-.c.o: include
+.c.o: 
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
 
