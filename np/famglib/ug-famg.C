@@ -82,6 +82,7 @@ INT InitFAMG (void);
 #include "famg_heap.h"
 
 #include "famg_grid.h" // nur fuer printm fuers debuggen. WEG!
+#include "famg_sparse.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -599,12 +600,25 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
     VECTOR *vec;
 	MATRIX *m;
 	INT nrVec = 0, nrLinks = 0, i;
-	SHORT mc,bmask;	
+	SHORT mc,mcd,bmask;	
 	// WEG SHORT xc,bc,xmask;	
     
     MarkTmpMem(MGHEAP(mg),mark_key); /* release in PostProcess */
 	
 	    
+#ifdef FAMG_SPARSE_BLOCK
+    if (VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
+	{
+		bmask  = VD_SCALTYPEMASK(b);
+    }
+    else
+    {
+        UserWrite("Not a scalar equation. \n");
+        REP_ERR_RETURN(1);
+    }
+    mc = A->sm[MTP(0,0)]->offset[0];
+    mcd = A->sm[DMTP(0)]->offset[0];
+#else
     if (MD_IS_SCALAR(A) && MD_IS_SCALAR(ACons) && VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
 	{
 		// WEG xc    = VD_SCALCMP(x);
@@ -618,11 +632,16 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
         UserWrite("Not a scalar equation. \n");
         REP_ERR_RETURN(1);
     }
+    mcd = mc;
+#endif
 
     grid = GRID_ON_LEVEL(mg,0);
 	assert(grid!=NULL);
+
+#ifndef FAMG_SPARSE_BLOCK
 	if (AssembleDirichletBoundary (grid,A,x,b))
-        NP_RETURN(1,result[0]);
+       NP_RETURN(1,result[0]); 
+#endif
 
     for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
@@ -638,7 +657,7 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 			// check whether a dirichlet vector has exactly 1 matrix entry (the main diagonnal)
 			m = VSTART(vec);
 			nrLinks++;
-			assert(fabs(MVALUE(m,mc))>=1e-8);
+			assert(fabs(MVALUE(m,mcd))>=1e-8);
 			for( m=MNEXT(m); m!=NULL; m = MNEXT(m) )
 			{
 				nrLinks++;
@@ -646,7 +665,6 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 			}
 		}
     }
-
 
 	famg_interface.gridvector = new FAMGugGridVector(grid);
 	if( famg_interface.gridvector == NULL )

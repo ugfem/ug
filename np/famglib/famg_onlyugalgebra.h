@@ -38,6 +38,7 @@ extern "C"
 #endif
 }
 
+#include "famg_sparse.h"
 
 //
 // vector stuff
@@ -307,6 +308,81 @@ private:
   MATRIX *matp;
 };
 
+#ifdef FAMG_SPARSE_BLOCK
+class FAMGMatrixAlg
+{
+public:
+  typedef class FAMGVector Vector;
+  typedef class FAMGGridVector GridVector;
+  typedef class FAMGMatrixEntry MatrixEntry;
+  typedef class FAMGMatrixIter Iterator;
+
+  FAMGMatrixAlg( int nr_vecs, int nr_links ) : n(nr_vecs), nlinks(nr_links) {}
+  FAMGMatrixAlg( GRID *grid, MATDATA_DESC *md, int nrVec, int nrLink ) : n(nrVec), nlinks(nrLink), mygrid(grid), matdesc(md), comp(md->sm[MTP(0,0)]->offset[0]), compD(md->sm[DMTP(0)]->offset[0]) {}
+  FAMGMatrixAlg( GRID *grid, MATDATA_DESC *md ) : n(0), nlinks(0), mygrid(grid), matdesc(md), comp(md->sm[MTP(0,0)]->offset[0]), compD(md->sm[DMTP(0)]->offset[0]) {}               // CAUTION: set N and NLinks explicitly
+  FAMGMatrixAlg( GRID *grid, const FAMGMatrixAlg &pattern_mat) :  n(0), nlinks(0), mygrid(grid) {
+    matdesc = NULL; if(pattern_mat.GetMatDesc()->locked) matdesc = pattern_mat.GetMatDesc();else AllocMDFromMD(MYMG(grid), GLEVEL(grid), GLEVEL(grid), pattern_mat.GetMatDesc(), &matdesc);assert(matdesc!=NULL); comp = matdesc->sm[MTP(0,0)]->offset[0]; compD = matdesc->sm[DMTP(0)]->offset[0];
+  }
+  ~FAMGMatrixAlg() {
+    if (FreeMD(MYMG(GetMyGrid()),GLEVEL(GetMyGrid()),GLEVEL(GetMyGrid()),GetMatDesc())) assert(0);
+  }
+
+  double operator[] ( const FAMGMatrixEntry & me ) const {if(MDIAG(me.GetMyMatrix())) return MVALUE(me.GetMyMatrix(),GetCompD());else return MVALUE(me.GetMyMatrix(),GetComp());}
+  double& operator[] ( const FAMGMatrixEntry & me ) {if(MDIAG(me.GetMyMatrix())) return MVALUE(me.GetMyMatrix(),GetCompD());else return MVALUE(me.GetMyMatrix(),GetComp());}
+  int is_valid( const FAMGVectorEntry& row_ve, const FAMGMatrixEntry& me ) const {
+    return me.GetMyMatrix()!=NULL;
+  }
+  int is_end( const FAMGVectorEntry& row_ve, const FAMGMatrixEntry& me ) const {
+    return me.GetMyMatrix()==NULL;
+  }
+  FAMGMatrixEntry firstEntry( const FAMGVectorEntry& row_ve ) const {
+    return (FAMGMatrixEntry)VSTART(row_ve.myvector());
+  }
+  FAMGMatrixEntry endEntry( const FAMGVectorEntry& row_ve ) const {
+    return (FAMGMatrixEntry)NULL;
+  }
+  double DiagValue( const FAMGVectorEntry& row_ve ) const {
+    return MVALUE(VSTART(row_ve.myvector()),GetCompD());
+  }
+  double GetAdjData( const FAMGMatrixEntry& me ) const {
+    return MVALUE(MADJ(me.GetMyMatrix()),GetComp());
+  }
+  void AddEntry(double mval, const FAMGVectorEntry &row, const FAMGVectorEntry &col);
+  int ConstructGalerkinMatrix( const FAMGGrid &fg ) {
+    return ::ConstructGalerkinMatrix(*this, fg);
+  }
+  void MarkStrongLinks( const FAMGGrid &grid ) const {
+    ::MarkStrongLinks(*this, grid);
+  }
+
+  int &GetN() {
+    return n;
+  }
+  int &GetNLinks() {
+    return nlinks;
+  }
+  MATDATA_DESC *GetMatDesc() const {
+    return matdesc;
+  }
+
+private:
+  int n;                        // number of vectors
+  int nlinks;                   // number of links (==entries) in the matrix
+  GRID *GetMyGrid() {
+    return mygrid;
+  }
+  int GetComp() const {
+    return comp;
+  }
+  int GetCompD() const {
+    return compD;
+  }
+  int comp;
+  int compD;
+  GRID *mygrid;
+  MATDATA_DESC *matdesc;
+};
+#else
 class FAMGMatrixAlg
 {
 public:
@@ -380,6 +456,7 @@ private:
   GRID *mygrid;
   MATDATA_DESC *matdesc;
 };
+#endif
 
 class FAMGMatrixIter
 {

@@ -27,11 +27,12 @@ extern "C" {
 #include <strstream.h>
 #include "famg_ugalgebra.h"
 #include "famg_misc.h"
+#include "famg_sparse.h"
 
 /* RCS_ID
 $Header$
 */
-
+ 
 FAMGVector* FAMGugVector::create_new() const
 {
 	FAMGugGridVector &gridvector = (FAMGugGridVector&)GetGridVector();
@@ -115,6 +116,11 @@ void FAMGugMatrix::AddEntry(double mval, const FAMGugVectorEntry &row, const FAM
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 	MVALUE(MADJ(newmat),GetComp())=0.0;	// circumvent bug in ug-alloc
 #endif
-	MVALUE(newmat,GetComp())=mval;
+#ifdef FAMG_SPARSE_BLOCK
+    if(MDIAG(newmat)) MVALUE(newmat,GetCompD())=mval;
+	else MVALUE(newmat,GetComp())=mval;
+#else
+    MVALUE(newmat,GetComp())=mval;
+#endif
 	GetNLinks()++;
 }
