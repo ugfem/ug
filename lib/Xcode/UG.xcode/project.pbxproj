@@ -5171,10 +5171,9 @@
 			fileEncoding = 30;
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.h;
-			name = compiler.h;
-			path = /Volumes/Users/vcr/UGXcode/ug/arch/compiler.h;
-			refType = 0;
-			sourceTree = "<absolute>";
+			path = compiler.h;
+			refType = 4;
+			sourceTree = "<group>";
 		};
 		1184E57C06425F1D00210118 = {
 			fileRef = 1184E57B06425F1D00210118;
