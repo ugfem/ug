@@ -59,6 +59,7 @@
 /* switch on blasm calls */
 #define _SPARSE_
 
+
 #define SMALL_DET                       1e-15
 #define MAX_DEPTH           MAX_NODAL_VECTORS
 #define V_BVNUMBER(v,n)         (VINDEX(v)/n)
@@ -1371,13 +1372,14 @@ INT gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
 
    SYNOPSIS:
    INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d, const DOUBLE *damp);
+   const VECDATA_DESC *d, const DOUBLE *omega);
 
    PARAMETERS:
    .  g - pointer to grid
    .  v - type vector descriptor to store correction
    .  M - type matrix descriptor for precondition
    .  d - type vector descriptor for right hand side (the defect)
+   .  omega - relaxation parameter
 
    DESCRIPTION:
    This function solves `LowerTriangle(M) v = d`,
@@ -1394,7 +1396,8 @@ INT gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
    D*/
 /****************************************************************************/
 
-INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, const DOUBLE *damp)
+INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
+            const VECDATA_DESC *d, const DOUBLE *omega)
 {
   VECTOR *vec,*w,*first_vec;
   INT rtype,ctype,myindex,err;
@@ -1428,14 +1431,19 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
     mc    = MD_SCALCMP(M);
     dc    = VD_SCALCMP(d);
     mask  = VD_SCALTYPEMASK(v);
-    dmp  = damp[0];
+    dmp  = omega[0];
 
     /* solve LowerTriangle(v)=d */
     for (vec=first_vec; vec!= NULL; vec=SUCCVC(vec))
     {
       myindex = VINDEX(vec);
-      if ( (VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
+
+      if (VDATATYPE(vec)&mask)
       {
+        if (VCLASS(vec) < ACTIVE_CLASS) {
+          VVALUE(vec,vc) = 0.0;
+          continue;
+        }
         sum = 0.0;
         for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
         {
@@ -1459,7 +1467,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
     vcomp   = VD_CMPPTR_OF_TYPE(v,rtype);
     dcomp   = VD_CMPPTR_OF_TYPE(d,rtype);
     myindex = VINDEX(vec);
-    tdmp     = damp+offset[rtype];
+    tdmp     = omega+offset[rtype];
 
     /* rhs */
     if (VCLASS(vec) < ACTIVE_CLASS)
@@ -1583,9 +1591,405 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
                         MVALPTR(VSTART(vec)),s)!=0)
       REP_ERR_RETURN (__LINE__);
 
-    /* damp */
+    /* relaxation */
     for (i=0; i<n; i++)
       VVALUE(vec,vcomp[i]) *= tdmp[i];
+  }
+
+  return (NUM_OK);
+}
+
+INT l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
+            const VECDATA_DESC *d, const DOUBLE *omega)
+{
+  VECTOR *vec,*w,*last_vec;
+  INT rtype,ctype,myindex,err;
+  register MATRIX *mat;
+  register SHORT vc,dc,mc,mask;
+  register SHORT *mcomp,*wcomp,*dcomp;
+  register SHORT i,j;
+  register SHORT n,nc;
+  register DOUBLE sum;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr,*vcomp;
+  const SHORT *offset = VD_OFFSETPTR(v);
+
+#ifndef NDEBUG
+  if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
+    REP_ERR_RETURN (err);
+#endif
+
+  last_vec = LASTVECTOR(g);
+
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
+  {
+    register DOUBLE dmp  = omega[0];
+    vc    = VD_SCALCMP(v);
+    mc    = MD_SCALCMP(M);
+    dc    = VD_SCALCMP(d);
+    mask  = VD_SCALTYPEMASK(v);
+
+    /* solve UpperTriangle(v)=d */
+    for (vec=last_vec; vec!= NULL; vec=PREDVC(vec))
+    {
+      if (VDATATYPE(vec)&mask)
+      {
+        if (VCLASS(vec) < ACTIVE_CLASS) {
+          VVALUE(vec,vc) = 0.0;
+          continue;
+        }
+        myindex = VINDEX(vec);
+        sum = 0.0;
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+        {
+          w = MDEST(mat);
+          if ((VINDEX(w)>myindex) && (VDATATYPE(w)&mask) && (VCLASS(w)>=ACTIVE_CLASS) )
+            sum += MVALUE(mat,mc)*VVALUE(w,vc);
+        }
+        VVALUE(vec,vc) = dmp*(VVALUE(vec,dc)-sum)/MVALUE(VSTART(vec),mc);
+      }
+    }
+
+    return (NUM_OK);
+  }
+
+  L_REVERSE_VLOOP__CLASS(vec,last_vec,EVERY_CLASS)
+  {
+    const DOUBLE *tdmp;
+
+    rtype = VTYPE(vec);
+    tdmp     = omega+offset[rtype];
+
+    n               = VD_NCMPS_IN_TYPE(v,rtype);
+    if (n == 0) continue;
+    vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
+    vmat  = VVALPTR(vec);
+    if (VCLASS(vec) < ACTIVE_CLASS) {
+      for (i=0; i<n; i++)
+        vmat[vcomp[i]] = 0.0;
+      continue;
+    }
+    dcomp   = VD_CMPPTR_OF_TYPE(d,rtype);
+    myindex = VINDEX(vec);
+
+    /* rhs */
+    for (i=0; i<n; i++) s[i] = VVALUE(vec,dcomp[i]);
+    for (ctype=0; ctype<NVECTYPES; ctype++)
+      if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
+        switch (MAT_RCKIND(M,rtype,ctype))
+        {
+        case R1C1 :
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_11(s,mat,m,w,cy)
+              s[0] -= s0;
+          break;
+
+        case R1C2 :
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_12(s,mat,m,w,cy)
+              s[0] -= s0;
+          break;
+
+        case R1C3 :
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_13(s,mat,m,w,cy)
+              s[0] -= s0;
+          break;
+
+        case R2C1 :
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_21(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          break;
+
+        case R2C2 :
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_22(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          break;
+
+        case R2C3 :
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_23(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          break;
+
+        case R3C1 :
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = s2 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_31(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          s[2] -= s2;
+          break;
+
+        case R3C2 :
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = s2 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_32(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          s[2] -= s2;
+          break;
+
+        case R3C3 :
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = s2 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_33(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          s[2] -= s2;
+          break;
+
+        default :
+          mcomp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
+          wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
+          wmat  = VVALPTR(w);
+          nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              for (i=0; i<n; i++)
+                for (j=0; j<nc; j++)
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+        }
+
+    /* solve */
+    if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
+                        MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
+                        MVALPTR(VSTART(vec)),s)!=0)
+      REP_ERR_RETURN (__LINE__);
+
+    /* relaxation */
+    for (i=0; i<n; i++)
+      VVALUE(vec,vcomp[i]) *= tdmp[i];
+  }
+
+  return (NUM_OK);
+}
+
+INT l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
+               const VECDATA_DESC *d, VECDATA_DESC *omega)
+{
+  VECTOR *vec,*w,*last_vec;
+  INT rtype,ctype,myindex,err;
+  register MATRIX *mat;
+  register SHORT vc,dc,mc,mask,dmp;
+  register SHORT *mcomp,*wcomp,*dcomp;
+  register SHORT i,j;
+  register SHORT n,nc;
+  register DOUBLE sum;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr,*vcomp;
+  const SHORT *offset = VD_OFFSETPTR(v);
+
+#ifndef NDEBUG
+  if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
+    REP_ERR_RETURN (err);
+#endif
+
+  last_vec = LASTVECTOR(g);
+
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
+  {
+    vc    = VD_SCALCMP(v);
+    mc    = MD_SCALCMP(M);
+    dc    = VD_SCALCMP(d);
+    mask  = VD_SCALTYPEMASK(v);
+    dmp  = VD_SCALCMP(omega);
+
+    /* solve UpperTriangle(v)=d */
+    for (vec=last_vec; vec!= NULL; vec=PREDVC(vec))
+    {
+      if (VDATATYPE(vec)&mask)
+      {
+        if (VCLASS(vec) < ACTIVE_CLASS) {
+          VVALUE(vec,vc) = 0.0;
+          continue;
+        }
+        myindex = VINDEX(vec);
+        sum = 0.0;
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+        {
+          w = MDEST(mat);
+          if ((VINDEX(w)>myindex) && (VDATATYPE(w)&mask) && (VCLASS(w)>=ACTIVE_CLASS) )
+            sum += MVALUE(mat,mc)*VVALUE(w,vc);
+        }
+        VVALUE(vec,vc) = VVALUE(vec,dmp)*(VVALUE(vec,dc)-sum)/MVALUE(VSTART(vec),mc);
+      }
+    }
+
+    return (NUM_OK);
+  }
+
+  L_REVERSE_VLOOP__CLASS(vec,last_vec,EVERY_CLASS)
+  {
+    register SHORT *tdmp;
+
+    rtype = VTYPE(vec);
+    tdmp    = VD_CMPPTR_OF_TYPE(omega,rtype);
+
+    n               = VD_NCMPS_IN_TYPE(v,rtype);
+    if (n == 0) continue;
+    vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
+    vmat  = VVALPTR(vec);
+    if (VCLASS(vec) < ACTIVE_CLASS) {
+      for (i=0; i<n; i++)
+        vmat[vcomp[i]] = 0.0;
+      continue;
+    }
+    dcomp   = VD_CMPPTR_OF_TYPE(d,rtype);
+    myindex = VINDEX(vec);
+
+    /* rhs */
+    for (i=0; i<n; i++) s[i] = VVALUE(vec,dcomp[i]);
+    for (ctype=0; ctype<NVECTYPES; ctype++)
+      if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
+        switch (MAT_RCKIND(M,rtype,ctype))
+        {
+        case R1C1 :
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_11(s,mat,m,w,cy)
+              s[0] -= s0;
+          break;
+
+        case R1C2 :
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_12(s,mat,m,w,cy)
+              s[0] -= s0;
+          break;
+
+        case R1C3 :
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_13(s,mat,m,w,cy)
+              s[0] -= s0;
+          break;
+
+        case R2C1 :
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_21(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          break;
+
+        case R2C2 :
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_22(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          break;
+
+        case R2C3 :
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_23(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          break;
+
+        case R3C1 :
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = s2 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_31(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          s[2] -= s2;
+          break;
+
+        case R3C2 :
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = s2 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_32(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          s[2] -= s2;
+          break;
+
+        case R3C3 :
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
+          s0 = s1 = s2 = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              MATMUL_33(s,mat,m,w,cy)
+              s[0] -= s0;
+          s[1] -= s1;
+          s[2] -= s2;
+          break;
+
+        default :
+          mcomp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
+          wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
+          wmat  = VVALPTR(w);
+          nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+              for (i=0; i<n; i++)
+                for (j=0; j<nc; j++)
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+        }
+
+    /* solve */
+    if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
+                        MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
+                        MVALPTR(VSTART(vec)),s)!=0)
+      REP_ERR_RETURN (__LINE__);
+
+    /* relaxation */
+    for (i=0; i<n; i++)
+      VVALUE(vec,vcomp[i]) *= VVALUE(vec,tdmp[i]);
   }
 
   return (NUM_OK);
@@ -1638,7 +2042,7 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr;
 
-  PRINTDEBUG(np,1,("l_lsor: l=%d v=%s M=%s d=%s dmp=VS\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
+  PRINTDEBUG(np,1,("l_lsor_ld: l=%d v=%s M=%s d=%s dmp=VS\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -1809,7 +2213,7 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
                         MVALPTR(VSTART(vec)),s)!=0)
       REP_ERR_RETURN (__LINE__);
 
-    /* damp */
+    /* relaxation */
     for (i=0; i<n; i++)
       VVALUE(vec,vcomp[i]) *= VVALUE(vec,tdmp[i]);
   }
@@ -6294,7 +6698,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
         REP_ERR_RETURN (__LINE__);
       }
       AddVlistVValues(cnt,vlist,v,vval);
-      IFDEBUG(np,0)
+      IFDEBUG(np,1)
       nrm = 0.0;
       for (i=0; i<m; i++) nrm += ABS(vval[i]);
       check = CheckNorm(MYMG(g),GLEVEL(g),v,d,M);
@@ -6379,7 +6783,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
         REP_ERR_RETURN (__LINE__);
       }
       AddVlistVValues(cnt,vlist,v,vval);
-      IFDEBUG(np,0)
+      IFDEBUG(np,1)
       nrm = 0.0;
       for (i=0; i<m; i++) nrm += ABS(vval[i]);
       check = CheckNorm(MYMG(g),GLEVEL(g),v,d,M);
