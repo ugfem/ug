@@ -702,6 +702,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
       }
     }
 
+        #ifdef __EXCHANGE_CONNECTIONS__
   IFDEBUG(dddif,1)
   if (new == PrioMaster)
   {
@@ -713,6 +714,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
     }
   }
   ENDDEBUG
+        #endif
 
   GRID_UNLINK_VECTOR(theGrid,pv);
 
