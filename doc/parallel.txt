@@ -37,6 +37,7 @@ you choose. This is one of
 	MPI				workstations clusters,
 					many supercomputers 
 	SHMEMT3D		Cray T3D (shmem)
+	SHMEM           ????????
 	NX				Intel Paragon (nx)
 	NXLIB			workstation clusters (simulating nx)
 	PARIX			Parsytec computers:
@@ -48,12 +49,39 @@ for a full list of currently supported models type
 
 For Models PVM or MPI you need to set the environment
 variable PVM_ROOT (PVM) or MPIHOME (MPI) and uncomment
-the following lines to set the model dependent include and
+the following lines in ug.conf to set the model dependent include and
 library information correctly:
 
-# example settings for MPI
-MODEL_ENV_CFLAGS = -I$(MPIHOME)/include
-MODEL_ENV_LFLAGS = -L$(MPIHOME)/lib/IRIX/ch_p4 -lmpi
+for PVM:
+	in the shell ressource file (~/.tcshrc):
+		setenv PVM_ROOT /rlocal/pvm3
+		setenv PVM_ARCH HPPA
+		setenv PVM_DEBUGGER /usr/softbench/bin/softdebug
+		setenv MANPATH "${MANPATH}:/rlocal/pvm3/man"
+
+	in ug/ug.conf:
+		MODEL_ENV_CFLAGS = -I$(PVM_ROOT)/include
+		MODEL_ENV_LFLAGS = -L$(PVM_ROOT)/lib/$(PVM_ARCH) -lpvm3
+		
+	in ~/hosts
+		* ep=/home/christian/ug/UG/simple wd=/home/christian/ug/UG/simple
+		#first line should be machine you start the pvmd
+		piz
+	
+	in ~/.pvmrc
+		setenv PVM_EXPORT "->"
+
+	anywhere in your path:
+		pvmd3		(e.g. from /rlocal/pvm3/lib/HPPA)
+		
+for MPI (not recommended on HP):
+	in the shell ressource file (~/.tcshrc):
+		setenv MPIHOME /home/birken/birken/sw/mpi/mpich
+		set path=($path $MPIHOME/bin)
+
+	in ug/ug.conf:
+		MODEL_ENV_CFLAGS = -I$(MPIHOME)/include
+		MODEL_ENV_LFLAGS = -L$(MPIHOME)/lib/IRIX/ch_p4 -lmpi
 
 Set other configuration options, you want using 'ugconf'.
 All but GRAPE should work with parallel models.
