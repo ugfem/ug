@@ -204,11 +204,13 @@ struct mgio_cg_element {
   int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of corners							*/
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int nhe;                                                                              /* nb of he_elements of this element		*/
+  /* if 0 element not refined					*/
 };
 
 struct mgio_refinement {
 
   int refrule;                                                                  /* id of refinement rule					*/
+  int sonref;                                                                           /* 1 if sons are refined, bitwise			*/
   int nnewcorners;                                                              /* nb of new corners on next level			*/
   int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of new corners    */
   int nmoved;                                                                           /* nmoved new corners moved					*/

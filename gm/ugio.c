@@ -366,12 +366,12 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset)
       for (j=0; j<MGIO_MAX_SONS_OF_ELEM; j++)
       {
         sonData = &(Refrule->sons[j]);
-        sonData->tag = ug_refrule->sons[i].tag;
+        sonData->tag = ug_refrule->sons[j].tag;
         for (k=0; k<MGIO_MAX_CORNERS_OF_ELEM; k++)
-          sonData->corners[k] = ug_refrule->sons[i].corners[k];
+          sonData->corners[k] = ug_refrule->sons[j].corners[k];
         for (k=0; k<MGIO_MAX_SIDES_OF_ELEM; k++)
-          sonData->nb[k] = ug_refrule->sons[i].nb[k];
-        sonData->path = ug_refrule->sons[i].path;
+          sonData->nb[k] = ug_refrule->sons[j].nb[k];
+        sonData->path = ug_refrule->sons[j].path;
       }
       Refrule++;
       ug_refrule++;
@@ -389,16 +389,10 @@ static INT SetRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT 
   REFRULE *theRule;
   NODE *theNode;
   INT i,j,n;
+  int sonRefined;
 
-  if (REFINE(theElement)==NO_REFINEMENT)
-  {
-    refinement->refrule = -1;
-    refinement->nnewcorners = 0;
-    refinement->nmoved = 0;
-    return (0);
-  }
-  else
-    refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
+  if (REFINE(theElement)==NO_REFINEMENT) return (1);
+  refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
   theRule = RefRules[TAG(theElement)] + REFINE(theElement);
 
   /* store new corner ids */
@@ -420,6 +414,13 @@ static INT SetRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT 
   }
   refinement->nnewcorners = n;
 
+  /* sons are refined ? */
+  sonRefined=0;
+  for (i=0,n=0; i<NSONS(theElement); i++)
+    if (REFINE(SON(theElement,i))!=NO_REFINEMENT)
+      sonRefined |= (1<<i);
+  refinement->sonref = sonRefined;
+
   /* not movable at the moment */
   refinement->nmoved = 0;
 
@@ -434,12 +435,13 @@ static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, 
 
   if (refinement!=NULL) actualPosition = refinement;
 
-  if (REFINE(theElement)==NO_REFINEMENT) return (0);
+  if (REFINE(theElement)==NO_REFINEMENT) return (1);
   if (SetRefinement (theElement,actualPosition,RefRuleOffset)) return (1);
   actualPosition++;
   for (i=0; i<NSONS(theElement); i++)
   {
     theSon = SON(theElement,i);
+    if (REFINE(theSon)==NO_REFINEMENT) continue;
     if (SetHierRefinement(theSon,NULL,RefRuleOffset)) return (1);
   }
 
@@ -471,7 +473,7 @@ static INT SetRefinement (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS], MGIO_
 {
   REFRULE *theRule;
   NODE *theNode;
-  INT i,j,n;
+  INT i,j,n,sonRefined;
 
   if (REFINE(theElement)==NO_REFINEMENT)
   {
@@ -495,12 +497,19 @@ static INT SetRefinement (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS], MGIO_
   {
     if (i<=EDGES_OF_ELEM(theElement)+SIDES_OF_ELEM(theElement)) j=i;
     else j=CENTER_NODE_INDEX(theElement);
-    if (!theRule->pattern[j]) continue;
+    if (theRule->pattern[j]!=1) continue;
     theNode = CORNER(SonList[theRule->sonandnode[j][0]],theRule->sonandnode[j][1]);
     if (theNode==NULL) return (1);
     refinement->newcornerid[n++] = ID(theNode);
   }
   refinement->nnewcorners = n;
+
+  /* sons are refined ? */
+  sonRefined=0;
+  for (i=0,n=0; i<NSONS(theElement); i++)
+    if (REFINE(SonList[i])!=NO_REFINEMENT)
+      sonRefined |= (1<<i);
+  refinement->sonref = sonRefined;
 
   /* not movable at the moment */
   refinement->nmoved = 0;
@@ -517,14 +526,15 @@ static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, 
 
   if (refinement!=NULL) actualPosition = refinement;
 
-  if (REFINE(theElement)==NO_REFINEMENT) return (0);
+  if (REFINE(theElement)==NO_REFINEMENT) return (1);
   if (GetSons(theElement,SonList)) return (1);
   if (SetRefinement (theElement,SonList,actualPosition,RefRuleOffset)) return (1);
   actualPosition++;
   for (i=0; i<NSONS(theElement); i++)
   {
     theSon = SonList[i];
-    if (SetHierRefinement(theSon,NULL,RefRuleOffset)) return (1);
+    if (REFINE(theSon)!=NO_REFINEMENT)
+      if (SetHierRefinement(theSon,NULL,RefRuleOffset)) return (1);
   }
 
   return (0);
@@ -533,14 +543,14 @@ static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, 
 static INT nHierElements (ELEMENT *theElement, INT *n)
 {
   INT i;
-  ELEMENT *theSon;
   ELEMENT *SonList[MAX_SONS];
 
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
   (*n)++;
   if (GetSons(theElement,SonList)) return (1);
   for (i=0; i<NSONS(theElement); i++)
-    if (nHierElements(theSon,n)) return (1);
+    if (REFINE(SonList[i])!=NO_REFINEMENT)
+      if (nHierElements(SonList[i],n)) return (1);
 
   return (0);
 }
@@ -564,12 +574,24 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   MGIO_REFINEMENT *refinement;
   MGIO_BD_GENERAL bd_general;
   INT i,j,k,niv,nbv,nie,nbe,n,bvi,ivi,nhe,hr_max;
-  INT RefRuleOffset[TAGS];
+  INT RefRuleOffset[TAGS],zip;
+  char sysCom[NAMESIZE];
   char *p;
   BNDP **BndPList;
 
   /* check */
   if (theMG==NULL) return (1);
+
+#ifndef __MWCW__
+  /* zip if */
+  zip = 0;
+  p = name + strlen(name) - 3;
+  if (strcmp(p,".gz")==0)
+  {
+    zip = 1;
+    p[0] = '\0';
+  }
+#endif
 
   /* open file */
   if (Write_OpenFile (name)) return (1);
@@ -706,8 +728,9 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   theGrid = GRID_ON_LEVEL(theMG,0);
   for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
-    if (SetHierRefinement (theElement,refinement,RefRuleOffset)) return (1);
     i = ID(theElement);
+    if (cg_element[i].nhe==0) continue;
+    if (SetHierRefinement (theElement,refinement,RefRuleOffset)) return (1);
     if (Write_Refinement (cg_element[i].nhe,refinement)) return (1);
   }
 
@@ -716,6 +739,16 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
 
   /* close file */
   if (CloseFile ()) return (1);
+
+#ifndef __MWCW__
+  /* zip if */
+  if (zip)
+  {
+    strcpy(sysCom,"gzip -f ");
+    strcat(sysCom,name);
+    if (system(sysCom)==-1) return (1);
+  }
+#endif
 
   return (0);
 }
@@ -763,6 +796,99 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
  */
 /****************************************************************************/
 
+static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement)
+{
+  INT i,j,n,nedge,type,sonRefined;
+  ELEMENT *theSonElem[MAX_SONS];
+  NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
+  NODE *SonNodeList[MAX_CORNERS_OF_ELEM];
+  GRID *upGrid;
+  MGIO_RR_RULE *theRule;
+  static MGIO_REFINEMENT *ref;
+  struct mgio_sondata *SonData;
+
+  /* init */
+  if (refinement!=NULL) ref=refinement;
+  if (ref->refrule==-1) return (1);
+  theRule = rr_rules+ref->refrule;
+  upGrid = UPGRID(theGrid);
+
+  /* insert nodes */
+  n=0;
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+  {
+    NodeList[n] = CreateSonNode(upGrid,CORNER(theElement,i));
+    if (NodeList[n]==NULL) return (1);
+    n++;
+  }
+  nedge = EDGES_OF_ELEM(theElement);
+  for (i=0; i<nedge; i++)
+  {
+    if (!theRule->pattern[i]) continue;
+    NodeList[n] = CreateMidNode(upGrid,theElement,i);
+    if (NodeList[n]==NULL) return (1);
+    n++;
+  }
+#ifdef __THREEDIM__
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+  {
+    if (!theRule->pattern[i+nedge]) continue;
+    NodeList[n] = CreateSideNode(upGrid,theElement,i);
+    if (NodeList[n]==NULL) return (1);
+    n++;
+  }
+#endif
+  if (theRule->pattern[CENTER_NODE_INDEX(theElement)])
+  {
+    NodeList[n] = CreateCenterNode(upGrid,theElement);
+    if (NodeList[n]==NULL) return (1);
+    n++;
+  }
+
+  /* insert elements */
+  SETNSONS(theElement,theRule->nsons);
+  for (i=0; i<theRule->nsons; i++)
+  {
+    SonData = theRule->sons+i;
+    type = IEOBJ;
+    if (OBJT(theElement)==BEOBJ)
+      for (j=0; j<SIDES_OF_TAG(SonData->tag); j++)
+        if (SonData->nb[j]>=20 && SIDE_ON_BND(theElement,SonData->nb[j]-20))
+        {
+          type = BEOBJ;
+          break;
+        }
+    for (j=0; j<CORNERS_OF_TAG(SonData->tag); j++)
+      SonNodeList[j] = NodeList[SonData->corners[j]];
+    theSonElem[i] = CreateElement(upGrid,SonData->tag,type,SonNodeList,theElement);
+    if (theSonElem[i]==NULL) return (1);
+    SET_SON(theElement,i,theSonElem[i]);
+    SETECLASS(theSonElem[i],theRule->class);
+  }
+
+  /* set neighbor relation between sons */
+  for (i=0; i<theRule->nsons; i++)
+  {
+    SonData = theRule->sons+i;
+    for (j=0; j<SIDES_OF_TAG(SonData->tag); j++)
+      if (SonData->nb[j]<20)
+        SET_NBELEM(theSonElem[i],j,theSonElem[SonData->nb[j]]);
+  }
+
+  /* jump to the sons ? */
+  sonRefined = ref->sonref;
+
+  /* one refinement used */
+  ref++;
+
+  /* call recoursively */
+  for (i=0; i<theRule->nsons; i++)
+    if (sonRefined & (1<<i))
+      if (InsertLocalTree (rr_rules,upGrid,theSonElem[i],NULL)) return (1);
+
+  return (0);
+}
+
 MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, char *format, unsigned long heapSize)
 {
   MULTIGRID *theMG;
@@ -781,11 +907,28 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   MGIO_REFINEMENT *refinement;
   BNDP **BndPList;
   COORD **PositionList, *Positions;
+  char sysCom[NAMESIZE];
+  char *p;
   BVP *theBVP;
   BVP_DESC theBVPDesc;
   MESH theMesh;
   char FormatName[NAMESIZE], BndValName[NAMESIZE];
   INT i,j,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],**Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,*Element_nb_ids;
+  INT zip;
+
+#ifndef __MWCW__
+  /* unzip if */
+  zip = 0;
+  p = FileName + strlen(FileName) - 3;
+  if (strcmp(p,".gz")==0)
+  {
+    zip = 1;
+    strcpy(sysCom,"gzip -d -f ");
+    strcat(sysCom,FileName);
+    if (system(sysCom)==-1) return (NULL);
+    p[0] = '\0';
+  }
+#endif
 
   /* open file */
   if (Read_OpenFile (FileName))                                                                           {return (NULL);}
@@ -903,6 +1046,10 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
     return (theMG);
   }
 
+  /* create grids */
+  for (i=1; i<mg_general.nLevel; i++)
+    if (CreateNewLevel(theMG)==NULL)                                                                {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+
   /* read hierarchical elements */
   theGrid = GRID_ON_LEVEL(theMG,0); max=0;
   for (i=0; i<cg_general.nElement; i++) max = MAX(max,cg_element[i].nhe);
@@ -911,12 +1058,24 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     i = ID(theElement);
+    if (cg_element[i].nhe==0) continue;
     if (Read_Refinement (cg_element[i].nhe,refinement))                     {DisposeMultiGrid(theMG); return (NULL);}
+    if (InsertLocalTree(rr_rules,theGrid,theElement,refinement))    {DisposeMultiGrid(theMG); return (NULL);}
   }
 
   /* close file */
   ReleaseTmpMem(theHeap);
   if (CloseFile ())                                                                                                       {DisposeMultiGrid(theMG); return (NULL);}
+
+#ifndef __MWCW__
+  /* zip if */
+  if (zip)
+  {
+    strcpy(sysCom,"gzip -f ");
+    strcat(sysCom,FileName);
+    if (system(sysCom)==-1)                                                                                 {DisposeMultiGrid(theMG); return (NULL);}
+  }
+#endif
 
   return (theMG);
 }

@@ -929,8 +929,9 @@ int Read_Refinement (int n, MGIO_REFINEMENT *refinement)
   pr = refinement;
   for (i=0; i<n; i++)
   {
-    if (Bio_Read_mint(1,intList)) return (1);
+    if (Bio_Read_mint(2,intList)) return (1);
     ctrl = intList[0];
+    pr->sonref = intList[1];
     pr->refrule = MGIO_ECTRL_REF(ctrl)-1;
     if (pr->refrule>-1)
     {
@@ -991,6 +992,7 @@ int Write_Refinement (int n, MGIO_REFINEMENT *refinement)
   {
     s=t=0;
     intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved);
+    intList[s++] = pr->sonref;
     if (pr->refrule>-1)
     {
       for (j=0; j<pr->nnewcorners; j++)
