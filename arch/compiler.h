@@ -77,10 +77,11 @@ extern "C" {
 /*          __YMP__      CRAY YMP version                                   */
 /*          __NECSX4__   NEC SX4                                            */
 /*          __SR2201__   Hitachi SR2201                                     */
+/*          __MACOSXSERVER__   MacOS X Server                               */
 /*          __MWCW__     Apple Power Macintosh                              */
 /*          __MKLINUX__  Mikrokernel Linux (PowerPC)                        */
 /*          __NEXTSTEP__ NEXTSTEP operating system                          */
-/*          __OPENSTEP__ OPENSTEP and Rhapsody                              */
+/*          __OPENSTEP__ OPENSTEP                                           */
 /*          __LINUXPPC__                                                    */
 /*                                                                          */
 /* #define this if you are using NXLib                                      */
@@ -878,6 +879,39 @@ extern "C" {
 #ifndef CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC 10000
 #endif
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for MACOSXSERVER                                             */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __MACOSXSERVER__
+#undef __MWCW__
+
+#define ARCHNAME        "MacOS X Server"
+
+/* basic types */
+#define SHORT         short
+#define INT           int
+#define FLOAT         float
+#define DOUBLE        double
+#define COORD         float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
+#define ALIGNMASK     0xFFFFFFFC    /* compatible to alignment */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
+/* current time as DOUBLE value */
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
