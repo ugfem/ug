@@ -379,6 +379,9 @@ static INT GenerateNewGrid(GRID *theGrid)
   m = noc * nof;
     #ifdef ModelP
   PRINTDEBUG(np,1,("%d: noc * nof %d\n",me,m));
+        #ifdef Debug
+  if (rep_err_count > 0) m = 0;
+        #endif
   m = UG_GlobalMinINT(m);
   PRINTDEBUG(np,1,("%d: noc * nof %d\n",me,m));
         #endif
@@ -412,6 +415,7 @@ static INT GenerateNewGrid(GRID *theGrid)
       }
       SETVCLASS(newVect,3);
       SETVNCLASS(newVect,VCLASS(vect));
+      SETPRIO(newVect,PRIO(vect));
 
                         #ifdef ModelP
       if (DDD_InfoPrioCopies(PARHDR(vect)) > 0) {
@@ -427,6 +431,10 @@ static INT GenerateNewGrid(GRID *theGrid)
           DDD_IdentifyObject(PARHDR(newVect),*proclist,PARHDR(vect));
           proclist += 2;
         }
+        PRINTDEBUG(np,1,(" prio %d, attr %d\n",
+                         DDD_InfoPriority(PARHDR(newVect)),
+                         DDD_InfoAttr(PARHDR(newVect))));
+
         PRINTDEBUG(np,1,("\n"));
       }
                         #endif
@@ -682,8 +690,11 @@ static int Gather_VectorFlags (DDD_OBJ obj, void *data)
 
   flag[0] = VCCOARSE(pv);
 
-  PRINTDEBUG(np,1,("%d:gather  ind %3d gid %08x  c %d\n",
-                   me,VINDEX(pv),DDD_InfoGlobalId(PARHDR(pv)),VCCOARSE(pv)));
+  PRINTDEBUG(np,1,("%d:gather  ind %3d gid %08x  c %d prio %d, attr %d\n",
+                   me,VINDEX(pv),
+                   DDD_InfoGlobalId(PARHDR(pv)),VCCOARSE(pv),
+                   DDD_InfoPriority(PARHDR(pv)),
+                   DDD_InfoAttr(PARHDR(pv))));
 
   return (0);
 }
@@ -704,7 +715,9 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
 
 static INT l_vectorflag_consistent (GRID *g)
 {
-  DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), sizeof(INT),
+  PRINTDEBUG(np,1,("%d: l_vectorflag_consistent\n",me));
+
+  DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), sizeof(INT),
                   Gather_VectorFlags, Scatter_VectorFlags);
   return (NUM_OK);
 }
@@ -875,7 +888,7 @@ static int Scatter_VectorFlags1 (DDD_OBJ obj, void *data)
 
 static INT l_vectorflag_consistent1 (GRID *g)
 {
-  DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), 3 * sizeof(INT),
+  DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), 3 * sizeof(INT),
                   Gather_VectorFlags1, Scatter_VectorFlags1);
   return (NUM_OK);
 }
@@ -1318,8 +1331,12 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
             SETMUSED(mat,1);
             n++;
           }
-      assert(n > 0);
       PRINTDEBUG(np,1,("%d:%d ->",VINDEX(vect),n));
+      if (n == 0) {
+        PrintErrorMessage('E',"IpAverage",
+                          "can't build Interpolation matrix (n = 0)");
+        REP_ERR_RETURN(1);
+      }
       s = 1.0 / n;
       for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
         if (!MUSED(mat)) continue;

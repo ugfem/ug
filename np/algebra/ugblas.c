@@ -368,7 +368,7 @@ INT l_vector_consistent (GRID *g, const VECDATA_DESC *x)
 	for (tp=0; tp<NVECTYPES; tp++)
 	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-	DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), m * sizeof(DOUBLE),
+	DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), m * sizeof(DOUBLE),
 					Gather_VectorComp, Scatter_VectorComp);
 	return (NUM_OK);
 }
@@ -413,7 +413,9 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 					   Gather_VectorComp, Scatter_VectorComp);
 	else
 		for (level=fl; level<=tl; level++) 
-			DDD_IFAExchange(BorderVectorSymmIF, level, m * sizeof(DOUBLE),
+			DDD_IFAExchange(BorderVectorSymmIF, 
+							GRID_ATTR(GRID_ON_LEVEL(mg,level)), 
+							m * sizeof(DOUBLE),
 							Gather_VectorComp, Scatter_VectorComp);
 
 	return (NUM_OK);
@@ -473,7 +475,7 @@ INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
 	for (tp=0; tp<NVECTYPES; tp++)
  	    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-	DDD_IFAOneway(VectorVIF, GLEVEL(g), IF_FORWARD, m * sizeof(DOUBLE),
+	DDD_IFAOneway(VectorVIF, GRID_ATTR(g), IF_FORWARD, m * sizeof(DOUBLE),
 				  Gather_VectorComp, Scatter_GhostVectorComp);
 
 	return (NUM_OK);
@@ -564,7 +566,7 @@ INT l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
  	    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 	m++;
 
-	DDD_IFAOneway(VectorVAllIF, GLEVEL(g), IF_FORWARD, m * sizeof(DOUBLE),
+	DDD_IFAOneway(VectorVAllIF, GRID_ATTR(g), IF_FORWARD, m * sizeof(DOUBLE),
 				  Gather_ProjectVectorComp, Scatter_ProjectVectorComp);
 
 	return (NUM_OK);
@@ -629,7 +631,7 @@ INT l_vector_collect (GRID *g, const VECDATA_DESC *x)
 	for (tp=0; tp<NVECTYPES; tp++)
 	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-	DDD_IFAOneway(BorderVectorIF, GLEVEL(g), IF_FORWARD, m * sizeof(DOUBLE),
+	DDD_IFAOneway(BorderVectorIF, GRID_ATTR(g), IF_FORWARD, m * sizeof(DOUBLE),
 				  Gather_VectorCompCollect, Scatter_VectorComp);
 
 	return (NUM_OK);
@@ -676,7 +678,9 @@ INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 				   Gather_VectorCompCollect, Scatter_VectorComp);
 	else
 	  for (level=fl; level<=tl; level++) 
-		DDD_IFAOneway(BorderVectorIF, level, IF_FORWARD, m * sizeof(DOUBLE),
+		DDD_IFAOneway(BorderVectorIF, 
+					  GRID_ATTR(GRID_ON_LEVEL(mg,level)), 
+					  IF_FORWARD, m * sizeof(DOUBLE),
 					  Gather_VectorCompCollect, Scatter_VectorComp);
 
 	return (NUM_OK);
@@ -782,7 +786,9 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 					   Gather_VectorVecskip, Scatter_VectorVecskip);
 	else
 		for (level=fl; level<=tl; level++) 
-			DDD_IFAExchange(BorderVectorSymmIF, level, m * sizeof(DOUBLE),
+			DDD_IFAExchange(BorderVectorSymmIF, 
+							GRID_ATTR(GRID_ON_LEVEL(mg,level)), 
+							m * sizeof(DOUBLE),
 							Gather_VectorVecskip, Scatter_VectorVecskip);
 
 	return (NUM_OK);
@@ -822,7 +828,7 @@ INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
 	for (tp=0; tp<NVECTYPES; tp++)
 	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-	DDD_IFAOneway(VectorVIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
+	DDD_IFAOneway(VectorVIF, GRID_ATTR(g), IF_BACKWARD, m * sizeof(DOUBLE),
 				  Gather_VectorCompCollect, Scatter_VectorComp);
 
 	return (NUM_OK);
@@ -897,7 +903,7 @@ INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
 	m = MIN(m,MAX_NODAL_VALUES);
 	DataSizePerMatrix = m * m;
 
-	DDD_IFAOneway(ElementVIF, GLEVEL(g), IF_BACKWARD, 
+	DDD_IFAOneway(ElementVIF, GRID_ATTR(g), IF_BACKWARD, 
 				  DataSizePerMatrix * sizeof(DOUBLE),
 				  Gather_MatrixCollect, Scatter_MatrixCollect);
 
@@ -993,7 +999,7 @@ INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 	for (tp=0; tp<NVECTYPES; tp++)
 	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-	DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), m * sizeof(DOUBLE),
+	DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), m * sizeof(DOUBLE),
 					Gather_VectorComp, Scatter_VectorComp);
 
     if (l_vector_average(g,x) != NUM_OK)
@@ -1042,7 +1048,9 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 					   Gather_VectorComp, Scatter_VectorComp);
 	else
 		for (level=fl; level<=tl; level++) 
-			DDD_IFAExchange(BorderVectorSymmIF, level, m * sizeof(DOUBLE),
+			DDD_IFAExchange(BorderVectorSymmIF, 
+							GRID_ATTR(GRID_ON_LEVEL(mg,level)), 
+							m * sizeof(DOUBLE),
 							Gather_VectorComp, Scatter_VectorComp);
 
 	for (level=fl; level<=tl; level++) 
@@ -1562,14 +1570,15 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 	/* TODO: make consistency of diags and off-diags in one communication! */
 
-	DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), MaxBlockSize*sizeof(DOUBLE),
+	DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), 
+					MaxBlockSize*sizeof(DOUBLE),
 					Gather_DiagMatrixComp, Scatter_DiagMatrixComp);
 
     if (mode == MAT_DIAG_CONS) return (NUM_OK);
 
     if (mode == MAT_GHOST_DIAG_CONS) {
 	    ConsGrid = g;
-	    DDD_IFAOneway(VectorVIF, GLEVEL(g), IF_FORWARD, 
+	    DDD_IFAOneway(VectorVIF, GRID_ATTR(g), IF_FORWARD, 
 					  MaxBlockSize * sizeof(DOUBLE),
 					  Gather_DiagMatrixComp, Scatter_GhostDiagMatrixComp);
 		return (NUM_OK);
@@ -1577,7 +1586,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 	/* now make off-diagonal entries consistent */
 	MaximumInconsMatrices=0;
-	DDD_IFAExecLocal(BorderVectorSymmIF, GLEVEL(g), CountAndSortInconsMatrices);
+	DDD_IFAExecLocal(BorderVectorSymmIF, GRID_ATTR(g), CountAndSortInconsMatrices);
 	MaximumInconsMatrices = UG_GlobalMaxINT(MaximumInconsMatrices);
 	DataSizePerVector = MaximumInconsMatrices * MaxBlockSize * sizeof(DOUBLE);
 	DataSizePerVector = CEIL(DataSizePerVector);
@@ -1590,11 +1599,11 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 	sizePerVector = CEIL(sizePerVector);
 
     if (mode == MAT_CONS) 
-		DDD_IFAExchangeX(BorderVectorSymmIF, GLEVEL(g), sizePerVector,
+		DDD_IFAExchangeX(BorderVectorSymmIF, GRID_ATTR(g), sizePerVector,
 						 Gather_OffDiagMatrixComp, Scatter_OffDiagMatrixComp);
     else if (mode == MAT_MASTER_CONS) 
 	{
-		DDD_IFAOnewayX(BorderVectorIF,GLEVEL(g),IF_FORWARD, sizePerVector,
+		DDD_IFAOnewayX(BorderVectorIF, GRID_ATTR(g),IF_FORWARD, sizePerVector,
 					   Gather_OffDiagMatrixCompCollect,
 					   Scatter_OffDiagMatrixComp);
 	}
