@@ -20,11 +20,9 @@
 /*                                                                          */
 /****************************************************************************/
 
-
 /* RCS_ID
    $Header$
  */
-
 
 #ifndef __COMPILER__
 #define __COMPILER__
@@ -73,6 +71,7 @@ extern "C" {
 /*          __MWCW__     Apple Power Macintosh                              */
 /*          __MKLINUX__  Mikrokernel Linux (PowerPC)                        */
 /*          __NEXTSTEP__ NEXTSTEP operating system                          */
+/*          __OPENSTEP__ OPENSTEP and Rhapsody                              */
 /*                                                                          */
 /* #define this if you are using NXLib                                      */
 /*          __NXLIB__    NXLIB Paragon Library                              */
@@ -748,10 +747,46 @@ extern "C" {
 
 /* current time as DOUBLE value */
 #ifndef CLOCKS_PER_SEC
-#define CLOCKS_PER_SEC 1000000
+#define CLOCKS_PER_SEC CLK_TCK
 #endif
 #undef CURRENT_TIME
-#define CURRENT_TIME   (((DOUBLE)times(NULL))/((DOUBLE)CLK_TCK))
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for OPENSTEP                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __OPENSTEP__
+#undef __MWCW__
+
+#define ARCHNAME        "OPENSTEP"
+
+/* basic types */
+#define SHORT         short
+#define INT           int
+#define FLOAT         float
+#define DOUBLE        double
+#define COORD         float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
+#define ALIGNMASK     0xFFFFFFFC    /* compatible to alignment */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
+/* current time as DOUBLE value */
+#ifndef CLOCKS_PER_SEC
+#define CLOCKS_PER_SEC 10000
+#endif
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
 
