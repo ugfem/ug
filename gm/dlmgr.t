@@ -37,7 +37,7 @@
 
 UNLINK(OTYPE)
 	{
-		INT Prio = DDD_InfoPriority( CAT(HDR(OTYPE),(Object)) );
+		INT Prio = DDD_InfoPriority( HDR(OTYPE)((Object)) );
 		INT listpart = PRIO2LISTPART( CAT(OTYPE,_LIST) ,Prio);
 		INT listpart1 = listpart;
 		OTYPE *Object1 = NULL;
