@@ -3618,6 +3618,149 @@ static INT VMListCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   convert - convert a matrix into a sparse format
+
+   DESCRIPTION:
+   This command converts a matrix into a sparse format,
+   prints it out or svae it to a file.
+
+   `convert <mat> [$p] [$f <name>]`
+   .  <mat> - matrix symbol
+   .  p - print on shell
+   D*/
+/****************************************************************************/
+
+static int ReadMatrixDimensions (char *name, int *n, int *na)
+{
+  int i;
+
+  FILE *stream = fileopen(name,"r");
+  if (stream == NULL) return(1);
+  fscanf(stream," %d\n",n);
+  for (i=0; i<=*n; i++)
+    fscanf(stream," %d ",na);
+  fclose(stream);
+
+  return(0);
+}
+
+static int ReadMatrix (char *name, int n, int *ia, int *ja, double *a)
+{
+  int i;
+
+  FILE *stream = fileopen(name,"r");
+  if (stream == NULL) return(1);
+  fscanf(stream," %d\n",&i);
+  if (i != n) return(1);
+  for (i=0; i<=n; i++)
+    fscanf(stream," %d ",ia+i);
+  fscanf(stream,"\n");
+  for (i=0; i<ia[n]; i++)
+    fscanf(stream," %d ",ja+i);
+  fscanf(stream,"\n");
+  for (i=0; i<ia[n]; i++)
+    fscanf(stream," %lf ",a+i);
+  fscanf(stream,"\n");
+  fclose(stream);
+
+  return(0);
+}
+
+static int WriteMatrix (char *name, int n, int *ia, int *ja, double *a)
+{
+  int i;
+
+  FILE *stream = fileopen(name,"w");
+  if (stream == NULL) return(1);
+  fprintf(stream," %d\n",n);
+  for (i=0; i<=n; i++)
+    fprintf(stream," %d ",ia[i]);
+  fprintf(stream,"\n");
+  for (i=0; i<ia[n]; i++)
+    fprintf(stream," %d ",ja[i]);
+  fprintf(stream,"\n");
+  for (i=0; i<ia[n]; i++)
+    fprintf(stream," %lf ",a[i]);
+  fprintf(stream,"\n");
+  fclose(stream);
+
+  return(0);
+}
+
+static INT ConvertCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  HEAP *theHeap;
+  MATDATA_DESC *A;
+  int n,nn,*ia,*ja;
+  double *a,*r;
+  char name[32];
+  INT i,j,MarkKey;
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL) {
+    PrintErrorMessage('E',"convert","no current multigrid");
+    return(CMDERRORCODE);
+  }
+  theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+  if ((A = ReadArgvMatDesc(theMG,"convert",argc,argv))==NULL) {
+    PrintErrorMessage('E',"convert","could not read symbol");
+    return (PARAMERRORCODE);
+  }
+  theHeap = MGHEAP(theMG);
+  MarkTmpMem(theHeap,&MarkKey);
+  if (ReadArgvChar("r",name,argc,argv) == 0) {
+    if (ReadMatrixDimensions(name,&n,&nn)) {
+      PrintErrorMessage('E',"convert",
+                        "could not read matrix dimensions");
+      ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+      return(CMDERRORCODE);
+    }
+    ia = (int *)GetTmpMem(theHeap,sizeof(int) * (n+1),MarkKey);
+    a = (double *)GetTmpMem(theHeap,sizeof(double) * nn,MarkKey);
+    ja = (int *)GetTmpMem(theHeap,sizeof(int) * nn,MarkKey);
+    if ((ia == NULL) || (a == NULL) || (ja == NULL)) {
+      PrintErrorMessage('E',"convert",
+                        "could not allocate memory");
+      ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+      return(CMDERRORCODE);
+    }
+    if (ReadMatrix(name,n,ia,ja,a)) {
+      PrintErrorMessage('E',"convert","could write matrix");
+      ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+      return(CMDERRORCODE);
+    }
+  }
+  else if (ConvertMatrix(theGrid,MGHEAP(theMG),MarkKey,A,&n,&ia,&ja,&a)) {
+    PrintErrorMessage('E',"convert","could not read matrix");
+    ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+    return(CMDERRORCODE);
+  }
+  if (ReadArgvChar("f",name,argc,argv) == 0)
+    if (WriteMatrix(name,n,ia,ja,a)) {
+      PrintErrorMessage('E',"convert","could write matrix");
+      ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+      return(CMDERRORCODE);
+    }
+  if (ReadArgvOption("p",argc,argv)) {
+    r = (DOUBLE *)GetTmpMem(MGHEAP(theMG),sizeof(DOUBLE) * n,MarkKey);
+    for (i=0; i<n; i++) {
+      for (j=0; j<n; j++)
+        r[j] = 0.0;
+      for (j=ia[i]; j<ia[i+1]; j++)
+        r[ja[j]] = a[j];
+      for (j=0; j<n; j++)
+        UserWriteF("%8.4f",r[j]);
+      UserWrite("\n");
+    }
+  }
+  ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    in - insert an inner node and vertex
 
    DESCRIPTION:
@@ -12768,6 +12911,7 @@ INT InitCommands ()
   if (CreateCommand("slist",                      SelectionListCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("rlist",                      RuleListCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
+  if (CreateCommand("convert",        ConvertCommand                  )==NULL) return(__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("status",                     StatusCommand                                   )==NULL) return (__LINE__);
