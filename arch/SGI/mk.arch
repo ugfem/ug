@@ -22,6 +22,7 @@ ARCH_CFLAGS   = -mips2 -g # -g -O2
 ARCH_C++FLAGS = -mips2 -g # -g -O2
 ARCH_LFLAGS   = -mips2
 ARCH_ARFLAGS  = ru
+ARCH_EXFLAGS  = xo
 
 ARCH_XINCLUDES =
 ARCH_XLIBS     = -lX11 -lXt -lXaw -lXmu -lXext
