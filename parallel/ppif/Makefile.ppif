@@ -12,7 +12,7 @@
 
 # build complete pathes
 ARCH_PATH = $(ARCH_DIR)/$(ARCH)
-PPIF_PATH = $(PPIF_DIR)/$(PPIF)
+PPIF_PATH = $(PPIF_DIR)/$(MODEL)
 
 
 # include make options from sub-modules
