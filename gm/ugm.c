@@ -6270,7 +6270,8 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
   for (j=1; j<=theMesh->nSubDomains; j++)
     for (k=0; k<theMesh->nElements[j]; k++)
     {
-      i = theMesh->ElementLevel[j][k];
+      if (theMesh->ElementLevel!=NULL) i = theMesh->ElementLevel[j][k];
+      else i=0;
       theGrid = GRID_ON_LEVEL(theMG,i);
       n = theMesh->Element_corners[j][k];
       for (l=0; l<n; l++)
