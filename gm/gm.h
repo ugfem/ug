@@ -1026,6 +1026,7 @@ struct multigrid {
   char filename[NAMESIZE];                      /* filename if saved					*/
 
   INT CoarseGridFixed;                          /* coarse grid complete					*/
+  INT MarkKey;                                  /* coarse grid MarkKey for SIMPLE_HEAP Mark/Release	*/
 } ;
 
 /****************************************************************************/
@@ -2463,6 +2464,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MG_SAVED(p)                             ((p)->saved)
 #define MG_FILENAME(p)                  ((p)->filename)
 #define MG_COARSE_FIXED(p)              ((p)->CoarseGridFixed)
+#define MG_MARK_KEY(p)              ((p)->MarkKey)
 
 /****************************************************************************/
 /*																			*/

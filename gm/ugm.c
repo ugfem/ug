@@ -113,9 +113,6 @@ static INT theMGRootDirID;                      /* env dir ID for the multigrids
 
 static INT UsedOBJT;                            /* for the dynamic OBJECT management	*/
 
-/* the scope of this variable reaches from CreateMultiGrid until FixCoarseGrid */
-static INT CoarseGridMarkKey=0;
-
 /* used by OrderNodesInGrid */
 static const INT *Order,*Sign;
 static DOUBLE InvMeshSize;
@@ -2267,31 +2264,6 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
 
 /****************************************************************************/
 /*D
-   GetCoarseGridMarkKey - return mark key for temporary memory allocation during carse grid construction
-
-   SYNOPSIS:
-   INT GetCoarseGridMarkKey (void)
-
-   PARAMETERS:
-   .  void - none
-
-   DESCRIPTION:
-   This function returns a mark key for temporary memory allocation
-   during carse grid construction. The memory is release by 'FixCoarseGrid'.
-
-   RETURN VALUE:
-   INT
-   .n   mark key
-   D*/
-/****************************************************************************/
-
-INT GetCoarseGridMarkKey (void)
-{
-  return (CoarseGridMarkKey);
-}
-
-/****************************************************************************/
-/*D
    CreateMultiGrid - Return a pointer to new multigrid structure
 
    SYNOPSIS:
@@ -2329,6 +2301,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   BVP_DESC *theBVPDesc;
   MESH mesh;
   FORMAT *theFormat;
+  INT MarkKey;
 
   theFormat = GetFormat(format);
   if (theFormat==NULL)
@@ -2358,15 +2331,11 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
     return(NULL);
   }
 
-  /* TODO (HRR 971009): if this is a problem (open a second MG before FixCoarseGrid of the first one)
-          CoarseGridMarkKey would have to be an array... */
-  if (CoarseGridMarkKey!=0)
-    return(NULL);
   /* mark temp memory here, release it after coarse grid construction in FixCoarseGrid */
-  MarkTmpMem(theHeap,&CoarseGridMarkKey);
+  MarkTmpMem(theHeap,&MarkKey);
+  MG_MARK_KEY(theMG) = MarkKey;
 
-
-  theBVP = BVP_Init(BndValProblem,theHeap,&mesh,CoarseGridMarkKey);
+  theBVP = BVP_Init(BndValProblem,theHeap,&mesh,MarkKey);
   if (theBVP==NULL)
   {
     PrintErrorMessage('E',"CreateMultiGrid","BVP not found");
@@ -2441,9 +2410,9 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   if(optimizedIE == TRUE)
   {
     if ((MGNDELEMPTRARRAY(theMG)=
-           GetTmpMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),CoarseGridMarkKey))==NULL)
+           GetTmpMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),MarkKey))==NULL)
     {
-      ReleaseTmpMem(theHeap,CoarseGridMarkKey);
+      ReleaseTmpMem(theHeap,MarkKey);
       PrintErrorMessage('E',"CreateMultiGrid",
                         "ERROR: could not allocate memory from the MGHeap");
       return (NULL);
@@ -5101,6 +5070,7 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
   INT i,j,maxi;
   INT IndexOfDivPart;
   INT IndexOfModPart;
+  INT MarkKey = MG_MARK_KEY(theMG);
 
   *h_ID = -1;
 
@@ -5142,7 +5112,7 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
           /*
              MGNDELEMBLK(theMG,j) = malloc(maxi);
            */
-          if ((MGNDELEMBLK(theMG,j)=GetTmpMem(MGHEAP(theMG),maxi,CoarseGridMarkKey))==NULL)
+          if ((MGNDELEMBLK(theMG,j)=GetTmpMem(MGHEAP(theMG),maxi,MarkKey))==NULL)
           {
             PrintErrorMessage('E',"InsertElement","  ==> NdElPtrArray_GetMemAndCheckIDs( ) ERROR: No memory for MGNDELEMBLK(theMG,j)");
             return(1);
@@ -5686,6 +5656,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
   NODE **NList,*Nodes[MAX_CORNERS_OF_ELEM],*ListNode;
   VERTEX **VList;
   INT i,k,n,nv,j,maxlevel,l,move,part;
+  INT MarkKey = MG_MARK_KEY(theMG);
 
   if (theMesh == NULL) return(GM_OK);
   if (theMesh->nElements == NULL)
@@ -5704,9 +5675,9 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
 
   /* prepare */
   nv = theMesh->nBndP + theMesh->nInnP;
-  VList = (VERTEX **) GetTmpMem(MGHEAP(theMG),nv*sizeof(VERTEX *),CoarseGridMarkKey);
+  VList = (VERTEX **) GetTmpMem(MGHEAP(theMG),nv*sizeof(VERTEX *),MarkKey);
   if (VList == NULL) return(GM_ERROR);
-  NList = (NODE **) GetTmpMem(MGHEAP(theMG),nv*sizeof(NODE *),CoarseGridMarkKey);
+  NList = (NODE **) GetTmpMem(MGHEAP(theMG),nv*sizeof(NODE *),MarkKey);
   if (NList == NULL) return(GM_ERROR);
   for (j=0; j<nv; j++) NList[j] = NULL;
 
@@ -8684,6 +8655,7 @@ static INT FinishGrid (MULTIGRID *mg)
   ELEMENT *elem,*nb,*succ;
   HEAP *heap=MGHEAP(mg);
   FIFO unused,shell;
+  INT MarkKey = MG_MARK_KEY(mg);
   INT i,side,id,nbid,part,nsd,found,s_id;
   INT *sd_table;
   void *buffer;
@@ -8703,16 +8675,16 @@ static INT FinishGrid (MULTIGRID *mg)
 
   /* table for subdomain ids */
   nsd = 1 + BVPD_NSUBDOM(MG_BVPD(mg));
-  sd_table = (INT*)GetTmpMem(heap,nsd*sizeof(INT),CoarseGridMarkKey);
+  sd_table = (INT*)GetTmpMem(heap,nsd*sizeof(INT),MarkKey);
   if (sd_table==NULL)
     REP_ERR_RETURN (GM_ERROR);
 
   /* init two fifos */
-  buffer=(void *)GetTmpMem(heap,sizeof(ELEMENT*)*NT(grid),CoarseGridMarkKey);
+  buffer=(void *)GetTmpMem(heap,sizeof(ELEMENT*)*NT(grid),MarkKey);
   if (buffer==NULL)
     REP_ERR_RETURN (GM_ERROR);
   fifo_init(&unused,buffer,sizeof(ELEMENT*)*NT(grid));
-  buffer=(void *)GetTmpMem(heap,sizeof(ELEMENT*)*NT(grid),CoarseGridMarkKey);
+  buffer=(void *)GetTmpMem(heap,sizeof(ELEMENT*)*NT(grid),MarkKey);
   if (buffer==NULL)
     REP_ERR_RETURN (GM_ERROR);
   fifo_init(&shell,buffer,sizeof(ELEMENT*)*NT(grid));
@@ -8959,6 +8931,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
   void *buffer;
   INT i,n,id,nbid,part,j;
   FIFO myfifo;
+  INT MarkKey = MG_MARK_KEY(theMG);
 
   /* prepare */
   if (TOPLEVEL(theMG)<0) REP_ERR_RETURN (GM_ERROR);
@@ -8967,7 +8940,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 
   /* allocate fifo and init */
   theHeap = MYMG(theGrid)->theHeap;
-  buffer=(void *)GetTmpMem(theHeap,sizeof(ELEMENT*)*n,CoarseGridMarkKey);
+  buffer=(void *)GetTmpMem(theHeap,sizeof(ELEMENT*)*n,MarkKey);
   fifo_init(&myfifo,buffer,sizeof(ELEMENT*)*n);
   for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
        theElement=SUCCE(theElement))
@@ -9076,8 +9049,8 @@ INT FixCoarseGrid (MULTIGRID *theMG)
     REP_ERR_RETURN (GM_ERROR);
 
   /* here all temp memory since CreateMultiGrid is released */
-  ReleaseTmpMem(MGHEAP(theMG),CoarseGridMarkKey);
-  CoarseGridMarkKey = 0;
+  ReleaseTmpMem(MGHEAP(theMG),MG_MARK_KEY(theMG));
+  MG_MARK_KEY(theMG) = 0;
 
   return (GM_OK);
 }
