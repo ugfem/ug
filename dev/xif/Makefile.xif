@@ -30,7 +30,8 @@ OFF:
 	echo "no gui toolbox"
 
 clean:
-	rm -f *.o
+	find . -name '*.o' -exec rm {} \; -print
+	find . -name '*.a' -exec rm {} \; -print
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdevX.a $(OBJECTS)
