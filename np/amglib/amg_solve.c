@@ -732,14 +732,15 @@ static int bcgs_solve (AMG_VECTOR *x, AMG_VECTOR *b)
     AMG_daxpy(r[0],-alpha,w);
     AMG_daxpy(x,alpha,z[0]);
     dnorm=sqrt(AMG_ddot(r[0],r[0]));
-    if (sc->verbose>0)
+    if ( dnorm<dnorm0*sc->red_factor || dnorm<sc->dnorm_min )
     {
-      sprintf(buf,"%4d %12.4lE %12.4lg\n",i+1,dnorm,dnorm/dnormlast);
-      AMG_Print(buf);
+      if (sc->verbose>0)
+      {
+        sprintf(buf,"%4d %12.4lE %12.4lg\n",i+1,dnorm,dnorm/dnormlast);
+        AMG_Print(buf);
+      }
+      break;
     }
-    dnormlast=dnorm;
-    if (dnorm<dnorm0*sc->red_factor) break;
-    if (dnorm<sc->dnorm_min) break;
 
     AMG_dset(z[0],0.0);
     AMG_dcopy(d[0],r[0]);
