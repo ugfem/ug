@@ -156,6 +156,8 @@ INT CheckPartitioning (MULTIGRID *theMG)
         /* or is ghost -> partitioning must be restricted   */
         if (!EMASTER(theFather))
         {
+          UserWriteF(PFMT "elem=" EID_FMTX  "cannot be refined\n",
+                     me,EID_PRTX(theFather));
           _restrict_ = 1;
           continue;
         }
@@ -167,7 +169,11 @@ INT CheckPartitioning (MULTIGRID *theMG)
           /* level 0 elements are not coarsened */
           if (LEVEL(theFather)==0) continue;
           if (!EMASTER(EFATHER(theFather)))
+          {
+            UserWriteF(PFMT "elem=" EID_FMTX  "cannot be coarsened\n",
+                       me,EID_PRTX(theFather));
             _restrict_ = 1;
+          }
         }
       }
     }
