@@ -1658,7 +1658,8 @@ FILE *GetProtocolFile (void)
 static INT LogOnCommand (INT argc, char **argv)
 {
   char logfile[NAMESIZE];
-  INT i,rv,popt,pext,meext,rename;
+  INT i,rv,popt,res,pext,meext,rename;
+  int ropt;
 
   /* check options */
   popt = pext = meext = rename = FALSE;
@@ -1691,7 +1692,8 @@ static INT LogOnCommand (INT argc, char **argv)
       break;
 
     case 'r' :
-      rename = TRUE;
+      res = sscanf(argv[i]," r %d",&ropt);
+      if (res==0 || (res==1 && ropt==1)) rename = TRUE;
       break;
 
     default :
