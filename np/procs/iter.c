@@ -502,6 +502,42 @@ typedef struct
 
 } NP_MI;
 
+#define SP_NOTINIT                                              0
+#define SP_OMS                                                  1
+#define SP_A                                                    2
+#define SP_O                                                    3
+
+typedef struct
+{
+  NP_ITER iter;
+
+  /* necessary componentes for 'activ' mode */
+  VECDATA_DESC *t;                      /* temporary field                  */
+  INT nu;                               /* number of sub iterations         */
+  NP_ITER *S;                                       /* sub iteration                    */
+  INT mode;                                                             /* SP_OMS: (1-S)*S^nu				*/
+  /* SP_A:       A*S^nu				*/
+
+  /* necessary componentes for 'executable' mode */
+  INT maxiter;                                                  /* maximum number of iterations     */
+  DOUBLE tol;                                                           /* tolerance, stopping criterion    */
+
+} NP_SP;
+
+typedef struct
+{
+  NP_BASE base;
+
+  MATDATA_DESC *A;                      /* matrix to handle                 */
+  VECDATA_DESC *x;                      /* in-field                         */
+  INT xc;                                                               /* scalar component in x			*/
+  NP_ITER *S;                           /* sub iteration                    */
+  INT skip;                             /* 1 for skipping dirichlet flags   */
+  char file[128];                                               /* file name						*/
+
+} NP_IM;
+
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -604,10 +640,9 @@ INT DPrintVector (MULTIGRID *mg, VECDATA_DESC *x)
   VECTOR *v;
   DOUBLE_VECTOR pos;
   INT vtype,comp,ncomp,j,lev;
-  FILE *c,*p;
+  FILE *f;
 
-  c=fopen("c","w");
-  p=fopen("p","w");
+  f=fopen("logfiles/x","w");
   for (vtype=0; vtype<NVECTYPES; vtype++)
   {
     ncomp = VD_NCMPS_IN_TYPE(x,vtype);
@@ -616,18 +651,10 @@ INT DPrintVector (MULTIGRID *mg, VECDATA_DESC *x)
     S_FINE_VLOOP__TYPE(CURRENTLEVEL(mg),v,mg,vtype)
     {
       VectorPosition(v,pos);
-#ifdef __TWODIM__
-      fprintf(c,"%15.8e %5.2f %5.2f\n",VVALUE(v,comp),pos[0],pos[1]);
-      fprintf(p,"%15.8e %5.2f %5.2f\n",VVALUE(v,comp+1),pos[0],pos[1]);
-#endif
-#ifdef __THREEDIM__
-      fprintf(c,"%15.8e %5.2f %5.2f %5.2f\n",VVALUE(v,comp),pos[0],pos[1],pos[2]);
-      fprintf(p,"%15.8e %5.2f %5.2f %5.2f\n",VVALUE(v,comp+1),pos[0],pos[1],pos[2]);
-#endif
+      fprintf(f,"%15.8e\n",VVALUE(v,comp));
     }
   }
-  fclose(c);
-  fclose(p);
+  fclose(f);
 
   return(NUM_OK);
 }
@@ -1570,7 +1597,7 @@ static INT SSORPreProcess  (NP_ITER *theNP, INT level,
   {
     if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
     if (SetAutoDamp(theNP,theGrid,np->AutoDamp,myMat,ssor->omega,np->DampVector)) NP_RETURN(1,result[0]);
-    /*DPrintVector(MYMG(theGrid),np->DampVector);*/
+    DPrintVector(MYMG(theGrid),np->DampVector);
   }
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,myMat,result)) NP_RETURN(1,result[0]);
@@ -1585,6 +1612,7 @@ static INT SSORSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DES
 {
   NP_SSOR *np = (NP_SSOR *) theNP;
   GRID *theGrid=NP_GRID(theNP,level);
+  VECDATA_DESC *b0;
 
   /* store passed XXXDATA_DESCs */
   NPIT_A(theNP) = A;
@@ -1593,89 +1621,83 @@ static INT SSORSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DES
 
   /* iterate forward */
     #ifdef ModelP
-  if (np->smoother.cons_mode == MAT_MASTER_CONS) {
-    if (l_vector_collect(theGrid,b)!=NUM_OK)
-      NP_RETURN(1,result[0]);
+  if (np->smoother.cons_mode == MAT_MASTER_CONS)
+  {
+    if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
   }
-  else {
-    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  else
+  {
+    if (l_vector_meanvalue(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
   }
-  if (np->smoother.AutoDamp) {
-    if (l_lsor_ld(theGrid,np->t,np->smoother.L,b,
-                  np->smoother.DampVector,
-                  np->smoother.diag) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  if (np->smoother.AutoDamp)
+  {
+    if (l_lsor_ld(theGrid,np->t,np->smoother.L,b, np->smoother.DampVector, np->smoother.diag) != NUM_OK) NP_RETURN(1,result[0]);
   }
-  else {
-    if (l_lsor(theGrid,np->t,np->smoother.L,b,
-               np->omega,np->smoother.diag) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  else
+  {
+    if (l_lsor(theGrid,np->t,np->smoother.L,b, np->omega,np->smoother.diag) != NUM_OK) NP_RETURN(1,result[0]);
   }
-  if (l_vector_consistent(theGrid,np->t) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (l_vector_consistent(theGrid,np->t) != NUM_OK) NP_RETURN(1,result[0]);
     #else
-  if (np->smoother.AutoDamp) {
-    if (l_lsor_ld(theGrid,np->t,A,b,np->smoother.DampVector,NULL) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  if (np->smoother.AutoDamp)
+  {
+    if (l_lsor_ld(theGrid,np->t,A,b,np->smoother.DampVector,NULL) != NUM_OK) NP_RETURN(1,result[0]);
   }
-  else {
-    if (l_lsor(theGrid,np->t,A,b,np->omega,NULL) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  else
+  {
+    if (l_lsor(theGrid,np->t,A,b,np->omega,NULL) != NUM_OK) NP_RETURN(1,result[0]);
   }
     #endif
 
-  /* damp */
-  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,np->t,np->smoother.damp)
-      != NUM_OK)
-    NP_RETURN(1,result[0]);
+  /* store unmodified b */
+  b0=NULL; if (AllocVDFromVD(NP_MG(theNP),level,level,b,&b0)) NP_RETURN(1,result[0]);
+  if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,b0,b) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* update defect */
-  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,np->t)
-      != NUM_OK) NP_RETURN(1,result[0]);
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,np->t) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* iterate backward */
     #ifdef ModelP
-  if (np->smoother.cons_mode == MAT_MASTER_CONS) {
-    if (l_vector_collect(theGrid,b)!=NUM_OK)
-      NP_RETURN(1,result[0]);
+  if (np->smoother.cons_mode == MAT_MASTER_CONS)
+  {
+    if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
   }
-  else {
-    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  else
+  {
+    if (l_vector_meanvalue(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
   }
-  if (np->smoother.AutoDamp) {
-    if (l_usor_ld(theGrid,x,np->smoother.L,b,
-                  np->smoother.DampVector,
-                  np->smoother.diag) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  if (np->smoother.AutoDamp)
+  {
+    if (l_usor_ld(theGrid,x,np->smoother.L,b, np->smoother.DampVector, np->smoother.diag) != NUM_OK) NP_RETURN(1,result[0]);
   }
-  else {
-    if (l_usor(theGrid,x,np->smoother.L,b,np->omega,np->smoother.diag)
-        != NUM_OK)
-      NP_RETURN(1,result[0]);
+  else
+  {
+    if (l_usor(theGrid,x,np->smoother.L,b,np->omega,np->smoother.diag) != NUM_OK) NP_RETURN(1,result[0]);
   }
-  if (l_vector_consistent(theGrid,x) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
     #else
-  if (np->smoother.AutoDamp) {
-    if (l_usor_ld(theGrid,x,A,b,np->smoother.DampVector,NULL) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  if (np->smoother.AutoDamp)
+  {
+    if (l_usor_ld(theGrid,x,A,b,np->smoother.DampVector,NULL) != NUM_OK) NP_RETURN(1,result[0]);
   }
-  else {
-    if (l_usor(theGrid,x,A,b,np->omega,NULL) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  else
+  {
+    if (l_usor(theGrid,x,A,b,np->omega,NULL) != NUM_OK) NP_RETURN(1,result[0]);
   }
     #endif
+
+  /* copy back unmodified b */
+  if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,b,b0) != NUM_OK) NP_RETURN(1,result[0]);
+  if (FreeVD(NP_MG(theNP),level,level,b0)) NP_RETURN(1,result[0]);
+
+  /* add the two corrections */
+  if (dadd(NP_MG(theNP),level,level,ALL_VECTORS,x,np->t) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* damp */
   if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* update defect */
   if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK) NP_RETURN(1,result[0]);
-
-  /* now add the two corrections */
-  if (dadd(NP_MG(theNP),level,level,ALL_VECTORS,x,np->t) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -4538,6 +4560,43 @@ static INT SetAutoDamp_Scalar (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VEC
   return(0);
 }
 
+static INT SetAutoDamp_Test (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
+{
+  INT i,n,comp,rtype;
+  SHORT *advcomp;
+  VECTOR *v;
+  MATRIX *m;
+  DOUBLE diag,sum_1,sum_2,sum;
+
+  advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
+  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+  {
+    if (VECSKIP(v)) continue;
+    for (i=0; i<n; i++)
+    {
+      /* prepare */
+      comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,i*(n+1));
+
+      /* calculate approximate-inverse diagonal */
+      sum_1=0.0;
+      sum_2=0.0;
+      for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+        if (VINDEX(v)>MDESTINDEX(m) && !VECSKIP(MDEST(m)))
+          sum_1+=0.5*ABS(MVALUE(m,comp)-MVALUE(MADJ(m),comp));
+        else if (VINDEX(v)<MDESTINDEX(m) && !VECSKIP(MDEST(m)))
+          sum_2+=0.5*ABS(MVALUE(m,comp)-MVALUE(MADJ(m),comp));
+      sum=0.5*(sum_1+sum_2);
+      diag=0.5*MVALUE(VSTART(v),comp)+sum;
+
+      /* set diag via auto-damp omega */
+      if (MVALUE(VSTART(v),comp)*diag==0.0) return(1);
+      VVALUE(v,advcomp[i])=MVALUE(VSTART(v),comp)/diag;
+    }
+  }
+
+  return(0);
+}
+
 static INT SetAutoDamp_HZ (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
 {
   INT i,n,comp,rtype;
@@ -4618,6 +4677,9 @@ static INT SetAutoDamp (NP_ITER *theNP, GRID *g, INT mode, MATDATA_DESC *A, cons
   case 4 :
     r=SetAutoDamp_HZ(g,A,damp,adv);
     break;
+  case 5 :
+    r=SetAutoDamp_Test(g,A,damp,adv);
+    break;
   default :
     r=1;
     if (mode<0)
@@ -4690,12 +4752,13 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
 
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,myMat,result)) NP_RETURN(1,result[0]);
-  if (l_setindex(theGrid))
-    if (np->AutoDamp)
-    {
-      if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
-      if (SetAutoDamp(theNP,theGrid,np->AutoDamp,myMat,np->damp,np->DampVector)) NP_RETURN(1,result[0]);
-    }
+  if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
+  if (np->AutoDamp)
+  {
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
+    if (SetAutoDamp(theNP,theGrid,np->AutoDamp,myMat,np->damp,np->DampVector)) NP_RETURN(1,result[0]);
+    DPrintVector(MYMG(theGrid),np->DampVector);
+  }
   *baselevel = level;
 
   return (0);
@@ -9672,6 +9735,397 @@ static INT MIConstruct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   sp - numproc for investigation  of  smoothing property
+
+   DESCRIPTION:
+   This numproc iterates x <-- A*S^nu, where A is the system matrix and S an iterator
+
+   .vb
+   npinit <name>
+   .ve
+
+   .  $d~<dummy> - correction vector
+
+   SEE ALSO:
+   ls
+   D*/
+/****************************************************************************/
+
+static INT SPInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_SP *np = (NP_SP *) theNP;
+  char option[16],buffer[256];
+  INT ret;
+
+  /* base class initialization */
+  ret=NPIterInit(&np->iter,argc,argv);
+
+  /* initialization for 'executable' */
+  if (ReadArgvDOUBLE("tol",&(np->tol),argc,argv)) { np->tol=-1.0; ret=NP_ACTIVE; }
+  if (ReadArgvINT("n",&(np->maxiter),argc,argv)) { np->maxiter=-1; ret=NP_ACTIVE; }
+  if (np->maxiter<1) { np->maxiter=-1; ret=NP_ACTIVE; }
+
+  /* initialization for 'active' */
+  if (ReadArgvINT("nu",&(np->nu),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (np->nu<0) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvChar("I",buffer,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->S=(NP_ITER *)GetNumProcByName(theNP->mg,buffer,ITER_CLASS_NAME);
+  if (ReadArgvChar("mode",buffer,argc,argv))
+  {
+    PrintErrorMessage('E',"SPInit","specify mode");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  np->mode=SP_NOTINIT;
+  if (strcmp(buffer,"oms")==0) np->mode=SP_OMS;
+  if (strcmp(buffer,"a")==0) np->mode=SP_A;
+  if (strcmp(buffer,"o")==0) np->mode=SP_O;
+  if (np->mode==SP_NOTINIT)
+  {
+    PrintErrorMessage('E',"SPInit","wrong mode specification");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+
+  return (ret);
+}
+
+static INT SPDisplay (NP_BASE *theNP)
+{
+  char option[16];
+  NP_SP *np = (NP_SP *) theNP;
+
+  NPIterDisplay(&np->iter);
+
+  if (np->tol>=0.0) UserWriteF(DISPLAY_NP_FORMAT_SF,"tol",np->tol);
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"tol","---");
+  if (np->maxiter>=0) UserWriteF(DISPLAY_NP_FORMAT_SI,"n",np->maxiter);
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"n","---");
+
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"nu",(int)np->nu);
+  if (np->S != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"I",ENVITEM_NAME(np->S));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"I","---");
+  if (np->mode==SP_NOTINIT) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","---");
+  if (np->mode==SP_OMS) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","oms");
+  if (np->mode==SP_A) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","a");
+  if (np->mode==SP_O) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","o");
+
+  return (0);
+}
+
+static INT SPPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_SP *np = (NP_SP *) theNP;
+
+  if (np->S->PreProcess!=NULL)
+    if ((*np->S->PreProcess)(np->S,level,x,b,A,baselevel,result)) REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+static INT SP (NP_ITER *theNP, INT level, VECDATA_DESC *c, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_SP *np = (NP_SP *) theNP;
+  INT i;
+
+  if (AllocVDFromVD(NP_MG(theNP),level,level,c,&np->t)) NP_RETURN(1,result[0]);
+  for (i=0; i<np->nu; i++)
+  {
+    if (dmatmul(NP_MG(theNP),level,level,ALL_VECTORS,np->t,A,b)!=NUM_OK) NP_RETURN(1,result[0]);
+    if ((*np->S->Iter)(np->S,level,c,np->t,A,result)) NP_RETURN(1,result[0]);
+    if (daxpy(NP_MG(theNP),level,level,ALL_VECTORS,b,-1.0,c)!=NUM_OK) NP_RETURN(1,result[0]);
+  }
+  if (np->mode==SP_OMS)
+  {
+    if (dmatmul(NP_MG(theNP),level,level,ALL_VECTORS,np->t,A,b)!=NUM_OK) NP_RETURN(1,result[0]);
+    if ((*np->S->Iter)(np->S,level,c,np->t,A,result)) NP_RETURN(1,result[0]);
+    if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,b,c)!= NUM_OK) REP_ERR_RETURN (1);
+  }
+  else if (np->mode==SP_A)
+  {
+    if (dmatmul(NP_MG(theNP),level,level,ALL_VECTORS,np->t,A,b)!=NUM_OK) NP_RETURN(1,result[0]);
+    if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,b,np->t)!= NUM_OK) REP_ERR_RETURN (1);
+  }
+  else if (np->mode==SP_O)
+  {}
+  else REP_ERR_RETURN (1);
+
+  if (FreeVD(NP_MG(theNP),level,level,np->t)) NP_RETURN(1,result[0]);
+  if (dset(NP_MG(theNP),level,level,ALL_VECTORS,c,0.0)!= NUM_OK) NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT SPPostProcess (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_SP *np = (NP_SP *) theNP;
+
+  if (np->S->PostProcess!=NULL)
+    if ((*np->S->PostProcess)(np->S,level,x,b,A,result)) REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+INT SPExecute (NP_BASE *theNP, INT argc , char **argv)
+{
+  INT i,level,baselevel,result;
+  NP_ITER *npiter=(NP_ITER *)theNP;
+  NP_SP *np = (NP_SP *) theNP;
+  DOUBLE sp,real,imag,norm_old,norm,s11,s12,s21,s22,a,b;
+  char text[DISPLAY_WIDTH+4];
+  VECDATA_DESC *x1,*x2,*s1,*s2;
+
+  /* prepare */
+  CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'@',"\n"); UserWriteF("\n%s",text);
+  level = CURRENTLEVEL(theNP->mg);
+  if (SPPreProcess(npiter,level,npiter->c,npiter->b,npiter->A,&baselevel,&result)) REP_ERR_RETURN (1);
+  if (dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,npiter->b,&norm)!=NUM_OK) REP_ERR_RETURN (1);
+  if (norm==0.0) REP_ERR_RETURN (1);
+  if (dscal(NP_MG(theNP),level,level,ALL_VECTORS,npiter->b,1.0/norm)) REP_ERR_RETURN (1);
+
+  /* allocate vectors and initialize */
+  x1=NULL;
+  if (AllocVDFromVD(NP_MG(theNP),level,level,npiter->c,&x1)) REP_ERR_RETURN (1);
+  if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,x1,npiter->b)!= NUM_OK) REP_ERR_RETURN (1);
+  x2=NULL;
+  if (AllocVDFromVD(NP_MG(theNP),level,level,npiter->c,&x2)) REP_ERR_RETURN (1);
+  if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,x2,x1)!= NUM_OK) REP_ERR_RETURN (1);
+  if (SP(npiter,level,npiter->c,x2,npiter->A,&result)) REP_ERR_RETURN (1);
+  if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,x1,x2,&sp)!=NUM_OK) REP_ERR_RETURN (1);
+  if (daxpy(NP_MG(theNP),level,level,ALL_VECTORS,x2,-sp,x1)!=NUM_OK) REP_ERR_RETURN (1);
+  if (dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,x2,&norm)!=NUM_OK) REP_ERR_RETURN (1);
+  if (norm==0.0) REP_ERR_RETURN (1);
+  if (dscal(NP_MG(theNP),level,level,ALL_VECTORS,x2,1.0/norm)) REP_ERR_RETURN (1);
+  s1=NULL;
+  if (AllocVDFromVD(NP_MG(theNP),level,level,npiter->c,&s1)) REP_ERR_RETURN (1);
+  s2=NULL;
+  if (AllocVDFromVD(NP_MG(theNP),level,level,npiter->c,&s2)) REP_ERR_RETURN (1);
+
+  /* go */
+  real=imag=0.0;
+  for (i=1; i<=np->maxiter; i++)
+  {
+    /* iterate 2-dim-subspace */
+    if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,s1,x1)!= NUM_OK) REP_ERR_RETURN (1);
+    if (SP(npiter,level,npiter->c,s1,npiter->A,&result)) REP_ERR_RETURN (1);
+    if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,s2,x2)!= NUM_OK) REP_ERR_RETURN (1);
+    if (SP(npiter,level,npiter->c,s2,npiter->A,&result)) REP_ERR_RETURN (1);
+
+    /* solve reduced eigen-value problem */
+    if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,x1,s1,&s11)!=NUM_OK) REP_ERR_RETURN (1);
+    if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,x1,s2,&s12)!=NUM_OK) REP_ERR_RETURN (1);
+    if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,x2,s1,&s21)!=NUM_OK) REP_ERR_RETURN (1);
+    if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,x2,s2,&s22)!=NUM_OK) REP_ERR_RETURN (1);
+
+    norm_old=sqrt(real*real+imag*imag);
+    a=0.5*(s11+s22);
+    b=0.25*(s11-s22)*(s11-s22)+s12*s21;
+    if (b>0.0)
+    {
+      if (a>=0.0) real=a+sqrt(b);
+      else real=a-sqrt(b);
+      imag=0.0;
+    }
+    else
+    {
+      real=a;
+      imag=sqrt(-b);
+    }
+    norm=sqrt(real*real+imag*imag);
+    UserWriteF(" %-3d  %c: %-12.7e   %-12.7e   %-12.7e\n",i,'e',real,imag,norm);
+    if (ABS(norm-norm_old)<np->tol*norm) { i++; break; }
+
+    /* update subspace */
+    if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,x1,s1)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,x1,&norm)!=NUM_OK) REP_ERR_RETURN (1);
+    if (norm==0.0) REP_ERR_RETURN (1);
+    if (dscal(NP_MG(theNP),level,level,ALL_VECTORS,x1,1.0/norm)) REP_ERR_RETURN (1);
+    if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,x2,s2)!= NUM_OK) REP_ERR_RETURN (1);
+    if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,x1,x2,&sp)!=NUM_OK) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),level,level,ALL_VECTORS,x2,-sp,x1)!=NUM_OK) REP_ERR_RETURN (1);
+    if (dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,x2,&norm)!=NUM_OK) REP_ERR_RETURN (1);
+    if (norm==0.0) REP_ERR_RETURN (1);
+    if (dscal(NP_MG(theNP),level,level,ALL_VECTORS,x2,1.0/norm)) REP_ERR_RETURN (1);
+  }
+
+  if (FreeVD(NP_MG(theNP),level,level,x1)) REP_ERR_RETURN (1);
+  if (FreeVD(NP_MG(theNP),level,level,x2)) REP_ERR_RETURN (1);
+  if (FreeVD(NP_MG(theNP),level,level,s1)) REP_ERR_RETURN (1);
+  if (FreeVD(NP_MG(theNP),level,level,s2)) REP_ERR_RETURN (1);
+
+  norm=sqrt(real*real+imag*imag);
+  UserWriteF("\n");
+  UserWriteF(" %-3d  %c: %-12.7e   %-12.7e   %-12.7e\n\n",i-1,'r',real,imag,norm);
+
+  if (SPPostProcess(npiter,level,npiter->c,npiter->b,npiter->A,&result)) return (1);
+
+  return(0);
+}
+
+static INT SPConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np = (NP_ITER *) theNP;
+
+  theNP->Init = SPInit;
+  theNP->Display = SPDisplay;
+  theNP->Execute = SPExecute;
+  np->PreProcess = SPPreProcess;
+  np->Iter = SP;
+  np->PostProcess = SPPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   im - calculates iteration matrix of an iteration, usefull only for small matrices
+
+   DESCRIPTION:
+   This numproc calculates iteration matrix of an iteration and writes it to file, scilab format
+
+   .vb
+   npinit <name>
+   .ve
+
+   .  $d~<dummy> - correction vector
+
+   SEE ALSO:
+   ls
+   D*/
+/****************************************************************************/
+
+static INT IMInit (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_IM *np=(NP_IM*)theNP;
+  char buffer[256];
+  INT n,vtype,ncomp;
+
+  np->A = ReadArgvMatDesc(theNP->mg,"A",argc,argv);
+  if (np->A==NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->x = ReadArgvVecDesc(theNP->mg,"x",argc,argv);
+  if (np->x==NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  for (vtype=0,ncomp=0; vtype<NVECTYPES; vtype++)
+  {
+    n=VD_NCMPS_IN_TYPE(np->x,vtype);
+    if (n==0) continue;
+    np->xc=VD_CMP_OF_TYPE(np->x,vtype,0);
+    ncomp+=n;
+  }
+  if (ncomp!=1) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->S=NULL;
+  if (ReadArgvChar("I",buffer,argc,argv)==0)
+    np->S=(NP_ITER *)GetNumProcByName(theNP->mg,buffer,ITER_CLASS_NAME);
+  if (ReadArgvINT("s",&(np->skip),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvChar ("file",np->file,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+
+  return(NP_EXECUTABLE);
+}
+
+static INT IMDisplay (NP_BASE *theNP)
+{
+  NP_IM *np = (NP_IM*)theNP;
+
+  if (np->S != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"I",ENVITEM_NAME(np->S));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"I","---");
+  if (np->A != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"A",ENVITEM_NAME(np->A));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"A","---");
+  if (np->x != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"x","---");
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"s",(int)np->skip);
+  UserWriteF(DISPLAY_NP_FORMAT_SS,"file",np->file);
+
+  return (0);
+}
+
+INT IMExecute (NP_BASE *theNP, INT argc , char **argv)
+{
+  INT nv,vtype,bc,n,ncomp,i,j,level,baselevel,result,MarkKey;
+  NP_IM *np = (NP_IM*)theNP;
+  VECDATA_DESC *b,*Ax;
+  VECTOR *v,*w;
+  GRID *g;
+  HEAP *Heap;
+  DOUBLE *Mat;
+  char buffer[128];
+  FILE *file;
+
+  level = CURRENTLEVEL(theNP->mg);
+  g = GRID_ON_LEVEL(theNP->mg,level);
+  Heap=MGHEAP(theNP->mg);
+  MarkTmpMem(Heap,&MarkKey);
+  for (v=FIRSTVECTOR(g),i=0; v!=NULL; v=SUCCVC(v)) if (np->skip*VECSKIP(v)==0) i++;
+  nv=i;
+  Mat=(DOUBLE*)GetTmpMem(Heap,sizeof(DOUBLE)*nv*nv,MarkKey);
+  b=NULL; if (AllocVDFromVD(NP_MG(theNP),0,level,np->x,&b)) REP_ERR_RETURN (1);
+  Ax=NULL; if (AllocVDFromVD(NP_MG(theNP),0,level,np->x,&Ax)) REP_ERR_RETURN (1);
+  for (vtype=0,ncomp=0; vtype<NVECTYPES; vtype++)
+  {
+    n=VD_NCMPS_IN_TYPE(b,vtype);
+    if (n==0) continue;
+    bc=VD_CMP_OF_TYPE(b,vtype,0);
+    ncomp+=n;
+  }
+  if (ncomp!=1) REP_ERR_RETURN(1);
+  if (np->S!=NULL) if (np->S->PreProcess!=NULL) if ((*np->S->PreProcess)(np->S,level,np->x,b,np->A,&baselevel,&result)) REP_ERR_RETURN(1);
+  if (dset(NP_MG(theNP),level,level,ALL_VECTORS,np->x,0.0)!= NUM_OK) REP_ERR_RETURN(1);
+  if (np->S!=NULL)
+    for (v=FIRSTVECTOR(g),j=0; v!=NULL; v=SUCCVC(v))
+    {
+      if (np->skip*VECSKIP(v)!=0) continue;
+      VVALUE(v,np->xc)=1.0;
+      if (dmatmul(NP_MG(theNP),level,level,ALL_VECTORS,Ax,np->A,np->x)!=NUM_OK) REP_ERR_RETURN(1);
+      if ((*np->S->Iter)(np->S,level,b,Ax,np->A,&result)) REP_ERR_RETURN(1);
+      for (w=FIRSTVECTOR(g),i=0; w!=NULL; w=SUCCVC(w))
+        if (np->skip*VECSKIP(w)==0)
+        {
+          if (w==v) Mat[nv*i+j]=1.0-VVALUE(w,bc);
+          else Mat[nv*i+j]=   -VVALUE(w,bc);
+          i++;
+        }
+      VVALUE(v,np->xc)=0.0;
+      j++;
+    }
+  else
+    for (v=FIRSTVECTOR(g),j=0; v!=NULL; v=SUCCVC(v))
+    {
+      if (np->skip*VECSKIP(v)!=0) continue;
+      VVALUE(v,np->xc)=1.0;
+      if (dmatmul(NP_MG(theNP),level,level,ALL_VECTORS,b,np->A,np->x)!=NUM_OK) REP_ERR_RETURN(1);
+      for (w=FIRSTVECTOR(g),i=0; w!=NULL; w=SUCCVC(w))
+        if (np->skip*VECSKIP(w)==0)
+        {
+          Mat[nv*i+j]=VVALUE(w,bc);
+          i++;
+        }
+      VVALUE(v,np->xc)=0.0;
+      j++;
+    }
+  if (j!=nv) REP_ERR_RETURN(1);
+  if (np->S!=NULL) if (np->S->PostProcess!=NULL) if ((*np->S->PostProcess)(np->S,level,np->x,b,np->A,&result)) REP_ERR_RETURN(1);
+  if (FreeVD(NP_MG(theNP),0,level,b)) REP_ERR_RETURN (1);
+  if (FreeVD(NP_MG(theNP),0,level,Ax)) REP_ERR_RETURN (1);
+  file=fopen(np->file,"w"); if (file==NULL) REP_ERR_RETURN(1);
+  for (i=0; i<nv; i++)
+  {
+    for (j=0; j<nv; j++)
+      fprintf(file,"%e ",Mat[nv*i+j]);
+    fprintf(file,"\n");
+  }
+  fclose(file);
+  ReleaseTmpMem(Heap,MarkKey);
+
+  return(0);
+}
+
+static INT IMConstruct (NP_BASE *theNP)
+{
+  theNP->Init = IMInit;
+  theNP->Display = IMDisplay;
+  theNP->Execute = IMExecute;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitIter	- Init this file
 
@@ -9759,11 +10213,10 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".exprj",sizeof(NP_EXPRJ),
                   EXPRJConstruct))
     REP_ERR_RETURN (__LINE__);
-  if (CreateClass(ITER_CLASS_NAME ".calibrate",sizeof(NP_CALIBRATE),
-                  CalibrateConstruct))
-    REP_ERR_RETURN (__LINE__);
-  if (CreateClass(ITER_CLASS_NAME ".mi",sizeof(NP_MI),MIConstruct))
-    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".calibrate",sizeof(NP_CALIBRATE),CalibrateConstruct)) REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".mi",sizeof(NP_MI),MIConstruct)) REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".sp",sizeof(NP_SP),SPConstruct)) REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".im",sizeof(NP_SP),IMConstruct)) REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
 
