@@ -14,7 +14,7 @@ ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lc -lm
 
-ARCH_CFLAGS   = -I /usr/include/mpp   # -g 
+ARCH_CFLAGS   = -I /usr/include/mpp -O   # -g 
 #ARCH_CFLAGS  = -hinline3,scalar3
 #ARCH_CFLAGS  = -g
 #ARCH_CFLAGS  = -hinline2,scalar2
