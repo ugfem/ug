@@ -43,9 +43,6 @@
 #include "compiler.h"
 #endif
 
-#ifndef __UGTYPES2__
-/* #include "ugtypes2.h" */
-#endif
 #ifndef __GM_H__
 #include "gm.h"
 #endif

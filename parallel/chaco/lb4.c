@@ -57,7 +57,6 @@
 #include <assert.h>
 
 #include "compiler.h"
-/* #include "ugtypes2.h" */
 #include "heaps.h"
 #include "ugenv.h"
 #include "misc.h"
