@@ -407,21 +407,17 @@ static INT NLSmootherInit (NP_BASE *theNP, INT argc , char **argv)
   return (NPNLIterInit(&np->iter,argc,argv));
 }
 
-static INT NLSmootherDisplay (NP_BASE *theNP)
+static INT NLSmootherDisplay (NP_NL_SMOOTHER *theNP)
 {
-  NP_NL_SMOOTHER *np;
-
-  np = (NP_NL_SMOOTHER *) theNP;
-
-  NPNLIterDisplay(&np->iter);
+  NPNLIterDisplay(&theNP->iter);
   UserWrite("configuration parameters:\n");
-  if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
-  if (np->c != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->c));
-  if (np->L != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
+  if (sc_disp(theNP->damp,theNP->iter.b,"damp")) REP_ERR_RETURN (1);
+  if (theNP->c != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(theNP->c));
+  if (theNP->L != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(theNP->L));
     #ifdef ModelP
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"cons_mode",(int)np->cons_mode);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"cons_mode",(int)theNP->cons_mode);
         #endif
 
   return (0);
