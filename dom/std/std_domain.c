@@ -1235,6 +1235,34 @@ INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 
 /****************************************************************************/
 /*D
+   BVP_Check - check consistency of BVP
+
+   SYNOPSIS:
+   INT BVP_Check (BVP *aBVP);
+
+   PARAMETERS:
+   .  aBVP - BVP structure
+   .  CheckResult - 0 if ok, 1 if error detected
+
+   DESCRIPTION:
+   This function checks consistency of BVP
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error.
+   D*/
+/****************************************************************************/
+
+INT BVP_Check (BVP *aBVP)
+{
+  UserWrite("BVP_Check: not implemented\n");
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    BVP_InsertBndP - sets a BNDP from command input
 
    SYNOPSIS:
