@@ -1234,7 +1234,7 @@ int MergeMultigrid (char *in, int rename)
   printf("\n");
 #endif
 
-  close(stream);
+  fclose(stream);
 
   /* display memory requirements */
   if (ht_malloc_display()) return (1);
