@@ -977,8 +977,8 @@ WINDOWID X11_OpenOutput (const char *title, INT x, INT y, INT width, INT height,
   *error = 0;
 
   /* create GraphWindow structure */
-  gw = malloc(sizeof(GraphWindow));
-  if (gw==NULL) return(NULL);
+  gw = (GraphWindow *) malloc(sizeof(GraphWindow));
+  if (gw==NULL) return((WINDOWID) NULL);
   gw->next = windowList;
   windowList = gw;
 
