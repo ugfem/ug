@@ -173,7 +173,7 @@ EVALUES *GetElementValueEvalProc (const char *name)
 }
 
 /****************************************************************************/
-/*D
+/*
    GetFirstElementValueEvalProc - Get the first element eval proc
 
    SYNOPSIS:
@@ -188,7 +188,7 @@ EVALUES *GetElementValueEvalProc (const char *name)
    EVALUES *
    .n      pointer to EVALUES
    .n      NULL if there is no
-   D*/
+ */
 /****************************************************************************/
 
 EVALUES *GetFirstElementValueEvalProc (void)
@@ -204,14 +204,14 @@ EVALUES *GetFirstElementValueEvalProc (void)
 }
 
 /****************************************************************************/
-/*D
+/*
    GetNextElementValueEvalProc - Get the next element eval proc
 
    SYNOPSIS:
    EVALUES *GetNextElementValueEvalProc (EVALUES *EvalProc);
 
    PARAMETERS:
-   .  EvalProc -
+   .  EvalProc - evaluation procedure
 
    DESCRIPTION:
    This function gets the next 'EVALUES' in the element-eval-proc-list
@@ -220,7 +220,7 @@ EVALUES *GetFirstElementValueEvalProc (void)
    EVALUES *
    .n      pointer to EVALUES *
    .n      NULL if there is no
-   D*/
+ */
 /****************************************************************************/
 
 EVALUES *GetNextElementValueEvalProc (EVALUES *EvalProc)
