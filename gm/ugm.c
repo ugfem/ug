@@ -7017,17 +7017,24 @@ void ListGrids (const MULTIGRID *theMG)
   heap = HeapFreelistUsed(MGHEAP(theMG));
   used = HeapUsed(MGHEAP(theMG)) - heap;
   free = HeapSize(MGHEAP(theMG)) - used;
-#ifdef MEM_SIZE_ULL
+    #ifdef MEM_SIZE_ULL
   if (heap == 0)
     UserWriteF("\n%llu bytes used out of %d allocated\n",used,used+free);
   else
     UserWriteF("\n%llu ( %llu + %llu ) bytes used out of %llu allocated\n",used+heap,used,heap,used+free);
-#else
+    #else
   if (heap == 0)
     UserWriteF("\n%lu bytes used out of %d allocated\n",used,used+free);
   else
-    UserWriteF("\n%lu ( %lu + %lu ) bytes used out of %lu allocated\n",used+heap,used,heap,used+free);
-#endif
+    UserWriteF("\n%lu ( %lu + %lu ) bytes used out of %lu allocated\n",
+               used+heap,used,heap,used+free);
+    #endif
+
+    #ifdef ModelP
+  used = used + heap;
+  used = UG_GlobalMaxINT(used);
+  UserWriteF("%lu bytes used on some processor\n",used);
+    #endif
 }
 
 /****************************************************************************/
