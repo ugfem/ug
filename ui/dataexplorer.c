@@ -557,6 +557,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   /* allocate memory for mapping */
   heap = mg->theHeap;
   MarkTmpMem(heap, &key);
+  /* FIXME: false assumption that for n vertices ids are from 0..n-1 */
   Id2Position = (INT *)GetTmpMem(heap, numVertices*sizeof(INT), key);
   if (Id2Position == NULL) {
     ReleaseTmpMem(heap, key);
