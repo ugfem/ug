@@ -89,6 +89,7 @@
 
 typedef struct {
   INT n;
+  INT SubdomainID;
   NODE *theNode[4];
   VERTEX *theVertex[4];
   ELEMENT *theNeighbour[4];
@@ -322,7 +323,7 @@ static INT HandleSubdomain (INDEPFRONTLIST *theIFL, NODE **Nodes,
     /* check if closed */
     if (node_id[j][orientation] == id)
     {
-      theFL = CreateFrontList(theIFL);
+      theFL = CreateFrontList(theIFL,SubdomainID);
       if (CreateFrontComp (theFL, NULL, cnt, NodeHandle)==NULL)
       {
         PrintErrorMessage('E',"HandleSubdomain","no storage for FC list");
@@ -1802,7 +1803,7 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
       PrintErrorMessage('E',"FrontLineUpDate","no storage for new IFL");
       return (1);
     }
-    thenewFL = CreateFrontList (thenewIFL);
+    thenewFL = CreateFrontList (thenewIFL,myList->SubdomainID);
     if (thenewFL==NULL)
     {
       PrintErrorMessage('E',"FrontLineUpDate","no storage for new FL");
@@ -1941,11 +1942,11 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
     NeighborSide[i] = theElementContext->Neighbourside[i];
   }
 
-  InsertElement (MYMG(theGrid),n,Node,Neighbor,NeighborSide);
-  /* alternativ O(N*N): InsertElement (MYMG(theGrid),n,Node,NULL,NULL);*/
-
-  theElement = LASTELEMENT(theGrid);
+  theElement = InsertElement (MYMG(theGrid),n,Node,Neighbor,NeighborSide);
+  SETPROP(theElement,theElementContext->SubdomainID);
   theElementContext->thenewElement = theElement;
+
+  /* alternativ O(N*N): InsertElement (MYMG(theGrid),n,Node,NULL,NULL);*/
 
   /* plot */
 
@@ -2075,6 +2076,7 @@ static FRONTCOMP *CreateOrSelectFC (
   ELEMENT_CONTEXT *theElementContext)
 {
   FRONTCOMP *thenewFC;
+  NODE *theNode;
   VERTEX *theVertex;
   COORD_VECTOR pos;
 
@@ -2137,10 +2139,11 @@ static FRONTCOMP *CreateOrSelectFC (
   /* create a new FC including node and vertex */
   pos[0] = xt[2];
   pos[1] = yt[2];
-  if (InsertInnerNode (MYMG(theGrid),pos) != GM_OK)
+  theNode = InsertInnerNode (MYMG(theGrid),pos);
+  if (theNode == NULL)
     return(NULL);
 
-  thenewFC = CreateFrontComp (myList, theFC, 1, &LASTNODE(theGrid));
+  thenewFC = CreateFrontComp (myList, theFC, 1, &theNode);
   if (thenewFC==NULL)
   {
     PrintErrorMessage('E',"CreateOrSelectFC","no storage for new FC");
@@ -2173,7 +2176,7 @@ static int FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContex
   theElementContext->theVertex[1] = (MYVERTEX(FRONTN(the_old_succ)));
   theElementContext->theVertex[2] = (MYVERTEX(FRONTN(thenewFC)));
 
-
+  theElementContext->SubdomainID = theFC->myFL->SubdomainID;
 
   switch (FlgForAccel)
   {

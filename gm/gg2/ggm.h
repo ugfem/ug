@@ -109,7 +109,8 @@ struct frontlist {
   struct frontlist *succfl,*predfl;      /* double linked list of front lists	*/
   GRID *myGrid;                                         /* pointer to my grid					*/
   struct indepfrontlist *myIFL;         /* pointer to my indep. front list		*/
-  int orientation;                                      /* MATHPOS or MATHNEG					*/
+  INT orientation;                                      /* MATHPOS or MATHNEG					*/
+  INT SubdomainID;
   struct frontcomp *startfc;                    /* entry to front the component list	*/
   struct frontcomp *lastfc;                     /* entry to front the component list	*/
   long int nFrontcomp;                          /* # of front components in this list	*/
@@ -165,7 +166,7 @@ typedef struct {
 
 INT                     SetFlagsfortemporaryGGObjects(INT IflObject,INT FlObject,INT FcObject);
 INDEPFRONTLIST  *CreateIndepFrontList   (GRID *theGrid);
-FRONTLIST               *CreateFrontList                (INDEPFRONTLIST *theIFL);
+FRONTLIST               *CreateFrontList                (INDEPFRONTLIST *theIFL, INT SubdomainID);
 FRONTCOMP               *CreateFrontComp                (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE **NodeHandle);
 
 INT DisposeADVfront                     (GRID *theGrid);

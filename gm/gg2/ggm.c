@@ -163,7 +163,7 @@ INDEPFRONTLIST *CreateIndepFrontList (GRID *theGrid)
 /*                                                                          */
 /****************************************************************************/
 
-FRONTLIST *CreateFrontList (INDEPFRONTLIST *myIFL)
+FRONTLIST *CreateFrontList (INDEPFRONTLIST *myIFL, INT SubdomainID)
 {
   FRONTLIST *pfl;
 
@@ -178,6 +178,7 @@ FRONTLIST *CreateFrontList (INDEPFRONTLIST *myIFL)
   NFC(pfl) = 0;
   MYGRID(pfl) = MYGRID(myIFL);
   MYIFL(pfl)   = myIFL;
+  pfl->SubdomainID = SubdomainID;
 
   /* insert in myIFL at begin of myIFL */
   SUCCFL(pfl) = STARTFL(myIFL);
