@@ -746,23 +746,19 @@ D*/
 /****************************************************************************/
 
 #ifdef ModelP
-INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
+static INT l_vector_average (GRID *g, const VECDATA_DESC *x)
 {
 	VECTOR *v;
-	INT vc,i,type,mask,m,n;
+	DOUBLE fac;
+	INT vc,i,type,mask,n;
 	const SHORT *Comp;	
 
-    if (l_vector_collect(g,x) != NUM_OK)
-	    REP_ERR_RETURN(NUM_ERROR);
-	
 	if (VD_IS_SCALAR(x)) {
         mask = VD_SCALTYPEMASK(x);
 		vc = VD_SCALCMP(x);
 		for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) 
-		    if (mask & VDATATYPE(v)) {
-			    m = DDD_InfoNCopies(PARHDR(v)) + 1;
-			    VVALUE(v,vc) *= 1.0 / m;
-			}
+		    if (mask & VDATATYPE(v)) 
+			    VVALUE(v,vc) *= 1.0 / (DDD_InfoNCopies(PARHDR(v)) + 1.0);
 	}
 	else 
 	    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) {
@@ -770,12 +766,31 @@ INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 		  n = VD_NCMPS_IN_TYPE(x,type);
 		  if (n == 0) continue;
 		  Comp = VD_CMPPTR_OF_TYPE(x,type);
-		  m = DDD_InfoNCopies(PARHDR(v)) + 1;
-		  for (i=0; i<VD_NCMPS_IN_TYPE(x,type); i++)
-		      VVALUE(v,Comp[i]) *= 1.0 / m;
+		  fac = 1.0 / (DDD_InfoNCopies(PARHDR(v)) + 1.0);
+		  for (i=0; i<n; i++)
+		      VVALUE(v,Comp[i]) *= fac;
 		}
 
-	return (l_vector_consistent(g,x));
+	return(NUM_OK);
+}
+
+INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
+{
+    INT tp,m; 
+
+    ConsVector = (VECDATA_DESC *)x;
+
+	m = 0;
+	for (tp=0; tp<NVECTYPES; tp++)
+	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+	DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), m * sizeof(DOUBLE),
+					Gather_VectorComp, Scatter_VectorComp);
+
+    if (l_vector_average(g,x) != NUM_OK)
+	    REP_ERR_RETURN(NUM_ERROR);
+
+	return (NUM_OK);
 }
 #endif
 
@@ -805,11 +820,25 @@ D*/
 #ifdef ModelP
 INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
-    INT level; 
+    INT level,tp,m; 
+
+    ConsVector = (VECDATA_DESC *)x;
+
+	m = 0;
+	for (tp=0; tp<NVECTYPES; tp++)
+		m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+	if ((fl==0) && (tl==TOPLEVEL(mg)))
+		DDD_IFExchange(BorderVectorSymmIF, m * sizeof(DOUBLE),
+					   Gather_VectorComp, Scatter_VectorComp);
+	else
+		for (level=fl; level<=tl; level++) 
+			DDD_IFAExchange(BorderVectorSymmIF, level, m * sizeof(DOUBLE),
+							Gather_VectorComp, Scatter_VectorComp);
 
 	for (level=fl; level<=tl; level++) 
-	    if (l_vector_meanvalue(GRID_ON_LEVEL(mg,level),x))
-			return(NUM_ERROR);
+	    if (l_vector_average(GRID_ON_LEVEL(mg,level),x) != NUM_OK)
+		    REP_ERR_RETURN(NUM_ERROR);
 
 	return (NUM_OK);
 }
