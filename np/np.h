@@ -101,6 +101,7 @@
 #define DISPLAY_NP_LI_FORMAT_SSSSSS             "%-2s %-15.12s %-15.12s %-15.12s %-15.12s %-15.12s\n"
 #define DISPLAY_NP_FORMAT_S                     "%-16.13s = "
 #define DISPLAY_NP_FORMAT_SS                    "%-16.13s = %-35.32s\n"
+#define DISPLAY_NP_FORMAT_SSS                   "%-16.13s = %-15.12s %-15.12s\n"
 #define DISPLAY_NP_FORMAT_SF                    "%-16.13s = %-7.4g\n"
 #define DISPLAY_NP_FORMAT_SFF                   "%-16.13s = %-7.4g  %-7.4g\n"
 #define DISPLAY_NP_FORMAT_SFFF                  "%-16.13s = %-7.4g  %-7.4g  %-7.4g\n"
