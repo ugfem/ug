@@ -627,7 +627,7 @@ struct lgm_bnds {
   INT nn;
   struct lgm_surface *theSurf;                  /* surface										*/
         #ifdef NO_PROJECT
-  DOUBLE global[3][3];                                  /* global coordinates							*/
+  DOUBLE global[4][3];                                  /* global coordinates							*/
         #else
   DOUBLE local[3][2];                                           /* local coordinates							*/
         #endif
