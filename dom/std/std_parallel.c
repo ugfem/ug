@@ -167,7 +167,7 @@ void BVertexXferBndP (BNDP *bndp, int proc, int prio)
   PRINTDEBUG(dom,1,("  me %x %d pid %d n %d size %d\n",
                     me,bndp,BND_PATCH_ID(bndp),BND_N(bndp),BND_SIZE(bndp)));
 
-  DDD_XferAddData(size,DDD_USER_DATA);
+  DDD_XferAddData(size,DDD_DOMAIN_DATA);
 }
 
 void BVertexGatherBndP (BNDP *bndp, int cnt, char *data)
