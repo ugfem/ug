@@ -5244,8 +5244,17 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	EE2D_Property = 0;
 	if (theGpo->ElemColored==2)
 	{
+		#ifndef ModelP
 		EE2D_NProperty = MG_NPROPERTY(theMG);
-		if (EE2D_NProperty>0 && EE2D_NProperty<EE_MAX_PROP)
+		#else
+		EE2D_NProperty = procs;
+		#endif
+
+		if (EE2D_NProperty>0
+			#ifndef ModelP
+			&& EE2D_NProperty<EE_MAX_PROP
+			#endif
+			)
 		{
 		    EE2D_Property = 1;
 			for (i=0; i<=EE2D_NProperty; i++)
