@@ -23,6 +23,7 @@ sub max
 }
 
 # check dimension
+print "detect dimension ";
 $dim=2;
 open(IN,$ARGV[0]);
 while($line=<IN>)
@@ -32,9 +33,10 @@ while($line=<IN>)
 		$dim=3;
 		last;
 	}
+	print ".";
 }
 close(IN);
-print "dimension $dim detected\n";
+print " found $dim, run ".$dim."d-check\n";
 
 if ($dim==2)
 {
@@ -260,6 +262,7 @@ if ($dim==3)
 	}
 
     # get points
+	print "detecting points ";
     $m=0;
     while($line=<IN>)
     {
@@ -267,13 +270,15 @@ if ($dim==3)
         {
             $p[$m][0]=$1; $p[$m][1]=$2; $p[$m][2]=$3; $p_ref[$m]=0;
             $m++;
+			print ".";
         }
     }
     close(IN);
     if ($m<3) {print "ERROR: $m points detected\n";}
-    else {print "$m points detected\n";}
+    else {print " hmm, found $m\n";}
 
     # check point references
+	print "checking point references ";
     for ($i=0; $i<$s; $i++)
     {
         for ($j=0; $j<$nst[$i]; $j++)
@@ -289,19 +294,61 @@ if ($dim==3)
         if ($p_ref[$i]==0)
         {
             $err=1;
-            print "ERROR: point $i not referenced\n";
+            print "\nERROR: point $i not referenced\n";
         }
+		else
+		{
+			print ".";
+		}
     }
-    if (!$err) {$i=$m-1; print "point 0 ... $i referenced correctly\n";}
+    if (!$err) {$i=$m-1; print " ok\n";}
 
     # check subdomains
     $err=0; for ($i=0; $i<=$sd_max; $i++) {$sd_ref[$i]=0;}
     for ($i=0; $i<$s; $i++) {$sd_ref[$left[$i]]=1; $sd_ref[$right[$i]]=1;}
+	print "checking subdomain references fron surfaces ";
 	for ($i=0; $i<=$sd_max; $i++)
     {
         if (!$sd_ref[$i]) {print "ERROR: subdomain $i not referenced\n";$err=1;}
+		else {print ".";}
 	}
-    if (!$err) {print "subdomain 0 ... $sd_max: ok\n";}
+	print " ok\n";
+	print "checking line-references from surfaces of the subdomains ";
+	for ($i=0; $i<=$sd_max; $i++)
+	{
+		print ".";
+		for ($j=0; $j<$s; $j++)
+		{
+			if ($left[$j]!=$i && $right[$j]!=$i) {next;}
+			for ($k=0; $k<$nsl[$j]; $k++)
+			{
+				$line=$sl[$j][$k];
+				$surf_ref=0;
+				for ($j2=0; $j2<$s; $j2++)
+				{
+					if ($left[$j2]!=$i && $right[$j2]!=$i) {next;}
+					for ($k2=0; $k2<$nsl[$j2]; $k2++)
+					{
+						if ($sl[$j2][$k2]==$line)
+						{
+							$surf_ref_id[$surf_ref]=$j2;
+							$surf_ref++;
+						}
+					}
+				}
+				if ($surf_ref!=2) 
+				{
+					print "\nERROR: surface $j, line $line is referenced from $surf_ref surfaces of subdomain $i: (";
+					for ($j2=0; $j2<$surf_ref-1; $j2++)
+					{
+						print "$surf_ref_id[$j2], ";
+					}
+					print "$surf_ref_id[$surf_ref-1])"; $err=1;
+				}
+			}
+		}
+	}
+    if (!$err) {print " ok\n";}
 
     # output
     open(FULL,">gnu/full");
@@ -313,9 +360,40 @@ if ($dim==3)
             $idx=$lp[$i][$j];
             print FULL "$p[$idx][0] $p[$idx][1] $p[$idx][2];\n";
         }
-        print FULL "\n";
+        print FULL "\n\n";
     }
     close(FULL);
+    for ($i=0; $i<=$sd_max; $i++)
+    {
+        open(OUT,">gnu/sd$i");
+        for ($j=0; $j<$s; $j++)
+        {
+           	if ($left[$j]!=$i && $right[$j]!=$i) {next;}
+           	for ($k=0; $k<$nsl[$j]; $k++)
+			{
+				$line=$sl[$j][$k];
+            	for ($kk=0; $kk<$n[$line]; $kk++)
+            	{
+            	    $idx=$lp[$line][$kk];
+            	    print OUT "$p[$idx][0] $p[$idx][1] $p[$idx][2];\n";
+            	}
+            	print OUT "\n\n";
+			}
+        }
+        close(OUT);
+    }
+
+	# write README
+	open(README,">gnu/README");
+	print README '# to print output-file with gnuplot:'."\n";
+	print README '#'."\n";
+	print README '# gnuplot'."\n";
+	print README '# load "README"'."\n";
+	print README '# splot "full" w l'."\n";
+	print README '#'."\n";
+	print README '#'."\n";
+	print README 'set parametric;'."\n";
+	close(README);
 }
 
 
