@@ -41,11 +41,13 @@
 #include "debug.h"
 #include "wop.h"
 #include "wpm.h"
+#include "fileopen.h"
 #include "misc.h"
 #include "evm.h"
 #include "cw.h"
 #include "graph.h"
 #include "gm.h"
+#include "defaults.h"
 #include "ugm.h"
 #include "rm.h"
 #include "refine.h"
@@ -405,6 +407,8 @@ static INT NoOfViewableSides[64] =  {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,
 									1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
 									1,2,3,3,2,3,3,4,2,3,3,4,3,4,4,5,
 									2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6};
+
+static int gnuplotpathes_set;          /* pathes used in ug            */
 
 /* unit vectors */
 static DOUBLE				ex[3] = {1.0, 0.0, 0.0};
@@ -766,6 +770,8 @@ static DOUBLE		LINE2D_minCut;
 static DOUBLE		LINE2D_maxCut;
 static DOUBLE		LINE2D_xmin;
 static DOUBLE		LINE2D_xscl;
+static INT          LINE2D_GnuFile;
+static FILE *       LINE2D_GnuStream;
 
 /*---------- working variables of 'EW_EVector3D' ---------------------------*/
 #define RASTERPOINTS_MAX		200
@@ -4121,6 +4127,74 @@ static INT Draw2D (DRAWINGOBJ *q)
 	
 	return (0);
 }
+
+/****************************************************************************/
+/*
+   LineDraw2D - Draw content of a 2D Line drawing object 
+
+   SYNOPSIS:
+   static INT LineDraw2D (DRAWINGOBJ *q)
+
+   PARAMETERS:
+.  q - the drawing object
+
+   DESCRIPTION:
+   This function writes content of a 2D line drawing object.
+
+   RETURN VALUE:
+   INT
+
+   0 when ok
+
+   1 when error occured
+   */
+/****************************************************************************/
+
+static INT LineDraw2D (DRAWINGOBJ *q)
+{
+	INT j, n, centered, end, mode;
+	DOUBLE help[2],norm;
+	COORD_POINT a, b, point[MAX_POINTS_OF_POLY];
+	long color;
+
+	if (Draw2D(q)) RETURN(1);
+	if (!LINE2D_GnuFile) return (0);
+	
+#ifdef ModelP
+	if (me!=master) return (0);
+#endif
+
+	end = 0;
+	while (!end)
+	{
+		switch (DO_2c(q))
+		{
+			case DO_NO_INST:
+				end = 1;
+				break;
+			case DO_WAIT:
+				DO_inc(q);
+				UgWait(WAIT_001);
+				break;
+			case DO_RANGE:
+				DO_inc_RANGE(q);
+				break;
+			case DO_LINE:
+				DO_inc(q)
+				DO_inc(q);
+				fprintf (LINE2D_GnuStream,"%f %f;\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				DO_inc_n(q,2);
+				fprintf (LINE2D_GnuStream,"%f %f;\n\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				DO_inc_n(q,2);
+				break;
+			default:
+				RETURN(1);
+		}
+	}
+	
+	return (0);
+}
+
 
 /****************************************************************************/
 /*																			*/
@@ -7523,6 +7597,14 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 		Draw2D(WOP_DrawingObject);
 	}
 
+#ifdef ModelP
+	if (me==master)
+#endif
+	if (LINE2D_GnuFile  && W_ID(theWork)==DRAW_WORK)
+	{
+		if (fclose(LINE2D_GnuStream)==EOF) return (1);
+	}
+
 	return (0);
 }
 
@@ -8321,6 +8403,19 @@ static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 	if (theLpo->EvalFct->PreprocessProc!=NULL)
 		if ((*theLpo->EvalFct->PreprocessProc)(PO_NAME(theLpo),theMG)) 
 			return (1);
+
+	/* gnuplot-option */
+	LINE2D_GnuFile=0;
+#ifdef ModelP 
+	if (me==master)
+#endif
+	if (theLpo->Gnuplot && W_ID(theWork)==DRAW_WORK)
+	{
+		LINE2D_GnuFile=1;
+		if (gnuplotpathes_set) LINE2D_GnuStream=FileOpenUsingSearchPaths(theLpo->Gnufilename,"w","gnuplotpaths");
+		else LINE2D_GnuStream=fileopen(theLpo->Gnufilename,"w");
+		if (LINE2D_GnuStream==NULL) theLpo->Gnuplot=LINE2D_GnuFile=0;
+	}
 
 	return (0);
 }
@@ -21832,7 +21927,7 @@ INT InitWOP (void)
 		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_vert_fw_up_Proc;
 		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_fw_up_Proc;
 		theEWW->EW_EvaluateProc 				= EW_LineElement2D;
-		theEWW->EW_ExecuteProc					= Draw2D;
+		theEWW->EW_ExecuteProc					= LineDraw2D;
 		theEWW->EW_PostProcessProc				= EW_PostProcess_Line2D;
 		
 		/* findrange work */
@@ -22059,6 +22154,11 @@ INT InitWOP (void)
 		
 	/* set PlotObjTypes of PlotObjHandlings */
 	if (InitPlotObjTypes()) return (__LINE__);
+ 
+	/* path to grid-dirs */
+	gnuplotpathes_set = 0;
+    if (ReadSearchingPaths(DEFAULTSFILENAME,"gnuplotpaths")==0)
+		gnuplotpathes_set=1;
 
     #ifdef ModelP
 	ConnectWopTree();

@@ -336,6 +336,8 @@ struct LinePlotObj2D {
   INT nHit;                                                                     /* # elements hit by the line					*/
   DOUBLE xmin;                                                          /* min intersection between grid and line	    */
   DOUBLE xmax;                                                          /* max intersection between grid and line	    */
+  INT Gnuplot;                                  /* 1 for gnuplot-output                         */
+  char Gnufilename[NAMELEN];                    /* filename for gnuplot-output                  */
 };
 
 /*----------- application dimension 3 PlotObjs -----------------------------*/
