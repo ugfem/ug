@@ -33,7 +33,7 @@ ARCH_LIBS     = -lm
 
 ARCH_CFLAGS   = 
 ARCH_NOOPTIM  = -g 
-ARCH_OPTIM    = -O3 -tpp7 -xW
+ARCH_OPTIM    = -O3 -tpp7 -xW # works for P4 only!!!
 ARCH_C++FLAGS = 
 ARCH_LFLAGS   = 
 ARCH_ARFLAGS  = rus
