@@ -2477,7 +2477,7 @@ INT DisposeConnectionsInGrid (GRID *theGrid)
   MATRIX *theMatrix, *nextMatrix;
   CONNECTION *theCon;
 
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
   {
     theMatrix = VSTART(theVector);
     while (theMatrix!=NULL)
@@ -7649,7 +7649,7 @@ INT DisposeIMatricesInGrid (GRID *theGrid)
 {
   VECTOR *theV;
 
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+  for (theV=PFIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
   {
     if (DisposeIMatrices(theGrid,VISTART(theV))) RETURN (1);
     VISTART(theV) = NULL;
