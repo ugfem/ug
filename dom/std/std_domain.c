@@ -1223,8 +1223,8 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
                         PATCH_ID(thePatch),PATCH_TYPE(thePatch),
                         LINE_PATCH_N(thePatch)));
     }
-        #endif
   ASSERT(err == 0);
+        #endif
 
   m = ncorners + nlines;
   theBVP->sideoffset = m;
