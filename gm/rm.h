@@ -52,8 +52,10 @@
 /****************************************************************************/
 
 /* uncomment this if you want to use the fule rule set for tetrahedra */
-/* -> recompile rm.c refine.c ugm.c gmcheck.c commands.c              */
-#define TET_RULESET
+/* -> recompile rm.c refine.c ugm.c gmcheck.c ../ui/commands.c        */
+/*
+   #define TET_RULESET
+ */
 
 /* defines for edge types */
 #define INNER_EDGE          1

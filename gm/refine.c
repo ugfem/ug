@@ -113,6 +113,16 @@
 
 #define MAX_GREEN_SONS	32 			/* max num of sons for green refinement */
 
+/* define to control element which is responsible */
+/* equal side refinement of neighboring elements  */
+#ifdef ModelP
+#define _EID_	EGID
+#define _ID_	GID
+#else
+#define _EID_	ID
+#define _ID_	ID
+#endif
+
 #define EDGE_IN_PATTERN(p,i)		(((p)[(i)]) & 0x1)
 #define SIDE_IN_PATTERN(e,p,i)		(((p)[EDGES_OF_ELEM(e)+(i)]) & 0x1)
 #define EDGE_IN_PAT(p,i)			(((p)>>(i)) & 0x1)
@@ -238,10 +248,10 @@ static ELEMENT *debugelem=NULL;
 	if (e!=NULL)                                                             \
 		UserWriteF( s " ID=%d/%08x PRIO=%d TAG=%d BE=%d ECLASS=%d LEVEL=%d"  \
 		" REFINECLASS=%d MARKCLASS=%d REFINE=%d MARK=%d COARSE=%d"           \
-		   " USED=%d NSONS=%d EFATHERID=%d\n",ID(e),EGID(e),EPRIO(e),        \
-		TAG(e),(OBJT(e)==BEOBJ),ECLASS(e),REFINECLASS(e),MARKCLASS(e),       \
-		REFINE(e),MARK(e),COARSEN(e),                                        \
-		USED(e),NSONS(e),(EFATHER(e)!=NULL)?ID(EFATHER(e)):0);               \
+		" USED=%d NSONS=%d EFATHERID=%d SIDEPATTERN=%d\n",                   \
+		ID(e),EGID(e),EPRIO(e),TAG(e),(OBJT(e)==BEOBJ),ECLASS(e),LEVEL(e),   \
+		REFINECLASS(e),MARKCLASS(e),REFINE(e),MARK(e),COARSEN(e),            \
+		USED(e),NSONS(e),(EFATHER(e)!=NULL)?ID(EFATHER(e)):0,SIDEPATTERN(e));\
 	ENDDEBUG
 
 
@@ -962,6 +972,8 @@ static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *t
 				else
 					NbSidePattern |= NbSideMask;
 
+				PRINTDEBUG(gm,1,(PFMT "CorrectTetrahedronSidePattern(): nb=" EID_FMTX 
+				"new nbsidepattern=%d\n",me,EID_PRTX(theNeighbor),NbSidePattern));
 				SETSIDEPATTERN(theNeighbor,NbSidePattern);
 			}
 			break;
@@ -1058,7 +1070,6 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 		 theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
-
 		/* make edgepattern consistent with pattern of edges */
 		SETUSED(theElement,1);
 
@@ -1072,8 +1083,14 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 			theNeighbor = NBELEM(theElement,i);
 			if (theNeighbor == NULL) continue;
 
-			/* TODO: is this or only USED ok? */
-			if (!USED(theNeighbor)) continue;
+			/* only one of the neighboring elements does corrections */
+			/* determine element for side correction by (g)id        */
+			if (_EID_(theElement) < _EID_(theNeighbor)) continue;
+
+			/* determine element for side correction by used flag    */
+/*
+			if (USED(theNeighbor)) continue;
+*/
 
 			/* edgepatterns from theElement and theNeighbor are in final state */
 
@@ -1174,8 +1191,8 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 		/* get new pattern from mark */
 		NewPattern = MARK2PAT(theElement,Mark);
 		IFDEBUG(gm,1)
-		UserWriteF("   thePattern=%d NewPattern=%d Mark=%d\n",
-			thePattern,NewPattern,Mark);
+		UserWriteF("   thePattern=%d EdgePattern=%d SidePattern=%d NewPattern=%d Mark=%d\n",
+			thePattern,theEdgePattern,theSidePattern,NewPattern,Mark);
 		ENDDEBUG
 		
 
@@ -1383,14 +1400,19 @@ static INT BuildGreenClosure (GRID *theGrid)
 		}
 		#endif
 
+
+#ifndef ModelP
 		/* if element is green before refinement and will be green after */
 		/* refinement and nothing changes -> reset USED flag             */ 
+		/* in parallel case: one communication to determine the minimum  */
+		/* over all copies of an green element would be needed           */
 		if (REFINECLASS(theElement)==GREEN_CLASS && 
 			MARKCLASS(theElement)==GREEN_CLASS && UPDATE_GREEN(theElement)==0)
 		{
 			/* do not renew green refinement */
 			SETUSED(theElement,0);
 		}
+#endif
 	}	
 
 	return(GM_OK);
@@ -3228,7 +3250,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 					"ERROR Sorttables[%d][%d]"\
 					" eNodePtr=%x nbNodePtr=%x\n",
 					i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
-/*				assert(0);*/
+				assert(0);
 			}
 	}
 	#endif
@@ -3890,7 +3912,11 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 						{
 							INT node,k;
 							INT maxedge=-1;
+							#ifdef ModelP
+							unsigned int maxid = 0;
+							#else
 							INT maxid = -1;
+							#endif
 
 							node0 = -1;
 							for (k=0; k<nedges; k++)
@@ -3905,14 +3931,16 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 								if (EDGE_OF_SIDE(theElement,i,k)>maxedge)
 									maxedge = 2*k+1;
 								*/
-								if (theSideNodes[2*k+1]!=NULL && ID(theSideNodes[2*k+1])>maxid)
-									maxid = ID(theSideNodes[2*k+1]);
+								/* neighboring elements need to refine in the same way      */
+								/* in parallel case all copies of the elements also         */
+								if (theSideNodes[2*k+1]!=NULL && _ID_(theSideNodes[2*k+1])>maxid)
+									maxid = _ID_(theSideNodes[2*k+1]);
 							}
 							assert(maxid != -1);
 							assert(node0 != -1);
 
 							/* if (node0 == maxedge && ((SIDEPATTERN(theElement)&(1<<i)) == 0)) */
-							if (ID(theSideNodes[node0]) == maxid)
+							if (_ID_(theSideNodes[node0]) == maxid)
 							{
 
 								sons[nelem].tag = TETRAHEDRON;
@@ -4242,10 +4270,10 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 				  }
 				else
 				  if ((m!=j) && (sons[i].corners[j] == sons[i].corners[m] || 
-					  (ID(sons[i].corners[j]) == ID(sons[i].corners[m])))) 
+					  (_ID_(sons[i].corners[j]) == _ID_(sons[i].corners[m])))) 
 					UserWriteF("     ERROR: son %d has equivalent corners "
 						"%d=%d  ID=%d ID=%d adr=%x adr=%x\n",
-						n,j,m,ID(sons[i].corners[j]),ID(sons[i].corners[m]),
+						n,j,m,_ID_(sons[i].corners[j]),_ID_(sons[i].corners[m]),
 						sons[i].corners[j],sons[i].corners[m]); 
 			ENDDEBUG
 
@@ -4254,7 +4282,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			for (j=0; j<CORNERS_OF_ELEM(sons[i].theSon); j++)
 			{
 				if (sons[i].corners[j] != NULL)
-				  UserWriteF(" %d",ID(sons[i].corners[j])); 
+				  UserWriteF(" %d",_ID_(sons[i].corners[j])); 
 			}
 			UserWriteF("\n"); 
 			ENDDEBUG
@@ -5096,7 +5124,7 @@ IFDEBUG(gm,debugstart)
 printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
 Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
 if (DDD_ConsCheck() > 0) buggy(theMG);
-if (level == 1)
+if (0 && level == 1)
 	Debugdddif = dddiflevel;
 ENDDEBUG
 
