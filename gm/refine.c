@@ -142,6 +142,17 @@ static ELEMENT *debugelem=NULL;
 
 #define PRINTELEMID(id) 
 
+#define REFINE_ELEMENT_LIST(d,e,s) \
+	IFDEBUG(gm,d) \
+	if (e!=NULL) \
+		UserWriteF( s " ID=%d TAG=%d BE=%d ECLASS=%d REFINECLASS=%d" \
+		" MARKCLASS=%d REFINE=%d MARK=%d COARSE=%d" \
+		   " USED=%d NSONS=%d\n", ID(e),\
+		TAG(e),(OBJT(e)==BEOBJ),ECLASS(e),REFINECLASS(e),MARKCLASS(e), \
+		REFINE(e),MARK(e),COARSEN(e), \
+		USED(e),NSONS(e)); \
+	ENDDEBUG
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -192,6 +203,9 @@ static INT TriSectionEdge[64][2] = {  {-1,-1},{-1,-1},{-1,-1},{ 1, 0},{-1,-1},{ 
 
 /* the indices of the edges of each side */
 static INT  CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
+
+/* TODO: delete this */
+static INT newstyle = 1;
 
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
@@ -626,14 +640,15 @@ FIFOSTART:
 		}
 
 		/* TODO: why here swap from NOREFRULE to COPY_REFRULE */
-if (0)
+if (0) 
 		if (MARKCLASS(theElement)==RED_CLASS && Mark==NO_REFINEMENT)
 		{
-			UserWriteF("CloseGrid(): MARKCLASS=RED_CLASS && Mark==NO_REFINEMENT -> set Mark=COPY!\n");
+			if (0) UserWriteF("CloseGrid(): MARKCLASS=RED_CLASS && Mark==NO_REFINEMENT -> set Mark=COPY!\n");
+			UserWriteF("   Switching MARKCLASS=%d for MARK=%d of EID=%d to GREEN_CLASS\n",MARKCLASS(theElement),MARK(theElement),ID(theElement));
 			Mark = COPY;
 		}
 		/* TODO: delete or better  ... && MyPattern != 0 ?? */
-if (0)
+if (0) 
 		if (MARKCLASS(theElement)!=RED_CLASS && Mark!=NO_REFINEMENT) {
 			SETMARKCLASS(theElement,GREEN_CLASS);
 			IFDEBUG(gm,1)
@@ -706,7 +721,7 @@ if (0)
 		for (j=0; j<EDGES_OF_ELEM(theElement); j++)
 		{
 			/* no green elements for this edge if there is no edge node */ 
-			if (!NODE_OF_RULE(theElement,MARK(theElement),i))
+			if (!NODE_OF_RULE(theElement,MARK(theElement),j))
 				continue;
 
 			MyEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)));
@@ -749,12 +764,25 @@ if (0)
 					}
 				}
 				/* tetrahedra have a complete rule set */
+if (1) ;
 				else if (MARK(theElement) == NO_REFINEMENT) {
-					printf("   ERROR: green tetrahedron with no rule! EID=%d TAG=%d \
-						REFINECLASS=%d REFINE=%d MARKCLASS=%d  MARK=%d\n",ID(theElement),\
+					printf("   ERROR: green tetrahedron with no rule! EID=%d TAG=%d "\
+						"REFINECLASS=%d REFINE=%d MARKCLASS=%d  MARK=%d\n",ID(theElement),\
 						TAG(theElement),REFINECLASS(theElement),REFINE(theElement),MARKCLASS(theElement),MARK(theElement));
+		{
+		INT MyEdgePattern,i;
+
+		MyEdgePattern = 0;
+		for (i=EDGES_OF_ELEM(theElement)-1; i>=0; i--)
+		{
+			MyEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+			MyEdgePattern = (MyEdgePattern<<1) | PATTERN(MyEdge);
+			printf("%d",PATTERN(MyEdge));
+		}
+			printf(" Pattern=%d\n",MyEdgePattern);
+		}
 					fflush(stdout);
-					ASSERT(0);
+					if (0) SETMARK(theElement,COPY);
 				}					
 
 				SETMARKCLASS(theElement,GREEN_CLASS);
@@ -1643,6 +1671,551 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 	return (GM_OK);
 }
 
+
+
+
+struct compare_record { 
+	ELEMENT *elem; 		 /* element to connect 					 */
+	INT side;			 /* side of elem to connect 			 */
+	INT nodes;		     /* number of nodes of side 			 */
+	NODE *nodeptr[4]; 	 /* pointer of nodes in descending order */
+};
+typedef struct compare_record COMPARE_RECORD;
+
+#define MAX_SIDE_NODES 	9
+
+INT SonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX_SIDE_NODES])
+{
+	EDGE *theEdge;
+	INT i,ncorners,nedges;
+
+	ncorners = CORNERS_OF_SIDE(theElement,side);
+	nedges = EDGES_OF_SIDE(theElement,side);
+	(*nodes) = 0;
+
+	
+	/* reset pointers */
+	for (i=0; i<MAX_SIDE_NODES; i++) {
+		SideNodes[i] = NULL;
+	}
+	 
+	/* determine corner nodes */
+	for (i=0; i<ncorners; i++) {
+		SideNodes[i] = SONNODE(CORNER(theElement,CORNER_OF_SIDE(theElement,side,i)));
+		assert(SideNodes[i]!=NULL && NTYPE(SideNodes[i])==CORNER_NODE);
+		(*nodes)++;
+	}
+
+	/* determine mid nodes */
+	for (i=0; i<nedges; i++) {
+		theEdge = GetEdge(NFATHER(SideNodes[i]),NFATHER(SideNodes[(i+1)%nedges]));
+		assert(theEdge != NULL);
+
+		IFDEBUG(gm,4)
+		UserWriteF("theEdge=%x midnode=%x\n",theEdge,MIDNODE(theEdge));
+		ENDDEBUG
+
+		if (MIDNODE(theEdge) != NULL) {
+			SideNodes[ncorners+i] = MIDNODE(theEdge);
+			assert(NTYPE(MIDNODE(theEdge)) == MID_NODE);
+			(*nodes)++;
+		}
+	}
+
+	#ifdef __THREEDIM__
+	/* determine side node */
+	{
+		NODE *theNode,*theNode0,*theNode1;
+		LINK *theLink0,*theLink1;
+		INT l;
+
+		theNode = NULL;
+		theNode0 = SideNodes[ncorners];
+		theNode1 = SideNodes[ncorners+2];
+        l = 0;
+
+		if (theNode0 != NULL && theNode1 != NULL)
+			for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
+				for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1))
+					if (NBNODE(theLink0) == NBNODE(theLink1)) {
+						if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
+							theNode = NBNODE(theLink0);
+							(*nodes)++;
+							break;
+						}
+					}
+				if (theNode != NULL) break; 
+			}
+		ASSERT(l==0 || (l==1 && NTYPE(theNode)==SIDE_NODE));
+
+		SideNodes[ncorners+nedges] = theNode;
+
+		IFDEBUG(gm,4)
+		UserWriteF("sidenode=%x\n",theNode);
+		ENDDEBUG
+	}
+	#endif
+
+	IFDEBUG(gm,2)
+	UserWriteF("SonSideNodes\n");
+	for (i=0; i<MAX_SIDE_NODES; i++) UserWriteF(" %5d",i);
+	UserWriteF("\n");
+	for (i=0; i<MAX_SIDE_NODES; i++) 
+		if (SideNodes[i]!=NULL) UserWriteF(" %5d",ID(SideNodes[i]));
+	UserWriteF("\n");
+	ENDDEBUG
+
+	return(GM_OK);
+}
+
+
+INT compare_node (const void *e0, const void *e1)
+{
+	NODE *n0, *n1;
+
+	n0 = (NODE *) *(NODE **)e0;
+	n1 = (NODE *) *(NODE **)e1;
+
+	if (n0 < n1) return(1);
+	if (n0 > n1) return(-1);
+	return(0);
+}
+
+INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
+							ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons)
+{
+	INT i,j,nsons,markclass;
+
+	/* reset soncount */
+	*Sons_of_Side = 0;
+	nsons = 0;
+
+	/* get sons of element */
+	if (NeedSons)
+		if (GetSons(theElement,SonList) != GM_OK) RETURN(GM_FATAL);
+
+	IFDEBUG(gm,2)
+	UserWriteF("    Get_Sons_of_ElementSide():"
+		   " tag=%d, refineclass=%d markclass=%d refine=%d mark=%d coarse=%d"
+		   " used=%d nsons=%d needsons=%d\n",
+		TAG(theElement),REFINECLASS(theElement),MARKCLASS(theElement),
+		REFINE(theElement),MARK(theElement),COARSEN(theElement),
+		USED(theElement),NSONS(theElement),NeedSons);
+	ENDDEBUG
+
+	markclass = MARKCLASS(theElement);
+
+/*
+	if (0 && MARKCLASS(theElement)==GREEN_CLASS && TAG(theElement)==TETRAHEDRON)
+		markclass = RED_CLASS;
+*/
+
+	/* select sons to connect */
+	switch (markclass) {
+
+		case YELLOW_CLASS: {
+			*Sons_of_Side = 1;
+			SonSides[0] = side;
+			break;
+		}
+
+		case GREEN_CLASS: {
+			/* determine sonnodes of side */
+			NODE *SideNodes[MAX_SIDE_NODES];
+			INT corner[MAX_CORNERS_OF_SIDE];
+			INT n,nodes;
+
+			/* determine nodes of sons on side of element */ 
+			SonSideNodes(theElement,side,&nodes,SideNodes);
+
+			/* sort side nodes in descending adress order */
+			qsort(SideNodes,MAX_SIDE_NODES,sizeof(NODE *),compare_node);
+				
+			IFDEBUG(gm,3)
+			UserWriteF("After qsort:\n");
+			for (i=0; i<MAX_SIDE_NODES; i++) UserWriteF(" %8d",i);
+			UserWriteF("\n");
+			for (i=0; i<MAX_SIDE_NODES; i++) 
+				if (SideNodes[i]!=NULL) UserWriteF(" %x",SideNodes[i]);
+				else	UserWriteF(" %8d",0);
+			UserWriteF("\n");
+			ENDDEBUG
+
+			/* determine sonnode on side */
+			for (i=0; i<NSONS(theElement); i++) {
+				
+				n = 0;
+
+				for (j=0; j<MAX_CORNERS_OF_SIDE; j++)
+					corner[j] = -1;
+
+				IFDEBUG(gm,4)
+				UserWriteF("son=%d\n",i);  
+				ENDDEBUG
+
+				/* sonside on side */
+				for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++) {
+					NODE *nd;
+
+					nd = CORNER(SonList[i],j);
+					if (bsearch(&nd,SideNodes,
+						nodes,sizeof(NODE *),compare_node)) {
+						corner[n] = j;
+						n++;
+					}
+				}
+				assert(n<5);
+
+				IFDEBUG(gm,4)
+				UserWriteF("\n nodes on side n=%d:",n);
+				for (j=0; j<MAX_CORNERS_OF_SIDE; j++)
+					UserWriteF(" %d",corner[j]);
+				ENDDEBUG
+
+
+				IFDEBUG(gm,0)
+				if (n==3)	assert(TAG(SonList[i])==TETRAHEDRON);
+				if (n==4)	assert(TAG(SonList[i])!=TETRAHEDRON);
+				ENDDEBUG
+
+				/* sonside on side */
+				if (n==3 || n==4) {
+					INT edge0,edge1,sonside,side0,side1;
+					
+					/* determine side number */
+					edge0 = edge1 = -1;
+					edge0 = EDGE_WITH_CORNERS(SonList[i],corner[0],corner[1]);
+					edge1 = EDGE_WITH_CORNERS(SonList[i],corner[1],corner[2]);
+					assert(edge0!=-1 && edge1!=-1);
+
+					sonside = -1;
+					for (side0=0; side0<MAX_SIDES_OF_EDGE; side0++) {
+						for (side1=0; side1<MAX_SIDES_OF_EDGE; side1++) {
+							IFDEBUG(gm,5)
+							UserWriteF("edge0=%d side0=%d SIDE_WITH_EDGE=%d\n",
+								edge0, side0,
+								SIDE_WITH_EDGE(SonList[i],edge0,side0));
+							UserWriteF("edge1=%d side1=%d SIDE_WITH_EDGE=%d\n",
+								edge1, side1,
+								SIDE_WITH_EDGE(SonList[i],edge1,side1));
+							ENDDEBUG
+							if (SIDE_WITH_EDGE(SonList[i],edge0,side0) ==
+								SIDE_WITH_EDGE(SonList[i],edge1,side1)) {
+								sonside = SIDE_WITH_EDGE(SonList[i],edge0,side0);
+								break;
+							}
+						}
+						if (sonside != -1) break; 			
+					}
+					assert(sonside != -1);
+					IFDEBUG(gm,4)
+					UserWriteF(" son[%d]=%x with sonside=%d on eside=%d\n",i,SonList[i],sonside,side);
+					ENDDEBUG
+
+					IFDEBUG(gm,3)
+					INT k;
+					ELEMENT *Nb;
+					
+					for (k=0; k<SIDES_OF_ELEM(SonList[i]); k++) {
+						Nb = NBELEM(SonList[i],k);
+						if (Nb!=NULL) {
+							INT j;
+							for (j=0; j<SIDES_OF_ELEM(Nb); j++) {
+								if (NBELEM(Nb,j)==SonList[i]) break;
+							}
+							if (j<SIDES_OF_ELEM(Nb))
+								UserWriteF(" sonside=%d has backptr to son Nb=%x Nbside=%d\n",
+											k,Nb,j);
+						}
+					}
+					ENDDEBUG
+
+					SonSides[nsons] = sonside;
+					SonList[nsons] = SonList[i]; 
+					nsons++;
+				}
+			}
+			assert(nsons>0 && nsons<6);
+
+			IFDEBUG(gm,3)
+		 	UserWriteF(" nsons on side=%d\n",nsons);
+			ENDDEBUG
+
+			*Sons_of_Side = nsons;	
+			break;
+		}
+
+		case RED_CLASS: {
+			SONDATA *sondata;
+
+			for (i=0; i<NSONS(theElement); i++) {
+				sondata = SON_OF_RULE(MARK2RULEADR(theElement,MARK(theElement)),i);
+				for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++) 
+					if (SON_NB(sondata,j) == FATHER_SIDE_OFFSET+side) {
+						SonSides[nsons] = j;
+						SonList[nsons] = SonList[i];
+						nsons ++;
+					}
+			}
+			*Sons_of_Side = nsons;
+			break;
+		}
+
+		default:
+			RETURN(GM_FATAL);
+	}
+
+	for (i=*Sons_of_Side; i<MAX_SONS; i++)
+		SonList[i] = NULL;
+
+	return(GM_OK);			
+}
+
+INT Sort_Node_Ptr (INT n,NODE **nodes)
+{
+	NODE* nd;
+	INT i,j,max;
+
+	max = 0;
+
+	switch (n) {
+
+		case 3:
+		case 4:
+			for (i=0; i<n; i++) {
+				max = i;
+				for (j=i+1; j<n; j++) 
+					if (nodes[max]<nodes[j]) max = j;
+				if (i != max) {
+					nd = nodes[i]; 
+					nodes[i] = nodes[max];
+					nodes[max] = nd;
+				}
+			}	
+			break;
+
+		default:
+			RETURN(GM_FATAL);
+	}
+
+	return(GM_OK);
+}
+
+
+INT	Fill_Comp_Table (COMPARE_RECORD **SortTable, COMPARE_RECORD *Table, INT nelems, 
+					 ELEMENT **Elements, INT *Sides)
+{
+	COMPARE_RECORD *Entry;
+	INT i,j;
+
+	for (i=0; i<nelems; i++) {
+		SortTable[i] = Table+i;
+		Entry = Table+i;
+		Entry->elem = Elements[i]; 
+		Entry->side = Sides[i]; 
+		Entry->nodes = CORNERS_OF_SIDE(Entry->elem,Entry->side);
+		for (j=0; j<CORNERS_OF_SIDE(Entry->elem,Entry->side);j++)
+			Entry->nodeptr[j] = CORNER(Entry->elem,CORNER_OF_SIDE(Entry->elem,Entry->side,j));
+		if (Sort_Node_Ptr(Entry->nodes,Entry->nodeptr)!=GM_OK) RETURN(GM_FATAL);
+	}
+
+	return(GM_OK);
+}
+
+
+int compare_nodes (const void *ce0, const void *ce1)
+{
+	COMPARE_RECORD *e0, *e1;
+	INT j;
+
+	e0 = (COMPARE_RECORD *) *(COMPARE_RECORD **)ce0;
+	e1 = (COMPARE_RECORD *) *(COMPARE_RECORD **)ce1;
+
+	IFDEBUG(gm,5)
+	UserWriteF("TO compare:\n");
+	for (j=0; j<e0->nodes; j++)
+		UserWriteF("eNodePtr=%x nbNodePtr=%x\n",e0->nodeptr[j],e1->nodeptr[j]);
+	ENDDEBUG
+
+	if (e0->nodeptr[0] < e1->nodeptr[0]) return(1);
+	if (e0->nodeptr[0] > e1->nodeptr[0]) return(-1);
+
+	if (e0->nodeptr[1] < e1->nodeptr[1]) return(1);
+	if (e0->nodeptr[1] > e1->nodeptr[1]) return(-1); 
+
+	if (e0->nodeptr[2] < e1->nodeptr[2]) return(1); 
+	if (e0->nodeptr[2] > e1->nodeptr[2]) return(-1);
+
+	if (e0->nodes==4 && e1->nodes==4) {
+		if (e0->nodeptr[3] < e1->nodeptr[3]) return(1); 
+		if (e0->nodeptr[3] > e1->nodeptr[3]) return(-1);
+	}
+
+	return(0);
+}
+
+INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, 
+								 ELEMENT **Sons_of_Side_List, INT *SonSides)
+{
+	COMPARE_RECORD ElemSonTable[MAX_SONS];
+	COMPARE_RECORD NbSonTable[MAX_SONS];
+	COMPARE_RECORD *ElemSortTable[MAX_SONS];
+	COMPARE_RECORD *NbSortTable[MAX_SONS];
+
+	ELEMENT *theNeighbor;
+	ELEMENT *Sons_of_NbSide_List[MAX_SONS];
+	ELEMENTSIDE *ElementSide;
+	INT nbside,Sons_of_NbSide,NbSonSides[MAX_SONS];
+	INT i;
+
+	IFDEBUG(gm,2)
+	UserWriteF("Connect_Sons_of_ElementSide: ID(elem)=%d side=%d Sons_of_Side=%d\n",
+				ID(theElement),side,Sons_of_Side);
+	REFINE_ELEMENT_LIST(0,theElement,"theElement:");
+	UserWriteF("Sondata:\n");
+	for (i=0; i<Sons_of_Side; i++)
+		UserWriteF(" %5d",ID(Sons_of_Side_List[i]));
+	UserWriteF("\n");
+	for (i=0; i<Sons_of_Side; i++)
+		UserWriteF(" %5d",SonSides[i]);
+	UserWriteF("\n");
+	ENDDEBUG
+
+	/* connect to boundary */
+	if (OBJT(theElement)==BEOBJ && SIDE(theElement,side)!=NULL) {
+		/* TODO: connect change test */  
+		if (!newstyle) return(GM_OK);
+
+		for (i=0; i<Sons_of_Side; i++) {
+
+			assert(OBJT(Sons_of_Side_List[i])==BEOBJ);
+			if (CreateSonElementSide(theGrid,theElement,side,
+								  	 Sons_of_Side_List[i],SonSides[i]) != GM_OK) 
+				return(GM_FATAL);
+		}		
+
+		return(GM_OK);
+	}
+
+	/* connect to neighbor element */
+	theNeighbor = NBELEM(theElement,side);
+
+	if (theNeighbor==NULL) return(GM_OK);
+
+	/* only yellow elements may have no neighbors */
+	if (MARKCLASS(theNeighbor)==NO_CLASS) {
+		if (hFlag) assert(MARKCLASS(theElement)==YELLOW_CLASS);
+		return(GM_OK);
+	}			
+
+	if ((REF_TYPE_CHANGES(theNeighbor)||
+		(DIM==3 && TAG(theNeighbor)==HEXAHEDRON && MARKCLASS(theNeighbor)==GREEN_CLASS && 
+		(REFINECLASS(theNeighbor)!=GREEN_CLASS || (REFINECLASS(theNeighbor)==GREEN_CLASS 
+			&& USED(theNeighbor)==1)))))
+		return(GM_OK);
+
+	/* determine corresponding side of neighbor */
+	for (nbside=0; nbside<SIDES_OF_ELEM(theNeighbor); nbside++) 
+		if (NBELEM(theNeighbor,nbside) == theElement) break;
+	assert(nbside<SIDES_OF_ELEM(theNeighbor));
+
+	/* get sons of neighbor to connect */
+	Get_Sons_of_ElementSide(theNeighbor,nbside,&Sons_of_NbSide,Sons_of_NbSide_List,NbSonSides,1);
+	assert(Sons_of_Side == Sons_of_NbSide && Sons_of_Side>0 && Sons_of_Side<6);
+
+	/* fill sort and comparison tables */
+	Fill_Comp_Table(ElemSortTable,ElemSonTable,Sons_of_Side,Sons_of_Side_List,SonSides);
+	Fill_Comp_Table(NbSortTable,NbSonTable,Sons_of_NbSide,Sons_of_NbSide_List,NbSonSides);
+
+	IFDEBUG(gm,5)
+	INT i,j;
+
+	UserWriteF("BEFORE qsort\n");
+
+	/* test whether all entries are corresponding */
+	for (i=0; i<Sons_of_Side; i++) {
+		COMPARE_RECORD *Entry, *NbEntry;
+
+		Entry = ElemSortTable[i];
+		NbEntry = NbSortTable[i];
+
+		if (Entry->nodes != NbEntry->nodes)
+			UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d]"\
+						" eNodes=%d nbNodes=%d\n",i,Entry->nodes,NbEntry->nodes);
+		for (j=0; j<Entry->nodes; j++)
+			if (1 || Entry->nodeptr[j] != NbEntry->nodeptr[j])
+				UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d][%d]"\
+							" eNodePtr=%x nbNodePtr=%x\n",i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
+		UserWriteF("\n");
+	}
+	UserWriteF("\n\n");
+	ENDDEBUG
+
+	/* qsort the tables using nodeptrs */
+	qsort(ElemSortTable,Sons_of_Side,sizeof(COMPARE_RECORD *), compare_nodes);
+	qsort(NbSortTable,Sons_of_NbSide,sizeof(COMPARE_RECORD *), compare_nodes);
+
+	IFDEBUG(gm,4)
+	INT i,j;
+
+	UserWriteF("After qsort\n");
+
+	/* test whether all entries are corresponding */
+	UserWriteF("SORTTABLELIST:\n");
+	for (i=0; i<Sons_of_Side; i++) {
+		COMPARE_RECORD *Entry, *NbEntry;
+
+		Entry = ElemSortTable[i];
+		NbEntry = NbSortTable[i];
+
+		UserWriteF("EAdr=%x side=%d realNbAdr=%x    NbAdr=%x nbside=%x realNbAdr=%x\n",
+			Entry->elem, Entry->side, NBELEM(Entry->elem,Entry->side),
+			NbEntry->elem, NbEntry->side,NBELEM(NbEntry->elem,NbEntry->side));
+	}
+
+
+	for (i=0; i<Sons_of_Side; i++) {
+		COMPARE_RECORD *Entry, *NbEntry;
+
+		Entry = ElemSortTable[i];
+		NbEntry = NbSortTable[i];
+
+		if (Entry->nodes != NbEntry->nodes)
+			UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d]"\
+						" eNodes=%d nbNodes=%d\n",i,Entry->nodes,NbEntry->nodes);
+		for (j=0; j<Entry->nodes; j++)
+			if (Entry->nodeptr[j] != NbEntry->nodeptr[j])
+				UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d][%d]"\
+							" eNodePtr=%x nbNodePtr=%x\n",i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
+		UserWriteF("\n");
+
+		if (NBELEM(Entry->elem,Entry->side)!=NbEntry->elem) {
+			UserWriteF("NOTEQUAL for i=%d elem=%x: elemrealnb=%x elemsortnb=%x\n",
+						i,Entry->elem,NBELEM(Entry->elem,Entry->side),NbEntry->elem);
+			REFINE_ELEMENT_LIST(0,theElement,"theElement:");
+			REFINE_ELEMENT_LIST(0,theNeighbor,"theNeighbor:");
+		}
+		if (NBELEM(NbEntry->elem,NbEntry->side)!=Entry->elem) {
+			UserWriteF("NOTEQUAL for i=%d nb=%x: nbrealnb=%x nbsortnb=%x\n",
+						i,NbEntry->elem,NBELEM(NbEntry->elem,NbEntry->side),Entry->elem);
+			REFINE_ELEMENT_LIST(0,theElement,"theE:");
+			REFINE_ELEMENT_LIST(0,theNeighbor,"theN:");
+		}
+	}
+	UserWriteF("\n\n");
+	ENDDEBUG
+
+	/* set neighborship relations */
+	if (newstyle)
+	for (i=0; i<Sons_of_Side; i++) {
+		SET_NBELEM(ElemSortTable[i]->elem,ElemSortTable[i]->side,NbSortTable[i]->elem);
+		SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,ElemSortTable[i]->elem);
+	}
+
+	return(GM_OK);
+}
+
+
 /****************************************************************************/
 /*																			*/
 /* Function:  RefineElementYellow										*/
@@ -2279,6 +2852,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	}
 
 	/* init outer side relations of son elements */
+if(!newstyle)
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
 		for (j=0; j<5; j++) {
 			if (sons[i*5+j].tag < 0) continue; 
@@ -2508,6 +3082,36 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			}
 		}
 	}
+
+
+	for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
+		INT j,k,Sons_of_Side;
+		ELEMENT *Sons_of_Side_List[MAX_SONS];
+		INT SonSides[MAX_SIDE_NODES];
+
+		Sons_of_Side = 0;
+
+		for (j=0; j<MAX_SONS; j++)
+			Sons_of_Side_List[j] = NULL;
+
+		for (j=0; j<5; j++) {
+			if (sons[i*5+j].tag < 0) break;
+			Sons_of_Side_List[j] = sons[i*5+j].theSon;
+			Sons_of_Side++;
+			SonSides[j] = 0;
+			if (sons[i*5+j].tag == PYRAMID) {
+				for (k=0; k<SIDES_OF_TAG(PYRAMID); k++)
+					if (CORNERS_OF_SIDE_TAG(PYRAMID,k) == 4)
+						break;
+				SonSides[j] = k;
+			}
+		}
+		assert(Sons_of_Side>0 && Sons_of_Side<6);
+
+		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
+								 Sons_of_Side_List,SonSides)!=GM_OK) RETURN(GM_FATAL);
+	}
+
 	return(GM_OK);
 }
 
@@ -2550,6 +3154,8 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 	
 	/* is something to do ? */
 	if (!IS_TO_REFINE(theElement)) return(GM_OK);
+
+	for (i=0; i<MAX_SONS; i++) SonList[i] = SonList2[i] = NULL;
 
 	rule = MARK2RULEADR(theElement,MARK(theElement));
 
@@ -2604,7 +3210,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 	if (OBJT(theElement)==BEOBJ)
 		for(s=0; s<NSONS_OF_RULE(rule); s++)
 		{
-				if (OBJT(SonList[s]) != BEOBJ) continue;
+				if (newstyle || OBJT(SonList[s]) != BEOBJ) continue;
 				for (j=0; j<SIDES_OF_ELEM(SonList[s]); j++)
 				{
 					SET_SIDE(SonList[s],j,NULL);
@@ -2698,7 +3304,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
                 #endif
 				continue;
 			}
-
+if(newstyle) continue;
 			/* the boundary case */
 			if ((OBJT(SonList[s]) == BEOBJ) && (SIDE(SonList[s],i) != NULL)) continue;
 
@@ -2929,6 +3535,24 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 			}
 			ASSERT(found==1);
 		}
+	}
+
+	for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
+		INT j,Sons_of_Side;
+		ELEMENT *Sons_of_Side_List[MAX_SONS];
+		INT SonSides[MAX_SIDE_NODES];
+
+		for (j=0; j<MAX_SONS; j++)
+			Sons_of_Side_List[j] = NULL;
+
+		for (j=0; j<NSONS_OF_RULE(rule); j++)
+			Sons_of_Side_List[j] = SonList[j];
+
+		if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
+							Sons_of_Side_List,SonSides,0)!=GM_OK) RETURN(GM_FATAL);
+
+		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
+								 Sons_of_Side_List,SonSides)!=GM_OK) RETURN(GM_FATAL);
 	}
 	
 	return(GM_OK);
