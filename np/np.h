@@ -122,6 +122,7 @@
 #define MD_COLPTR(md)                               ((md)->ColsInType)
 #define MD_COLS_IN_MTYPE(md,mtp)            (MD_COLPTR(md)[mtp])
 #define MD_COLS_IN_RT_CT(md,rt,ct)          MD_COLS_IN_MTYPE(md,MTP(rt,ct))
+#define MD_NCMPS_IN_MTYPE(md,mtp)           MD_ROWS_IN_MTYPE(md,mtp)*MD_COLS_IN_MTYPE(md,mtp)
 #define MD_MCMPPTR_OF_MTYPE(md,mtp)         ((md)->CmpsInType[mtp])
 #define MD_MCMP_OF_MTYPE(md,mtp,i)          ((md)->CmpsInType[mtp][i])
 #define MD_MCMPPTR_OF_RT_CT(md,rt,ct)       ((md)->CmpsInType[MTP(rt,ct)])

@@ -96,10 +96,6 @@ INT InitNumerics ()
     SetHiWrd(err,__LINE__);
     return (err);
   }
-  if ((err=InitAssemble())!=0) {
-    SetHiWrd(err,__LINE__);
-    return (err);
-  }
   if ((err=InitBasics())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
