@@ -1,0 +1,53 @@
+#FIG 3.2
+Portrait
+Center
+Metric
+A4      
+100.00
+Single
+-2
+1200 2
+0 32 #8e8e8e
+2 2 0 2 9 7 50 0 -1 0.000 0 0 -1 0 0 5
+	 900 900 9000 900 9000 12600 900 12600 900 900
+2 1 0 3 0 7 50 0 -1 0.000 0 0 -1 1 0 2
+	1 1 9.00 225.00 405.00
+	 450 900 450 12600
+2 1 0 2 9 7 50 0 -1 0.000 0 0 -1 0 0 2
+	 900 1350 9000 1350
+2 1 0 2 9 7 50 0 -1 0.000 0 0 -1 0 0 2
+	 4950 900 4950 12600
+4 1 9 50 0 0 26 0.0000 4 270 1035 2250 1260 Server\001
+4 1 0 50 0 0 16 1.5708 4 150 405 360 11520 time\001
+4 0 0 50 0 0 16 0.0000 4 195 1980 1125 1800 ug_dart_server_start:\001
+4 0 0 50 0 0 16 0.0000 4 210 3525 1125 2400 open a new or an existing Dashboard\001
+4 0 0 50 0 0 16 0.0000 4 225 1020 5400 2970 ug_dart.pl:\001
+4 0 0 50 0 0 16 0.0000 4 225 3330 5400 3570 1. execute ug_dart-conf.pl to create\001
+4 0 0 50 0 0 16 0.0000 4 210 3300 5400 3870     "DartConfiguration.tcl" which   \001
+4 0 0 50 0 0 16 0.0000 4 210 2745 5400 4170     contains the configuration \001
+4 0 0 50 0 0 16 0.0000 4 225 3360 5400 5070 2. execute ug_dart_tests.pl to create\001
+4 0 0 50 0 0 16 0.0000 4 165 2460 5400 5370     the DartTestfile.txt files\001
+4 0 0 50 0 0 16 0.0000 4 210 3435 1125 2610 using "DashboardManager.tcl Start"\001
+4 0 0 50 0 0 16 0.0000 4 165 720 5400 6270     calls \001
+4 0 0 50 0 0 16 0.0000 4 210 3480 5400 6570     - "DashboardManager.tcl Start" to\001
+4 0 0 50 0 0 16 0.0000 4 150 3030 5400 6870       create the needed directories\001
+4 0 0 50 0 0 16 0.0000 4 225 3495 5400 7170     - "DashboardManager.tcl Update"\001
+4 0 0 50 0 0 16 0.0000 4 225 3525 5400 7470       to make an update against the cvs\001
+4 0 0 50 0 0 16 0.0000 4 210 1305 5400 7770       repository\001
+4 0 0 50 0 0 16 0.0000 4 210 2700 5400 8070     - "DashboardManager.tcl \001
+4 0 0 50 0 0 16 0.0000 4 210 2670 5400 8670       configure command       \001
+4 0 0 50 0 0 16 0.0000 4 210 3345 5400 8370       Configure" which executes the \001
+4 0 0 50 0 0 16 0.0000 4 210 3330 5400 8970     - "DashboardManager.tcl Build"\001
+4 0 0 50 0 0 16 0.0000 4 165 2790 5400 9270       which executes the make \001
+4 0 0 50 0 0 16 0.0000 4 150 1290 5400 9570       command\001
+4 0 0 50 0 0 16 0.0000 4 210 3210 5400 9870     - "DashboardManager.tcl Test"\001
+4 0 0 50 0 0 16 0.0000 4 225 3120 5400 10170       which runs the specified tests\001
+4 0 0 50 0 0 16 0.0000 4 210 3480 5400 10470     - "DashboardManager.tcl Submit"\001
+4 0 0 50 0 0 16 0.0000 4 165 3255 5400 10770        which sends the results of the \001
+4 0 0 50 0 0 16 0.0000 4 210 3075 5400 11070        build-test-cycle to the server\001
+4 0 0 50 0 0 16 0.0000 4 210 1980 1125 11520 ug_dart_server_stop:\001
+4 0 0 50 0 0 16 0.0000 4 165 3300 1125 12120 build html code out of the xml files\001
+4 0 0 50 0 0 16 0.0000 4 165 2265 1125 12420 and close the dashboard\001
+4 0 0 50 0 0 16 0.0000 4 195 1260 5400 4470     parameters\001
+4 0 0 50 0 0 16 0.0000 4 210 3510 5400 5970 3. execute ug_dart_client_test which \001
+4 1 9 50 0 0 26 0.0000 4 270 945 6300 1260 Client\001

@@ -42,16 +42,8 @@ First of all you need an installation of Tcl and ssh on your system because
 the configure/build/test cycle is driven by Tcl scripts and the data is
 copied to the Dart server via scp.
 The only thing left to do is defining tests. There are several tests 
-predefined and when you want to add your own tests all you have to do is to
-create a file called "DartTestfile.txt" in the directory in which the 
-executable to be tested will reside after building UG. This file should 
-contain the following command
-
- ADD_TEST(TestIdentifier ExecutableName [Arguments]).
-
-The ExecutableName can be any executable build within UG or any other 
-executable that exists on your system. The TestIdentifier is a name for the 
-test which appears on the dashboard and which has to be unique.
+predefined and when you want to add your own tests. For further information
+see the README_TESTS.txt file.
 
 
 

@@ -1,0 +1,56 @@
+#FIG 3.2
+Portrait
+Center
+Metric
+A4      
+100.00
+Single
+-2
+1200 2
+2 2 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 5
+	 450 900 9000 900 9000 12600 450 12600 450 900
+2 1 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 2
+	 4725 900 4725 12600
+2 1 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 2
+	 450 1350 9000 1350
+2 1 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 2
+	 450 3600 9000 3600
+2 1 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 2
+	 450 11250 9000 11250
+2 2 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 5
+	 450 12600 9000 12600 9000 13050 450 13050 450 12600
+4 0 0 50 0 2 16 0.0000 4 225 7800 450 450 Segmentation of the Dart cycle into Dart specific parts and UG specific parts:\001
+4 0 1 50 0 2 16 0.0000 4 165 480 2250 1260 Dart\001
+4 0 0 50 0 2 16 0.0000 4 165 360 6525 1260 UG\001
+4 0 0 50 0 2 12 0.0000 4 180 3705 900 1710 When "ug_dart.pl" is called it calls other scripts\001
+4 0 0 50 0 2 12 0.0000 4 180 3780 900 1965 to prepare a Dart cycle. This preparation consists\001
+4 0 0 50 0 2 12 0.0000 4 180 3630 900 2220 mainly of building the "DartConfiguration.tcl"\001
+4 0 0 50 0 2 12 0.0000 4 150 3060 900 2475 file and the "DartTestfile.txt" files. The \001
+4 0 0 50 0 2 12 0.0000 4 180 2955 900 2730 "DartConfiguration.tcl" file holds the \001
+4 0 0 50 0 2 12 0.0000 4 180 3510 900 2985 configuration for the Dart cycle. The tests are \001
+4 0 0 50 0 2 12 0.0000 4 180 3000 900 3240 specified in the "DartTestfile.txt" files. \001
+4 0 0 50 0 2 12 0.0000 4 180 3630 900 4065 The "DartConfiguration.tcl" file holds among  \001
+4 0 0 50 0 2 12 0.0000 4 180 2535 900 4320 others the following information:\001
+4 0 0 50 0 2 12 0.0000 4 180 3540 900 5085 1. BuildName: it has to be a unique name for  \001
+4 0 0 50 0 2 12 0.0000 4 180 3315 900 5340     the build-test-submit cycle. It consists of \001
+4 0 0 50 0 2 12 0.0000 4 180 3540 900 5595     the specification of the system on which the \001
+4 0 0 50 0 2 12 0.0000 4 180 3690 900 5850     the cycle is performed, the compiler name and\001
+4 0 0 50 0 2 12 0.0000 4 180 3810 900 6105     and maybe some ugconf options. There is a line\001
+4 0 0 50 0 2 12 0.0000 4 150 2550 900 6360     in the file which looks like this:\001
+4 0 0 50 0 2 12 0.0000 4 135 2505 900 6870       BuildName: <BuildName>  . \001
+4 0 0 50 0 2 12 0.0000 4 165 3555 900 7635 2. ConfigureCommand: The command which \001
+4 0 0 50 0 2 12 0.0000 4 180 3585 900 7890     should be used to configure the source to be \001
+4 0 0 50 0 2 12 0.0000 4 180 2730 900 8145     build. There is an entry like this: \001
+4 0 0 50 0 2 12 0.0000 4 165 5430 900 8655       ConfigureCommand:                                                         make config\001
+4 0 0 50 0 2 12 0.0000 4 135 3720 900 9675 3. BuildCommand: The command which should\001
+4 0 0 50 0 2 12 0.0000 4 180 3675 900 9930     be used to build the source. There is an entry \001
+4 0 0 50 0 2 12 0.0000 4 150 840 900 10185     like this:\001
+4 0 0 50 0 2 12 0.0000 4 135 5385 900 10695       MakeCommand:                                                                 make build\001
+4 0 0 50 0 2 12 0.0000 4 180 3015 900 11700 The "DartTestfile,txt" file contains the \001
+4 0 0 50 0 2 12 0.0000 4 165 765 900 11955 following:\001
+4 0 0 50 0 2 12 0.0000 4 180 5370 900 12465 ADD_TEST(<testname>                                                          make test) \001
+4 0 0 50 0 2 12 0.0000 4 180 3225 5175 1710 The Makefiles have got additional targets:\001
+4 0 0 50 0 2 12 0.0000 4 180 3060 5175 2220 1. make config: e.g. ugconf -v <options>\001
+4 0 0 50 0 2 12 0.0000 4 135 1050 5175 2730 2. make build\001
+4 0 0 50 0 2 12 0.0000 4 150 915 5175 3240 3. make test\001
+4 0 0 50 0 2 12 0.0000 4 180 5460 900 12960 Summary: The Makefiles handle the interaction between Dart and UG.\001
