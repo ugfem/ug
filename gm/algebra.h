@@ -85,22 +85,27 @@ extern const char *ObjTypeName[MAXVOBJECTS];
 /*																			*/
 /****************************************************************************/
 
-/* vector */
-#define VBUILDCON_CE                            1
-#define VBUILDCON_SHIFT                         3
-#define VBUILDCON_LEN                           1
-#define VBUILDCON(p)                            CW_READ(p,VBUILDCON_CE)
-#define SETVBUILDCON(p,n)                       CW_WRITE(p,VBUILDCON_CE,n)
+enum ALGEBRA_CE {
 
-/* matrix */
+  EBUILDCON_CE = GM_N_CE,               /* continue after gm.h entries				*/
+
+  ALGEBRA_N_CE
+};
 
 /* element */
-#define EBUILDCON_CE                            52
 #define EBUILDCON_SHIFT                         11
 #define EBUILDCON_LEN                           1
 #define EBUILDCON(p)                            CW_READ(p,EBUILDCON_CE)
 #define SETEBUILDCON(p,n)                       CW_WRITE(p,EBUILDCON_CE,n)
 
+/****************************************************************************/
+/*																			*/
+/* macros for VECTORs														*/
+/*																			*/
+/****************************************************************************/
+
+#define VBUILDCON(p)                            VCFLAG(p)
+#define SETVBUILDCON(p,n)                       SETVCFLAG(p,n)
 
 /****************************************************************************/
 /*																			*/
