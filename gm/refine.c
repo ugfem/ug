@@ -288,9 +288,6 @@ static INT TriSectionEdge[64][2] =
 /* the indices of the edges of each side */
 static INT  CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
 
-/* ptr to Get_Sons_of_ElementSideProc */
-static Get_Sons_of_ElementSideProcPtr Get_Sons_of_ElementSideProc;
-
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -2928,17 +2925,7 @@ static int compare_nodes (const void *ce0, const void *ce1)
 	return(0);
 }
 
-INT Set_Get_Sons_of_ElementSideProc (Get_Sons_of_ElementSideProcPtr Proc)
-{
-	if (Proc==NULL) return (1);
-	Get_Sons_of_ElementSideProc = Proc;
-	hFlag = 0;
-	return (0);
-}
-
-INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, 
-								 INT Sons_of_Side, 
-								 ELEMENT **Sons_of_Side_List, INT *SonSides)
+INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT notHanging)
 {
 	COMPARE_RECORD ElemSonTable[MAX_SONS];
 	COMPARE_RECORD NbSonTable[MAX_SONS];
@@ -2994,7 +2981,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 	if (MARKCLASS(theNeighbor)==NO_CLASS)
 	{
 		
-		if (hFlag) assert(MARKCLASS(theElement)==YELLOW_CLASS);
+		if (notHanging) assert(MARKCLASS(theElement)==YELLOW_CLASS);
 	
 		return(GM_OK);
 	}			
@@ -3016,7 +3003,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 	assert(nbside<SIDES_OF_ELEM(theNeighbor));
 
 	/* get sons of neighbor to connect */
-	(*Get_Sons_of_ElementSideProc)(theNeighbor,nbside,&Sons_of_NbSide,
+	Get_Sons_of_ElementSide(theNeighbor,nbside,&Sons_of_NbSide,
 		Sons_of_NbSide_List,NbSonSides,1);
 	ASSERT(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0 
 			&& Sons_of_NbSide<6);
@@ -3240,7 +3227,7 @@ static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theCo
 		SonSides[0] = i;
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side,
-			Sons_of_Side_List,SonSides)!=GM_OK) RETURN(GM_FATAL);
+			Sons_of_Side_List,SonSides,hFlag)!=GM_OK) RETURN(GM_FATAL);
 	}
 
 	return(GM_OK);
@@ -4191,7 +4178,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 		assert(Sons_of_Side>0 && Sons_of_Side<6);
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
-			 	Sons_of_Side_List,SonSides)!=GM_OK) RETURN(GM_FATAL);
+			 	Sons_of_Side_List,SonSides,hFlag)!=GM_OK) RETURN(GM_FATAL);
 	}
 
 	return(GM_OK);
@@ -4408,7 +4395,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 				Sons_of_Side_List,SonSides,0)!=GM_OK) RETURN(GM_FATAL);
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
-				Sons_of_Side_List,SonSides)!=GM_OK) RETURN(GM_FATAL);
+				Sons_of_Side_List,SonSides,hFlag)!=GM_OK) RETURN(GM_FATAL);
 	}
 	
 	return(GM_OK);
@@ -4715,7 +4702,7 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 				ENDDEBUG
 				
 				if (Connect_Sons_of_ElementSide(theGrid,theElement,i,
-						Sons_of_Side,Sons_of_Side_List,SonSides)!=GM_OK) 
+						Sons_of_Side,Sons_of_Side_List,SonSides,hFlag)!=GM_OK) 
 					RETURN(GM_FATAL);
 			}
 		}
@@ -4769,9 +4756,6 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 	/* TODO: delete special debug */ debugelem = NULL;
 
 	/* set flags for different modes */
-	
-	/* set Get_Sons_of_ElementSideProc */
-	Get_Sons_of_ElementSideProc = Get_Sons_of_ElementSide;
 	rFlag=flag & 0x03; 	 	/* copy local or all */
 	hFlag=!((flag>>2)&0x1); /* use hanging nodes */
 	fifoFlag=(flag>>3)&0x1; /* use fifo       	 */
