@@ -1752,7 +1752,7 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
           /* every successor of pe was decoupled before */
           /* -> correct NSONS                          */
           next = SUCCE(pe);
-          while (next!=NULL && EPRIO(next)==prio
+          while (next!=NULL && PRIO2INDEX(EPRIO(next))==PRIO2INDEX(prio)
                  && theFather==EFATHER(next))
           {
             SETNSONS(theFather,NSONS(theFather)+1);
@@ -1846,47 +1846,6 @@ void ElementObjMkCons_Xferold (DDD_OBJ obj, int newness)
 }
 
 
-/* TODO: delete this function */
-void ElementObjMkCons_Refineold (DDD_OBJ obj, int newness)
-{
-  INT i,j;
-  ELEMENT *pe     = (ELEMENT *)obj;
-  VERTEX  *pv;
-
-  PRINTDEBUG(dddif,1,(PFMT " ElementObjMkCons_Refine(): pe=" EID_FMTX "\n",
-                      me,EID_PRTX(pe)))
-
-  /* reconstruct pointer from vectors */
-  if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (void*)pe;
-
-  if (dddctrl.sideData)
-  {
-    for (i=0; i<SIDES_OF_ELEM(pe); i++) VOBJECT(SVECTOR(pe,i)) = (void*)pe;
-  }
-
-  /* increment nsons of father */
-  if (newness == XFER_NEW)
-  {
-    ELEMENT *father = EFATHER(pe);
-    if (father != NULL) {
-      assert(NSONS(father)<
-             NSONS_OF_RULE(MARK2RULEADR(father,REFINE(father))));
-
-                        #ifdef __THREEDIM__
-      /* insert only first son */
-      if (SON(father,0) == NULL)
-                        #endif
-      SET_SON(father,NSONS(father),pe);
-      SETNSONS(father,NSONS(father)+1);
-    }
-    else
-      /* only GhostElements may have no father */
-      assert(EGHOST(pe));
-  }
-
-}
-
-
 void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
   ELEMENT *pe                     = (ELEMENT *)obj;
@@ -1930,28 +1889,29 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
   }
 
   /* check whether element and father are decoupled */
-  if (theFather != NULL)
-  {
-    ELEMENT *SonList[MAX_SONS];
-    int i;
-
-    if (GetAllSons(theFather,SonList)) ASSERT(0);
-    i = 0;
-    while (SonList[i] != NULL)
+  if (0)
+    if (theFather != NULL)
     {
-      if (SonList[i] == pe) lostson = 0;
-      i++;
+      ELEMENT *SonList[MAX_SONS];
+      int i;
+
+      if (GetAllSons(theFather,SonList)) ASSERT(0);
+      i = 0;
+      while (SonList[i] != NULL)
+      {
+        if (SonList[i] == pe) lostson = 0;
+        i++;
+      }
+
+      PRINTDEBUG(dddif,1,(PFMT "  ElementPriorityUpdate(): father: f="
+                          EID_FMTX " lost son=" EID_FMTX " nsons=%d\n",me,
+                          EID_PRTX(theFather),EID_PRTX(pe),NSONS(theFather)));
+
+      if (lostson == 1)
+        SETNSONS(theFather,NSONS(theFather)+1);
+      else if (old == new)
+        return;
     }
-
-    PRINTDEBUG(dddif,1,(PFMT "  ElementPriorityUpdate(): father: f="
-                        EID_FMTX " lost son=" EID_FMTX " nsons=%d\n",me,
-                        EID_PRTX(theFather),EID_PRTX(pe),NSONS(theFather)));
-
-    if (lostson == 1)
-      SETNSONS(theFather,NSONS(theFather)+1);
-    else if (old == new)
-      return;
-  }
 
   GRID_UNLINK_ELEMENT(theGrid,pe);
 
@@ -1969,7 +1929,7 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
       if (pe == SON(theFather,oldwhere))
       {
         if (succe != NULL)
-          if (EFATHER(succe)==theFather && EPRIO(succe)==old)
+          if (EFATHER(succe)==theFather && PRIO2INDEX(EPRIO(succe))==PRIO2INDEX(old))
             Next = succe;
 
         SET_SON(theFather,oldwhere,Next);
@@ -1992,7 +1952,7 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 
         /* add successor elements which were decoupled before */
         next = SUCCE(pe);
-        while (next!=NULL && EPRIO(next)==new
+        while (next!=NULL && PRIO2INDEX(EPRIO(next))==PRIO2INDEX(new)
                && theFather==EFATHER(next))
         {
           SETNSONS(theFather,NSONS(theFather)+1);
