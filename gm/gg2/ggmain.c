@@ -1951,7 +1951,29 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
     NeighborSide[i] = theElementContext->Neighbourside[i];
   }
 
-  theElement = InsertElement (MYMG(theGrid),n,Node,Neighbor,NeighborSide);
+  /*
+          theElement = InsertElement (MYMG(theGrid),n,Node,Neighbor,NeighborSide);
+   */
+  IFDEBUG(gm,2)
+  printf("ggmain.c: theMG=%x InsertElement n=%d Node=%x\n",MYMG(theGrid),n,Node);
+  printf("ggmain.c: ndelemptrarray=%x\n",MGNDELEMPTRARRAY(MYMG(theGrid)));
+  fflush(stdout);
+  for (i=0; i<n; i++)
+  {
+    printf("ggmain.c: i=%d Node=%x id=%d\n",i,Node[i],ID(Node[i]));
+    fflush(stdout);
+  }
+  for (i=0; i<NDELEM_BLKS_MAX; i++)
+  {
+    printf("i=%d ndblk=%x\n",i,MGNDELEMBLK(MYMG(theGrid),i));
+    fflush(stdout);
+  }
+  ENDDEBUG
+
+
+    theElement = InsertElement (MYMG(theGrid),n,Node,NULL,NULL);
+  if (theElement == NULL) RETURN(GM_FATAL);
+
   SETSUBDOMAIN(theElement,theElementContext->SubdomainID);
   theElementContext->thenewElement = theElement;
 
