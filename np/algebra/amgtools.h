@@ -70,7 +70,7 @@
 #define VECT(avect) (avect->vect)
 
 /* some useful macros for avects (see below) */
-#ifndef ModelP
+
         #define ELIMINATE_LIST1(ls,p) {if ((p)->pred!=NULL) (p)->pred->succ=(p)->succ;else ls=(p)->succ;if ((p)->succ!=NULL) (p)->succ->pred=(p)->pred;}
         #define ELIMINATE_LIST2(ls,le,p) {if ((p)->pred!=NULL) (p)->pred->succ=(p)->succ;else ls=(p)->succ;if ((p)->succ!=NULL) (p)->succ->pred=(p)->pred;else le=(p)->pred;}
 
@@ -81,16 +81,6 @@
 
         #define ADDBEFORE_LIST2(ls,le,pa,p) {(p)->succ=(pa); if (((p)->pred=(pa)->pred)==NULL) ls=(p);else (p)->pred->succ=(p);(pa)->pred=p;}
         #define APPEND_LIST2(la,le,aa,ae) { if ((aa)!=NULL) {if ((la)==NULL) {la=(aa); le=(ae);} else {(le)->succ=(aa); (aa)->pred=(le); le=(ae);}} }
-#else
-/* does not yet run in parallel version */
-        #define ELIMINATE_LIST1(ls,p) {(p)=NULL;}
-        #define ELIMINATE_LIST2(ls,le,p) {(p)=NULL;}
-        #define ADDATSTART_LIST1(ls,p) {(p)=NULL;}
-        #define ADDATSTART_LIST2(ls,le,p) {(p)=NULL;}
-        #define ADDATEND_LIST2(ls,le,p) {(p)=NULL;}
-        #define ADDBEFORE_LIST2(ls,le,pa,p) {(p)=NULL;}
-        #define APPEND_LIST2(la,le,aa,ae) {(aa)=NULL;}
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -106,8 +96,6 @@ struct avector {
   INT StronglyInfluenced;
   struct avector *pred;
   struct avector *succ;
-  /*	struct avector *pred2;
-          struct avector *succ2; */
   VECTOR *vect;
 };
 typedef struct avector AVECTOR;
@@ -128,6 +116,7 @@ typedef struct avector AVECTOR;
 
 INT UnmarkAll             (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta);
 INT MarkAll               (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta);
+INT MarkOffDiagWithoutDirichlet (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta);
 INT MarkAbsolute          (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta);
 INT MarkRelative          (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta);
 INT SetupInitialList      (GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR **initialEH);
@@ -135,6 +124,7 @@ INT DistributeInitialList (AVECTOR **La, AVECTOR **Le, AVECTOR **Ta, AVECTOR **T
 INT CountStrongNeighbors  (AVECTOR *initialS, DOUBLE *avNrOfStrongNbsHnd, INT *maxNeighbors);
 INT CoarsenRugeStueben    (GRID *theGrid);
 INT CoarsenVanek          (GRID *theGrid);
+INT IpAverage             (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpRugeStueben         (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpVanek               (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT GalerkinCGMatrixFromInterpolation(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);

@@ -111,6 +111,19 @@ INT MarkAll(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta)
   return(0);
 }
 
+INT MarkOffDiagWithoutDirichlet(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta)
+{
+  VECTOR *vect;
+  MATRIX *mat;
+
+  for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
+    if (VECSKIP(vect)==0)
+      for (mat=VSTART(vect); mat!=NULL; mat=MNEXT(mat))
+        if (VECSKIP(MDEST(mat))==0)
+          SETSTRONG(mat,1);
+  return(0);
+}
+
 INT MarkAbsolute(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta)
 {
   VECTOR *vect;
@@ -198,12 +211,11 @@ INT SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR 
     SETVCUSED(vect,0);
     SETVCCOARSE(vect,0);
 
-    /* if (VECSKIP(vect)!=0)
-       { we try first without ... */
     if ((avect=(AVECTOR *) GetMem(theHeap,sizeof(AVECTOR),FROM_TOP))==NULL)
     {
-      PrintErrorMessage('E',"SetupInitialList","could not allocate avector");
-      REP_ERR_RETURN(CMDERRORCODE);
+      PrintErrorMessage('E',"SetupInitialList",
+                        "could not allocate avector");
+      REP_ERR_RETURN(1);
     }
 
     CTRL(avect)=0;
@@ -217,7 +229,6 @@ INT SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR 
     VISTART(vect)=(MATRIX *) avect;             /* VISTART field is used for establishing bijection */
 
     ADDATEND_LIST2(*initialSH,*initialEH,avect);
-    /* } */
   }
 
   return(DONE);
@@ -233,12 +244,23 @@ INT DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Ta, AVECTOR **Te
   while ((avect=*La)!=NULL)
   {
     ELIMINATE_LIST2(*La,*Le,avect);
-    if (VECSKIP(VECT(avect))!=0)
+    if (VECSKIP(VECT(avect)) != 0)
     {
       SETAVFINE(avect,1);
       SETAVTESTED(avect,1);
       ADDATEND_LIST2(*Ta,*Te,avect);
     }
+                #ifdef ModelP
+    else if (DDD_InfoNCopies(PARHDR(VECT(avect))) > 0)
+    {
+
+      printf("border skiped\n");
+
+      SETAVFINE(avect,1);
+      SETAVTESTED(avect,1);
+      ADDATEND_LIST2(*Ta,*Te,avect);
+    }
+                #endif
     else
     {
       i=STRONG_OUT(avect);
@@ -297,7 +319,6 @@ INT CountStrongNeighbors(AVECTOR *initialS, DOUBLE *avNrOfStrongNbsHnd, INT *max
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef DebugAMG
 static INT CheckImat(GRID *theGrid, int i)
 {
   INT noc,nof;
@@ -335,7 +356,6 @@ static INT CheckImat(GRID *theGrid, int i)
   }
   return(0);
 }
-#endif
 
 static INT GenerateNewGrid(GRID *theGrid)
 {
@@ -343,7 +363,6 @@ static INT GenerateNewGrid(GRID *theGrid)
   VECTOR *vect,*newVect;
   GRID *newGrid;
   MULTIGRID *theMG;
-  MATRIX *imat;
 
   /* if the new grid is all or empty we're done else generate it */
   nof=noc=0;
@@ -360,8 +379,9 @@ static INT GenerateNewGrid(GRID *theGrid)
   theMG=MYMG(theGrid);
   if ((newGrid=CreateNewLevelAMG(theMG))==NULL)
   {
-    PrintErrorMessage('E',"GenerateNewGrid","could not create new amg level");
-    REP_ERR_RETURN(CMDERRORCODE);
+    PrintErrorMessage('E',"GenerateNewGrid",
+                      "could not create new amg level");
+    REP_ERR_RETURN(1);
   }
 
   /* generate vectors of newGrid */
@@ -373,18 +393,22 @@ static INT GenerateNewGrid(GRID *theGrid)
       /* generate coarse grid vector at end of list */
       if ((newVect=CreateVector(newGrid,VTYPE(vect),vect->object))==NULL)
       {
-        PrintErrorMessage('E',"GenerateNewGrid","could not create vector");
-        REP_ERR_RETURN(CMDERRORCODE);
+        PrintErrorMessage('E',"GenerateNewGrid",
+                          "could not create vector");
+        REP_ERR_RETURN(1);
       }
       SETVCLASS(newVect,3);
       SETVNCLASS(newVect,VCLASS(vect));
 
       /* an interpolation matrix is created ... */
-      if ((imat=CreateIMatrix(theGrid,vect,newVect))==NULL)
+      if (CreateIMatrix(theGrid,vect,newVect) == NULL)
       {
-        PrintErrorMessage('E',"GenerateNewGrid","could not create interpolation matrix");
-        REP_ERR_RETURN(CMDERRORCODE);
+        PrintErrorMessage('E',"GenerateNewGrid",
+                          "could not create interpolation matrix");
+        REP_ERR_RETURN(1);
       }
+      assert(VISTART(vect)!=NULL);
+      assert(MDEST(VISTART(vect))!=NULL);
     }
   }
   return(DONE);
@@ -427,7 +451,7 @@ INT CoarsenRugeStueben(GRID *theGrid)
   if (maxNeighbors>MAXNEIGHBORS)
   {
     Release(theHeap,FROM_TOP);
-    REP_ERR_RETURN(CMDERRORCODE);
+    REP_ERR_RETURN(1);
   }
 
   Ca=Ce=Fa=Fe=Ta=Te=NULL;
@@ -446,8 +470,9 @@ INT CoarsenRugeStueben(GRID *theGrid)
   {
     while ((avect=Ua[i])!=NULL)
     {
-      ELIMINATE_LIST2(Ua[i],Ue[i],avect)
-      ADDATEND_LIST2(Ca,Ce,avect)
+      ELIMINATE_LIST2(Ua[i],Ue[i],avect);
+      ADDATEND_LIST2(Ca,Ce,avect);
+      assert(VECSKIP(VECT(avect)) == 0);
       SETAVCOARSE(avect,1);
       vect=VECT(avect);
       for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
@@ -458,9 +483,10 @@ INT CoarsenRugeStueben(GRID *theGrid)
         mat2=MADJ(mat);
         if (mat2==NULL)
         {
-          PrintErrorMessage('E',"CoarsenRugeStueben","G(A) is not symmetric");
+          PrintErrorMessage('E',"CoarsenRugeStueben",
+                            "G(A) is not symmetric");
           Release(theHeap,FROM_TOP);
-          REP_ERR_RETURN(CMDERRORCODE);
+          REP_ERR_RETURN(1);
         }
         if (STRONG(mat2))
         {
@@ -500,8 +526,9 @@ INT CoarsenRugeStueben(GRID *theGrid)
     i--;
   }
 
-  /* second part: final C-point choice (tests if all F points i depend only on points j depending on C
-          if not, either j  or i is made C-point */
+  /* second part: final C-point choice
+     (tests if all F points i depend only on points j depending on C
+          if not, either j  or i is made C-point) */
   while ((avect=Fa)!=NULL)
   {
     ELIMINATE_LIST2(Fa,Fe,avect)
@@ -557,6 +584,7 @@ INT CoarsenRugeStueben(GRID *theGrid)
           ADDATEND_LIST2(Ca,Ce,testCoarse)
           SETAVTESTED(testCoarse,0);
       SETAVFINE(testCoarse,0);
+      assert(VECSKIP(VECT(testCoarse)) == 0);
       SETAVCOARSE(testCoarse,1);
     }
 
@@ -567,23 +595,18 @@ INT CoarsenRugeStueben(GRID *theGrid)
 
   Fa=Ta; Fe=Te;
 
-  /* copy coarse/fine information to theGrid and generate vectors of newGrid */
+  /* copy coarse/fine information to theGrid
+     and generate vectors of newGrid */
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
   {
-    if (VECSKIP(vect)==0)
-    {
-      avect=(AVECTOR *) VISTART(vect);
-
-      if (AVCOARSE(avect))
-        SETVCCOARSE(vect,1);
-    }
+    avect=(AVECTOR *) VISTART(vect);
+    if (AVCOARSE(avect))
+      SETVCCOARSE(vect,1);
     VISTART(vect)=NULL;             /* ==(AVECTOR *) VISTART(vect) */
   }
-
   error=GenerateNewGrid(theGrid);
   Release(theHeap,FROM_TOP);
   REP_ERR_RETURN(error);
-
 }
 
 
@@ -640,7 +663,7 @@ static INT GenerateClusters(AVECTOR **Ua, AVECTOR **Ue, GRID *theGrid, GRID *new
       if ((newVect=CreateVector(newGrid,VTYPE(vect),vect->object))==NULL)
       {
         PrintErrorMessage('E',"GenerateClusters","could not create vector");
-        REP_ERR_RETURN(CMDERRORCODE);
+        REP_ERR_RETURN(1);
       }
       SETVCLASS(newVect,3);
       SETVNCLASS(newVect,CLASS(vect));
@@ -651,13 +674,15 @@ static INT GenerateClusters(AVECTOR **Ua, AVECTOR **Ue, GRID *theGrid, GRID *new
       {
         vect=VECT(avect);
 
-        VISTART(vect)=NULL;                             /* !was used for connection to avect up to now! */
+        VISTART(vect)=NULL;                             /* !was used for connection
+                                                           to avect up to now! */
 
         /* interpolation matrices are created to vect */
         if ((imat=CreateIMatrix(theGrid,vect,newVect))==NULL)
         {
-          PrintErrorMessage('E',"GenerateClusters","could not create interpolation matrix");
-          REP_ERR_RETURN(CMDERRORCODE);
+          PrintErrorMessage('E',"GenerateClusters",
+                            "could not create interpolation matrix");
+          REP_ERR_RETURN(1);
         }
 
         /* change the order for the neighbors of the cluster */
@@ -713,14 +738,14 @@ INT CoarsenVanek(GRID *theGrid)
   {
     PrintErrorMessage('E',"CoarsenVanek","too many neighbors");
     Release(theHeap,FROM_TOP);
-    REP_ERR_RETURN(CMDERRORCODE);
+    REP_ERR_RETURN(1);
   }
 
   if ((newGrid=CreateNewLevelAMG(theMG))==NULL)
   {
     PrintErrorMessage('E',"CoarsenCommand","could not create new amg level");
     Release(theHeap,FROM_TOP);
-    REP_ERR_RETURN(CMDERRORCODE);
+    REP_ERR_RETURN(1);
   }
 
   Da=De=NULL;
@@ -737,15 +762,18 @@ INT CoarsenVanek(GRID *theGrid)
   for (avect=Da; avect!=NULL; avect=avect->succ)
     VISTART(VECT(avect))=NULL;
 
-  /* first step: we generate clusters with a size greater than (avNosN+1)*.66-1 */
-  if ((error=GenerateClusters(Ua,Ue,theGrid,newGrid,(INT)((avNosN+1.0)*0.66-1.0)))!=DONE)
+  /* first step:
+     we generate clusters with a size greater than (avNosN+1)*.66-1 */
+  if ((error=GenerateClusters(Ua,Ue,theGrid,newGrid,
+                              (INT)((avNosN+1.0)*0.66-1.0)))!=DONE)
   {
     Release(theHeap,FROM_TOP);
     REP_ERR_RETURN(error);
   }
 
-  /* second step: try to add the rest of the points to an already existing cluster
-          if there are several possibilities add it to the smallest cluster */
+  /* second step:
+     try to add the rest of the points to an already existing cluster
+     if there are several possibilities add it to the smallest cluster */
   i=0;
   while (i<MAXNEIGHBORS)
   {
@@ -788,15 +816,17 @@ INT CoarsenVanek(GRID *theGrid)
             ADDATEND_LIST2(Ua[k],Ue[k],avect2);
           }
 
-        /* we now eliminate avect (but its successor is still valid!) */
+        /* we now eliminate avect
+           (but its successor is still valid!) */
         ELIMINATE_LIST2(Ua[i],Ue[i],avect);
 
         VISTART(vect)=NULL;
         if ((imat=CreateIMatrix(theGrid,vect,newVect0))==NULL)
         {
-          PrintErrorMessage('E',"CoarsenVanek","could not create interpolation matrix");
+          PrintErrorMessage('E',"CoarsenVanek",
+                            "could not create interpolation matrix");
           Release(theHeap,FROM_TOP);
-          REP_ERR_RETURN(CMDERRORCODE);
+          REP_ERR_RETURN(1);
         }
 
         INDEX(newVect0)++;
@@ -831,6 +861,75 @@ INT CoarsenVanek(GRID *theGrid)
 /*                                                                          */
 /****************************************************************************/
 
+INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+{
+  INT icomp,mcomp,ncomp,i,j,n;
+  DOUBLE s,t,sum,factor;
+  GRID *newGrid;
+  VECTOR *vect,*dest,*newVect;
+  MATRIX *mat,*mat2,*imat;
+
+  for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
+    if (VCCOARSE(vect)) {
+      dest = vect;
+      assert(VECSKIP(dest)==0);
+      assert(VISTART(dest)!=NULL);
+      newVect = MDEST(VISTART(dest));
+      assert(newVect!=NULL);
+    }
+
+  newGrid=theGrid->coarser;
+  for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
+    if ((VCCOARSE(vect)==0)&&(VECSKIP(vect)==0))
+    {
+      ncomp = MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(vect));
+      n = 0;
+      for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
+        if (VCCOARSE(MDEST(mat))==1) n++;
+      assert(n > 0);
+      s = 1.0 / n;
+      for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
+        dest = MDEST(mat);
+        if (VCCOARSE(dest) == 0) continue;
+        if (MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(dest)) != ncomp) {
+          PrintErrorMessage('E',"IpAverage","can't handle this format");
+          REP_ERR_RETURN(1);
+        }
+        assert(VISTART(dest)!=NULL);
+        newVect = MDEST(VISTART(dest));
+        assert(newVect!=NULL);
+        if ((imat=CreateIMatrix(theGrid,vect,newVect))==NULL) {
+          PrintErrorMessage('E',"IpAverge",
+                            "could not create interpolation matrix");
+          REP_ERR_RETURN(1);
+        }
+        SETMDIAG(imat,1);
+        MVALUE(imat,0) = s;
+        for (i=0; i<ncomp; i++)
+          for (j=0; j<ncomp; j++)
+            if (i == j) MVALUE(imat,i*ncomp + j) = s;
+            else MVALUE(imat,i*ncomp + j) = 0.0;
+      }
+    }
+    else {
+      imat = VISTART(vect);
+      if (imat == NULL) continue;
+      SETMDIAG(imat,1);
+      MVALUE(imat,0) = 1.0;
+      for (i=0; i<ncomp; i++)
+        for (j=0; j<ncomp; j++)
+          if (i == j) MVALUE(imat,i*ncomp + j) = 1.0;
+          else MVALUE(imat,i*ncomp + j) = 0.0;
+    }
+
+  IFDEBUG(np,4)
+  CheckImat(theGrid,2);
+  ENDDEBUG
+
+  return(DONE);
+}
+
+
 INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT icomp,mcomp;
@@ -856,7 +955,8 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
           where C_i:coarse, S_i:strong, W_i:weak in N_i
           The last term is approximated by
                \frac{\sum{C_j \cut C_i} a_{jk}}{{\sum_{C_j \cut C_i} a_{jk} e_k}}
-      Please note that the IP-matrices directly connecting the coarse grid points to their fathers
+      Please note that the IP-matrices directly connecting
+          the coarse grid points to their fathers
           are used here to store intermediate values of a local computation. */
 
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
@@ -875,8 +975,10 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
         }
         else
         {
-          /* since with weakly connected points the below interpolation to coarse grid points
-             is not by the coarse grid choice guaranteed to work, these are simply lumped to the diagonal */
+          /* since with weakly connected points the below
+             interpolation to coarse grid points
+             is not by the coarse grid choice guaranteed to work,
+             these are simply lumped to the diagonal */
           if ((STRONG(mat)==0)&&(VECSKIP(vect2)==0))
             s+=MVALUE(mat,mcomp);
         }
@@ -885,9 +987,12 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 #ifdef DebugAMG
       UserWriteF("NID=%d: s=%f, ",ID(VMYNODE(vect)),s);
 #endif
-      /*******unfortunately we have to store s to formulate WAGNER for later use in amgc:
-              in the previous version this was done in FACTOREDMAT. For the new version one
-              should  look at this point again.
+      /*******unfortunately we have to store s to formulate
+         WAGNER for later use in amgc:
+         in the previous version this was done in FACTOREDMAT.
+         For the new version one
+         should  look at this point again.
+
          switch (ipType)
          {
               case REUSKEN:
@@ -939,7 +1044,7 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
           if ((imat=CreateIMatrix(theGrid,vect,newVect))==NULL)
           {
             PrintErrorMessage('E',"IpRugeStueben","could not create interpolation matrix");
-            REP_ERR_RETURN(CMDERRORCODE);
+            REP_ERR_RETURN(1);
           }
           MVALUE(imat,icomp)=t;
 
@@ -965,9 +1070,10 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
     if (VCCOARSE(vect))
       MVALUE(VISTART(vect),icomp)=1.0;
 
-#ifdef DebugAMG
+  IFDEBUG(np,4)
   CheckImat(theGrid,2);
-#endif
+  ENDDEBUG
+
   return(DONE);
 }
 
@@ -1020,7 +1126,7 @@ INT IpVanek(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
           if ((imat2=CreateIMatrix(theGrid,vect,newVect2))==NULL)
           {
             PrintErrorMessage('E',"IpVanek","could not create interpolation matrix");
-            REP_ERR_RETURN(CMDERRORCODE);
+            REP_ERR_RETURN(1);
           }
 
           /* but the cluster imat should remain the first one */
@@ -1031,9 +1137,9 @@ INT IpVanek(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
       }
   }
 
-#ifdef DebugAMG
+  IFDEBUG(np,4)
   CheckImat(theGrid,2);
-#endif
+  ENDDEBUG
 
   return(DONE);
 }
@@ -1049,54 +1155,20 @@ INT IpVanek(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 /****************************************************************************/
 
 
-INT GalerkinCGMatrixFromInterpolation(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT GalerkinCGMatrixFromInterpolation(GRID *theGrid,
+                                      MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  INT icomp,mcomp;
+  INT icomp,mcomp,level;
   DOUBLE Akl,IikAkl;
   GRID *newGrid;
   VECTOR *vect,*vect2,*newVect,*newVect2;
   MATRIX *mat,*mat2,*imat,*imat2;
 
-  if (MD_IS_SCALAR(A)==FALSE)
+  level = GLEVEL(theGrid) - 1;
+  if (AllocMDFromMD(MYMG(theGrid),level,level,A,&A))
     REP_ERR_RETURN(1);
-  mcomp=MD_SCALCMP(A);
-
-  /* if (MD_IS_SCALAR(I)==FALSE)
-          REP_ERR_RETURN(1);
-     icomp=MD_SCALCMP(I); */
-  icomp = 0;       /* preliminary, later this should be obtained via I */
-
-  newGrid=theGrid->coarser;
-
-  for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
-  {
-    for (mat=VSTART(vect); mat!=NULL; mat=MNEXT(mat))
-    {
-      vect2=MDEST(mat);
-      Akl=MVALUE(mat,mcomp);
-      for (imat=VISTART(vect); imat!=NULL; imat=MNEXT(imat))
-      {
-        newVect=MDEST(imat);
-        IikAkl=Akl*MVALUE(imat,icomp);
-        for (imat2=VISTART(vect2); imat2!=NULL; imat2=MNEXT(imat2))
-        {
-          newVect2=MDEST(imat2);
-          assert((VECSKIP(vect)==0)&&(VECSKIP(vect2)==0));
-          if ((mat2=GetMatrix(newVect,newVect2))==NULL)
-          {
-            if ((mat2=CreateConnection(newGrid,newVect,newVect2))==NULL)
-            {
-              PrintErrorMessage('E',"GalerkinCGMatrixFromInterpolation","could not create stiffness matrix");
-              REP_ERR_RETURN(CMDERRORCODE);
-            }
-            MVALUE(mat2,mcomp)=0.0;
-            MVALUE(MADJ(mat2),mcomp)=0.0;
-          }
-          MVALUE(mat2,mcomp)+=IikAkl*MVALUE(imat2,icomp);
-        }
-      }
-    }
-  }
+  if (AssembleGalerkinByMatrix(theGrid,A,1))
+    REP_ERR_RETURN(1);
 
   return(DONE);
 }
@@ -1136,8 +1208,9 @@ INT SparsenCGMatrix(GRID *theGrid, MATDATA_DESC *A, INT lumpFlag)
 
         if (DisposeConnection(theGrid,MMYCON(mat))!=0)
         {
-          PrintErrorMessage('E',"SparsenCGMatrix","could not dispose connection");
-          REP_ERR_RETURN(CMDERRORCODE);
+          PrintErrorMessage('E',"SparsenCGMatrix",
+                            "could not dispose connection");
+          REP_ERR_RETURN(1);
         }
       }
     }
@@ -1160,6 +1233,7 @@ INT ReorderFineGrid(GRID *theGrid, INT orderType)
 {
   VECTOR *vect,*CaV,*CeV,*FaV,*FeV,*TaV,*TeV;
 
+    #ifndef ModelP
   switch (orderType)
   {
   case ASBEFORE : break;
@@ -1201,6 +1275,7 @@ INT ReorderFineGrid(GRID *theGrid, INT orderType)
     }
     break;
   }
+        #endif
 
   return(DONE);
 }
