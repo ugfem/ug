@@ -268,6 +268,11 @@ D*/
 INT InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
         DOUBLE nodal_values[MAX_CORNERS_OF_ELEM], DOUBLE *result)
 {
+    if (dim==1)
+    {
+        *result = (1-ip_local[0])*nodal_values[0] + ip_local[0]*nodal_values[1];
+        return(0);
+    }
 	if (dim==2)
 	{
 		if (tag==TRIANGLE) {
@@ -979,14 +984,14 @@ INT D_GN (INT n, INT i, COORD *ip_local, DOUBLE *derivative)
 			derivative[0] = 1.0-Eta;
 			derivative[1] = -Xi;
 			return(0);
-		  case 2: 
-			derivative[0] = -Eta;
-			derivative[1] = 1.0-Xi;
-			return(0);
-		  case 3: 
-			derivative[0] = Eta;
-			derivative[1] = Xi;
-			return(0);
+          case 2:
+            derivative[0] = Eta;
+            derivative[1] = Xi;
+            return(0);
+          case 3:
+            derivative[0] = -Eta;
+            derivative[1] = 1.0-Xi;
+            return(0);
 		  }
 	  }
     #endif
