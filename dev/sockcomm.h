@@ -102,7 +102,7 @@ enum DevCmds
   DC_ErasePolygon,
   DC_Polymark,
   DC_InvPolymark,
-  DC_Text,
+  DC_DrawText,
   DC_CenteredText,
   DC_ClearViewPort,
   DC_SetLineWidth,
