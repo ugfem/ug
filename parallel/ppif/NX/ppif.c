@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      osf-ppif.c                                                    */
+/* File:      ppif.c                                                        */
 /*                                                                          */
 /* Purpose:   parallel processor interface                                  */
 /*            Provides a portable interface to message passing MIMD         */
@@ -26,7 +26,7 @@
 /*            Universitaet Stuttgart                                        */
 /*            Allmandring 3a                                                */
 /*            7000 Stuttgart 80                                             */
-/*            internet: birken@rus.uni-stuttgart.de                         */
+/*            internet: birken@ica3.uni-stuttgart.de                        */
 /*                                                                          */
 /* History:   17 Aug 1992, begin                                            */
 /*            18 Feb 1993, Indigo version                                   */
@@ -35,6 +35,11 @@
 /* Remarks:                                                                 */
 /*                                                                          */
 /****************************************************************************/
+
+/* uncomment this to get information about the physical partition shape
+   and size on startup (InitPPIF) */
+/*#define PPIF_SHOW_PARTITION_INFO*/
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -49,6 +54,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <assert.h>
 
 
 
@@ -295,6 +301,43 @@ int InitPPIF (int *argcp, char ***argvp)
   {
     printf("%4d: PPIF-error: couldn't get VChannel memory!\n", me);
   }
+
+#ifdef PPIF_SHOW_PARTITION_INFO
+  if (me==0) {
+    nx_nodes_t mynodes;
+    unsigned long nnodes;
+    int i, status;
+    long rows, cols;
+
+    status = nx_app_nodes(0, &mynodes, &nnodes);
+    assert(nnodes==procs);
+    if (status!=0)
+    {
+      printf("%4d: PPIF-warning: couldn't get partition-info\n", me);
+    }
+    else
+    {
+      printf("PARTITION_INFO:\n");
+      for(i = 0; i < nnodes; i++)
+      {
+        if (i%8==0) printf("\t%4d: ", i);
+        printf(" %4d", mynodes[i]);
+        if (i%8==7) printf("\n");
+      }
+      printf("\n");
+    }
+
+    status = nx_app_rect(&rows, &cols);
+    if (status!=0)
+    {
+      printf("%4d: PPIF-warning: couldn't get partition-rect\n", me);
+    }
+    else
+    {
+      printf("PARTITION_RECT: row=%ld x col=%ld\n", rows, cols);
+    }
+  }
+#endif
 
   /* 3D array configuration */
   /*
