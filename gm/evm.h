@@ -82,8 +82,14 @@
 										(C)[1] = (A)[1] - (B)[1];}
 #define V2_ADD(A,B,C)				   {(C)[0] = (A)[0] + (B)[0];\
 										(C)[1] = (A)[1] + (B)[1];}
+#define V2_ADD1(A,C)				   {(C)[0] += (A)[0];\
+										(C)[1] += (A)[1];}
 #define V2_SCALE(c,C)				   {(C)[0] = (c)*(C)[0];\
 										(C)[1] = (c)*(C)[1];}
+#define V2_SCALEADD1(c,A,C)			   {(C)[0] += (c)*(A)[0];\
+										(C)[1] += (c)*(A)[1];}
+#define V2_SCALESET(c,A,C)			   {(C)[0] = (c)*(A)[0];\
+										(C)[1] = (c)*(A)[1];}
 #define V2_VECTOR_PRODUCT(A,B,c)		(c) = (A)[0]*(B)[1] - (A)[1]*(B)[0];
 #define V2_COMPARE(A,B,c)				(c) = (((ABS((A)[0]-(B)[0])<SMALL_C)&&(ABS((A)[1]-(B)[1])<SMALL_C))?(0):(1));
 #define V2_ISEQUAL(A,B) 				((ABS((A)[0]-(B)[0])<SMALL_C)&&(ABS((A)[1]-(B)[1])<SMALL_C))
@@ -145,9 +151,18 @@
 #define V3_ADD(A,B,C)				   {(C)[0] = (A)[0] + (B)[0];\
 										(C)[1] = (A)[1] + (B)[1];\
 										(C)[2] = (A)[2] + (B)[2];}
+#define V3_ADD1(A,C)				   {(C)[0] += (A)[0];\
+										(C)[1] += (A)[1];\
+										(C)[2] += (A)[2];}
 #define V3_SCALE(c,C)				   {(C)[0] = (c)*(C)[0];\
 										(C)[1] = (c)*(C)[1];\
 										(C)[2] = (c)*(C)[2];}
+#define V3_SCALEADD1(c,A,C)			   {(C)[0] += (c)*(A)[0];\
+										(C)[1] += (c)*(A)[1];\
+										(C)[2] += (c)*(A)[2];}
+#define V3_SCALESET(c,A,C)			   {(C)[0] = (c)*(A)[0];\
+										(C)[1] = (c)*(A)[1];\
+										(C)[2] = (c)*(A)[2];}
 #define V3_VECTOR_PRODUCT(A,B,C)	   {(C)[0] = (A)[1]*(B)[2] - (A)[2]*(B)[1];\
 										(C)[1] = (A)[2]*(B)[0] - (A)[0]*(B)[2];\
 										(C)[2] = (A)[0]*(B)[1] - (A)[1]*(B)[0];}
@@ -266,7 +281,10 @@
 #define V_DIM_COPY(A,C)				    V2_COPY(A,C)
 #define V_DIM_SUBTRACT(A,B,C)			V2_SUBTRACT(A,B,C)
 #define V_DIM_ADD(A,B,C)			    V2_ADD(A,B,C)
+#define V_DIM_ADD1(A,C)		            V2_ADD1(A,C)
 #define V_DIM_SCALE(c,C)			    V2_SCALE(c,C)
+#define V_DIM_SCALEADD1(c,A,C)			V2_SCALEADD1(c,A,C)
+#define V_DIM_SCALESET(c,A,C)			V2_SCALESET(c,A,C)
 #define V_DIM_VECTOR_PRODUCT(A,B,c)		V2_VECTOR_PRODUCT(A,B,c)
 #define V_DIM_COMPARE(A,B,c)			V2_COMPARE(A,B,c)
 #define V_DIM_ISEQUAL(A,B) 			    V2_ISEQUAL(A,B)
@@ -293,7 +311,10 @@
 #define V_DIM_COPY(A,C)				    V3_COPY(A,C)
 #define V_DIM_SUBTRACT(A,B,C)			V3_SUBTRACT(A,B,C)
 #define V_DIM_ADD(A,B,C)			    V3_ADD(A,B,C)
+#define V_DIM_ADD1(A,C)			        V3_ADD1(A,C)
 #define V_DIM_SCALE(c,C)			    V3_SCALE(c,C)
+#define V_DIM_SCALEADD1(c,A,C)			V3_SCALEADD1(c,A,C)
+#define V_DIM_SCALESET(c,A,C)			V3_SCALESET(c,A,C)
 #define V_DIM_VECTOR_PRODUCT(A,B,c)		V3_VECTOR_PRODUCT(A,B,c)
 #define V_DIM_COMPARE(A,B,c)			V3_COMPARE(A,B,c)
 #define V_DIM_ISEQUAL(A,B) 			    V3_ISEQUAL(A,B)
