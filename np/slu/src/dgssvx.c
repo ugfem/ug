@@ -24,8 +24,22 @@
 
 static SuperLUStat_t SLU_SuperLUStat;
 
+static DNformat  *Bstore, *Xstore;
+static double    *Bmat, *Xmat;
+static int ldb, ldx, nrhs;
+static SuperMatrix *AA;    /* A in NC format used by the factorization routine.*/
+static SuperMatrix AC;    /* Matrix postmultiplied by Pc */
+static int colequ, equil, nofact, notran, rowequ;
+static char trant[1], norm[1];
+static int i, j, info1;
+static double amax, anorm, bignum, smlnum, colcnd, rowcnd, rcmax, rcmin;
+static int relax, panel_size;
+static double diag_pivot_thresh, drop_tol;
+static double t0;            /* temporary time */
+static double    *utime;
+
 void
-dgssvx(char *fact, char *trans, char *refact,
+dgssvx(int decompose, char *fact, char *trans, char *refact,
        SuperMatrix *A, factor_param_t *factor_params, int *perm_c,
        int *perm_r, int *etree, char *equed, double *R, double *C,
        SuperMatrix *L, SuperMatrix *U, void *work, int lwork,
@@ -381,211 +395,203 @@ dgssvx(char *fact, char *trans, char *refact,
    *
    */
 
-  DNformat  *Bstore, *Xstore;
-  double    *Bmat, *Xmat;
-  int ldb, ldx, nrhs;
-  SuperMatrix *AA;   /* A in NC format used by the factorization routine.*/
-  SuperMatrix AC;   /* Matrix postmultiplied by Pc */
-  int colequ, equil, nofact, notran, rowequ;
-  char trant[1], norm[1];
-  int i, j, info1;
-  double amax, anorm, bignum, smlnum, colcnd, rowcnd, rcmax, rcmin;
-  int relax, panel_size;
-  double diag_pivot_thresh, drop_tol;
-  double t0;           /* temporary time */
-  double    *utime;
   extern SuperLUStat_t SuperLUStat;
 
   /* External functions */
   extern double dlangs(char *, SuperMatrix *);
   extern double dlamch_(char *);
 
-  Bstore = B->Store;
-  Xstore = X->Store;
-  Bmat   = Bstore->nzval;
-  Xmat   = Xstore->nzval;
-  ldb    = Bstore->lda;
-  ldx    = Xstore->lda;
-  nrhs   = B->ncol;
+  if (decompose)
+  {
 
-  *info = 0;
-  nofact = lsame_(fact, "N");
-  equil = lsame_(fact, "E");
-  notran = lsame_(trans, "N");
-  if (nofact || equil) {
-    *(unsigned char *)equed = 'N';
-    rowequ = FALSE;
-    colequ = FALSE;
-  } else {
-    rowequ = lsame_(equed, "R") || lsame_(equed, "B");
-    colequ = lsame_(equed, "C") || lsame_(equed, "B");
-    smlnum = dlamch_("Safe minimum");
-    bignum = 1. / smlnum;
-  }
+    Bstore = B->Store;
+    Xstore = X->Store;
+    Bmat   = Bstore->nzval;
+    Xmat   = Xstore->nzval;
+    ldb    = Bstore->lda;
+    ldx    = Xstore->lda;
+    nrhs   = B->ncol;
 
-  /* Test the input parameters */
-  if (!nofact && !equil && !lsame_(fact, "F")) *info = -1;
-  else if (!notran && !lsame_(trans, "T") && !lsame_(trans, "C")) *info = -2;
-  else if ( !(lsame_(refact,"Y") || lsame_(refact, "N")) ) *info = -3;
-  else if ( A->nrow != A->ncol || A->nrow < 0 ||
-            (A->Stype != NC && A->Stype != NR) ||
-            A->Dtype != _D || A->Mtype != GE )
-    *info = -4;
-  else if (lsame_(fact, "F") && !(rowequ || colequ || lsame_(equed, "N")))
-    *info = -9;
-  else {
-    if (rowequ) {
-      rcmin = bignum;
-      rcmax = 0.;
-      for (j = 0; j < A->nrow; ++j) {
-        rcmin = MIN(rcmin, R[j]);
-        rcmax = MAX(rcmax, R[j]);
-      }
-      if (rcmin <= 0.) *info = -10;
-      else if ( A->nrow > 0)
-        rowcnd = MAX(rcmin,smlnum) / MIN(rcmax,bignum);
-      else rowcnd = 1.;
-    }
-    if (colequ && *info == 0) {
-      rcmin = bignum;
-      rcmax = 0.;
-      for (j = 0; j < A->nrow; ++j) {
-        rcmin = MIN(rcmin, C[j]);
-        rcmax = MAX(rcmax, C[j]);
-      }
-      if (rcmin <= 0.) *info = -11;
-      else if (A->nrow > 0)
-        colcnd = MAX(rcmin,smlnum) / MIN(rcmax,bignum);
-      else colcnd = 1.;
-    }
-    if (*info == 0) {
-      if ( lwork < -1 ) *info = -15;
-      else if ( B->ncol < 0 || Bstore->lda < MAX(0, A->nrow) ||
-                B->Stype != DN || B->Dtype != _D ||
-                B->Mtype != GE )
-        *info = -16;
-      else if ( X->ncol < 0 || Xstore->lda < MAX(0, A->nrow) ||
-                B->ncol != X->ncol || X->Stype != DN ||
-                X->Dtype != _D || X->Mtype != GE )
-        *info = -17;
-    }
-  }
-  if (*info != 0) {
-    i = -(*info);
-    xerbla_("dgssvx", &i);
-    return;
-  }
-
-  /* Default values for factor_params */
-  panel_size = sp_ienv(1);
-  relax      = sp_ienv(2);
-  diag_pivot_thresh = 1.0;
-  drop_tol   = 0.0;
-  if ( factor_params != NULL ) {
-    if ( factor_params->panel_size != -1 )
-      panel_size = factor_params->panel_size;
-    if ( factor_params->relax != -1 ) relax = factor_params->relax;
-    if ( factor_params->diag_pivot_thresh != -1 )
-      diag_pivot_thresh = factor_params->diag_pivot_thresh;
-    if ( factor_params->drop_tol != -1 )
-      drop_tol = factor_params->drop_tol;
-  }
-
-  StatInit(panel_size, relax);
-  utime = SuperLUStat.utime;
-
-  /* Convert A to NC format when necessary. */
-  if ( A->Stype == NR ) {
-    NRformat *Astore = A->Store;
-    AA = (SuperMatrix *) SUPERLU_MALLOC( sizeof(SuperMatrix) );
-    dCreate_CompCol_Matrix(AA, A->ncol, A->nrow, Astore->nnz,
-                           Astore->nzval, Astore->colind, Astore->rowptr,
-                           NC, A->Dtype, A->Mtype);
-    if ( notran ) {     /* Reverse the transpose argument. */
-      *trant = 'T';
-      notran = 0;
+    *info = 0;
+    nofact = lsame_(fact, "N");
+    equil = lsame_(fact, "E");
+    notran = lsame_(trans, "N");
+    if (nofact || equil) {
+      *(unsigned char *)equed = 'N';
+      rowequ = FALSE;
+      colequ = FALSE;
     } else {
-      *trant = 'N';
-      notran = 1;
-    }
-  } else {   /* A->Stype == NC */
-    *trant = *trans;
-    AA = A;
-  }
-
-  if ( equil ) {
-    t0 = SuperLU_timer_();
-    /* Compute row and column scalings to equilibrate the matrix A. */
-    dgsequ(AA, R, C, &rowcnd, &colcnd, &amax, &info1);
-
-    if ( info1 == 0 ) {
-      /* Equilibrate matrix A. */
-      dlaqgs(AA, R, C, rowcnd, colcnd, amax, equed);
       rowequ = lsame_(equed, "R") || lsame_(equed, "B");
       colequ = lsame_(equed, "C") || lsame_(equed, "B");
+      smlnum = dlamch_("Safe minimum");
+      bignum = 1. / smlnum;
     }
-    utime[EQUIL] = SuperLU_timer_() - t0;
-  }
 
-  /* Scale the right hand side if equilibration was performed. */
-  if ( notran ) {
-    if ( rowequ ) {
-      for (j = 0; j < nrhs; ++j)
-        for (i = 0; i < A->nrow; ++i) {
-          Bmat[i + j*ldb] *= R[i];
+    /* Test the input parameters */
+    if (!nofact && !equil && !lsame_(fact, "F")) *info = -1;
+    else if (!notran && !lsame_(trans, "T") && !lsame_(trans, "C")) *info = -2;
+    else if ( !(lsame_(refact,"Y") || lsame_(refact, "N")) ) *info = -3;
+    else if ( A->nrow != A->ncol || A->nrow < 0 ||
+              (A->Stype != NC && A->Stype != NR) ||
+              A->Dtype != _D || A->Mtype != GE )
+      *info = -4;
+    else if (lsame_(fact, "F") && !(rowequ || colequ || lsame_(equed, "N")))
+      *info = -9;
+    else {
+      if (rowequ) {
+        rcmin = bignum;
+        rcmax = 0.;
+        for (j = 0; j < A->nrow; ++j) {
+          rcmin = MIN(rcmin, R[j]);
+          rcmax = MAX(rcmax, R[j]);
         }
-    }
-  } else if ( colequ ) {
-    for (j = 0; j < nrhs; ++j)
-      for (i = 0; i < A->nrow; ++i) {
-        Bmat[i + j*ldb] *= C[i];
+        if (rcmin <= 0.) *info = -10;
+        else if ( A->nrow > 0)
+          rowcnd = MAX(rcmin,smlnum) / MIN(rcmax,bignum);
+        else rowcnd = 1.;
       }
-  }
-
-  if ( nofact || equil ) {
-
-    t0 = SuperLU_timer_();
-    sp_preorder(refact, AA, perm_c, etree, &AC);
-    utime[ETREE] = SuperLU_timer_() - t0;
-
-    /*	printf("Factor PA = LU ... relax %d\tw %d\tmaxsuper %d\trowblk %d\n",
-                   relax, panel_size, sp_ienv(3), sp_ienv(4));
-            fflush(stdout); */
-
-    /* Compute the LU factorization of A*Pc. */
-    t0 = SuperLU_timer_();
-    dgstrf(refact, &AC, diag_pivot_thresh, drop_tol, relax, panel_size,
-           etree, work, lwork, perm_r, perm_c, L, U, info);
-    utime[FACT] = SuperLU_timer_() - t0;
-
-    if ( lwork == -1 ) {
-      mem_usage->total_needed = *info - A->ncol;
+      if (colequ && *info == 0) {
+        rcmin = bignum;
+        rcmax = 0.;
+        for (j = 0; j < A->nrow; ++j) {
+          rcmin = MIN(rcmin, C[j]);
+          rcmax = MAX(rcmax, C[j]);
+        }
+        if (rcmin <= 0.) *info = -11;
+        else if (A->nrow > 0)
+          colcnd = MAX(rcmin,smlnum) / MIN(rcmax,bignum);
+        else colcnd = 1.;
+      }
+      if (*info == 0) {
+        if ( lwork < -1 ) *info = -15;
+        else if ( B->ncol < 0 || Bstore->lda < MAX(0, A->nrow) ||
+                  B->Stype != DN || B->Dtype != _D ||
+                  B->Mtype != GE )
+          *info = -16;
+        else if ( X->ncol < 0 || Xstore->lda < MAX(0, A->nrow) ||
+                  B->ncol != X->ncol || X->Stype != DN ||
+                  X->Dtype != _D || X->Mtype != GE )
+          *info = -17;
+      }
+    }
+    if (*info != 0) {
+      i = -(*info);
+      xerbla_("dgssvx", &i);
       return;
     }
-  }
 
-  if ( *info > 0 ) {
-    if ( *info <= A->ncol ) {
-      /* Compute the reciprocal pivot growth factor of the leading
-         rank-deficient *info columns of A. */
-      *recip_pivot_growth = dPivotGrowth(*info, AA, perm_c, L, U);
+    /* Default values for factor_params */
+    panel_size = sp_ienv(1);
+    relax      = sp_ienv(2);
+    diag_pivot_thresh = 1.0;
+    drop_tol   = 0.0;
+    if ( factor_params != NULL ) {
+      if ( factor_params->panel_size != -1 )
+        panel_size = factor_params->panel_size;
+      if ( factor_params->relax != -1 ) relax = factor_params->relax;
+      if ( factor_params->diag_pivot_thresh != -1 )
+        diag_pivot_thresh = factor_params->diag_pivot_thresh;
+      if ( factor_params->drop_tol != -1 )
+        drop_tol = factor_params->drop_tol;
     }
-    return;
-  }
 
-  /* Compute the reciprocal pivot growth factor *recip_pivot_growth. */
-  *recip_pivot_growth = dPivotGrowth(A->ncol, AA, perm_c, L, U);
+    StatInit(panel_size, relax);
+    utime = SuperLUStat.utime;
 
-  /* Estimate the reciprocal of the condition number of A. */
-  t0 = SuperLU_timer_();
-  if ( notran ) {
-    *(unsigned char *)norm = '1';
-  } else {
-    *(unsigned char *)norm = 'I';
+    /* Convert A to NC format when necessary. */
+    if ( A->Stype == NR ) {
+      NRformat *Astore = A->Store;
+      AA = (SuperMatrix *) SUPERLU_MALLOC( sizeof(SuperMatrix) );
+      dCreate_CompCol_Matrix(AA, A->ncol, A->nrow, Astore->nnz,
+                             Astore->nzval, Astore->colind, Astore->rowptr,
+                             NC, A->Dtype, A->Mtype);
+      if ( notran ) {   /* Reverse the transpose argument. */
+        *trant = 'T';
+        notran = 0;
+      } else {
+        *trant = 'N';
+        notran = 1;
+      }
+    } else { /* A->Stype == NC */
+      *trant = *trans;
+      AA = A;
+    }
+
+    if ( equil ) {
+      t0 = SuperLU_timer_();
+      /* Compute row and column scalings to equilibrate the matrix A. */
+      dgsequ(AA, R, C, &rowcnd, &colcnd, &amax, &info1);
+
+      if ( info1 == 0 ) {
+        /* Equilibrate matrix A. */
+        dlaqgs(AA, R, C, rowcnd, colcnd, amax, equed);
+        rowequ = lsame_(equed, "R") || lsame_(equed, "B");
+        colequ = lsame_(equed, "C") || lsame_(equed, "B");
+      }
+      utime[EQUIL] = SuperLU_timer_() - t0;
+    }
+
+    /* Scale the right hand side if equilibration was performed. */
+    if ( notran ) {
+      if ( rowequ ) {
+        for (j = 0; j < nrhs; ++j)
+          for (i = 0; i < A->nrow; ++i) {
+            Bmat[i + j*ldb] *= R[i];
+          }
+      }
+    } else if ( colequ ) {
+      for (j = 0; j < nrhs; ++j)
+        for (i = 0; i < A->nrow; ++i) {
+          Bmat[i + j*ldb] *= C[i];
+        }
+    }
+
+    if ( nofact || equil ) {
+
+      t0 = SuperLU_timer_();
+      sp_preorder(refact, AA, perm_c, etree, &AC);
+      utime[ETREE] = SuperLU_timer_() - t0;
+
+      /*	printf("Factor PA = LU ... relax %d\tw %d\tmaxsuper %d\trowblk %d\n",
+                     relax, panel_size, sp_ienv(3), sp_ienv(4));
+              fflush(stdout); */
+
+      /* Compute the LU factorization of A*Pc. */
+      t0 = SuperLU_timer_();
+      dgstrf(refact, &AC, diag_pivot_thresh, drop_tol, relax, panel_size,
+             etree, work, lwork, perm_r, perm_c, L, U, info);
+      utime[FACT] = SuperLU_timer_() - t0;
+
+      if ( lwork == -1 ) {
+        mem_usage->total_needed = *info - A->ncol;
+        return;
+      }
+    }
+
+    if ( *info > 0 ) {
+      if ( *info <= A->ncol ) {
+        /* Compute the reciprocal pivot growth factor of the leading
+           rank-deficient *info columns of A. */
+        *recip_pivot_growth = dPivotGrowth(*info, AA, perm_c, L, U);
+      }
+      return;
+    }
+
+    /* Compute the reciprocal pivot growth factor *recip_pivot_growth. */
+    *recip_pivot_growth = dPivotGrowth(A->ncol, AA, perm_c, L, U);
+
+    /* Estimate the reciprocal of the condition number of A. */
+    t0 = SuperLU_timer_();
+    if ( notran ) {
+      *(unsigned char *)norm = '1';
+    } else {
+      *(unsigned char *)norm = 'I';
+    }
+    anorm = dlangs(norm, AA);
+    dgscon(norm, L, U, anorm, rcond, info);
+    utime[RCOND] = SuperLU_timer_() - t0;
+
   }
-  anorm = dlangs(norm, AA);
-  dgscon(norm, L, U, anorm, rcond, info);
-  utime[RCOND] = SuperLU_timer_() - t0;
 
   /* Compute the solution matrix X. */
   for (j = 0; j < nrhs; j++)      /* Save a copy of the right hand sides */

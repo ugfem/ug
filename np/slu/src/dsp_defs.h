@@ -135,7 +135,7 @@ extern void
 dgssv(SuperMatrix *, int *, int *, SuperMatrix *, SuperMatrix *,
       SuperMatrix *, int *);
 extern void
-dgssvx(char *, char *, char *, SuperMatrix *, factor_param_t *,
+dgssvx(int, char *, char *, char *, SuperMatrix *, factor_param_t *,
        int *, int *, int *, char *, double *, double *,
        SuperMatrix *, SuperMatrix *, void *, int, SuperMatrix *,
        SuperMatrix *, double *, double *, double *,

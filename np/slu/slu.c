@@ -204,7 +204,7 @@ float *floatMalloc (int);
 double *doubleMalloc (int);
 void dCreate_Dense_Matrix (SuperMatrix *, int, int, double *, int, Stype_t, Dtype_t, Mtype_t);
 void get_perm_c (int, SuperMatrix *, int *);
-void dgssvx (char *, char *, char *, SuperMatrix *, factor_param_t *, int *, int *, int *, char *, double *, double *,
+void dgssvx (int decompose, char *, char *, char *, SuperMatrix *, factor_param_t *, int *, int *, int *, char *, double *, double *,
              SuperMatrix *, SuperMatrix *, void *, int, SuperMatrix *, SuperMatrix *, double *, double *, double *, double *, mem_usage_t *, int *);
 void superlu_free (void*);
 void *superlu_malloc (int);
@@ -424,7 +424,7 @@ static INT SLUPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_D
   get_perm_c(np->optimize,&np->A,np->perm_c);
   if (!(np->R=(double *)superlu_malloc(np->A.nrow*sizeof(double)))) REP_ERR_RETURN(1);
   if (!(np->C=(double *)superlu_malloc(np->A.ncol*sizeof(double)))) REP_ERR_RETURN(1);
-  dgssvx(fact,trans,refact,&np->A,&np->iparam,np->perm_c,np->perm_r,np->etree,equed,np->R,np->C,&np->L,&np->U,work,0,
+  dgssvx(1,fact,trans,refact,&np->A,&np->iparam,np->perm_c,np->perm_r,np->etree,equed,np->R,np->C,&np->L,&np->U,work,0,
          &np->B,&np->X,&np->rpg,&np->rcond,&np->ferr,&np->berr,&np->mem_usage,&info);
   if (info!=0) REP_ERR_RETURN(1);
 
@@ -445,15 +445,16 @@ static INT SLUIter (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b,
   int info,bl,firstfact;
   char fact[1],equed[1],trans[1],refact[1];
   void *work;
+  VEC_SCALAR defect;
 
   /* control parameters */
-  *fact='F'; *equed='B'; *trans='N'; *refact='Y';
+  *fact='F'; *equed='B'; *trans='N'; *refact='N';
 
   /* solve */
   if (ReadVector(np->n,&np->B,theGrid,b)) REP_ERR_RETURN(1);
   SLU_MarkKey_nb=1;
   MarkTmpMem(SLU_Heap,&(SLU_MarkKey[SLU_MarkKey_nb]));
-  dgssvx(fact,trans,refact,&np->A,&np->iparam,np->perm_c,np->perm_r,np->etree,equed,np->R,np->C,&np->L,&np->U,work,0,
+  dgssvx(0,fact,trans,refact,&np->A,&np->iparam,np->perm_c,np->perm_r,np->etree,equed,np->R,np->C,&np->L,&np->U,work,0,
          &np->B,&np->X,&np->rpg,&np->rcond,&np->ferr,&np->berr,&np->mem_usage,&info);
   ReleaseTmpMem(SLU_Heap,SLU_MarkKey[SLU_MarkKey_nb]);
   SLU_MarkKey_nb=0;
