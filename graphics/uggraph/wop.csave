@@ -11799,17 +11799,17 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 #	endif
 
 	SelectionSort((void *)table,i,sizeof(*table),CompareElements);
-	if (PutAtStartOfList(theGrid,i,table)!=GM_OK) return (1);	
+	if (PutAtEndOfList(theGrid,i,table)!=GM_OK) return (1);	
 
 	/* now order level 1 to toplevel hirarchically */
 	for (i=0; i<theMG->topLevel; i++)
 	{
 		theGrid = theMG->grids[i];
-		for (theElement=LASTELEMENT(theGrid); theElement!= NULL; theElement=PREDE(theElement))
+		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
 		{
 			if (NSONS(theElement)<=0) continue;
 			OrderSons(table,theElement);
-			if (PutAtStartOfList(UPGRID(theGrid),NSONS(theElement),table)!=GM_OK) return (1);	
+			if (PutAtEndOfList(UPGRID(theGrid),NSONS(theElement),table)!=GM_OK) return (1);
 		}
 	}
 	
