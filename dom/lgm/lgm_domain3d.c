@@ -1525,6 +1525,8 @@ static INT TransferSurfaces2Mesh (HEAP *Heap, LGM_SURFACE *theSurface, MESH *the
   return (0);
 }
 
+#ifdef NETGEN_SUPPORT
+
 static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h)
 {
   INT i,n,ni,j,k,offset,nils,id,ls_offset;
@@ -1826,6 +1828,15 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
   return (0);
 }
+
+#else
+
+static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h)
+{
+  return (1);
+}
+
+#endif
 
 INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 {
