@@ -1693,7 +1693,7 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
                   father is deleted and removes his reference in son,
                   but father and son are sent again to p. Son x gets
                   his father pointer again. Son needs to be
-                  rearranged in element to list be surely a son of father.
+                  rearranged in element list to be surely a son of father.
                   This applies only for ghost sons, since master sons
                   avoid deleting of their fathers?!
    */
@@ -1747,10 +1747,10 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
 
         SET_SON(theFather,where,pe);
 
-        /* very successor of pe was decoupled before */
-        /* -> correct NSONS                          */
         if (0)
         {
+          /* every successor of pe was decoupled before */
+          /* -> correct NSONS                          */
           next = SUCCE(pe);
           while (next!=NULL && EPRIO(next)==prio
                  && theFather==EFATHER(next))
