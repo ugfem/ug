@@ -1670,6 +1670,11 @@ INT l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = scale*(DOUBLE)rand();
 			}
 	
+	#ifdef ModelP
+	if (l_vector_consistent(g,x)) 
+	    return (NUM_ERROR);
+	#endif
+
 	return (NUM_OK);
 }
 
@@ -1776,6 +1781,11 @@ INT l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE from, DOUB
 								VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = from + scale*(DOUBLE)rand();
 					}
 			}
+
+	#ifdef ModelP
+	if (l_vector_consistent(g,x)) 
+	    return (NUM_ERROR);
+	#endif
 	
 	return (NUM_OK);
 }
