@@ -1436,8 +1436,6 @@ static int Gather_NewObjectInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRI
 
   *((int *)data) = 0;
 
-  if (GHOST(theEdge)) return(0);
-
   nedges = GetSonEdges(theEdge,SonEdges);
 
   /* identification is done if one objects of MidNode and the one */
@@ -1450,8 +1448,9 @@ static int Gather_NewObjectInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRI
   {
     /* send number of objects that need identification */
     /* must be equal on all procs                      */
-    *((int *)data) = (MidNode!=NULL) + nedges;
-    ASSERT(*((int *)data)==1 || *((int *)data)==3);
+    if (MidNode!=NULL && NEW_NIDENT(MidNode)) ((int *)data)[0] = 1;
+    if (SonEdges[0]!=NULL && NEW_EDIDENT(SonEdges[0])) ((int *)data)[0] += 2;
+    if (SonEdges[1]!=NULL && NEW_EDIDENT(SonEdges[1])) ((int *)data)[0] += 4;
   }
 
   return(0);
@@ -1474,16 +1473,19 @@ static int Scatter_NewObjectInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PR
   {
     if (MidNode == NULL)
     {
-      if (SonEdges[0] != NULL) SETNEW_EDIDENT(SonEdges[0],1);
+      if (SonEdges[0]!=NULL)
+        if (newsonobjects & 0x2) SETNEW_EDIDENT(SonEdges[0],1);
     }
     else
     {
-
-      SETNEW_NIDENT(MidNode,1);
+      if (newsonobjects & 0x1)
+        SETNEW_NIDENT(MidNode,1);
       if (SonEdges[0]!=NULL)
-        SETNEW_EDIDENT(SonEdges[0],1);
-      if (SonEdges[0]!=NULL)
-        SETNEW_EDIDENT(SonEdges[1],1);
+        if (newsonobjects & 0x2)
+          SETNEW_EDIDENT(SonEdges[0],1);
+      if (SonEdges[1]!=NULL)
+        if (newsonobjects & 0x4)
+          SETNEW_EDIDENT(SonEdges[1],1);
     }
   }
 
@@ -1656,7 +1658,7 @@ static int Gather_IdentSonObjects (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_P
   /* identification is only done between master objects */
   ASSERT(identlevel-1 == LEVEL(theEdge));
 
-  *((int *)data) = 0;
+  ((int *)data)[0] = 0;
 
   nedges = GetSonEdges(theEdge,SonEdges);
 
@@ -1670,8 +1672,9 @@ static int Gather_IdentSonObjects (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_P
   {
     /* send number of objects that need identification */
     /* must be equal on all procs                      */
-    *((int *)data) = (MidNode!=NULL) + nedges;
-    ASSERT(*((int *)data)==1 || *((int *)data)==3);
+    if (MidNode!=NULL && NEW_NIDENT(MidNode)) ((int *)data)[0] = 1;
+    if (SonEdges[0]!=NULL && NEW_EDIDENT(SonEdges[0])) ((int *)data)[0] += 2;
+    if (SonEdges[1]!=NULL && NEW_EDIDENT(SonEdges[1])) ((int *)data)[0] += 4;
   }
 
   return(0);
@@ -1694,14 +1697,15 @@ static int Scatter_IdentSonObjects (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_
 
   if (newsonobjects)
   {
-    ASSERT((MidNode==NULL && nedges!=2)  ||
-           (MidNode!=NULL && nedges==2));
+    if (0)
+      ASSERT((MidNode==NULL && nedges!=2)  ||
+             (MidNode!=NULL && nedges==2));
 
-    if (MidNode == NULL)
+    if (MidNode==NULL)
     {
-      if (SonEdges[0] != NULL)
+      if (SonEdges[0]!=NULL &&  NEW_EDIDENT(SonEdges[0]))
       {
-        ASSERT(newsonobjects==1 && nedges<=1 && SonEdges[1]==NULL);
+        ASSERT(newsonobjects & 0x2);
 
         DDD_IdentifyObject(PARHDR(SonEdges[0]),proc,PARHDR(theEdge));
         if (dddctrl.edgeData && EDVECTOR(SonEdges[0])!=NULL)
@@ -1712,10 +1716,14 @@ static int Scatter_IdentSonObjects (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_
     {
 
       /* identify midnode */
-      if (MidNode!=NULL)
+      if (MidNode!=NULL && NEW_NIDENT(MidNode))
       {
-        ASSERT(MidNode!=NULL && SonEdges[0]!=NULL && SonEdges[1]!=NULL);
-        ASSERT(nedges==2);
+        ASSERT(newsonobjects & 0x1);
+        if (0) {
+          ASSERT(MidNode!=NULL && SonEdges[0]!=NULL && SonEdges[1]!=NULL);
+          ASSERT(nedges==2);
+        }
+
         if (1)
         {
           DDD_IdentifyObject(PARHDR(MidNode),proc,PARHDR(theEdge));
@@ -1739,10 +1747,12 @@ static int Scatter_IdentSonObjects (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_
         }
       }
 
-      if (SonEdges[0]!=NULL)
+      if (SonEdges[0]!=NULL &&  NEW_EDIDENT(SonEdges[0]) && (newsonobjects & 0x2))
       {
-        ASSERT(MidNode!=NULL && SonEdges[0]!=NULL && SonEdges[1]!=NULL);
-        ASSERT(nedges==2);
+        if (0) {
+          ASSERT(MidNode!=NULL && SonEdges[0]!=NULL && SonEdges[1]!=NULL);
+          ASSERT(nedges==2);
+        }
         /* identify edge0 */
         SonNode0 = NBNODE(LINK0(SonEdges[0]));
         SonNode1 = NBNODE(LINK1(SonEdges[0]));
@@ -1766,10 +1776,12 @@ static int Scatter_IdentSonObjects (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_
         }
       }
 
-      if (SonEdges[1]!=NULL)
+      if (SonEdges[1]!=NULL &&  NEW_EDIDENT(SonEdges[1]) && (newsonobjects & 0x4))
       {
-        ASSERT(MidNode!=NULL && SonEdges[0]!=NULL && SonEdges[1]!=NULL);
-        ASSERT(nedges==2);
+        if (0) {
+          ASSERT(MidNode!=NULL && SonEdges[0]!=NULL && SonEdges[1]!=NULL);
+          ASSERT(nedges==2);
+        }
         /* identify edge1 */
         SonNode0 = NBNODE(LINK0(SonEdges[1]));
         SonNode1 = NBNODE(LINK1(SonEdges[1]));
