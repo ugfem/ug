@@ -1,0 +1,24 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for XPLORER (Power PC, Parsytec)
+#
+
+ARCH_TYPE     = __CC__
+
+ARCH_CC       = px3 ancc.px
+ARCH_LINK     = px3 ancc.px
+ARCH_AR       = px3 ar
+ARCH_SUFFIX   = .px
+ARCH_POSTLINK = true    # strip $(APPL).px
+
+ARCH_LIBS     = -lm
+
+ARCH_CFLAGS   = # -g 
+ARCH_C++FLAGS =
+ARCH_LFLAGS   = 
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDES = 
+ARCH_XLIBS     = 
+
