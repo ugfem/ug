@@ -670,10 +670,10 @@ int ShellInitAndOpen (ShellWindow *sh)
   Rect r,destRect,viewRect;
   GrafPtr myPort;
   FontInfo info;
-  char buffer[64];
+  char buffer[256];
   int TermWinH=0,TermWinV=0,TermWinDH=400,TermWinDV=300;
   short maxX,maxY;
-  char ShellTitle[64];
+  char ShellTitle[256];
 
   shell = sh;
 
