@@ -372,13 +372,13 @@ INT NPEWSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
                            const VECDATA_DESC *x, INT xclass, INT index)
 {
-  SHORT i;
+  SHORT i,j;
   INT vtype;
   INT lev;
 
   for (lev=fl; lev<=tl; lev++)
     l_setindex(GRID_ON_LEVEL(mg,lev));
-  index *= 20;
+  j = 0;
   for (vtype=0; vtype<NVECTYPES; vtype++)
     if (VD_ISDEF_IN_TYPE(x,vtype))
     {
@@ -386,11 +386,17 @@ static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
       VECTOR *v;
       DOUBLE_VECTOR pos;
 
-      A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass) {
+      A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
+      {
+        for (i=0; i<ncomp; i++)
+          VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = 0.0;
+        if (VECSKIP(v) != 0) continue;
+        if (j++ < index) continue;
+        if (VINDEX(v) % (index+2) == 0) continue;
         VectorPosition(v,pos);
         for (i=0; i<ncomp; i++) {
           VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) =
-            pos[i] + index;
+            pos[i] + 1.0 / (1.0 + index*VINDEX(v)*VINDEX(v));
         }
       }
     }
@@ -1373,27 +1379,28 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
       break;
     if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
       NP_RETURN(1,ewresult->error_code);
-    for (i=0; i<New; i++) {
-      if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
-                                        ev[i],np->t,
-                                        np->M,&ewresult->error_code))
-        NP_RETURN(1,ewresult->error_code);
-      if ((*np->LS->Defect)(np->LS,level,ev[i],np->t,np->M,
-                            &ewresult->error_code))
-        NP_RETURN(1,ewresult->error_code);
-      if ((*np->LS->Residuum)(np->LS,0,level,ev[i],np->t,np->M,
-                              &ewresult->lresult[i]))
-        NP_RETURN(1,ewresult->error_code);
-      if ((*np->LS->Solver)(np->LS,level,ev[i],np->t,np->M,
-                            abslimit,reduction,
-                            &ewresult->lresult[i]))
-        NP_RETURN(1,ewresult->error_code);
-      if (np->Project != NULL)
-        if (np->Project->Project(np->Project,bl,level,
-                                 ev[i],&ewresult->error_code)
-            != NUM_OK)
+    if (iter > 0)
+      for (i=0; i<New; i++) {
+        if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
+                                          ev[i],np->t,
+                                          np->M,&ewresult->error_code))
           NP_RETURN(1,ewresult->error_code);
-    }
+        if ((*np->LS->Defect)(np->LS,level,ev[i],np->t,np->M,
+                              &ewresult->error_code))
+          NP_RETURN(1,ewresult->error_code);
+        if ((*np->LS->Residuum)(np->LS,0,level,ev[i],np->t,np->M,
+                                &ewresult->lresult[i]))
+          NP_RETURN(1,ewresult->error_code);
+        if ((*np->LS->Solver)(np->LS,level,ev[i],np->t,np->M,
+                              abslimit,reduction,
+                              &ewresult->lresult[i]))
+          NP_RETURN(1,ewresult->error_code);
+        if (np->Project != NULL)
+          if (np->Project->Project(np->Project,bl,level,
+                                   ev[i],&ewresult->error_code)
+              != NUM_OK)
+            NP_RETURN(1,ewresult->error_code);
+      }
     for (i=0; i<New; i++) {
       if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i]) != NUM_OK)
         NP_RETURN(1,ewresult->error_code);
