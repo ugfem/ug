@@ -138,6 +138,69 @@ void INT_2_bitpattern (INT n, char text[33])
 }
 
 /****************************************************************************/
+/*																			*/
+/* Function:  CenterInPattern												*/
+/*																			*/
+/* Purpose:   fill str up to PatLen with pattern and center text in it.		*/
+/*			  Terminate the str with end									*/
+/*																			*/
+/* Input:	  s.a															*/
+/*																			*/
+/* Output:	  INT 0: ok														*/
+/*				  1: error													*/
+/*																			*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   CenterInPattern	- compose a headline of chars with string centered
+
+   SYNOPSIS:
+   INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char *end)
+
+   PARAMETERS:
+   .  str - string to print to
+   .  PatLen - width of headline
+   .  text - text to center in headline
+   .  p - char replicated for headline
+   .  end - trailing string (optional)
+
+   DESCRIPTION:
+   This function transforms an INT into a bitpattern string consisting of 0s
+   and 1s only.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char *end)
+{
+  INT i,TextBegin,TextEnd,TextLen;
+
+  TextLen   = strlen(text);
+  TextBegin = (PatLen-TextLen)/2;
+  TextEnd   = TextBegin+TextLen;
+
+  if (TextLen>PatLen)
+    return (CenterInPattern(str,PatLen," text too long ",p,end));
+
+  for (i=0; i<TextBegin-1; i++)
+    str[i] = p;
+  str[i] = ' ';
+  for (i=TextBegin; i<TextEnd; i++)
+    str[i] = *(text++);
+  str[i++] = ' ';
+  for (; i<PatLen; i++)
+    str[i] = p;
+  str[PatLen] = '\0';
+  if (end!=NULL)
+    strcat(str,end);
+
+  return (0);
+}
+
+/****************************************************************************/
 /*D
    expandfmt - Expand (make explicit) charset-ranges in scanf
 
