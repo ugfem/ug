@@ -184,6 +184,7 @@ INT         BVP_Save              (BVP *theBVP, char *name, INT argc, char **arg
 BVP        *BVP_Load              (char *name, INT argc, char **argv);
 BVP        *BVP_GetByName         (char *name);
 BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh);
+INT         BVP_Dispose           (BVP *theBVP);
 INT         BVP_SetBVPDesc        (BVP *theBVP, BVP_DESC *theBVPDesc);
 INT         BVP_SetCoeffFct       (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
 INT         BVP_SetUserFct        (BVP *theBVP, INT n, UserProcPtr *UserFct);
@@ -201,7 +202,7 @@ BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
 BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, COORD lcoord);
 INT         BNDP_Dispose          (HEAP *Heap, BNDP *theBndP);
 INT         BNDP_SaveBndP         (BNDP *theBndP, FILE *stream);
-BNDP       *BNDP_LoadBndP         (HEAP *Heap, FILE *stream);
+BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap, FILE *stream);
 
 /* functions for BNDS */
 INT         BNDS_Global           (BNDS *theBndS, COORD *local, COORD *global);
@@ -209,8 +210,6 @@ INT         BNDS_BndCond          (BNDS *theBndS, COORD *local, COORD *in, DOUBL
 INT         BNDS_BndSDesc         (BNDS *theBndS, INT *left, INT *right);
 BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, COORD *local);
 INT         BNDS_Dispose          (HEAP *Heap, BNDS *theBndS);
-INT         BNDS_SaveBndS         (BNDS *theBndS, FILE *stream);
-BNDS       *BNDS_LoadBndS         (HEAP *Heap, FILE *stream);
 
 /* miscellanious */
 INT         InitDom               (void);
