@@ -709,12 +709,12 @@ FIFOSTART:
 			if (ADDPATTERN(MyEdge) == 0) {
 				/* TODO: when does this case occur? */
 				/* for HEXAHEDRA Patterns2Rules returns 0 for not red elements */
-				/*       perhaps if the side of the red element has no edges markes and no side node */
+				/*       perhaps if the side of the red element has no edges marked and no side node */
 				if (MARK(theElement) == NO_REFINEMENT) {
-					SETMARK(theElement,COPY);
-					IFDEBUG(gm,0)
-					UserWriteF("   WARNING: EID=%d switching MARK from NO_REFINEMENT to COPY\n",ID(theElement));
+					IFDEBUG(gm,1)
+					UserWriteF("   WARNING: EID=%d switching MARK from NO_REFINEMENT to COPY - TAG=%d ECLASS=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d MARK=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement));
 					ENDDEBUG
+					SETMARK(theElement,COPY);
 				}
 				SETMARKCLASS(theElement,GREEN);
 				break;
@@ -1132,6 +1132,9 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 		theElementContext[i] = SONNODE(CORNER(theElement,i));
 
+	if (ID(theElement)==30)
+		printf("element\n");
+
 	if (DIM==3 && TAG(theElement)==HEXAHEDRON && REFINECLASS(theElement)==GREEN) {
 
 		for (i=0; i<EDGES_OF_ELEM(theElement); i++)
@@ -1156,6 +1159,7 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 						ENDDEBUG
 
 						l = 0;
+						/* TODO: faster: substitute search by FLAG in node on sides */
 						for (theLink=START(NBNODE(theLink0)); theLink!=NULL; theLink=NEXT(theLink)) 
 							for (k=0; k<CORNERS_OF_SIDE(theElement,i); k++) 
 								if (NBNODE(theLink) == SONNODE(CORNER(theElement,CORNER_OF_SIDE(theElement,i,k))))
@@ -1163,7 +1167,7 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 						if (l == 0) {
 							theNode = NBNODE(theLink0);
 							IFDEBUG(gm,3)
-							UserWriteF("    		FOUND node ID=%d\n",ID(NBNODE(theLink)));
+							UserWriteF("    		FOUND node ID=%d\n",ID(NBNODE(theLink0)));
 							continue;
 							ENDDEBUG
 							break;
@@ -1185,7 +1189,7 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 		theNode1 = SONNODE(CORNER(theElement,6));
 		for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
 			for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1)) 
-				if (NBNODE(theLink0) == NBNODE(theLink1)) {
+				if (NTYPE(NBNODE(theLink0))==CENTER_NODE && NBNODE(theLink0) == NBNODE(theLink1)) {
 					theNode = NBNODE(theLink0);
 					break;
 				}
@@ -1504,7 +1508,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 					MARKCLASS(theNeighbor)==GREEN && USED(theNeighbor)==0) {
 
 					IFDEBUG(gm,3)
-					UserWriteF("    	Serching for side node allocated by green neighbor:\n");
+					UserWriteF("    	Searching for side node allocated by green neighbor:\n");
 					ENDDEBUG
 
 					assert(SideNodes[i] == NULL);
@@ -1520,6 +1524,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 								ENDDEBUG
 
 								l = 0;
+								/* TODO: faster: substitute check for side node through FLAG */ 
 								for (theLink=START(NBNODE(theLink0)); theLink!=NULL; theLink=NEXT(theLink)) 
 									for (k=0; k<CORNERS_OF_SIDE(theElement,i); k++) 
 										if (NBNODE(theLink) == SONNODE(CORNER(theElement,CORNER_OF_SIDE(theElement,i,k))))
@@ -1527,16 +1532,18 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 								if (l == 0) {
 									SideNodes[i] = NBNODE(theLink0);
 									IFDEBUG(gm,3)
-									UserWriteF("    		FOUND node ID=%d\n",ID(NBNODE(theLink)));
+									UserWriteF("    		FOUND node ID=%d\n",ID(NBNODE(theLink0)));
 									continue;
 									ENDDEBUG
 									break;
 								}
 							}
 						if (SideNodes[i] != NULL) {
+							/* TODO: delete this 
 							IFDEBUG(gm,3)
 							continue;
 							ENDDEBUG
+							*/
 							break;
 						}
 					}
@@ -1791,8 +1798,10 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	for (i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++) UserWriteF(" %3d",i);
 	UserWrite("\n");
 	for (i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++) 
-	  if (theContext[i] != NULL)
-		UserWriteF(" %3d",ID(theContext[i]));
+		if (theContext[i] != NULL)
+			UserWriteF(" %3d",ID(theContext[i]));
+		else
+			UserWriteF("    ");
 	UserWrite("\n");
 	ENDDEBUG
 	IFDEBUG(gm,3)
@@ -3177,11 +3186,13 @@ static int RefineGrid (GRID *theGrid)
 			IFDEBUG(gm,2)
 			UserWrite("  CurrentContext is :\n");
 			for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
-				UserWriteF("%3d",i);
+				UserWriteF(" %3d",i);
 			UserWrite("\n");
 			for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
-			  if (theContext[i] != NULL)
-				UserWriteF("%3d",ID(theContext[i]));
+				if (theContext[i] != NULL)
+					UserWriteF(" %3d",ID(theContext[i]));
+				else
+					UserWriteF("    ");
 			UserWrite("\n");
 			ENDDEBUG
 
@@ -3192,11 +3203,13 @@ static int RefineGrid (GRID *theGrid)
 			IFDEBUG(gm,2)
 			UserWrite("  UpdateContext is :\n");
 			for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
-				UserWriteF("%3d",i);
+				UserWriteF(" %3d",i);
 			UserWrite("\n");
 			for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
-			  if (theContext[i] != NULL)
-				UserWriteF("%3d",ID(theContext[i]));
+				if (theContext[i] != NULL)
+					UserWriteF(" %3d",ID(theContext[i]));
+				else
+					UserWriteF("    ");
 			UserWrite("\n");
 			ENDDEBUG
 
