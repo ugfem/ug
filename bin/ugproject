@@ -35,6 +35,9 @@ make nd
 make ed
 # Test is ready
 # restore original state
+cp $UGROOT/configs/2TTFF.conf $UGROOT/ug.conf
+ugmake ug -i ifdef
+ugmake ug
 mv $UGROOT/ug.conf.orig $UGROOT/ug.conf 
 ugmake ug -i ifdef
 echo "diff2da, ns2da, cda, cd2d, fema, femn created"
