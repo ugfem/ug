@@ -61,8 +61,8 @@ public:
   void SetTmpMatrix(FAMGMatrixAlg *tmp);
   void SetVector(int, FAMGVector *);
 
-  void Defect() const;
-  void DefectTrans();
+  void Defect( void ) const;
+  void Defect(FAMGVector &defect, FAMGVector &rhs, FAMGVector &solution) const;
   void JACSmooth();
   void SGSSmooth();
   void FGSSmooth();
@@ -254,6 +254,15 @@ inline FAMGGrid::~FAMGGrid() {
   delete GetMatrix(); delete GetConsMatrix();
   for( int i=0; i<FAMGMAXVECTORS; i++) delete GetVector(i);
 };
+inline void FAMGGrid::Defect(FAMGVector &defect, FAMGVector &rhs, FAMGVector &solution) const
+{
+  defect.VecMinusMatVec(rhs, *GetMatrix(), solution);
+}
+inline void FAMGGrid::Defect( void ) const
+{       // take default values
+  Defect(*GetVector(FAMGDEFECT), *GetVector(FAMGRHS), *GetVector(FAMGUNKNOWN));
+}
+
 
 #ifdef USE_UG_DS
 #else

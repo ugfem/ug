@@ -92,12 +92,6 @@ int pl(FAMGGraph *graph);
 
 // Class FAMGGrid
  
-void FAMGGrid::Defect() const
-{
-    GetVector(FAMGDEFECT)->VecMinusMatVec(*GetVector(FAMGRHS), *GetMatrix(), *GetVector(FAMGUNKNOWN)); 
-    return;
-}
-
 void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect) const
 // including smoothing of fine nodes
 {
@@ -130,7 +124,7 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 #endif
 	
 	// correct defect
-	Defect();
+	Defect(fgdefect, fgdefect, fgsolution);
 #ifdef ModelP
 	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
@@ -239,7 +233,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 #endif
 	
 	// prepare defect for jacobi smoothing
-	Defect();
+	Defect(fgdefect, fgdefect, fgsol);
 #ifdef ModelP
 	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
@@ -263,7 +257,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
         fgsol.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
         
         // correct defect
-        Defect();
+        Defect(fgdefect, fgdefect, fgsol);
     }
     else
     {
