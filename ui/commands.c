@@ -4340,119 +4340,6 @@ static INT MarkCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (ReadArgvOption("c",argc, argv))
-  {
-    for (i=0; i<=TOPLEVEL(theMG); i++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
-           theElement!=NULL; theElement=SUCCE(theElement))
-        if (EstimateHere(theElement))
-          MarkForRefinement(theElement,NO_REFINEMENT,NULL);
-
-    UserWrite("all refinement marks removed\n");
-
-    return(OKCODE);
-  }
-
-  if (ReadArgvDOUBLE("x",&x,argc, argv)==0)
-  {
-    for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
-           theElement!=NULL; theElement=SUCCE(theElement))
-        if (EstimateHere(theElement))
-          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-            if (XC(MYVERTEX(CORNER(theElement,j))) < x)
-              MarkForRefinement(theElement,RED,NULL);
-
-    UserWriteF("all elements in x < %f marked for refinement\n",
-               (float) x);
-
-    return(OKCODE);
-  }
-
-  if (ReadArgvDOUBLE("X",&x,argc, argv)==0)
-  {
-    for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
-           theElement!=NULL; theElement=SUCCE(theElement))
-        if (EstimateHere(theElement))
-          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-            if (XC(MYVERTEX(CORNER(theElement,j))) > x)
-              MarkForRefinement(theElement,RED,NULL);
-
-    UserWriteF("all elements in x > %f marked for refinement\n",
-               (float) x);
-
-    return(OKCODE);
-  }
-
-  if (ReadArgvDOUBLE("y",&y,argc, argv)==0)
-  {
-    for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
-           theElement!=NULL; theElement=SUCCE(theElement))
-        if (EstimateHere(theElement))
-          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-            if (YC(MYVERTEX(CORNER(theElement,j))) < y)
-              MarkForRefinement(theElement,RED,NULL);
-
-    UserWriteF("all elements in y < %f marked for refinement\n",
-               (float) y);
-
-    return(OKCODE);
-  }
-
-#ifdef __THREEDIM__
-  if (ReadArgvDOUBLE("z",&z,argc, argv)==0)
-  {
-    for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
-           theElement!=NULL; theElement=SUCCE(theElement))
-        if (EstimateHere(theElement))
-          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-            if (ZC(MYVERTEX(CORNER(theElement,j))) < z)
-              MarkForRefinement(theElement,RED,NULL);
-
-    UserWriteF("all elements in z < %f marked for refinement\n",
-               (float) z);
-
-    return(OKCODE);
-  }
-#endif
-
-  if (ReadArgvPosition("pos",argc,argv,global)==0)
-  {
-    theElement = FindElementOnSurface(theMG,global);
-    if (theElement != NULL)
-    {
-      MarkForRefinement(theElement,RED,NULL);
-        #ifdef ModelP
-      j = (INT) UG_GlobalSumDOUBLE(1.0);
-      i = DDD_InfoGlobalId(PARHDRE(theElement));
-    }
-    else
-    {
-      j = (INT) UG_GlobalSumDOUBLE(0.0);
-      i = -1;
-    }
-    if (j == 0)
-      return(PARAMERRORCODE);
-
-    for (l=0; l<j; l++)
-    {
-      rv = UG_GlobalMaxINT(i);
-      UserWriteF("element GID %08x marked for refinement\n",rv);
-      if (rv == i) i = -1;
-    }
-        #else
-      UserWriteF("element %d marked for refinement\n",ID(theElement));
-    }
-    else
-      return(PARAMERRORCODE);
-            #endif
-
-    return (OKCODE);
-  }
-
   /* first check help option */
   for (i=1; i<argc; i++)
     if (argv[i][0]=='h')
@@ -4465,13 +4352,6 @@ static INT MarkCommand (INT argc, char **argv)
       }
       return (OKCODE);
     }
-
-  theMG = currMG;
-  if (theMG==NULL)
-  {
-    PrintErrorMessage('E',"mark","no open multigrid");
-    return (CMDERRORCODE);
-  }
 
   /* scan parameters */
   /*rv = sscanf(argv[0],"mark %31[redbluecopycoarsnoi_123qttet2hex] %d",rulename,&Side);*/
@@ -4501,6 +4381,119 @@ static INT MarkCommand (INT argc, char **argv)
 
     if (rv!=2)
       Side = NO_SIDE_SPECIFIED;
+  }
+
+  if (ReadArgvOption("c",argc, argv))
+  {
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          MarkForRefinement(theElement,NO_REFINEMENT,NULL);
+
+    UserWrite("all refinement marks removed\n");
+
+    return(OKCODE);
+  }
+
+  if (ReadArgvDOUBLE("x",&x,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (XC(MYVERTEX(CORNER(theElement,j))) < x)
+              MarkForRefinement(theElement,Rule,NULL);
+
+    UserWriteF("all elements in x < %f marked for refinement\n",
+               (float) x);
+
+    return(OKCODE);
+  }
+
+  if (ReadArgvDOUBLE("X",&x,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (XC(MYVERTEX(CORNER(theElement,j))) > x)
+              MarkForRefinement(theElement,Rule,NULL);
+
+    UserWriteF("all elements in x > %f marked for refinement\n",
+               (float) x);
+
+    return(OKCODE);
+  }
+
+  if (ReadArgvDOUBLE("y",&y,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (YC(MYVERTEX(CORNER(theElement,j))) < y)
+              MarkForRefinement(theElement,Rule,NULL);
+
+    UserWriteF("all elements in y < %f marked for refinement\n",
+               (float) y);
+
+    return(OKCODE);
+  }
+
+#ifdef __THREEDIM__
+  if (ReadArgvDOUBLE("z",&z,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (ZC(MYVERTEX(CORNER(theElement,j))) < z)
+              MarkForRefinement(theElement,Rule,NULL);
+
+    UserWriteF("all elements in z < %f marked for refinement\n",
+               (float) z);
+
+    return(OKCODE);
+  }
+#endif
+
+  if (ReadArgvPosition("pos",argc,argv,global)==0)
+  {
+    theElement = FindElementOnSurface(theMG,global);
+    if (theElement != NULL)
+    {
+      MarkForRefinement(theElement,Rule,NULL);
+        #ifdef ModelP
+      j = (INT) UG_GlobalSumDOUBLE(1.0);
+      i = DDD_InfoGlobalId(PARHDRE(theElement));
+    }
+    else
+    {
+      j = (INT) UG_GlobalSumDOUBLE(0.0);
+      i = -1;
+    }
+    if (j == 0)
+      return(PARAMERRORCODE);
+
+    for (l=0; l<j; l++)
+    {
+      rv = UG_GlobalMaxINT(i);
+      UserWriteF("element GID %08x marked for refinement\n",rv);
+      if (rv == i) i = -1;
+    }
+        #else
+      UserWriteF("element %d marked for refinement\n",ID(theElement));
+    }
+    else
+      return(PARAMERRORCODE);
+            #endif
+
+    return (OKCODE);
   }
 
   /* check options */
@@ -6460,6 +6453,13 @@ static INT MakeGridCommand  (INT argc, char **argv)
     PrintErrorMessage('E',"makegrid","no open multigrid");
     return (CMDERRORCODE);
   }
+        #ifdef ModelP
+  if (me!=master)
+  {
+    if (FixCoarseGrid(theMG)) return (CMDERRORCODE);
+    return (OKCODE);
+  }
+        #endif
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
   {
     PrintErrorMessage('E',"InsertBoundaryNode","only a multigrid with exactly one level can be edited");
