@@ -93,6 +93,15 @@ typedef struct
 
 } NP_COPY_VEC;
 
+typedef struct
+{
+  NP_BASE base;
+
+  DOUBLE a,b;
+  VECDATA_DESC *f,*g,*d;
+
+} NP_LC_VEC;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -440,6 +449,106 @@ static INT COPYV_Construct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
+   lcv - linear combination of two vectors
+
+   DESCRIPTION:
+   This num proc does a linear combination of two vectors
+
+   'npinit <name>  $f <sym1> $g <sym2> $d <sym3> $a <value> $b <value>'
+
+   .  <name> - num proc name
+   .  $a~<value> - scaling factor of the first vector
+   .  $f~<sym1> - name of the first source vector descriptor
+   .  $b~<value> - scaling factor of the second vector
+   .  $g~<sym2> - name of the second source vector descriptor
+   .  $d~<sym3> - name of the destination vector descriptor
+
+   'npexecute <name>'
+
+   EXAMPLE:
+   .vb
+   npcreate lincomb $c lcv;
+   npinit lincomb $a 1.0 $f sol1 $b -1.0 $g sol2 $d diff;
+   npexecute lincomb;
+   .ve
+   D*/
+/****************************************************************************/
+
+static INT LCV_Init (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_LC_VEC *np;
+
+  np= (NP_LC_VEC*)theNP;
+
+  np->f = ReadArgvVecDesc(theNP->mg,"f",argc,argv);
+  np->g = ReadArgvVecDesc(theNP->mg,"g",argc,argv);
+  np->d = ReadArgvVecDesc(theNP->mg,"d",argc,argv);
+  if (np->d==NULL) np->d=np->f;
+  if (ReadArgvDOUBLE("a",&np->a,argc,argv)) np->a = 1.0;
+  if (ReadArgvDOUBLE("b",&np->b,argc,argv)) np->b = -1.0;
+
+  if ((np->f == NULL) || (np->g == NULL)) return (NP_NOT_ACTIVE);
+  return (NP_EXECUTABLE);
+}
+
+static INT LCV_Display (NP_BASE *theNP)
+{
+  NP_LC_VEC *np;
+
+  np= (NP_LC_VEC*)theNP;
+
+  UserWrite("symbolic user data:\n");
+  if (np->f != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"f",ENVITEM_NAME(np->f));
+  if (np->g != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"g",ENVITEM_NAME(np->g));
+  if (np->d != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"d",ENVITEM_NAME(np->d));
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"a",(float)np->a);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"b",(float)np->b);
+
+  return (0);
+}
+
+static INT LCV_Execute (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_LC_VEC *np;
+
+  np= (NP_LC_VEC*)theNP;
+
+  if ((np->f==NULL)  || (np->g==NULL) || (np->d==NULL) || np->f==np->g ) return(1);
+
+  if (np->d!=np->f && np->d!=np->g)
+  {
+    if (dcopy(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,np->d,np->f)) return (1);
+    if (dscal(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,np->d,np->a)) return (1);
+    if (daxpy(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,np->d,np->b,np->g)) return (1);
+  }
+  if (np->d==np->f)
+  {
+    if (dscal(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,np->d,np->a)) return (1);
+    if (daxpy(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,np->d,np->b,np->g)) return (1);
+  }
+  if (np->d==np->g)
+  {
+    if (dscal(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,np->d,np->b)) return (1);
+    if (daxpy(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,np->d,np->a,np->f)) return (1);
+  }
+
+  return (0);
+}
+
+static INT LCV_Construct (NP_BASE *theNP)
+{
+  theNP->Init = LCV_Init;
+  theNP->Display = LCV_Display;
+  theNP->Execute = LCV_Execute;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    InitBasics - Enrol basics
 
    SYNOPSIS:
@@ -467,8 +576,9 @@ INT InitBasics (void)
     return (__LINE__);
   if (CreateClass(BASE_CLASS_NAME ".eu",sizeof(NP_EUNORM_VEC),EU_Construct))
     return (__LINE__);
-  if (CreateClass(BASE_CLASS_NAME ".copyv",sizeof(NP_COPY_VEC),
-                  COPYV_Construct))
+  if (CreateClass(BASE_CLASS_NAME ".copyv",sizeof(NP_COPY_VEC),COPYV_Construct))
+    return (__LINE__);
+  if (CreateClass(BASE_CLASS_NAME ".lcv",sizeof(NP_LC_VEC),LCV_Construct))
     return (__LINE__);
 
   return (0);
