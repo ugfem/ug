@@ -1648,7 +1648,9 @@ static INT GetFullPathName (char *buffer)
 
     if ((sptr=GetStringVar(svarname))==NULL)
     {
-      PrintErrorMessage('E',"InterpretString","variable not found");
+      char buf[64];
+      sprintf(buf,"variable %s not found",svarname);
+      PrintErrorMessage('E',"InterpretString",buf);
       return(8522);                     /* variable not found */
     }
     strcpy(buffer,sptr);
@@ -2002,7 +2004,9 @@ static INT InterpretString (void)
 
       if ((cmdStart=GetStringVar(buffer))==NULL)
       {
-        PrintErrorMessage('E',"InterpretString","variable not found");
+        char buf[64];
+        sprintf(buf,"variable %s not found",buffer);
+        PrintErrorMessage('E',"InterpretString",buf);
         return(8522);                           /* variable not found */
       }
 
@@ -2334,7 +2338,9 @@ static INT InterpretString (void)
 
           if ((sptr=GetStringVar(buffer))==NULL)
           {
-            PrintErrorMessage('E',"InterpretString","variable not found");
+            char buf[64];
+            sprintf(buf,"variable %s not found",buffer);
+            PrintErrorMessage('E',"InterpretString",buf);
             return(8522);                                       /* variable not found */
           }
           while ((c1=*(sptr++))!=(char) 0)
