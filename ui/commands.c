@@ -236,6 +236,12 @@ static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
                                          #endif
  /* rules for prisms */
  {"pri_quadsect",PRISM_QUADSECT},
+ /* rules for tetrahedra */
+ {"hex_bisect_eins",HEX_BISECT_0_1},
+ {"hex_bisect_zwei",HEX_BISECT_0_2},
+ {"hex_bisect_drei",HEX_BISECT_0_3},
+ {"hex_trisect_eins",HEX_TRISECT_0},
+ {"hex_trisect_fuenf",HEX_TRISECT_5},
                                          #endif
  {"coarse", COARSE}};
 
