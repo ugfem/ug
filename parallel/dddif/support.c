@@ -30,7 +30,7 @@
 /****************************************************************************/
 
 /* standard C library */
-#ifdef __SR2201__
+#if defined(__SR2201__) || defined(__CC__)
 #include <stdlib.h>
 #include <stdio.h>
 #endif
