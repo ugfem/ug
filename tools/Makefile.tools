@@ -22,8 +22,8 @@ OBJECTS = ugnetgen.o ugstl.o xugv.o m2ps.o ugmgs.o ugpfm.o ugmarc.o ugmesh.o
 all : $(OBJECTS) Makefile.tools
 	$(UG_LINK) xugv.o  -o $(UGROOT)/bin/xugv  $(UG_LFLAGS)
 	$(UG_LINK) m2ps.o  -o $(UGROOT)/bin/m2ps  $(UG_LFLAGS) 
-	$(UG_LINK) ugmgs.o -o $(UGROOT)/bin/ugmgs $(UGLIBS) $(UG_LFLAGS) 
-	$(UG_LINK) ugpfm.o -o $(UGROOT)/bin/ugpfm $(UGLIBS) $(UG_LFLAGS) 
+	$(UG_LINK) ugmgs.o -o $(UGROOT)/bin/ugmgs $(UGLIBS) $(UG_LFLAGS) $(UGLIBS) 
+	$(UG_LINK) ugpfm.o -o $(UGROOT)/bin/ugpfm $(UGLIBS) $(UG_LFLAGS) $(UGLIBS)
 	$(UG_LINK) ugmarc.o -o $(UGROOT)/bin/ugmarc  $(UGLIBS) $(UG_LFLAGS) 
 	$(UG_LINK) ugnetgen.o -o $(UGROOT)/bin/ugnetgen  $(UGLIBS) $(UG_LFLAGS) 
 	$(UG_LINK) ugstl.o -o $(UGROOT)/bin/ugstl  $(UGLIBS) $(UG_LFLAGS) 
