@@ -21190,7 +21190,7 @@ static INT PWorkGEN_Quit(void)
 
 static void PWorkGEN_Execute(void)
 {
-	INT i;
+	INT i, length;
 	DRAWINGOBJ *p;
 
 	/* receive DOs */
@@ -21219,7 +21219,7 @@ static void PWorkGEN_Execute(void)
 		for (i = 0; i <= WopDownChannels; i++)
 			if (WOP_Count[i] > 0) {
 				p = WOP_DO_Buffer[i][WOP_Rear[i]];
-				DO_inc(p);
+				DO_inc_n(p, 2);
 				(*WOP_GEN_ExecuteProc)(p);
 				WOP_Count[i]--;
 				WOP_Rear[i] = (WOP_Rear[i] + 1) % DO_BUFFER_SLOTS;
@@ -21235,9 +21235,10 @@ static void PWorkGEN_Execute(void)
 				}
 			if (!WOP_Sending[i])
 				if (WOP_Count[i] > 0) {
+					length = DO_2INT(WOP_DO_Buffer[i][WOP_Rear[i]]+1);
 					WOP_Sending[i] = 1;
 					WOP_Outmsg[i] = SendASync(WOP_UpChannel, WOP_DO_Buffer[i][WOP_Rear[i]], 
-											  DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &WOP_SError[i]);
+											  length, &WOP_SError[i]);
 				}
 		}
 	}
@@ -21253,9 +21254,9 @@ static void PWorkGEN_Execute(void)
    DESCRIPTION:
    Evaluates DOs in packets of the following format:
 
-   +-------+-----+-----+-----+---+
-   ! TOKEN ! DO1 ! DO2 ! ... ! 0 !
-   +-------+-----+-----+-----+---+
+   +-------+-----+-----+-----+-----+---+
+   ! TOKEN ! LEN ! DO1 ! DO2 ! ... ! 0 !
+   +-------+-----+-----+-----+-----+---+
 
    The token tells wether this packet is the last one. DOs can be packed as
    long as the packet length does not exceed the slot length.
@@ -21280,6 +21281,7 @@ static void PWorkEW_Evaluate(void)
 	{
 		/* set pointers and default token */
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
+		DO_inc(p);
 		DO_inc(p);
 		DO_2INT(p1) = NO_TOKEN;
 
@@ -21308,8 +21310,10 @@ static void PWorkEW_Evaluate(void)
 		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
 				 > WOP_CurrDoLen);
 
-		/* set endmarker */
+		/* set endmarker & length */
 		DO_2c(p) = DO_NO_INST;
+		DO_inc(p1);
+		DO_2INT(p1) = (INT)p-(INT)p1+2;
 
 		/* book slot */
 		WOP_Count[i]++;
@@ -21336,7 +21340,7 @@ static void PWorkEW_Evaluate(void)
 
 static void PWorkEW_Execute_3D(void)
 {
-	INT i, k, t, min;
+	INT i, k, t, min, length;
 
 	/* receive DOs */
 
@@ -21382,7 +21386,7 @@ static void PWorkEW_Execute_3D(void)
 		if (min == INT_MAX) return;
 
 		/* execute DO from slot with minimum ID */
-		(*WOP_GEN_ExecuteProc)(WOP_DO_Buffer[k][WOP_Rear[k]]+2);
+		(*WOP_GEN_ExecuteProc)(WOP_DO_Buffer[k][WOP_Rear[k]]+3);
 		WOP_Count[k]--;
 		WOP_Rear[k] = (WOP_Rear[k] + 1) % DO_BUFFER_SLOTS;
 	}
@@ -21416,9 +21420,10 @@ static void PWorkEW_Execute_3D(void)
 			if (min == INT_MAX) return;
 
 			/* send DO from slot with minimum ID */
+			length = DO_2INT(WOP_DO_Buffer[k][WOP_Rear[k]]+2);
 			WOP_Sending[0] = k;
 			WOP_Outmsg[0] = SendASync(WOP_UpChannel, WOP_DO_Buffer[k][WOP_Rear[k]],
-							   	      DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &WOP_SError[0]);
+							   	      length, &WOP_SError[0]);
 		}
 	}
 }
@@ -21433,9 +21438,9 @@ static void PWorkEW_Execute_3D(void)
    DESCRIPTION:
    Evaluates DOs in packets of the following format:
 
-   +-------+----+-----+-----+-----+---+
-   ! TOKEN ! ID ! DO1 ! DO2 ! ... ! 0 !
-   +-------+----+-----+-----+-----+---+
+   +-------+----+-----+-----+-----+-----+---+
+   ! TOKEN ! ID ! LEN | DO1 ! DO2 ! ... ! 0 !
+   +-------+----+-----+-----+-----+-----+---+
 
    The token tells wether this packet is the last one. ID is the plot id.
    DOs can be packed as long as their IDs are successive and the packet
@@ -21464,6 +21469,7 @@ static void PWorkEW_Evaluate_3D(void)
 		DO_2INT(p1) = NO_TOKEN;
 		DO_inc(p);
 		p2 = p;
+		DO_inc(p);
 		DO_inc(p);
 
 		/* loop until slot is nonempty */
@@ -21497,12 +21503,14 @@ static void PWorkEW_Evaluate_3D(void)
 			} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
 					 > WOP_CurrDoLen && WOP_nextID == WOP_lastID+1);
 
-		} while ( p == p2+1);
+		} while ( p == p2+2);
 
 	fin:
-		/* set endmarker and plot id */
+		/* set endmarker, plot id & length */
 		DO_2c(p) = DO_NO_INST;
 		DO_2INT(p2) = WOP_lastID;
+		DO_inc(p2);
+		DO_2INT(p2) = (INT)p-(INT)p1+1;
 
 		/* book slot */
 		WOP_Count[i]++;
