@@ -525,20 +525,6 @@ exit:
   return(res->error_code);
 }
 
-
-/****************************************************************************/
-/*																			*/
-/* Function:  Init															*/
-/*																			*/
-/* Purpose:   init solve cycle												*/
-/*																			*/
-/* Input:         NumProcType Init Function										*/
-/*																			*/
-/* Output: INT 0: ok														*/
-/*			   1: error														*/
-/*																			*/
-/****************************************************************************/
-
 static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
 {
   NP_NEWTON *newton;                                            /* object pointer						*/
@@ -554,60 +540,65 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
   /* read other numprocs */
   newton->trans = (NP_TRANSFER *) ReadArgvNumProc(base->mg,"T",TRANSFER_CLASS_NAME,
                                                   argc,argv);
-  if (newton->trans == NULL) return(NP_NOT_ACTIVE);
+  if (newton->trans == NULL) {
+    PrintErrorMessage('E',"NewtonInit","cannot read transfer num proc");
+    return(NP_NOT_ACTIVE);
+  }
   newton->solve = (NP_LINEAR_SOLVER *) ReadArgvNumProc(base->mg,"S",
                                                        LINEAR_SOLVER_CLASS_NAME,argc,argv);
-  if (newton->solve == NULL) return(NP_NOT_ACTIVE);
-
+  if (newton->solve == NULL) {
+    PrintErrorMessage('E',"NewtonInit","cannot read solve num proc");
+    return(NP_NOT_ACTIVE);
+  }
   /* set configuration parameters */
   if (ReadArgvDOUBLE("rhoreass",&(newton->rhoReass),argc,argv))
     newton->rhoReass = 0.8;
-  if ((newton->rhoReass<0.0)||(newton->rhoReass>1.0)) return(NP_NOT_ACTIVE);
-
+  if ((newton->rhoReass<0.0)||(newton->rhoReass>1.0)) {
+    PrintErrorMessage('E',"NewtonInit","rhoreass must be in (0,1)");
+    return(NP_NOT_ACTIVE);
+  }
   if (ReadArgvINT("lsteps",&(newton->maxLineSearch),argc,argv))
     newton->maxLineSearch=6;
-  if ((newton->maxLineSearch<0)||(newton->maxLineSearch>20)) return(NP_NOT_ACTIVE);
-
+  if ((newton->maxLineSearch<0)||(newton->maxLineSearch>20)) {
+    PrintErrorMessage('E',"NewtonInit","maxLineSearch <= 20");
+    return(NP_NOT_ACTIVE);
+  }
   if (ReadArgvINT("maxit",&(newton->maxit),argc,argv))
     newton->maxit = 50;
-  if ((newton->maxit<0)||(newton->maxit>1000)) return(NP_NOT_ACTIVE);
-
+  if ((newton->maxit<0)||(newton->maxit>1000)) {
+    PrintErrorMessage('E',"NewtonInit","maxit <= 1000");
+    return(NP_NOT_ACTIVE);
+  }
   if (ReadArgvINT("line",&(newton->lineSearch),argc,argv))
     newton->lineSearch = 1;
-  if ((newton->lineSearch<0)||(newton->lineSearch>1)) return(NP_NOT_ACTIVE);
-
+  if ((newton->lineSearch<0)||(newton->lineSearch>1)) {
+    PrintErrorMessage('E',"NewtonInit","line = 0 or 1");
+    return(NP_NOT_ACTIVE);
+  }
   if (ReadArgvINT("linrate",&(newton->linearRate),argc,argv))
     newton->linearRate = 0;
-  if ((newton->linearRate<0)||(newton->linearRate>1)) return(NP_NOT_ACTIVE);
-
+  if ((newton->linearRate<0)||(newton->linearRate>1)) {
+    PrintErrorMessage('E',"NewtonInit","linrate = 0 or 1");
+    return(NP_NOT_ACTIVE);
+  }
   if (ReadArgvDOUBLE("lambda",&(newton->lambda),argc,argv))
     newton->lambda = 1.0;
-  if ((newton->lambda<0.0)||(newton->lambda>2.0)) return(NP_NOT_ACTIVE);
-
+  if ((newton->lambda<0.0)||(newton->lambda>2.0)) {
+    PrintErrorMessage('E',"NewtonInit","lambda must be in (0,1)");
+    return(NP_NOT_ACTIVE);
+  }
   if (ReadArgvDOUBLE("linminred",&(newton->linMinRed),argc,argv))
     newton->linMinRed = 0.001;
-  if ((newton->linMinRed<0.0)||(newton->linMinRed>=1.0)) return(NP_NOT_ACTIVE);
-
-
+  if ((newton->linMinRed<0.0)||(newton->linMinRed>=1.0)) {
+    PrintErrorMessage('E',"NewtonInit","linminred must be in (0,1)");
+    return(NP_NOT_ACTIVE);
+  }
   /* set display option */
   newton->displayMode = ReadArgvDisplay(argc,argv);
 
   /* call general nls init */
   return (NPNLSolverInit(&(newton->nlsolver),argc,argv));
 }
-
-/****************************************************************************/
-/*																			*/
-/* Function:  Display														*/
-/*																			*/
-/* Purpose:   display linear multigrid cycle								*/
-/*																			*/
-/* Input:     none															*/
-/*																			*/
-/* Output:    INT 0: ok														*/
-/*			   1: error														*/
-/*																			*/
-/****************************************************************************/
 
 static INT NewtonDisplay (NP_BASE *theNumProc)
 {
@@ -625,22 +616,6 @@ static INT NewtonDisplay (NP_BASE *theNumProc)
 
   return (0);
 }
-
-/****************************************************************************/
-/*																			*/
-/* Function:  Execute														*/
-/*																			*/
-/* Purpose:	  execute linear solver											*/
-/*																			*/
-/* Input:	  theNumProc	num proc data structure							*/
-/*			  theMG			data newton										*/
-/*			  argc,argv		command options									*/
-/*																			*/
-/* Output:	  INT 0: ok														*/
-/*			  else : error													*/
-/*																			*/
-/****************************************************************************/
-
 
 static INT NewtonConstruct (NP_BASE *theNP)
 {
