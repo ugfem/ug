@@ -87,11 +87,11 @@
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
 
-/* temp node flag for Identification */
-static INT ce_NIDENT;
-#define NIDENT_LEN                    1
-#define NIDENT(p)                     CW_READ(p,ce_NIDENT)
-#define SETNIDENT(p,n)                CW_WRITE(p,ce_NIDENT,n)
+/* temp node flag for Identification
+   static INT ce_NIDENT;
+   #define NIDENT_LEN                    1
+   #define NIDENT(p)                     CW_READ(p,ce_NIDENT)
+ #define SETNIDENT(p,n)                CW_WRITE(p,ce_NIDENT,n) */
 
 /* temp edge flag for Identification
    static INT ce_EDIDENT;
@@ -99,11 +99,12 @@ static INT ce_NIDENT;
    #define EDIDENT(p)                    CW_READ(p,ce_EDIDENT)
  #define SETEDIDENT(p,n)               CW_WRITE(p,ce_EDIDENT,n) */
 
-#define EDIDENT_CE                                      23
-#define EDIDENT_SHIFT                           16
-#define EDIDENT_LEN                             1
-#define EDIDENT(p)                                      CW_READ_STATIC(p,EDIDENT_,GENERAL_)
-#define SETEDIDENT(p,n)                     CW_WRITE_STATIC(p,EDIDENT_,GENERAL_,n)
+#define NIDENT(p)                     THEFLAG(p)
+#define SETNIDENT(p,n)                SETTHEFLAG(p,n)
+
+#define EDIDENT(p)                    THEFLAG(p)
+#define SETEDIDENT(p,n)               SETTHEFLAG(p,n)
+
 
 /* this function is called for low level identification */
 static INT (*Ident_FctPtr)(DDD_HDR *IdentObjectHdr, INT nobject,
@@ -752,9 +753,9 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
   debug = 0;
         #endif
 
-  /* allocate a control word entry to lock nodes */
-  if (AllocateControlEntry(NODE_CW,1,&ce_NIDENT) != GM_OK)
-    assert(0);
+  /* allocate a control word entry to lock nodes
+     if (AllocateControlEntry(NODE_CW,1,&ce_NIDENT) != GM_OK)
+          assert(0); */
 
   /* allocate a control word entry to lock edges
      if (AllocateControlEntry(EDGE_CW,1,&ce_EDIDENT) != GM_OK)
@@ -785,9 +786,8 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 
   ENDDEBUG
 
-  FreeControlEntry(ce_NIDENT);
-
-  /*FreeControlEntry(ce_EDIDENT); */
+  /*FreeControlEntry(ce_NIDENT);
+     FreeControlEntry(ce_EDIDENT); */
 }
 
 #endif /* end ModelP */
