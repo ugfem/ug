@@ -652,6 +652,128 @@ static INT GetNodeNextToCut (INT tag, const DOUBLE_VECTOR *x, const DOUBLE_VECTO
 
   return (0);
 }
+#define POLYMAX         4
+#define INSIDE_POLY             -1
+#define OUTSIDE_POLY    -2
+
+static INT PointInPoly (INT n, const DOUBLE_VECTOR Corners[], const DOUBLE_VECTOR point)
+{
+  DOUBLE D,tau[POLYMAX],xa,ya,xe,ye,sp;
+  int i, left, right;
+
+  assert (n<=POLYMAX);
+
+  xa = Corners[0][_X_];
+  ya = Corners[0][_Y_];
+  for (i=1; i<=n; i++)
+  {
+    xe = Corners[i%n][_X_];
+    ye = Corners[i%n][_Y_];
+    D = (xe-xa)*(xe-xa)+(ye-ya)*(ye-ya);
+    tau[i-1] = ((ye-ya)*(point[_X_]-xa)-(xe-xa)*(point[_Y_]-ya))/D;
+    if (fabs(tau[i-1])<=10*SMALL_C)
+    {
+      /* is point on this side? */
+      sp = (xe-xa)*(point[_X_]-xa)+(ye-ya)*(point[_Y_]-ya);
+      if ((-10*SMALL_C <= sp) && (sp <= D+10*SMALL_C))
+        return (i-1);
+    }
+    xa = xe;
+    ya = ye;
+  }
+  left = right = 0;
+  for (i=0; i<n; i++)
+  {
+    if (tau[i]>10*SMALL_C) left++;
+    if (tau[i]<-10*SMALL_C) right++;
+  }
+  if (left==n || right==n)
+    return(INSIDE_POLY);
+  return(OUTSIDE_POLY);
+}
+
+static INT Intersect2d_old (INT nCorners, const DOUBLE_VECTOR Corners[], const DOUBLE_VECTOR vect, const DOUBLE_VECTOR Point, INT *Side, DOUBLE lambda[DIM_OF_BND])
+{
+  DOUBLE_VECTOR point,aux,px,dx;
+  DOUBLE dx_v,px_v,px_dx,alpha,mindist;
+  INT corn,nearestSide,where;
+
+  V2_COPY(Point,point);
+
+  where = PointInPoly(nCorners,Corners,point);
+  if (where==OUTSIDE_POLY)
+  {
+    /* find nearest side */
+    mindist = MAX_C;
+    nearestSide = -1;
+    for (corn=0; corn<nCorners; corn++)
+    {
+      V2_SUBTRACT(point,Corners[corn],px);
+      V2_SUBTRACT(Corners[(corn+1)%nCorners],Corners[corn],dx);
+      V2_VECTOR_PRODUCT(px,dx,alpha);
+
+      if (alpha<-10*SMALL_C) continue;         /* point is left of dx */
+
+      V2_SCALAR_PRODUCT(px,dx,px_dx);
+      V2_SCALAR_PRODUCT(dx,dx,alpha);
+
+      px_dx /= alpha;
+      if ((px_dx<-10*SMALL_C) || (1+10*SMALL_C<px_dx)) continue;          /* foot point outside dx */
+
+      V2_SCALE(px_dx,dx);           /* foot point */
+      V2_SUBTRACT(px,dx,aux);
+      V2_SCALAR_PRODUCT(aux,aux,alpha);         /* dist^2 (footpoint-point) */
+
+      if (alpha<mindist)
+      {
+        mindist = alpha;
+        nearestSide = corn;
+      }
+    }
+
+    if (nearestSide<0) return (1);          /* don't know how to find an upwind point in this situation */
+
+    /* now we take the foot point as point and proceed */
+    V2_SUBTRACT(point,Corners[nearestSide],px);
+    V2_SUBTRACT(Corners[(nearestSide+1)%nCorners],Corners[nearestSide],dx);
+    V2_VECTOR_PRODUCT(px,dx,alpha);
+    V2_SCALAR_PRODUCT(px,dx,px_dx);
+    V2_SCALAR_PRODUCT(dx,dx,alpha);
+    px_dx /= alpha;
+    V2_SCALE(px_dx,dx);         /* foot point */
+    V2_ADD(Corners[nearestSide],dx,point);
+    where = nearestSide;
+  }
+
+  /* point is in (or on) polygon */
+  for (corn=0; corn<nCorners; corn++)
+  {
+    if (corn==where)
+      continue;                         /* skip side the point is lying on */
+    V2_SUBTRACT(point,Corners[corn],px);
+    V2_SUBTRACT(Corners[(corn+1)%nCorners],Corners[corn],dx);
+    V2_VECTOR_PRODUCT(dx,vect,dx_v);
+
+    if (fabs(dx_v)<10*SMALL_C) continue;       /* vect parallel to side */
+
+    V2_VECTOR_PRODUCT(px,dx,px_dx);
+    alpha = px_dx/dx_v;
+
+    if (alpha>10*SMALL_C) continue;            /* downwind */
+
+    if ((fabs(alpha)<10*SMALL_C) && (dx_v<0)) continue;        /* point lies on the side and polygon lies upwind of point */
+
+    V2_VECTOR_PRODUCT(px,vect,px_v);
+    lambda[0] = px_v/dx_v;
+    if ((-10*SMALL_C<lambda[0]) && (lambda[0]<1.0+10*SMALL_C))
+    {
+      *Side = corn;
+      return (0);
+    }
+  }
+
+  return (2);
+}
 
 INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const DOUBLE_VECTOR pt,
                  INT *Side, DOUBLE lambda[DIM_OF_BND])
@@ -662,6 +784,8 @@ INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const
 
   for (side=0; side<nco; side++)
   {
+    /* skip side with pt */
+    /*         if (side==1) continue; */
     /* we search the cutting point of line xs+c0*(xn-xs) with pt-c1*vel by solving the system
                                                T
             (xn0-xs0  xn1-xs1)    (c0)   (pt0-xs0)
@@ -672,9 +796,11 @@ INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const
     V2_SUBTRACT(x[next],x[side],v);                                                                     /* vector from xs to xn */
     V2_COPY(v,M[0]);                                                                                                    /* transposed coefficient matrix for cut of lines */
     V2_COPY(vel,M[1]);
-    M2_INVERT(M,MI,det);                                                                                        /* inverse */
+    det = M[0][0]*M[1][1]-M[1][0]*M[0][1];
     if (det==0.0)
-      continue;                                                                                                                 /* lines are parallel */
+      continue;
+    /* lines are parallel */
+    M2_INVERT(M,MI,det);                                                                                        /* inverse */
 
     V2_SUBTRACT(pt,x[side],r);                                                                                  /* right hand side */
     MT2_TIMES_V2(MI,r,coeff);                                                                                   /* solve for coefficients */
@@ -853,7 +979,7 @@ INT GetMJRawRegularUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECT
       V2_COPY(FVG_GCM(geo),                               SCVCorners[2]);
       V2_COPY(FVG_GEM(geo,(ip+nc-1)%nc),  SCVCorners[3]);
 
-      if (Intersect2d(4,SCVCorners,IPVel[ip],SCVF_GIP(FVG_SCVF(geo,ip)),&side,&lambda)!=0)
+      if (Intersect2d_old(4,SCVCorners,IPVel[ip],SCVF_GIP(FVG_SCVF(geo,ip)),&side,&lambda)!=0)
         continue;
 
       switch (side)
@@ -899,7 +1025,7 @@ INT GetMJRawRegularUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECT
       V2_COPY(FVG_GCM(geo),                       SCVCorners[2]);
       V2_COPY(FVG_GEM(geo,ip),            SCVCorners[3]);
 
-      if (Intersect2d(4,SCVCorners,IPVel[ip],SCVF_GIP(FVG_SCVF(geo,ip)),&side,&lambda)!=0)
+      if (Intersect2d_old(4,SCVCorners,IPVel[ip],SCVF_GIP(FVG_SCVF(geo,ip)),&side,&lambda)!=0)
         continue;
 
       switch (side)
