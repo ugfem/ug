@@ -64,7 +64,7 @@
 /****************************************************************************/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*
@@ -96,6 +96,14 @@ INT InitGm ()
     SetHiWrd(err,__LINE__);
     return (err);
   }
+
+  /* elements.c */
+  if ((err=PreInitElementTypes())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
 
   /* enrol.c */
   if ((err=InitEnrol())!=0)
