@@ -165,6 +165,7 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define PARAM_PATCH_LEFT(p)     (p)->pa.left
 #define PARAM_PATCH_RIGHT(p)    (p)->pa.right
 #define PARAM_PATCH_POINTS(p,i) (p)->pa.points[i]
+#define PARAM_PATCH_RES(p)              ((p)->pa.resolution)
 #define PARAM_PATCH_RANGE(p)    (p)->pa.range
 #define PARAM_PATCH_BS(p)       (p)->pa.BndSegFunc
 #define PARAM_PATCH_BSD(p)      (p)->pa.bs_data
@@ -411,8 +412,9 @@ struct parameter_patch {
   INT id;                           /* unique id used for load/store        */
 
   INT left,right;                                       /* id of left and right subdomain       */
+  INT resolution;                                       /* measure for curvature				*/
   INT points[CORNERS_OF_BND_SEG];   /* ids of points                        */
-  DOUBLE range[2][DIM_OF_BND];       /* parameter range                      */
+  DOUBLE range[2][DIM_OF_BND];      /* parameter range                      */
 
   BndSegFuncPtr BndSegFunc;                     /* pointer to definition function           */
   void *bs_data;                                        /* can be used by applic to find data   */
@@ -566,6 +568,8 @@ BVP   *CreateBoundaryValueProblem (char *BVPname, BndCondProcPtr theBndCond,
                                    int numOfCoeffFct, CoeffProcPtr coeffs[],
                                    int numOfUserFct, UserProcPtr userfct[]);
 BVP       *CreateBVP                              (char *BVP, char *Domain, char *Problem);
+const char *GetBVP_DomainName     (const BVP *aBVP);
+const char *GetBVP_ProblemName    (const BVP *aBVP);
 BVP   *Create_MarcBVP             (char *BVPname, BndCondProcPtr theBndCond,
                                    int numOfCoeffFct, CoeffProcPtr coeffs[],
                                    int numOfUserFct, UserProcPtr userfct[]);

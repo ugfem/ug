@@ -47,6 +47,7 @@
 #include "defaults.h"
 #include "general.h"
 #include "debug.h"
+#include "scan.h"
 #include "evm.h"
 
 /* dev modules */
@@ -128,6 +129,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 static INT BndPointGlobal (BNDP *aBndP, DOUBLE *global);
+static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global);
 
 /* Marc specials */
 
@@ -2000,6 +2002,26 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
   return ((BVP*)theBVP);
 }
 
+const char *GetBVP_DomainName (const BVP *aBVP)
+{
+  const STD_BVP *theBVP = (const STD_BVP *)aBVP;
+
+  if (theBVP==NULL)
+    return NULL;
+
+  return ENVITEM_NAME(theBVP->Domain);
+}
+
+const char *GetBVP_ProblemName (const BVP *aBVP)
+{
+  const STD_BVP *theBVP = (const STD_BVP *)aBVP;
+
+  if (theBVP==NULL)
+    return NULL;
+
+  return ENVITEM_NAME(theBVP->Problem);
+}
+
 static INT GetNumberOfPatches(PATCH *p)
 {
   switch (PATCH_TYPE(p))
@@ -2247,6 +2269,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
     PARAM_PATCH_BCD(thePatch) = NULL;
     for (i=0; i<2*DIM_OF_BND; i++)
       PARAM_PATCH_POINTS(thePatch,i) = theSegment->points[i];
+    PARAM_PATCH_RES(thePatch) = SEG_RESOLUTION(theSegment);
     for (i=0; i<DIM_OF_BND; i++)
     {
       PARAM_PATCH_RANGE(thePatch)[0][i] = theSegment->alpha[i];
@@ -2604,6 +2627,9 @@ INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
   STD_BVP *theBVP;
   INT i;
 
+  if (aBVP==NULL)
+    return (1);
+
   /* cast */
   theBVP = GetSTD_BVP(aBVP);
 
@@ -2877,6 +2903,84 @@ static BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
 }
 #endif
 
+#define BN_RES          100
+
+static int DropPerpendicularOnSegment (PATCH *patch, const double range[][DIM_OF_BND], const double global[], double local[], double *mindist2)
+{
+  double sa = range[0][0];
+  double sb = range[1][0];
+  double ds = (sb - sa)/((double)BN_RES);
+  int k;
+        #if (DIM==3)
+  double ta = range[0][1];
+  double tb = range[1][1];
+  double dt = (tb - ta)/((double)BN_RES);
+  int l;
+        #endif
+
+  for (k=0; k<=BN_RES; k++)
+  {
+    DOUBLE lambda[DIM_OF_BND];
+    DOUBLE_VECTOR point,diff;
+    double dist2;
+
+    lambda[0] = (k==BN_RES) ? sb : sa+k*ds;
+
+                #if (DIM==3)
+    for (l=0; l<=BN_RES; l++)
+    {
+
+      lambda[1] = (l==BN_RES) ? tb : ta+l*dt;
+                #endif
+
+    if (PatchGlobal(patch,lambda,point))
+      return 1;
+    V_DIM_SUBTRACT(point,global,diff);
+    dist2 = V_DIM_SCAL_PROD(diff,diff);
+    if (*mindist2>dist2)
+    {
+      *mindist2 = dist2;
+      V_BDIM_COPY(lambda,local);
+    }
+                #if (DIM==3)
+  }
+                #endif
+  }
+  return 0;
+}
+
+static int ResolvePointOnSegment (PATCH *patch, int depth, double resolution2, const double range[][DIM_OF_BND], const double global[], double local[])
+{
+  double ds = (range[1][0] - range[0][0])/((double)BN_RES);
+        #if (DIM==3)
+  double dt = (range[1][1] - range[0][1])/((double)BN_RES);
+        #endif
+  double new_range[2][DIM_OF_BND];
+  DOUBLE mindist2 = MAX_D;
+
+  new_range[0][0] = local[0]-ds;
+  new_range[1][0] = local[0]+ds;
+        #if (DIM==3)
+  new_range[0][1] = local[1]-dt;
+  new_range[1][1] = local[1]+dt;
+        #endif
+
+  if (DropPerpendicularOnSegment(patch,new_range,global,local,&mindist2))
+    return 1;
+  if (mindist2>resolution2)
+  {
+    if (depth>0)
+    {
+      /* recursive call */
+      if (ResolvePointOnSegment(patch,depth-1,resolution2,new_range,global,local))
+        return 1;
+    }
+    else
+      return 2;
+  }
+  return 0;
+}
+
 /* domain interface function: for description see domain.h */
 /* TODO: syntax for manpages??? */
 BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
@@ -2886,22 +2990,77 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   PATCH *p;
   INT j,pid;
   int i;
-  float pos[DIM_OF_BND];
+  float pos[2];
 #       ifdef __THREEDIM__
   DOUBLE lc;
 #       endif
 
   theBVP = GetSTD_BVP(aBVP);
 
-    #ifdef __TWODIM__
-  if (sscanf(argv[0],"bn %d %f",&i,pos) != 2)
-    return(NULL);
-    #endif
-    #ifdef __THREEDIM__
-  if (sscanf(argv[0],"bn %d %f %f",&i,pos,pos+1) != 3)
-    return(NULL);
-    #endif
+  if (ReadArgvOption("g",argc,argv))
+  {
+    float fValue[3];
+    DOUBLE resolution2;
+    double global[DIM];
 
+    /* insert bn from global coordinates */
+    if (sscanf(argv[0],"bn %f %f %f",fValue,fValue+1,fValue+2) != DIM)
+    {
+      PrintErrorMessageF('E',"BVP_InsertBndP","g option specified but could not scan\n"
+                         "global coordinates from '%s'\n",argv[0]);
+      return(NULL);
+    }
+    V_DIM_COPY(fValue,global);
+
+    if (ReadArgvDOUBLE("r",&resolution2,argc,argv)!=0)
+      resolution2 = 1e-2;                       /* default */
+    resolution2 *= resolution2;
+
+    /* find segment id and local coordinates (on any segment) */
+    {
+      DOUBLE mindist2 = MAX_D;
+      int seg;
+      DOUBLE lambda[DIM_OF_BND];
+
+      for (seg=0; seg<STD_BVP_NSIDES(theBVP); seg++)
+      {
+        PATCH *patch = STD_BVP_PATCH(theBVP,seg+STD_BVP_SIDEOFFSET(theBVP));
+        DOUBLE seg_mindist2 = mindist2;
+
+        if (DropPerpendicularOnSegment(patch,PARAM_PATCH_RANGE(patch),global,lambda,&seg_mindist2))
+          return NULL;
+
+        if (mindist2>seg_mindist2)
+        {
+          mindist2 = seg_mindist2;
+          i = seg;
+          V_BDIM_COPY(lambda,pos);
+        }
+        if (mindist2<=resolution2)
+          break;
+      }
+      if (mindist2>resolution2)
+      {
+        /* refine search */
+        PATCH *patch = STD_BVP_PATCH(theBVP,i+STD_BVP_SIDEOFFSET(theBVP));
+
+        V_BDIM_COPY(pos,lambda);
+        if (ResolvePointOnSegment(patch,2,resolution2,PARAM_PATCH_RANGE(patch),global,lambda))
+          return NULL;
+        V_BDIM_COPY(lambda,pos);
+      }
+    }
+
+  }
+  else
+  {
+    if (sscanf(argv[0],"bn %d %f %f",&i,pos,pos+1) != DIM_OF_BND+1)
+    {
+      PrintErrorMessageF('E',"BVP_InsertBndP","could not scan segment id and\n"
+                         "local coordinates on segment from '%s'\n",argv[0]);
+      return(NULL);
+    }
+  }
   pid = i + theBVP->sideoffset;
   p = theBVP->patches[pid];
 
@@ -4117,11 +4276,11 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   /* besides parametric coordinates return also whether element lies left or right of boundary */
   lambda[DOM_EVAL_FOR_SD] = (SideIsCooriented(ps)) ? PARAM_PATCH_LEFT(p) : PARAM_PATCH_RIGHT(p);
   if (in == NULL)
-    return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,lambda,value,type));
+    return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),PARAM_PATCH_BSD(p),lambda,value,type));
 
   for (i=0; i<DOM_N_IN_PARAMS; i++)
     in[i] = lambda[i];
-  return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,in,value,type));
+  return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),PARAM_PATCH_BSD(p),in,value,type));
 }
 
 /* domain interface function: for description see domain.h */
@@ -4676,6 +4835,12 @@ INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
   DOUBLE *pos;
   INT i;
 
+        #ifdef ModelP
+  /* TODO: parallel version */
+  PrintErrorMessage('E',"BNDP_Move","parallel not implemented");
+  ASSERT(FALSE);
+        #endif
+
   ps = (BND_PS *)aBndP;
   if (PATCH_IS_FREE(currBVP->patches[ps->patch_id]))
   {
@@ -4820,13 +4985,13 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
     for (i=0; i<DIM_OF_BND; i++)
       loc[i] = local[i];
     loc[DOM_EVAL_FOR_SD] = DOM_EVAL_SD_UNKNOWN;
-    return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,local,value,type));
+    return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),PARAM_PATCH_BSD(p),local,value,type));
   }
 
   for (i=0; i<DIM_OF_BND; i++)
     in[i] = local[i];
   /* maybe the user has set in[DOM_EVAL_FOR_SD]: don't erase it */
-  return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,in,value,type));
+  return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),PARAM_PATCH_BSD(p),in,value,type));
 }
 
 /* domain interface function: for description see domain.h */
@@ -4883,12 +5048,11 @@ INT BNDP_SaveBndP (BNDP *BndP)
   BND_PS *bp;
   INT i,j;
   int iList[2];
-  double dList[DIM-1];
+  double dList[DIM];
 
   IF_MARC(BndP)
   return(M_BNDP_SaveBndP(BndP));
 
-  /* TODO: save free boundary points */
   iList[0] = BND_PATCH_ID(BndP);
   iList[1] = BND_N(BndP);
   if (Bio_Write_mint(2,iList)) return (1);
@@ -4899,6 +5063,15 @@ INT BNDP_SaveBndP (BNDP *BndP)
     for (j=0; j<DIM-1; j++)
       dList[j] = bp->local[i][j];
     if (Bio_Write_mdouble(DIM-1,dList)) return (1);
+  }
+  if (!PATCH_IS_FIXED(currBVP->patches[BND_PATCH_ID(BndP)]))
+  {
+    DOUBLE *pos = (DOUBLE*)BND_DATA(bp);
+
+    /* save free boundary point coordinates */
+    for (j=0; j<DIM; j++)
+      dList[j] = pos[j];
+    if (Bio_Write_mdouble(DIM,dList)) return (1);
   }
 
   return(0);
@@ -4941,6 +5114,15 @@ INT BNDP_SaveBndP_Ext (BNDP *BndP)
       dList[j] = bp->local[i][j];
     if (Bio_Write_mdouble(DIM-1,dList)) return (1);
   }
+  if (!PATCH_IS_FIXED(currBVP->patches[BND_PATCH_ID(BndP)]))
+  {
+    DOUBLE *pos = (DOUBLE*)BND_DATA(bp);
+
+    /* save free boundary point coordinates */
+    for (j=0; j<DIM; j++)
+      dList[j] = pos[j];
+    if (Bio_Write_mdouble(DIM,dList)) return (1);
+  }
 
   return(0);
 }
@@ -4951,7 +5133,7 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   BND_PS *bp;
   int i,j,pid,n;
   int iList[2];
-  double dList[DIM-1];
+  double dList[DIM];
 
   if (((STD_BVP *)theBVP)->type == BVP_MARC)
     return(M_BNDP_LoadBndP(theBVP,Heap));
@@ -4967,16 +5149,20 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
     for (j=0; j<DIM-1; j++)
       bp->local[i][j] = dList[j];
   }
-  /* TODO: load free boundary points properly */
+  /* load free boundary points properly */
   if (!PATCH_IS_FIXED(currBVP->patches[pid]))
   {
-    /* store global coordinates */
+    DOUBLE *pos;
+
+    /* read global coordinates */
     BND_DATA(bp) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
     if (BND_DATA(bp)==NULL)
       return (NULL);
 
-    if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
-      return (NULL);
+    if (Bio_Read_mdouble(DIM,dList)) return (NULL);
+    pos = (DOUBLE*)BND_DATA(bp);
+    for (j=0; j<DIM; j++)
+      pos[j] = dList[j];
   }
 
   return((BNDP *)bp);
