@@ -1181,12 +1181,8 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   GRID_LINK_ELEMENT(theGrid,pe,PrioMaster);
 
   SET_EFATHER(pe,Father);
-        #ifndef ModelP
   if (Father != NULL)
     SETSUBDOMAIN(pe,SUBDOMAIN(Father));
-        #else
-  SETSUBDOMAIN(pe,me+1);
-        #endif
 
   /* return ok */
   return(pe);
