@@ -768,6 +768,7 @@ void FAMGPaList::MarkParents(FAMGGrid *grid)
         cgnode = graph->GetNode(pa[i]);
         if(cgnode->IsCGNode()) 
 			continue;
+		assert(cgnode->IsUndecidedNode());
         graph->Remove(cgnode);
         graph->MarkCGNode(cgnode);
         graph->UpdateNSons(NULL,cgnode->GetPaList(),grid);
@@ -844,7 +845,7 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
     double weight, minweight;
 
     minweight = 1e+10;
-    for(pl = palist; pl != NULL; pl = pl->GetNext())
+    for(pl = GetPaList(); pl != NULL; pl = pl->GetNext())
     {
         weight = pl->TotalWeight();
         if (weight < minweight)
@@ -857,7 +858,7 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
     graph->MarkFGNode(this);
     graph->UpdateNSons(NULL,palist,grid);
     graph->ClearPaList(palist);
-    palist = NULL;
+    SetPaList(NULL);
 	assert(minpl!=NULL);
     minpl->MarkParents(grid);
 
@@ -957,11 +958,58 @@ int FAMGGraph::EliminateNodes(FAMGGrid *gridptr)
                 DrawUgPicture(thePic);
             } 
             cin >> c;
-            } 
+        } 
 		*/
     }
 
     return 0;
+}
+
+int FAMGGraph::EliminateDirichletNodes(FAMGGrid *gridptr)
+{
+#ifdef USE_UG_DS
+	FAMGNode *node, *nextNode;
+	FAMGList *list;
+	VECTOR *vec;
+	
+	list = GetList();
+	while( list!=NULL )
+	{
+		node = list->GetFirst();
+		assert( node!=NULL );	// a list with no node in it is not allowed
+		while( node!=NULL )
+		{
+			// prepare next loop as long as it is possible; the danger is, that
+			// FAMGGraph::Remove(node*) deletes node from the list, such that
+			// succ of node is invalid for our needs and more: Remove may delete
+			// the whole list (if node was its onlyiest) such that also the list 
+			// successor can not be determined
+			nextNode = node->GetSucc();
+			if( nextNode==NULL )
+			{
+				list = list->GetSucc();
+			}
+			
+			// now we may remove(node) if we want
+			
+			// analyse if node is a Dirichlet node
+			vec = ((FAMGugVectorEntryRef*)(node->GetVec().GetPointer()))->myvector();
+			if( VECSKIP(vec) )
+			{
+				// vec has at least 1 Dirichlet component
+				assert(node->GetPaList()->GetNp()==0);	// node should have no parents because he can be eliminated directly (dirichlet node!)
+	            if(node->Eliminate(gridptr)) return 1;
+    	        if(node->UpdateNeighborsFG(gridptr)) return 1; 
+        	    // if(InsertHelplist()) return 1; // should be superflouos here because no nodes were put into the helplist
+			}
+			
+			node = nextNode;
+		}
+	}
+#else
+	cout << "FAMGGraph::EliminateDirichletNodes only implemented for UG" << endl;
+#endif
+	return 0;
 }
 
 int FAMGGraph::InsertNode(FAMGGrid *gridptr, FAMGNode *nodei)

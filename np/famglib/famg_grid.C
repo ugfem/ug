@@ -971,6 +971,8 @@ int FAMGGrid::ConstructTransfer()
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
 	
+	if( level == 0 )
+		if (graph->EliminateDirichletNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
 	
 #ifdef ModelP
 	// in parallel now only the nodes in the border of the core partition are in the list

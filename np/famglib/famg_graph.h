@@ -405,6 +405,7 @@ public:
   void CorrectPaList(FAMGPaList *&palist, double threshold);
   int SavePaList(FAMGPaList *&list, int np, const int pa[], double c[], double ct[], double error);
   int EliminateNodes(FAMGGrid *gridptr);
+  int EliminateDirichletNodes(FAMGGrid *gridptr);
   int RemainingNodes();
   void UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid *grid);
   void InitNSons();
