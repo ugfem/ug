@@ -61,17 +61,21 @@
 /* devices module */
 #include "devices.h"
 
-/* grid generatormodule */
-#include "ggm.h"
-#include "ggmain.h"
-/*#include "gg3d.h"*/
-
 /* grid manager module */
 #include "gm.h"
 #include "rm.h"
 #include "evm.h"
 #include "ugm.h"
 #include "algebra.h"
+
+/* grid generator module */
+#ifdef __TWODIM__
+#include "ggm.h"
+#include "ggmain.h"
+#endif
+#ifdef __THREEDIM__
+#include "gg3d.h"
+#endif
 
 /* numerics module */
 #include "num.h"
@@ -6501,7 +6505,7 @@ static INT SelectCommand (INT argc, char **argv)
    extracon - display or delete extra connections
 
    DESCRIPTION:
-   This command displays or delete’ extra connections.
+   This command displays or deleteí extra connections.
 
    'extracon [$d]'
 
@@ -6964,13 +6968,15 @@ static INT MakeGridCommand  (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   INT i,Single_Mode;
+  MESH *mesh;
+    #ifdef __TWODIM__
+  CoeffProcPtr coeff;
   GG_ARG args;
   GG_PARAM params;
-  MESH *mesh;
-  CoeffProcPtr coeff;
   long ElemID,m;
-  float tmp;
   int iValue;
+  float tmp;
+        #endif
     #ifdef __THREEDIM__
   INT smooth;
   DOUBLE h;
@@ -6996,6 +7002,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
   Single_Mode = 0;
 
   /* check options */
+    #ifdef __TWODIM__
   args.doanimate =
     args.doupdate =
       args.dostep =
@@ -7007,6 +7014,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
                   args.doAngle =  NO;
   args.doedge = YES;
   ElemID = -1;
+        #endif
 
   if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))
   {
@@ -10352,8 +10360,10 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
 
 static INT SetPrintingFormatCommand (INT argc, char **argv)
 {
-  MULTIGRID *theMG;
   INT err;
+
+#       ifdef __NP__
+  MULTIGRID *theMG;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -10361,8 +10371,24 @@ static INT SetPrintingFormatCommand (INT argc, char **argv)
     PrintErrorMessage('E',"setpf","there is no current multigrid\n");
     return (CMDERRORCODE);
   }
-
   err = SetPrintingFormatCmd(theMG,argc,argv);
+#       endif
+
+#       ifdef __NUMERICS__
+  char format[NAMESIZE];
+
+  if (sscanf(argv[0],"setpf %s",format)!=1)
+  {
+    if (currMG==NULL)
+    {
+      PrintErrorMessage('E',"setpf","no format specified and no current mg");
+      return (PARAMERRORCODE);
+    }
+    strcpy(format,ENVITEM_NAME(MGFORMAT(currMG)));
+  }
+
+  err = SetPrintingFormatCmd(format,argc,argv);
+#       endif
 
   switch (err)
   {
@@ -11709,7 +11735,41 @@ static INT DebugCommand (INT argc, char **argv)
 }
 #endif
 
+/****************************************************************************/
+/*D
+   reperr - prints the error stack
 
+   DESCRIPTION:
+   This command prints the error stack which is created when functios use
+   the ERR_REP_RETURN macro. In low level functions REP_ERR_RESET should be called.
+
+   File and line of the returning functions are printed.
+
+   'reperr'
+   D*/
+/****************************************************************************/
+
+#ifdef Debug
+static INT RepErrCommand (INT argc, char **argv)
+{
+  INT i;
+
+  NO_OPTION_CHECK(argc,argv);
+
+  if (rep_err_count==0)
+  {
+    UserWrite("no errors are reported\n");
+  }
+  else
+  {
+    UserWrite("reported errors are:\n\n");
+
+    for (i=0; i<rep_err_count; i++)
+      UserWriteF("%2d: File: %20s, Line: %5d\n",i,rep_err_file[i],rep_err_line[i]);
+  }
+  return (OKCODE);
+}
+#endif
 
 /****************************************************************************/
 /*D
@@ -12772,8 +12832,8 @@ INT InitCommands ()
 
   /* formats */
   if (CreateCommand("newformat",          CreateFormatCommand                             )==NULL) return (__LINE__);
-  if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
   if (CreateCommand("showpf",             ShowPrintingFormatCommand               )==NULL) return (__LINE__);
+  if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
 #ifdef __NP__
   if (CreateCommand("createvector",   CreateVecDescCommand            )==NULL) return (__LINE__);
   if (CreateCommand("creatematrix",   CreateMatDescCommand            )==NULL) return (__LINE__);
@@ -12797,6 +12857,7 @@ INT InitCommands ()
   /* debugging */
         #ifdef Debug
   if (CreateCommand("debug",                      DebugCommand                                )==NULL) return (__LINE__);
+  if (CreateCommand("reperr",             RepErrCommand                               )==NULL) return (__LINE__);
         #endif
 
 #ifdef ModelP
