@@ -352,6 +352,17 @@ static INT SetCompactTypesOfVec (VECDATA_DESC *vd)
   return (0);
 }
 
+static INT VDCompsSubsequent (const VECDATA_DESC *vd)
+{
+  INT tp,i;
+
+  for (tp=0; tp<NVECTYPES; tp++)
+    for (i=0; i<VD_NCMPS_IN_TYPE(vd,tp); i++)
+      if (VD_CMP_OF_TYPE(vd,tp,i)!=VD_CMP_OF_TYPE(vd,tp,0)+i)
+        return (NO);
+  return (YES);
+}
+
 /****************************************************************************/
 /*D
    FillRedundantComponentsOfVD - fill the redundant components of a VECDATA_DESC
@@ -377,6 +388,7 @@ INT FillRedundantComponentsOfVD (VECDATA_DESC *vd)
   ConstructVecOffsets(VD_NCMPPTR(vd),VD_OFFSETPTR(vd));
   SetCompactTypesOfVec(vd);
   SetScalVecSettings(vd);
+  VD_SUCC_COMP(vd) = VDCompsSubsequent(vd);
 
   return (NUM_OK);
 }
@@ -468,8 +480,8 @@ static INT GetNewVectorName (MULTIGRID *theMG, char *name)
    CreateVecDesc - create a vector and fill extra data
 
    SYNOPSIS:
-   VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
-   SHORT *NCmpInType);
+   VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *compNames,
+                                                         const SHORT *NCmpInType, SHORT nId, SHORT *Ident);
 
    PARAMETERS:
    .  theMG - create vector for this multigrid
@@ -477,6 +489,7 @@ static INT GetNewVectorName (MULTIGRID *theMG, char *name)
    .  NCmpInType - 'VECDATA_DESC' specification
    .  compNames - (optional) vector of component names (in the canonic type order)
                one char each (NULL pointer for no names)
+   .  nId - number of comps after identification (maybe
 
    DESCRIPTION:
    This function creates a 'VECDATA_DESC' and fills its components.
@@ -489,7 +502,7 @@ static INT GetNewVectorName (MULTIGRID *theMG, char *name)
 /****************************************************************************/
 
 VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *compNames,
-                             const SHORT *NCmpInType)
+                             const SHORT *NCmpInType, SHORT nId, SHORT *Ident)
 {
   VECDATA_DESC *vd;
   SHORT offset[NVECOFFSETS],*Comp;
@@ -545,13 +558,12 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
   }
   PRINTDEBUG(np,1,("\n"));
 
-  /* fill bitwise fields */
-  SetCompactTypesOfVec(vd);
+  VD_NID(vd) = nId;
+  VD_IDENT_PTR(vd) = Ident;
 
-  /* fill fields with scalar properties */
-  SetScalVecSettings(vd);
+  if (FillRedundantComponentsOfVD(vd))
+    return (NULL);
   VM_LOCKED(vd) = 0;
-  VD_SUCC_COMP(vd) = TRUE;
 
   return (vd);
 }
@@ -622,13 +634,11 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
   for (tp=0; tp<NVECOFFSETS; tp++)
     VD_OFFSET(vd,tp) = offset[tp];
 
-  /* fill bitwise fields */
-  SetCompactTypesOfVec(vd);
+  VD_NID(vd) = NO_IDENT;
 
-  /* fill fields with scalar properties */
-  SetScalVecSettings(vd);
+  if (FillRedundantComponentsOfVD(vd))
+    return (NULL);
   VM_LOCKED(vd) = 0;
-  VD_SUCC_COMP(vd) = FALSE;
 
   return (vd);
 }
@@ -704,11 +714,10 @@ VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_
   }
   VD_OFFSET(vd,type) = offset;       /* last one points to the end of the array */
 
-  /* fill bitwise fields */
-  SetCompactTypesOfVec(vd);
+  VD_NID(vd) = NO_IDENT;
 
-  /* fill fields with scalar properties */
-  SetScalVecSettings(vd);
+  if (FillRedundantComponentsOfVD(vd))
+    return (NULL);
   VM_LOCKED(vd) = 0;
 
   return (vd);
@@ -869,7 +878,7 @@ INT AllocVDfromNCmp (MULTIGRID *theMG, INT fl, INT tl,
       }
     }
     *new_desc = CreateVecDesc(theMG,NULL,compNames,
-                              NCmpInType);
+                              NCmpInType,NO_IDENT,NULL);
     if (*new_desc == NULL) {
       PrintErrorMessage('E',"AllocVDfromNCmp","cannot create VecDesc\n");
       REP_ERR_RETURN (1);
@@ -916,7 +925,13 @@ INT AllocVDfromNCmp (MULTIGRID *theMG, INT fl, INT tl,
 INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    const VECDATA_DESC *vd, VECDATA_DESC **new_desc)
 {
-  return (AllocVDfromNCmp(theMG,fl,tl,vd->NCmpInType,vd->compNames,new_desc));
+  if (AllocVDfromNCmp(theMG,fl,tl,vd->NCmpInType,vd->compNames,new_desc))
+    REP_ERR_RETURN(1);
+
+  VD_NID(*new_desc) = VD_NID(vd);
+  VD_IDENT_PTR(*new_desc) = VD_IDENT_PTR(vd);
+
+  return (0);
 }
 
 /****************************************************************************/
@@ -1674,6 +1689,17 @@ static INT SetCompactTypesOfMat (MATDATA_DESC *md)
   return (0);
 }
 
+static INT MDCompsSubsequent (const MATDATA_DESC *md)
+{
+  INT tp,i;
+
+  for (tp=0; tp<NMATTYPES; tp++)
+    for (i=0; i<MD_NCMPS_IN_MTYPE(md,tp); i++)
+      if (MD_MCMP_OF_MTYPE(md,tp,i)!=MD_MCMP_OF_MTYPE(md,tp,0)+i)
+        return (NO);
+  return (YES);
+}
+
 /****************************************************************************/
 /*D
    FillRedundantComponentsOfMD - fill the redundant components of a MATDATA_DESC
@@ -1699,6 +1725,7 @@ INT FillRedundantComponentsOfMD (MATDATA_DESC *md)
   ConstructMatOffsets(MD_ROWPTR(md),MD_COLPTR(md),MD_OFFSETPTR(md));
   SetCompactTypesOfMat(md);
   SetScalMatSettings(md);
+  MD_SUCC_COMP(md) = MDCompsSubsequent(md);
 
   return (NUM_OK);
 }
@@ -1865,12 +1892,8 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
   for (tp=0; tp<NMATOFFSETS; tp++)
     MD_MTYPE_OFFSET(md,tp) = offset[tp];
 
-  /* fill bitwise fields */
-  SetCompactTypesOfMat(md);
-
-  /* fill fields with scalar properties */
-  SetScalMatSettings(md);
-  MD_SUCC_COMP(md) = TRUE;
+  if (FillRedundantComponentsOfMD(md))
+    return (NULL);
   VM_LOCKED(md) = 0;
 
   return (md);
@@ -1945,12 +1968,8 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const char *name,
   for (tp=0; tp<NMATOFFSETS; tp++)
     MD_MTYPE_OFFSET(md,tp) = offset[tp];
 
-  /* fill bitwise fields */
-  SetCompactTypesOfMat(md);
-
-  /* fill fields with scalar properties */
-  SetScalMatSettings(md);
-  MD_SUCC_COMP(md) = FALSE;
+  if (FillRedundantComponentsOfMD(md))
+    return (NULL);
   VM_LOCKED(md) = 0;
 
   return (md);
@@ -3032,6 +3051,7 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
   MATDATA_DESC *md,*mdi;
   DOUBLE tmp;
   INT tp,tpn,rt,ct,i,j,n,nn,ni,kn,ki,lev,consider_mat;
+  INT min,max,mintp;
   INT nv,nm;
   SHORT *vcmp,*mcmp,*pn,*pi;
   SHORT nvn[NVECTYPES],nvi[NVECTYPES];
@@ -3100,6 +3120,47 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
     nvi[tp] = ki;
     nvn[tp] = kn;
   }
+
+  if (nn==0)
+  {
+    /* there is interface only: take interface type with minimal offset components */
+    min = MAX_I;
+    for (tp=0; tp<NVECTYPES; tp++)
+    {
+      max = 0;
+      for (i=0; i<SPID_NVD(spid); i++)
+        if (VD_ISDEF_IN_TYPE(SPID_VDI(spid,i),tp))
+        {
+          /* this is the interface */
+          vd = SPID_VDI(spid,i);
+          n  = VD_NCMPS_IN_TYPE(vd,tp);
+          for (j=0; j<n; j++)
+            max = MAX(max,VD_CMP_OF_TYPE(vd,tp,j));
+        }
+      if (max<min)
+      {
+        mintp = tp;
+        min = max;
+      }
+    }
+    tp = mintp;
+    kn = 0;
+    for (i=0; i<SPID_NVD(spid); i++)
+      if (VD_ISDEF_IN_TYPE(SPID_VDI(spid,i),tp))
+      {
+        /* this is non-interface */
+        vd = SPID_VDI(spid,i);
+        n  = VD_NCMPS_IN_TYPE(vd,tp);
+        for (j=0; j<n; j++)
+        {
+          ASSERT(nn<SPID_NVD_MAX*MAX_VEC_COMP);
+          vn[nn++] = VD_CMP_OF_TYPE(vd,tp,j);
+          kn++;
+        }
+      }
+    nvn[tp] = kn;
+  }
+
   ConstructVecOffsets(nvi,vioffset);
   ConstructVecOffsets(nvn,vnoffset);
 
@@ -3179,6 +3240,47 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
     nmi[tp] = ki;
     nmn[tp] = kn;
   }
+
+  if (nn==0)
+  {
+    /* there is interface only: take interface type with minimal offset components */
+    min = MAX_I;
+    for (tp=0; tp<NMATTYPES; tp++)
+    {
+      max = 0;
+      for (i=0; i<SPID_NMD(spid); i++)
+        if (MD_ISDEF_IN_MTYPE(SPID_MDI(spid,i),tp))
+        {
+          /* this is the interface */
+          md = SPID_MDI(spid,i);
+          n  = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
+          for (j=0; j<n; j++)
+            max = MAX(max,MD_MCMP_OF_MTYPE(md,tp,j));
+        }
+      if (max<min)
+      {
+        mintp = tp;
+        min = max;
+      }
+    }
+    tp = mintp;
+    kn = 0;
+    for (i=0; i<SPID_NMD(spid); i++)
+      if (MD_ISDEF_IN_MTYPE(SPID_MDI(spid,i),tp))
+      {
+        /* this is non-interface */
+        md = SPID_MDI(spid,i);
+        n  = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
+        for (j=0; j<n; j++)
+        {
+          ASSERT(nn<SPID_NMD_MAX*MAX_MAT_COMP);
+          mn[nn++] = MD_MCMP_OF_MTYPE(md,tp,j);
+          kn++;
+        }
+      }
+    nmn[tp] = kn;
+  }
+
   ConstructMatOffsetsAlt(nmi,mioffset);
   ConstructMatOffsetsAlt(nmn,mnoffset);
 

@@ -57,6 +57,8 @@
 
 #define DEFAULT_NAMES "uvwzpqrst"   /* of size MAX_VEC_COMP                 */
 
+#define NO_IDENT                        -1              /* no identification of components		*/
+
 /* defines for getting object type specific information from XXXDATA_DESCs	*/
 #define STRICT                  123
 #define NON_STRICT              124
@@ -68,6 +70,10 @@
 #define VD_NCMPS_IN_TYPE(vd,tp)             (VD_NCMPPTR(vd)[tp])
 #define VD_CMP_OF_TYPE(vd,tp,i)             ((vd)->CmpsInType[tp][i])
 #define VD_CMPPTR_OF_TYPE(vd,tp)            ((vd)->CmpsInType[tp])
+
+#define VD_NID(vd)                                                      ((vd)->nId)
+#define VD_IDENT_PTR(vd)                                        ((vd)->Ident)
+#define VD_IDENT(vd,i)                                          ((vd)->Ident[i])
 
 #define VD_DATA_TYPES(vd)                                       ((vd)->datatypes)
 #define VD_OBJ_USED(vd)                                         ((vd)->objused)
@@ -165,7 +171,7 @@ typedef struct {
   /* fields for environment list variable */
   ENVVAR v;
 
-  INT locked;                          /* locked for dynamic allocation         */
+  SHORT locked;                        /* locked for dynamic allocation         */
   MULTIGRID *mg;                                   /* associated multigrid					*/
   char compNames[MAX_VEC_COMP];    /* names for symbol components           */
   SHORT NCmpInType[NVECTYPES];     /* number of components of a vector      */
@@ -176,15 +182,18 @@ typedef struct {
   /* redundant (but frequently used) information                          */
   SHORT IsScalar;                  /* TRUE if desc is scalar:               */
                                    /*  same settings in all types           */
-  SHORT SuccComp;                   /* successive components                */
+  SHORT SuccComp;                  /* successive components                 */
   SHORT ScalComp;                  /* location of scalar component          */
-  INT ScalTypeMask;                /* mask for used vectypes                */
+  SHORT ScalTypeMask;              /* mask for used vectypes                */
   SHORT offset[NVECOFFSETS];       /* offsets for VEC_SCALARs               */
 
-  INT datatypes;                                   /* compact form of vtypes (bitwise)		*/
-  INT objused;                                     /* compact form of otypes (bitwise)		*/
-  INT mintype;                                     /* minimal used type                         */
-  INT maxtype;                                     /* maximal used type                         */
+  SHORT datatypes;                                         /* compact form of vtypes (bitwise)		*/
+  SHORT objused;                                   /* compact form of otypes (bitwise)		*/
+  SHORT mintype;                                   /* minimal used type                         */
+  SHORT maxtype;                                   /* maximal used type                         */
+
+  SHORT nId;                                               /* number of comps after ident			*/
+  SHORT *Ident;                                    /* identification table					*/
 
   SHORT Components[1];                 /* memory for component mapping	        */
 
@@ -194,7 +203,7 @@ typedef struct {
 
   ENVVAR v;
 
-  INT locked;                           /* locked for dynamic allocation        */
+  SHORT locked;                         /* locked for dynamic allocation        */
   MULTIGRID *mg;                                    /* associated multigrid					*/
   char compNames[2*MAX_MAT_COMP];   /* names for symbol components          */
   SHORT RowsInType[NMATTYPES];          /* number of rows of a matrix per type  */
@@ -207,14 +216,14 @@ typedef struct {
   /* same settings in all types           */
   SHORT SuccComp;                   /* successive components                */
   SHORT ScalComp;                       /* location of scalar component         */
-  INT ScalRowTypeMask;                  /* mask for used vectypes in rows       */
-  INT ScalColTypeMask;                  /* mask for used vectypes in cols       */
+  SHORT ScalRowTypeMask;                /* mask for used vectypes in rows       */
+  SHORT ScalColTypeMask;                /* mask for used vectypes in cols       */
   SHORT offset[NMATOFFSETS];            /* offsets for what ever you need it    */
 
-  INT rowdatatypes;                                /* compact form of row vtypes (bitwise)	*/
-  INT coldatatypes;                                /* compact form of col vtypes (bitwise)	*/
-  INT rowobjused;                                  /* compact form of row otypes (bitwise)	*/
-  INT colobjused;                                  /* compact form of col otypes (bitwise)	*/
+  SHORT rowdatatypes;                               /* compact form of row vtypes (bitwise)	*/
+  SHORT coldatatypes;                               /* compact form of col vtypes (bitwise)	*/
+  SHORT rowobjused;                                     /* compact form of row otypes (bitwise)	*/
+  SHORT colobjused;                                     /* compact form of col otypes (bitwise)	*/
 
   SHORT Components[1];                  /* memory for component mapping	        */
 
@@ -257,7 +266,7 @@ MATDATA_DESC *GetFirstMatrix (MULTIGRID *theMG);
 MATDATA_DESC *GetNextMatrix (MATDATA_DESC *md);
 
 VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *compNames,
-                             const SHORT *NCmpInType);
+                             const SHORT *NCmpInType, SHORT nId, SHORT *Ident);
 MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *compNames,
                              const SHORT *RowsInType, const SHORT *ColsInType);
 VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
