@@ -215,7 +215,7 @@ static INT SaveSurfaceGrid  (MULTIGRID *theMG, FILE *stream)
   VERTEX *theVertex;
   DOUBLE *global;
   char buffer[BUFFERSIZE];
-  INT i,id,move,part,l,tl;
+  INT i,k,id,move,part,l,tl;
 
   tl = CURRENTLEVEL(theMG);
   for (l=0; l<= tl; l++)
@@ -274,8 +274,8 @@ static INT SaveSurfaceGrid  (MULTIGRID *theMG, FILE *stream)
             continue;
           global = CVECT(theVertex);
           fprintf(stream,IN_FMT);
-          for (i=0; i<DIM; i++)
-            fprintf(stream," %f",global[i]);
+          for (k=0; k<DIM; k++)
+            fprintf(stream," %f",global[k]);
           fprintf(stream,EOL_FMT);
           ID(theVertex) = id++;
         }

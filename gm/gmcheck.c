@@ -286,8 +286,15 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 
 	switch (NTYPE(theNode))
 	{
+	    case (LEVEL_0_NODE):
+		    if (LEVEL(theNode) > 0) {
+			    UserWriteF(PFMT " node=" ID_FMTX " has NTYPE=LEVEL_0_NODE"
+						   " but is on level=%d\n",
+						   me,ID_PRTX(theNode),LEVEL(theNode));
+				return(nerrors++);
+			}
+		    break;
 		case (CORNER_NODE):
-			if (LEVEL(theNode)>0)
 			{
 				FatherNode = (NODE *)NFATHER(theNode);
 				if (FatherNode == NULL)
