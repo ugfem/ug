@@ -181,7 +181,6 @@ mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c]
     $i <Id>                # refine the element with <Id>
     $s                     # refine all elements from the current selection
     $h                     # show available rules
-    $c                     # clear all refinement tags
 
 -check > grid multigrid algebra vector matrix
 check            # check consistency of grid (and algebraic) datastrcuture
@@ -204,12 +203,24 @@ smooth <nIt> [$b]
     <nIt>                  # number of iterations
     $b                     # also smooth boundary nodes
 
+-lexorderv > vectors grid order sort
+lexorderv         # reorder the vectors on each mg-level lexicographically
+lexorderv ur|ul|dr|dl|ru|rd|lu|ld [$l <level>] [$m] [$s <|>|0]
+                           # where u=up, d=down, r=right, l=left
+    $l <level>             # order only level
+    $m                     # also order the MATRIXs of each node in the same way
+    $s <|>|0               # treatment of vectors with skip>0: put at begin, put at end
+                           # or treat them like others (default)
+
 -orderv > vector matrix order sort
 orderv           # order the vectors of the current multigrid
-orderv $m FFCCLL | FCFCLL $d <dep-proc> $o dep-proc options> [$a]
+orderv $m FFCCLL | FCFCLL [$s <skip pattern>] $d <dep-proc> $o dep-proc options> [$c <cut proc>] [$a]
     $m FFCCLL | FCFCLL     # possible modes are FFCCLL or FCFCLL
+    $s <skip pattern>      # if specified put vectors with skip pattern containing
+                           # <skip pattern> to the begin of the list
     $d <dep-proc>          # the ordering algorithm uses this dependency procedure...
     $o <dep-proc options>  # ...and passes these options to it
+    $c <cut proc>          # user specified proc for cuts
     $a                     # order all levels of the current multigrid
 
 -ordernodes > nodes grid order sort
@@ -374,6 +385,17 @@ closewindow [$n <window name> | $a]
 setcurrwindow    # make a window the current window
 setcurrwindow <window name>
 
+-drawtext > text plot window
+drawtext         # draw text into a ug window
+drawtext <xpos> <ypos> <text> [$w <window name>] [$c] [$i] [$s <size>]
+   <xpos>                  # x-coordinate in pixels (origin is the lower left corner)
+   <ypos>                  # y-coordinate in pixels (origin is the lower left corner)
+   <text>                  # text to draw
+   $w <window name>        # draw text into this window (default: current window)
+   $i                      # draw text inverse
+   $c                      # center text at <xpos> <ypos>
+   $s <size>               # text size
+
 -openpicture > window picture plot graphics
 openpicture      # open a picture on a window (these will be the current window and picture then)
 openpicture [$w <window name>] [$s <h> <v> <dh> <dv>] [$n <picture name>]
@@ -521,6 +543,10 @@ setkey $<command char> $" <command sequence>"
     $k <command char>      # specifiy a single character which will be the command key
     $" <command sequence>" # give an arbitrary sequence of statements which is to be
                            # executed when the command key is pressed
+                           # NOTICE: when executed string varibales preceeded by a ?
+                           # will be expanded with the CURRENT contents of this variable
+                           # If they are preceeded by a @ as usual, the string vars will be
+                           # evaluated instantaneously when the cmd key is created
 
 -delkey > command setkey
 delkey           # remove a command key allocated before
