@@ -3418,7 +3418,7 @@ INT CheckAlgebra (GRID *theGrid)
   {
     MATRIX  *theMatrix;
                 #ifdef ModelP
-    INT prio = DDD_InfoPriority(PARHDR(theVector));
+    INT prio = PRIO(theVector);
                 #endif
 
     for (theMatrix=VSTART(theVector);
@@ -3436,7 +3436,7 @@ INT CheckAlgebra (GRID *theGrid)
       }
 
                         #ifdef ModelP
-      if (prio != PrioGhost)
+      if (!HGHOSTPRIO(prio))
                         #endif
       if (MUSED(theMatrix) != 1)
       {
@@ -3448,7 +3448,7 @@ INT CheckAlgebra (GRID *theGrid)
       }
 
                         #ifdef ModelP
-      if (prio == PrioGhost)
+      if (HGHOSTPRIO(prio))
       {
         errors++;
         UserWriteF(PFMT "ERROR: ghost vector has matrix vec="
@@ -4064,7 +4064,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   for (i=0; i<entries; i++) {
     INDEX(table[i]) = i;
         #ifdef ModelP
-    GRID_LINK_VECTOR(theGrid,table[i],DDD_InfoPriority(PARHDR(table[i])));
+    GRID_LINK_VECTOR(theGrid,table[i],PRIO(table[i]));
         #else
     GRID_LINK_VECTOR(theGrid,table[i],PrioMaster);
             #endif
