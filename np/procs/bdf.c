@@ -93,7 +93,6 @@ typedef struct
   INT nested;                                                            /* use nested iteration                        */
   INT nlinterpolate;                                             /* nonlinear interpolation			*/
   INT optnlsteps;                                            /* optimal number of nonlin. steps */
-  INT ctn;                                                               /* change to nested iteration		*/
   INT rep;                               /* for repeat solver after grid changed */
   INT Break;                                                     /* break after error estimator         */
   INT Continue;                                              /* continue after error estimator  */
@@ -108,6 +107,12 @@ typedef struct
   NP_ERROR *error;                       /* error indicator                 */
   INT err_toplevel;                                              /* toplevel for error estimation	*/
   INT err_baselevel;                                             /* baselevel for error estimation	*/
+  INT ctn;                                                               /* change to nested iteration		*/
+  INT hist;
+  INT list_i;
+  INT list_n;
+  DOUBLE list_dt[50];
+  DOUBLE list_work[50];
 
   /* statistics */
   INT number_of_nonlinear_iterations;       /* number of iterations             */
@@ -300,6 +305,10 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   bdf->max_linear_iterations = 0;
   bdf->exec_time = 0.0;
 
+  /* init time-optimization-list */
+  bdf->list_i = 0;
+  bdf->list_n = 0;
+
   /* return ok */
   *res = 0;
   return(*res);
@@ -310,16 +319,17 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
   NP_NL_SOLVER *nlsolve;
-  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
+  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1,qfm_dt,dtfactor;
   DOUBLE Factor[MAX_VEC_COMP];
   INT n_unk;
-  INT i,k,mg_changed,changed;
+  INT i,k,mg_changed,changed,ret;
   INT low,llow,nlinterpolate,last_number_of_nonlinear_iterations;
   INT verygood,bad;
   NLRESULT nlresult;
   ERESULT eresult;
   MULTIGRID *mg;
   char buffer[128];
+  static INT qfm;
 
   /* get numprocs ... */
   bdf = (NP_BDF *) ts;                  /* this is the trick, tsolver is derived	*/
@@ -433,6 +443,10 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
             }
             UserWrite("halfen time step\n");
             bad=1;
+
+            /* restart optimization */
+            bdf->list_i = 0;
+            bdf->list_n = 0;
           }
           break;                                     /* and try all over again  */
         }
@@ -599,20 +613,53 @@ Continue:
   SetStringVar("TIMESTEP",buffer);
   SetStringVar(":BDF:DT",buffer);
 
-  UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d\n",
+  UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d QFM=%d\n",
              bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
-             bdf->total_linear_iterations,bdf->max_linear_iterations);
+             bdf->total_linear_iterations,bdf->max_linear_iterations,qfm);
 
   /* chose new dt for next time step */
   if ((bdf->optnlsteps) && (nlresult.converged))
   {
-    k = bdf->number_of_nonlinear_iterations - last_number_of_nonlinear_iterations;
-    if (k <= 0) bdf->dt *= 2.0;
-    else bdf->dt *= SQRT(bdf->optnlsteps / ((DOUBLE) k));
-    if (bdf->dt < bdf->dtmin) bdf->dt = bdf->dtmin;
-    else if (bdf->dt > bdf->dtmax) bdf->dt = bdf->dtmax;
-    PRINTDEBUG(np,1,("new time step %f k %d n %d l %d\n",bdf->dt,k,bdf->number_of_nonlinear_iterations,last_number_of_nonlinear_iterations));
-    *res = 0;
+    qfm = 0;
+    if (bdf->hist>2)
+    {
+      /* fill in result */
+      bdf->list_dt[bdf->list_i]    = bdf->dt;
+      bdf->list_work[bdf->list_i] = (DOUBLE)(bdf->number_of_nonlinear_iterations - last_number_of_nonlinear_iterations)/bdf->dt;
+      bdf->list_i = (bdf->list_i+1)%bdf->hist;
+      bdf->list_n++;
+      bdf->list_n = MIN(bdf->list_n,bdf->hist);
+
+      /* get quadratic fitted dt for minimal work */
+      ret = QuadraticFittedMin (bdf->list_dt,bdf->list_work,bdf->list_n,&qfm_dt);
+      if (ret==0)
+      {
+        UserWriteF("QUADRATIC_FITTED MIN:         %f\n",(float)(qfm_dt*3.17098e-8));
+        qfm_dt = MAX(0.5*bdf->dt,qfm_dt);
+        qfm_dt = MIN(2.0*bdf->dt,qfm_dt);
+        qfm_dt = MAX(bdf->dtmin,qfm_dt);
+        qfm_dt = MIN(bdf->dtmax,qfm_dt);
+        UserWriteF("QUADRATIC_FITTED MIN (REST.): %f\n",(float)(qfm_dt*3.17098e-8));
+        bdf->dt = qfm_dt;
+        qfm = 1;
+      }
+    }
+
+    if (!qfm)
+    {
+      k = bdf->number_of_nonlinear_iterations - last_number_of_nonlinear_iterations;
+      if (k <= 0) bdf->dt *= 2.0;
+      else
+      {
+        if (bdf->optnlsteps==1) dtfactor = QUOT(20+bdf->number_of_nonlinear_iterations,5+bdf->step);
+        else dtfactor = bdf->optnlsteps;
+        bdf->dt *= SQRT(QUOT(dtfactor,k));
+      }
+      if (bdf->dt < bdf->dtmin) bdf->dt = bdf->dtmin;
+      else if (bdf->dt > bdf->dtmax) bdf->dt = bdf->dtmax;
+      PRINTDEBUG(np,1,("new time step %f k %d n %d l %d\n",bdf->dt,k,bdf->number_of_nonlinear_iterations,last_number_of_nonlinear_iterations));
+      *res = 0;
+    }
   }
   else if (eresult.step ==0.)
   {
@@ -755,9 +802,17 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
     bdf->ctn=0;
   }
   if ((bdf->nested<0)||(bdf->nested>1)) return(NP_NOT_ACTIVE);
-  if (ReadArgvINT("optnlsteps",&(bdf->optnlsteps),argc,argv))
-    bdf->optnlsteps = 0;
+  if (ReadArgvINT("optnlsteps",&(bdf->optnlsteps),argc,argv)) bdf->optnlsteps = 0;
   if (bdf->optnlsteps < 0) return(NP_NOT_ACTIVE);
+  if (bdf->optnlsteps==1)
+  {
+    bdf->hist = 4;
+  }
+  else
+  {
+    if (ReadArgvINT("hist",&(bdf->hist),argc,argv)) bdf->hist = 0;
+  }
+  if (bdf->hist < 0 || bdf->hist > 50) return(NP_NOT_ACTIVE);
   if (ReadArgvINT("rep",&(bdf->rep),argc,argv))
     bdf->rep=1;
   if (ReadArgvINT("nlinterpolate",&(bdf->nlinterpolate),argc,argv))
@@ -867,6 +922,7 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"ctn",(int)bdf->ctn);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nlinterpolate",(int)bdf->nlinterpolate);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"optnlsteps",(int)bdf->optnlsteps);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"hist",(int)bdf->hist);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"dtscale",(float)bdf->dtscale);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"rhogood",(float)bdf->rhogood);
   if (bdf->y_p1 != NULL)
