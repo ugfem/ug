@@ -38,7 +38,7 @@ case $HOSTTYPE in
         PMAKE="make -j 3"
         ;;
     *)
-        PMAKE="gmake -j 3"
+        PMAKE="gmake -j 8"
         ;;
 esac;
 
@@ -126,10 +126,6 @@ then
     gm)
         echo UGMAKE=$PMAKE
         UGMAKE=$PMAKE
-        echo ugpmake gg2 
-        ugpmake gg2 
-        echo ugpmake gg3
-        ugpmake gg3
         echo UGMAKE=$SMAKE
         UGMAKE=$SMAKE
         echo cd $UGROOT/$1
@@ -159,6 +155,8 @@ then
         ugpmake procs;
         echo ugpmake udm;
         ugpmake udm;
+		echo UGMAKE=$SMAKE;
+        ugpmake amglib;
 		echo UGMAKE=$SMAKE;
 		UGMAKE=$SMAKE;
 		echo cd $UGROOT/np
