@@ -6,29 +6,29 @@
 
 /******************************************************************************/
 /*                                                                            */
-/* File:          gm.h                                                        */
+/* File:      gm.h                                                            */
 /*                                                                            */
 /* Purpose:   grid manager header file (the heart of ug)                      */
 /*                                                                            */
-/* Author:        Peter Bastian, Klaus Johannsen                              */
+/* Author:    Peter Bastian, Klaus Johannsen                                  */
 /*                                                                            */
-/*                        Institut fuer Computeranwendungen III               */
-/*                        Universitaet Stuttgart                              */
-/*                        Pfaffenwaldring 27                                  */
-/*                        70569 Stuttgart                                     */
-/*                        email: ug@ica3.uni-stuttgart.de                     */
+/*            Institut fuer Computeranwendungen III                           */
+/*            Universitaet Stuttgart                                          */
+/*            Pfaffenwaldring 27                                              */
+/*            70569 Stuttgart                                                 */
+/*            email: ug@ica3.uni-stuttgart.de                                 */
 /*                                                                            */
-/*                        blockvector data structure:                         */
-/*                        Christian Wrobel                                    */
-/*                        Institut fuer Computeranwendungen III               */
-/*                        Universitaet Stuttgart                              */
-/*                        Pfaffenwaldring 27                                  */
-/*                        70569 Stuttgart                                     */
-/*                        email: ug@ica3.uni-stuttgart.de                     */
+/*       blockvector data structure:                                          */
+/*            Christian Wrobel                                                */
+/*            Institut fuer Computeranwendungen III                           */
+/*            Universitaet Stuttgart                                          */
+/*            Pfaffenwaldring 27                                              */
+/*            70569 Stuttgart                                                 */
+/*            email: ug@ica3.uni-stuttgart.de                                 */
 /*                                                                            */
 /* History:   09.03.92 begin, ug version 2.0  (as ugtypes2.h)                 */
-/*                        13.12.94 begin, ug version 3.0                      */
-/*                        27.09.95 blockvector implemented (Christian Wrobel) */
+/*            13.12.94 begin, ug version 3.0                                  */
+/*            27.09.95 blockvector implemented (Christian Wrobel)             */
 /*                                                                            */
 /* Remarks:                                                                   */
 /*                                                                            */
@@ -296,17 +296,11 @@ namespace UG3d {
 /** \todo Please doc me! */
 #define DIAGMATRIXTYPE(rt)  (MAXMATRICES+rt)
 
-/** @name Defines for vectors */
-/*@{*/
-/** \brief vector associated to a node                                  */
-#define NODEVEC                                                 0
-/** \brief vector associated to an edge                                 */
-#define EDGEVEC                                                 1
-/** \brief vector associated to an element                              */
-#define ELEMVEC                                                 2
-/** \brief vector associated to an elementside                  */
-#define SIDEVEC                                                 3
-/*@}*/
+enum {NODEVEC,       /**< Vector associated to a node */
+      EDGEVEC,       /**< Vector associated to an edge */
+      ELEMVEC,       /**< Vector associated to an element */
+      SIDEVEC        /**< Vector associated to an element side */
+};
 
 /** @name Some constants for abstract vector type names */
 /*@{*/
@@ -374,15 +368,11 @@ namespace UG3d {
 #define GSTATUS_ORDERED             8
 /*@}*/
 
-/** @name Selection mode */
-/*@{*/
-/** \brief objects selected are nodes                   */
-#define nodeSelection                   1
-/** \brief objects selected are elements                */
-#define elementSelection                2
-/** \brief objects selected are vectors                 */
-#define vectorSelection                 3
-/*@}*/
+/** \brief Selection mode */
+enum {nodeSelection=1,         /**< Objects selected are nodes */
+      elementSelection=2,       /**< Objects selected are elements */
+      vectorSelection=3        /**< Objects selected are vectors */
+};
 
 /** @name Possible values for rule in MarkForRefinement */
 /*@{*/
@@ -425,23 +415,19 @@ namespace UG3d {
 #endif
 /*@}*/
 
-/** @name Values for element class */
-/*@{*/
-#define NO_CLASS                0
-#define YELLOW_CLASS    1
-#define GREEN_CLASS             2
-#define RED_CLASS               3
-#define SWITCH_CLASS    4
-/*@}*/
+/** \brief Values for element class */
+enum {NO_CLASS,
+      YELLOW_CLASS,
+      GREEN_CLASS,
+      RED_CLASS,
+      SWITCH_CLASS};
 
-/** @name Values for node types (relative to the father element of the vertex) */
-/*@{*/
-#define CORNER_NODE             0
-#define MID_NODE        1
-#define SIDE_NODE       2
-#define CENTER_NODE     3
-#define LEVEL_0_NODE    4
-/*@}*/
+/** \brief Values for node types (relative to the father element of the vertex) */
+enum {CORNER_NODE,
+      MID_NODE,
+      SIDE_NODE,
+      CENTER_NODE,
+      LEVEL_0_NODE};
 
 /** @name Macros for the multigrid user data space management */
 /*@{*/
@@ -486,7 +472,7 @@ typedef INT (*ConversionProcPtr)(void *, const char *, char *);
 /** \brief Tagged print user data --> string
  *
  */
-typedef INT (*TaggedConversionProcPtr)(INT,                             /* tag for data identification          */
+typedef INT (*TaggedConversionProcPtr)(INT,            /**< Tag for data identification          */
                                        void *,                          /* pointer to user data                         */
                                        const char *,            /* prefix for each line                         */
                                        char *                           /* resulting string                                     */
