@@ -285,19 +285,33 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth)
 
   IFDEBUG(dom,1)
   x = (COORD **) GetTmpMem(MGHEAP(theMG),mesh->nBndP*sizeof(COORD *));
-  for (i=0, theNode=LASTNODE(GRID_ON_LEVEL(theMG,0));
-       theNode!=NULL; theNode=PREDN(theNode))
-    x[i++] = CVECT(MYVERTEX(theNode));
-  ENDDEBUG
+  for (i=0, theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0));
+       theNode!=NULL; theNode=SUCCN(theNode))
+  {
+    PRINTDEBUG(dom,0,(" i %d  nid %ld nd %x %x %x \n",
+                      i,ID(theNode),theNode,
+                      V_BNDP(theVertex),mesh->theBndPs[i]));
 
+    x[i++] = CVECT(MYVERTEX(theNode));
+  }
   for (i=0, theNode=LASTNODE(GRID_ON_LEVEL(theMG,0));
        theNode!=NULL; theNode=PREDN(theNode))
   {
-    theVertex = MYVERTEX(theNode);
-
-    PRINTDEBUG(dom,1,("  nid %ld nd %x %x %x \n",ID(theNode),theNode,
+    PRINTDEBUG(dom,0,(" i %d  nid %ld nd %x %x %x \n",
+                      i,ID(theNode),theNode,
                       V_BNDP(theVertex),mesh->theBndPs[i]));
 
+    x[i++] = CVECT(MYVERTEX(theNode));
+  }
+
+
+
+  ENDDEBUG
+
+  for (i=0, theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0));
+       theNode!=NULL; theNode=SUCCN(theNode))
+  {
+    theVertex = MYVERTEX(theNode);
     if (V_BNDP(theVertex) != mesh->theBndPs[i])
       return(1);
     if (AddBoundaryNode (i++,CVECT(theVertex)))
