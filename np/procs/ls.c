@@ -1615,9 +1615,9 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     /* restart ? */
     if ((np->restart>0 && i%np->restart==0) || restart)
     {
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->v,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->r,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dset(theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dset(theNP->base.mg,np->baselevel,level,np->v,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->r,EVERY_CLASS,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       alpha = np->rho = np->omega = 1.0;
       restart = 0;
     }
@@ -1626,16 +1626,16 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     if (s_ddot_sv (theNP->base.mg,np->baselevel,level,b,np->r,np->weight,&rho_new)!=NUM_OK) REP_ERR_RETURN (1);
     beta=rho_new*alpha/np->rho/np->omega;
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=beta;
-    if (s_dscale (theNP->base.mg,np->baselevel,level,np->p,scal)) REP_ERR_RETURN (1);
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,Factor_One,b)!= NUM_OK) REP_ERR_RETURN (1);
+    if (a_dscale (theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,scal)) REP_ERR_RETURN (1);
+    if (a_daxpy (theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,Factor_One,b)!= NUM_OK) REP_ERR_RETURN (1);
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=-beta*np->omega;
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
+    if (a_daxpy (theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
     if (np->Iter!=NULL)
     {
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->q,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->s,np->p)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dset(theNP->base.mg,np->baselevel,level,np->q,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->s,EVERY_CLASS,np->p)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       if ((*np->Iter->Iter)(np->Iter,level,np->q,np->p,A,&lresult->error_code)) REP_ERR_RETURN (1);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->p,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->v,A,np->q,EVERY_CLASS)) REP_ERR_RETURN (1);
             #ifdef ModelP
       if (a_vector_collect(theNP->base.mg,np->baselevel,level,np->v)
@@ -1645,7 +1645,7 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
       if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
       alpha = rho_new/alpha;
       for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
-      if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
+      if (a_daxpy (theNP->base.mg,np->baselevel,level,x,EVERY_CLASS,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
     }
     else
     {
@@ -1663,17 +1663,17 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
       if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
       alpha = rho_new/alpha;
       for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
-      if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+      if (a_daxpy (theNP->base.mg,np->baselevel,level,x,EVERY_CLASS,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
     }
     lresult->number_of_linear_iterations++;
-    if (s_dcopy(theNP->base.mg,np->baselevel,level,np->s,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    if (a_dcopy(theNP->base.mg,np->baselevel,level,np->s,EVERY_CLASS,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=-alpha;
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->s,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
+    if (a_daxpy (theNP->base.mg,np->baselevel,level,np->s,EVERY_CLASS,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
     if (LinearResiduum(theNP,np->baselevel,level,x,np->s,A,lresult))
       REP_ERR_RETURN (1);
     if (sc_cmp(lresult->last_defect,abslimit,b) || sc_cmp(lresult->last_defect,defect2reach,b))
     {
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,b,np->s) != NUM_OK)
+      if (a_dcopy(theNP->base.mg,np->baselevel,level,b,EVERY_CLASS,np->s) != NUM_OK)
         NP_RETURN(1,lresult->error_code);
       lresult->converged = 1;
       if (np->display > PCR_NO_DISPLAY)
@@ -1683,14 +1683,14 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     }
     if (np->Iter!=NULL)
     {
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->q,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->t,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dset(theNP->base.mg,np->baselevel,level,np->q,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->t,EVERY_CLASS,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       if ((*np->Iter->Iter)(np->Iter,level,np->q,np->s,A,&lresult->error_code)) REP_ERR_RETURN (1);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->s,np->t)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->s,EVERY_CLASS,np->t)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     }
     else
     {
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->q,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->q,EVERY_CLASS,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
             #ifdef ModelP
       if (a_vector_consistent(theNP->base.mg,np->baselevel,level,np->q)
           != NUM_OK)
@@ -1711,10 +1711,10 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     else
       np->omega /= 1.0E-20;
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=np->omega;
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
-    if (s_dcopy(theNP->base.mg,np->baselevel,level,b,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    if (a_daxpy (theNP->base.mg,np->baselevel,level,x,EVERY_CLASS,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
+    if (a_dcopy(theNP->base.mg,np->baselevel,level,b,EVERY_CLASS,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=-np->omega;
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,b,scal,np->t)!= NUM_OK) REP_ERR_RETURN (1);
+    if (a_daxpy (theNP->base.mg,np->baselevel,level,b,EVERY_CLASS,scal,np->t)!= NUM_OK) REP_ERR_RETURN (1);
     np->rho = rho_new;
 
     /* redisuum */
