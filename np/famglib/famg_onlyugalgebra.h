@@ -289,6 +289,13 @@ public:
     return (FAMGVectorEntry)MDEST(GetMyMatrix());
   }
 
+  int is_strong() const {
+    return MUSED(GetMyMatrix());
+  }
+  void set_strong(const int n) {
+    SETMUSED(GetMyMatrix(),n);
+  }
+
 private:
   FAMGMatrixEntry( MATRIX *mat) : matp(mat) {}
   MATRIX* GetMyMatrix() const {
@@ -345,6 +352,9 @@ public:
   void AddEntry(double mval, const FAMGVectorEntry &row, const FAMGVectorEntry &col);
   int ConstructGalerkinMatrix( const FAMGGrid &fg ) {
     return ::ConstructGalerkinMatrix(*this, fg);
+  }
+  void MarkStrongLinks( const FAMGGrid &grid ) const {
+    ::MarkStrongLinks(*this, grid);
   }
 
   int &GetN() {

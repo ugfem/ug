@@ -377,6 +377,77 @@ void SGSSmoother( VT &sol, const MT &M, VT &def )
 	return;
 }
 
+template<class MT>
+void MarkStrongLinks(const MT &A, const FAMGGrid &grid)
+{
+	typedef typename MT::Vector VT;
+	const typename MT::GridVector& gridvec = (typename MT::GridVector&)grid.GetGridVector();
+	typename MT::MatrixEntry matij;
+	typename VT::VectorEntry vi;
+	typename VT::Iterator viter(gridvec);
+
+    double rlist[20], llist[20], mij, mji, rmax, lmax;
+    int z, y;
+    const double sigma = FAMGGetParameter()->Getsigma();
+    const int minsl = 2 - 1;
+
+	while (viter(vi))
+	{
+        for(z = 0; z <= minsl; z++)
+        {
+            rlist[z] = llist[z] = 0.0;
+        }
+
+        typename MT::Iterator mij_iter(A,vi);
+        mij_iter(matij); // skip diagonal
+        while( mij_iter(matij) )
+        {
+            mij = Abs(A[matij]);
+            mji = Abs(A.GetAdjData(matij));
+
+            for(z = minsl; z >= 0; z--)
+            {
+                if (mij < rlist[z]) break;
+            }
+            for(y = minsl; y > z+1; y--)
+            { 
+                rlist[y] = rlist[y-1];
+            }
+            if(z+1 <= minsl) rlist[z+1] = mij;
+
+            for(z = minsl; z >= 0; z--)
+            {
+                if (mji < llist[z]) break;
+            }
+            for(y = minsl; y > z+1; y--)
+            { 
+                llist[y] = llist[y-1];
+            }
+            if(z+1 <= minsl) llist[z+1] = mji;            
+        }
+
+        rmax = rlist[minsl]*sigma; 
+        lmax = llist[minsl]*sigma; 
+
+        mij_iter.reset();
+        mij_iter(matij);
+        matij.set_strong(1);
+        while( mij_iter(matij) )
+        {
+            mij = Abs(A[matij]);
+            mji = Abs(A.GetAdjData(matij));
+            if((mij > rmax) || (mji > lmax)) 
+            {
+                matij.set_strong(1);
+            }
+            else matij.set_strong(0);
+        }
+
+    }
+    
+	return;
+}
+
 
 template<class MT>
 int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )

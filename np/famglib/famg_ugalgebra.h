@@ -311,6 +311,17 @@ public:
     return FAMGVectorEntry( new FAMGugVectorEntryRef(MDEST(GetMyMatrix())));
   }
 
+  virtual FAMGVectorEntry strong() const {
+    return FAMGVectorEntry( new FAMGugVectorEntryRef(MGETSTRONG(GetMyMatrix())));
+  }
+
+  virtual int is_strong() const {
+    return (FAMGVectorEntry)MUSED(GetMyMatrix());
+  }
+  virtual void set_strong(const int n) {
+    SETMUSED(GetMyMatrix(),n);
+  }
+
 private:
   FAMGugMatrixEntryRef( MATRIX *mat) : matp(mat) {}
   MATRIX* GetMyMatrix() const {
@@ -368,6 +379,7 @@ public:
   }
 
   virtual int ConstructGalerkinMatrix( const FAMGGrid &fg );
+  virtual void MarkStrongLinks const ( const FAMGGrid &grid );
 
   MATDATA_DESC *GetMatDesc() const {
     return matdesc;
@@ -553,6 +565,8 @@ inline int FAMGugMatrix::ConstructGalerkinMatrix( const FAMGGrid &fg )
 {
   return ::ConstructGalerkinMatrix(*this, fg);
 }
+inline void FAMGugMatrix::MarkStrongLinks const ( const FAMGGrid &grid )
+{::MarkStrongLinks(*this, grid);}
 
 #else   // ONLY_ONE_ALGEBRA_DS
 //

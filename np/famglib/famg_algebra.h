@@ -252,6 +252,9 @@ public:
   FAMGMatrixEntryRef& operator++ (int) {FAMGMatrixEntryRef& tmp = *this; ++*this; return tmp;}              // postfix
 
   virtual FAMGVectorEntry dest() const = 0;
+
+  virtual int is_strong() const = 0;
+  virtual void set_strong(const int) = 0;
 };
 
 class FAMGMatrixEntry
@@ -275,6 +278,13 @@ public:
     return matentry;
   }
 
+  int is_strong() const {
+    return matentry->is_strong();
+  }
+  void set_strong(const int n) {
+    matentry->set_strong(n);
+  }
+
 private:
   FAMGMatrixEntryRef* matentry;
 };
@@ -293,6 +303,7 @@ public:
   virtual double GetAdjData( const FAMGMatrixEntry& me ) const = 0;
 
   virtual int ConstructGalerkinMatrix( const FAMGGrid &fg ) = 0;
+  virtual void MarkStrongLinks( const FAMGGrid &grid ) = 0;
 
   int &GetN() {
     return n;
@@ -385,6 +396,9 @@ void JacobiSmoothFG( VT &sol, const MT &M, const VT &def );
 
 template<class MT>
 int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg );
+
+template<class MT>
+void MarkStrongLinks(const MT &A, const FAMGGrid &grid);
 
 #ifdef ONLY_ONE_ALGEBRA_DS
 
