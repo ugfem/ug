@@ -285,7 +285,8 @@ ENVITEM *MakeEnvItem (const char *name, const INT type, const INT size)
   ENVDIR *currentDir;
 
   /* check if name too long */
-  if (strlen(name)+1>NAMESIZE) return(NULL);
+  if (strlen(name)+1>NAMESIZE)
+    return(NULL);
 
   /* check if name not already used in this directory */
   currentDir = path[pathIndex];
@@ -293,7 +294,10 @@ ENVITEM *MakeEnvItem (const char *name, const INT type, const INT size)
   while (anItem!=NULL)
   {
     if ((anItem->v.type==type)&&(strcmp(anItem->v.name,name)==0))
+    {
+      UserWriteF("MakeEnvItem(): item '%s' already defined\n",anItem->v.name);
       return(NULL);
+    }
     lastItem = anItem;
     anItem = anItem->v.next;
   }
