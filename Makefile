@@ -43,7 +43,7 @@ init: $(OBJECTS)
 $(UG_LIB): $(OBJECTS)
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
-build: clean_all all
+build: clean_all_with_libs all
 
 
 ##############################################################################
@@ -113,6 +113,9 @@ clean: $(MODEL_TARGET)_clean
 clean_all: clean
 	rm -rf include
 
+clean_all_with_libs: clean_all
+	cd lib && rm -f *.a	
+
 ar: 
 	cd gm && make -f Makefile.gm ar
 	cd graphics && make -f Makefile.graphics ar
@@ -147,3 +150,4 @@ xmc:
 	cd np && make -f Makefile.np xmc
 	cd graphics && make -f Makefile.graphics xmc
 	cd ui && make -f Makefile.ui xmc
+
