@@ -107,7 +107,7 @@ void BElementXferBndS (BNDS **bnds, int n, int proc, int prio)
 
     }
 
-  DDD_XferAddData(size,DDD_USER_DATA);
+  DDD_XferAddData(size,DDD_DOMAIN_DATA);
 }
 
 void BElementGatherBndS (BNDS **bnds, int n, int cnt, char *data)
