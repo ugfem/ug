@@ -451,7 +451,6 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
   newFormat->PrintGrid            = PrintGrid;
   newFormat->PrintMultigrid       = PrintMultigrid;
 
-
   /* initialize with zero */
   for (i=0; i<MAXVECTORS; i++)
   {
@@ -497,6 +496,11 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
   }
   newFormat->MaxConnectionDepth = MaxDepth;
   newFormat->NeighborhoodDepth  = NeighborhoodDepth;
+
+#ifdef __INTERPOLATION_MATRIX__
+  for (i=0; i<MAXMATRICES; i++)
+    newFormat->IMatrixSizes[i] = 0;
+#endif
 
   if (ChangeEnvDir(name)==NULL) return(NULL);
   UserWrite("format "); UserWrite(name); UserWrite(" installed\n");

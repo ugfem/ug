@@ -40,6 +40,7 @@
 #define __GM__
 
 #include <limits.h>
+#include <assert.h>
 
 #ifndef __COMPILER__
 #include "compiler.h"
@@ -64,6 +65,9 @@
 #ifndef __DOMAIN__
 #include "domain.h"
 #endif
+
+/* if interpolation matrix is stored */
+#define __INTERPOLATION_MATRIX__
 
 /****************************************************************************/
 /*																			*/
@@ -128,6 +132,7 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define GRID_CHANGED                    1
 #define GRID_ASSEMBLED                  2
 #define GRID_FULLACTIVE                 4
+#define GRID_NEWDEFECT          8
 
 /* selection mode */
 #define nodeSelection                   1                       /* objects selected are nodes			*/
@@ -216,16 +221,18 @@ struct format {
   ConversionProcPtr PrintGrid;
   ConversionProcPtr PrintMultiGrid;
 #else
-  INT sVertex;                                                  /* size of vertex user data struc. in bytes */
-  INT sMultiGrid;                                               /* size of mg user data structure in bytes	*/
-  INT VectorSizes[MAXVECTORS];                  /* number of doubles in vectors                         */
-  INT MatrixSizes[MAXMATRICES];                 /* number of doubles in matrices			*/
-  INT ConnectionDepth[MAXMATRICES];             /* depth of connection for matrices             */
-  INT MaxConnectionDepth;                               /* maximal connection depth                             */
-  INT NeighborhoodDepth;                                /* geometrical depth corresponding			*/
-  /* algebraic con with depth 1				*/
-
-  ConversionProcPtr PrintVertex;                /* print user data to string				*/
+  INT sVertex;                                   /* size of vertex user data struc. in bytes */
+  INT sMultiGrid;                        /* size of mg user data structure in bytes	 */
+  INT VectorSizes[MAXVECTORS];       /* number of doubles in vectors                     */
+  INT MatrixSizes[MAXMATRICES];      /* number of doubles in matrices			 */
+#ifdef __INTERPOLATION_MATRIX__
+  INT IMatrixSizes[MAXMATRICES];      /* number of doubles in matrices	         */
+#endif
+  INT ConnectionDepth[MAXMATRICES];      /* depth of connection for matrices     */
+  INT MaxConnectionDepth;                  /* maximal connection depth               */
+  INT NeighborhoodDepth;                   /* geometrical depth corresponding		 */
+  /* algebraic con with depth 1			 */
+  ConversionProcPtr PrintVertex;       /* print user data to string	             */
   ConversionProcPtr PrintGrid;
   ConversionProcPtr PrintMultigrid;
   ConversionProcPtr PrintVector[MAXVECTORS];
@@ -300,6 +307,10 @@ struct vector {
   struct matrix *start;                         /* implements matrix					*/
 
   BV_DESC block_descr;                          /* membership to the blockvector levels	*/
+
+#ifdef __INTERPOLATION_MATRIX__
+  struct matrix *istart;            /* implements interpolation matrix      */
+#endif
 
   /* user data */
   DOUBLE value[1];                                      /* array of doubles                                     */
@@ -611,6 +622,9 @@ struct grid {
   INT nEdge;                                                    /* number of edges						*/
   INT nVector;                                          /* number of vectors					*/
   INT nCon;                                                     /* number of Connections				*/
+#ifdef __INTERPOLATION_MATRIX__
+  INT nIMat;                        /* number of interpolation matrices     */
+#endif
   INT nSide;                                                    /* number of element sides				*/
 
   /* pointers */
@@ -652,6 +666,10 @@ struct multigrid {
   void *freeObjects[MAXOBJECTS];        /* pointer to allocated but unused objs */
   void *freeVectors[MAXVECTORS];        /* pointer to allocated but unused objs */
   void *freeConnections[MAXCONNECTIONS];      /* ptr to alloc. but unused objs	*/
+#ifdef __INTERPOLATION_MATRIX__
+  void *freeIMatrices[MAXVECTORS][MAXVECTORS];
+  /* pointer to allocated but unused objs */
+#endif
 
   /* selection */
   INT NbOfSelections;                           /* number of selected objects			*/
@@ -947,6 +965,9 @@ extern CONTROL_ENTRY
 #define VECSKIPBIT(v,n)                         (((v)->skip) & (1<<n))
 #define SETVECSKIPBIT(v,n)                      (v)->skip = ((v)->skip & (~(1<<n))) | (1<<n)
 #define VSTART(v)                                       ((v)->start)
+#ifdef __INTERPOLATION_MATRIX__
+#define VISTART(v)                                      ((v)->istart)
+#endif
 #define VVALUE(v,n)                             ((v)->value[n])
 #define VVALUEPTR(v,n)                          (&((v)->value[n]))
 #define VMYNODE(v)                                      ((NODE*)((v)->object))
@@ -1829,6 +1850,10 @@ CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to
 INT             DisposeExtraConnections (GRID *theGrid);
 MATRIX          *GetMatrix                              (const VECTOR *FromVector, const VECTOR *ToVector);
 CONNECTION      *GetConnection                  (const VECTOR *FromVector, const VECTOR *ToVector);
+#ifdef __INTERPOLATION_MATRIX__
+MATRIX      *GetIMatrix             (VECTOR *FineVector, VECTOR *CoarseVector);
+MATRIX      *CreateIMatrix          (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
+#endif
 #endif
 #ifdef __version23__
 EDGE            *CreateAuxEdge                  (GRID *theGrid, NODE *from, NODE *to);

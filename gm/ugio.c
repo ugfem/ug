@@ -222,7 +222,6 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
 INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
 {
   FILE *stream;
-  FORMAT *theFormat;
   GRID *theGrid;
   VERTEX *theVertex;
   NODE *theNode;
@@ -251,7 +250,6 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   }
 
   j = theMG->topLevel;
-  theFormat = theMG->theFormat;
 
   /* write header */
 #ifdef __version23__
@@ -555,8 +553,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
   long version;
   INT point,onside;
   unsigned INT cw1, cw2;
-  INT maxNsubdomain,minNsubdomain,Nsubdomain,err;
-  INT *counter;
 
   /* open file */
   if (gridpaths_set)
