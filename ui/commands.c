@@ -6217,6 +6217,26 @@ static INT MakeGridCommand  (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
+#ifdef __GRAPE_TRUE__
+static INT CallGrapeCommand (INT argc, char **argv)
+{
+  MULTIGRID *theCurrMG;
+
+  /* see if multigrid exists */
+  theCurrMG = GetCurrentMultigrid();
+  if (theCurrMG==NULL)
+  {
+    UserWrite("cannot call grape without multigrid\n");
+    return (CMDERRORCODE);
+  }
+
+  /* call grape */
+  if (CallGrape(theCurrMG)) return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+#endif
+
 /****************************************************************************/
 /*
    ScreenSizeCommand - Print the size of the monitor screen in pixels
@@ -9935,6 +9955,11 @@ INT InitCommands ()
   if (CreateCommand("bnodes",                 BnodesCommand                                       )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
     #endif
+
+  /* commands for grape */
+        #ifdef __GRAPE_TRUE__
+  if (CreateCommand("grape",              CallGrapeCommand                                )==NULL) return (__LINE__);
+        #endif
 
   /* commands for window and picture management */
   if (CreateCommand("screensize",         ScreenSizeCommand                               )==NULL) return (__LINE__);
