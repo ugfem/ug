@@ -1676,6 +1676,11 @@ static INT LogOnCommand (INT argc, char **argv)
         #ifdef ModelP
   if (pext == TRUE)
   {
+    if (sscanf(argv[0],expandfmt(CONCAT3(" logon -e %",NAMELENSTR,"[ -~]")),logfile)!=1)
+    {
+      PrintErrorMessage('E',"logon","could not read name of logfile");
+      return(PARAMERRORCODE);
+    }
     sprintf(logfile,"%s.p%3d.%03d",logfile,procs,me);
   }
   else
