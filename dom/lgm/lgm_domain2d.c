@@ -890,15 +890,6 @@ INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
-{
-  /* HRR_TODO: assign part */
-  *part = 0;
-
-  return(0);
-}
-
-/* domain interface function: for description see domain.h */
 BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
   INT i,j,i0,j0,count,k;

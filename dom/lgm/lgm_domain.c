@@ -129,53 +129,13 @@ static LGM_PROBLEM *Lgm_Problem_GetByName (char *name)
   return((LGM_PROBLEM *) SearchEnv(name,"/LGM_PROBLEM",theProblemVarID,theProblemDirID));
 }
 
-/****************************************************************************/
-/*D
-   BVP_GetByName - get pointer to BVP by name
-
-   SYNOPSIS:
-   BVP *BVP_GetByName (char *name);
-
-   PARAMETERS:
-   .  name - name of file
-   .  argc, argv - command parameters
-
-   DESCRIPTION:
-   This function gives the pointer to the BVP by its <name>.
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BVP *BVP_GetByName (char *name)
 {
   return((BVP *) SearchEnv(name,"/LGM_BVP",theLGMDomainVarID,theBVPDirID));
 }
 
-/****************************************************************************/
-/*D
-   BVP_GetFirst - Return a pointer to the first LGM_BVP
-
-   SYNOPSIS:
-   BVP *BVP_GetFirst (void);
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
-   This function returns a pointer to the first BVP in the /LGM_BVP
-   directory.
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if not found.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BVP *BVP_GetFirst (void)
 {
   ENVDIR *theSBVPDir;
@@ -188,27 +148,7 @@ BVP *BVP_GetFirst (void)
   return (theBVP);
 }
 
-/****************************************************************************/
-/*D
-   BVP_GetNext - Return a pointer to the next multigrid
-
-   SYNOPSIS:
-   BVP *BVP_GetNext (BVP *theBVP);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-
-   DESCRIPTION:
-   This function returns a pointer to the next BVP in the /LGMD_BVP
-   directory.
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if not found.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BVP *BVP_GetNext (BVP *theBVP)
 {
   if (theBVP==NULL) return (NULL);
@@ -292,27 +232,7 @@ BVP *BVP_Load (char *name, INT argc, char **argv)
   return (NULL);
 }
 
-/****************************************************************************/
-/*D
-   BVP_SetBVPDesc - set BVP-descriptor
-
-   SYNOPSIS:
-   INT BVP_SetBVPDesc (BVP *theBVP, BVP_DESC *theBVPDesc);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  theBVPDesc - descriptor to set
-
-   DESCRIPTION:
-   This function sets the BVP descriptor according to the BVP.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
 {
   LGM_DOMAIN *theDomain;
@@ -342,27 +262,7 @@ INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_SetCoeffFct - set coefficient function(s)
-
-   SYNOPSIS:
-   INT BVP_SetCoeffFct (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  n - nb. of coefficient function or -1 for all
-
-   DESCRIPTION:
-   This function one or all coefficient functions.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
 {
   LGM_DOMAIN *theDomain;
@@ -387,27 +287,7 @@ INT BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_SetUserFct - set coefficient function(s)
-
-   SYNOPSIS:
-   INT BVP_SetUserFct (BVP *theBVP, INT n, UserProcPtr *UserFct);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  n - nb. of user function or -1 for all
-
-   DESCRIPTION:
-   This function gives one or all user functions.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 {
   LGM_DOMAIN *theDomain;
@@ -440,28 +320,7 @@ INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 /****************************************************************************/
 /****************************************************************************/
 
-/****************************************************************************/
-/*D
-   BVP_InsertBndP - sets a BNDP from command input
-
-   SYNOPSIS:
-   BNDP *BVP_InsertBndP (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  argc, argv - command parameters
-   .  theBndP - the BNDP to set
-
-   DESCRIPTION:
-   This function sets a BNDP from command input parameters.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 {
   return (NULL);
@@ -481,6 +340,15 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *aBndS)
   if (aBndS == NULL) return(0);
   theBndS = BNDS2LGM(aBndS);
   return (PutFreelistMemory(Heap,theBndS,sizeof(theBndS)));
+}
+
+/* domain interface function: for description see domain.h */
+INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
+{
+  /* HRR_TODO: assign part */
+  *part = 0;
+
+  return(0);
 }
 
 /****************************************************************************/
