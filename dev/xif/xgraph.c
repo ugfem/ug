@@ -192,12 +192,14 @@ static void IFShadedPolygon(SHORT_POINT *points, INT n, DOUBLE intensity)
 {
   int s;
 
+  XSetBackground(display,gw->gc,ctab[X11OutputDevice->black].pixel);
   s = (int)(0.5 + intensity * (DOUBLE)(NO_PATTERNS-1));
   XSetFillStyle(display, gw->gc, FillOpaqueStippled);
   XSetStipple(display, gw->gc, pattern[s]);
   XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
   XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
   XSetFillStyle(display, gw->gc, FillSolid);
+  XSetBackground(display,gw->gc,ctab[X11OutputDevice->white].pixel);
 }
 
 static void IFInversePolygon (SHORT_POINT *points, INT n)
