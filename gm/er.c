@@ -108,6 +108,15 @@ enum NB_STATUS {
   NB_TOUCHED
 };
 
+/* debug levels of extract rule module */
+enum ER_DBG {
+
+  ER_DBG_GENERAL          = 1,
+  ER_DBG_RULES            = 2,
+  ER_DBG_RULE_VERBOSE     = 3,
+  ER_DBG_ELEM                     = 3
+};
+
 #define HASH_SIZE                               1000
 #define HASH_FACTOR                             .61803398874989         /* golden section: 0.5*(sqrt(5)-1) */
 #define HASH_ADDRESS(k)                 floor(HASH_SIZE*(k*HASH_FACTOR-floor(k*HASH_FACTOR)))
@@ -572,7 +581,7 @@ static HRID GetRuleID
   global.nelem_inspected[etag]++;
   global.nelems_inspected++;
 
-  PRINTDEBUG(gm,2,(ELEM_INFO("GetRuleID",YES,elem,ER_NSONS(er))));
+  PRINTDEBUG(gm,ER_DBG_ELEM,(ELEM_INFO("GetRuleID",YES,elem,ER_NSONS(er))));
 
   FillOrderedSons(er,oco);
 
@@ -997,7 +1006,7 @@ static int ExtractInterfaceERule (DDD_OBJ obj)
     global.nelem_not_inspected[TAG(elem)]++;
     global.nelems_not_inspected++;
 
-    IFDEBUG(gm,2)
+    IFDEBUG(gm,ER_DBG_ELEM)
     int nsons;
     ELEMENT *sons[MAX_SONS];
 
@@ -1052,7 +1061,7 @@ static INT ExtractInterfaceRules (MULTIGRID *mg)
     {
       INT MarkKey;
 
-      PRINTDEBUG(gm,1,("ExtractInterfaceRules: interface elements to consider on level %d: %ld\n",lev,global.if_elems));
+      PRINTDEBUG(gm,ER_DBG_GENERAL,("ExtractInterfaceRules: interface elements to consider on level %d: %ld\n",lev,global.if_elems));
 
       if (MarkTmpMem(global.heap,&MarkKey))
         REP_ERR_RETURN(1);
@@ -1077,7 +1086,7 @@ static INT ExtractInterfaceRules (MULTIGRID *mg)
       /* extract rules from interface elements */
       DDD_IFAExecLocal(ElementVHIF, GRID_ATTR(grid), ExtractInterfaceERule);
 
-      IFDEBUG(gm,1)
+      IFDEBUG(gm,ER_DBG_GENERAL)
       long N_er = 0;
       int tag;
 
@@ -1173,7 +1182,7 @@ static INT ExtractRules (MULTIGRID *mg)
       {
         global.nelem_not_inspected[TAG(elem)]++;
         global.nelems_not_inspected++;
-        IFDEBUG(gm,2)
+        IFDEBUG(gm,ER_DBG_ELEM)
         int nsons;
         ELEMENT *sons[MAX_SONS];
 
@@ -1207,7 +1216,7 @@ static INT ExtractRules (MULTIGRID *mg)
     for (tag=1; tag<TAGS; tag++)
       global.hrule[tag] = global.hrule[tag-1]+global.maxrule[tag-1];
 
-    PRINTDEBUG(gm,1,("ExtractRules: after hrule table allocation: HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
+    PRINTDEBUG(gm,ER_DBG_GENERAL,("ExtractRules: after hrule table allocation: HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
 
     for (h=0; h<HASH_SIZE; h++)
     {
@@ -1224,10 +1233,10 @@ static INT ExtractRules (MULTIGRID *mg)
     }
     ASSERT(maxrules==n);
 
-    PRINTDEBUG(gm,1,("ExtractRules: max members of hash table entries is %d\n",max_list_len));
+    PRINTDEBUG(gm,ER_DBG_GENERAL,("ExtractRules: max members of hash table entries is %d\n",max_list_len));
   }
   else
-    PRINTDEBUG(gm,1,("ExtractRules: realized rules were completely covered by rm rules\n"));
+    PRINTDEBUG(gm,ER_DBG_GENERAL,("ExtractRules: realized rules were completely covered by rm rules\n"));
 
   if (ReleaseTmpMem(global.heap,MarkKey))
     REP_ERR_RETURN(1);
@@ -1785,6 +1794,41 @@ INT GetOrderedSons (ELEMENT *theElement, MGIO_RR_RULE *theRule, NODE **NodeConte
   return (0);
 }
 
+static int CheckNBrelations (MGIO_RR_RULE *mr, int i, int tag)
+{
+  int n = mr->nsons;
+  int err=0;
+  int s;
+
+  for (s=0; s<n; s++)
+  {
+    struct mgio_sondata *son = &(mr->sons[s]);
+    int ns = SIDES_OF_TAG(son->tag);
+    int i;
+
+    for (i=0; i<ns; i++)
+    {
+      int nb = son->nb[i];
+      if (nb<FATHER_SIDE_OFFSET)
+      {
+        struct mgio_sondata *nbson = &(mr->sons[nb]);
+        int nnbs = SIDES_OF_TAG(nbson->tag);
+        int j;
+
+        for (j=0; j<nnbs; j++)
+          if (nbson->nb[j]==s)
+            break;
+        if (j>=nnbs)
+        {
+          PrintDebug("ERROR: rule %d of %d, asym in son %d, nb %d\n",i,tag,s,i);
+          err++;
+        }
+      }
+    }
+  }
+  return (err);
+}
+
 static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrules)
 {
   ELEMENT *elem;
@@ -1793,6 +1837,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
   int use_bug_in_rule = TRUE;
   short *bug_in_rule[TAGS];
   INT MarkKey;
+  int tg;
 
   if (MarkTmpMem(global.heap,&MarkKey))
     use_bug_in_rule = FALSE;
@@ -1811,6 +1856,16 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
           bug_in_rule[t][i] = FALSE;
       }
     }
+  }
+
+  /* check symmetry of nb relations */
+  for (tg=0; tg<TAGS; tg++)
+  {
+    int i;
+    for (i=0; i<global.maxrule[tg]; i++)
+      if (CheckNBrelations(mrules+RefRuleOffset[tg]+i,i,tg))
+        if (use_bug_in_rule)
+          bug_in_rule[tg][i] = TRUE;
   }
 
   for (l=0; l<TOPLEVEL(mg); l++)
@@ -1840,7 +1895,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
 
         /* check nsons */
         if (NSONS(elem)!=nsons)
-          PD_ERR(4,("ERROR in CheckMRules, elem %ld: NSONS(elem)!=mr->nsons\n",id),error);
+          PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: NSONS(elem)!=mr->nsons\n",id),error);
 
         if (GetNodeContext(elem,nodes))
           ASSERT(FALSE);
@@ -1851,13 +1906,13 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
           {
                                                 #ifndef ModelP
             if (newnodes[i]==NULL)
-              PD_ERR(4,("ERROR in CheckMRules, elem %ld: pattern %d inconsistent (says ex but doesn't)\n",id,i),error);
+              PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: pattern %d inconsistent (says ex but doesn't)\n",id,i),error);
                                                 #endif
           }
           else
           {
             if (newnodes[i]!=NULL)
-              PD_ERR(4,("ERROR in CheckMRules, elem %ld: pattern %d inconsistent (says nonex but does)\n",id,i),error);
+              PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: pattern %d inconsistent (says nonex but does)\n",id,i),error);
           }
 
         /* check sons */
@@ -1865,7 +1920,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
           ASSERT(FALSE);
                                 #ifndef ModelP
         if (maxsonex!=nsons)
-          PD_ERR(4,("ERROR in CheckMRules, elem %ld: wrong number of sons (%d vs %d)\n",id,maxsonex,nsons),error);
+          PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: wrong number of sons (%d vs %d)\n",id,maxsonex,nsons),error);
                                 #endif
         for (s=0; s<maxsonex; s++)
         {
@@ -1878,12 +1933,12 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
             int co,si;
 
             if (rson->tag!=TAG(son))
-              PD_ERR(4,("ERROR in CheckMRules, elem %ld: wrong tag of son %d (%d vs %d)\n",id,s,rson->tag,TAG(son)),error);
+              PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: wrong tag of son %d (%d vs %d)\n",id,s,rson->tag,TAG(son)),error);
 
             /* check corners */
             for (co=0; co<nco; co++)
               if (CORNER(son,co)!=nodes[rson->corners[co]])
-                PD_ERR(4,("ERROR in CheckMRules, elem %ld: corner %d of son %d inconsistent\n",id,co,s),error);
+                PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: corner %d of son %d inconsistent\n",id,co,s),error);
 
             /* check neighbours */
             for (si=0; si<nsi; si++)
@@ -1900,7 +1955,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
                   if (sons[rson->nb[si]]!=NULL)
                                                                         #endif
                   if (nb!=sons[rson->nb[si]])
-                    PD_ERR(4,("ERROR in CheckMRules, elem %ld: inner nb %d of son %d inconsistent\n",id,si,s),error);
+                    PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: inner nb %d of son %d inconsistent\n",id,si,s),error);
                 }
                 else if (nbf!=NULL)
                 {
@@ -1911,66 +1966,68 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
                     if (NBELEM(elem,j)==nbf)
                       break;
                   if (j!=(rson->nb[si]-FATHER_SIDE_OFFSET))
-                    PD_ERR(4,("ERROR in CheckMRules, elem %ld: outer nb %d of son %d inconsistent\n",id,si,s),error);
+                    PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: outer nb %d of son %d inconsistent\n",id,si,s),error);
                 }
               }
               else
               {
                                                                 #ifndef ModelP
                 if (rson->nb[si]<FATHER_SIDE_OFFSET)
-                  PD_ERR(4,("ERROR in CheckMRules, elem %ld: son %d has no nb but %d no fatherside\n",id,s,si),error);
+                  PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: son %d has no nb but %d no fatherside\n",id,s,si),error);
                                                                 #endif
               }
             }
                                                 #ifndef ModelP
                                                 #ifdef __THREEDIM__
-            if (s>0)
-            {
-              ELEMENT *nson = sons[0];
-              int path = rson->path;
-              int pd = PATHDEPTH(path);
-              int son_path_ok = FALSE;
-              int j;
+            /* check path
+                    NOT CONSISTENT in rm since not used (says Stefan, 971219)
+               if (s>0)
+               {
+                    ELEMENT *nson = sons[0];
+                    int path = rson->path;
+                    int pd = PATHDEPTH(path);
+                    int son_path_ok = FALSE;
+                    int j;
 
-              max_path_depth = MAX(max_path_depth,pd);
+                    max_path_depth = MAX(max_path_depth,pd);
 
-              /* check path */
-              for (j=0; j<pd; j++)
-              {
-                int ns = NEXTSIDE(path,j);
+                    for (j=0; j<pd; j++)
+                    {
+                            int ns = NEXTSIDE(path,j);
 
-                if (nson==NULL)
-                {
-                  PD_ERR(4,("ERROR in CheckMRules, elem %ld: nson==NULL for son %d at %d\n",id,s,j),error);
-                  break;
-                }
-                if (ns>=SIDES_OF_ELEM(nson))
-                {
-                  PD_ERR(4,("ERROR in CheckMRules, elem %ld: path of son %d at %d has invalid side %s\n",id,s,j,ns),error);
-                  break;
-                }
-                nson = NBELEM(nson,ns);
-              }
-              if (nson!=son)
-                PD_ERR(4,("ERROR in CheckMRules, elem %ld: wrong path of son %d\n",id,s),error)
-                else
-                  son_path_ok = TRUE;
-              if (!son_path_ok)
-                some_path_wrong = TRUE;
-            }
+                            if (nson==NULL)
+                            {
+                                    PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: nson==NULL for son %d at %d\n",id,s,j),error);
+                                    break;
+                            }
+                            if (ns>=SIDES_OF_ELEM(nson))
+                            {
+                                    PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: path of son %d at %d has invalid side %s\n",id,s,j,ns),error);
+                                    break;
+                            }
+                            nson = NBELEM(nson,ns);
+                    }
+                    if (nson!=son)
+                            PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: wrong path of son %d\n",id,s),error)
+                    else
+                            son_path_ok = TRUE;
+                    if (!son_path_ok)
+                            some_path_wrong = TRUE;
+               }*/
                                                 #endif
                                                 #endif
           }
         }
         /*if (!some_path_wrong)
-                PD_ERR(4,("FINE in CheckMRules (%c-rule), elem %ld: all paths ok\n",(refi<UGMAXRULE(tag))?'r':'e',id),error);*/
+                PD_ERR(ER_DBG_RULE_VERBOSE,("FINE in CheckMRules (%c-rule), elem %ld: all paths ok\n",(refi<UGMAXRULE(tag))?'r':'e',id),error);*/
 
-        /* check sonandnode */
-        for (i=0; i<MAX_NEW_CORNERS_DIM; i++)
-          if (newnodes[i]!=NULL)
-            if (sons[mr->sonandnode[i][0]]!=NULL)
-              if (CORNER(sons[mr->sonandnode[i][0]],mr->sonandnode[i][1]) != newnodes[i])
-                PD_ERR(4,("ERROR in CheckMRules, elem %ld: sonandnode %d inconsistent\n",id,i),error);
+        /* check sonandnode
+                NOT CONSISTENT in rm since not used (says Stefan, 971219)
+           for (i=0; i<MAX_NEW_CORNERS_DIM; i++)
+                if (newnodes[i]!=NULL)
+                        if (sons[mr->sonandnode[i][0]]!=NULL)
+                                if (CORNER(sons[mr->sonandnode[i][0]],mr->sonandnode[i][1]) != newnodes[i])
+                                        PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: sonandnode %d inconsistent\n",id,i),error);*/
 
         /* summary */
         if (error)
@@ -2045,7 +2102,7 @@ INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR
     REP_ERR_RETURN(1);
 
   global.heap = MGHEAP(mg);
-  PRINTDEBUG(gm,1,("Write_RefRules (er): before any allocation: HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
+  PRINTDEBUG(gm,ER_DBG_GENERAL,("Write_RefRules (er): before any allocation: HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
   if (Mark(global.heap,FROM_BOTTOM,&BotMarkKey))
     REP_ERR_RETURN(1);
 
@@ -2081,7 +2138,7 @@ INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR
   if (*mrule_handle==NULL)
     REP_ERR_RETURN(1);
 
-  PRINTDEBUG(gm,1,("Write_RefRules (er): after mrule table allocation: HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
+  PRINTDEBUG(gm,ER_DBG_GENERAL,("Write_RefRules (er): after mrule table allocation: HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
 
   /* write refrules */
   mrule = *mrule_handle;
@@ -2112,13 +2169,13 @@ INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR
   if (Release(global.heap,FROM_BOTTOM,BotMarkKey))
     REP_ERR_RETURN(1);
 
-  IFDEBUG(gm,1)
+  IFDEBUG(gm,ER_DBG_GENERAL)
   WriteDebugInfo();
   ENDDEBUG
 
-  PRINTDEBUG(gm,1,("Write_RefRules (er): when finished (storage occupied by MGIO_RR_RULE list): HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
+  PRINTDEBUG(gm,ER_DBG_GENERAL,("Write_RefRules (er): when finished (storage occupied by MGIO_RR_RULE list): HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
 
-  IFDEBUG(gm,3)
+  IFDEBUG(gm,ER_DBG_RULES)
   CheckMRules(mg,RefRuleOffset,*mrule_handle);
   ENDDEBUG
 
@@ -2157,7 +2214,7 @@ INT ResetRefineTagsBeyondRuleManager (MULTIGRID *mg)
         SETREFINE(elem,COPY);
         n++;
       }
-  PRINTDEBUG(gm,1,("ResetRefineTags: done (for %d elements)\n",n));
+  PRINTDEBUG(gm,ER_DBG_GENERAL,("ResetRefineTags: done (for %d elements)\n",n));
 
   return (0);
 }
