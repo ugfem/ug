@@ -51,7 +51,7 @@
 /****************************************************************************/
 
 #define DEFAULTSFILENAME            "defaults"
-#define UGRC_NAME                           ".rntrc" /* ".ugrc" */
+#define UGRC_NAME                           ".ugrc"
 
 #define BUFFSIZE    256             /* max length of name string    */
 #define BUFFLEN     255             /* BUFFSIZE-1                   */
