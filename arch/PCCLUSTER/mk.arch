@@ -1,0 +1,27 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for Cluster of PCs with Linux (with GCC)
+#	
+
+ARCH_TYPE     = __PC__
+
+ARCH_MAKE     = make
+ARCH_CC       = mpicc
+ARCH_CC       = mpigcc
+ARCH_LINK     = mpicc
+ARCH_LINK     = mpiCC
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lm
+
+ARCH_CFLAGS   = -pipe
+ARCH_NOOPTIM  = -g -Wall -Wno-unused -Wno-parentheses
+ARCH_OPTIM    = -s -O3 -march=i686 -fomit-frame-pointer -funroll-loops -ffast-math
+ARCH_C++FLAGS = -fpermissive
+ARCH_LFLAGS   =
+ARCH_ARFLAGS  = rus
+
+ARCH_XINCLUDES =
+ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lX11
