@@ -299,6 +299,7 @@ sub write_line
 		if ( $cdf{ns_prop1}{$nns} =~/\A4($int)/ )
 		{
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
+# 			if ($nl == 74) { print "ERROR line $nl has id $1\n"; }
 			printf LGM "line %d:",$nl;
 			$ns = sprintf "node_ns%d",$nns; 
 			$numns = sprintf "num_nod_ns%d",$nns; 
@@ -343,7 +344,11 @@ sub search_lines
 				$found = 0;
 				last LOOP1;
 			}
-			if ($found == 1) { printf LGM " %d",$nl; }
+			if ($found == 1)
+			{
+# 				if ($nl == 74) { print "ERROR line $nl added to surface $spoints\n"; }
+				printf LGM " %d",$nl; 
+			}
 			$nl++;
 		}
 	}
@@ -358,11 +363,13 @@ sub write_surf
 #		print "$cdf{ns_prop1}{$nns}\n";
 		if ( $cdf{ns_prop1}{$nns} =~/\A3($int)/ )
 		{
+			$surf = $1;
+			printf "writing surface $1 ";
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
 			printf LGM "surface %d:",$nsurf;
 			$nsurf++;
 
-			$surfacename = sprintf "surface%d",$1;
+			$surfacename = sprintf "surface%d",$surf;
   			printf LGM " left=%d; right=%d;",
   				$cdf{unitsrev}{$cdf{$surfacename}{left}},
   				$cdf{unitsrev}{$cdf{$surfacename}{right}};
@@ -384,13 +391,22 @@ sub write_surf
 			print LGM ";";
 
  			print LGM " triangles:";
+			# index of surface $1 in eb_prop1
+			$ncon = 0;
+			LOOP: foreach $nconnect (1 .. $cdf{num_el_blk})
+			{
+				if ( $cdf{eb_prop1}{$nconnect} =~/\A3($int)/ )
+				{
+					if ($surf == $1) { $ncon = $nconnect; last LOOP;}
+				}
+			}
 			# number of triangles in block $1
-			$numnt = sprintf "num_el_in_blk%d",$nsurf; 
+			$numnt = sprintf "num_el_in_blk%d",$ncon; 
 			# hash of triangles
-			$connect = sprintf "connect%d",$nsurf; 
+			$connect = sprintf "connect%d",$ncon; 
 #			print "$numnt;\n";
 			# print triangles
-#			printf "\nERROR %s %d\n", $numnt, $cdf{$numnt}{1};
+#			printf "ERROR %s %d\n", $numnt, $cdf{$numnt}{1};
 			foreach $nt (1 .. $cdf{$numnt}{1})
 			{
 				printf LGM " %d", $cdf{$connect}{3*$nt-2}-1;
