@@ -1,0 +1,115 @@
+#!/bin/tcsh -ef
+
+# ugeps2mpg: creates an mpg-file from eps-frames.
+# The frames must have names `basename.????.eps'. The extension
+# `eps' is important: set the UG shell variable EXT = "eps" for
+# the command `cmfn'.
+#
+# Created on the base of `ugppm2mpg'.
+# Oct. 15, 2003, D. Logashenko
+
+set help = "usage: ugeps2mpg <basename> -f <first> <last> [-fi <increment>]"
+
+if ( $#argv != 4 && $#argv != 6 ) then
+	echo "$help"
+	exit
+endif
+
+#
+# defaults
+#
+
+@ fi = 1		# frame increment
+
+#
+# parse commandline
+#
+
+set base = $argv[1]
+
+if ( "$argv[2]" == "-f" ) then
+	@ fs = $argv[3]
+	@ fe = $argv[4]
+else
+	echo "$help"
+	exit
+endif
+
+if ( $#argv > 4 ) then
+	if ( "$argv[5]" == "-fi" )  then
+		@ fi = $argv[6]
+	else
+		echo "$help"
+		exit
+	endif
+endif
+
+#
+# Convert EPS to PPMs and further to YUVs
+#
+
+@ i = $fs
+@ j = 1
+
+# Get the frame size:
+set psfile = `echo $base $i | awk '{printf "%s.%04d.eps",$1,$2}'`
+set bbox = `grep BoundingBox $psfile`
+@ width = $bbox[4]
+@ width -= $bbox[2]
+@ height = $bbox[5]
+@ height -= $bbox[3]
+echo ""
+echo Images have dimensions $width x $height
+echo ""
+
+# Convert the files
+while ( $i <= $fe )
+	set psfile = `echo $base $i | awk '{printf "%s.%04d.eps",$1,$2}'` 
+	set ppmfile = `echo $base $i | awk '{printf "%s.%04d.ppm",$1,$2}'`  
+	set outfile = $base.$j
+	echo Converting EPS to YUV: $psfile
+	gs -dBATCH -dNOPAUSE -q -sDEVICE=ppmraw -g${width}x${height} -sOutputFile=$ppmfile $psfile
+	ppmtoyuvsplit $outfile $ppmfile >& /dev/null
+	rm $ppmfile
+	echotc up
+	@ i += $fi
+	@ j++
+end
+echo "Converting PPM to YUV: done                                 "
+
+#
+# Now convert the YUVs to an MPG
+#
+
+echo "Converting YUV to MPG: wait..."
+
+#
+#  if #rows/columns is odd, ppmtoyuvsplit chopped off a row/column
+#
+if ( $width  % 2 ) @ width--
+if ( $height % 2 ) @ height--
+
+#
+#  mpeg needs an option if width/height is not divisible by 16
+#
+set PF = ""
+if ( $width % 16 || $height % 16 ) set PF = "-PF"
+
+#
+# make MPG
+#
+@ j--
+mpeg -g 1 -f 1 -a 1 -b $j -h $width -v $height $PF $base. -s $base.mpg >& /dev/null
+
+#
+# clean up
+#
+
+rm -f $base.*.[YUV]
+
+echotc up
+echo "Converting YUV to MPG: done   "
+echotc bl
+echo ""
+echo "$base.mpg created." 
+echo ""
