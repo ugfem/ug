@@ -2,281 +2,281 @@
 lgm
 nginterface3d
 @etab
-@dec sigvec @1 @0
+@dec sigvec @0 @1
 <sys/signal.h>
-@dec ofstream @1 @0
+@dec ofstream @0 @1
 <fstream.h>
-@dec Point3d @1 @0
+@dec Point3d @0 @1
 <geom/geom3d.hh>
-@dec FILE @1 @0
+@dec FILE @0 @1
 <stdio.h>
-@dec ARRAY__pt__30_Q2_12SparseMatrix10linestruct @1 @0
+@dec ARRAY__pt__30_Q2_12SparseMatrix10linestruct @0 @1
 <linalg/sparsmat.hh>
-@dec __clockid_t @1 @0
+@dec __clockid_t @0 @1
 <sys/time.h>
-@dec __cycles @1 @0
+@dec __cycles @0 @1
 <sys/time.h>
-@dec fstream @1 @0
+@dec fstream @0 @1
 <fstream.h>
-@dec BaseMatrix @1 @0
+@dec BaseMatrix @0 @1
 <linalg/basemat.hh>
-@dec rlimit @1 @0
+@dec rlimit @0 @1
 <sys/resource.h>
-@dec __fp_int_block @1 @0
+@dec __fp_int_block @0 @1
 <machine/save_state.h>
-@dec sapply_int @1 @0
+@dec sapply_int @0 @1
 <iomanip.h>
-@dec filebuf @1 @0
+@dec filebuf @0 @1
 <fstream.h>
-@dec __sigev_types @1 @0
+@dec __sigev_types @0 @1
 <sys/sigevent.h>
-@dec SparseMatrix @1 @0
+@dec SparseMatrix @0 @1
 <linalg/sparsmat.hh>
-@dec iostream_withassign @1 @0
+@dec iostream_withassign @0 @1
 <iostream.h>
-@dec stack_t @1 @0
+@dec stack_t @0 @1
 <sys/newsig.h>
-@dec box3d @1 @0
+@dec box3d @0 @1
 <geom/geom3d.hh>
 @dec istrstream @1
 <strstream.h>
 @dec InputElement @1
-"nginterface3d.cc"
+"lgm.hh"
 @dec linesegment3d @1
 "lgm.hh"
-@dec __ucontext @1 @0
+@dec __ucontext @0 @1
 <sys/newsig.h>
-@dec __si_codes @1 @0
+@dec __si_codes @0 @1
 <sys/siginfo.h>
-@dec exception @1 @0
+@dec exception @0 @1
 <math.h>
 @dec ADFRONT2 @1
 <meshing/adfront2.hh>
-@dec ADFRONT3 @1 @0
+@dec ADFRONT3 @0 @1
 <meshing/adfront3.hh>
-@dec _FILEX @1 @0
+@dec _FILEX @0 @1
 <stdio.h>
 @dec ARRAY__pt__26_Q2_8ADFRONT211frontpoint2 @1
 <meshing/adfront2.hh>
 @dec strstreambase @1
 <strstream.h>
-@dec idtype_t @1 @0
+@dec idtype_t @0 @1
 <sys/wait.h>
-@dec INDEX_2 @1 @0
+@dec INDEX_2 @0 @1
 <hashtabl.hh>
-@dec INDEX_3 @1 @0
+@dec INDEX_3 @0 @1
 <hashtabl.hh>
-@dec INDEX_HASHTABLE @1 @0
+@dec INDEX_HASHTABLE @0 @1
 <hashtabl.hh>
-@dec ILINE @1 @0
+@dec ILINE @0 @1
 <geom/geom2d.hh>
-@dec ki_timeval @1 @0
+@dec ki_timeval @0 @1
 <sys/time.h>
-@dec BASE_INDEX_3_HASHTABLE @1 @0
+@dec BASE_INDEX_3_HASHTABLE @0 @1
 <hashtabl.hh>
-@dec long_double @1 @0
+@dec long_double @0 @1
 <stdlib.h>
-@dec imanip_long @1 @0
+@dec imanip_long @0 @1
 <iomanip.h>
-@dec oapply_long @1 @0
+@dec oapply_long @0 @1
 <iomanip.h>
 @dec splinesegment3d @1
 "lgm.hh"
 @dec ARRAY__pt__15_Q2_7netrule2tf @1
 <meshing/ruler2.hh>
-@dec Vec2d @1 @0
+@dec Vec2d @0 @1
 <geom/geom2d.hh>
-@dec ostream @1 @0
+@dec ostream @0 @1
 <iostream.h>
-@dec iomanip_int @1 @0
+@dec iomanip_int @0 @1
 <iomanip.h>
-@dec imanip_int @1 @0
+@dec imanip_int @0 @1
 <iomanip.h>
-@dec wait @1 @0
+@dec wait @0 @1
 <sys/wait.h>
-@dec Vec3d @1 @0
+@dec Vec3d @0 @1
 <geom/geom3d.hh>
-@dec label_t @1 @0
+@dec label_t @0 @1
 <sys/types.h>
-@dec sigaction @1 @0
+@dec sigaction @0 @1
 <sys/signal.h>
-@dec sapply_long @1 @0
+@dec sapply_long @0 @1
 <iomanip.h>
-@dec Segment @1 @0
+@dec Segment @0 @1
 <meshing/meshtype.hh>
-@dec smanip_int @1 @0
+@dec smanip_int @0 @1
 <iomanip.h>
-@dec rusage @1 @0
+@dec rusage @0 @1
 <sys/resource.h>
-@dec oapply_int @1 @0
+@dec oapply_int @0 @1
 <iomanip.h>
-@dec sigevent @1 @0
+@dec sigevent @0 @1
 <sys/sigevent.h>
-@dec _quad @1 @0
+@dec _quad @0 @1
 <sys/types.h>
-@dec istream @1 @0
+@dec istream @0 @1
 <iostream.h>
-@dec itimerval @1 @0
+@dec itimerval @0 @1
 <sys/time.h>
-@dec fp_rnd @1 @0
+@dec fp_rnd @0 @1
 <math.h>
-@dec ARRAY__pt__23_Q2_8ADFRONT39FrontFace @1 @0
+@dec ARRAY__pt__23_Q2_8ADFRONT39FrontFace @0 @1
 <meshing/adfront3.hh>
-@dec _physadr @1 @0
+@dec _physadr @0 @1
 <sys/types.h>
-@dec BaseVector @1 @0
+@dec BaseVector @0 @1
 <linalg/vector.hh>
-@dec BASE_TABLE @1 @0
+@dec BASE_TABLE @0 @1
 <table.hh>
-@dec ifstream @1 @0
+@dec ifstream @0 @1
 <fstream.h>
-@dec fourint @1 @0
+@dec fourint @0 @1
 <template.hh>
-@dec PTRIANGLE2D @1 @0
+@dec PTRIANGLE2D @0 @1
 <geom/geom2d.hh>
-@dec k_siginfo_t @1 @0
+@dec k_siginfo_t @0 @1
 <sys/siginfo.h>
-@dec PLINE2D @1 @0
+@dec PLINE2D @0 @1
 <geom/geom2d.hh>
-@dec ostream_withassign @1 @0
+@dec ostream_withassign @0 @1
 <iostream.h>
-@dec twoint @1 @0
+@dec twoint @0 @1
 <template.hh>
-@dec __siginfo @1 @0
+@dec __siginfo @0 @1
 <sys/siginfo.h>
-@dec iapply_int @1 @0
+@dec iapply_int @0 @1
 <iomanip.h>
-@dec Vector @1 @0
+@dec Vector @0 @1
 <linalg/vector.hh>
-@dec timezone @1 @0
+@dec timezone @0 @1
 <sys/time.h>
 @dec ostrstream @1
 <strstream.h>
-@dec BitArray @1 @0
+@dec BitArray @0 @1
 <bitarray.hh>
-@dec __save_state @1 @0
+@dec __save_state @0 @1
 <machine/save_state.h>
-@dec Iostream_init @1 @0
+@dec Iostream_init @0 @1
 <iostream.h>
-@dec timeval @1 @0
+@dec timeval @0 @1
 <sys/time.h>
-@dec ARRAY @1 @0
+@dec ARRAY @0 @1
 <array.hh>
-@dec ioapply_long @1 @0
+@dec ioapply_long @0 @1
 <iomanip.h>
-@dec timespec @1 @0
+@dec timespec @0 @1
 <sys/time.h>
-@dec LINE2D @1 @0
+@dec LINE2D @0 @1
 <geom/geom2d.hh>
-@dec threeint @1 @0
+@dec threeint @0 @1
 <template.hh>
 @dec strstreambuf @1
 <strstream.h>
-@dec INDEX_3_HASHTABLE @1 @0
+@dec INDEX_3_HASHTABLE @0 @1
 <hashtabl.hh>
-@dec TABLE @1 @0
+@dec TABLE @0 @1
 <table.hh>
-@dec ARRAY__pt__26_Q2_8ADFRONT311FrontPoint3 @1 @0
+@dec ARRAY__pt__26_Q2_8ADFRONT311FrontPoint3 @0 @1
 <meshing/adfront3.hh>
-@dec istream_withassign @1 @0
+@dec istream_withassign @0 @1
 <iostream.h>
-@dec omanip_long @1 @0
+@dec omanip_long @0 @1
 <iomanip.h>
-@dec Element @1 @0
+@dec Element @0 @1
 <meshing/meshtype.hh>
-@dec mallinfo @1 @0
+@dec mallinfo @0 @1
 <stdlib.h>
-@dec ARRAY__pt__28_Q2_10BASE_TABLE10linestruct @1 @0
+@dec ARRAY__pt__28_Q2_10BASE_TABLE10linestruct @0 @1
 <table.hh>
 @dec strstream @1
 <strstream.h>
 @dec my_surfacemeshing @1
 "nginterface3d.cc"
-@dec BASE_INDEX_HASHTABLE @1 @0
+@dec BASE_INDEX_HASHTABLE @0 @1
 <hashtabl.hh>
-@dec frame_marker @1 @0
+@dec frame_marker @0 @1
 <machine/frame.h>
-@dec passwd @1 @0
+@dec passwd @0 @1
 <pwd.h>
-@dec __sigset_t @1 @0
+@dec __sigset_t @0 @1
 <sys/newsig.h>
 @dec Meshing2 @1
 <meshing/meshing2.hh>
-@dec Meshing3 @1 @0
+@dec Meshing3 @0 @1
 <meshing/meshing3.hh>
-@dec sigval @1 @0
+@dec sigval @0 @1
 <sys/sigevent.h>
-@dec s_passwd @1 @0
+@dec s_passwd @0 @1
 <pwd.h>
-@dec smanip_long @1 @0
+@dec smanip_long @0 @1
 <iomanip.h>
 @dec ARRAY__pt__21_Q2_7netrule8threeint @1
 <meshing/ruler2.hh>
-@dec vnetrule @1 @0
+@dec vnetrule @0 @1
 <meshing/ruler3.hh>
-@dec INDEX_2_HASHTABLE @1 @0
+@dec INDEX_2_HASHTABLE @0 @1
 <hashtabl.hh>
-@dec sigstack @1 @0
+@dec sigstack @0 @1
 <sys/signal.h>
-@dec iostream @1 @0
+@dec iostream @0 @1
 <iostream.h>
-@dec omanip_int @1 @0
+@dec omanip_int @0 @1
 <iomanip.h>
-@dec siglocal @1 @0
+@dec siglocal @0 @1
 <sys/signal.h>
 @dec netrule @1
 <meshing/ruler2.hh>
-@dec ldiv_t @1 @0
+@dec ldiv_t @0 @1
 <stdlib.h>
-@dec fd_set @1 @0
+@dec fd_set @0 @1
 <sys/types.h>
-@dec __xsi @1 @0
+@dec __xsi @0 @1
 <sys/signal.h>
-@dec siglocal_misc @1 @0
+@dec siglocal_misc @0 @1
 <sys/signal.h>
-@dec DenseMatrix @1 @0
+@dec DenseMatrix @0 @1
 <linalg/densemat.hh>
-@dec __sub_ctxt @1 @0
+@dec __sub_ctxt @0 @1
 <sys/newsig.h>
 @dec ARRAY__pt__23_Q2_8ADFRONT29frontline @1
 <meshing/adfront2.hh>
-@dec fstreambase @1 @0
+@dec fstreambase @0 @1
 <fstream.h>
-@dec BASE_INDEX_2_HASHTABLE @1 @0
+@dec BASE_INDEX_2_HASHTABLE @0 @1
 <hashtabl.hh>
 @dec geompoint3d @1
 "lgm.hh"
-@dec sigcontext @1 @0
+@dec sigcontext @0 @1
 <sys/signal.h>
-@dec TempVector @1 @0
+@dec TempVector @0 @1
 <linalg/vector.hh>
-@dec tm @1 @0
+@dec tm @0 @1
 <sys/time.h>
-@dec TRIANGLE2D @1 @0
+@dec TRIANGLE2D @0 @1
 <geom/geom2d.hh>
-@dec ios @1 @0
+@dec ios @0 @1
 <iostream.h>
-@dec iapply_long @1 @0
+@dec iapply_long @0 @1
 <iomanip.h>
-@dec BASE_ARRAY @1 @0
+@dec BASE_ARRAY @0 @1
 <array.hh>
-@dec div_t @1 @0
+@dec div_t @0 @1
 <stdlib.h>
-@dec itimerspec @1 @0
+@dec itimerspec @0 @1
 <sys/time.h>
 @dec referencetransform @0
 <geom/reftrans.hh>
-@dec Point2d @1 @0
+@dec Point2d @0 @1
 <geom/geom2d.hh>
-@dec __fp_dbl_block @1 @0
+@dec __fp_dbl_block @0 @1
 <machine/save_state.h>
-@dec siglocalx @1 @0
+@dec siglocalx @0 @1
 <sys/signal.h>
-@dec iomanip_long @1 @0
+@dec iomanip_long @0 @1
 <iomanip.h>
-@dec ioapply_int @1 @0
+@dec ioapply_int @0 @1
 <iomanip.h>
-@dec streambuf @1 @0
+@dec streambuf @0 @1
 <iostream.h>
 @dec surfacemeshing @1
-"nginterface3d.cc"
+"lgm.hh"

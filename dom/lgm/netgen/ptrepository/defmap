@@ -1,66 +1,67 @@
 @tab
 lgm
 nginterface3d
+gt
 @etab
-@dec sigvec @0 @1
+@dec sigvec @0 @1 @2
 <sys/signal.h>
-@dec ofstream @0 @1
+@dec ofstream @0 @1 @2
 <fstream.h>
-@dec Point3d @0 @1
+@dec Point3d @0 @1 @2
 <geom/geom3d.hh>
-@dec FILE @0 @1
+@dec FILE @0 @1 @2
 <stdio.h>
-@dec ARRAY__pt__30_Q2_12SparseMatrix10linestruct @0 @1
+@dec ARRAY__pt__30_Q2_12SparseMatrix10linestruct @0 @1 @2
 <linalg/sparsmat.hh>
-@dec __clockid_t @0 @1
+@dec __clockid_t @0 @1 @2
 <sys/time.h>
-@dec __cycles @0 @1
+@dec __cycles @0 @1 @2
 <sys/time.h>
-@dec fstream @0 @1
+@dec fstream @0 @1 @2
 <fstream.h>
-@dec BaseMatrix @0 @1
+@dec BaseMatrix @0 @1 @2
 <linalg/basemat.hh>
-@dec rlimit @0 @1
+@dec rlimit @0 @1 @2
 <sys/resource.h>
-@dec __fp_int_block @0 @1
+@dec __fp_int_block @0 @1 @2
 <machine/save_state.h>
 @dec sapply_int @0 @1
 <iomanip.h>
-@dec filebuf @0 @1
+@dec filebuf @0 @1 @2
 <fstream.h>
-@dec __sigev_types @0 @1
+@dec __sigev_types @0 @1 @2
 <sys/sigevent.h>
-@dec SparseMatrix @0 @1
+@dec SparseMatrix @0 @1 @2
 <linalg/sparsmat.hh>
-@dec iostream_withassign @0 @1
+@dec iostream_withassign @0 @1 @2
 <iostream.h>
-@dec stack_t @0 @1
+@dec stack_t @0 @1 @2
 <sys/newsig.h>
-@dec box3d @0 @1
+@dec box3d @0 @1 @2
 <geom/geom3d.hh>
 @dec istrstream @1
 <strstream.h>
 @dec InputElement @1
-"nginterface3d.cc"
+"lgm.hh"
 @dec linesegment3d @1
 "lgm.hh"
-@dec __ucontext @0 @1
+@dec __ucontext @0 @1 @2
 <sys/newsig.h>
-@dec __si_codes @0 @1
+@dec __si_codes @0 @1 @2
 <sys/siginfo.h>
-@dec exception @0 @1
+@dec exception @0 @1 @2
 <math.h>
 @dec ADFRONT2 @1
 <meshing/adfront2.hh>
 @dec ADFRONT3 @0 @1
 <meshing/adfront3.hh>
-@dec _FILEX @0 @1
+@dec _FILEX @0 @1 @2
 <stdio.h>
 @dec ARRAY__pt__26_Q2_8ADFRONT211frontpoint2 @1
 <meshing/adfront2.hh>
 @dec strstreambase @1
 <strstream.h>
-@dec idtype_t @0 @1
+@dec idtype_t @0 @1 @2
 <sys/wait.h>
 @dec INDEX_2 @0 @1
 <hashtabl.hh>
@@ -68,107 +69,107 @@ nginterface3d
 <hashtabl.hh>
 @dec INDEX_HASHTABLE @0 @1
 <hashtabl.hh>
-@dec ILINE @0 @1
+@dec ILINE @0 @1 @2
 <geom/geom2d.hh>
-@dec ki_timeval @0 @1
+@dec ki_timeval @0 @1 @2
 <sys/time.h>
 @dec BASE_INDEX_3_HASHTABLE @0 @1
 <hashtabl.hh>
 @dec imanip_long @0 @1
 <iomanip.h>
-@dec long_double @0 @1
+@dec long_double @0 @1 @2
 <stdlib.h>
 @dec oapply_long @0 @1
 <iomanip.h>
 @dec splinesegment3d @1
 "lgm.hh"
-@dec ARRAY__pt__15_Q2_7netrule2tf @1
+@dec ARRAY__pt__15_Q2_7netrule2tf @1 @2
 <meshing/ruler2.hh>
-@dec Vec2d @0 @1
+@dec Vec2d @0 @1 @2
 <geom/geom2d.hh>
-@dec ostream @0 @1
+@dec ostream @0 @1 @2
 <iostream.h>
 @dec iomanip_int @0 @1
 <iomanip.h>
 @dec imanip_int @0 @1
 <iomanip.h>
-@dec wait @0 @1
+@dec wait @0 @1 @2
 <sys/wait.h>
-@dec Vec3d @0 @1
+@dec Vec3d @0 @1 @2
 <geom/geom3d.hh>
-@dec label_t @0 @1
+@dec label_t @0 @1 @2
 <sys/types.h>
-@dec sigaction @0 @1
+@dec sigaction @0 @1 @2
 <sys/signal.h>
 @dec sapply_long @0 @1
 <iomanip.h>
-@dec Segment @0 @1
+@dec Segment @0 @1 @2
 <meshing/meshtype.hh>
 @dec smanip_int @0 @1
 <iomanip.h>
-@dec rusage @0 @1
+@dec rusage @0 @1 @2
 <sys/resource.h>
 @dec oapply_int @0 @1
 <iomanip.h>
-@dec sigevent @0 @1
+@dec sigevent @0 @1 @2
 <sys/sigevent.h>
-@dec _quad @0 @1
+@dec _quad @0 @1 @2
 <sys/types.h>
-@dec istream @0 @1
+@dec istream @0 @1 @2
 <iostream.h>
-@dec itimerval @0 @1
+@dec itimerval @0 @1 @2
 <sys/time.h>
-@dec fp_rnd @0 @1
+@dec fp_rnd @0 @1 @2
 <math.h>
 @dec ARRAY__pt__23_Q2_8ADFRONT39FrontFace @0 @1
 <meshing/adfront3.hh>
-@dec _physadr @0 @1
+@dec _physadr @0 @1 @2
 <sys/types.h>
-@dec BaseVector @0 @1
+@dec BaseVector @0 @1 @2
 <linalg/vector.hh>
 @dec BASE_TABLE @0 @1
 <table.hh>
-@dec ifstream @0 @1
+@dec ifstream @0 @1 @2
 <fstream.h>
-@dec fourint @0 @1
+@dec fourint @0 @1 @2
 <template.hh>
-@dec PTRIANGLE2D @0 @1
+@dec PTRIANGLE2D @0 @1 @2
 <geom/geom2d.hh>
-@dec k_siginfo_t @0 @1
+@dec k_siginfo_t @0 @1 @2
 <sys/siginfo.h>
-@dec PLINE2D @0 @1
+@dec PLINE2D @0 @1 @2
 <geom/geom2d.hh>
-@dec ostream_withassign @0 @1
+@dec ostream_withassign @0 @1 @2
 <iostream.h>
-@dec twoint @0 @1
+@dec twoint @0 @1 @2
 <template.hh>
-@dec __siginfo @0 @1
+@dec __siginfo @0 @1 @2
 <sys/siginfo.h>
 @dec iapply_int @0 @1
 <iomanip.h>
-@dec Vector @0 @1
+@dec Vector @0 @1 @2
 <linalg/vector.hh>
-@dec timezone @0 @1
+@dec timezone @0 @1 @2
 <sys/time.h>
 @dec ostrstream @1
 <strstream.h>
 @dec BitArray @0 @1
 <bitarray.hh>
-@dec __save_state @0 @1
+@dec __save_state @0 @1 @2
 <machine/save_state.h>
-@dec Iostream_init @0 @1
+@dec Iostream_init @0 @1 @2
 <iostream.h>
-@dec timeval @0 @1
+@dec timeval @0 @1 @2
 <sys/time.h>
-@dec ARRAY @0 @1
+@dec ARRAY @0 @1 @2
 <array.hh>
 @dec ioapply_long @0 @1
 <iomanip.h>
-@dec timespec @0 @1
+@dec timespec @0 @1 @2
 <sys/time.h>
-@dec LINE2D @0 @1
+@dec LINE2D @0 @1 @2
 <geom/geom2d.hh>
-@dec threeint @0 @1
+@dec threeint @0 @1 @2
 <template.hh>
 @dec strstreambuf @1
 <strstream.h>
@@ -178,13 +179,13 @@ nginterface3d
 <table.hh>
 @dec ARRAY__pt__26_Q2_8ADFRONT311FrontPoint3 @0 @1
 <meshing/adfront3.hh>
-@dec istream_withassign @0 @1
+@dec istream_withassign @0 @1 @2
 <iostream.h>
 @dec omanip_long @0 @1
 <iomanip.h>
-@dec Element @0 @1
+@dec Element @0 @1 @2
 <meshing/meshtype.hh>
-@dec mallinfo @0 @1
+@dec mallinfo @0 @1 @2
 <stdlib.h>
 @dec ARRAY__pt__28_Q2_10BASE_TABLE10linestruct @0 @1
 <table.hh>
@@ -194,21 +195,21 @@ nginterface3d
 "nginterface3d.cc"
 @dec BASE_INDEX_HASHTABLE @0 @1
 <hashtabl.hh>
-@dec frame_marker @0 @1
+@dec frame_marker @0 @1 @2
 <machine/frame.h>
-@dec passwd @0 @1
+@dec passwd @0 @1 @2
 <pwd.h>
-@dec __sigset_t @0 @1
+@dec __sigset_t @0 @1 @2
 <sys/newsig.h>
 @dec Meshing2 @1
 <meshing/meshing2.hh>
 @dec Meshing3 @0 @1
 <meshing/meshing3.hh>
-@dec sigval @0 @1
+@dec sigval @0 @1 @2
 <sys/sigevent.h>
-@dec s_passwd @0 @1
+@dec s_passwd @0 @1 @2
 <pwd.h>
-@dec ARRAY__pt__21_Q2_7netrule8threeint @1
+@dec ARRAY__pt__21_Q2_7netrule8threeint @1 @2
 <meshing/ruler2.hh>
 @dec smanip_long @0 @1
 <iomanip.h>
@@ -216,67 +217,67 @@ nginterface3d
 <meshing/ruler3.hh>
 @dec INDEX_2_HASHTABLE @0 @1
 <hashtabl.hh>
-@dec sigstack @0 @1
+@dec sigstack @0 @1 @2
 <sys/signal.h>
-@dec iostream @0 @1
+@dec iostream @0 @1 @2
 <iostream.h>
 @dec omanip_int @0 @1
 <iomanip.h>
-@dec siglocal @0 @1
+@dec siglocal @0 @1 @2
 <sys/signal.h>
-@dec netrule @1
+@dec netrule @1 @2
 <meshing/ruler2.hh>
-@dec ldiv_t @0 @1
+@dec ldiv_t @0 @1 @2
 <stdlib.h>
-@dec fd_set @0 @1
+@dec fd_set @0 @1 @2
 <sys/types.h>
-@dec __xsi @0 @1
+@dec __xsi @0 @1 @2
 <sys/signal.h>
-@dec siglocal_misc @0 @1
+@dec siglocal_misc @0 @1 @2
 <sys/signal.h>
-@dec DenseMatrix @0 @1
+@dec DenseMatrix @0 @1 @2
 <linalg/densemat.hh>
-@dec __sub_ctxt @0 @1
+@dec __sub_ctxt @0 @1 @2
 <sys/newsig.h>
 @dec ARRAY__pt__23_Q2_8ADFRONT29frontline @1
 <meshing/adfront2.hh>
-@dec fstreambase @0 @1
+@dec fstreambase @0 @1 @2
 <fstream.h>
 @dec BASE_INDEX_2_HASHTABLE @0 @1
 <hashtabl.hh>
 @dec geompoint3d @1
 "lgm.hh"
-@dec sigcontext @0 @1
+@dec sigcontext @0 @1 @2
 <sys/signal.h>
-@dec TempVector @0 @1
+@dec TempVector @0 @1 @2
 <linalg/vector.hh>
-@dec tm @0 @1
+@dec tm @0 @1 @2
 <sys/time.h>
-@dec TRIANGLE2D @0 @1
+@dec TRIANGLE2D @0 @1 @2
 <geom/geom2d.hh>
-@dec ios @0 @1
+@dec ios @0 @1 @2
 <iostream.h>
-@dec BASE_ARRAY @0 @1
+@dec BASE_ARRAY @0 @1 @2
 <array.hh>
 @dec iapply_long @0 @1
 <iomanip.h>
-@dec div_t @0 @1
+@dec div_t @0 @1 @2
 <stdlib.h>
-@dec itimerspec @0 @1
+@dec itimerspec @0 @1 @2
 <sys/time.h>
 @dec referencetransform @0
 <geom/reftrans.hh>
-@dec Point2d @0 @1
+@dec Point2d @0 @1 @2
 <geom/geom2d.hh>
-@dec __fp_dbl_block @0 @1
+@dec __fp_dbl_block @0 @1 @2
 <machine/save_state.h>
-@dec siglocalx @0 @1
+@dec siglocalx @0 @1 @2
 <sys/signal.h>
 @dec iomanip_long @0 @1
 <iomanip.h>
 @dec ioapply_int @0 @1
 <iomanip.h>
-@dec streambuf @0 @1
+@dec streambuf @0 @1 @2
 <iostream.h>
 @dec surfacemeshing @1
-"nginterface3d.cc"
+"lgm.hh"
