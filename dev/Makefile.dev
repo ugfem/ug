@@ -11,9 +11,9 @@
 include ../ug.conf
 
 
-# select your devices: one of XIF or SIF. META and PS are optional
+# select your devices: one of { XIF, SIF, RIF }. META and PS are optional
 DEVICES = XIF META PS
-OBJECTS = devices.o
+OBJECTS = devices.o sockcomm.o
 
 
 # local C compiler flags
@@ -30,6 +30,9 @@ XIF:
 
 SIF:
 	cd sif; make -f Makefile.sif; cd ..;
+
+RIF:
+	cd rif; make -f Makefile.rif; cd ..;
 
 META:
 	cd meta; make -f Makefile.meta; cd ..;
@@ -51,10 +54,17 @@ SLIB:
 	cd sif; make -f Makefile.sif; cd ..;
 	cd ps; make -f Makefile.ps; cd ..;
 
+RLIB: 
+	rm -f ../lib/libdev.a
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdev.a $(OBJECTS)
+	cd meta; make -f Makefile.meta; cd ..;
+	cd rif; make -f Makefile.rif; cd ..;
+	cd ps; make -f Makefile.ps; cd ..;
 
 clean:
 	rm -f $(OBJECTS)
 	cd xif;  make -f Makefile.xif  clean; cd ..;
 	cd sif;  make -f Makefile.sif  clean; cd ..;
+	cd rif;  make -f Makefile.rif  clean; cd ..;
 	cd meta; make -f Makefile.meta clean; cd ..;
 	cd ps;   make -f Makefile.ps   clean; cd ..;

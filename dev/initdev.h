@@ -39,18 +39,19 @@
 
 /****************************************************************************/
 /*																			*/
-/* init functions called internally by devices.c							*/
+/* init and exit functions called internally by devices.c							*/
 /*																			*/
 /****************************************************************************/
 
-/* initialisation of the devices module */
-INT InitDevices (int argc, char **argv);
 
-/* the screen device (same name for Mac and X11 !) */
-OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error);
+/* the screen device (same name for Mac, X11 and Remote!) */
+OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error);
+void ExitScreen (void);
+
 
 /* metafile device */
 INT InitMeta (void);
+
 
 /* metafile device */
 INT InitPostScript (void);

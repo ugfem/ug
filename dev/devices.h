@@ -300,14 +300,16 @@ typedef union {
 
 typedef struct outputdevice OUTPUTDEVICE;
 
+
 /****************************************************************************/
 /*																			*/
 /* function exported by the devices module									*/
 /*																			*/
 /****************************************************************************/
 
-/* initialization */
-INT               InitDevices                           (int argc, char **argv);
+/* initialization and clean up */
+INT               InitDevices                           (int *argcp, char **argv);
+void          ExitDevices               (void);
 
 /* return the size of the monitor screen, return 0 if not available */
 INT               GetScreenSize                         (INT size[2]);

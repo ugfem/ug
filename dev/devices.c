@@ -600,11 +600,11 @@ const char *GetToolName (INT tool)
    InitDevices - Initialize all devices at startup
 
    SYNOPSIS:
-   INT InitDevices (int argc, char **argv);
+   INT InitDevices (int *argcp, char **argv);
 
    PARAMETERS:
-   .  argc - argument counter
-   .  argv - command line parameters
+   .  argcp - pointer to argument counter
+   .  argv  - command line parameters
 
    DESCRIPTION:
    This function initializes all devices at startup.
@@ -618,7 +618,7 @@ const char *GetToolName (INT tool)
 /****************************************************************************/
 
 
-INT InitDevices (int argc, char **argv)
+INT InitDevices (int *argcp, char **argv)
 {
   ENVDIR *DevDir;
   ENVITEM *dev;
@@ -653,7 +653,7 @@ INT InitDevices (int argc, char **argv)
   if (me == master)
   {
         #endif
-  defaultOuputDevice = InitScreen(argc,argv,&error);
+  defaultOuputDevice = InitScreen(argcp,argv,&error);
   if (error) return(1);
         #ifdef ModelP
 }
@@ -695,4 +695,12 @@ INT InitDevices (int argc, char **argv)
   }
 
   return(0);
+}
+
+
+
+void ExitDevices (void)
+{
+  /* clean up screen device */
+  ExitScreen();
 }
