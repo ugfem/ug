@@ -25,6 +25,12 @@
 
 #include "famg_algebra.h"
 
+extern "C"
+{
+#include "parallel.h"
+#include "pargm.h"
+}
+
 /* RCS_ID
    $Header$
  */
@@ -336,12 +342,12 @@ inline int FAMGNode::GetFlagNewMarked() const {
 inline void FAMGNode::SetFlagNewMarked(int f) {
   control.newmarked = f;
 }
-inline void FAMGNode::NodeMarkCG() { /*printf("node %d marked Coarse\n",GetId());*/
+inline void FAMGNode::NodeMarkCG() { /*printf("%d: node %d marked Coarse "VINDEX_FMTX"\n",me,GetId(),VINDEX_PRTX(myvec.myvector()));*/
   control.nt = 2;SetFlagNewMarked(1);
-}                                                                                                                       // only in the node; ensure that the CG is also set in the gridvector
-inline void FAMGNode::NodeMarkFG() { /*printf("node %d marked Fine\n",GetId());*/
+}                                                                                                                                                                               // only in the node; ensure that the CG is also set in the gridvector
+inline void FAMGNode::NodeMarkFG() { /*printf("%d: node %d marked Fine "VINDEX_FMTX"\n",me,GetId(),VINDEX_PRTX(myvec.myvector()));*/
   control.nt = 1;SetFlagNewMarked(1);
-}                                                                                                                       // only in the node; ensure that the FG is also set in the gridvector
+}                                                                                                                                                                       // only in the node; ensure that the FG is also set in the gridvector
 #else
 inline void FAMGNode::NodeMarkCG() { /*printf("node %d marked Coarse\n",GetId());*/
   control.nt = 2;
