@@ -4,15 +4,15 @@
 /*                                                                          */
 /* File:      gg3d.c                                                        */
 /*                                                                          */
-/* Purpose:   interface for the 3d grid generator netgen                            */
+/* Purpose:   interface for the 3d grid generator netgen                    */
 /*                                                                          */
 /* Author:    Christian Wieners                                             */
-/*			  Institut fuer Computeranwendungen III                         */
-/*			  Universitaet Stuttgart			                            */
-/*			  Pfaffenwaldring 27				                            */
-/*			  70569 Stuttgart, Germany			                            */
-/*			  email: ug@ica3.uni-stuttgart.de		                        */
-/*									                                        */
+/*            Institut fuer Computeranwendungen III                         */
+/*		Universitaet Stuttgart                                        */
+/*		Pfaffenwaldring 27				                            */
+/*		70569 Stuttgart, Germany			                            */
+/*		email: ug@ica3.uni-stuttgart.de		                        */
+/*                                                                          */
 /* History:   18 March 96 begin, ug version 3.2                             */
 /*                                                                          */
 /* Remarks:                                                                 */
@@ -53,6 +53,10 @@ using namespace UG2d;
 using namespace UG3d;
 #endif
 #endif
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*                                                                          */

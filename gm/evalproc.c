@@ -66,6 +66,8 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
+extern INT n_offset[TAGS];
+
 struct Coubling_CoeffProc_Name {
 
   INT nUsed;

@@ -1,10 +1,10 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  rm.c	                                                                                                                */
-/*																			*/
-/* Purpose:   rule manager for 2D and 3D refinement rules					*/
+/*                                                                          */
+/* File:      rm.c                                                          */
+/*                                                                          */
+/* Purpose:   rule manager for 2D and 3D refinement rules                   */
 /*																			*/
 /* Author:	  Stefan Lang                                                                                   */
 /*			  Institut fuer Computeranwendungen III                                                 */
@@ -102,6 +102,12 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
+
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/
@@ -109,16 +115,16 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
-INT MaxRules[TAGS] = {0,0,0,0,0,0,0,0};
-INT MaxNewCorners[TAGS] = {0,0,0,0,0,0,0,0};
-INT MaxNewEdges[TAGS] = {0,0,0,0,0,0,0,0};
-INT CenterNodeIndex[TAGS] = {0,0,0,0,0,0,0,0};
-REFRULE *RefRules[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+INT NS_PREFIX MaxRules[TAGS] = {0,0,0,0,0,0,0,0};
+INT NS_PREFIX MaxNewCorners[TAGS] = {0,0,0,0,0,0,0,0};
+INT NS_PREFIX MaxNewEdges[TAGS] = {0,0,0,0,0,0,0,0};
+INT NS_PREFIX CenterNodeIndex[TAGS] = {0,0,0,0,0,0,0,0};
+REFRULE * NS_PREFIX RefRules[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 SHORT   *Pattern2Rule[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
 #ifdef __THREEDIM__
 /* define the standard regular rules for tetrahedrons */
-FULLREFRULEPTR theFullRefRule;
+FULLREFRULEPTR NS_PREFIX theFullRefRule;
 static ElementVectorProcPtr theDirectionElemEval;
 #endif
 
@@ -3082,7 +3088,7 @@ static INT YAlignment (ELEMENT *theElement)
    D*/
 /****************************************************************************/
 
-INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
+INT NS_PREFIX MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
 {
         #ifdef __TWODIM__
   INT side;
@@ -3461,7 +3467,7 @@ INT MarkForRefinementX (ELEMENT *e, INT fl, INT tl, INT rule, void *data)
    D*/
 /****************************************************************************/
 
-INT EstimateHere (ELEMENT *theElement)
+INT NS_PREFIX EstimateHere (ELEMENT *theElement)
 {
         #ifdef ModelP
   if (EGHOST(theElement)) return(0);
@@ -3733,7 +3739,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
    D*/
 /****************************************************************************/
 
-ELEMENT *ELEMENT_TO_MARK (ELEMENT *theElement)
+ELEMENT * NS_PREFIX ELEMENT_TO_MARK (ELEMENT *theElement)
 {
   if (IS_REFINED(theElement)) return(NULL);
 
@@ -3773,7 +3779,7 @@ ELEMENT *ELEMENT_TO_MARK (ELEMENT *theElement)
    D*/
 /****************************************************************************/
 
-INT GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
+INT NS_PREFIX GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
 {
   INT *side = (INT*)data;
   INT mark;
@@ -3971,7 +3977,7 @@ static INT PrintSonData (struct sondata theSonData, PrintfProcPtr Printf)
    D*/
 /****************************************************************************/
 
-INT ShowRefRuleX (INT tag, INT nb, PrintfProcPtr Printf)
+INT NS_PREFIX ShowRefRuleX (INT tag, INT nb, PrintfProcPtr Printf)
 {
   INT i;
   REFRULE *theRule;

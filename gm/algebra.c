@@ -1,16 +1,16 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  algebra.c                                                                                                     */
-/*																			*/
-/* Purpose:   management for algebraic structures							*/
-/*																			*/
-/* Author:	  Klaus Johannsen												*/
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 294										*/
-/*			  6900 Heidelberg												*/
+/*                                                                          */
+/* File:      algebra.c                                                     */
+/*                                                                          */
+/* Purpose:   management for algebraic structures                           */
+/*                                                                          */
+/* Author:    Klaus Johannsen                                               */
+/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 294										*/
+/*            6900 Heidelberg                                               */
 /*			  email: ug@ica3.uni-stuttgart.de                                               */
 /*																			*/
 /*			  blockvector data structure:									*/
@@ -127,6 +127,10 @@ static INT ce_VCSTRONG;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*                                                                          */

@@ -2642,7 +2642,7 @@ typedef struct {
 } GENERAL_ELEMENT;
 
 /* these are the offsets into the variable length pointer array of the element */
-
+#ifndef __cplusplus
 extern INT n_offset[TAGS];
 extern INT father_offset[TAGS];
 extern INT sons_offset[TAGS];
@@ -2651,6 +2651,7 @@ extern INT evector_offset[TAGS];
 extern INT svector_offset[TAGS];
 extern INT side_offset[TAGS];
 extern INT data_offset[TAGS];
+#endif
 
 /* the element descriptions are also globally available, these are pointers ! */
 GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
