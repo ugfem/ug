@@ -404,9 +404,10 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
       np->transfer.damp[i] = 1.0;
 
   np->transfer.A = ReadArgvMatDesc(np->transfer.base.mg,"A",argc,argv);
-  np->transfer.x = np->transfer.c = np->transfer.b = NULL;
+  np->transfer.x = ReadArgvVecDesc(np->transfer.base.mg,"x",argc,argv);
+  np->transfer.b = ReadArgvVecDesc(np->transfer.base.mg,"b",argc,argv);
 
-  if (np->transfer.A!=NULL)
+  if ((np->transfer.A!=NULL)&&(np->transfer.x!=NULL)&&(np->transfer.b!=NULL))
     return(NP_EXECUTABLE);
   else
     return(NP_ACTIVE);
@@ -422,8 +423,12 @@ INT AMGTransferDisplay (NP_BASE *theNP)
   UserWrite("Symbolic user data:\n");
   if (np->transfer.A != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"A",ENVITEM_NAME(np->transfer.A));
+  if (np->transfer.b != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(np->transfer.b));
+  if (np->transfer.x != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->transfer.x));
 
-  UserWrite("Configuration parameters:\n");
+  UserWrite("\nConfiguration parameters:\n");
   UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->transfer.baselevel);
   if (sc_disp(np->transfer.damp,np->transfer.b,"damp"))
     REP_ERR_RETURN (1);
@@ -751,7 +756,7 @@ INT AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
     }
 
     npa->explicitFlag=0;
-    (*np->PreProcess)(np,&(np->baselevel),level,NULL,NULL,np->A,&result);
+    (*np->PreProcess)(np,&(np->baselevel),level,np->x,np->b,np->A,&result);
     npa->explicitFlag=1;
 
     if (result) {
