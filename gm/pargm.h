@@ -306,6 +306,7 @@ enum Priorities
 #define SETEPRIO(p,i)   ;
 #define EMASTERPRIO(p)  1
 #define EPROCLIST(p)    (&_proclist_)
+#define ENCOPIES(p)             1
 #define PARTITION(p)    _partition_
 
 /* dummies for nodes, vectors, edges */
@@ -313,6 +314,15 @@ enum Priorities
 #define GHOST(p)        0
 #define SETPRIO(p,i)    ;
 #define PROCLIST(p)     (&_proclist_)
+#define NCOPIES(p)              1
+
+/* ddd dummies */
+#define DDD_IdentifyBegin()
+#define DDD_IdentifyEnd()
+#define DDD_IdentifyNumber(o,p,n)
+
+/* ppif dummies */
+#define Broadcast(p,n)  ((int)0)
 
 #endif
 
