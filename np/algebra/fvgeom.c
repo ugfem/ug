@@ -1099,8 +1099,9 @@ INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VEC
       noflow[ip] = TRUE;
       found++;
 
-      /* set arbitrary NodalShape = 1 (no contribution anyways) */
-      NodalShape[ip][0] = 1.0;
+      /* use linear combination of from and to node */
+      NodalShape[ip][SCVF_FROM(FVG_SCVF(geo,ip))] =
+        NodalShape[ip][SCVF_TO  (FVG_SCVF(geo,ip))] = 0.5;
     }
     else
       noflow[ip] = FALSE;
@@ -1149,13 +1150,13 @@ INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VEC
             /* this is an inflow ip */
             ASSERT(IPShape[scvip[i]][scvip[j]]==0.0);
             sum += IPShape[scvip[i]][scvip[j]] = -f[j]/flux;
-            ASSERT(IPShape[scvip[i]][scvip[j]]>0);
-            ASSERT(IPShape[scvip[i]][scvip[j]]<=1);
+            ASSERT(IPShape[scvip[i]][scvip[j]]>-SMALL_C);
+            ASSERT(IPShape[scvip[i]][scvip[j]]<=1.0+SMALL_C);
           }
         ASSERT(NodalShape[scvip[i]][corn]==0.0);
         NodalShape[scvip[i]][corn] = 1.0-sum;
-        ASSERT(NodalShape[scvip[i]][corn]>=0.0);
-        ASSERT(NodalShape[scvip[i]][corn]<=1.0);
+        ASSERT(NodalShape[scvip[i]][corn]>=-SMALL_C);
+        ASSERT(NodalShape[scvip[i]][corn]<=1.0+SMALL_C);
       }
   }
   return (0);
