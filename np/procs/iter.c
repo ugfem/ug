@@ -210,6 +210,8 @@ typedef struct
   INT dc_max;
   INT extra;
   INT display;
+  INT ls;
+  INT diag;
 
   NP_ITER *u_iter;
   NP_ITER *v_iter;
@@ -354,6 +356,26 @@ typedef struct
   VEC_SCALAR damp;
 
 } NP_LMGC;
+
+typedef struct
+{
+  NP_ITER iter;
+
+  INT gamma;
+  INT nu1;
+  INT nu2;
+  INT baselevel;
+
+  NP_TRANSFER *Transfer;
+  NP_ITER *PreSmooth;
+  NP_ITER *PostSmooth;
+
+  VECDATA_DESC *t;
+  VECDATA_DESC *d;
+
+  VEC_SCALAR damp;
+
+} NP_II;
 
 typedef struct
 {
@@ -1505,6 +1527,271 @@ static INT PGSConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
+static INT II_Init (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_II *np;
+  INT i;
+  char post[VALUELEN],pre[VALUELEN],base[VALUELEN];
+
+  np = (NP_II *) theNP;
+
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  np->d = ReadArgvVecDesc(theNP->mg,"d",argc,argv);
+  np->Transfer = (NP_TRANSFER *)
+                 ReadArgvNumProc(theNP->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='S') {
+      if (sscanf(argv[i],"S %s %s %s",pre,post,base)!=3)
+        continue;
+      np->PreSmooth = (NP_ITER *)
+                      GetNumProcByName(theNP->mg,pre,ITER_CLASS_NAME);
+      np->PostSmooth = (NP_ITER *)
+                       GetNumProcByName(theNP->mg,post,ITER_CLASS_NAME);
+      break;
+    }
+
+  if (ReadArgvINT("g",&(np->gamma),argc,argv))
+    np->gamma = 1;
+  if (ReadArgvINT("n1",&(np->nu1),argc,argv))
+    np->nu1 = 1;
+  if (ReadArgvINT("n2",&(np->nu2),argc,argv))
+    np->nu2 = 1;
+  if (ReadArgvINT("b",&(np->baselevel),argc,argv))
+    np->baselevel = 0;
+
+  if (np->Transfer == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (np->PreSmooth == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (np->PostSmooth == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+
+  if (sc_read(np->damp,NP_FMT(np),NULL,"damp",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++)
+      np->damp[i] = 1.0;
+
+  return (NPIterInit(&np->iter,argc,argv));
+}
+
+static INT II_Display (NP_BASE *theNP)
+{
+  NP_II *np;
+
+  np = (NP_II *) theNP;
+
+  NPIterDisplay(&np->iter);
+
+  UserWrite("configuration parameters:\n");
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"g",(int)np->gamma);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n1",(int)np->nu1);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n2",(int)np->nu2);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
+
+  if (np->Transfer != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"T",ENVITEM_NAME(np->Transfer));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"T","---");
+  if (np->PreSmooth != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"pre",ENVITEM_NAME(np->PreSmooth));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"pre","---");
+  if (np->PostSmooth != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"post",ENVITEM_NAME(np->PostSmooth));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"post","---");
+
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->d != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"d",ENVITEM_NAME(np->d));
+
+  return (0);
+}
+
+static INT II_PreProcess (NP_ITER *theNP, INT level,
+                          VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                          INT *baselevel, INT *result)
+{
+  NP_II *np;
+  INT i;
+
+  np = (NP_II *) theNP;
+
+  if (np->Transfer->PreProcess != NULL)
+    if ((*np->Transfer->PreProcess)
+          (np->Transfer,&(np->baselevel),level,x,b,A,result))
+      REP_ERR_RETURN(1);
+
+  if (np->PreSmooth->PreProcess != NULL)
+    for (i = np->baselevel; i <= level; i++)
+      if ((*np->PreSmooth->PreProcess)
+            (np->PreSmooth,i,x,b,A,baselevel,result))
+        REP_ERR_RETURN(1);
+
+  if (np->PreSmooth != np->PostSmooth)
+    if (np->PostSmooth->PreProcess != NULL)
+      for (i = np->baselevel; i <= level; i++)
+        if ((*np->PreSmooth->PreProcess)
+              (np->PostSmooth,i,x,b,A,baselevel,result))
+          REP_ERR_RETURN(1);
+
+  *baselevel = MIN(np->baselevel,level);
+
+  return (0);
+}
+
+static MATDATA_DESC *II_uuA,*II_upA,*II_puA,*II_ppA;
+static VECDATA_DESC *II_t,*II_u,*II_p;
+static NP_ITER *II_Smooth;
+
+static II_MultiplySchurComplement (MULTIGRID *theMG, INT level,
+                                   VECDATA_DESC *c, VECDATA_DESC *d,
+                                   INT *result)
+{
+  if (dmatmul(theMG,level,level,ALL_VECTORS,II_t,II_upA,c) != NUM_OK)
+    NP_RETURN(1,result[0]);
+    #ifdef ModelP
+  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),II_t)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if (dset(theMG,level,level,ALL_VECTORS,II_u,0.0)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+  if ((*II_Smooth->Iter)(II_Smooth,level,II_u,II_t,II_uuA,result))
+    REP_ERR_RETURN(1);
+  if (dmatmul(theMG,level,level,ALL_VECTORS,d,II_puA,II_u)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,d,II_ppA,II_p)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+}
+
+static INT II_Iter (NP_ITER *theNP, INT level,
+                    VECDATA_DESC *c, VECDATA_DESC *b, MATDATA_DESC *A,
+                    INT *result)
+{
+  NP_II *np = (NP_II *) theNP;
+  MULTIGRID *theMG = NP_MG(theNP);
+  GRID *theGrid = GRID_ON_LEVEL(theMG,level);
+  LRESULT lresult;
+  INT i;
+  DOUBLE eunorm;
+
+  if (AllocVDFromVD(theMG,level,level,c,&np->t)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,c,&np->d)) NP_RETURN(1,result[0]);
+  if (dcopy(theMG,level,level,ALL_VECTORS,np->d,b) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  for (i=0; i<np->nu1; i++) {
+    if ((*np->PreSmooth->Iter)(np->PreSmooth,level,np->t,b,A,result))
+      REP_ERR_RETURN(1);
+    if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (i<np->nu1-1) {
+      if (II_MultiplySchurComplement(theMG,level,c,np->t,result))
+        NP_RETURN(1,result[0]);
+      if (dcopy(theMG,level,level,ALL_VECTORS,b,np->d) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      if (dadd(theMG,level,level,ALL_VECTORS,b,np->t) != NUM_OK)
+        NP_RETURN(1,result[0]);
+    }
+  }
+  if (level > np->baselevel)
+  {
+    if (np->nu1 > 0) {
+      if (II_MultiplySchurComplement(theMG,level,c,np->t,result))
+        NP_RETURN(1,result[0]);
+      if (dcopy(theMG,level,level,ALL_VECTORS,b,np->d) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      if (dadd(theMG,level,level,ALL_VECTORS,b,np->t) != NUM_OK)
+        NP_RETURN(1,result[0]);
+    }
+    if ((*np->Transfer->RestrictDefect)
+          (np->Transfer,level,b,b,A,Factor_One,result))
+      REP_ERR_RETURN(1);
+
+    if (dset(theMG,level-1,level-1,ALL_VECTORS,c,0.0) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    for (i=0; i<np->gamma; i++)
+      if (II_Iter(theNP,level-1,c,b,A,result))
+        REP_ERR_RETURN(1);
+    if ((*np->Transfer->InterpolateCorrection)
+          (np->Transfer,level,np->t,c,A,np->damp,result))
+      REP_ERR_RETURN(1);
+    if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (II_MultiplySchurComplement(theMG,level,c,np->t,result))
+      NP_RETURN(1,result[0]);
+    if (dcopy(theMG,level,level,ALL_VECTORS,b,np->d) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (dadd(theMG,level,level,ALL_VECTORS,b,np->t) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  for (i=0; i<np->nu2; i++) {
+    if ((*np->PostSmooth->Iter)(np->PostSmooth,level,np->t,b,A,result))
+      REP_ERR_RETURN(1);
+    if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (i<np->nu2-1) {
+      if (II_MultiplySchurComplement(theMG,level,c,np->t,result))
+        NP_RETURN(1,result[0]);
+      if (dcopy(theMG,level,level,ALL_VECTORS,b,np->d) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      if (dadd(theMG,level,level,ALL_VECTORS,b,np->t) != NUM_OK)
+        NP_RETURN(1,result[0]);
+    }
+  }
+  if (FreeVD(NP_MG(theNP),level,level,np->t)) REP_ERR_RETURN(1);
+  if (FreeVD(NP_MG(theNP),level,level,np->d)) REP_ERR_RETURN(1);
+  if (np->Transfer->AdaptCorrection != NULL)
+    if ((*np->Transfer->AdaptCorrection)(np->Transfer,level,c,b,A,result))
+      REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+static INT II_PostProcess (NP_ITER *theNP, INT level,
+                           VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                           INT *result)
+{
+  NP_II *np;
+  INT i;
+
+  np = (NP_II *) theNP;
+
+  if (np->PreSmooth->PostProcess != NULL)
+    for (i = level; i >= np->baselevel; i--)
+      if ((*np->PreSmooth->PostProcess)
+            (np->PreSmooth,i,x,b,A,result))
+        REP_ERR_RETURN(1);
+
+  if (np->PreSmooth != np->PostSmooth)
+    if (np->PostSmooth->PostProcess != NULL)
+      for (i = level; i >= np->baselevel; i--)
+        if ((*np->PreSmooth->PostProcess)
+              (np->PostSmooth,i,x,b,A,result))
+          REP_ERR_RETURN(1);
+
+  if (np->Transfer->PostProcess != NULL)
+    if ((*np->Transfer->PostProcess)
+          (np->Transfer,&(np->baselevel),level,x,b,A,result))
+      REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+static INT IIConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np;
+
+  theNP->Init = II_Init;
+  theNP->Display = II_Display;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_ITER *) theNP;
+  np->PreProcess = II_PreProcess;
+  np->Iter = II_Iter;
+  np->PostProcess = II_PostProcess;
+
+  return(0);
+}
+
 static INT TSInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_TS *np;
@@ -1586,6 +1873,8 @@ static INT TSInit (NP_BASE *theNP, INT argc , char **argv)
   if (ReadArgvINT("dc",&np->dc,argc,argv))
     np->dc = 0;
   np->extra = ReadArgvOption("extra",argc,argv);
+  np->ls = ReadArgvOption("ls",argc,argv);
+  np->diag = ReadArgvOption("diag",argc,argv);
   np->display = ReadArgvDisplay(argc,argv);
   np->dc_max = 0;
 
@@ -1656,10 +1945,15 @@ static INT TSDisplay (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"dc",(int)np->dc);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"dc_max",(int)np->dc_max);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"extra",(int)np->extra);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"ls",(int)np->ls);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"diag",(int)np->diag);
 
-  if (np->display == PCR_NO_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
-  else if (np->display == PCR_RED_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
-  else if (np->display == PCR_FULL_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+  if (np->display == PCR_NO_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (np->display == PCR_RED_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (np->display == PCR_FULL_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
 
   return (0);
 }
@@ -1754,6 +2048,72 @@ static INT ConstructSchurComplement (GRID *theGrid,
   return (0);
 }
 
+static INT ConstructDiagSchurComplement (GRID *theGrid,
+                                         MATDATA_DESC *uuA,
+                                         MATDATA_DESC *upA,
+                                         MATDATA_DESC *puA,
+                                         MATDATA_DESC *ppA,
+                                         MATDATA_DESC *S, INT extra)
+{
+  VECTOR *v;
+
+  if (dmatcopy(MYMG(theGrid),GLEVEL(theGrid),GLEVEL(theGrid),
+               ALL_VECTORS,S,ppA) != NUM_OK)
+    REP_ERR_RETURN (1);
+
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v))
+  {
+    INT vtype = VTYPE(v);
+    INT vncomp = MD_ROWS_IN_RT_CT(ppA,vtype,vtype);
+
+    if (vncomp > 0)
+    {
+      SHORT *s = MD_MCMPPTR_OF_RT_CT(ppA,vtype,vtype);
+      DOUBLE *sval = MVALUEPTR(VSTART(v),0);
+      MATRIX *m;
+
+      for (m=START(v); m!=NULL; m=NEXT(m))
+      {
+        INT wtype = MDESTTYPE(m);
+        INT wncomp = MD_COLS_IN_RT_CT(puA,vtype,wtype);
+
+        if (wncomp > 0)
+        {
+          VECTOR *w = MDEST(m);
+          SHORT *pu = MD_MCMPPTR_OF_RT_CT(puA,vtype,wtype);
+          DOUBLE *puval = MVALUEPTR(m,0);
+          SHORT *up = MD_MCMPPTR_OF_RT_CT(upA,wtype,vtype);
+          DOUBLE *upval = MVALUEPTR(MADJ(m),0);
+          DOUBLE InvMat[MAX_SINGLE_MAT_COMP];
+          INT i,j,k,l;
+
+          if (InvertSmallBlock(wncomp,
+                               MD_MCMPPTR_OF_RT_CT(uuA,wtype,wtype),
+                               MVALUEPTR(VSTART(w),0),InvMat)) {
+            for (i=0; i<wncomp*wncomp; i++) InvMat[i] = 0.0;
+            for (i=0; i<wncomp; i++) InvMat[i*wncomp+i] = 1.0;
+          }
+          for (i=0; i<vncomp; i++)
+            for (j=0; j<vncomp; j++)
+            {
+              DOUBLE sum = 0.0;
+
+              for (k=0; k<wncomp; k++)
+                for (l=0; l<wncomp; l++) {
+                  sum += puval[pu[i*wncomp+k]]
+                         * InvMat[k*wncomp+l]
+                         * upval[up[l*vncomp+j]];
+                }
+              sval[s[i*wncomp+j]] -= sum;
+            }
+        }
+      }
+    }
+  }
+
+  return (0);
+}
+
 static INT TSPreProcess  (NP_ITER *theNP, INT level,
                           VECDATA_DESC *x, VECDATA_DESC *b,
                           MATDATA_DESC *A, INT *baselevel, INT *result)
@@ -1794,10 +2154,16 @@ static INT TSPreProcess  (NP_ITER *theNP, INT level,
     NP_RETURN(1,result[0]);
   /*	if (AssembleTotalDirichletBoundary(theGrid,A,x,b))
       NP_RETURN(1,result[0]); */
-  if (ConstructSchurComplement(theGrid,np->L,np->upA,np->puA,np->ppA,
-                               np->S,np->extra))
-    NP_RETURN(1,result[0]);
-
+  if (np->diag) {
+    if (ConstructDiagSchurComplement(theGrid,np->L,np->upA,np->puA,np->ppA,
+                                     np->S,np->extra))
+      NP_RETURN(1,result[0]);
+  }
+  else {
+    if (ConstructSchurComplement(theGrid,np->L,np->upA,np->puA,np->ppA,
+                                 np->S,np->extra))
+      NP_RETURN(1,result[0]);
+  }
         #ifdef ModelP
   FreeMD(NP_MG(theNP),level,level,np->L);
         #endif
@@ -1869,6 +2235,16 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     #endif
   if (dset(theMG,level,level,ALL_VECTORS,np->ux,0.0)!= NUM_OK)
     NP_RETURN(1,result[0]);
+
+  II_uuA = np->uuA;
+  II_puA = np->puA;
+  II_upA = np->upA;
+  II_ppA = np->ppA;
+  II_t = np->t;
+  II_u = np->u;
+  II_p = np->p;
+  II_Smooth = np->v_iter;
+
   if ((*np->u_iter->Iter)(np->u_iter,level,np->ux,np->t,np->uuA,result))
     REP_ERR_RETURN(1);
   if (dmatmul_minus(theMG,level,level,ALL_VECTORS,np->s,np->puA,np->ux)
@@ -1914,6 +2290,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     if (ddot(theMG,level,level,ALL_VECTORS,np->s,np->r,&lambda))
       NP_RETURN(1,result[0]);
     rho = - lambda / rho;
+    if (np->ls) rho = 0.0;
     PRINTDEBUG(np,1,("rho %f lambda %f\n",rho,lambda));
     if (daxpy(theMG,level,level,ALL_VECTORS,np->r,rho,np->p) != NUM_OK)
       NP_RETURN(1,result[0]);
@@ -1921,6 +2298,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     ASSERT(lambda != 0.0);
     if (dcopy(theMG,level,level,ALL_VECTORS,np->p,np->r) != NUM_OK)
       NP_RETURN(1,result[0]);
+    /* Multiply Schur compelement */
     if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,np->upA,np->p)
         != NUM_OK)
       NP_RETURN(1,result[0]);
@@ -1938,10 +2316,14 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     if (dmatmul_minus(theMG,level,level,ALL_VECTORS,np->q,np->ppA,np->p)
         != NUM_OK)
       NP_RETURN(1,result[0]);
+    /* for testing ...
+       II_MultiplySchurComplement(theMG,level,np->p,np->q,result);
+     */
     if (ddot(theMG,level,level,ALL_VECTORS,np->q,np->p,&lambda))
       NP_RETURN(1,result[0]);
     ASSERT(lambda != 0);
     lambda = rho / lambda;
+    if (np->ls) lambda = 1.0;
     /* update inner defect */
     if (daxpy(theMG,level,level,ALL_VECTORS,np->s,lambda,np->q) != NUM_OK)
       NP_RETURN(1,result[0]);
@@ -4891,7 +5273,6 @@ static INT LmgcConstruct (NP_BASE *theNP)
   return(0);
 }
 
-
 /****************************************************************************/
 /*D
    addmgc - numproc for additive linear multigrid cycle
@@ -6503,6 +6884,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".pgs",sizeof(NP_PGS),PGSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ts",sizeof(NP_TS),TSConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".ii",sizeof(NP_II),IIConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".bhr",sizeof(NP_TS),BHRConstruct))
     REP_ERR_RETURN (__LINE__);
