@@ -998,7 +998,7 @@ struct multigrid {
   INT bottomLevel;                                      /* bottom level for AMG                 */
   BVP *theBVP;                                          /* pointer to BndValProblem				*/
   BVP_DESC theBVPD;                                     /* description of BVP-properties		*/
-  struct format *theFormat;                     /* pointer to format definition                 */
+  struct format *theFormat;                     /* pointer to format definitions                */
   HEAP *theHeap;                                        /* associated heap structure			*/
   INT nProperty;                                        /* max nb of properties used in elements*/
 
@@ -1308,6 +1308,21 @@ enum GM_CE {
 
   GM_N_CE
 };
+
+enum LV_MODIFIERS {
+
+  LV_SKIP                 = (1<<0),                     /* print skip flags in vector			*/
+  LV_VO_INFO              = (1<<1),                     /* vector object related info			*/
+  LV_POS                  = (1<<2)                      /* position vector						*/
+};
+
+enum LV_ID_TYPES {
+  LV_ID,
+  LV_GID,
+  LV_KEY
+};
+
+#define LV_MOD_DEFAULT          (LV_POS | LV_VO_INFO)
 
 /****************************************************************************/
 /*																			*/
@@ -2277,6 +2292,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define GRID_STATUS_OFFSET                              1
 
 #define GLEVEL(p)                                       ((p)->level)
+#define GFORMAT(p)                                      MGFORMAT(MYMG(p))
 #define SETGLOBALGSTATUS(p)             ((p)->status=~0)
 #define GSTATUS(p,n)                            ((p)->status&(n))
 #define RESETGSTATUS(p,n)                       ((p)->status&=~(n))
@@ -2388,11 +2404,11 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define NS(p)                           ((p)->nSide)
 #define NVEC(p)                         ((p)->nVector)
 #define NC(p)                           ((p)->nCon)
-#define VEC_DEF_IN_OBJ_OF_GRID(p,tp)     ((p)->mg->theFormat->OTypeUsed[(tp)]>0)
+#define VEC_DEF_IN_OBJ_OF_GRID(p,tp)     (GFORMAT(p)->OTypeUsed[(tp)]>0)
 #define NIMAT(p)                        ((p)->nIMat)
-#define NELIST_DEF_IN_GRID(p)  ((p)->mg->theFormat->nodeelementlist)
-#define EDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->elementdata)
-#define NDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->nodedata)
+#define NELIST_DEF_IN_GRID(p)  (GFORMAT(p)->nodeelementlist)
+#define EDATA_DEF_IN_GRID(p)   (GFORMAT(p)->elementdata)
+#define NDATA_DEF_IN_GRID(p)   (GFORMAT(p)->nodedata)
 
 /****************************************************************************/
 /*																			*/
@@ -2414,7 +2430,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define CURRENTLEVEL(p)                 ((p)->currentLevel)
 #define FULLREFINELEVEL(p)              ((p)->fullrefineLevel)
 #define MGFORMAT(p)                     ((p)->theFormat)
-#define DATAFORMAT(p)                   ((p)->theFormat)
+#define DATAFORMAT(p)                   MGFORMAT(p)
 #define MG_BVP(p)                               ((p)->theBVP)
 #define MG_BVPD(p)                              (&((p)->theBVPD))
 #define MGBNDSEGDESC(p,i)               (&((p)->segments[i]))
@@ -2439,10 +2455,10 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MG_USER_HEAP(p)                 ((p)->UserHeap)
 #define GEN_MGUD(p)                     ((p)->GenData)
 #define GEN_MGUD_ADR(p,o)               ((void *)(((char *)((p)->GenData))+(o)))
-#define VEC_DEF_IN_OBJ_OF_MG(p,tp)       ((p)->theFormat->OTypeUsed[(tp)]>0)
-#define NELIST_DEF_IN_MG(p)     ((p)->theFormat->nodeelementlist)
-#define EDATA_DEF_IN_MG(p)      ((p)->theFormat->elementdata)
-#define NDATA_DEF_IN_MG(p)      ((p)->theFormat->nodedata)
+#define VEC_DEF_IN_OBJ_OF_MG(p,tp)       (MGFORMAT(p)->OTypeUsed[(tp)]>0)
+#define NELIST_DEF_IN_MG(p)     (MGFORMAT(p)->nodeelementlist)
+#define EDATA_DEF_IN_MG(p)      (MGFORMAT(p)->elementdata)
+#define NDATA_DEF_IN_MG(p)      (MGFORMAT(p)->nodedata)
 #define MG_GENPURP(p)                   ((p)->genpurp)
 #define MG_SAVED(p)                             ((p)->saved)
 #define MG_FILENAME(p)                  ((p)->filename)
@@ -2637,7 +2653,8 @@ INT         MoveSideNode             (MULTIGRID *theMG, NODE *theNode, DOUBLE *l
 #endif
 INT         MoveNode                (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update);
 INT                     MoveFreeBoundaryVertex  (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos);
-INT                     FinishMovingFreeBoundaryVertices (MULTIGRID *theMG);
+INT                     SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const DOUBLE *local);
+INT                     FinishMovingFreeBoundaryVertices        (MULTIGRID *theMG);
 INT             SmoothMultiGrid                 (MULTIGRID *theMG, INT niter, INT bdryFlag);
 INT         SmoothGrid              (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis, const INT bnd_num, const INT *bnd, const INT option);
 INT         SmoothGridReset         (MULTIGRID *theMG, INT fl, INT tl);
@@ -2698,10 +2715,10 @@ void            ListNodeRange                   (MULTIGRID *theMG, INT from, INT
 void            ListElement                     (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListElementSelection    (MULTIGRID *theMG,                                              INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListElementRange                (MULTIGRID *theMG, INT from, INT to,    INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt);
-void            ListVector                              (MULTIGRID *theMG, VECTOR *theVector,   INT matrixopt, INT dataopt);
-void            ListVectorSelection     (MULTIGRID *theMG,                                              INT matrixopt, INT dataopt);
-void            ListVectorOfElementSelection(MULTIGRID *theMG,                                  INT matrixopt, INT dataopt);
-void            ListVectorRange                 (MULTIGRID *theMG,                      INT fl, INT tl, INT fromV, INT toV, INT idopt, INT matrixopt, INT dataopt);
+void            ListVector                              (MULTIGRID *theMG, VECTOR *theVector,   INT matrixopt, INT dataopt, INT modifiers);
+void            ListVectorSelection     (MULTIGRID *theMG,                                              INT matrixopt, INT dataopt, INT modifiers);
+void            ListVectorOfElementSelection(MULTIGRID *theMG,                                  INT matrixopt, INT dataopt, INT modifiers);
+void            ListVectorRange                 (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers);
 
 /* query */
 LINK            *GetLink                                (NODE *from, NODE *to);
@@ -2779,7 +2796,7 @@ EVECTOR         *GetFirstElementVectorEvalProc                          (void);
 EVECTOR         *GetNextElementVectorEvalProc                           (EVECTOR *EvecProc);
 
 /* miscellaneous */
-INT             RenumberMultiGrid                                       (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non);
+INT             RenumberMultiGrid                                       (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non, INT MarkKey);
 INT                     OrderNodesInGrid                                        (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
 INT             PutAtEndOfList                                          (GRID *theGrid, INT cnt, ELEMENT **elemList);
 INT         MGSetVectorClasses                              (MULTIGRID *theMG);
