@@ -13,7 +13,7 @@ OBJECTS = xugv.o m2ps.o
 
 all : $(OBJECTS) Makefile.tools
 	$(UG_LINK) xugv.o -o $(UGROOT)/bin/xugv $(UG_LFLAGS) 
-	$(UG_LINK) xugv.o -o $(UGROOT)/bin/m2ps $(UG_LFLAGS) 
+	$(UG_LINK) m2ps.o -o $(UGROOT)/bin/m2ps $(UG_LFLAGS) 
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
