@@ -71,12 +71,15 @@
 
 #define BUFFERSIZE                              512     /* size of the general purpose text buff*/
 
-#define HEADER_FMT "# grid on level 0 for %s\n# saved %s\n# %s\n# %s\n"
-#define BN_FMT     "bn %d"
-#define IN_FMT     "in "
-#define IE_FMT     "ie "
-#define EOL_FMT    ";\n"
-#define EOF_FMT    "# end of file\n"
+#define HEADER_FMT               "# grid on level 0 for %s\n# saved %s\n# %s\n# %s\n"
+#define BN_HEADER_FMT    "\n# boundary nodes\n"
+#define BN_FMT               "bn %d"
+#define IN_HEADER_FMT    "\n# inner nodes\n"
+#define IN_FMT               "in "
+#define IE_HEADER_FMT    "\n# elements\n"
+#define IE_FMT               "ie "
+#define EOL_FMT              ";\n"
+#define EOF_FMT              "# end of file\n"
 
 /****************************************************************************/
 /*																			*/
@@ -195,7 +198,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   BVP_DESC theBVPDesc;
   PATCH_DESC thePatchDesc;
   PATCH *thePatch;
-  INT i,k,id,found;
+  INT i,k,id;
 
   if (gridpaths_set)
     /* this way grids are stored to path[0] */
@@ -227,6 +230,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   theGrid = GRID_ON_LEVEL(theMG,0);
 
   /* find all boundary nodes witch are no corner nodes */
+  fprintf(stream,BN_HEADER_FMT);
   id = theMG->numOfCorners;
   for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
@@ -266,6 +270,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
     }
   }
   /* find all inner nodes */
+  fprintf(stream,IN_HEADER_FMT);
   for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     theVertex = MYVERTEX(theNode);
@@ -278,6 +283,9 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
       fprintf(stream," %f",global[i]);
     fprintf(stream,EOL_FMT);
   }
+
+  /* elements */
+  fprintf(stream,IE_HEADER_FMT);
   for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL;
        theElement=SUCCE(theElement))
   {
@@ -350,13 +358,13 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
 /****************************************************************************/
 
 static COORD LocalCoord[2][4][2]=
-{ {{0,0},{1,0},{0,1},{0,0}},
+{ {{ 0, 0},{1, 0},{0,1},{ 0,0}},
   {{-1,-1},{1,-1},{1,1},{-1,1}} };
+
 INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, char *tag)
 {
   ELEMENT *theElement;
   VERTEX *theVertex;
-  NODE *theNode;
   GRID *theGrid;
   long nv,ne,id;
   int i,j,k,n;
