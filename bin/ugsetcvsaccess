@@ -13,13 +13,13 @@ then
 fi
 
 DEFAULT=stefan,klaus,birken,henrik,peter,wieners
-ERRORFILE=$UGROOT/bin/cvsacces
+ERRORFILE=$UGROOT/bin/cvsaccess
 
 cd $UGROOT/..
-rm $ERRORFILE;
+rm -f $ERRORFILE;
 
-# clear all access lists
-echo "cvs admin -e * ..."; 
+# clear access lists 
+echo "cvs admin -e * ...";
 cvs admin -e * 2>> $ERRORFILE;
 
 # set default access lists 
@@ -29,21 +29,23 @@ cvs admin -a$DEFAULT * 2>> $ERRORFILE;
 # set special access lists
 echo "setting special access lists ...";
 cd $UGROOT/../cd;
-cvs admin -Agabi * 2>> $ERRORFILE;
+cvs admin -agabi * 2>> $ERRORFILE;
 
 cd $UGROOT/gm;
-cvs admin -Aniko,christian,gabi * 2>> $ERRORFILE;
+cvs admin -aniko,christian,gabi * 2>> $ERRORFILE;
 
 cd $UGROOT/numerics;
-cvs admin -Achristian,gabi * 2>> $ERRORFILE;
+cvs admin -achristian,gabi * 2>> $ERRORFILE;
 
 cd $UGROOT/numerics;
-cvs admin -Aniko * 2>> $ERRORFILE;
+cvs admin -aniko * 2>> $ERRORFILE;
 
 cd $UGROOT/bin;
+cvs admin -e * 2>> $ERRORFILE;
 cvs admin -abirken,wieners,stefan * 2>> $ERRORFILE;
 
 cd $UGROOT/parallel
+cvs admin -e * 2>> $ERRORFILE;
 cvs admin -abirken,stefan * 2>> $ERRORFILE;
 
 if test `grep failed $ERRORFILE | wc -l` -ge 1
@@ -56,7 +58,7 @@ then
 	echo "not all access lists could be set properly";
 	echo "Check for errors in file: $ERRORFILE!";
 else
-	rm $ERRORFILE;
+	rm -f $ERRORFILE;
 	echo "$0 succeded, all access lists are set properly!";
 fi
 
