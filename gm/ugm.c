@@ -4019,10 +4019,9 @@ INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT segid, COORD *newPos)
 #ifdef __TWODIM__
 INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 {
-  int l,i,n;
-  double ratio;
+  INT l,i,n,sides;
+  DOUBLE ratio;
   DOUBLE N;
-  /* COORD beta,gamma; */
   COORD lambda,lambda0,lambda1,lambda2,lambdaa,lambdae;
   GRID *theGrid;
   NODE *node,*node2;
@@ -4170,6 +4169,10 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
               x[0]+=XC(vptr);
               x[1]+=YC(vptr);
               N+=1;
+
+              UserWriteF(" link %f %f\n",XC(vptr),YC(vptr));
+
+
             }
             else
             {
@@ -4179,7 +4182,12 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
             }
           }
 
+          UserWriteF("old %f %f new %f %f\n",
+                     XC(vptr0),YC(vptr0),(x[0]/N),(x[1]/N));
+
           XC(vptr0)=x[0]/N; YC(vptr0)=x[1]/N;
+
+          return(GM_OK);
 
           /* if there is a father element, change local variables */
           if (l!=0)
@@ -4195,18 +4203,19 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
       }
 
       /* at last, the boundary element sides of this level must be updated! */
+      if (bdryFlag==0) continue;                        /* boundary is not allowed to move */
       for (eptr=theGrid->elements; eptr!=NULL; eptr=SUCCE(eptr))
         if (OBJT(eptr)==BEOBJ)
         {
-          n=SIDES_OF_ELEM(eptr);
-          for (i=0; i<n; i++)
+          sides=SIDES_OF_ELEM(eptr);
+          for (i=0; i<sides; i++)
             if ((eside=SIDE(eptr,i))!=NULL)
             {
               /* for higher dimensions (3d) the following must be generalized */
               vptr=MYVERTEX(CORNER(eptr,i));
               if (MOVE(vptr)!=0)
                 PARAM(eside,0,0)=LAMBDA(VSEG(vptr),0);
-              vptr=MYVERTEX(CORNER(eptr,(i+1)%n));
+              vptr=MYVERTEX(CORNER(eptr,(i+1)%sides));
               if (MOVE(vptr)!=0)
                 PARAM(eside,1,0)=LAMBDA(VSEG(vptr),0);
             }
@@ -5329,7 +5338,6 @@ ELEMENT *FindElementFromId (GRID *theGrid, INT id)
   return(NULL);
 }
 
-
 /****************************************************************************/
 /*D
    PointInElement - Determine whether point is contained in element
@@ -5380,51 +5388,31 @@ INT PointInElement (const COORD *x, const ELEMENT *theElement) /* 2D version */
 #endif
 
 #ifdef __THREEDIM__
-INT PointInElement (const COORD *x, const ELEMENT *theElement) /* 3D version */
+static INT PointInElement (COORD *global, ELEMENT *theElement)
 {
-  COORD *point[MAX_CORNERS_OF_ELEM];
-  COORD delta[MAX_CORNERS_OF_ELEM-1][DIM];
-  COORD n[DIM];
-  COORD a, b, norm;
-  int i,j,k,rv;
+  COORD *x[MAX_CORNERS_OF_ELEM];
+  COORD_VECTOR a,b,rot;
+  COORD det;
+  INT n,i;
 
-  /* check element */
-  if (theElement==NULL) return(0);
+  CORNER_COORDINATES(theElement,n,x);
 
-  /* load geometrical data of the corners */
-  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-    point[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-
-  rv = 1;
-
-  /* check for each side represented by a corner */
-  for(i=0; i<CORNERS_OF_ELEM(theElement); i++)
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
-    /* use this corner as reference point */
-    for(j=0; j<CORNERS_OF_ELEM(theElement)-1; j++)
-      for(k=0; k<DIM; k++)
-        delta[j][k] = point[(i+j)%CORNERS_OF_ELEM(theElement)][k] - point[i][k];
-
-    /* calculate a vector n[.] normal to that side */
-    V3_VECTOR_PRODUCT(delta[0],delta[1], n);
-    V3_EUKLIDNORM(n,norm);
-    if(norm < SMALL_C) return(0);
-
-    /* check if last point of tetrahedron is on the same side as x */
-    V3_SCALAR_PRODUCT(n,x,a);
-    V3_SCALAR_PRODUCT(n,delta[2],b);
-    if (a*b < -SMALL_C*b*b) return(5);
-    if (a*b <  SMALL_C*b*b) rv++;
+    V3_SUBTRACT(x[CORNERS_OF_SIDE(theElement,i,1)],
+                x[CORNERS_OF_SIDE(theElement,i,0)],a);
+    V3_SUBTRACT(x[CORNERS_OF_SIDE(theElement,i,2)],
+                x[CORNERS_OF_SIDE(theElement,i,0)],b);
+    V3_VECTOR_PRODUCT(a,b,rot);
+    V3_SUBTRACT(global,x[CORNERS_OF_SIDE(theElement,i,0)],b);
+    V3_SCALAR_PRODUCT(rot,b,det);
+    if (det < 0.0)
+      return(0);
   }
 
-  /* x seems to lie on four sides: impossible error */
-  if (rv == 5) rv = 0;
-
-  /* return result */
-  return(rv);
+  return(1);
 }
 #endif
-
 
 /****************************************************************************/
 /*D
@@ -5447,16 +5435,30 @@ INT PointInElement (const COORD *x, const ELEMENT *theElement) /* 3D version */
    D*/
 /****************************************************************************/
 
-
 ELEMENT *FindElementFromPosition (GRID *theGrid, COORD *pos)
 {
   ELEMENT *theElement;
 
-  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-    if (PointInElement(pos,theElement)==1) return(theElement);
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+       theElement=SUCCE(theElement))
+    if (PointInElement(pos,theElement) == 1)
+      return(theElement);
+
   return(NULL);
 }
 
+ELEMENT *FindElementOnSurface (MULTIGRID *theMG, COORD *global)
+{
+  ELEMENT *t;
+  INT k;
+
+  for (k=0; k<=TOPLEVEL(theMG); k++)
+    for (t=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); t!=NULL; t=SUCCE(t))
+      if (EstimateHere(t))
+        if (PointInElement(global,t)) return(t);
+
+  return(NULL);
+}
 
 /****************************************************************************/
 /*D
@@ -7527,8 +7529,8 @@ INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
   *amin = MAX_D; *amax = -MAX_D;
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
-    *amax = MAX(*amax,angle[i]);
-    *amin = MIN(*amin,angle[i]);
+    *amax = MAX(*amax,angle[i]) * 360.0;
+    *amin = MIN(*amin,angle[i]) * 360.0;
   }
 
   return(GM_OK);
