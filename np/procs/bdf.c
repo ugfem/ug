@@ -96,10 +96,10 @@ typedef struct
   INT nested;                                                            /* use nested iteration                        */
   INT nlinterpolate;                                             /* nonlinear interpolation			*/
   INT optnlsteps;                                            /* optimal number of nonlin. steps */
-  INT rep;                               /* for repeat solver after grid changed */
+  INT rep;                               /* for repeat solver after grid chg*/
   INT Break;                                                     /* break after error estimator         */
   INT Continue;                                              /* continue after error estimator  */
-  INT refarg;                                                /* refine copy all                 */
+  INT refarg;                                                    /* refine copy all                 */
   DOUBLE tstart;                                                 /* start time                          */
   DOUBLE dtstart;                                                /* time step to begin with			*/
   DOUBLE dtmin;                                                  /* smallest time step allowed		*/
@@ -331,9 +331,12 @@ static INT TimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
     UserWrite("solution y is not defined\n");
     return(__LINE__);
   }
-  if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->y_p1))) return(__LINE__);
-  if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->y_m1))) return(__LINE__);
-  if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->b))) return(__LINE__);
+  if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->y_p1)))
+    NP_RETURN(1,res[0]);
+  if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->y_m1)))
+    NP_RETURN(1,res[0]);
+  if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->b)))
+    NP_RETURN(1,res[0]);
 
   return(0);
 }
@@ -1126,18 +1129,6 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
   level = CURRENTLEVEL(theNP->mg);
 
   /* check functions */
-  if (np->y == NULL) {
-    PrintErrorMessage('E',"BDFExecute","no vector y");
-    return (1);
-  }
-  if (np->tass == NULL) {
-    PrintErrorMessage('E',"BDFExecute","no assemble num proc");
-    return (1);
-  }
-  if (np->nlsolve == NULL) {
-    PrintErrorMessage('E',"BDFExecute","no solver num proc");
-    return (1);
-  }
   bdf->Break = ReadArgvOption("Break",argc,argv);
   bdf->Continue = ReadArgvOption("Continue",argc,argv);
 
@@ -1396,13 +1387,13 @@ INT InitBDFSolver (void)
 {
   INT error=0;
 
-  if (MakeStruct(":BDF")!=0)
-  {
+  if (MakeStruct(":BDF")!=0) {
     SetHiWrd(error,__LINE__);
     return (1);
   }
 
-  if (CreateClass (T_SOLVER_CLASS_NAME ".bdf",sizeof(NP_BDF), BDFConstruct)) return (__LINE__);
+  if (CreateClass (T_SOLVER_CLASS_NAME ".bdf",sizeof(NP_BDF), BDFConstruct))
+    return (__LINE__);
 
   return (0);
 }

@@ -334,6 +334,24 @@ typedef struct
 
 typedef struct
 {
+  NP_ITER iter;
+
+  NP_ITER *Iter;
+  NP_TRANSFER *Transfer;
+
+  VECDATA_DESC *s;
+  VECDATA_DESC *t;
+  VECDATA_DESC *u;
+
+  INT display;
+  INT n;
+
+  DOUBLE damp[2*MAXLEVEL];
+
+} NP_CALIBRATE;
+
+typedef struct
+{
   NP_SMOOTHER smoother;
 
   INT mem;                                                      /* memory used temporary (bytes)*/
@@ -4038,7 +4056,7 @@ static INT FFConstruct (NP_BASE *theNP)
    lmgc - numproc for linear multigrid cycle
 
    DESCRIPTION:
-   This numproc executes
+   This numproc executes a linear multigrid cycle.
 
    .vb
    npinit <name> [$c <cor>] [$r <rhs>] [$A <mat>]
@@ -4212,7 +4230,8 @@ static INT Lmgc (NP_ITER *theNP, INT level,
 
     if ((*np->BaseSolver->Solver)(np->BaseSolver,level,c,b,A,
                                   np->BaseSolver->abslimit,
-                                  np->BaseSolver->reduction,&lresult)) NP_RETURN(1,result[0]);
+                                  np->BaseSolver->reduction,&lresult))
+      NP_RETURN(1,result[0]);
     IFDEBUG(np,4)
     dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
     UserWriteF("defect after base solver : %f\n",eunorm);
@@ -4238,19 +4257,23 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   for (i=0; i<np->nu1; i++) {
     if ((*np->PreSmooth->Iter)(np->PreSmooth,level,np->t,b,A,result))
       REP_ERR_RETURN(1);
-    if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK) NP_RETURN(1,result[0]);
+    if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
+      NP_RETURN(1,result[0]);
   }
 
-  IFDEBUG(np,4)
+  IFDEBUG(np,1)
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("after presmoothing : %f\n",eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
+  UserWriteF("correction of presmoothing : %f\n",eunorm);
   ENDDEBUG
 
   if ((*np->Transfer->RestrictDefect)
         (np->Transfer,level,b,b,A,Factor_One,result))
     REP_ERR_RETURN(1);
 
-  if (dset(theMG,level-1,level-1,ALL_VECTORS,c,0.0) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dset(theMG,level-1,level-1,ALL_VECTORS,c,0.0) != NUM_OK)
+    NP_RETURN(1,result[0]);
   for (i=0; i<np->gamma; i++)
     if (Lmgc(theNP,level-1,c,b,A,result))
       REP_ERR_RETURN(1);
@@ -4261,8 +4284,10 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
   UserWriteF("norm of interpolated correction : %f\n",eunorm);
   ENDDEBUG
-  if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK) NP_RETURN(1,result[0]);
-  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,b,A,np->t) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,b,A,np->t) != NUM_OK)
+    NP_RETURN(1,result[0]);
   IFDEBUG(np,4)
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("defect after CG correction : %f\n",eunorm);
@@ -4335,12 +4360,13 @@ static INT LmgcConstruct (NP_BASE *theNP)
   return(0);
 }
 
+
 /****************************************************************************/
 /*D
    addmgc - numproc for additive linear multigrid cycle
 
    DESCRIPTION:
-   This numproc executes
+   This numproc executes an additive multigrid cycle.
 
    .vb
    npinit <name> [$c <cor>] [$r <rhs>] [$A <mat>]
@@ -4554,7 +4580,7 @@ static INT AddmgcConstruct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
-   exact - numproc for exact solver
+   ex - numproc for exact solver
 
    DESCRIPTION:
    This numproc executes a symmetric Gauss-Seidel smoother,
@@ -4880,20 +4906,32 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   if (np->fmode == 1)
   {
     np->FMat = (FLOAT*)GetMem(theHeap,np->nv*(2*bw+1)*sizeof(FLOAT),FROM_BOTTOM);
-    if (np->FMat==NULL) REP_ERR_RETURN(1);
+    if (np->FMat==NULL) {
+      UserWriteF("EX: cannot allocate %d bytes\n",
+                 np->nv*(2*bw+1)*sizeof(FLOAT));
+      REP_ERR_RETURN(1);
+    }
     memset((void*)np->FMat,0,np->nv*(2*bw+1)*sizeof(FLOAT));
     np->mem = np->nv*(2*bw+1)*sizeof(FLOAT);
-    if (EXCopyMatrixFLOAT (theGrid,x,A,np->bw,np->FMat)) REP_ERR_RETURN(1);
-    if (EXDecomposeMatrixFLOAT (np->FMat,np->bw,np->nv)) REP_ERR_RETURN(1);
+    if (EXCopyMatrixFLOAT (theGrid,x,A,np->bw,np->FMat))
+      REP_ERR_RETURN(1);
+    if (EXDecomposeMatrixFLOAT (np->FMat,np->bw,np->nv))
+      REP_ERR_RETURN(1);
   }
   else
   {
     np->DMat = (DOUBLE*)GetMem(theHeap,np->nv*(2*bw+1)*sizeof(DOUBLE),FROM_BOTTOM);
-    if (np->DMat==NULL) REP_ERR_RETURN(1);
+    if (np->DMat==NULL) {
+      UserWriteF("EX: cannot allocate %d bytes\n",
+                 np->nv*(2*bw+1)*sizeof(DOUBLE));
+      REP_ERR_RETURN(1);
+    }
     memset((void*)np->DMat,0,np->nv*(2*bw+1)*sizeof(DOUBLE));
     np->mem = np->nv*(2*bw+1)*sizeof(DOUBLE);
-    if (EXCopyMatrixDOUBLE (theGrid,x,A,np->bw,np->DMat)) REP_ERR_RETURN(1);
-    if (EXDecomposeMatrixDOUBLE (np->DMat,np->bw,np->nv)) REP_ERR_RETURN(1);
+    if (EXCopyMatrixDOUBLE (theGrid,x,A,np->bw,np->DMat))
+      REP_ERR_RETURN(1);
+    if (EXDecomposeMatrixDOUBLE (np->DMat,np->bw,np->nv))
+      REP_ERR_RETURN(1);
   }
 
   return (0);
@@ -5015,6 +5053,231 @@ static INT EXConstruct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   calibrate - numproc for additive linear multigrid cycle
+
+   DESCRIPTION:
+   This numproc calibrates the damping factors of an iteration.
+
+   .vb
+   npinit <name> [$c <cor>] [$r <rhs>] [$A <mat>]
+       $I <iter> [$s <tmp1>] [$t <tmp2>]
+   .ve
+
+   .  $c~<cor> - correction vector
+   .  $r~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $s~<tmp1> - tempory vector
+   .  $t~<tmp2> - tempory vector
+   .  $I~<iter> - iteration numproc
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - solve
+   .  $p - postprocess
+
+   SEE ALSO:
+   ls
+   D*/
+/****************************************************************************/
+
+static INT CalibrateInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_CALIBRATE *np = (NP_CALIBRATE *) theNP;
+  INT i;
+  char pre[VALUELEN];
+
+  np->s = ReadArgvVecDesc(theNP->mg,"s",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  np->Iter = (NP_ITER *)
+             ReadArgvNumProc(theNP->mg,"I",ITER_CLASS_NAME,argc,argv);
+  if (np->Iter == NULL)
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->Transfer = (NP_TRANSFER *)
+                 ReadArgvNumProc(theNP->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
+  if (ReadArgvINT("n",&(np->n),argc,argv))
+    np->n = 1;
+
+  for (i=0; i<2*MAXLEVEL; i++) np->damp[i] = SMALL_D;
+  np->display = ReadArgvDisplay(argc,argv);
+
+  return (NPIterInit(&np->iter,argc,argv));
+}
+
+static INT CalibrateDisplay (NP_BASE *theNP)
+{
+  NP_CALIBRATE *np = (NP_CALIBRATE *) theNP;
+  INT i;
+
+  NPIterDisplay(&np->iter);
+
+  UserWrite("configuration parameters:\n");
+  if (np->Iter != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"I",ENVITEM_NAME(np->Iter));
+  if (np->Transfer != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"T",ENVITEM_NAME(np->Transfer));
+  if (np->s != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(np->s));
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->u != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->u));
+
+  for (i=0; i<2*MAXLEVEL; i++)
+    if (np->damp[i] != SMALL_D)
+      UserWriteF("ev[%3d]         = %-7.4g\n",i-MAXLEVEL,np->damp[i]);
+
+  if (np->display == PCR_NO_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (np->display == PCR_RED_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (np->display == PCR_FULL_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n",np->n);
+
+  return (0);
+}
+
+static INT CalibratePreProcess  (NP_ITER *theNP, INT level,
+                                 VECDATA_DESC *x, VECDATA_DESC *b,
+                                 MATDATA_DESC *A,
+                                 INT *baselevel, INT *result)
+{
+  NP_CALIBRATE      *np = (NP_CALIBRATE *) theNP;
+  MULTIGRID      *theMG = NP_MG(theNP);
+  DOUBLE a0,a1;
+  INT i;
+
+  if (level == BOTTOMLEVEL(theMG)) return(0);
+
+  if (np->Iter->PreProcess != NULL)
+    if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result))
+      REP_ERR_RETURN(1);
+
+  if (AllocVDFromVD(theMG,level-1,level,x,&np->s))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,x,&np->t))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,x,&np->u))
+    NP_RETURN(1,result[0]);
+  np->damp[level+MAXLEVEL] = 0.0;
+  for (i=0; i<np->n; i++) {
+    if (np->Transfer != NULL) {          /* choose a high frequent vector */
+      l_dsetrandom(GRID_ON_LEVEL(theMG,level),np->t,EVERY_CLASS,1.0);
+      /* here we assume that the transfer proprocess is done before */
+      if (dmatmul(theMG,level,level,ALL_VECTORS,np->s,A,np->t)
+          != NUM_OK)
+        NP_RETURN(1,result[0]);
+      ClearDirichletValues(GRID_ON_LEVEL(theMG,level),np->s);
+      if ((*np->Transfer->ProjectSolution)
+            (np->Transfer,level-1,level,np->s,result))
+        REP_ERR_RETURN(1);
+      if ((*np->Transfer->InterpolateCorrection)
+            (np->Transfer,level,np->t,np->s,A,Factor_One,result))
+        REP_ERR_RETURN(1);
+      if (dsub(theMG,level,level,ALL_VECTORS,np->s,np->t) != NUM_OK)
+        NP_RETURN(1,result[0]);
+    }
+    else {                                    /* choose a low frequent vector */
+      if (dset(theMG,level,level,ALL_VECTORS,np->s,1.0) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      ClearDirichletValues(GRID_ON_LEVEL(theMG,level),np->s);
+    }
+    if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,A,np->s) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if ((*np->Iter->Iter)(np->Iter,level,np->u,np->t,A,result))
+      REP_ERR_RETURN(1);
+    if (ddot(theMG,level,level,ALL_VECTORS,np->s,np->s,&a0) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (ddot(theMG,level,level,ALL_VECTORS,np->u,np->s,&a1) != NUM_OK)
+      NP_RETURN(1,result[0]);
+
+    IFDEBUG(np,1)
+    UserWriteF("test vector x\n");
+    PrintVector(GRID_ON_LEVEL(theMG,level),np->s,3,3);
+    UserWriteF("y = Iter(Ax)\n");
+    PrintVector(GRID_ON_LEVEL(theMG,level),np->u,3,3);
+    ENDDEBUG
+
+    if (a1 == 0.0)
+      a0 = a1 = 1.0;
+    else
+      a0 /= a1;
+    np->damp[level+MAXLEVEL] += a0;
+    if (np->display == PCR_FULL_DISPLAY)
+      UserWriteF(" test %d: damping factor for %s on level %d = %f\n",
+                 i,ENVITEM_NAME(np->Iter),level,a0);
+  }
+  if (np->n > 0)
+    np->damp[level+MAXLEVEL] *= 1.0/np->n;
+  else
+    np->damp[level+MAXLEVEL] = 1.0;
+  if (np->display > PCR_NO_DISPLAY)
+    UserWriteF("calibrated damping factor for %s on level %d = %f\n",
+               ENVITEM_NAME(np->Iter),level,np->damp[level+MAXLEVEL]);
+  FreeVD(theMG,level-1,level,np->s);
+  FreeVD(theMG,level,level,np->t);
+  FreeVD(theMG,level,level,np->u);
+
+  return (0);
+}
+
+static INT Calibrate (NP_ITER *theNP, INT level,
+                      VECDATA_DESC *c, VECDATA_DESC *b, MATDATA_DESC *A,
+                      INT *result)
+{
+  NP_CALIBRATE      *np = (NP_CALIBRATE *) theNP;
+  MULTIGRID      *theMG = NP_MG(theNP);
+
+  if ((*np->Iter->Iter)(np->Iter,level,c,b,A,result))
+    REP_ERR_RETURN(1);
+  if (np->display > PCR_RED_DISPLAY)
+    UserWriteF("calibrated damping factor for %s on level %d = %f\n",
+               ENVITEM_NAME(np->Iter),level,np->damp[level+MAXLEVEL]);
+  if (ABS(np->damp[level+MAXLEVEL]-1.0) < SMALL_D)
+    return(0);
+  if (dscal(theMG,level,level,ALL_VECTORS,c,(np->damp[level+MAXLEVEL]-1.0))
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,b,A,c) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (dscal(theMG,level,level,ALL_VECTORS,c,
+            np->damp[level+MAXLEVEL]/(np->damp[level+MAXLEVEL]-1.0))
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT CalibratePostProcess (NP_ITER *theNP, INT level,
+                                 VECDATA_DESC *x, VECDATA_DESC *b,
+                                 MATDATA_DESC *A, INT *result)
+{
+  NP_CALIBRATE *np = (NP_CALIBRATE *) theNP;
+
+  if (np->Iter->PostProcess != NULL)
+    if ((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result))
+      REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+static INT CalibrateConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np = (NP_ITER *) theNP;
+
+  theNP->Init = CalibrateInit;
+  theNP->Display = CalibrateDisplay;
+  theNP->Execute = NPIterExecute;
+  np->PreProcess = CalibratePreProcess;
+  np->Iter = Calibrate;
+  np->PostProcess = CalibratePostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitIter	- Init this file
 
@@ -5075,6 +5338,9 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".addmgc",sizeof(NP_LMGC),AddmgcConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ex",sizeof(NP_EX),EXConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".calibrate",sizeof(NP_CALIBRATE),
+                  CalibrateConstruct))
     REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
