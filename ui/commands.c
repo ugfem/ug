@@ -3592,7 +3592,7 @@ static INT VMListCommand (INT argc, char **argv)
   INT i,fl,tl,fromV,toV,res,mode,dataopt,matrixopt,vclass,vnclass;
   VECDATA_DESC *theVD;
   MATDATA_DESC *theMD;
-
+  char value[VALUELEN];
   /* following variables: keep type for sscanf */
   long f,t;
 
@@ -3617,23 +3617,22 @@ static INT VMListCommand (INT argc, char **argv)
   if (ReadArgvINT("vnclass",&vnclass,argc,argv))
     vnclass = 3;
 
-  theVD = ReadArgvVecDesc(theMG,"vmlist",argc,argv);
-  if (theVD != NULL) {
-                #ifdef __INTERPOLATION_MATRIX__
-    if (ReadArgvOption("I",argc,argv))
-      PrintIMatrix(theGrid,theVD,vclass,vnclass);
-    else
+  if (ReadArgvChar("vmlist",value,argc,argv) == 0) {
+    theVD = GetVecDataDescByName(theMG,value);
+    if (theVD != NULL) {
+            #ifdef __INTERPOLATION_MATRIX__
+      if (ReadArgvOption("I",argc,argv))
+        PrintIMatrix(theGrid,theVD,vclass,vnclass);
+      else
+            #endif
       PrintVector(theGrid,theVD,vclass,vnclass);
-                #else
-    PrintVector(theGrid,theVD,vclass,vnclass);
-        #endif
-    return(OKCODE);
-  }
-
-  theMD = ReadArgvMatDesc(theMG,"vmlist",argc,argv);
-  if (theMD != NULL) {
-    PrintMatrix(theGrid,theMD,vclass,vnclass);
-    return(OKCODE);
+      return(OKCODE);
+    }
+    theMD = GetMatDataDescByName(theMG,value);
+    if (theMD != NULL) {
+      PrintMatrix(theGrid,theMD,vclass,vnclass);
+      return(OKCODE);
+    }
   }
 
   /* check options */
