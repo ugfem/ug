@@ -1474,7 +1474,8 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
   GRID *CoarseGrid;
   MATRIX *m,*im,*jm,*cm;
   VECTOR *v,*w,*iv,*jv;
-  DOUBLE sum,*mptr,*cmptr,*imptr,*jmptr,mvalue,imvalue;
+  register DOUBLE sum,*mptr,*cmptr,*imptr,*jmptr,mvalue,imvalue;
+  register DOUBLE *imptr0,*imptr1,*jmptr0,*jmptr1;
   INT vtype,ivtype,mtype,cmtype,vncomp,wncomp,ivncomp,jvncomp,rmask,cmask;
   register SHORT i,j,k,l,mc,*mcomp,*cmcomp;
 
@@ -1557,7 +1558,7 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
           if (VNCLASS(iv)>1)
             for (jm=VISTART(w); jm!= NULL; jm = NEXT(jm)) {
               jv = MDEST(jm);
-              cm = GetMatrix(iv,jv);
+              GET_MATRIX(iv,jv,cm);
               if (cm == NULL)
                 cm = CreateExtraConnection(CoarseGrid,iv,jv);
               if (cm !=NULL) {
@@ -1567,17 +1568,26 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
                 jmptr = MVALUEPTR(jm,0);
                 ivncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
                 jvncomp = MD_COLS_IN_MTYPE(Mat,cmtype);
-                for (i=0; i<ivncomp; i++)
+                imptr1 = imptr;
+                for (i=0; i<ivncomp; i++) {
+                  jmptr1 = jmptr;
                   for (j=0; j<jvncomp; j++) {
                     sum = 0.0;
-                    for (k=0; k<vncomp; k++)
+                    imptr0 = imptr1;
+                    for (k=0; k<vncomp; k++) {
+                      jmptr0 = jmptr1;
                       for (l=0; l<wncomp; l++) {
-                        sum += imptr[i*vncomp+k]
+                        sum += *imptr0
                                * mptr[mcomp[k*wncomp+l]]
-                               * jmptr[j*wncomp+l];
+                               * *jmptr0++;
                       }
+                      imptr0++;
+                    }
                     cmptr[cmcomp[i*jvncomp+j]] += sum;
+                    jmptr1 += wncomp;
                   }
+                  imptr1 += vncomp;
+                }
               }
               else {                                           /* connection not in pattern */
                 cm = GetMatrix(jv,jv);
