@@ -1913,8 +1913,8 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
         NODE *nd;
 
         nd = CORNER(SonList[i],j);
-        if (bsearch(&nd,SideNodes,
-                    nodes,sizeof(NODE *),compare_node)) {
+        if (bsearch(&nd,SideNodes, nodes,sizeof(NODE *),
+                    compare_node)) {
           corner[n] = j;
           n++;
         }
@@ -1955,6 +1955,12 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
         edge0 = edge1 = -1;
         edge0 = EDGE_WITH_CORNERS(SonList[i],corner[0],corner[1]);
         edge1 = EDGE_WITH_CORNERS(SonList[i],corner[1],corner[2]);
+        /* corners are not stored in local side numbering,      */
+        /* therefore corner[x]-corner[y] might be the diagonal  */
+        if (n==4 && edge0==-1)
+          edge0 = EDGE_WITH_CORNERS(SonList[i],corner[0],corner[3]);
+        if (n==4 && edge1==-1)
+          edge1 = EDGE_WITH_CORNERS(SonList[i],corner[1],corner[3]);
         assert(edge0!=-1 && edge1!=-1);
 
         sonside = -1;
@@ -2181,6 +2187,7 @@ static INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT 
         return(GM_FATAL);
     }
 
+    /* internal boundaries not connected */
     return(GM_OK);
   }
 
@@ -2189,6 +2196,15 @@ static INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT 
 
   if (theNeighbor==NULL) return(GM_OK);
 
+  /* master elements only connect to master elements     */
+  /* ghost elements connect to ghost and master elements */
+        #ifdef ModelP
+  if (DDD_InfoPriority(PARHDRE(theElement)) == PrioMaster &&
+      DDD_InfoPriority(PARHDRE(theNeighbor)) == PrioGhost)
+
+    return(GM_OK);
+        #endif
+
   /* only yellow elements may have no neighbors */
   if (MARKCLASS(theNeighbor)==NO_CLASS) {
 
@@ -2196,6 +2212,7 @@ static INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT 
 
     return(GM_OK);
   }
+
 
   if ((REF_TYPE_CHANGES(theNeighbor)||
        (DIM==3 && NEWGREEN(theNeighbor) && MARKCLASS(theNeighbor)==GREEN_CLASS &&
@@ -2210,10 +2227,7 @@ static INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT 
 
   /* get sons of neighbor to connect */
   Get_Sons_of_ElementSide(theNeighbor,nbside,&Sons_of_NbSide,Sons_of_NbSide_List,NbSonSides,1);
-  /* TODO: find proper assertions for ModelP */
-        #ifndef ModelP
-  assert(Sons_of_Side == Sons_of_NbSide && Sons_of_Side>0 && Sons_of_Side<6);
-        #endif
+  assert(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0 && Sons_of_NbSide<6);
 
   /* fill sort and comparison tables */
   Fill_Comp_Table(ElemSortTable,ElemSonTable,Sons_of_Side,Sons_of_Side_List,SonSides);
@@ -4076,57 +4090,59 @@ static INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
         SETUSED(EFATHER(theElement),1);
         if (USED(theElement) == 1) {
           REFINE_ELEMENT_LIST(1,theElement,"drop mark");
-          assert(EFATHER(theElement)!=NULL);
-          SETUSED(EFATHER(theElement),1);
-          SETUSED(theElement,0);
+
+          ASSERT(EFATHER(theElement)!=NULL);
         }
+        /* this father has to be connected */
+        SETUSED(EFATHER(theElement),1);
+        SETUSED(theElement,0);
       }
+    }
 
 
-      /* connect sons of elements with used flag set */
-      /* drop used marks to fathers */
-      for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
-        PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
-                         theGrid = GRID_ON_LEVEL(theMG,l);
-                         && SIDE_ON_BND(theElement,i)
-                         for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
-                           INT prio;
-                           prio = EPRIO(theNeighbor);
-                           if (USED(theElement) == 0 ||
-                               (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioMaster)
-                             continue;
+    /* connect sons of elements with used flag set */
+    for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
+      PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
+                       theGrid = GRID_ON_LEVEL(theMG,l);
+                       && SIDE_ON_BND(theElement,i)
+                       for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+                         INT prio;
+                         prio = EPRIO(theNeighbor);
+                         if (USED(theElement) == 0 ||
+                             (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioMaster)
+                           continue;
 
-                           PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
-                                            me,DDD_InfoGlobalId(PARHDRE(theElement)),
-                                            theElement,ID(theElement),
-                                            LEVEL(theElement)));
+                         PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
+                                          me,DDD_InfoGlobalId(PARHDRE(theElement)),
+                                          theElement,ID(theElement),
+                                          LEVEL(theElement)));
+                         IFDEBUG(gm,1)
+                         for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
+                           INT j,Sons_of_Side,prio;
+                           ELEMENT *Sons_of_Side_List[MAX_SONS];
+                           INT SonSides[MAX_SIDE_NODES];
+                           for (j=0; j<Sons_of_Side; j++)
+                             if ((OBJT(theElement)==BEOBJ && SIDE_ON_BND(theElement,i)) ||
+                                 NBELEM(theElement,i) == NULL ||
+                                 (prio = DDD_InfoPriority(PARHDRE(NBELEM(theElement,i)))) == PrioGhost)
+                               continue;
+
+                           if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
+                                                       Sons_of_Side_List,SonSides,1)!=GM_OK) RETURN(GM_FATAL);
+
                            IFDEBUG(gm,1)
-                           for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
-                             INT j,Sons_of_Side,prio;
-                             ELEMENT *Sons_of_Side_List[MAX_SONS];
-                             INT SonSides[MAX_SIDE_NODES];
-                             for (j=0; j<Sons_of_Side; j++)
-                               if ((OBJT(theElement)==BEOBJ && SIDE_ON_BND(theElement,i)) ||
-                                   NBELEM(theElement,i) == NULL ||
-                                   (prio = DDD_InfoPriority(PARHDRE(NBELEM(theElement,i)))) == PrioGhost)
-                                 continue;
+                           INT j;
+                           printf("%d:          side=%d NSONS=%d Sons_of_Side=%d:\n",me,i,NSONS(theElement),Sons_of_Side);
+                           for (j=0; j<Sons_of_Side; j++)
+                             UserWriteF("%d:            son=%08x/%x sonside=%d\n",me,
+                                        DDD_InfoGlobalId(PARHDRE(Sons_of_Side_List[j])),Sons_of_Side_List[j],SonSides[j]);
+                           printf("%d:         connecting ghostelements:\n",me);
+                           ENDDEBUG
 
-                             if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
-                                                         Sons_of_Side_List,SonSides,1)!=GM_OK) RETURN(GM_FATAL);
-
-                             IFDEBUG(gm,1)
-                             INT j;
-                             printf("%d:                side=%d NSONS=%d Sons_of_Side=%d:\n",me,i,NSONS(theElement),Sons_of_Side);
-                             for (j=0; j<Sons_of_Side; j++)
-                               UserWriteF("%d:            son=%08x/%x sonside=%d\n",me,
-                                          DDD_InfoGlobalId(PARHDRE(Sons_of_Side_List[j])),Sons_of_Side_List[j],SonSides[j]);
-                             printf("%d:         connecting ghostelements:\n",me);
-                             ENDDEBUG
-
-                             if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side,
-                                                             Sons_of_Side_List,SonSides)!=GM_OK) RETURN(GM_FATAL);
-                           }
+                           if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side,
+                                                           Sons_of_Side_List,SonSides)!=GM_OK) RETURN(GM_FATAL);
                          }
+                       }
 #endif
 
 #ifdef ModelP
@@ -4338,10 +4354,12 @@ DisposeTopLevel(theMG);
   /* identify multiply created objects */
   IdentifyGridLevels(theMG,FromLevel,ToLevel);
 
-  /* create one-element-overlapping for multigrid */
-  CreateGridOverlap(theMG,FromLevel);
-  ConnectNewOverlap(theMG,FromLevel);
-  dddif_SetBorderPriorities(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)));
+  if (0) {
+    /* create one-element-overlapping for multigrid */
+    CreateGridOverlap(theMG,FromLevel);
+    ConnectNewOverlap(theMG,FromLevel);
+    dddif_SetBorderPriorities(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)));
+  }
 }
         #endif
 
