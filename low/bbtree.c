@@ -184,7 +184,7 @@ static void ClosestBBoxesToPoint(BBT_NODE *node, DOUBLE *x, BBT_FUNC func,
 /*---------------------------------------------------------------------------*
 * BBoxForBBoxes - creates a new bbox containing all n given bboxes          *
 *---------------------------------------------------------------------------*/
-BBT_BBOX *BBoxForBBoxes(BBT_BBOX **bboxes, INT n)
+static BBT_BBOX *BBoxForBBoxes(BBT_BBOX **bboxes, INT n)
 {
   BBT_BBOX *bbox;
   INT i, j;
@@ -204,7 +204,7 @@ BBT_BBOX *BBoxForBBoxes(BBT_BBOX **bboxes, INT n)
 /*---------------------------------------------------------------------------*
 * NewNode - creates a new bouding box tree node                             *
 *---------------------------------------------------------------------------*/
-BBT_NODE *NewNode(BBT_BBOX *bbox)
+static BBT_NODE *NewNode(BBT_BBOX *bbox)
 {
   BBT_NODE *newNode;
 
@@ -218,7 +218,7 @@ BBT_NODE *NewNode(BBT_BBOX *bbox)
 /*---------------------------------------------------------------------------*
 * BuildTree - builds a new bounding box tree                                *
 *---------------------------------------------------------------------------*/
-BBT_NODE *BuildTree(BBT_BBOX **bboxes, INT n)
+static BBT_NODE *BuildTree(BBT_BBOX **bboxes, INT n)
 {
   BBT_NODE *node;
   BBT_BBOX *bbox, **lbboxes, **rbboxes, **new_bboxes;
@@ -336,7 +336,7 @@ static void TreePointDistanceCallback(void *obj, void *bypass)
    .  pointer to new bounding box tree
    D*/
 /*---------------------------------------------------------------------------*/
-BBT_TREE *BBT_NewTree(HEAP *theHeap, BBT_BBOX **bboxes, INT n, INT dim)
+BBT_TREE NS_PREFIX *BBT_NewTree(HEAP *theHeap, BBT_BBOX **bboxes, INT n, INT dim)
 {
   BBT_TREE *newTree;
 
@@ -372,7 +372,7 @@ BBT_TREE *BBT_NewTree(HEAP *theHeap, BBT_BBOX **bboxes, INT n, INT dim)
    .  pointer to new empty bounding box
    D*/
 /*---------------------------------------------------------------------------*/
-BBT_BBOX *BBT_NewBBox(HEAP *theHeap, INT dim, DOUBLE *ll, DOUBLE *ur, void *obj)
+BBT_BBOX* NS_PREFIX BBT_NewBBox(HEAP *theHeap, INT dim, DOUBLE *ll, DOUBLE *ur, void *obj)
 {
   BBT_BBOX *newBB;
   INT i;
@@ -413,8 +413,8 @@ BBT_BBOX *BBT_NewBBox(HEAP *theHeap, INT dim, DOUBLE *ll, DOUBLE *ur, void *obj)
    .  none
    D*/
 /*---------------------------------------------------------------------------*/
-void BBT_ClosestBBoxesToPoint(BBT_TREE *tree, DOUBLE *x, BBT_FUNC func,
-                              void *bypass)
+void NS_PREFIX BBT_ClosestBBoxesToPoint(BBT_TREE *tree, DOUBLE *x, BBT_FUNC func,
+                                        void *bypass)
 {
   DOUBLE minmax;
 
@@ -452,8 +452,8 @@ void BBT_ClosestBBoxesToPoint(BBT_TREE *tree, DOUBLE *x, BBT_FUNC func,
    .  distance to closest object
    D*/
 /*---------------------------------------------------------------------------*/
-DOUBLE BBT_TreePointDistance(BBT_TREE *tree, DOUBLE *x, void **obj,
-                             BBT_POINT_DIST_FUNC dist)
+DOUBLE NS_PREFIX BBT_TreePointDistance(BBT_TREE *tree, DOUBLE *x, void **obj,
+                                       BBT_POINT_DIST_FUNC dist)
 {
   TREE_POINT_DIST_DATA bypass;
   DOUBLE minmax;
