@@ -4791,8 +4791,8 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
       printf("%s\n", "Not enough memory");
       return(NULL);
     }
-    if (DiscretizeLine(Heap,lineptr[i],h, pointlist, norp, MarkKey))
-      return(NULL);
+    /*if (DiscretizeLine(Heap,lineptr[i],h, pointlist, norp, MarkKey))
+            return(NULL); */
     if (DiscretizeLineNew(Heap,lineptr[i],h, pointlist, norp, MarkKey))
       return(NULL);
     if(LGM_DEBUG)
