@@ -223,13 +223,28 @@ static void ExecGetNextUGEvent (int sockfd)
 
 static void ug_frontend (int sockfd)
 {
-  int n, cmd;
+  int n, cmd=-1;
   INT len;
   WINDOWID win;
 
 
   for (;;)
   {
+                #ifdef DebugSockets
+    {
+      int info;
+      n = read(sockfd, (char *)&info, sizeof(int));
+
+      if (info!=MAGIC_COOKIE)
+      {
+        fprintf(stderr, "ugd: invalid cookie for cmd=#%d in debugmode!\n",
+                cmd);
+        fflush(stdout);
+      }
+    }
+                #endif
+
+
     n = read(sockfd, (char *)&cmd, sizeof(int));
     if (n==0)
     {
@@ -241,8 +256,10 @@ static void ug_frontend (int sockfd)
       fprintf(stderr, "ugd: ERROR in readline.\n");
       exit(1);
     }
+
     /*
        printf("cmd %s/%d\n", cmd_text[cmd], cmd);
+       fflush(stdout);
      */
 
     switch (cmd)
@@ -496,7 +513,7 @@ INT main (int argc, char **argv)
   int sockfd, newsockfd, clilen, childpid;
   struct sockaddr_in cli_addr, serv_addr;
   int port;
-
+  int nodelay_flag, optlen=sizeof(nodelay_flag);
 
 
   /* open internet TCP stream socket */
@@ -505,6 +522,8 @@ INT main (int argc, char **argv)
     fprintf(stderr, "ugd: can't open TCP socket.\n");
     exit(1);
   }
+  getsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (char *)&nodelay_flag,&optlen);
+  printf("TCP_NODELAY=%d\n");
 
 
   /* optional first argument is local port number */
@@ -559,6 +578,8 @@ INT main (int argc, char **argv)
                        (struct sockaddr *) &cli_addr,
                        &clilen);
 
+
+
     if (newsockfd<0)
     {
       fprintf(stderr, "ugd: error during accept.\n");
@@ -586,7 +607,9 @@ INT main (int argc, char **argv)
     else
     {
       /* this is the server (ugd) process */
-      printf("ugd: starting ug-frontend with pid=%d\n", childpid);
+      printf("ugd: starting ug-frontend with pid=%d for client %s\n",
+             childpid,
+             InternetAddr((struct in_addr *) &cli_addr.sin_addr));
     }
 
     close(newsockfd);

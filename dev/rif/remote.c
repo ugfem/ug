@@ -60,13 +60,18 @@
 #define MAXBUFSIZE 1024
 
 
-
+#ifdef DebugSockets
+#define BUFSTART        ptr=buf; BUFINT(MAGIC_COOKIE);
+#else
 #define BUFSTART    ptr=buf
+#endif
+
 #define BUFINT(i)   *(INT *)ptr=(INT)(i); ptr+=sizeof(INT)
 #define BUFLONG(i)   *(long *)ptr=(long)(i); ptr+=sizeof(long)
 #define BUFPOINT(p) BUFINT((p).x); BUFINT((p).y)
 #define BUFTEXT(t)  { int l=strlen(t); BUFINT(l); memcpy(ptr,(t),l); ptr+=l; }
 #define BUFEND          SocketWrite(theSocket, buf, ptr-buf);
+
 
 
 /****************************************************************************/
@@ -204,7 +209,9 @@ static void IFCenteredText (SHORT_POINT point, const char *s, INT mode)
 
 static void IFClearViewPort (void)
 {
-  SocketWriteCmd(theSocket, DC_ClearViewPort);
+  BUFSTART;
+  BUFINT(DC_ClearViewPort);
+  BUFEND;
 }
 
 
@@ -278,7 +285,9 @@ static void IFGetPaletteEntry (long index, short *r, short *g, short *b)
 
 static void IFFlush (void)
 {
-  SocketWriteCmd(theSocket, DC_Flush);
+  BUFSTART;
+  BUFINT(DC_Flush);
+  BUFEND;
 }
 
 
@@ -304,7 +313,9 @@ void InitRemotePort (OUTPUTDEVICE *thePort)
 {
   int l;
 
-  SocketWriteCmd(theSocket, DC_InitRemotePort);
+  BUFSTART;
+  BUFINT(DC_InitRemotePort);
+  BUFEND;
 
   /* init thePort with data from remote port */
   /*
@@ -578,7 +589,9 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
 {
   INT len;
 
-  SocketWriteCmd(theSocket, DC_GetNextUGEvent);
+  BUFSTART;
+  BUFINT(DC_GetNextUGEvent);
+  BUFEND;
   /*
           SocketWriteData(theSocket, theEvent, sizeof(EVENT));
    */
@@ -626,6 +639,7 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
   int port;
   unsigned long inaddr;
   struct hostent *hp;
+  int nodelay_flag, optlen=sizeof(nodelay_flag);
 
 
   /* connect procedure */
@@ -698,7 +712,9 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
   serv_addr.sin_port        = htons(port);
 
   fprintf(stdout,"%s: connecting to %s, port %d ...\n",
-          prog_name, hoststr, port);
+          prog_name,
+          InternetAddr((struct in_addr *)&serv_addr.sin_addr),
+          port);
 
 
   /* now remove first argument from command line */
@@ -716,6 +732,9 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
     fprintf(stderr,"%s: cannot open internet socket\n",prog_name);
     exit(-1);
   }
+  getsockopt(theSocket, IPPROTO_TCP, TCP_NODELAY, (char *)&nodelay_flag,&optlen);
+  printf("TCP_NODELAY=%d\n");
+
 
   /* connect to server */
   if (connect(theSocket, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0)
@@ -729,8 +748,10 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 
   /* now the socket connection is ready. */
 
-  SocketWriteCmd(theSocket, DC_InitScreen);
-  SocketWriteINT(theSocket, (INT)*argcp);
+  BUFSTART;
+  BUFINT(DC_InitScreen);
+  BUFINT((INT)*argcp);
+  BUFEND;
   for(i=0; i<*argcp; i++)
     SocketWriteData(theSocket, argv[i], strlen(argv[i]));
 
@@ -784,8 +805,10 @@ void WriteString (const char *s)
   /* printf("%s",s); */
         #else
 
-  SocketWriteCmd(theSocket, DC_WriteString);
-  SocketWriteData(theSocket, s, strlen(s));
+  BUFSTART;
+  BUFINT(DC_WriteString);
+  BUFTEXT(s);
+  BUFEND;
 
   return;
         #endif
@@ -796,7 +819,9 @@ void WriteString (const char *s)
 
 void MousePosition (INT *point)
 {
-  SocketWriteCmd(theSocket, DC_MousePosition);
+  BUFSTART;
+  BUFINT(DC_MousePosition);
+  BUFEND;
   SocketReadINTN(theSocket, point, 2);
 }
 
@@ -805,7 +830,9 @@ void MousePosition (INT *point)
 
 INT MouseStillDown (void)
 {
-  SocketWriteCmd(theSocket, DC_MouseStillDown);
+  BUFSTART;
+  BUFINT(DC_MouseStillDown);
+  BUFEND;
   return(SocketReadINT(theSocket));
 }
 

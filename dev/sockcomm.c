@@ -259,7 +259,27 @@ long SocketReadLong (int sockfd)
   INT n;
 
   n = SocketRead(sockfd, (char *)&v, sizeof(long));
+  if (n!=sizeof(long))
+  {
+    fprintf(stderr, "ug: SocketReadLong with invalid size %d\n", n);
+  }
+
   return(v);
+}
+
+
+/****************************************************************************/
+
+/*
+        helpful routines concerning networking and nameservers
+ */
+
+char *InternetAddr (struct in_addr *inaddr)
+{
+  struct hostent *he;
+
+  he = gethostbyaddr((char *)inaddr, sizeof(struct in_addr), AF_INET);
+  return(he->h_name);
 }
 
 

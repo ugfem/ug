@@ -23,6 +23,9 @@
 #define __KB_SOCK_H__
 
 
+#define DebugSockets
+
+
 /****************************************************************************/
 /*                                                                          */
 /* auto include mechanism and other include files                           */
@@ -33,6 +36,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
@@ -57,6 +61,10 @@
 #define SERV_TCP_PORT_MIN      6000
 #define SERV_TCP_PORT_MAX      6999
 
+
+#ifdef DebugSockets
+#define MAGIC_COOKIE   0x16091968
+#endif
 
 
 /****************************************************************************/
@@ -119,6 +127,8 @@ void SocketWriteData (int, const char *, int);
 INT SocketReadINT (int);
 void SocketReadINTN (int, INT *, int);
 long SocketReadLong (int);
+
+char *InternetAddr (struct in_addr *);
 
 
 /****************************************************************************/
