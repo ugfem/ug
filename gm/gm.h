@@ -142,6 +142,7 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 /* selection mode */
 #define nodeSelection                   1                       /* objects selected are nodes			*/
 #define elementSelection                2                       /* objects selected are elements		*/
+#define vectorSelection                 3                       /* objects selected are vectors			*/
 
 /* possible values for rule in MarkForRefinement */
 #define NO_REFINEMENT           0
@@ -689,6 +690,12 @@ union geom_object {                                             /* objects that 
   union element el;
 } ;
 
+union selection_object {                                        /* objects than can be selected			*/
+  struct node nd;
+  union element el;
+  struct vector ve;
+} ;
+
 struct grid {
 
   /* variables */
@@ -750,7 +757,7 @@ struct multigrid {
   /* selection */
   INT NbOfSelections;                           /* number of selected objects			*/
   INT SelectionMode;                                    /* selectionmode (see above)			*/
-  union geom_object *Selection[MAXSELECTION];       /* pointer to selec. objects*/
+  union selection_object *Selection[MAXSELECTION];       /* pointer to selec obj*/
 
   /* user data */
   void *GenData;                                        /* general user data space				*/
@@ -781,6 +788,7 @@ typedef struct bndsegdesc BNDSEGDESC;
 typedef struct link LINK;
 typedef struct edge EDGE;
 typedef union  geom_object GEOM_OBJECT;
+typedef union  selection_object SELECTION_OBJECT;
 typedef struct grid GRID;
 typedef struct multigrid MULTIGRID;
 
@@ -790,7 +798,7 @@ typedef struct multigrid MULTIGRID;
 /*																			*/
 /****************************************************************************/
 
-typedef INT (*DependencyProcPtr)(GRID *, char *);
+typedef INT (*DependencyProcPtr)(GRID *, const char *);
 
 struct AlgebraicDependency {
 
@@ -801,6 +809,23 @@ struct AlgebraicDependency {
 } ;
 
 typedef struct AlgebraicDependency ALG_DEP;
+
+/****************************************************************************/
+/*																			*/
+/* find cut for vector ordering				                                                                */
+/*																			*/
+/****************************************************************************/
+
+typedef VECTOR *(*FindCutProcPtr)(GRID *, VECTOR *, INT *);
+
+typedef struct {
+
+  /* fields for enironment list variable */
+  ENVVAR v;
+
+  FindCutProcPtr FindCutProc;           /* pointer to find cut function				*/
+
+} FIND_CUT;
 
 /****************************************************************************/
 /*																			*/
@@ -1090,7 +1115,7 @@ extern CONTROL_ENTRY
 
 #define CMATRIX0(m)                             (m)
 #define CMATRIX1(m)                             ((MDIAG(m)) ? (NULL) : (MINC(m)))
-#define SETCUSED(c,n)                           SETMUSED(CMATRIX0(c),n); SETMUSED(MADJ(CMATRIX0(c)),n)
+#define SETCUSED(c,n)                           {SETMUSED(CMATRIX0(c),n); SETMUSED(MADJ(CMATRIX0(c)),n);}
 
 /****************************************************************************/
 /*																			*/
@@ -1204,14 +1229,18 @@ extern CONTROL_ENTRY
 #define MGOBJ 8                                                 /* multigrid object                             */
 #define VSOBJ 9                                                 /* vertex segment object			*/
 
-#ifdef __version3__
-/* object numbers for algebra */
-#define VEOBJ 12                                                /* vector object					*/
-#define MAOBJ 13                                                /* matrix object					*/
-#define BLOCKVOBJ 14                                            /* blockvector object				*/
+#ifdef __version23__
+
+#define NPREDEFOBJ 10                                   /* no of predefined objects             */
 #endif
 
-#define NPREDEFOBJ 15                                   /* no of predefined objects             */
+#ifdef __version3__
+/* object numbers for algebra */
+#define VEOBJ 10                                                /* vector object					*/
+#define MAOBJ 11                                                /* matrix object					*/
+#define BLOCKVOBJ 12                                            /* blockvector object                           */
+#define NPREDEFOBJ 13                                   /* no of predefined objects             */
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -1768,6 +1797,8 @@ extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel	*/
 #define GM_CURRENT_LEVEL                        2
 #define GM_ORDER_IN_COLS                        0
 #define GM_ORDER_IN_ROWS                        1
+#define GM_PUT_AT_BEGIN                         1               /* put skip vectors at begin of the list	*/
+#define GM_PUT_AT_END                           2               /* put skip vectors at end of the list		*/
 
 /* get/set current multigrid, loop through multigrids */
 MULTIGRID               *MakeMGItem                             (const char *name);
@@ -1878,6 +1909,7 @@ INT             DisposeAuxEdges                 (GRID *theGrid);
 /* searching */
 NODE            *FindNodeFromId                 (GRID *theGrid, INT id);
 NODE            *FindNodeFromPosition   (GRID *theGrid, COORD *pos, COORD *tol);
+VECTOR          *FindVectorFromPosition (GRID *theGrid, COORD *pos, COORD *tol);
 ELEMENT         *FindElementFromId              (GRID *theGrid, INT id);
 ELEMENT         *FindElementFromPosition(GRID *theGrid, COORD *pos);
 BLOCKVECTOR *FindBV                                     (const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf );
@@ -1894,6 +1926,7 @@ void            ListElementSelection    (MULTIGRID *theMG,                      
 void            ListElementRange                (MULTIGRID *theMG, INT from, INT to,    INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt);
 void            ListVector                              (MULTIGRID *theMG, VECTOR *theVector,   INT matrixopt, INT dataopt);
 void            ListVectorSelection     (MULTIGRID *theMG,                                              INT matrixopt, INT dataopt);
+void            ListVectorOfElementSelection(MULTIGRID *theMG,                                  INT matrixopt, INT dataopt);
 void            ListVectorRange                 (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to,    INT matrixopt, INT dataopt);
 
 /* query */
@@ -1914,8 +1947,11 @@ INT             AddNodeToSelection              (MULTIGRID *theMG, NODE *theNode
 INT             IsNodeSelected                  (MULTIGRID *theMG, NODE *theNode);
 INT             AddElementToSelection   (MULTIGRID *theMG, ELEMENT *theElement);
 INT             IsElementSelected               (MULTIGRID *theMG, ELEMENT *theElement);
+INT             AddVectorToSelection    (MULTIGRID *theMG, VECTOR *theVector);
+INT             IsVectorSelected                (MULTIGRID *theMG, VECTOR *theVector);
 INT             RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode);
 INT             RemoveElementFromSelection(MULTIGRID *theMG, ELEMENT *theElement);
+INT             RemoveVectorFromSelection(MULTIGRID *theMG, VECTOR *theVector);
 
 /* multigrid user data space management (using the heaps.c block heap management) */
 INT             AllocateControlEntry    (INT cw_id, INT length, INT *ce_id);
@@ -1926,7 +1962,9 @@ BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id);
 
 /* ordering of degrees of freedom */
 ALG_DEP         *CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc);
-INT             OrderVectors (MULTIGRID *theMG, INT levels, INT mode, char *dependency, char *dep_options);
+FIND_CUT        *CreateFindCutProc              (char *name, FindCutProcPtr FindCutProc);
+INT                     LexOrderVectorsInGrid   (GRID *theGrid, const INT *order, const INT *sign, INT SpecSkipVecs, INT AlsoOrderMatrices);
+INT             OrderVectors                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
 
 /* miscellaneous */
 INT             RenumberMultiGrid               (MULTIGRID *theMG);
