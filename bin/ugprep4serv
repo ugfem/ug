@@ -28,7 +28,8 @@ ugtex refmanualI.tex
 ugtex refmanualII.tex
 ugtex applmanual.tex
 ugtex progmanual.tex
-ugtex refmanual.tex
+ugtex refmanualI.tex
+ugtex refmanualII.tex
 ugtex applmanual.tex
 dvips progmanual.dvi -o progmanual.ps
 dvips refmanualI.dvi -o refmanualI.ps
