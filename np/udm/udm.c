@@ -336,13 +336,18 @@ static INT SetCompactTypesOfVec (VECDATA_DESC *vd)
   /* fill bitwise fields */
   fmt = MGFORMAT(VD_MG(vd));
   VD_DATA_TYPES(vd) = VD_OBJ_USED(vd) = 0;
+  VD_MAXTYPE(vd) = 0;
   for (tp=0; tp<NVECTYPES; tp++)
     if (VD_ISDEF_IN_TYPE(vd,tp))
     {
-      VD_MAXTYPE(vd) = tp + 1;
+      VD_MAXTYPE(vd) = tp;
       VD_DATA_TYPES(vd) |= BITWISE_TYPE(tp);
       VD_OBJ_USED(vd)   |= FMT_T2O(fmt,tp);
     }
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vd,tp))
+      break;
+  VD_MINTYPE(vd) = tp;
 
   return (0);
 }

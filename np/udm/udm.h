@@ -74,6 +74,7 @@
 #define VD_OFFSETPTR(vd)                    ((vd)->offset)
 #define VD_OFFSET(vd,tp)                    (VD_OFFSETPTR(vd)[tp])
 #define VD_NCOMP(vd)                        (VD_OFFSETPTR(vd)[NVECTYPES])
+#define VD_MINTYPE(vd)                      ((vd)->mintype)
 #define VD_MAXTYPE(vd)                      ((vd)->maxtype)
 
 /* MATDATA_DESC */
@@ -176,6 +177,7 @@ typedef struct {
 
   INT datatypes;                                   /* compact form of vtypes (bitwise)		*/
   INT objused;                                     /* compact form of otypes (bitwise)		*/
+  INT mintype;                                     /* minimal used type                         */
   INT maxtype;                                     /* maximal used type                         */
 
   SHORT Components[1];                 /* memory for component mapping	        */
