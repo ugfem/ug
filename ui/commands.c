@@ -5648,17 +5648,18 @@ static INT OrderVectorsCommand (INT argc, char **argv)
   }
 
   if (dep==NULL)
-    UserWrite("WARNING: no depency option specified\n");
+  {
+    UserWrite("WARNING: no depency specified\n");
+    if (dep_opt!=NULL)
+    {
+      UserWrite("WARNING: ignore specified options for dependency\n");
+      dep_opt=NULL;
+    }
+  }
 
   if (dep!=NULL && dep_opt==NULL)
   {
-    PrintErrorMessage('E',"orderv","the o option is mandatory");
-    return (PARAMERRORCODE);
-  }
-
-  if (dep_opt==NULL)
-  {
-    PrintErrorMessage('E',"orderv","the o option is mandatory");
+    PrintErrorMessage('E',"orderv","the o option is mandatory if dopt specified");
     return (PARAMERRORCODE);
   }
 
