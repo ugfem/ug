@@ -106,7 +106,7 @@ static void DisposeIFHead (IF_PROC *ifh)
 
 
 
-static IF_ATTR *NewIFAttr ()
+static IF_ATTR *NewIFAttr (void)
 {
   IF_ATTR *ifr;
 
@@ -340,11 +340,15 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
   IF_ATTR    *ifAttr, *lastIfAttr;
   int n, i;
   DDD_PROC lastproc;
+  int STAT_MOD;
 
+  STAT_GET_MODULE(STAT_MOD);
+  STAT_SET_MODULE(DDD_MODULE_IF);
 
   /* first delete possible old interface */
   IFDeleteAll(ifId);
 
+  STAT_RESET1;
   if (ifId==STD_INTERFACE)
   {
     theIF[ifId].cpl = IFCollectStdCouplings();
@@ -418,15 +422,19 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
       theIF[ifId].cpl = NULL;
     }
   }
+  STAT_TIMER1(T_CREATE_COLLECT);
 
 
 
   /* sort IF couplings */
+  STAT_RESET1;
   if (n>1)
     qsort(theIF[ifId].cpl, n, sizeof(COUPLING *), sort_IFCouplings);
+  STAT_TIMER1(T_CREATE_SORT);
 
 
   /* create IF_PROCs */
+  STAT_RESET1;
   lastproc = PROC_INVALID;
   lastIfHead  = NULL;
   theIF[ifId].nIfHeads = 0;
@@ -534,6 +542,7 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
       }
     }
   }
+  STAT_TIMER1(T_CREATE_BUILD);
 
   /* remember anchor of ifHead list */
   if (theIF[ifId].nIfHeads>0) {
@@ -545,13 +554,19 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
 
 
   /* establish obj-table as an addressing shortcut */
+  STAT_RESET1;
   IFCreateObjShortcut(ifId);
+  STAT_TIMER1(T_CREATE_SHORTCUT);
 
 
+  STAT_RESET1;
   update_channels(ifId);
+  STAT_TIMER1(T_CREATE_COMM);
 
   /* TODO das handling der VCs muss noch erheblich verbessert werden */
   /* TODO durch das is_elem suchen ist alles noch VERY inefficient */
+
+  STAT_SET_MODULE(STAT_MOD);
 }
 
 
@@ -673,7 +688,7 @@ return(nIFs-1);
 
 
 
-void StdIFDefine()
+void StdIFDefine (void)
 {
   /* exception: no OBJSTRUCT or priority entries */
   theIF[STD_INTERFACE].nObjStruct = 0;
@@ -907,9 +922,7 @@ void DDD_Interface::DisplayAll (void)
 
 
 
-
-
-void IFAllFromScratch (void)
+static void IFRebuildAll (void)
 {
   /*
      DDD_ConsCheck();
@@ -946,6 +959,36 @@ void IFAllFromScratch (void)
     /* free temporary array */
     FreeTmp(tmpcpl);
   }
+}
+
+
+void IFAllFromScratch (void)
+{
+  if (DDD_GetOption(OPT_IF_CREATE_EXPLICIT)==OPT_ON)
+  {
+    /* interfaces must be created explicitly by calling
+       DDD_IFRefreshAll(). This is for doing timings from
+       application level. */
+    return;
+  }
+
+  IFRebuildAll();
+}
+
+
+
+void DDD_IFRefreshAll (void)
+{
+  if (DDD_GetOption(OPT_IF_CREATE_EXPLICIT)==OPT_OFF)
+  {
+    /* if interfaces are not created explicit, then they
+       are always kept consistent automatically. therefore,
+       this function is senseless. */
+    /* return;  nevertheless, dont return, create interfaces
+                once more. just to be sure. */
+  }
+
+  IFRebuildAll();
 }
 
 

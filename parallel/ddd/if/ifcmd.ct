@@ -227,11 +227,13 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 #else /* ! IF_EXECLOCAL */
 
+	/*
 	STAT_ZEROTIMER;
 	STAT_RESET1;
 	STAT_SETCOUNT(20,0);
 	STAT_SETCOUNT(21,0);
 	STAT_SETCOUNT(22,0);
+	*/
 
 	/* allocate storage for in and out buffers */
 	ForIF(ifId,ifHead)
@@ -265,12 +267,15 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 			IFGetMem(ifHead, itemSize, nIn+PART->nABA, nOut+PART->nABA);
 		#endif
 
-		STAT_SETCOUNT(20,STAT_GETCOUNT(20)+ifHead->nItems);
+		/* STAT_SETCOUNT(20,STAT_GETCOUNT(20)+ifHead->nItems);
 		STAT_SETCOUNT(21,STAT_GETCOUNT(21)+2);
 		STAT_SETCOUNT(22,STAT_GETCOUNT(22)+
 			BufferLen(ifHead->bufIn) + BufferLen(ifHead->bufOut));
+		*/
 	}
+	/*
 	STAT_TIMER1(63);
+	*/
 
 
 	/* init communication, initiate receives */
@@ -437,7 +442,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	/* free memory */
 	IFExitComm(ifId);
 
-	STAT_TIMER1(60);
+	/*STAT_TIMER1(60);*/
 
 #endif /* IF_EXECLOCAL */
 }

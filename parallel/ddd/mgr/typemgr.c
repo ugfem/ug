@@ -888,7 +888,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       /* initialize ELEM_DESC */
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
       ConstructEl(&desc->element[i],
-                  argtyp, argp-adr, argsize, argrefs);
+                  argtyp, (int)(argp-adr), argsize, argrefs);
 
       /* set reftype-handler function pointer, if any */
       if (argrefs==DDD_TYPE_BY_HANDLER)
@@ -897,7 +897,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 #ifdef F_FRONTEND
       size += argsize;
       ConstructEl(&desc->element[i],
-                  argtyp, argp, argsize, argrefs);
+                  argtyp, (int)argp, argsize, argrefs);
 
       desc->element[i].msgoffset = offset;
       offset += argsize;
@@ -932,7 +932,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       if (CPP_STRUCT(desc) CPP_AND TRUE)
       {
         ConstructEl(&desc->element[i],
-                    argtyp, argp-adr, argsize, 0);
+                    argtyp, (int)(argp-adr), argsize, 0);
       }
 #endif
 #ifdef F_FRONTEND
@@ -986,7 +986,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 
       /* initialize ELEM_DESC */
       ConstructEl(&desc->element[i],
-                  argtyp, argp-adr, argsize, 0);
+                  argtyp, (int)(argp-adr), argsize, 0);
 
       /* read forth arg from cmdline */
       gbits = va_arg(ap, char *); argno++;
@@ -1047,7 +1047,8 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
         if (CPP_STRUCT(desc) CPP_AND TRUE)
         {
           /* do recursive TypeDefine */
-          i = RecursiveRegister(desc, i, argtyp, argp-adr, argno);
+          i = RecursiveRegister(desc,
+                                i, argtyp, (int)(argp-adr), argno);
           if (i==ERROR) HARD_EXIT;                                       /* return; */
 
                                                 #ifdef DebugTypeDefine
@@ -1109,7 +1110,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   {
     /* compute aligned object length */
                 #if defined(C_FRONTEND)
-    desc->size = va_arg(ap, char *) - adr;
+    desc->size = (size_t) (va_arg(ap, char *) - adr);
     desc->size = CEIL(desc->size);
                 #endif
                 #if defined(CPP_FRONTEND)

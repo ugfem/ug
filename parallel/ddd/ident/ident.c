@@ -74,7 +74,7 @@
 #define ID_STRING   3
 
 
-#define TUPEL_LEN(t)    ((t)&0x3f)
+#define TUPEL_LEN(t)    ((int)((t)&0x3f))
 
 
 /* overall mode of identification */
@@ -134,8 +134,8 @@ typedef struct _ID_REFDBY
 
 typedef struct _IDENTINFO {
   int typeId;
-  unsigned long tupel;
   int entry;
+  unsigned long tupel;
   IDENTIFIER id;
 
 
@@ -143,7 +143,7 @@ typedef struct _IDENTINFO {
 
   DDD_HDR hdr;
 
-  struct _IDENTINFO  *tupel_head;
+  struct _IDENTINFO  **tupel_head;
 
   /* information only for tupel_head */
   /* NOTE: other tupel-items MUST contain same information,
@@ -182,7 +182,7 @@ typedef struct _ID_PLIST {
   struct _ID_PLIST *next;
   ID_ENTRY    *first;
 
-  IDENTINFO   *local_ids;
+  IDENTINFO   **local_ids;
   IDENTINFO   **indexmap;               /* index-mapping of local_ids array */
 
   MSGITEM     *msgin, *msgout;
@@ -390,8 +390,8 @@ static int sort_intoTupelsLists (const void *e1, const void *e2)
 {
   IDENTINFO       *el1, *el2;
 
-  el1 = (IDENTINFO *) e1;
-  el2 = (IDENTINFO *) e2;
+  el1 = *((IDENTINFO **)e1);
+  el2 = *((IDENTINFO **)e2);
 
 
   /* sort according to (old) global ids */
@@ -410,8 +410,8 @@ static int sort_intoTupelsSets (const void *e1, const void *e2)
 {
   IDENTINFO       *el1, *el2;
 
-  el1 = (IDENTINFO *) e1;
-  el2 = (IDENTINFO *) e2;
+  el1 = *((IDENTINFO **)e1);
+  el2 = *((IDENTINFO **)e2);
 
 
   /* sort according to (old) global ids */
@@ -485,12 +485,14 @@ static int sort_tupelOrder (const void *e1, const void *e2)
             OBJ_GID(el1->hdr), OBJ_GID(el2->hdr));
     DDD_PrintError('E', 3030, cBuffer);
 
-    for(i=0; i<nIds; i++) {
-      printf("%4d: tupel[%d]  %08x/%d  %08x/%d   (id/loi)\n",
-             me, i,
-             el1->id.object, el1->loi,
-             el2->id.object, el2->loi);
-    }
+    /*
+       for(i=0; i<nIds; i++) {
+            printf("%4d: tupel[%d]  %08x/%d  %08x/%d   (id/loi)\n",
+                    me, i,
+                    el1->id.object, el1->loi,
+                    el2->id.object, el2->loi);
+       }
+     */
 
     HARD_EXIT;
   }
@@ -504,7 +506,7 @@ static int sort_tupelOrder (const void *e1, const void *e2)
 static void SetLOI (IDENTINFO *ii, int loi)
 {
   ID_REFDBY *rby;
-  IDENTINFO *head = ii->tupel_head;
+  IDENTINFO **head = ii->tupel_head;
   int i;
 
   /*
@@ -512,15 +514,15 @@ static void SetLOI (IDENTINFO *ii, int loi)
    */
 
   /* set loi to maximum of current and new value */
-  head->loi = MAX(loi, head->loi);
-  for(i=1; i<head->nObjIds; i++)
+  head[0]->loi = MAX(loi, head[0]->loi);
+  for(i=1; i<head[0]->nObjIds; i++)
   {
-    head[i].loi     = head->loi;
-    head[i].refd    = head->refd;
+    head[i]->loi     = head[0]->loi;
+    head[i]->refd    = head[0]->refd;
   }
 
   /* primitive cycle detection */
-  if (head->loi > 64)
+  if (head[0]->loi > 64)
   {
     sprintf(cBuffer, "IdentifyObject-cycle, objects %08x and %08x",
             ii->msg.gid, ii->id.object);
@@ -529,7 +531,7 @@ static void SetLOI (IDENTINFO *ii, int loi)
   }
 
 
-  for(rby=head->refd; rby!=NULL; rby=rby->next)
+  for(rby=head[0]->refd; rby!=NULL; rby=rby->next)
   {
     SetLOI(rby->by, loi+1);
 
@@ -557,7 +559,7 @@ static int sort_refd_gid (const void *e1, const void *e2)
 
 static void ResolveDependencies (
   IDENTINFO **tupels, int nTupels,
-  IDENTINFO *id, int nIds, int nIdentObjs)
+  IDENTINFO **id, int nIds, int nIdentObjs)
 {
   IDENTINFO **refd;
   int i, j;
@@ -574,9 +576,9 @@ static void ResolveDependencies (
   /* build array of pointers to objects being used for identification */
   for(i=0, j=0; i<nIds; i++)
   {
-    if (id[i].typeId==ID_OBJECT)
+    if (id[i]->typeId==ID_OBJECT)
     {
-      refd[j] = &(id[i]);
+      refd[j] = id[i];
       j++;
     }
   }
@@ -673,7 +675,7 @@ static void CleanupLOI (IDENTINFO **tupels, int nTupels)
         the tupel, it does only contain information about the
         structure of a tupel!
  */
-static void TupelId (IDENTINFO *id, int nIds)
+static void TupelId (IDENTINFO **id, int nIds)
 {
   int i, nObjIds;
   unsigned long tId;
@@ -683,15 +685,15 @@ static void TupelId (IDENTINFO *id, int nIds)
   nObjIds = 0;
   for(i=0; i<nIds; i++)
   {
-    tId = (tId<<2) | id[i].typeId;
+    tId = (tId<<2) | id[i]->typeId;
 
     /* count entries with ID_OBJECT */
-    if (id[i].typeId==ID_OBJECT)
+    if (id[i]->typeId==ID_OBJECT)
       nObjIds++;
   }
 
   /* set number of entries with ID_OBJECT */
-  id->nObjIds = nObjIds;
+  (*id)->nObjIds = nObjIds;
 
 
   /* code length of tupel into lowest 6 bits */
@@ -703,15 +705,15 @@ static void TupelId (IDENTINFO *id, int nIds)
   /* mark items with tupel id and set first in tupel */
   for(i=0; i<nIds; i++)
   {
-    id[i].tupel      = tId;
-    id[i].tupel_head = id;
-    id[i].nObjIds    = nObjIds;
+    id[i]->tupel      = tId;
+    id[i]->tupel_head = id;
+    id[i]->nObjIds    = nObjIds;
   }
 }
 
 
 
-static int IdentifySort (IDENTINFO *id, int nIds,
+static int IdentifySort (IDENTINFO **id, int nIds,
                          int nIdentObjs, MSGITEM *items_out, IDENTINFO ***indexmap_out,
 #ifdef CPP_FRONTEND
                          DDD_PROC /*dest*/
@@ -724,19 +726,21 @@ static int IdentifySort (IDENTINFO *id, int nIds,
   int i, j, last, nTupels;
   int keep_order_inside_tupel;
 
+
   /* sort to recognize identification tupels */
   /* in case of IDMODE_LISTS, the original ordering
      inside each tupel is kept. for IDMODE_SETS, each tupel
      is sorted according to the identificators themselves. */
+  STAT_RESET3;
   switch (DDD_GetOption(OPT_IDENTIFY_MODE))
   {
   case IDMODE_LISTS :
-    qsort(id, nIds, sizeof(IDENTINFO), sort_intoTupelsLists);
+    qsort(id, nIds, sizeof(IDENTINFO *), sort_intoTupelsLists);
     keep_order_inside_tupel = TRUE;
     break;
 
   case IDMODE_SETS :
-    qsort(id, nIds, sizeof(IDENTINFO), sort_intoTupelsSets);
+    qsort(id, nIds, sizeof(IDENTINFO *), sort_intoTupelsSets);
     keep_order_inside_tupel = FALSE;
     break;
 
@@ -744,12 +748,13 @@ static int IdentifySort (IDENTINFO *id, int nIds,
     DDD_PrintError('E', 3330, "unknown OPT_IDENTIFY_MODE");
     HARD_EXIT;
   }
+  STAT_INCTIMER3(T_QSORT_TUPEL);
 
 
   /* compute tupel id for all items and mark items */
   for(i=0, last=0, nTupels=0; i<nIds; i++)
   {
-    if (id[i].msg.gid > id[last].msg.gid)
+    if (id[i]->msg.gid > id[last]->msg.gid)
     {
       TupelId(&(id[last]), i-last);
       nTupels++;
@@ -768,10 +773,10 @@ static int IdentifySort (IDENTINFO *id, int nIds,
   }
 
   for(i=0, j=0; j<nTupels; j++) {
-    idp[j] = &(id[i]);
+    idp[j] = id[i];
     do {
       i++;
-    } while (i<nIds && id[i].msg.gid==id[i-1].msg.gid);
+    } while (i<nIds && id[i]->msg.gid==id[i-1]->msg.gid);
   }
 
   /*
@@ -784,7 +789,9 @@ static int IdentifySort (IDENTINFO *id, int nIds,
 
   /* resolve dependencies caused by IdentifyObject,
      and set level-of-indirection accordingly */
+  STAT_RESET3;
   ResolveDependencies(idp, nTupels, id, nIds, nIdentObjs);
+  STAT_INCTIMER3(T_RESOLVE_DEP);
 
 
   /*
@@ -793,9 +800,12 @@ static int IdentifySort (IDENTINFO *id, int nIds,
    */
 
   /* sort array for loi */
+  STAT_RESET3;
   qsort(idp, nTupels, sizeof(IDENTINFO *), sort_loi);
+  STAT_INCTIMER3(T_QSORT_LOI);
 
 
+  STAT_RESET3;
   i=0; j=0;
   do {
     while (j<nTupels && idp[i]->loi==idp[j]->loi)
@@ -844,9 +854,11 @@ static int IdentifySort (IDENTINFO *id, int nIds,
     /* now i==j */
 
   } while (i<nTupels);
+  STAT_INCTIMER3(T_BUILD_GRAPH);
 
 
   /* construct array which will be sent actually */
+  STAT_RESET3;
   for(j=0; j<nTupels; j++)
   {
     /*
@@ -861,7 +873,7 @@ static int IdentifySort (IDENTINFO *id, int nIds,
        for(k=0;k<idp[j]->nObjIds;k++)
        {
             printf("%4d:               msg_idx %d %08x\n", me,
-                    k, idp[j]->tupel_head[k].id.object);
+                    k, idp[j]->tupel_head[k]->id.object);
        }
      */
 
@@ -874,6 +886,7 @@ static int IdentifySort (IDENTINFO *id, int nIds,
     items_out[j].tupel = idp[j]->tupel;
 #               endif
   }
+  STAT_INCTIMER3(T_CONSTRUCT_ARRAY);
 
 
   CleanupLOI(idp, nTupels);
@@ -996,6 +1009,9 @@ void DDD_Library::IdentifyEnd (void)
   ID_ENTRY        *id;
   int i, cnt, j;
 
+  STAT_SET_MODULE(DDD_MODULE_IDENT);
+  STAT_ZEROALL;
+
 #       if DebugIdent<=9
   printf("%4d: DDD_IdentifyEnd.\n", me);
   fflush(stdout);
@@ -1014,15 +1030,17 @@ void DDD_Library::IdentifyEnd (void)
 #       endif
 
 
+  STAT_RESET1;
+
   /* for each id_plist entry */
   for(plist=thePLists, cnt=0; plist!=NULL; plist=plist->next, cnt++)
   {
     /* allocate message buffers */
     /* use one alloc for three buffers */
-    plist->local_ids = (IDENTINFO *) AllocTmp(
-      sizeof(IDENTINFO)*plist->entries +                    /* for local id-infos */
-      sizeof(MSGITEM)  *plist->entries +                    /* for incoming msg   */
-      sizeof(MSGITEM)  *plist->entries                      /* for outgoing msg   */
+    plist->local_ids = (IDENTINFO **) AllocTmp(
+      sizeof(IDENTINFO *)*plist->entries +                    /* for local id-infos */
+      sizeof(MSGITEM)    *plist->entries +                    /* for incoming msg   */
+      sizeof(MSGITEM)    *plist->entries                      /* for outgoing msg   */
       );
 
     if (plist->local_ids==NULL)
@@ -1034,33 +1052,31 @@ void DDD_Library::IdentifyEnd (void)
     plist->msgout =             &plist->msgin[plist->entries];
 
 
-    /* construct contiguous buffer, physical copy of IDENTINFO struct!! */
-    /* TODO this may be a time-consuming step */
+    /* construct pointer array to IDENTINFO structs */
     for(id=plist->first, i=0; id!=NULL; id=id->next, i++)
-      plist->local_ids[i] = id->msg;
-
-    /* now, the plist->first list isn't needed anymore */
-    /* free memory */
-    FreeIdEntryList(plist->first);
-    /* set to NULL for security */
-    plist->first = NULL;
+      plist->local_ids[i] = &(id->msg);
 
 
 
     /* sort outgoing items */
+    STAT_RESET2;
     plist->entries = IdentifySort(plist->local_ids, plist->entries,
                                   plist->nIdentObjs,
                                   plist->msgout,   /* output: msgbuffer outgoing */
                                   &plist->indexmap, /* output: mapping of indices to local_ids array */
                                   plist->proc);
+    STAT_INCTIMER2(T_PREPARE_SORT);
 
 
 #               if DebugIdent<=5
     PrintPList(plist);
 #               endif
   }
+  STAT_TIMER1(T_PREPARE);
+  STAT_SETCOUNT(N_PARTNERS, cnt);
 
   /* initiate comm-channels and send/receive calls */
+  STAT_RESET1;
   if (!InitComm(cnt))
     HARD_EXIT;
 
@@ -1141,7 +1157,7 @@ void DDD_Library::IdentifyEnd (void)
     /* next plist, perhaps restart */
     plist=plist->next; if (plist==NULL) plist=thePLists;
   };
-
+  STAT_TIMER1(T_COMM_AND_IDENT);
 
   /* poll sends */
   for(plist=thePLists; plist!=0; plist=pnext)
@@ -1154,6 +1170,9 @@ void DDD_Library::IdentifyEnd (void)
 
     FreeTmp(plist->local_ids);
     FreeTmp(plist);
+
+    /* now, the plist->first list isn't needed anymore, free */
+    FreeIdEntryList(plist->first);
   };
 
 
@@ -1163,14 +1182,16 @@ void DDD_Library::IdentifyEnd (void)
 #       endif
 
 
+
   /* rebuild interfaces after topological change */
+  STAT_RESET1;
   IFAllFromScratch();
+  STAT_TIMER1(T_BUILD_IF);
 
 
 #       if DebugIdent<=9
   printf("%4d: DDD_IdentifyEnd. Ready.\n", me); fflush(stdout);
 #       endif
-
 
   IdentStepMode(IMODE_BUSY);
 }

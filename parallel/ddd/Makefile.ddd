@@ -108,6 +108,9 @@ Ctrl-o = debug.o	\
 	stat.o
 
 
+$(CtrlPth)/stat.h:	$(IncPth)/dddaddon.h
+	touch $(CtrlPth)/stat.h
+
 debug.o: $(SrcPth)/dddi.h	\
 		$(CtrlPth)/debug.c
 	$(DDD_CC) $(SrcOpt) $(CtrlPth)/debug.c

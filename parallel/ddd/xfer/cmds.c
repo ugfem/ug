@@ -490,6 +490,9 @@ void DDD_XferEnd (void)
   int DelCmds_were_pruned;
 
 
+  STAT_SET_MODULE(DDD_MODULE_XFER);
+  STAT_ZEROALL;
+
   /* step mode and check whether call to XferEnd is valid */
   if (!XferStepMode(XMODE_CMDS))
   {
@@ -501,10 +504,12 @@ void DDD_XferEnd (void)
   /*
           PREPARATION PHASE
    */
+  STAT_RESET;
   /* create sorted array of XICopyObj-items, and unify it */
   arrayXICopyObj = SortedArrayXICopyObj(sort_XICopyObj);
   remXICopyObj   = UnifyXICopyObj(arrayXICopyObj, unify_XICopyObj);
   obsolete = nXICopyObj-remXICopyObj;
+  STAT_TIMER(T_XFER_PREP_CMDS);
 
 
   /*
@@ -546,6 +551,7 @@ void DDD_XferEnd (void)
   /*
           COMMUNICATION PHASE 1
    */
+  STAT_RESET;
   /* send Cpl-info about new objects to owners of other local copies */
   arrayNewOwners = CplClosureEstimate(
     arrayXICopyObj, remXICopyObj,
@@ -567,16 +573,20 @@ void DDD_XferEnd (void)
 
   /* init communication topology */
   nRecvMsgs = LC_Connect(xferGlobals.objmsg_t);
+  STAT_TIMER(T_XFER_PREP_MSGS);
 
 
+  STAT_RESET;
   /* build obj msgs on sender side and start send */
   XferPackMsgs(sendMsgs);
+  STAT_TIMER(T_XFER_PACK_SEND);
 
   /*
           now messages are in the net, use spare time
    */
 
   /* create sorted array of XISetPrio-items, and unify it */
+  STAT_RESET;
   arrayXISetPrio = SortedArrayXISetPrio(sort_XISetPrio);
   remXISetPrio   = UnifyXISetPrio(arrayXISetPrio, unify_XISetPrio);
   obsolete += (nXISetPrio-remXISetPrio);
@@ -623,6 +633,7 @@ void DDD_XferEnd (void)
       DDD_PrintLine(cBuffer);
     }
   }
+  STAT_TIMER(T_XFER_WHILE_COMM);
 
   /*
           nothing more to do until incoming messages arrive
@@ -630,7 +641,9 @@ void DDD_XferEnd (void)
 
 
   /* wait for communication-completion (send AND receive) */
+  STAT_RESET;
   recvMsgs = LC_Communicate();
+  STAT_TIMER(T_XFER_WAIT_RECV);
 
 
   /* display information about message buffer sizes */
@@ -653,6 +666,7 @@ void DDD_XferEnd (void)
 
 
   /* unpack messages */
+  STAT_RESET;
   XferUnpack(recvMsgs, nRecvMsgs,
              localCplObjs, nCpls,
              arrayXISetPrio, remXISetPrio,
@@ -660,9 +674,11 @@ void DDD_XferEnd (void)
              arrayXICopyObj, remXICopyObj,
              arrayNewOwners, nNewOwners);
   LC_Cleanup();
+  STAT_TIMER(T_XFER_UNPACK);
 
   /* recreate sorted list of local coupled objects,
      old list might be corrupt due to creation of new objects */
+  STAT_RESET;
   if (localCplObjs!=NULL) FreeTmp(localCplObjs);
   localCplObjs = LocalCoupledObjectsList();
 
@@ -682,6 +698,7 @@ void DDD_XferEnd (void)
     remXIDelCpl--;
 
   remXIModCpl   = UnifyXIModCpl(arrayXIModCpl, unify_XIModCpl);
+  STAT_TIMER(T_XFER_PREP_CPL);
 
   /*
      printf("%4d: %d XIDelCpls obsolete\n", me, nXIDelCpl-remXIDelCpl);
@@ -692,10 +709,12 @@ void DDD_XferEnd (void)
           COMMUNICATION PHASE 2
    */
 
+  STAT_RESET;
   CommunicateCplMsgs(arrayXIDelCpl, remXIDelCpl,
                      arrayXIModCpl, remXIModCpl,
                      arrayXIAddCpl, nXIAddCpl,
                      localCplObjs, nCpls);
+  STAT_TIMER(T_XFER_CPLMSG);
 
 
   /*
@@ -746,7 +765,10 @@ void DDD_XferEnd (void)
 #       endif
 
   /* re-create all interfaces and step XMODE */
+  STAT_RESET;
   IFAllFromScratch();
+  STAT_TIMER(T_XFER_BUILD_IF);
+
   XferStepMode(XMODE_BUSY);
 }
 
@@ -762,15 +784,6 @@ void DDD_XferEnd (void)
  #	endif
  */
 
-
-/* aufbewahrungsort fuer timing-direktiven
-
-        STAT_ZEROTIMER;
-        STAT_RESET;
-
-        STAT_TIMER(10); STAT_RESET;
-        STAT_TIMER(12);
- */
 
 
 /****************************************************************************/

@@ -3,6 +3,21 @@
 CHANGES 1.8.5 -> 1.8.6
 
 ---------------------------
+970701 kb
+added check for PPIF initialization in DDD_Init().
+970528 kb
+reinvented STAT statistical evaluation.
+	- the DDD_StatXXX functionality will be used 
+	  extensively in future versions in order to provide
+	  an interface for performance measuring and other
+	  accounting information from DDD to application level.
+970528 kb
+tuning in Identify module.
+	- replaced sorting of array with big entries by sorting
+	  of array with pointers to big entries. better performance
+	  on systems with poor memcpy-implementation.
+	- NOTE: this can lead to errors on complicated identification
+	  tasks. (normally it should work, however). keep that in mind.
 970417 kb
 added DDD_TYPE_BY_HANDLER for EL_OBJPTR in TypeDefine.
 	- normally, for EL_OBJPTR defined during TypeDefine

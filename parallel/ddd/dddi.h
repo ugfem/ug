@@ -95,7 +95,7 @@
 #define MAX_PRIO       32    /* max. number of DDD_PRIO                     */
 
 #define MAX_OBJ    700000    /* max. number of locally registered objects   */
-#define MAX_CPL    100000    /* max. number of local objects with coupling  */
+#define MAX_CPL    200000    /* max. number of local objects with coupling  */
 
 #define MAX_TRIES  50000000  /* max. number of tries til timeout in IF-comm */
 
@@ -744,5 +744,11 @@ void      DDD_HdrDestructor (DDD_HDR);
 int       ddd_GlobalSumInt  (int);
 int       ddd_GlobalMaxInt  (int);
 int       ddd_GlobalMinInt  (int);
+
+
+/* stat.c */
+void      ddd_StatInit (void);
+void      ddd_StatExit (void);
+
 
 #endif

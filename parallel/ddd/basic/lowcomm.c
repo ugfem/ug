@@ -331,7 +331,7 @@ void LC_SetTableSize (LC_MSGHANDLE msg, LC_MSGCOMP id, ULONG entries)
 {
   MSG_DESC *md = (MSG_DESC *) msg;
 
-  md->chunks[id].size = entries * md->msgType->comp[id].entry_size;
+  md->chunks[id].size = ((int)entries) * md->msgType->comp[id].entry_size;
   md->chunks[id].entries = entries;
 }
 
@@ -443,7 +443,7 @@ static void LC_MsgRecv (MSG_DESC *md)
   ULONG    *hdr = (ULONG *)md->buffer;
 
   /* get number of chunks */
-  int n = hdr[1];
+  int n = (int)(hdr[1]);
 
   /* magic number is hdr[0] */
   if (hdr[0]!=MAGIC_DUMMY)
@@ -468,9 +468,9 @@ static void LC_MsgRecv (MSG_DESC *md)
   /* get chunk descriptions from message header */
   for(j=2, i=0; i<n; i++)
   {
-    md->chunks[i].offset  = hdr[j++];
-    md->chunks[i].size    = hdr[j++];
-    md->chunks[i].entries = hdr[j++];
+    md->chunks[i].offset  =          hdr[j++];
+    md->chunks[i].size    = (size_t)(hdr[j++]);
+    md->chunks[i].entries =          hdr[j++];
   }
 }
 

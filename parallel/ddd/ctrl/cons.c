@@ -212,7 +212,7 @@ static int ConsCheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
   int error_cnt = 0;
 
 
-  nItems = LC_GetTableLen(xm,constab_id);
+  nItems = (int) LC_GetTableLen(xm,constab_id);
   theCplBuf = (CONS_INFO *) LC_GetPtr(xm, constab_id);
 
 
@@ -372,7 +372,7 @@ static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
   int error_cnt = 0;
 
 
-  nItems = LC_GetTableLen(xm,constab_id);
+  nItems = (int) LC_GetTableLen(xm,constab_id);
   theCplBuf = (CONS_INFO *) LC_GetPtr(xm, constab_id);
 
 

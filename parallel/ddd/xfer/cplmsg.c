@@ -307,9 +307,9 @@ static void CplMsgUnpackSingle (LC_MSGHANDLE xm,
   DDD_PROC proc = LC_MsgGetProc(xm);
 
   /* get number and address of del-items */
-  nDelCpl = LC_GetTableLen(xm, delcpl_id);
-  nModCpl = LC_GetTableLen(xm, modcpl_id);
-  nAddCpl = LC_GetTableLen(xm, addcpl_id);
+  nDelCpl = (int) LC_GetTableLen(xm, delcpl_id);
+  nModCpl = (int) LC_GetTableLen(xm, modcpl_id);
+  nAddCpl = (int) LC_GetTableLen(xm, addcpl_id);
   theDelCpl = (TEDelCpl *) LC_GetPtr(xm, delcpl_id);
   theModCpl = (TEModCpl *) LC_GetPtr(xm, modcpl_id);
   theAddCpl = (TEAddCpl *) LC_GetPtr(xm, addcpl_id);

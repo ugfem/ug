@@ -63,8 +63,8 @@
 
 #else
 
-#define SLLNewArgProtos     /* none */
-#define SLLNewArgs          /* none */
+#define SLLNewArgProtos     void  /* none */
+#define SLLNewArgs                /* none */
 
 
 #define SLL_INFO(T)   \

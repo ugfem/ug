@@ -754,7 +754,7 @@ static void AcceptReceivedObjects (
 		
 		AcceptObjFromMsg(
 			(OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id),
-			LC_GetTableLen(xm, xferGlobals.objtab_id),
+			(int)    LC_GetTableLen(xm, xferGlobals.objtab_id),
 			(char *) LC_GetPtr(xm, xferGlobals.objmem_id),
 			localCplObjs, nLocalCplObjs
 		);
@@ -1136,7 +1136,7 @@ static void LocalizeObjects (LC_MSGHANDLE xm,
 	int          lenSymTab = (int) LC_GetTableLen(xm, xferGlobals.symtab_id);
 	int          lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
 
-	STAT_RESET4;
+	/*STAT_RESET4;*/
 
 
 	/* get table addresses inside message buffer */
@@ -1412,7 +1412,7 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm)
 	int          lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
 	int          i;
 
-	STAT_RESET4;
+	/*STAT_RESET4;*/
 
 	/* get table addresses inside message buffer */
 	theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
@@ -1450,7 +1450,7 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm)
 	}
 
 
-	STAT_INCTIMER4(23);
+	/*STAT_INCTIMER4(23);*/
 }
 
 
@@ -1600,7 +1600,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		DDD_PrintDebug(cBuffer);
 #	endif
 
-	STAT_RESET3;
+	/*STAT_RESET3;*/
 
 	if (nNewCpl>0)
 	{
@@ -1629,7 +1629,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	}
 
 
-	STAT_TIMER3(25); STAT_RESET3;
+	/*STAT_TIMER3(25); STAT_RESET3;*/
 
 
 	/* create union tables: allNewCpl, unionObjTab */
@@ -1637,7 +1637,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	{
 		LC_MSGHANDLE xm = theMsgs[i];
 
-		len = LC_GetTableLen(xm, xferGlobals.newcpl_id);
+		len = (int) LC_GetTableLen(xm, xferGlobals.newcpl_id);
 		if (len>0)
 		{
 			memcpy(allNewCpl+pos1, LC_GetPtr(xm,xferGlobals.newcpl_id),
@@ -1645,7 +1645,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 			pos1 += len;
 		}
 
-		len = LC_GetTableLen(xm, xferGlobals.objtab_id);
+		len = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
 		if (len>0)
 		{
 			OBJTAB_ENTRY *msg_ot = (OBJTAB_ENTRY *)
@@ -1755,10 +1755,10 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	{
 		LC_MSGHANDLE xm = theMsgs[i];
 		UnpackOldCplTab(
-			(TEOldCpl *)LC_GetPtr(xm,xferGlobals.oldcpl_id),
-			LC_GetTableLen(xm, xferGlobals.oldcpl_id),
+			(TEOldCpl *)     LC_GetPtr(xm,xferGlobals.oldcpl_id),
+			(int)            LC_GetTableLen(xm, xferGlobals.oldcpl_id),
 			(OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id),
-			LC_GetTableLen(xm, xferGlobals.objtab_id) );
+			(int)            LC_GetTableLen(xm, xferGlobals.objtab_id) );
 	}
 
 

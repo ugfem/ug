@@ -43,7 +43,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.6beta"
+#define DDD_VERSION    "1.8.6"
 
 
 /****************************************************************************/
@@ -160,6 +160,7 @@ enum OptionType {
   OPT_XFER_PRUNE_DELETE,           /* prune del-cmd in del/xfercopy-combination */
 
   OPT_IF_REUSE_BUFFERS,            /* reuse interface buffs as long as possible */
+  OPT_IF_CREATE_EXPLICIT,          /* dont (re-)create interfaces automatically */
 
   OPT_END
 };
@@ -843,6 +844,7 @@ void     DDD_IdentifyObject (_OBJREF, DDD_PROC _FPTR, _OBJREF);
 #define DDD_IFDisplay       F77SYM(ddd_ifdisplay,DDD_IFDISPLAY)
 #define DDD_IFInfoMemoryAll F77SYM(ddd_ifinfomemoryall,DDD_IFINFOMEMORYALL)
 #define DDD_IFInfoMemory    F77SYM(ddd_ifinfomemory,DDD_IFINFOMEMORY)
+#define DDD_IFRefreshAll    F77SYM(ddd_ifrefreshall,DDD_IFREFRESHALL)
 #define DDD_IFExchange      F77SYM(ddd_ifexchange,DDD_IFEXCHANGE)
 #define DDD_IFOneway        F77SYM(ddd_ifoneway,DDD_IFONEWAY)
 #define DDD_IFExecLocal     F77SYM(ddd_ifexeclocal,DDD_IFEXECLOCAL)
@@ -869,6 +871,7 @@ void     DDD_IFDisplayAll (void);
 void     DDD_IFDisplay (DDD_IF _FPTR);
 size_t   DDD_IFInfoMemoryAll (void);
 size_t   DDD_IFInfoMemory (DDD_IF _FPTR);
+void     DDD_IFRefreshAll (void);
 
 void     DDD_IFExchange   (DDD_IF _FPTR,                         size_t _FPTR, ComProcPtr,ComProcPtr);
 void     DDD_IFOneway     (DDD_IF _FPTR,               int _FPTR,size_t _FPTR, ComProcPtr,ComProcPtr);
