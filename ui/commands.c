@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
 /* History:   29.01.92 begin, ug version 2.0								*/
 /*			  02.02.95 begin, ug version 3.0								*/
@@ -8377,7 +8377,7 @@ static INT UpdateDocumentCommand (INT argc, char **argv)
 static INT ClearCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  TYPE_VEC_DESC sym;
+  SYMBOL *sym;
   INT i,fl,tl,skip;
   float value;
 
@@ -8417,7 +8417,8 @@ static INT ClearCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if (ReadTypeVecDescOfFormat(MGFORMAT(theMG),&sym,"clear",argc,argv))
+  if ((sym = ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),
+                                   "clear",argc,argv))==NULL)
   {
     PrintErrorMessage('E',"clear","could not read symbol");
     return (PARAMERRORCODE);
@@ -8425,12 +8426,13 @@ static INT ClearCommand (INT argc, char **argv)
 
   if (skip)
   {
-    if (a_dsetnonskip(theMG,fl,tl,&sym,EVERY_CLASS,value)!=NUM_OK)
+    if (a_dsetnonskip(theMG,fl,tl,SYM_VEC_DESC(sym),EVERY_CLASS,value)
+        !=NUM_OK)
       return (CMDERRORCODE);
   }
   else
   {
-    if (a_dset(theMG,fl,tl,&sym,EVERY_CLASS,value)!=NUM_OK)
+    if (a_dset(theMG,fl,tl,SYM_VEC_DESC(sym),EVERY_CLASS,value)!=NUM_OK)
       return (CMDERRORCODE);
   }
 
