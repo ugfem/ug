@@ -408,6 +408,66 @@ INT CountStrongNeighbors(AVECTOR *initialS, DOUBLE *avNrOfStrongNbsHnd, INT *max
   return(DONE);
 }
 
+/****************************************************************************/
+/*D
+   l_vectorflags_consistent - make flags consistent
+
+   SYNOPSIS:
+   static INT l_vectorflags_consistent (GRID *g);
+
+   PARAMETERS:
+   .  g - pointer to grid
+
+   DESCRIPTION:
+   This function makes the coarsening flags consistent.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+   D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static int Gather_VectorFlags (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT *flag = (INT *)data;
+
+  flag[0] = VCCOARSE(pv);
+
+  PRINTDEBUG(np,3,("%d:gather  ind %3d gid %08x  c %d prio %d, attr %d\n",
+                   me,VINDEX(pv),
+                   DDD_InfoGlobalId(PARHDR(pv)),VCCOARSE(pv),
+                   DDD_InfoPriority(PARHDR(pv)),
+                   DDD_InfoAttr(PARHDR(pv))));
+
+  return (0);
+}
+
+static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT *flag = (INT *)data;
+
+  if (flag[0] == 1)
+    SETVCCOARSE(pv,1);
+
+  PRINTDEBUG(np,3,("%d:scatter ind %3d gid %08x  c %d\n",
+                   me,VINDEX(pv),DDD_InfoGlobalId(PARHDR(pv)),VCCOARSE(pv)));
+
+  return (0);
+}
+
+static INT l_vectorflag_consistent (GRID *g)
+{
+  PRINTDEBUG(np,3,("%d: l_vectorflag_consistent\n",me));
+
+  DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), sizeof(INT),
+                  Gather_VectorFlags, Scatter_VectorFlags);
+  return (NUM_OK);
+}
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -461,6 +521,10 @@ static INT GenerateNewGrid(GRID *theGrid)
   VECTOR *vect,*newVect;
   GRID *newGrid;
   MULTIGRID *theMG;
+
+        #ifdef ModelP
+  l_vectorflag_consistent(theGrid);
+        #endif
 
   /* if the new grid is all or empty we're done else generate it */
   nof=noc=0;
@@ -788,67 +852,6 @@ INT CoarsenRugeStueben(GRID *theGrid)
   REP_ERR_RETURN(error);
 }
 
-/****************************************************************************/
-/*D
-   l_vectorflags_consistent - make flags consistent
-
-   SYNOPSIS:
-   static INT l_vectorflags_consistent (GRID *g);
-
-   PARAMETERS:
-   .  g - pointer to grid
-
-   DESCRIPTION:
-   This function makes the coarsening flags consistent.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
-
-#ifdef ModelP
-static int Gather_VectorFlags (DDD_OBJ obj, void *data)
-{
-  VECTOR *pv = (VECTOR *)obj;
-  INT *flag = (INT *)data;
-
-  flag[0] = VCCOARSE(pv);
-
-  PRINTDEBUG(np,3,("%d:gather  ind %3d gid %08x  c %d prio %d, attr %d\n",
-                   me,VINDEX(pv),
-                   DDD_InfoGlobalId(PARHDR(pv)),VCCOARSE(pv),
-                   DDD_InfoPriority(PARHDR(pv)),
-                   DDD_InfoAttr(PARHDR(pv))));
-
-  return (0);
-}
-
-static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
-{
-  VECTOR *pv = (VECTOR *)obj;
-  INT *flag = (INT *)data;
-
-  if (flag[0] == 1)
-    SETVCCOARSE(pv,1);
-
-  PRINTDEBUG(np,3,("%d:scatter ind %3d gid %08x  c %d\n",
-                   me,VINDEX(pv),DDD_InfoGlobalId(PARHDR(pv)),VCCOARSE(pv)));
-
-  return (0);
-}
-
-static INT l_vectorflag_consistent (GRID *g)
-{
-  PRINTDEBUG(np,3,("%d: l_vectorflag_consistent\n",me));
-
-  DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), sizeof(INT),
-                  Gather_VectorFlags, Scatter_VectorFlags);
-  return (NUM_OK);
-}
-#endif
-
 INT CoarsenAverage (GRID *theGrid)
 {
   INT error;
@@ -931,6 +934,7 @@ INT CoarsenAverage (GRID *theGrid)
   }
   while(!fifo_empty(&myfifo)) {
     theV = (VECTOR *)fifo_out(&myfifo);
+    assert(VSTART(theV) != NULL);
     if (VCUSED(theV)) {
       if (VCCOARSE(theV) == 0) {
         for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
@@ -979,7 +983,6 @@ INT CoarsenAverage (GRID *theGrid)
   }
   ReleaseTmpMem(theHeap,MarkKey);
         #ifdef ModelP
-  l_vectorflag_consistent(theGrid);
   PRINTDEBUG(np,3,("%d: m %d\n",me,m));
   m = UG_GlobalMaxINT(m) - UG_GlobalMinINT(m);
   PRINTDEBUG(np,3,("%d: m %d\n",me,m));
@@ -988,208 +991,6 @@ INT CoarsenAverage (GRID *theGrid)
     return(1);
   error = GenerateNewGrid(theGrid);
   return(error);
-}
-
-/****************************************************************************/
-/*D
-   l_vectorflags_consistent1 - make flags consistent
-
-   SYNOPSIS:
-   static INT l_vectorflags_consistent (GRID *g);
-
-   PARAMETERS:
-   .  g - pointer to grid
-
-   DESCRIPTION:
-   This function makes the coarsening flags consistent.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
-
-#ifdef ModelP
-static int Gather_VectorFlags1 (DDD_OBJ obj, void *data)
-{
-  VECTOR *pv = (VECTOR *)obj;
-  INT *flag = (INT *)data;
-
-  flag[0] = me;
-  flag[1] = VCCOARSE(pv);
-  flag[2] = VCUSED(pv);
-
-  PRINTDEBUG(np,3,("%d:gather  ind %d fl %d %d %d ncopies %d\n",
-                   me,VINDEX(pv),flag[0],flag[1],flag[2],
-                   DDD_InfoNCopies(PARHDR(pv))));
-
-  return (0);
-}
-
-static int Scatter_VectorFlags1 (DDD_OBJ obj, void *data)
-{
-  VECTOR *pv = (VECTOR *)obj;
-  INT *flag = (INT *)data;
-
-  if (me > flag[0]) {
-    SETVCCOARSE(pv,flag[1]);
-    SETVCUSED(pv,flag[2]);
-    PRINTDEBUG(np,3,("%d:scatter  ind %d fl %d %d %d ncopies %d\n",
-                     me,VINDEX(pv),flag[0],flag[1],flag[2],
-                     DDD_InfoNCopies(PARHDR(pv))));
-  }
-
-  return (0);
-}
-
-static INT l_vectorflag_consistent1 (GRID *g)
-{
-  DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), 3 * sizeof(INT),
-                  Gather_VectorFlags1, Scatter_VectorFlags1);
-  return (NUM_OK);
-}
-#endif
-
-static INT CoarsenAverage1 (GRID *theGrid)
-{
-  INT error;
-  FIFO myfifo;
-  void *buffer;
-  VECTOR *theV,*theW;
-  MATRIX *theM;
-  HEAP *theHeap;
-  INT n,m,d,dmin;
-  INT MarkKey;
-        #ifdef ModelP
-  INT p;
-        #endif
-
-  m = 0;
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    VINDEX(theV) = m++;
-    SETVCUSED(theV,0);
-  }
-  n = m;
-        #ifdef ModelP
-  for (p=0; p<me; p++) {
-    l_vectorflag_consistent1(theGrid);
-    PRINTDEBUG(np,3,("%d: l_vectorflag_consistent1 %d\n",me,p));
-  }
-        #endif
-  dmin = n;
-  PRINTDEBUG(np,3,("d "));
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VECSKIP(theV) == 0) continue;
-    d = 0;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
-    PRINTDEBUG(np,3,("%d:%d ",VINDEX(theV),d));
-    dmin = MIN(d,dmin);
-  }
-  PRINTDEBUG(np,3,("\ndmin %d\n",dmin));
-  theHeap = MGHEAP(MYMG(theGrid));
-  MarkTmpMem(theHeap,&MarkKey);
-  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
-  if (buffer == NULL) {
-    ReleaseTmpMem(theHeap,MarkKey);
-        #ifdef ModelP
-    for (p=me+1; p<procs; p++) {
-      l_vectorflag_consistent1(theGrid);
-      PRINTDEBUG(np,3,("%d: l_vectorflag_consistent1 %d\n",me,p));
-    }
-        #endif
-    return(1);
-  }
-  fifo_init(&myfifo,buffer,sizeof(void *) * n);
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VECSKIP(theV) == 0) continue;
-    d = 0;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
-    if (d == dmin)
-      fifo_in(&myfifo,(void *)theV);
-  }
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VECSKIP(theV) == 0) continue;
-    d = 0;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
-    if (d > dmin)
-      fifo_in(&myfifo,(void *)theV);
-  }
-  m = n;
-        #ifdef ModelP
-  PRINTDEBUG(np,3,("boundary"));
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VCUSED(theV)) m--;
-    if (VECSKIP(theV)) continue;
-    if (DDD_InfoNCopies(PARHDR(theV)) > 0) {
-      fifo_in(&myfifo,(void *)theV);
-      PRINTDEBUG(np,3,(" %d:%d",me,VINDEX(theV)));
-    }
-  }
-  PRINTDEBUG(np,3,("\n"));
-        #endif
-  while(!fifo_empty(&myfifo)) {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    if (VCUSED(theV)) {
-      if (VCCOARSE(theV) == 0) {
-        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-          theW = MDEST(theM);
-          if (!VCUSED(theW)) break;
-        }
-        if (theM != NULL) {
-          m--;
-          SETVCCOARSE(theW,1);
-          SETVCUSED(theW,1);
-          fifo_in(&myfifo,(void *)theW);
-          PRINTDEBUG(np,3,("out %d inc %d\n",
-                           VINDEX(theV),VINDEX(theW)));
-        }
-      }
-      else {
-        PRINTDEBUG(np,3,("outc %d",VINDEX(theV)));
-        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-          theW = MDEST(theM);
-          if (VCUSED(theW)) continue;
-          m--;
-          SETVCUSED(theW,1);
-          SETVCCOARSE(theW,0);
-          fifo_in(&myfifo,(void *)theW);
-          PRINTDEBUG(np,3,(" f %d",VINDEX(theW)));
-        }
-        PRINTDEBUG(np,3,("\n"));
-      }
-    }
-    else {
-      m--;
-      SETVCCOARSE(theV,1);
-      SETVCUSED(theV,1);
-      PRINTDEBUG(np,3,("c %d",VINDEX(theV)));
-      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-        theW = MDEST(theM);
-        if (VCUSED(theW)) continue;
-        m--;
-        SETVCUSED(theW,1);
-        SETVCCOARSE(theW,0);
-        fifo_in(&myfifo,(void *)theW);
-        PRINTDEBUG(np,3,(" f %d",VINDEX(theW)));
-      }
-      PRINTDEBUG(np,3,("\n"));
-    }
-  }
-  ReleaseTmpMem(theHeap,MarkKey);
-        #ifdef ModelP
-  for (p=me+1; p<procs; p++) {
-    l_vectorflag_consistent1(theGrid);
-    PRINTDEBUG(np,3,("%d: l_vectorflag_consistent %d\n",me,p));
-  }
-  PRINTDEBUG(np,3,("%d: m %d\n",me,m));
-  m = UG_GlobalMaxINT(m) - UG_GlobalMinINT(m);
-  PRINTDEBUG(np,3,("%d: m %d\n",me,m));
-        #endif
-  if (m != 0)
-    return(1);
-  error = GenerateNewGrid(theGrid);
-  REP_ERR_RETURN(error);
 }
 
 /****************************************************************************/
@@ -2508,6 +2309,7 @@ INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DE
    .n    1 if error occured (negative vector index if inversion of small block failed).
    D*/
 /****************************************************************************/
+
 INT NBTransformDefect (GRID *theGrid, const VECDATA_DESC *to, const VECDATA_DESC *from,
                        const MATDATA_DESC *A)
 {
