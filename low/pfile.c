@@ -28,6 +28,7 @@
 /****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
@@ -36,6 +37,8 @@
 #include "compiler.h"
 #include "general.h"
 #include "fileopen.h"
+
+#include "parallel.h"
 
 #include "pfile.h"
 
