@@ -33,46 +33,35 @@
 /*																			*/
 /****************************************************************************/
 
-#include "MWCW.cmdlinedefs"
-
 /* standard C includes */
-#include <string.h>
-#include <math.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-
-#ifndef __MWCW__        /* don't need that: included MacHeadersPPC */
+/*  #include <string.h> */
+/*  #include <math.h> */
+/*  #include <stddef.h> */
+/*  #include <stdlib.h> */
+/*  #include <stdio.h> */
+/*  #include <assert.h> */
 
 /* mac toolbox includes */
-#include <desk.h>
 #include <ToolUtils.h>
-#include <Types.h>
-#include <Memory.h>
-#include <Quickdraw.h>
-#include <Fonts.h>
-#include <Events.h>
-#include <Menus.h>
-#include <Windows.h>
-#include <Palettes.h>
-#include <TextEdit.h>
-#include <Dialogs.h>
-#include <OSUtils.h>
-#include <SegLoad.h>
-#include <osevents.h>
-#include <Packages.h>
-#include <Files.h>
-
-#endif
+/*  #include <Types.h> */
+/*  #include <Memory.h> */
+/*  #include <Quickdraw.h> */
+/*  #include <Fonts.h> */
+/*  #include <Events.h> */
+/*  #include <Menus.h> */
+/*  #include <Windows.h> */
+/*  #include <Palettes.h> */
+/*  #include <TextEdit.h> */
+/*  #include <Dialogs.h> */
+/*  #include <OSUtils.h> */
+/*  #include <SegLoad.h> */
+/*  #include <Packages.h> */
+/*  #include <Files.h> */
 
 /* interface includes */
-#include "compiler.h"
-#include "misc.h"
 #include "devices.h"
+#include "debug.h"
 #include "initdev.h"
-#include "heaps.h"
-#include "general.h"
 
 /* mif includes */
 #include "MacMain.m"
@@ -80,7 +69,7 @@
 #include "MacShell.h"
 #include "MacGraph.h"
 
-#include "MacMain.h"
+/*  #include "MacMain.h" */
 
 /****************************************************************************/
 /*																			*/
@@ -99,8 +88,7 @@
 /* quick fix: printf (called by debug.c fcts) will stimulate the SIOUX-interface
    to open another terminal window wich belongs to the application but is
    unknown to ug */
-#undef assert
-#define assert(ass)             if ((ass)==FALSE) return (0)
+#define my_assert(ass)          if ((ass)==FALSE) return (0)
 
 /****************************************************************************/
 /*																			*/
@@ -108,8 +96,8 @@
 /*																			*/
 /****************************************************************************/
 
-static int outbuffpos;
-static char outbuff[OUTBUFFSIZE];
+static int outbuffpos = 0;
+static char outbuff[OUTBUFFSIZE] = "";
 
 static ShellWindow shell;                                       /* our only shell window		*/
 
@@ -154,16 +142,18 @@ void WriteString (const char *s)
 {
   int len;
 
+  assert(outbuff[outbuffpos]=='\0');
+
   if ((outbuffpos+(len=strlen(s)))<OUTBUFFSIZE-1)
   {
+    strcpy(outbuff+outbuffpos,s);
     outbuffpos += len;
-    strcat(outbuff,s);
   }
   else
   {
     len = OUTBUFFSIZE-outbuffpos-1;
+    strncpy(outbuff+outbuffpos,s,len);
     outbuffpos += len;
-    strncat(outbuff,s,len);
     MacFlushOutbuff();
     WriteString(s+len);
   }
@@ -273,7 +263,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
           {
             /* graph window */
             gw = WhichGW(whichWindow);
-            assert(gw!=NULL);
+            my_assert(gw!=NULL);
             Mac_ActivateOutput((WINDOWID)gw);
             break;
           }
@@ -317,7 +307,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         {
           /* graph window */
           gw = WhichGW(whichWindow);
-          assert(gw!=NULL);
+          my_assert(gw!=NULL);
           if (GrowGraphWindow(gw,&theEvent,&(reportEvent->DocGrow))==POS_CHANGE)
           {
             reportEvent->Type                       = DOC_GROW;
@@ -328,7 +318,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
             SelectWindow(whichWindow);
 
             gw = WhichGW(whichWindow);
-            assert(gw!=NULL);
+            my_assert(gw!=NULL);
             Mac_ActivateOutput((WINDOWID)gw);
             reportEvent->Type                               = DOC_ACTIVATE;
             reportEvent->DocActivate.win    = (WINDOWID) gw;
@@ -345,7 +335,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         {
           /* graph window */
           gw = WhichGW(whichWindow);
-          assert(gw!=NULL);
+          my_assert(gw!=NULL);
           if (DragGraphWindow(gw,&theEvent,&(reportEvent->DocDrag))==POS_CHANGE)
           {
             reportEvent->Type                       = DOC_DRAG;
@@ -356,7 +346,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
             SelectWindow(whichWindow);
 
             gw = WhichGW(whichWindow);
-            assert(gw!=NULL);
+            my_assert(gw!=NULL);
             Mac_ActivateOutput((WINDOWID)gw);
             reportEvent->Type                               = DOC_ACTIVATE;
             reportEvent->DocActivate.win    = (WINDOWID) gw;
@@ -374,7 +364,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
           {
             /* graph window */
             gw = WhichGW(whichWindow);
-            assert(gw!=NULL);
+            my_assert(gw!=NULL);
             reportEvent->Type                               = DOC_GOAWAY;
             reportEvent->DocGoAway.win              = (WINDOWID) gw;
           }
@@ -394,7 +384,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
           {
             /* graph window */
             gw = WhichGW(whichWindow);
-            assert(gw!=NULL);
+            my_assert(gw!=NULL);
             Mac_ActivateOutput((WINDOWID)gw);
             reportEvent->Type                               = DOC_ACTIVATE;
             reportEvent->DocActivate.win    = (WINDOWID) gw;
@@ -411,7 +401,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
           {
             /* graph window */
             gw = WhichGW(whichWindow);
-            assert(gw!=NULL);
+            my_assert(gw!=NULL);
             SetPort(whichWindow);
             GlobalToLocal(&(theEvent.where));
             MouseLocation[0] = (INT)theEvent.where.h;
@@ -451,7 +441,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
       {
         /* graph window */
         gw = WhichGW(whichWindow);
-        assert(gw!=NULL);
+        my_assert(gw!=NULL);
 
         if (BitAnd(theEvent.modifiers,activeFlag)!=0)
         {
@@ -475,7 +465,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
       {
         /* graph window */
         gw = WhichGW(whichWindow);
-        assert(gw!=NULL);
+        my_assert(gw!=NULL);
 
         if (whichWindow==FrontWindow())
           SetMyCursor(gw->currTool);

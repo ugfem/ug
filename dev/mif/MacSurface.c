@@ -29,19 +29,13 @@
 /*																			*/
 /****************************************************************************/
 
-#include "MWCW.cmdlinedefs"
-
-#ifndef __MWCW__        /* don't need that: included MacHeadersPPC */
-
 /* Macintosh toolbox includes */
 #include <Types.h>
 #include <Events.h>
 #include <Menus.h>
 #include <Windows.h>
 #include <ToolUtils.h>
-#include <desk.h>
-
-#endif
+#include <Devices.h>
 
 /* standard C includes */
 #include <string.h>
@@ -276,7 +270,7 @@ void DoCommand (long mResult)
       About();
     else
     {
-      GetItem(myMenus[appleM],theItem,name);
+      GetMenuItemText(myMenus[appleM],theItem,name);
       temp = OpenDeskAcc(name);
     }
     break;
@@ -306,7 +300,7 @@ void SetUpMenus ()
   {
     myMenus[i] = GetMenu(i+appleID);
     assert(myMenus[i]!=NULL);
-    AddResMenu(myMenus[i],'DRVR');
+    AppendResMenu(myMenus[i],'DRVR');
   }
   for (i=0; i<menuCount; i++)
     InsertMenu(myMenus[i],0);                                           /* Add menus to menu bar */

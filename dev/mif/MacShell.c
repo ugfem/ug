@@ -32,10 +32,6 @@
 /*																			*/
 /****************************************************************************/
 
-#include "MWCW.cmdlinedefs"
-
-#ifndef __MWCW__        /* don't need that: included MacHeadersPPC */
-
 /* Macintosh toolbox includes */
 #include <Types.h>
 #include <Memory.h>
@@ -50,11 +46,9 @@
 #include <OSUtils.h>
 #include <ToolUtils.h>
 #include <SegLoad.h>
-#include <desk.h>
-#include <osevents.h>
 #include <Packages.h>
 #include <Files.h>
-#endif
+#include <TextUtils.h>
 
 /* standard C library */
 #include <string.h>
@@ -107,7 +101,7 @@ static int nchars=0;                                            /* number of cha
 
 static int scrollback=100;              /* default number of lines in scrollback bu */
 static int charsperline=256;    /* default line width for shell window		*/
-static int fontNum=monaco;              /* default font in shell window (Monaco)	*/
+static int fontNum=kFontIDMonaco;               /* default font in shell window (Monaco)	*/
 static int fontSize=9;                  /* default font size						*/
 
 /**** the universal headers contain the following defines: ******************/
@@ -264,17 +258,17 @@ static pascal void MyShellScrollAction (ControlHandle c, short p)
   {
     switch (p)
     {
-    case inUpButton :
-      new = MAX(GetCtlMin(c),shell->line-1);
+    case kControlUpButtonPart :
+      new = MAX(GetControlMinimum(c),shell->line-1);
       break;
-    case inDownButton :
-      new = MIN(GetCtlMax(c),shell->line+1);
+    case kControlDownButtonPart :
+      new = MIN(GetControlMaximum(c),shell->line+1);
       break;
-    case inPageUp :
-      new = MAX(GetCtlMin(c),shell->line-(shell->lines+1));
+    case kControlPageUpPart :
+      new = MAX(GetControlMinimum(c),shell->line-(shell->lines+1));
       break;
-    case inPageDown :
-      new = MIN(GetCtlMax(c),shell->line+(shell->lines+1));
+    case kControlPageDownPart :
+      new = MIN(GetControlMaximum(c),shell->line+(shell->lines+1));
       break;
     }
     if (shell->line!=new)
@@ -282,24 +276,24 @@ static pascal void MyShellScrollAction (ControlHandle c, short p)
       TEScroll(0,shell->lineHeight*(shell->line-new),shell->textH);
       shell->line = new;
     }
-    SetCtlValue(c,new);
+    SetControlValue(c,new);
     DrawControls(MAC_WIN(shell));
   }
   if (c==shell->hScrollBar)
   {
     switch (p)
     {
-    case inUpButton :
-      new = MAX(GetCtlMin(c),shell->col-1);
+    case kControlUpButtonPart :
+      new = MAX(GetControlMinimum(c),shell->col-1);
       break;
-    case inDownButton :
-      new = MIN(GetCtlMax(c),shell->col+1);
+    case kControlDownButtonPart :
+      new = MIN(GetControlMaximum(c),shell->col+1);
       break;
-    case inPageUp :
-      new = MAX(GetCtlMin(c),shell->col-(shell->cols+1));
+    case kControlPageUpPart :
+      new = MAX(GetControlMinimum(c),shell->col-(shell->cols+1));
       break;
-    case inPageDown :
-      new = MIN(GetCtlMax(c),shell->col+(shell->cols+1));
+    case kControlPageDownPart :
+      new = MIN(GetControlMaximum(c),shell->col+(shell->cols+1));
       break;
     }
     if (shell->col!=new)
@@ -307,7 +301,7 @@ static pascal void MyShellScrollAction (ControlHandle c, short p)
       TEScroll(shell->charWidth*(shell->col-new),0,shell->textH);
       shell->col = new;
     }
-    SetCtlValue(c,new);
+    SetControlValue(c,new);
     DrawControls(MAC_WIN(shell));
   }
 }
@@ -342,10 +336,10 @@ void ShellWinContentClick (WindowPtr theWindow,EventRecord *theEvent)
     /* cut and paste mechanism here */
     return;
 
-  case inThumb :
+  case kControlIndicatorPart :
     if (TrackControl(whichControl,theEvent->where,(ControlActionUPP)-1)!=0)
     {
-      new = GetCtlValue(whichControl);
+      new = GetControlValue(whichControl);
       if ((whichControl==shell->vScrollBar)&&(shell->line!=new))
       {
         TEScroll(0,shell->lineHeight*(shell->line-new),shell->textH);
@@ -359,10 +353,10 @@ void ShellWinContentClick (WindowPtr theWindow,EventRecord *theEvent)
     }
     break;
 
-  case inUpButton :
-  case inDownButton :
-  case inPageUp :
-  case inPageDown :
+  case kControlUpButtonPart :
+  case kControlDownButtonPart :
+  case kControlPageUpPart :
+  case kControlPageDownPart :
     part2 = TrackControl(whichControl,theEvent->where,MyShellScrollActionPtr);
     break;
   }
@@ -523,8 +517,8 @@ static INT InsertInShellWin (char c)
   /* adjust scroll bars */
   if (nLinesAfter!=nLinesBefore)
   {
-    SetCtlMax(shell->vScrollBar,(short)nLinesAfter);
-    SetCtlValue(shell->vScrollBar,(short)shell->line);
+    SetControlMaximum(shell->vScrollBar,(short)nLinesAfter);
+    SetControlValue(shell->vScrollBar,(short)shell->line);
   }
 
   return (0);
@@ -562,6 +556,14 @@ void MacWriteString (char *s)
   for (cp=s; *cp!='\0'; cp++)
     if (*cp=='\n')
       *cp = '\r';
+#       else
+
+  char *cp;
+
+  /* replace \r by \n for Metrowerks CodeWarrior C compiler */
+  for (cp=s; *cp!='\0'; cp++)
+    if (*cp=='\r')
+      *cp = '\n';
 #       endif
 
   nLinesBefore = (**(shell->textH)).nLines;
@@ -599,8 +601,8 @@ void MacWriteString (char *s)
   /* adjust scroll bars */
   if (nLinesAfter!=nLinesBefore)
   {
-    SetCtlMax(shell->vScrollBar,(short)nLinesAfter);
-    SetCtlValue(shell->vScrollBar,(short)shell->line);
+    SetControlMaximum(shell->vScrollBar,(short)nLinesAfter);
+    SetControlValue(shell->vScrollBar,(short)shell->line);
   }
 
   /* reset saved window pointer */
@@ -627,28 +629,28 @@ char *ShellHandleKeybordEvent (INT SpecialKey, char key)
     switch (SpecialKey)
     {
     case SK_PAGE_UP :
-      MyShellScrollAction(shell->vScrollBar,inPageUp);
+      MyShellScrollAction(shell->vScrollBar,kControlPageUpPart);
       return (NULL);
     case SK_PAGE_DOWN :
-      MyShellScrollAction(shell->vScrollBar,inPageDown);
+      MyShellScrollAction(shell->vScrollBar,kControlPageDownPart);
       return (NULL);
     case SK_PAGE_LEFT :
-      MyShellScrollAction(shell->hScrollBar,inPageUp);
+      MyShellScrollAction(shell->hScrollBar,kControlPageUpPart);
       return (NULL);
     case SK_PAGE_RIGHT :
-      MyShellScrollAction(shell->hScrollBar,inPageDown);
+      MyShellScrollAction(shell->hScrollBar,kControlPageDownPart);
       return (NULL);
     case SK_LINE_UP :
-      MyShellScrollAction(shell->vScrollBar,inUpButton);
+      MyShellScrollAction(shell->vScrollBar,kControlUpButtonPart);
       return (NULL);
     case SK_LINE_DOWN :
-      MyShellScrollAction(shell->vScrollBar,inDownButton);
+      MyShellScrollAction(shell->vScrollBar,kControlDownButtonPart);
       return (NULL);
     case SK_COL_LEFT :
-      MyShellScrollAction(shell->hScrollBar,inUpButton);
+      MyShellScrollAction(shell->hScrollBar,kControlUpButtonPart);
       return (NULL);
     case SK_COL_RIGHT :
-      MyShellScrollAction(shell->hScrollBar,inDownButton);
+      MyShellScrollAction(shell->hScrollBar,kControlDownButtonPart);
       return (NULL);
     }
 
@@ -717,7 +719,13 @@ int ShellInitAndOpen (ShellWindow *sh)
   InitMenus();
 
   /* show about box */
-  About();
+  {
+    int show_about = YES;
+    if (GetDefaultValue(DEFAULTSFILENAME,"show_about",buffer)==0)
+      sscanf(buffer," %d ",&show_about);
+    if (show_about)
+      About();
+  }
 
   /* draw menu bar */
   SetUpMenus();
@@ -735,13 +743,13 @@ int ShellInitAndOpen (ShellWindow *sh)
     sscanf(buffer," %d ",&fontSize);
   if (GetDefaultValue(DEFAULTSFILENAME,"font",buffer)==0)
   {
-    if (strcmp(buffer,"Monaco")==0) fontNum = monaco;
-    if (strcmp(buffer,"Courier")==0) fontNum = courier;
-    if (strcmp(buffer,"Times")==0) fontNum = times;
-    if (strcmp(buffer,"New York")==0) fontNum = newYork;
-    if (strcmp(buffer,"Helvetica")==0) fontNum = helvetica;
-    if (strcmp(buffer,"Geneva")==0) fontNum = geneva;
-    if (strcmp(buffer,"Athens")==0) fontNum = athens;
+    if (strcmp(buffer,"Monaco")==0) fontNum = kFontIDMonaco;
+    if (strcmp(buffer,"Courier")==0) fontNum = kFontIDCourier;
+    if (strcmp(buffer,"Times")==0) fontNum = kFontIDTimes;
+    if (strcmp(buffer,"New York")==0) fontNum = kFontIDNewYork;
+    if (strcmp(buffer,"Helvetica")==0) fontNum = kFontIDHelvetica;
+    if (strcmp(buffer,"Geneva")==0) fontNum = kFontIDGeneva;
+    if (strcmp(buffer,"Athens")==0) fontNum = kFontIDAthens;
   }
 
   /* read default size of shell window */
@@ -808,15 +816,15 @@ int ShellInitAndOpen (ShellWindow *sh)
   /* set correct size of the scroll bars */
   MoveControl(shell->vScrollBar,r.right-15,0);
   SizeControl(shell->vScrollBar,16,r.bottom-14);
-  SetCtlMin(shell->vScrollBar,0);
-  SetCtlMax(shell->vScrollBar,(short)(**(shell->textH)).nLines);
-  SetCtlValue(shell->vScrollBar,0);
+  SetControlMinimum(shell->vScrollBar,0);
+  SetControlMaximum(shell->vScrollBar,(short)(**(shell->textH)).nLines);
+  SetControlValue(shell->vScrollBar,0);
   ShowControl(shell->vScrollBar);
   MoveControl(shell->hScrollBar,0,r.bottom-15);
   SizeControl(shell->hScrollBar,r.right-14,16);
-  SetCtlMin(shell->hScrollBar,0);
-  SetCtlMax(shell->hScrollBar,(short)charsperline);
-  SetCtlValue(shell->hScrollBar,0);
+  SetControlMinimum(shell->hScrollBar,0);
+  SetControlMaximum(shell->hScrollBar,(short)charsperline);
+  SetControlValue(shell->hScrollBar,0);
   ShowControl(shell->hScrollBar);
   DrawControls(MAC_WIN(shell));
 

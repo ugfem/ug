@@ -32,14 +32,11 @@
 /*																			*/
 /****************************************************************************/
 
-#include "MWCW.cmdlinedefs"
-
-#ifndef __MWCW__        /* don't need that: included MacHeadersPPC */
-
 /* Macintosh toolbox includes */
 #include <Types.h>
 #include <Memory.h>
 #include <Quickdraw.h>
+#include <QuickdrawText.h>
 #include <Fonts.h>
 #include <Events.h>
 #include <Menus.h>
@@ -50,12 +47,9 @@
 #include <OSUtils.h>
 #include <ToolUtils.h>
 #include <SegLoad.h>
-#include <desk.h>
-#include <osevents.h>
 #include <Packages.h>
 #include <Files.h>
-
-#endif
+#include <TextUtils.h>
 
 /* standard C includes */
 #include <string.h>
@@ -647,6 +641,7 @@ static void InitMacPort ()
   /* init pointers to miscellaneous functions */
   MacOutputDevice->GetPaletteEntry        = MacGetPaletteEntry;
   MacOutputDevice->Flush                          = MacFlush;
+  MacOutputDevice->PlotPixelBuffer        = NULL;
 }
 
 /****************************************************************************/
@@ -1132,7 +1127,7 @@ static WINDOWID Mac_OpenOutput (
   gw->Local_UR[0] = Local_UR[0] = width;
   gw->Local_UR[1] = Local_UR[1] = 0;
 
-  TextFont(monaco);
+  TextFont(kFontIDMonaco);
 
   /* return window ptr */
   *error = 0;
