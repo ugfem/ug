@@ -123,6 +123,8 @@ static INT ce_VCSTRONG;
 /****************************************************************************/
 
 INT MatrixType[MAXVECTORS][MAXVECTORS];
+const char *VecTypeName[MAXVECTORS];
+
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
@@ -2624,7 +2626,7 @@ static INT CheckConnections (GRID *theGrid)
        theElement!=NULL;
        theElement=SUCCE(theElement))
   {
-    if(error=ElementCheckConnection(theGrid,theElement)!=0)
+    if ((error=ElementCheckConnection(theGrid,theElement))!=0)
     {
       UserWriteF(PFMT "%d: element=" EID_FMTX " has bad connections\n",
                  me, EID_PRTX(theElement));
@@ -6658,6 +6660,16 @@ INT InitAlgebra (void)
 
   /* init default find cut proc */
   if (CreateFindCutProc ("lex",FeedbackVertexVectors)==NULL) return(__LINE__);
+
+  for (i=0; i<MAXVECTORS; i++)
+    switch (i)
+    {
+    case NODEVECTOR : VecTypeName[i] = "nd"; break;
+    case EDGEVECTOR : VecTypeName[i] = "ed"; break;
+    case ELEMVECTOR : VecTypeName[i] = "el"; break;
+    case SIDEVECTOR : VecTypeName[i] = "si"; break;
+    default : VecTypeName[i] = "";
+    }
 
   return (0);
 }
