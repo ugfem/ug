@@ -9524,7 +9524,7 @@ int     EvalBndPoint_Line_Informations(LGM_MESH_INFO *theMesh)
                und muss hier nicht nochmal uebergeben werden.*/
 /*int LGM_ANSYS_ReadMesh (HEAP *theHeap, LGM_MESH_INFO *theMesh)*/
 /* alte Version*/
-int LGM_ANSYS_ReadMesh (HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) /* DIRKS NEU MarkKey*/
+int LGM_ANSYS_ReadMesh (char *name, HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) /* DIRKS NEU MarkKey*/
 {
   SD_TYP *sbd;
   int i,TetraederelementID, ll, stelle, SbdName,elem_lf;

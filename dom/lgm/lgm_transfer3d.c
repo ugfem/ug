@@ -34,6 +34,7 @@
 #include "lgm_transfer.h"
 #include "heaps.h"
 #include "general.h"
+#include "ng.h"
 
 
 static FILE *stream;
@@ -807,6 +808,9 @@ INT InitLGMTransfer (void)
   lgmdomainpathes_set = 0;
   if (ReadSearchingPaths(DEFAULTSFILENAME,"lgmdomainpathes")==0)
     lgmdomainpathes_set = 1;
+
+  /* init NG */
+  if (NG_Init ((int)lgmdomainpathes_set)) return (1);
 
   return (0);
 }

@@ -22,7 +22,7 @@ LCFLAGS = -I../../include
 2 :  $(OBJECTS) $(OBJECTS2) Makefile.lgm $(MODULES)
 	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) $(OBJECTS2)
 
-3 :  $(OBJECTS) $(OBJECTS3) Makefile.lgm $(MODULES)
+3 :  $(OBJECTS) $(OBJECTS3) Makefile.lgm $(MODULES) NGIN
 	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) $(OBJECTS3)
 
 .c.o:
@@ -31,9 +31,13 @@ LCFLAGS = -I../../include
 SURFACE:
 	cd netgen; make -f lgm_makefile.netgen $(DIM); cd ..;
 	
+NGIN:
+	cd ngin; make -f Makefile.ngin; cd ..;
+	
 clean:
 	rm -f *.o
 	cd netgen; make -f lgm_makefile.netgen clean; cd ..;
+	cd ngin; make -f Makefile.ngin clean; cd ..;
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS)
