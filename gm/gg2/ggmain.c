@@ -2773,25 +2773,25 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
        ((doAngle || doangle || doEdge || doedge) == NO ))
     {
       PrintErrorMessage('E',"GenerateGrid","no variable chosen for accelerate or not!");
-      return (2);
+      REP_ERR_RETURN (2);
     }
 
   /* are there already indep front lists? */
   if (STARTIFL(myMGdata)!=NULL)
   {
     PrintErrorMessage('E',"GenerateGrid","there exist already independent front lists");
-    return (4);
+    REP_ERR_RETURN (4);
   }
 
   if (AssembleFrontLists (theMG,mesh,MarkKey)!=0)
   {
-    return (5);
+    REP_ERR_RETURN (5);
   }
 
   /* now we can create all element sides that will be needed by the MakeElement fct. */
 
   if (doAngle || doEdge)
-    if (AccelInit(theGrid, doAngle, doEdge, myPars)!=0) return(1);
+    if (AccelInit(theGrid, doAngle, doEdge, myPars)!=0) REP_ERR_RETURN(1);
 
   if (doConstDel)
   {
@@ -2799,13 +2799,13 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
     elem_context_list = NULL;
     mesh_2d.nElements = (INT *) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(INT),MarkKey);
     if (mesh_2d.nElements == NULL)
-      return(1);
+      REP_ERR_RETURN(1);
     mesh_2d.Element = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*),MarkKey);
     if (mesh_2d.Element == NULL)
-      return(1);
+      REP_ERR_RETURN(1);
     mesh_2d.start = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*),MarkKey);
     if (mesh_2d.start == NULL)
-      return(1);
+      REP_ERR_RETURN(1);
     for(i=1; i<=theMG->theBVPD.nSubDomains; i++)
     {
       mesh_2d.Element[i] = NULL;
@@ -2840,10 +2840,10 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
           AccelUpdate( theFC, PREDFC(theFC), the_old_succ, FlgForAccel,doAngle,doEdge);
 
           if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
-            return (1);
+            REP_ERR_RETURN (1);
 
           if (MakeElement(theGrid, &theElementContext ))
-            return (8);
+            REP_ERR_RETURN (8);
           if (display>0)
           {
             nElement++;
@@ -2867,7 +2867,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         theIntersectfoundPoints[0] = NULL;
 
         if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
-          return (9);
+          REP_ERR_RETURN (9);
 
         FlgForAccel = NORMALCASE;
 
@@ -2875,15 +2875,15 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         disp_FL = NULL;
 
         if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-          return (10);
+          REP_ERR_RETURN (10);
 
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ ))
-          return (1);
+          REP_ERR_RETURN (1);
 
         AccelUpdate( theFC, thenewFC, the_old_succ, FlgForAccel, doAngle, doEdge);
 
         if (MakeElement(theGrid,&theElementContext))
-          return (11);
+          REP_ERR_RETURN (11);
         if (display>0)
         {
           nElement++;
@@ -2895,10 +2895,10 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         }
 
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if(FL_FC_Disposer(disp_FC, disp_FL))
-          return (1);
+          REP_ERR_RETURN (1);
 
 
 
@@ -2920,9 +2920,9 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
           FlgForAccel = FINALCASE;
           /* we make this last element and dispose the list */
           if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
-            return (1);
+            REP_ERR_RETURN (1);
           if (MakeElement(theGrid, &theElementContext))
-            return (12);
+            REP_ERR_RETURN (12);
           if (display>0)
           {
             nElement++;
@@ -2946,7 +2946,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         theIntersectfoundPoints[0] = NULL;
 
         if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
-          return (13);
+          REP_ERR_RETURN (13);
 
         FlgForAccel = NORMALCASE;
 
@@ -2954,13 +2954,13 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         disp_FL = NULL;
 
         if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-          return (10);
+          REP_ERR_RETURN (10);
 
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if (MakeElement(theGrid, &theElementContext))
-          return (15);
+          REP_ERR_RETURN (15);
 
         if (display>0)
         {
@@ -2973,12 +2973,12 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         }
 
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
-          return (1);
+          REP_ERR_RETURN (1);
 
         debug++;
 
         if(FL_FC_Disposer(disp_FC, disp_FL))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if (printelem)
         {
@@ -3001,14 +3001,14 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
           elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D),MarkKey);
           if (elem_2d == NULL)
-            return(1);
+            REP_ERR_RETURN(1);
           elem_2d->succel = NULL;
 
           if (FillElementContext(FlgForAccel, &(elem_2d->elem_context), theFC, PREDFC(theFC), the_old_succ))
-            return (1);
+            REP_ERR_RETURN (1);
 
           if (FillDelContext(&(elem_2d->elem_context), &(elem_2d->del_context)))
-            return (1);
+            REP_ERR_RETURN (1);
 
           if(mesh_2d.nElements[MYFL(theFC)->SubdomainID]==0)
           {
@@ -3046,7 +3046,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         theIntersectfoundPoints[0] = NULL;
 
         if ((thenewFC=CreateDelaunayTriangle(theGrid,mesh_2d,theIFL,myList,theFC,xt,yt))==NULL)
-          return (13);
+          REP_ERR_RETURN (13);
 
         FlgForAccel = NORMALCASE;
 
@@ -3054,18 +3054,18 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         disp_FL = NULL;
 
         if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-          return (10);
+          REP_ERR_RETURN (10);
 
         elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D),MarkKey);
         if (elem_2d == NULL)
-          return(1);
+          REP_ERR_RETURN(1);
         elem_2d->succel = NULL;
 
         if (FillElementContext(FlgForAccel, &(elem_2d->elem_context), theFC, thenewFC, the_old_succ))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if (FillDelContext(&(elem_2d->elem_context), &(elem_2d->del_context)))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if (display>0)
         {
@@ -3078,7 +3078,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         }
 
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &(elem_2d->elem_context)))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if(mesh_2d.nElements[MYFL(theFC)->SubdomainID]==0)
         {
@@ -3095,7 +3095,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         debug++;
 
         if(FL_FC_Disposer(disp_FC, disp_FL))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if (printelem)
         {
@@ -3115,11 +3115,11 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
           FlgForAccel = FINALCASE;
 
           if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
-            return (1);
+            REP_ERR_RETURN (1);
 
           /* we make this last element and dispose the list */
           if (MakeElement(theGrid, &theElementContext ))
-            return (16);
+            REP_ERR_RETURN (16);
           if (display>0)
           {
             nElement++;
@@ -3141,7 +3141,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         theIntersectfoundPoints[0] = NULL;
 
         if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
-          return (17);
+          REP_ERR_RETURN (17);
 
         FlgForAccel = NORMALCASE;
 
@@ -3149,14 +3149,14 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         disp_FL = NULL;
 
         if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-          return (10);
+          REP_ERR_RETURN (10);
 
 
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if (MakeElement(theGrid, &theElementContext))
-          return (19);
+          REP_ERR_RETURN (19);
 
         if (display>0)
         {
@@ -3168,10 +3168,10 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
           }
         }
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if(FL_FC_Disposer(disp_FC, disp_FL))
-          return (1);
+          REP_ERR_RETURN (1);
 
         if (printelem)
         {
@@ -3196,7 +3196,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
       {
 
         if (MakeElement(theGrid, &(mesh_2d.Element[i]->elem_context)))
-          return (15);
+          REP_ERR_RETURN (15);
         mesh_2d.Element[i] = mesh_2d.Element[i]->succel;
       }
     }
