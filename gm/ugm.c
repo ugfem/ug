@@ -176,13 +176,6 @@ INT ReleaseOBJT (INT type)
   if (type>=MAXOBJECTS)
     return (GM_ERROR);
 
-  for (theMG=GetFirstMultigrid(); theMG!=NULL; theMG=GetNextMultigrid(theMG))
-    if (theMG->freeObjects[type]!=NULL)
-    {
-      PrintErrorMessage('E',"ReleaseOBJT","first clean freeObjects list to this type FOR ALL mgs");
-      return (GM_ERROR);
-    }
-
   CLEAR_FLAG(UsedOBJT,1<<type);
 
   return (GM_OK);
@@ -236,8 +229,8 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
     {
       if (theMG->freeObjects[k] != NULL)
       {
-        ptr = (void **) theMG->freeObjects[type];
-        theMG->freeObjects[type] = ptr[0];
+        ptr = (void **) theMG->freeObjects[k];
+        theMG->freeObjects[k] = ptr[0];
         obj = (void *) ptr;
       }
       break;
@@ -247,7 +240,7 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
   }
 
   if (obj == NULL)
-    obj = GetMem(MGHEAP(theMG),(MEM *)size,FROM_BOTTOM);
+    obj = GetMem(MGHEAP(theMG),(MEM)size,FROM_BOTTOM);
 
   if (obj != NULL)
     memset(obj,0,size);
