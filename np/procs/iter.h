@@ -66,7 +66,7 @@ struct np_iter {
   INT (*PreProcess)
     (struct np_iter *,                       /* pointer to (derived) object     */
     INT,                                         /* level                           */
-    VECDATA_DESC *,                              /* correction vector               */
+    VECDATA_DESC *,                              /* solution vector					*/
     VECDATA_DESC *,                              /* defect vector                   */
     MATDATA_DESC *,                              /* matrix                          */
     INT *,                                       /* baselevel used by iter          */
@@ -81,7 +81,7 @@ struct np_iter {
   INT (*PostProcess)
     (struct np_iter *,                       /* pointer to (derived) object     */
     INT,                                         /* level                           */
-    VECDATA_DESC *,                              /* correction vector               */
+    VECDATA_DESC *,                              /* solution vector					*/
     VECDATA_DESC *,                              /* defect vector                   */
     MATDATA_DESC *,                              /* matrix                          */
     INT *);                                      /* result                          */
