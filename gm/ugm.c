@@ -6130,6 +6130,7 @@ INT KeyForObject( SELECTION_OBJECT *obj )
   int dummy;            /* dummy variable */
   DOUBLE_VECTOR coord;
 
+  if (obj==NULL) return (-1);
   switch( OBJT(obj) )
   {
   case BVOBJ :
