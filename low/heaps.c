@@ -71,6 +71,8 @@
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+
+
 /****************************************************************************/
 /*D
    InitHeaps - Initialize memory management module
@@ -256,7 +258,9 @@ void *GetMem (HEAP *theHeap, MEM n, INT mode)
   }
   else                                          /* it's a general heap      */
   {
-    n += ALIGNMENT;                         /* must remember size of block    */
+    /* add ALIGNMENT bytes at the beginning of the storage block
+       in order to remember size of allocated memory chunk there */
+    n += ALIGNMENT;
 
     /* find first BLOCK that fits */
     for (theBlock=theHeap->heapptr; theBlock->next!=theHeap->heapptr;
@@ -264,11 +268,15 @@ void *GetMem (HEAP *theHeap, MEM n, INT mode)
       if (theBlock->size>=n) break;
     if (theBlock->size>=n)
     {
+      /* if n is not an aligned size, we have to add some empty
+         space at the end of the memory chunk.                  */
+      MEM real_n = CEIL(n);
+
       /* BLOCK found */
-      if (theBlock->size>=CEIL(sizeof(BLOCK)+n))
+      if (theBlock->size >= (CEIL(sizeof(BLOCK))+real_n))
       {
         /* decrease BLOCK size only */
-        newsize = FLOOR(theBlock->size-n);
+        newsize = FLOOR(theBlock->size-real_n);
         allocated = theBlock->size-newsize;
         theHeap->used += allocated;
         theBlock->size = newsize;
