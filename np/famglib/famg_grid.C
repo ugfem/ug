@@ -1947,8 +1947,87 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 	
 	FAMGNode *node = Communication_Graph->GetNode(VINDEX(vec));
 	
+	if( node->IsUndecidedNode() )
+	{
+		if( msgtype == FAMG_TYPE_COARSE )
+		{
+			#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+			PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse "VINDEX_FMTX" from PE %d with prio %d\n",me,VINDEX_PRTX(vec),proc,prio));
+			#else
+			PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+			#endif
+
+			// code from PaList::MarkParents
+    	    Communication_Graph->Remove(node);
+        	Communication_Graph->MarkCGNode(node);
+	        Communication_Graph->UpdateNSons(NULL,node->GetPaList(),Communication_Grid);
+    	    Communication_Graph->ClearPaList(node->GetPaList());
+        	node->SetPaList(NULL);
+	        Communication_Grid->UpdateNeighborsCG(node->GetId());
+		}
+		else if( msgtype == FAMG_TYPE_FINE )
+		{
+			DOUBLE prolongations[FAMGMAXPARENTS], restrictions[FAMGMAXPARENTS];
+			int np, parents[FAMGMAXPARENTS], bp, pos = 0;
+			DDD_GID pgid;
+			MATRIX *mat;	
+		
+			np = *(int*)buffer;		// fetch number of parents from buffer
+		
+			#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+	    	PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine "VINDEX_FMTX" %d parents from PE %d with prio %d\n",me,VINDEX_PRTX(vec), np, proc,prio));
+			#else
+		    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine "VINDEX_FMTX" %d parents\n",me,VINDEX_PRTX(vec), np));
+			#endif
+
+			// prepare array offsets into the buffer
+			DDD_GID *buffer_gid  = (DDD_GID *)((char*)data + CEIL(sizeof(msgtype)+sizeof(int))); // round up to achive alignment
+			DOUBLE *buffer_prolo = (DOUBLE *)((char*)buffer_gid+CEIL(FAMGMAXPARENTS*sizeof(DDD_GID)));
+			DOUBLE *buffer_restr = buffer_prolo+FAMGMAXPARENTS;
+
+			for( bp=0; bp<np; bp++)	// process parent nodes
+			{
+				pgid = buffer_gid[bp];	// fetch GID of a parent node from buffer
+			
+			    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus:     -> GID %08x P=%g R=%g\n",me,pgid,buffer_prolo[bp],buffer_restr[bp]));
+				for( mat = MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat) )
+					if( DDD_InfoGlobalId(PARHDR(MDEST(mat)))==pgid )
+						break;
+				if( mat==NULL )
+				{
+					continue; // this parent node is not on this processor
+					// is skippping OK  ?????????
+				}
+
+				assert( pos<FAMGMAXPARENTS );
+
+				parents[pos] = VINDEX(MDEST(mat));
+				prolongations[pos] = buffer_prolo[bp];	// TODO: avoid the almost unneccessary copying of the DOUBLEs but consider: pos and bp may be different!
+				restrictions[pos] = buffer_restr[bp];
+		    	PRINTDEBUG(np,1,("%d: Scatter_NodeStatus:     -> "VINDEX_FMTX" P=%g R=%g\n",me,VINDEX_PRTX(MDEST(mat)),prolongations[pos],restrictions[pos]));
+				pos++;
+			}
+
+			// put the values for the parent nodes into the node
+			FAMGPaList *palist = NULL;
+			if(Communication_Graph->SavePaList(palist,pos,parents,prolongations,restrictions,1.0))
+			{
+				RETURN(1);
+			}
+			Communication_Graph->ClearPaList(node->GetPaList());		
+			node->SetPaList(palist);
+		
+			// process node as fine node
+			node->Eliminate(Communication_Grid);
+			node->UpdateNeighborsFG(Communication_Grid);
+		}
+		else
+		{
+			abort(); // unrecognized message type
+		}
+	}
 #ifdef Debug
-	if( !node->IsUndecidedNode() )
+	else
 	{
 		// check that the state of the node is consistent with the message
 		if( msgtype == FAMG_TYPE_COARSE )
@@ -1993,92 +2072,11 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 		}	
 		else
 		{
-			RETURN(1); // unrecognized message type
+			abort(); // unrecognized message type
 		}
 	}
-	else
-	{
 #endif
-	if( msgtype == FAMG_TYPE_COARSE )
-	{
-		#ifdef EXTENDED_OUTPUT_FOR_DEBUG
-		PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse "VINDEX_FMTX" from PE %d with prio %d\n",me,VINDEX_PRTX(vec),proc,prio));
-		#else
-		PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
-		#endif
-
-		// code from PaList::MarkParents
-        Communication_Graph->Remove(node);
-        Communication_Graph->MarkCGNode(node);
-        Communication_Graph->UpdateNSons(NULL,node->GetPaList(),Communication_Grid);
-        Communication_Graph->ClearPaList(node->GetPaList());
-        node->SetPaList(NULL);
-        Communication_Grid->UpdateNeighborsCG(node->GetId());
-	}
-	else if( msgtype == FAMG_TYPE_FINE )
-	{
-		DOUBLE prolongations[FAMGMAXPARENTS], restrictions[FAMGMAXPARENTS];
-		int np, parents[FAMGMAXPARENTS], bp, pos = 0;
-		DDD_GID pgid;
-		MATRIX *mat;	
-		
-		np = *(int*)buffer;		// fetch number of parents from buffer
-		
-		#ifdef EXTENDED_OUTPUT_FOR_DEBUG
-	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine "VINDEX_FMTX" %d parents from PE %d with prio %d\n",me,VINDEX_PRTX(vec), np, proc,prio));
-		#else
-	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine "VINDEX_FMTX" %d parents\n",me,VINDEX_PRTX(vec), np));
-		#endif
-		
-		// prepare array offsets into the buffer
-		DDD_GID *buffer_gid  = (DDD_GID *)((char*)data + CEIL(sizeof(msgtype)+sizeof(int))); // round up to achive alignment
-		DOUBLE *buffer_prolo = (DOUBLE *)((char*)buffer_gid+CEIL(FAMGMAXPARENTS*sizeof(DDD_GID)));
-		DOUBLE *buffer_restr = buffer_prolo+FAMGMAXPARENTS;
-
-		for( bp=0; bp<np; bp++)	// process parent nodes
-		{
-			pgid = buffer_gid[bp];	// fetch GID of a parent node from buffer
-			
-		    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus:     -> GID %08x P=%g R=%g\n",me,pgid,buffer_prolo[bp],buffer_restr[bp]));
-			for( mat = MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat) )
-				if( DDD_InfoGlobalId(PARHDR(MDEST(mat)))==pgid )
-					break;
-			if( mat==NULL )
-			{
-				continue; // this parent node is not on this processor
-				// is skippping OK  ?????????
-			}
-			
-			assert( pos<FAMGMAXPARENTS );
-			
-			parents[pos] = VINDEX(MDEST(mat));
-			prolongations[pos] = buffer_prolo[bp];	// TODO: avoid the almost unneccessary copying of the DOUBLEs but consider: pos and bp may be different!
-			restrictions[pos] = buffer_restr[bp];
-		    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus:     -> "VINDEX_FMTX" P=%g R=%g\n",me,VINDEX_PRTX(MDEST(mat)),prolongations[pos],restrictions[pos]));
-			pos++;
-		}
-
-		// put the values for the parent nodes into the node
-		FAMGPaList *palist = NULL;
-		if(Communication_Graph->SavePaList(palist,pos,parents,prolongations,restrictions,1.0))
-		{
-			RETURN(1);
-		}
-		Communication_Graph->ClearPaList(node->GetPaList());		
-		node->SetPaList(palist);
-		
-		// process node as fine node
-		node->Eliminate(Communication_Grid);
-		node->UpdateNeighborsFG(Communication_Grid);
-	}
-	else
-	{
-		RETURN(1); // unrecognized message type
-	}
-#ifdef Debug
-	}	// end of else
-#endif
-		
+	
 	// call Local_ClearNodeFlag afterwards!
 	
 	return 0;
