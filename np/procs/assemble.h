@@ -83,6 +83,19 @@
 #define NPANL_ASSMAT(p)                 (((NP_NL_ASSEMBLE*)(p))->NLAssembleMatrix)
 #define NPANL_POST(p)                   (((NP_NL_ASSEMBLE*)(p))->PostProcess)
 
+/* access macros for NP_T_ASSEMBLE */
+#define NPAT_x(p)                               (((NP_T_ASSEMBLE*)(p))->x)
+#define NPAT_c(p)                               (((NP_T_ASSEMBLE*)(p))->c)
+#define NPAT_b(p)                               (((NP_T_ASSEMBLE*)(p))->b)
+#define NPAT_A(p)                               (((NP_T_ASSEMBLE*)(p))->A)
+
+#define NPAT_PRE(p)                             (((NP_T_ASSEMBLE*)(p))->TAssemblePreProcess)
+#define NPAT_INITIAL(p)                 (((NP_T_ASSEMBLE*)(p))->TAssembleInitial)
+#define NPAT_ASSDEF(p)                  (((NP_T_ASSEMBLE*)(p))->TAssembleDefect)
+#define NPAT_ASSSOL(p)                  (((NP_T_ASSEMBLE*)(p))->TAssembleSolution)
+#define NPAT_ASSMAT(p)                  (((NP_T_ASSEMBLE*)(p))->TAssembleMatrix)
+#define NPAT_POST(p)                    (((NP_T_ASSEMBLE*)(p))->TAssemblePostProcess)
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/
@@ -339,6 +352,11 @@ struct np_t_assemble {
     VECDATA_DESC *,                              /* solution t_k+1 (just computed!)	*/
     VECDATA_DESC *,                              /* solution vector at t_k          */
     VECDATA_DESC *,                              /* solution vector at t_k-1        */
+    INT *);                                      /* result                          */
+  INT (*TAssembleFinal)                                  /* call after finishing integration*/
+    (struct np_t_assemble *,                 /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
     INT *);                                      /* result                          */
 };
 typedef struct np_t_assemble NP_T_ASSEMBLE;
