@@ -1731,7 +1731,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
                              (ECLASS(EFATHER(e)) == RED_CLASS) ?               \
                              EFATHER(e) : EFATHER(EFATHER(e)))
 #define SIDE_ON_BND(p,i) (((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)]) != NULL)
-#define INNER_SIDE(p,i) (((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)]) == NULL)
+#define INNER_SIDE(p,i)  (((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)]) == NULL)
 #define INNER_BOUNDARY(p,i) (0)
 /* TODO: replacind by function call */
 
@@ -2127,7 +2127,17 @@ INT         MGSetVectorClasses      (MULTIGRID *theMG);
                                                 if (Patch_local2bndcond(thePatch,mu,(v),(type)))\
                                                   return (1);}
 
-
+#define Vertex_BndCond(p,w,i,v,t)       { \
+    VSEGMENT *s; \
+    INT j,k; \
+    PATCH *q; \
+    k=0; \
+    for (s=(p)->bv.vseg,j=0; j<(i); s=s->next,j++) k++; \
+    q = s->thePatch; \
+    Patch_local2bndcond(q,s->lambda,(v),(t)); \
+    for (; s!=NULL; s=s->next) k++; \
+    (*(w)) = k; \
+}
 
 #else
 
@@ -2158,6 +2168,18 @@ INT         MGSetVectorClasses      (MULTIGRID *theMG);
                                                   return (1);}
 
 
+#define Vertex_BndCond(p,w,i,v,t)       { \
+    VSEGMENT *s; \
+    INT j,k; \
+    PATCH *q; \
+    k=0; \
+    for (s=p->bv.vseg,j=0; j<(i); s=s->next,j++) k++; \
+    q = s->thePatch; \
+    Patch_local2bndcond(q,s->lambda,(v),(t)); \
+    for (; s!=NULL; s=s->next) k++; \
+    (*(w)) = k; \
+}
+
 #endif
 
 /*  only for checks
@@ -2181,9 +2203,8 @@ INT         MGSetVectorClasses      (MULTIGRID *theMG);
 
    #define BVP_GetCoeffFct please change
    #define BVP_GetUserFct please change
-   #define BVP_GetBVPDesc please change
+ #define BVP_GetBVPDesc please change */
 
- */
 
 
 #define BVP_GetCoeffFct BVP_SetCoeffFct
