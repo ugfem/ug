@@ -2620,9 +2620,6 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   Node[1] = theElementContext->theNode[1];
   Node[2] = theElementContext->theNode[2];
 
-
-  UserWriteF("el %d %d %d\n",ID(Node[0]),ID(Node[1]),ID(Node[2]));
-
   /* find neighboring elements and side information (theElemSide[i]==NULL) means inner side */
   found = 0;
   for (i=0; i<n; i++)
@@ -2634,6 +2631,17 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
     if (theElemSide[i]!=NULL)
       found++;
   }
+
+  InsertElement (MYMG(theGrid),n,Node);
+  theElement = theGrid->elements;
+  theElementContext->thenewElement = theElement;
+
+
+  /* TODO: repair this */
+  return(0);
+
+
+
 
   /* create element */
   if (found>0)
@@ -3234,8 +3242,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ ))
           return (1);
 
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
-          return (10);
+        AccelUpdate( theFC, thenewFC, the_old_succ, FlgForAccel, doAngle, doEdge);
 
         if (MakeElement(theGrid,&theElementContext))
           return (11);
@@ -3243,8 +3250,8 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
 
-
-        AccelUpdate( theFC, thenewFC, the_old_succ, FlgForAccel, doAngle, doEdge);
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
+          return (10);
 
         if (printelem)
         {
@@ -3287,14 +3294,14 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
           return (1);
 
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
-          return (14);
-
         if (MakeElement(theGrid, &theElementContext))
           return (15);
 
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
+          return (14);
 
         if (printelem)
         {
@@ -3336,14 +3343,14 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
           return (1);
 
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
-          return (18);
-
         if (MakeElement(theGrid, &theElementContext))
           return (19);
 
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
+          return (18);
 
         if (printelem)
         {

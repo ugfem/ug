@@ -38,6 +38,7 @@
 #include "heaps.h"
 #include "misc.h"
 #include "ugm.h"
+#include "debug.h"
 #include "general.h"
 
 #include "ggm.h"
@@ -378,6 +379,8 @@ INT DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
   GRID *theGrid;
   FRONTLIST *theFL;
 
+  HEAPFAULT(theIFL);
+
   theGrid = MYGRID(theIFL);
 
   /* remove front lists from theIFL */
@@ -419,19 +422,18 @@ INT DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
 
 INT DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
 {
+  HEAPFAULT(theFC);
+
+  if (STARTFC(myList) == LASTFC(myList))
+  {
+    DisposeFrontList (myList);
+    return(0);
+  }
+
   SUCCFC(PREDFC(theFC)) = SUCCFC(theFC);
   PREDFC(SUCCFC(theFC)) = PREDFC(theFC);
-
   if (theFC == STARTFC(myList))
-  {
-    if (theFC == LASTFC(myList))
-    {
-      STARTFC(myList) = NULL;
-      LASTFC(myList) = NULL;
-    }
-    else
-      STARTFC(myList) = SUCCFC(theFC);
-  }
+    STARTFC(myList) = SUCCFC(theFC);
   else if (theFC == LASTFC(myList))
     LASTFC(myList) = PREDFC(theFC);
 
@@ -457,15 +459,20 @@ INT DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
 
 INT DisposeFrontList (FRONTLIST *theFL)
 {
-  GRID *theGrid;
+  MULTIGRID *theMG;
   INDEPFRONTLIST *myIFL;
 
+  HEAPFAULT(theFL);
+
   myIFL = MYIFL(theFL);
-  theGrid = MYGRID(theFL);
+  theMG = MYMG(MYGRID(theFL));
 
   /* remove front components of theFL */
-  while (STARTFC(theFL) != NULL)
+  while (STARTFC(theFL) != LASTFC(theFL))
     DisposeFrontComp(theFL,STARTFC(theFL));
+
+  HEAPFAULT(STARTFC(theFL));
+  PutFreeObject(theMG,STARTFC(theFL),sizeof(FRONTCOMP),FcObj);
 
   /* remove front list from list */
   if (PREDFL(theFL)!=NULL)
@@ -480,7 +487,7 @@ INT DisposeFrontList (FRONTLIST *theFL)
   NFL(myIFL)--;
 
   /* delete the front list itself */
-  PutFreeObject(theGrid->mg,theFL,sizeof(FRONTLIST),FlObj);
+  PutFreeObject(theMG,theFL,sizeof(FRONTLIST),FlObj);
 
   return(0);
 }
