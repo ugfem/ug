@@ -62,6 +62,10 @@
 
 #define V3_TRAFO4_SC(A,M,b)                {(b) = (M)[2]*(A)[0] + (M)[6]*(A)[1] + (M)[10]*(A)[2] + (M)[14];}
 
+/* rotation modes in 3D */
+#define ROTMODE_EULER   1
+#define ROTMODE_SPHERE  2
+
 /****************************************************************************/
 /*																			*/
 /* Defines and Macros for DRAWINGOBJECT                                                                         */
@@ -475,6 +479,7 @@ INT             WorkOnPicture                   (PICTURE *thePicture, WORK *theW
 INT                     DrawWindowText                  (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT mode);
 INT                     DragPicture                             (PICTURE *thePicture, const INT *MousePos);
 INT                     ZoomPicture                             (PICTURE *thePicture, const INT *MousePos);
+INT                     SetRotMode                              (INT mode);
 INT                     RotatePicture                   (PICTURE *thePicture, const INT *OldMousePos);
 INT                     RotateCut                               (PICTURE *thePicture, const INT *OldMousePos);
 INT                     MoveCut                                 (PICTURE *thePicture, const INT *OldMousePos);

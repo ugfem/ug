@@ -209,7 +209,7 @@ INT ce_ELEMORD;
 		(0,0) is in the upper left corner
 		x-axis to yhe right
 		y-axis down (opposite direction resp. standard ug-coordinate system!)
-		unit is 1 matrix entry box
+		unit is 1 (block-)matrix entry box
 */
 #define MAT_XC(col)	(col)
 #define MAT_YC(row)	(MAT_maxrow-(row))
@@ -406,7 +406,7 @@ static DOUBLE				ex[3] = {1.0, 0.0, 0.0};
 static DOUBLE				ey[3] = {0.0, 1.0, 0.0};
 static DOUBLE				ez[3] = {0.0, 0.0, 1.0};
 
-/*----------- variables describing taransformations --------------------*/
+/*----------- variables describing transformations -------------------------*/
 static DOUBLE					ObsTrafo[16], InvObsTrafo[16];
 static DOUBLE					CutTrafo[16], InvCutTrafo[16];
 static INT						CUT_CutExisting;
@@ -497,6 +497,7 @@ static long EE2D_NoColor[10];	/* 1 if no color (background color) used	*/
 static long EE2D_Color[10];		/* colors used								*/
 static INT EE2D_MaxLevel;		/* level considered to be the top level 	*/
 static INT EE2D_ElemID; 		/* 1 if element ID has to be plotted		*/
+static INT EE2D_Subdom; 		/* 1 if subdomain ID of element has to be pl*/
 static INT EE2D_RefMark;		/* 1 if plot refinement marks				*/
 static long EE2D_ColorRefMark;	/* color of refinement marks				*/
 static INT EE2D_IndMark;		/* 1 if plot indicator marks				*/
@@ -526,13 +527,13 @@ static INT	EE3D_NdCol;			/* node marker color						*/
 static INT	EE3D_IDColor;		/* node ID color							*/
 static INT	EE3D_Vectors;		/* plot vector markers						*/
 static INT	EE3D_VecIndex;		/* plot vector indices						*/
-static INT *EE3D_Type;			/* vector types to display					*/
+static INT *EE3D_OType;			/* vector object types to display			*/
 static long EE3D_VecCol[NVECTYPES];
 static INT	EE3D_PlotNode[MAX_CORNERS_OF_ELEM];
 static VECTOR *EE3D_ndv[MAX_CORNERS_OF_ELEM];
 static VECTOR *EE3D_sdv[MAX_SIDES_OF_ELEM];
 static VECTOR *EE3D_edv[MAX_EDGES_OF_ELEM];
-static INT  EE3D_vtp[NVECTYPES];
+static INT  EE3D_votp[NVECTYPES];
 #ifdef ModelP
 static DOUBLE EE3D_PartShrinkFactor;
 								/* part. shrink factor, 1.0 if normal plot	*/
@@ -613,6 +614,7 @@ static long VM_MExtraColor;		/* color of extra connections				*/
 static INT VM_Idx;				/* also plot vector indices					*/
 static long	VM_IdxColor;		/* color of indices							*/
 static INT VM_Order;			/* plot order								*/
+static INT VM_Part;				/* plot part								*/
 static long VM_OrderStart;		/* spectrum start for order					*/
 static float VM_OrderDelta;		/* spectrum increment for order				*/
 static INT VM_Dependency;		/* plot dependencies						*/
@@ -691,6 +693,10 @@ static COORD_POINT 	FE3D_MousePos;
 
 
 /*---------- working variables of 'EW_EScalar2D' ---------------------------*/
+#define ES2D_SETCOLOR(v,c)			{c = (long)(EScalar2D_V2C_factor*v+EScalar2D_V2C_offset);	\
+									 c = MIN(c,WOP_OutputDevice->spectrumEnd);					\
+									 c = MAX(c,WOP_OutputDevice->spectrumStart);}
+
 static PreprocessingProcPtr EScalar2D_PreProcess;
 static ElementEvalProcPtr EScalar2D_EvalFct;
 static DOUBLE		EScalar2D_V2C_factor;
@@ -698,7 +704,8 @@ static DOUBLE		EScalar2D_V2C_offset;
 static INT			EScalar2D_mode;
 static INT			EScalar2D_depth;
 static INT			EScalar2D_numOfContours;
-static DOUBLE		EScalar2D_ContValues[PO_MAXCONTOURS];
+static DOUBLE		*EScalar2D_ContValues;
+static long			EScalar2D_ContColor[PO_MAXCONTOURS];
 static DOUBLE		EScalar2D_minValue;
 static DOUBLE		EScalar2D_maxValue;
 
@@ -1780,8 +1787,10 @@ static ELEMENT *EW_GetFirstElement_hor_bw_down (MULTIGRID *theMG, INT fromLevel,
 
 static ELEMENT *EW_GetFirstElement_vert_fw_up (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 {
-	INT i;
 	ELEMENT *theElement;
+#	ifdef ModelP
+	INT i;
+#	endif
 	
 	if (theMG==NULL)
 		return (NULL);
@@ -5624,9 +5633,8 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	EE2D_ColorRefMark				= theOD->magenta;
 	EE2D_IndMark					= theGpo->PlotIndMarks;
 	EE2D_ColorIndMark				= theOD->red;
-	EE2D_ElemID 					= 0;
-	if (theGpo->PlotElemID == YES)
-	EE2D_ElemID 				= 1;
+	EE2D_ElemID 					= theGpo->PlotElemID;
+	EE2D_Subdom 					= theGpo->PlotSubdomain;
 	EE2D_ShrinkFactor				= theGpo->ShrinkFactor;
 	#ifdef ModelP
 	{
@@ -6165,7 +6173,7 @@ static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	DOUBLE_VECTOR x0,x1;
 	long Color;
 	BNDS *theSide;
-	INT i,j,left,right;
+	INT i,j,left,right,part;
 
 	if (!BND_PlotBoundary || OBJT(theElement)==IEOBJ)
 	{
@@ -6182,7 +6190,7 @@ static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		theSide = ELEM_BNDS(theElement,i);
 		if (theSide == NULL)
 		  continue;
-		BNDS_BndSDesc(theSide,&left,&right);
+		BNDS_BndSDesc(theSide,&left,&right,&part);
 		if ((left==0)||(right==0))
 			Color = BND_BndColor;
 		else
@@ -6405,7 +6413,7 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
 	GRID *theGrid;
 	VECTOR *vec;
 	BLOCKVECTOR  *theBV;
-	INT nColors,BVn;
+	INT i,nColors,BVn;
 
 	theVmo = &(PIC_PO(thePicture)->theVmo);
 	theOD  = PIC_OUTPUTDEV(thePicture);
@@ -6418,14 +6426,14 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
 	VN_MarkerColor[1]			= theOD->black;
 	VN_MarkerColor[2]			= theOD->yellow;
 	VN_MarkerColor[3]			= theOD->red;
-	VM_Type[NODEVECTOR]			= theVmo->Type[NODEVECTOR];
-	VM_Type[EDGEVECTOR]			= theVmo->Type[EDGEVECTOR];
-	VM_Type[ELEMVECTOR]			= theVmo->Type[ELEMVECTOR];
+	for (i=0; i<MAXVECTORS; i++)
+		VM_Type[i]				= theVmo->Type[i];
 	VM_Connections				= theVmo->Connections;
 	VM_MColor					= theOD->red;
 	VM_MExtra					= theVmo->Extra;
 	VM_MExtraColor				= theOD->black;
 	VM_Idx						= theVmo->Idx;
+	VM_Part						= theVmo->Part;
 	VM_IdxColor					= theOD->blue;
 	VM_Order					= theVmo->Order;
 	VM_Dependency				= theVmo->Dependency;
@@ -6500,13 +6508,13 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
 	DOUBLE_VECTOR mypos,nbpos;
 	long color;
 	
-	if (!VM_Type[VTYPE(vec)])
+	if (!VM_Type[VTYPE(vec)] || (VSTART(vec)==NULL))
 	{
 		DO_2c(theDO) = DO_NO_INST;
 
-                #ifdef ModelP
-	        WOP_DObjPnt = theDO;
-	        #endif
+        #ifdef ModelP
+        WOP_DObjPnt = theDO;
+        #endif
 
 		return (0);
 	}
@@ -6597,9 +6605,9 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 	{
 		DO_2c(theDO) = DO_NO_INST;
 
-                #ifdef ModelP
-	        WOP_DObjPnt = theDO;
-	        #endif
+        #ifdef ModelP
+        WOP_DObjPnt = theDO;
+        #endif
 
 		return (0);
 	}
@@ -6623,7 +6631,7 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 		{
 			case 0:
 				color = VN_MarkerColor[VCLASS(vec)];
-				markertype = VTYPE(vec);
+				markertype = VOTYPE(vec);
 				break;
 			case 1:
 				color = VM_OrderStart+VINDEX(vec)*VM_OrderDelta;
@@ -6678,7 +6686,7 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 	}
 	
 	/* plot index */
-	if (VM_Idx)
+	if (VM_Idx || VM_Part)
 	{
 		DO_2c(theDO) = DO_TEXT; DO_inc(theDO);
 		DO_2l(theDO) = VM_IdxColor; DO_inc(theDO);
@@ -6694,7 +6702,10 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 		{
 			case 0:
 			case 1:
-				sprintf(DO_2cp(theDO),"%d",(int)VINDEX(vec));
+				if (VM_Part)
+					sprintf(DO_2cp(theDO),"(%d)",(int)VPART(vec));
+				else
+					sprintf(DO_2cp(theDO),"%d",(int)VINDEX(vec));
 				break;
 			case 2:
 				sprintf(DO_2cp(theDO),"%c|/T%d",(int)setchar,(int)cycle);
@@ -7607,9 +7618,12 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM];
-	DOUBLE_VECTOR MidPoint,help,help1;
+	DOUBLE_VECTOR MidPoint,help;
 	INT coe,rule;
 	void *data;
+#	ifdef ModelP
+	DOUBLE_VECTOR help1;
+#	endif
 
 	coe = CORNERS_OF_ELEM(theElement);
 	
@@ -7738,7 +7752,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		theDO = InvertRefinementMark2D(theElement,theDO);
 	
 	/* plot element ID */
-	if (EE2D_ElemID)
+	if (EE2D_ElemID || EE2D_Subdom)
 	{
 		V2_CLEAR(MidPoint)
 		for (i=0; i<coe; i++)
@@ -7757,7 +7771,12 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				(long)DDD_InfoGlobalId(PARHDRE(theElement)));
 			DO_inc_str(theDO);
 		#else
-			sprintf(DO_2cp(theDO),"%d",(int)ID(theElement));
+			if (EE2D_Subdom && EE2D_ElemID)
+				sprintf(DO_2cp(theDO),"%d(%d)",(int)ID(theElement),(int)SUBDOMAIN(theElement));
+			else if (EE2D_Subdom)
+				sprintf(DO_2cp(theDO),"(%d)",(int)SUBDOMAIN(theElement));
+			else if (EE2D_ElemID)
+				sprintf(DO_2cp(theDO),"%d",(int)ID(theElement));
 			DO_inc_str(theDO);
 		#endif
 	}
@@ -8034,8 +8053,9 @@ static INT EW_PreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
 	if (EScalar2D_mode == PO_CONTOURS_EQ)
 	{
 		EScalar2D_numOfContours = theEspo->numOfContours;
-		for (i=0; i<theEspo->numOfContours; i++)
-			EScalar2D_ContValues[i] = theEspo->contValues[i];
+		EScalar2D_ContValues    = theEspo->contValues;
+		for (i=0; i<EScalar2D_numOfContours; i++)
+			ES2D_SETCOLOR(EScalar2D_ContValues[i],EScalar2D_ContColor[i])
 	}
 	EScalar2D_depth 		= theEspo->depth;
 	
@@ -8170,9 +8190,7 @@ static INT PlotColorTriangle2D (ELEMENT *theElement, const DOUBLE **CornersOfEle
 			EvalPoint[i] = (TP0[i]+TP1[i]+TP2[i])/3.0;
 		if (UG_GlobalToLocal(3,CornersOfElem,EvalPoint,LocalCoord)) return (1);
 		value = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-		Color = (long)(EScalar2D_V2C_factor*value+EScalar2D_V2C_offset);
-		Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-		Color = MAX(Color,WOP_OutputDevice->spectrumStart);
+		ES2D_SETCOLOR(value,Color);
 
 		/* draw */
 		DO_2c(*PtrDO) = DO_POLYGON; DO_inc(*PtrDO) 
@@ -8246,9 +8264,7 @@ static INT PlotColorQuadrilateral2D (ELEMENT *theElement, const DOUBLE **Corners
 		/* get values */		
 		if (UG_GlobalToLocal(4,CornersOfElem,EVP,LocalCoord)) return (1);
 		value = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-		Color = (long)(EScalar2D_V2C_factor*value+EScalar2D_V2C_offset);
-		Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-		Color = MAX(Color,WOP_OutputDevice->spectrumStart);
+		ES2D_SETCOLOR(value,Color);
 
 		/* draw */
 		DO_2c(*PtrDO) = DO_POLYGON; DO_inc(*PtrDO) 
@@ -8389,14 +8405,12 @@ static INT PlotContourTriangle2D (ELEMENT *theElement, const DOUBLE **CornersOfE
 		for (max=EScalar2D_numOfContours-1; max>=0; max--)
 			if (EScalar2D_ContValues[max]<=vmax)
 				break;
-
+		
 		/* draw contours */
 		for (i=min; i<=max; i++)
 		{
 			/* set color */
-			Color = (long)(EScalar2D_V2C_factor*EScalar2D_ContValues[i]+EScalar2D_V2C_offset);
-			Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-			Color = MAX(Color,WOP_OutputDevice->spectrumStart);
+			Color = EScalar2D_ContColor[i];
 
 			/* calculate points on each side of triangle having the right value */
 			n=0;
@@ -8427,7 +8441,7 @@ static INT PlotContourTriangle2D (ELEMENT *theElement, const DOUBLE **CornersOfE
 					V2_COPY(Point[1],DO_2Cp(*PtrDO)); DO_inc_n(*PtrDO,2);
 					V2_COPY(PointMid,DO_2Cp(*PtrDO)); DO_inc_n(*PtrDO,2);
 					V2_COPY(Point[2],DO_2Cp(*PtrDO)); DO_inc_n(*PtrDO,2);
-					break;
+				break;
 			}
 		}
 	}
@@ -8520,9 +8534,7 @@ static INT PlotContourQuadrilateral2D (ELEMENT *theElement, const DOUBLE **Corne
 		for (i=min; i<=max; i++)
 		{
 			/* set color */
-			Color = (long)(EScalar2D_V2C_factor*EScalar2D_ContValues[i]+EScalar2D_V2C_offset);
-			Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-			Color = MAX(Color,WOP_OutputDevice->spectrumStart);
+			Color = EScalar2D_ContColor[i];
 
 			/* calculate points on each side of triangle having the right value */
 			n=0;
@@ -11519,7 +11531,7 @@ static DRAWINGOBJ *ElementNodes (ELEMENT *theElement, DRAWINGOBJ *theDO, INT Vie
 			#endif
 		}
 	
-	/* invert what is neccessary */
+	/* invert what is necessary */
 	if (ninv>0)
 	{
 		DO_2c(theDO) = DO_INVPOLYMARK; DO_inc(theDO) 
@@ -11564,7 +11576,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 		if (!Viewable[i]) continue;
 		
 		/* first corners */
-		if (EE3D_Type[NODEVECTOR])
+		if (EE3D_OType[NODEVEC])
 			for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 			{
 				corn = CORNER_OF_SIDE(theElement,i,j);
@@ -11589,7 +11601,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 				}
 			}
 		/* now sides */
-		if (EE3D_Type[SIDEVECTOR])
+		if (EE3D_OType[SIDEVEC])
 		{
 			myz = 0.0;
 			for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
@@ -11602,7 +11614,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 			if (checkZ && (myz<=-SMALL_C))
 				continue;
 			
-			/* we don´t have to check VCUSED flag */
+			/* we don't have to check VCUSED flag */
 			vec = SVECTOR(theElement,i);
 			/*SETVCUSED(vec,TRUE);*/
 			EE3D_sdv[nplotSDV++] = vec;
@@ -11611,7 +11623,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 		}
 		
 		/* now edges */
-		if (EE3D_Type[EDGEVECTOR])
+		if (EE3D_OType[EDGEVEC])
 			for (j=0; j<EDGES_OF_SIDE(theElement,i); j++)
 			{
 				edge = EDGE_OF_SIDE(theElement,i,j);
@@ -11646,15 +11658,15 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 		/* how about elem vectors (inside element)? */
 	}
 	
-	if (EE3D_Type[NODEVECTOR])
+	if (EE3D_OType[NODEVEC])
 	{
 		/* plot node vectors */
 		if (nplotNDV>0)
 		{
-			EE3D_vtp[number++] = NODEVECTOR;
+			EE3D_votp[number++] = NODEVEC;
 			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
 			DO_2c(theDO) = nplotNDV; DO_inc(theDO) 
-			DO_2l(theDO) = EE3D_VecCol[NODEVECTOR]; DO_inc(theDO);
+			DO_2l(theDO) = EE3D_VecCol[NODEVEC]; DO_inc(theDO);
 			DO_2s(theDO) = EE3D_NDV_MARK; DO_inc(theDO);
 			DO_2s(theDO) = EE3D_VEC_SIZE; DO_inc(theDO);
 			for (j=0; j<nplotNDV; j++)
@@ -11678,7 +11690,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 				sprintf(DO_2cp(theDO),"%d",(int)VINDEX(EE3D_ndv[j])); DO_inc_str(theDO);
 			}
 		
-		/* invert what is neccessary */
+		/* invert what is necessary */
 		if (ninvNDV>0)
 		{
 			DO_2c(theDO) = DO_INVPOLYMARK; DO_inc(theDO) 
@@ -11693,15 +11705,15 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 			}
 		}
 	}
-	if (EE3D_Type[SIDEVECTOR])
+	if (EE3D_OType[SIDEVEC])
 	{
 		/* plot side vectors */
 		if (nplotSDV>0)
 		{
-			EE3D_vtp[number++] = SIDEVECTOR;
+			EE3D_votp[number++] = SIDEVEC;
 			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
 			DO_2c(theDO) = nplotSDV; DO_inc(theDO) 
-			DO_2l(theDO) = EE3D_VecCol[SIDEVECTOR]; DO_inc(theDO);
+			DO_2l(theDO) = EE3D_VecCol[SIDEVEC]; DO_inc(theDO);
 			DO_2s(theDO) = EE3D_SDV_MARK; DO_inc(theDO);
 			DO_2s(theDO) = EE3D_VEC_SIZE; DO_inc(theDO);
 			for (j=0; j<nplotSDV; j++)
@@ -11727,7 +11739,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 				sprintf(DO_2cp(theDO),"%d",(int)VINDEX(EE3D_sdv[j])); DO_inc_str(theDO);
 			}
 		
-		/* invert what is neccessary */
+		/* invert what is necessary */
 		if (ninvSDV>0)
 		{
 			DO_2c(theDO) = DO_INVPOLYMARK; DO_inc(theDO) 
@@ -11743,15 +11755,15 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 			}
 		}
 	}
-	if (EE3D_Type[EDGEVECTOR])
+	if (EE3D_OType[EDGEVEC])
 	{
 		/* plot edge vectors */
 		if (nplotEDV>0)
 		{
-			EE3D_vtp[number++] = EDGEVECTOR;
+			EE3D_votp[number++] = EDGEVEC;
 			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
 			DO_2c(theDO) = nplotEDV; DO_inc(theDO) 
-			DO_2l(theDO) = EE3D_VecCol[EDGEVECTOR]; DO_inc(theDO);
+			DO_2l(theDO) = EE3D_VecCol[EDGEVEC]; DO_inc(theDO);
 			DO_2s(theDO) = EE3D_EDV_MARK; DO_inc(theDO);
 			DO_2s(theDO) = EE3D_VEC_SIZE; DO_inc(theDO);
 			for (j=0; j<nplotEDV; j++)
@@ -11777,7 +11789,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 				sprintf(DO_2cp(theDO),"%d",(int)VINDEX(EE3D_edv[j])); DO_inc_str(theDO);
 			}
 		
-		/* invert what is neccessary */
+		/* invert what is necessary */
 		if (ninvEDV>0)
 		{
 			DO_2c(theDO) = DO_INVPOLYMARK; DO_inc(theDO) 
@@ -12661,11 +12673,11 @@ static INT EW_SelectVec3D (DRAWINGOBJ *q)
 					/* check tolerance */
 					if (((pt.x-FN3D_ACC)<FN3D_MousePos.x) && ((pt.x+FN3D_ACC)>FN3D_MousePos.x))
 						if (((pt.y-FN3D_ACC)<FN3D_MousePos.y) && ((pt.y+FN3D_ACC)>FN3D_MousePos.y))
-							switch (EE3D_vtp[number])
+							switch (EE3D_votp[number])
 							{
-								case NODEVECTOR: vec = EE3D_ndv[j]; break;
-								case EDGEVECTOR: vec = EE3D_edv[j]; break;
-								case SIDEVECTOR: vec = EE3D_sdv[j]; break;
+								case NODEVEC: vec = EE3D_ndv[j]; break;
+								case EDGEVEC: vec = EE3D_edv[j]; break;
+								case SIDEVEC: vec = EE3D_sdv[j]; break;
 							}
 				}
 				number++;
@@ -15299,12 +15311,14 @@ oops:
 
 static INT OrderHirarchically(MULTIGRID *mg)
 {
-	INT i, err;
+	INT i;
 	GRID *grid;
 	ELEMENT *p, *table[MAX_SONS];
-	HEAP *heap;
 
 	#ifdef ModelP
+	HEAP *heap;
+	INT err;
+	
 	heap = OE_Heap = mg->theHeap;
     err = 0;
 	#endif
@@ -15541,12 +15555,15 @@ static INT SettingsEqual (const VIEWEDOBJ *vo, const WOP_MG_DATA *data)
 
 static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 {
-	HEAP *heap;
-	ELEMENT *p;
-	GRID *grid;
 	WOP_MG_DATA *myMGdata;
 	MEM offset;
-	INT i, err;
+	INT i;
+#	ifdef ModelP
+	HEAP *heap;
+	GRID *grid;
+	ELEMENT *p;
+	INT err;
+#	endif
 
 	/* check if multigrid is already ordered */
 	offset   = OFFSET_IN_MGUD(wopMGUDid);
@@ -15562,7 +15579,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	{
 		if (SettingsEqual(vo, myMGdata))
 			if (ELEMORD(mg))
-				/* no ordering neccessary */
+				/* no ordering necessary */
 				return 0;
 	}
 	
@@ -15761,6 +15778,7 @@ static INT EXT_PreProcess_VecMat3D (PICTURE *thePicture, WORK *theWork)
 {
 	struct VecMatPlotObj3D *theVmo;
 	OUTPUTDEVICE *theOD;
+	INT i;
 	
 	if ((SELECTIONMODE(WOP_MG)!=vectorSelection) || (SELECTIONSIZE(WOP_MG)==0))
 	{
@@ -15772,10 +15790,8 @@ static INT EXT_PreProcess_VecMat3D (PICTURE *thePicture, WORK *theWork)
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	
 	/* set globals for eval function */
-	VM_Type[NODEVECTOR]			= theVmo->Type[NODEVECTOR];
-	VM_Type[EDGEVECTOR]			= theVmo->Type[EDGEVECTOR];
-	VM_Type[ELEMVECTOR]			= theVmo->Type[ELEMVECTOR];
-	VM_Type[SIDEVECTOR]			= theVmo->Type[SIDEVECTOR];
+	for (i=0; i<MAXVECTORS; i++)
+		VM_Type[i]				= theVmo->Type[i];	/* TODO: not used yet */
 	VM_DiagCol					= theOD->red;
 	VM_OffCol					= theOD->black;
 	VM_Idx						= theVmo->Idx;
@@ -15843,9 +15859,9 @@ static INT EXT_VecMatEval3D (DRAWINGOBJ *theDO, INT *end)
 	grid = GRID_ON_LEVEL(WOP_MG,CURRENTLEVEL(WOP_MG));
 	
 	/* plot element edges as context */
-	switch (rt)
+	switch (VOTYPE(vec))
 	{
-		case NODEVECTOR:
+		case NODEVEC:
 			nd = (NODE*)VOBJECT(vec);
 			for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem))
 				for (i=0; i<CORNERS_OF_ELEM(elem); i++)
@@ -16047,11 +16063,11 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 		
 		EE3D_Vectors				= theGpo->Vectors;
 		EE3D_VecIndex				= theGpo->VecIndex;
-		EE3D_Type					= theGpo->Type;
-		EE3D_VecCol[NODEVECTOR]		= theOD->cyan;
-		EE3D_VecCol[EDGEVECTOR]		= theOD->blue;
-		EE3D_VecCol[ELEMVECTOR]		= theOD->orange;
-		EE3D_VecCol[SIDEVECTOR]		= theOD->magenta;
+		EE3D_OType					= theGpo->OType;
+		EE3D_VecCol[NODEVEC]		= theOD->cyan;
+		EE3D_VecCol[EDGEVEC]		= theOD->blue;
+		EE3D_VecCol[ELEMVEC]		= theOD->orange;
+		EE3D_VecCol[SIDEVEC]		= theOD->magenta;
 		if (EE3D_Vectors)
 			ResetVectorUsed(theMG);
 	}
@@ -19319,10 +19335,10 @@ static INT GetRotMatForTripod (const DOUBLE *xAxis, const DOUBLE *yAxis, DOUBLE 
 	return (0);
 }
 
-/* the following two functions implement a rotation in the view reference system via
-   Euler angles (description see man page for RotatePicture) */
-
-/* another possibity would be a virtual sphere (one can think of it as a trackball) */
+/****************************************************************************/
+/*	the following two functions implement a rotation in the view reference system via
+ *	Euler angles (description see man page for RotatePicture)
+ */
 
 static INT EulerRotObsTrafo3d (const DOUBLE *mid,
 							   const INT *old,
@@ -19346,7 +19362,7 @@ static INT EulerRotObsTrafo3d (const DOUBLE *mid,
 	
 	rot[0] = cp;	rot[1] = 0.0;	rot[2] = sp;
 	rot[3] =-st*sp;	rot[4] = ct;	rot[5] = st*cp;
-	rot[6] =-ct*sp;	rot[7] =-st;	rot[8]= ct*cp;
+	rot[6] =-ct*sp;	rot[7] =-st;	rot[8] = ct*cp;
 	
 	return (0);
 }
@@ -19358,6 +19374,210 @@ static INT EulerInitRotObsTrafo3d (const DOUBLE *mid,
 								   DOUBLE *rot)
 {
 	return (EulerRotObsTrafo3d(mid,old,mouse,dx,dy,rot));
+}
+
+/****************************************************************************/
+/*		virtual sphere
+ */
+
+#define VIRT_SPHERE_REL_SIZE	0.75
+
+static INT VirtSphereRotObsTrafo3d (const DOUBLE *mid,
+									const INT *old,
+									const INT *mouse,
+									DOUBLE dx, DOUBLE dy,
+									DOUBLE *rot)
+{
+	DOUBLE	ml[2],	/* ortho proj onto conn old->mouse (mid local)	*/
+			l,		/* distance between old and mouse				*/
+			l0,		/* distance between old and ml					*/
+			l1,		/* distance between mouse and ml				*/
+			aux[2],	/* auxiliary vector								*/
+			help[2];/* auxiliary vector								*/
+	DOUBLE	alpha,	/* alpha (rotational axis)						*/
+			sa,		/* sin alpha (rotational axis)					*/
+			ca,		/* cos alpha (rotational axis)					*/
+			b0,		/* auxiliary angle to determine beta			*/
+			b1,		/* auxiliary angle to determine beta			*/
+			beta,	/* beta (rotation angle)						*/
+			sb,		/* sin beta (rotation angle)					*/
+			cb;		/* cos beta (rotation angle)					*/
+	DOUBLE	R,		/* radius of virtual sphere						*/
+			rl,		/* radius of circle about ml (r_local)			*/
+			r0,
+			r1,
+			sp;		/* scalar product								*/
+	DOUBLE	rab[9],	/* rotation matrix defined by alpha and beta	*/
+			mat[9];	/* resulting total rotation						*/
+	static COORD_POINT a={-1,-1},b;/* begin and end of a line						*/
+	char buffer[64];/* for info box text							*/
+	
+	/* mouse pos (x,y) corresponds to (r,phi) wrt mid as origin */
+	
+	/* radius of virtual sphere */
+	R = VIRT_SPHERE_REL_SIZE*0.5*MIN(dx,dy);
+	
+	V2_SUBTRACT(mid,old,aux);
+	V2_EUKLIDNORM(aux,r0);
+	V2_SUBTRACT(mid,mouse,aux);
+	V2_EUKLIDNORM(aux,r1);
+	
+	if ((r0>=R) && (r1>=R))
+	{
+		/* both positions are outside the circle */
+		/* rotate around z-axis */
+		
+		V2_SUBTRACT(old,mid,aux);
+		V2_Normalize(aux);
+		sa = aux[1];
+		ca = aux[0];
+		alpha = acos(ca);
+		if (sa<0)
+			alpha = 2*PI-alpha;
+		
+		V2_SUBTRACT(mouse,mid,aux);
+		V2_Normalize(aux);
+		sb = aux[1];
+		cb = aux[0];
+		beta = acos(cb);
+		if (sb<0)
+			beta = 2*PI-beta;
+		
+		beta -= alpha;
+		
+		cb = cos(beta);
+		sb = sin(beta);
+		
+		/* now rotation around z-axis by beta */
+		rab[0] = cb;	rab[1] =-sb;	rab[2] = 0;
+		rab[3] = sb;	rab[4] = cb;	rab[5] = 0;
+		rab[6] = 0;		rab[7] = 0;		rab[8] = 1;
+		
+		if (CheckOrthogonality3x3(rab))
+			return (0);
+		
+		/* accumulate total rotation in rot */
+		M3_TIMES_M3(rab,rot,mat);
+		M3_COPY(mat,rot);
+		
+		return (0);
+	}
+	
+	if (!((r0<R) && (r1<R)))
+		return (0);
+	
+	/* now both positions are inside the circle */
+	
+	/* use orthogonal projection of mid onto connection between old and new mouse
+	   pos to define rotation axis (angle alpha in screen plane) */
+	V2_SUBTRACT(mouse,old,ml);
+	V2_EUKLIDNORM(ml,l);
+	if (V2_Normalize(ml))
+		return (0);
+	V2_SUBTRACT(mid,old,aux);
+	V2_SCALAR_PRODUCT(ml,aux,sp);
+	V2_SCALE(sp,ml);
+	V2_ADD(ml,old,ml);
+	V2_SUBTRACT(ml,mid,aux);
+	V2_EUKLIDNORM(aux,rl);
+	rl = sqrt(R*R-rl*rl);
+	if (V2_Normalize(aux))
+	{
+		V2_SUBTRACT(mouse,old,aux);
+		
+		/* sin and cos of alpha = phi(old->mouse) + PI/2 */
+		sa =  aux[0];
+		ca = -aux[1];
+	}
+	else
+	{
+		/* sin and cos of alpha = phi(ml) */
+		sa = aux[1];
+		ca = aux[0];
+	}
+	
+	alpha = acos(ca);
+	if (sa<0)
+		alpha = 2*PI-alpha;
+	sprintf(buffer,"sphere: %+3.0f",alpha*180/PI);
+	DrawInfoBox(UGW_IFWINDOW(myWin),buffer);
+	
+	/* draw inverse line with current alpha 
+	if (!((a.x==-1) && (a.y==-1)))
+		UgInverseLine(a,b);
+	a.x = mid[0];
+	a.y = mid[1];
+	b.x = a.x+R*ca;
+	b.y = a.y+R*sa;
+	UgInverseLine(a,b);*/
+	
+	/* now rotation angle beta defined by change in r */
+	
+	/* distance from old to ml and from ml to mouse */
+	V2_SUBTRACT(old,ml,aux);
+	V2_EUKLIDNORM(aux,l0);
+	V2_SUBTRACT(mouse,ml,aux);
+	V2_EUKLIDNORM(aux,l1);
+	
+	/* angles in circle about ml */
+	b0 = acos(l0/rl);
+	b1 = acos(l1/rl);
+	
+	/* total rotation angle about rotational axis */
+	sp /= l;
+	if ((0<=sp) && (sp<=1.0))
+		/* ml between old and mouse*/
+		beta = PI-b0-b1;
+	else
+		beta = fabs(b1-b0);
+	
+	/* sign of rotation */
+	V2_SUBTRACT(ml,mid,aux);
+	V2_SUBTRACT(mouse,old,help);
+	V2_VECTOR_PRODUCT(help,aux,sp);
+	if (sp<0)
+		beta = -beta;
+	
+	/* sin and cosine of beta */
+	sb = sin(beta);
+	cb = cos(beta);
+	
+	/* now relative rotation defined by alpha and beta */
+	rab[0] = 1+sa*sa*(cb-1);	rab[1] = ca*sa*(cb-1);		rab[2] = -sa*sb;
+	rab[3] = sa*ca*(cb-1);		rab[4] = 1+ca*ca*(cb-1);	rab[5] = -ca*sb;
+	rab[6] = sa*sb;				rab[7] = ca*sb;				rab[8] = cb;
+	
+	if (CheckOrthogonality3x3(rab))
+		return (0);
+	
+	/* accumulate total rotation in rot */
+	M3_TIMES_M3(rab,rot,mat);
+	M3_COPY(mat,rot);
+	
+	return (0);
+}
+
+static INT VirtSphereInitRotObsTrafo3d (const DOUBLE *mid,
+										const INT *old,
+										const INT *mouse,
+										DOUBLE dx, DOUBLE dy,
+										DOUBLE *rot)
+{
+	COORD_POINT pt;
+	
+	/* set unit matrix */
+	rot[0] = 1; rot[1] = 0; rot[2] = 0;
+	rot[3] = 0; rot[4] = 1; rot[5] = 0;
+	rot[6] = 0; rot[7] = 0; rot[8] = 1;
+	
+	/* plot circle */
+	UgSetMarker(EMPTY_CIRCLE_MARKER);
+	UgSetMarkerSize(VIRT_SPHERE_REL_SIZE*MIN(dx,dy));
+	pt.x = mid[0];
+	pt.y = mid[1];
+	UgPolymark(&pt,1);
+	
+	return (0);
 }
 
 #define GET_POINT2D(x,y,pt)		   {h[_X_] = x; h[_Y_] = y;						\
@@ -19425,6 +19645,26 @@ static INT InitRotObsTrafo2d (const DOUBLE *mid,
 	return (0);
 }
 
+INT SetRotMode (INT mode)
+{
+	switch (mode)
+	{
+		case ROTMODE_EULER:
+			InitRotObsTrafo3d	= EulerInitRotObsTrafo3d;
+			RotObsTrafo3d		= EulerRotObsTrafo3d;
+			break;
+		
+		case ROTMODE_SPHERE:
+			InitRotObsTrafo3d	= VirtSphereInitRotObsTrafo3d;
+			RotObsTrafo3d		= VirtSphereRotObsTrafo3d;
+			break;
+		
+		default:
+			return (1);
+	}
+	return (0);
+}
+
 INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
@@ -19450,6 +19690,9 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 	theViewDim 				= PO_DIM(PIC_PO(thePicture));
 	
 	myWin = PIC_UGW(thePicture);
+	
+	/* set color black */
+	UgSetColor(PIC_OUTPUTDEV(thePicture)->black);
 	
 	/* build transformation */
 	if (BuildObsTrafo(thePicture))
@@ -19574,6 +19817,21 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 		/* init rotation matrix in screen system */
 		if ((*InitRotObsTrafo3d)(ScreenMid,OldMousePos,LastMousePos,dx,dy,RotMat))
 			return (1);
+		
+		if (0)
+		{
+			DOUBLE x=20,y=30;
+			
+			ScreenMid[0] = 150;
+			ScreenMid[1] = 150;
+			LastMousePos[0] = ScreenMid[0]-x;
+			LastMousePos[1] = ScreenMid[1]+y;
+			MousePos[0] = ScreenMid[0]+x;
+			MousePos[1] = ScreenMid[1]+y;
+			if ((*RotObsTrafo3d)(ScreenMid,LastMousePos,MousePos,dx,dy,RotMat))
+				return (1);
+			return (0);
+		}
 		M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
 		M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
 		
@@ -19597,13 +19855,13 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 			/* invert last tripod */
 			InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
 			
-			V2_COPY(MousePos,LastMousePos);
-			MouseMoved = TRUE;
-			
-			if ((*RotObsTrafo3d)(ScreenMid,OldMousePos,LastMousePos,dx,dy,RotMat))
+			if ((*RotObsTrafo3d)(ScreenMid,LastMousePos,MousePos,dx,dy,RotMat))
 				return (1);
 			M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
 			M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
+			
+			V2_COPY(MousePos,LastMousePos);
+			MouseMoved = TRUE;
 			
 			/* invert new tripod */
 			InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
@@ -19678,6 +19936,9 @@ INT RotateCut (PICTURE *thePicture, const INT *OldMousePos)
 	}
 	
 	myWin = PIC_UGW(thePicture);
+	
+	/* set color black */
+	UgSetColor(PIC_OUTPUTDEV(thePicture)->black);
 	
 	/* build transformation */
 	if (BuildObsTrafo(thePicture))
@@ -19766,13 +20027,13 @@ INT RotateCut (PICTURE *thePicture, const INT *OldMousePos)
 		/* invert last cut icon */
 		InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
 		
-		V2_COPY(MousePos,LastMousePos);
-		MouseMoved = TRUE;
-		
-		if ((*RotObsTrafo3d)(ScreenMid,OldMousePos,LastMousePos,dx,dy,RotMat))
+		if ((*RotObsTrafo3d)(ScreenMid,LastMousePos,MousePos,dx,dy,RotMat))
 			return (1);
 		M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
 		M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
+		
+		V2_COPY(MousePos,LastMousePos);
+		MouseMoved = TRUE;
 		
 		/* invert new cut icon */
 		InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
@@ -20010,8 +20271,8 @@ INT InitWOP (void)
 	#endif
 	
 	/* set function ptrs for RotatePicture and RotateCut */
-	RotObsTrafo3d		= EulerRotObsTrafo3d;
-	InitRotObsTrafo3d	= EulerInitRotObsTrafo3d;
+	InitRotObsTrafo3d	= VirtSphereInitRotObsTrafo3d;
+	RotObsTrafo3d		= VirtSphereRotObsTrafo3d;
 	
 	/* allocate storage in general mg user data:
 	   store view to check neccessity for ordering elements */
