@@ -1590,7 +1590,6 @@ INT MouseStillDown (void)
   int root_x,root_y;
   Window root,child;
   unsigned int keys_buttons;
-  char *s;
 
   /* if button has been released aready */
   if (MoveMouse==0)
@@ -1600,7 +1599,7 @@ INT MouseStillDown (void)
   }
 
   /* get next event, all events except button and motion are discarded */
-  if (!XCheckIfEvent(display,&report,callback,s)) return(1);
+  if (!XCheckIfEvent(display,&report,callback,NULL)) return(1);
 
   /* examine event */
   switch (report.type)
