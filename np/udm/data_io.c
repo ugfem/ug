@@ -880,7 +880,7 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, INT save_without_mg, cha
   block = (DTIO_BLOCK *)GetTmpMem(theHeap,nblock*blocksize,MarkKey);
   if (block==NULL)                                                                                {CloseDTFile(); return (1);}
   if (100*nblock<nNode)
-    UserWrite("WARNING: save will take long due to lake of temporary memory\n");
+    UserWrite("WARNING: save will take long due to lack of temporary memory\n");
 
   /* save data */
   for (fb=0,lb=MIN(nblock,nNode); fb<nNode; fb+=nblock,lb=MIN(lb+nblock,nNode))
