@@ -5,7 +5,7 @@
 #	created 16 December 1994												 #
 #																			 #
 ##############################################################################
-
+ 
 
 # include configuration and all makefile macro definitions
 include ../ug.conf
