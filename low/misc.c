@@ -236,21 +236,20 @@ INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char
 /****************************************************************************/
 
 /* install a user math error handler */
-int matherr(struct exception *x)
+int matherr(
+            #if defined(__HP__)
+  struct _exception *x
+                        #elif defined(__LINUXPPC__)
+  struct __exception *x
+                        #else
+  struct exception *x
+                        #endif
+  )
 {
   /* your math error handling here */
   UG_math_error = 1;       /* lets be more specific later ... */
   return(0);   /* proceed with standard messages */
 }
-#ifdef __HP__
-/* HP-UX 10.20 expects the name with an "_" as prefix for the math error handler */
-int _matherr(struct exception *x)
-{
-  /* your math error handling here */
-  UG_math_error = 1;       /* lets be more specific later ... */
-  return(0);   /* proceed with standard messages */
-}
-#endif
 
 #define FMTBUFFSIZE         1031
 
@@ -855,7 +854,7 @@ INT MemoryParameters (void)
 
   UserWriteF("\n  Alignment and byteorder are:\n");
   UserWriteF("    alignment=%d byteorder=%s\n",ALIGNMENT,
-             (((*((char *)&byteorder))==1) ? "BIGENDIAN" : "LITTLEENDIAN"));
+             (((*((char *)&byteorder))==1) ? "LITTLEENDIAN" : "BIGENDIAN"));
 
   return(0);
 }
