@@ -4631,9 +4631,9 @@ INT CheckOrientation (INT n, VERTEX **vertices)
   V3_SCALAR_PRODUCT(rot,diff[2],det);
 
   if (det < 0.0)
-    return(1);
+    return(0);
 
-  return(0);
+  return(1);
 }
 #endif
 
@@ -5139,7 +5139,7 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
         #endif
 
     #ifdef __THREEDIM__
-  if (CheckOrientation (n,Vertex))
+  if (!CheckOrientation (n,Vertex))
   {
     sideNode[0] = Node[0];
     sideVertex[0] = Vertex[0];
@@ -8008,7 +8008,8 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       /* set id from BNDS */
       if (BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid,&part))
         REP_ERR_RETURN (GM_ERROR);
-      assert(id>0);
+      printf("%d %d\n", id, nbid);
+      /*assert(id>0);*/
       SETSUBDOMAIN(theElement,id);
       SETUSED(theElement,1);
       fifo_in(&myfifo,(void *)theElement);
