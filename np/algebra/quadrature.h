@@ -45,7 +45,11 @@
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef __TWODIM__
 #define MAX_INT_POINTS 9
+#else
+#define MAX_INT_POINTS 27
+#endif
 
 #define Q_NIP(p)          ((p)->nip)
 #define Q_LOCAL(p,i)      ((DOUBLE*)((const DOUBLE_VECTOR_3D *)((p)->local))[i])

@@ -88,9 +88,11 @@ static const DOUBLE_VECTOR_3D Quadrature1D4_l[] = {{ 0.211324865405187, 0.0},
 static const DOUBLE Quadrature1D4_w[] = {0.5, 0.5};
 static QUADRATURE Quadrature1D4 = {2, Quadrature1D4_l, Quadrature1D4_w};
 
-static const DOUBLE_VECTOR_3D Quadrature1D6_l[] = {{0.5, 0.0},
-                                                   {0.112701665379258, 0.0},
-                                                   {0.887298334620742, 0.0}};
+static const DOUBLE_VECTOR_3D Quadrature1D6_l[] = {
+  {0.112701665379258, 0.0},
+  {0.5, 0.0},
+  {0.887298334620742, 0.0}
+};
 static const DOUBLE Quadrature1D6_w[] = {0.2777777777777777, 0.444444444444444, 0.2777777777777777};
 static QUADRATURE Quadrature1D6 = {3, Quadrature1D6_l, Quadrature1D6_w};
 
@@ -148,6 +150,30 @@ static const DOUBLE_VECTOR_3D Quadrature2D42_l[] = {{0.211324865405187, 0.211324
 static const DOUBLE Quadrature2D42_w[] = {0.25,0.25,0.25,0.25};
 static QUADRATURE Quadrature2D42 = {4, Quadrature2D42_l, Quadrature2D42_w};
 
+static const DOUBLE_VECTOR_3D Quadrature2D44_l[] = {
+  {0.112701665379258, 0.112701665379258},
+  {0.5, 0.112701665379258},
+  {0.887298334620742, 0.112701665379258},
+  {0.112701665379258, 0.5},
+  {0.5, 0.5},
+  {0.887298334620742, 0.5},
+  {0.112701665379258, 0.887298334620742},
+  {0.5, 0.887298334620742},
+  {0.887298334620742, 0.887298334620742}
+};
+static const DOUBLE Quadrature2D44_w[] = {
+  0.07716049382716,
+  0.12345679012346,
+  0.07716049382716,
+  0.12345679012346,
+  0.19753086419753,
+  0.12345679012346,
+  0.07716049382716,
+  0.12345679012346,
+  0.07716049382716
+};
+static QUADRATURE Quadrature2D44 = {9, Quadrature2D44_l, Quadrature2D44_w};
+
 static const DOUBLE_VECTOR_3D Quadrature3D40_l[] = {{0.25,0.25,0.25},
                                                     {0.1,0.1,0.4},
                                                     {0.1,0.4,0.1},
@@ -170,13 +196,66 @@ static const DOUBLE_VECTOR_3D Quadrature3D42_l[] = {{0.58541020, 0.13819660, 0.1
 static const DOUBLE Quadrature3D42_w[] = {0.25,0.25,0.25,0.25};
 static QUADRATURE Quadrature3D42 = {4, Quadrature3D42_l, Quadrature3D42_w};
 
-static const DOUBLE_VECTOR_3D Quadrature3D43_l[] = {{0.25,0.25,0.25},
-                                                    {0.333333333333333,  0.1666666666666666, 0.1666666666666666},
-                                                    {0.1666666666666666, 0.333333333333333,  0.1666666666666666},
-                                                    {0.1666666666666666, 0.1666666666666666, 0.333333333333333 },
-                                                    {0.1666666666666666, 0.1666666666666666, 0.1666666666666666}};
-static const DOUBLE Quadrature3D43_w[] = {-0.8,0.45,0.45,0.45,0.45};
-static QUADRATURE Quadrature3D43 = {5, Quadrature3D43_l, Quadrature3D43_w};
+static const DOUBLE_VECTOR_3D Quadrature3D43_l[] = {
+  {0.0,0.0,0.0},
+  {1.0,0.0,0.0},
+  {0.0,1.0,0.0},
+  {1.0,0.0,1.0},
+  {0.333333333333,0.333333333333,0.0},
+  {0.333333333333,0.0,0.333333333333},
+  {0.0,0.333333333333,0.333333333333},
+  {0.333333333333,0.333333333333,0.333333333333}
+};
+static const DOUBLE Quadrature3D43_w[] = {
+  0.025,0.025,0.025,0.025,0.225,0.225,0.225,0.225
+};
+static QUADRATURE Quadrature3D43 = {8, Quadrature3D43_l, Quadrature3D43_w};
+
+/* Strout 1971 */
+
+#define s_1 0.091971078   /* (7 - sq(15) ) / 34 */
+#define s_2 0.31979363    /* (7 + sq(15) ) / 34 */
+#define t_1 0.72408677    /* (13 + 3*sq(15) ) / 34 */
+#define t_2 0.040619117   /* (13 - 3*sq(15) ) / 34 */
+#define u   0.056350833   /* (10 - 2*sq(15) ) / 40 */
+#define v   0.44364917    /* (10 + 2*sq(15) ) / 40 */
+#define A   0.11851852    /* 16 / 135 */
+#define B_1 0.071937084   /* (2665 - 14*sq(15) ) / 37800 */
+#define B_2 0.069068207   /* (2665 - 14*sq(15) ) / 37800 */
+#define C   0.052910053   /* 20 / 378 */
+
+static const DOUBLE_VECTOR_3D Quadrature3D45_l[] = {
+  {0.25,0.25,0.25},
+  {s_1,s_1,s_1},
+  {t_1,s_1,s_1},
+  {s_1,t_1,s_1},
+  {s_1,s_1,t_1},
+  {s_2,s_2,s_2},
+  {t_2,s_2,s_2},
+  {s_2,t_2,s_2},
+  {s_2,s_2,t_2},
+  {v,u,u},
+  {u,v,u},
+  {u,u,v},
+  {v,v,u},
+  {v,u,v},
+  {u,v,v}
+};
+static const DOUBLE Quadrature3D45_w[] = {
+  A,B_1,B_1,B_1,B_1,B_2,B_2,B_2,B_2,C,C,C,C,C,C
+};
+static QUADRATURE Quadrature3D45 = {15, Quadrature3D45_l, Quadrature3D45_w};
+
+#undef s_1
+#undef s_2
+#undef t_1
+#undef t_2
+#undef u
+#undef v
+#undef A
+#undef B_1
+#undef B_2
+#undef C
 
 static const DOUBLE_VECTOR_3D Quadrature3D52_l[] = {{0.58541020, 0.72819660, 0.13819660},
                                                     {0.13819660, 0.72819660, 0.13819660},
@@ -245,6 +324,58 @@ static const DOUBLE_VECTOR_3D Quadrature3D82_l[] = {{0.211324865405187, 0.211324
 static const DOUBLE Quadrature3D82_w[] = {0.125,0.125,0.125,0.125,0.125,0.125,0.125,0.125};
 static QUADRATURE Quadrature3D82 = {8, Quadrature3D82_l, Quadrature3D82_w};
 
+#define A_1 0.112701665379258
+#define A_2 0.887298334620742
+#define W_1 0.277777777777777
+#define W_2 0.444444444444444
+
+static const DOUBLE_VECTOR_3D Quadrature3D84_l[] = {
+  {A_1,A_1,A_1},
+  {0.5,A_1,A_1},
+  {A_2,A_1,A_1},
+  {A_1,0.5,A_1},
+  {0.5,0.5,A_1},
+  {A_2,0.5,A_1},
+  {A_1,A_2,A_1},
+  {0.5,A_2,A_1},
+  {A_2,A_2,A_1},
+  {A_1,A_1,0.5},
+  {0.5,A_1,0.5},
+  {A_2,A_1,0.5},
+  {A_1,0.5,0.5},
+  {0.5,0.5,0.5},
+  {A_2,0.5,0.5},
+  {A_1,A_2,0.5},
+  {0.5,A_2,0.5},
+  {A_2,A_2,0.5},
+  {A_1,A_1,A_2},
+  {0.5,A_1,A_2},
+  {A_2,A_1,A_2},
+  {A_1,0.5,A_2},
+  {0.5,0.5,A_2},
+  {A_2,0.5,A_2},
+  {A_1,A_2,A_2},
+  {0.5,A_2,A_2},
+  {A_2,A_2,A_2}
+};
+static const DOUBLE Quadrature3D84_w[] =
+{W_1*W_1*W_1,W_2*W_1*W_1,W_1*W_1*W_1,
+ W_1*W_2*W_1,W_2*W_2*W_1,W_1*W_2*W_1,
+ W_1*W_1*W_1,W_2*W_1*W_1,W_1*W_1*W_1,
+ W_1*W_1*W_2,W_2*W_1*W_2,W_1*W_1*W_2,
+ W_1*W_2*W_2,W_2*W_1*W_2,W_1*W_2*W_2,
+ W_1*W_1*W_2,W_2*W_1*W_2,W_1*W_1*W_2,
+ W_1*W_1*W_1,W_2*W_1*W_1,W_1*W_1*W_1,
+ W_1*W_2*W_1,W_2*W_1*W_1,W_1*W_2*W_1,
+ W_1*W_1*W_1,W_2*W_1*W_1,W_1*W_1*W_1};
+static QUADRATURE Quadrature3D84 = {27, Quadrature3D84_l, Quadrature3D84_w};
+
+#undef A_1
+#undef A_2
+#undef W_1
+#undef W_2
+
+
 /****************************************************************************/
 /*D
    GetQuadrature - providing a quadrature formula
@@ -310,8 +441,11 @@ QUADRATURE *GetQuadrature(INT dim, INT n, INT order)
       switch (order)
       {
       case 0 : return(&Quadrature2D40);
+      case 1 : return(&Quadrature2D40);
       case 2 : return(&Quadrature2D42);
-      default : return(&Quadrature2D42);
+      case 3 : return(&Quadrature2D42);
+      case 4 : return(&Quadrature2D44);
+      default : return(&Quadrature2D44);
       }
     }
   case 3 :
@@ -323,7 +457,8 @@ QUADRATURE *GetQuadrature(INT dim, INT n, INT order)
       case 0 :  return(&Quadrature3D40);
       case 1 :  return(&Quadrature3D41);
       case 2 :  return(&Quadrature3D42);
-      default : return(&Quadrature3D43);
+      case 3 :  return(&Quadrature3D43);
+      default : return(&Quadrature3D45);
       }
     case 5 : return(&Quadrature3D52);
     case 6 :
@@ -336,8 +471,9 @@ QUADRATURE *GetQuadrature(INT dim, INT n, INT order)
       switch (order)
       {
       case 0 : return(&Quadrature3D80);
+      case 1 : return(&Quadrature3D82);
       case 2 : return(&Quadrature3D82);
-      default : return(&Quadrature3D82);
+      default : return(&Quadrature3D84);
       }
     }
   }
