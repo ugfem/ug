@@ -110,7 +110,7 @@ DDD_TYPE TypeBndS;
 DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
        ElementVHIF, ElementSymmVHIF;
 DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
-       NodeIF;
+       NodeIF, NodeAllIF;
 DDD_IF BorderVectorIF, BorderVectorSymmIF,
        OuterVectorIF, OuterVectorSymmIF,
        VectorVIF, VectorVAllIF;
@@ -676,7 +676,7 @@ static void ddd_IfInit (void)
   A[0] = PrioMaster; A[1] = PrioBorder;
   B[0] = PrioMaster; B[1] = PrioBorder;
   BorderNodeSymmIF = DDD_IFDefine(1,O,2,A,2,B);
-  DDD_IFSetName(BorderNodeSymmIF, "BorderNodeSymmIF: Border->Master");
+  DDD_IFSetName(BorderNodeSymmIF, "BorderNodeSymmIF: Border/Master");
 
   A[0] = PrioMaster;
   B[0] = PrioGhost;
@@ -692,6 +692,12 @@ static void ddd_IfInit (void)
   B[0] = PrioVGhost; B[1] = PrioGhost;
   NodeIF = DDD_IFDefine(1,O,1,A,2,B);
   DDD_IFSetName(NodeIF, "NodeIF: Master->Ghost");
+
+  A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioVGhost; A[3] = PrioGhost;
+  B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioVGhost; B[3] = PrioGhost;
+  NodeAllIF = DDD_IFDefine(1,O,4,A,4,B);
+  DDD_IFSetName(NodeAllIF, "NodeAllIF: All/All");
+
 
 
   /* define vector interfaces */
