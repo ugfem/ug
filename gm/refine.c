@@ -3987,6 +3987,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
   NODE *theNode;
   GRID *theGrid;
 
+  PRINTDEBUG(gm,0,("%d: IdentifyProcBoundaryObjects(): FromLevel=%d\n",me,FromLevel))
 
   /* this quickfix is not necessary anymore. ddd is now capable of
      multiple priority assignments for same object. KB 960906 */
@@ -4027,9 +4028,16 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
 
   /* identify nodes */
   for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
+
+    PRINTDEBUG(gm,0,("%d: IdentifyProcBoundaryObjects(): current identlevel=%d\n",me,l));
+
     theGrid = GRID_ON_LEVEL(theMG,l);
 
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+
+      PRINTDEBUG(gm,0,("%d: Identify current element: pe=%08x/%x eID=%d\n",me,
+                       DDD_InfoGlobalId(PARHDRE(theElement)),theElement,
+                       ID(theElement)));
 
       if (!IS_REFINED(theElement) ||
           (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioGhost) {
@@ -4222,7 +4230,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
   /* identify nodes */
   for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
     theGrid = GRID_ON_LEVEL(theMG,l);
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
 
       if (!IS_REFINED(theElement) ||
           (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioGhost) {
@@ -4307,7 +4315,7 @@ INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
   if (!IS_REFINED(theNeighbor) || !EHGHOSTPRIO(prio)) continue;
   for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
     theGrid = GRID_ON_LEVEL(theMG,l);
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
 
       if (!IS_REFINED(theElement) ||
           (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioGhost) {
@@ -4372,7 +4380,7 @@ INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
     DropUsedFlags -
     if (theGrid == NULL) continue;
     {
-      for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+      for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
         SETUSED(EFATHER(theElement),1);
         if (USED(theElement) == 1) {
           REFINE_ELEMENT_LIST(0,theElement,"drop mark");
@@ -4389,18 +4397,17 @@ INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
         PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
                          theGrid = GRID_ON_LEVEL(theMG,l);
                          && SIDE_ON_BND(theElement,i)
-                         for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+                         for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
                            INT prio;
                            prio = EPRIO(theNeighbor);
                            if (USED(theElement) == 0 ||
                                (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioMaster)
                              continue;
 
-                           IFDEBUG(gm,0)
-                           UserWriteF("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
-                                      me,DDD_InfoGlobalId(PARHDRE(theElement)),theElement,ID(theElement),
-                                      LEVEL(theElement));
-                           ENDDEBUG
+                           PRINTDEBUG(gm,0,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
+                                            me,DDD_InfoGlobalId(PARHDRE(theElement)),
+                                            theElement,ID(theElement),
+                                            LEVEL(theElement)));
                            IFDEBUG(gm,1)
                            for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
                              INT j,Sons_of_Side,prio;
@@ -4417,11 +4424,11 @@ INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
 
                              IFDEBUG(gm,0)
                              INT j;
-                             UserWriteF("%d:            side=%d NSONS=%d Sons_of_Side=%d:\n",me,i,NSONS(theElement),Sons_of_Side);
+                             printf("%d:                side=%d NSONS=%d Sons_of_Side=%d:\n",me,i,NSONS(theElement),Sons_of_Side);
                              for (j=0; j<Sons_of_Side; j++)
                                UserWriteF("%d:            son=%08x/%x sonside=%d\n",me,
                                           DDD_InfoGlobalId(PARHDRE(Sons_of_Side_List[j])),Sons_of_Side_List[j],SonSides[j]);
-                             UserWriteF("%d:         connecting ghostelements:\n",me);
+                             printf("%d:         connecting ghostelements:\n",me);
                              ENDDEBUG
 
                              if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side,
