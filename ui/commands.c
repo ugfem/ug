@@ -186,7 +186,6 @@ typedef struct
 
 static MULTIGRID *currMG=NULL;                  /* the current multigrid			*/
 
-static NUM_PROC *currNumProc=NULL;              /* current numerical procedure		*/
 static char buffer[BUFFERSIZE];         /* general purpose text buffer		*/
 
 static FILE     *protocolFile=NULL;     /* for protocol commands			*/
@@ -294,76 +293,6 @@ INT SetCurrentMultigrid (MULTIGRID *theMG)
     {
       /* never NULL */
       currMG = theMG;
-      return (0);
-    }
-
-  return (1);
-}
-
-/****************************************************************************/
-/*D
-   GetCurrentNumProc - return a pointer to the current numproc
-
-   SYNOPSIS:
-   static NUM_PROC *GetCurrentNumProc (void);
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
-   This function returns a pointer to the current numproc.
-
-   RETURN VALUE:
-   NUM_PROC *
-   .n      pointer to numproc
-   .n      NULL if there is no current numproc.
-   D*/
-/****************************************************************************/
-
-static NUM_PROC *GetCurrentNumProc (void)
-{
-  return (currNumProc);
-}
-
-/****************************************************************************/
-/*D
-   SetCurrentNumProc -	Set the current NumProc if it is valid
-
-   SYNOPSIS:
-   static INT SetCurrentNumProc (NUM_PROC *theNumProc);
-
-   PARAMETERS:
-   .  theNumProc - pointer to multigrid
-
-   DESCRIPTION:
-   This function sets the current NumProc if it is valid, i. e.
-   the function checks whether 'theNumProc' acually points to a numproc.
-   It can be NULL only if no numproc is defined.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if theNumProc is not in the numproc list
-   D*/
-/****************************************************************************/
-
-static INT SetCurrentNumProc (NUM_PROC *theNumProc)
-{
-  NUM_PROC *np;
-
-  np = GetFirstNumProc();
-  if (np==theNumProc)
-  {
-    /* possibly NULL */
-    currNumProc = theNumProc;
-    return (0);
-  }
-
-  for (; np!=NULL; np=GetNextNumProc(np))
-    if (np==theNumProc)
-    {
-      /* never NULL */
-      currNumProc = theNumProc;
       return (0);
     }
 
@@ -9838,6 +9767,81 @@ static INT ReInitCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
+#ifdef __NUMERICS__
+
+static NUM_PROC *currNumProc=NULL;              /* current numerical procedure		*/
+
+
+/****************************************************************************/
+/*D
+   GetCurrentNumProc - return a pointer to the current numproc
+
+   SYNOPSIS:
+   static NUM_PROC *GetCurrentNumProc (void);
+
+   PARAMETERS:
+   .  void -
+
+   DESCRIPTION:
+   This function returns a pointer to the current numproc.
+
+   RETURN VALUE:
+   NUM_PROC *
+   .n      pointer to numproc
+   .n      NULL if there is no current numproc.
+   D*/
+/****************************************************************************/
+
+static NUM_PROC *GetCurrentNumProc (void)
+{
+  return (currNumProc);
+}
+
+/****************************************************************************/
+/*D
+   SetCurrentNumProc -	Set the current NumProc if it is valid
+
+   SYNOPSIS:
+   static INT SetCurrentNumProc (NUM_PROC *theNumProc);
+
+   PARAMETERS:
+   .  theNumProc - pointer to multigrid
+
+   DESCRIPTION:
+   This function sets the current NumProc if it is valid, i. e.
+   the function checks whether 'theNumProc' acually points to a numproc.
+   It can be NULL only if no numproc is defined.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if theNumProc is not in the numproc list
+   D*/
+/****************************************************************************/
+
+static INT SetCurrentNumProc (NUM_PROC *theNumProc)
+{
+  NUM_PROC *np;
+
+  np = GetFirstNumProc();
+  if (np==theNumProc)
+  {
+    /* possibly NULL */
+    currNumProc = theNumProc;
+    return (0);
+  }
+
+  for (; np!=NULL; np=GetNextNumProc(np))
+    if (np==theNumProc)
+    {
+      /* never NULL */
+      currNumProc = theNumProc;
+      return (0);
+    }
+
+  return (1);
+}
+
 /****************************************************************************/
 /*D
    npexecute - execute a NumProc
@@ -9853,30 +9857,6 @@ static INT ReInitCommand (INT argc, char **argv)
    SEE ALSO
    'numerics', 'NUM_PROC'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ExecuteNumProcCommand - Solve a numerical problem
-
-   SYNOPSIS:
-   static INT ExecuteNumProcCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function solves a numerical problem.
-   It executes a num proc.
-
-   npexecute [<num proc name>] <argument list to be passed>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ExecuteNumProcCommand (INT argc, char **argv)
@@ -9936,27 +9916,6 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*
-   NumProcListCommand - List NumProc
-
-   SYNOPSIS:
-   static INT NumProcListCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lists solvers.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
 static INT NumProcListCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
@@ -9977,31 +9936,6 @@ static INT NumProcListCommand (INT argc, char **argv)
    . <num~proc~name> - name of an existing NumProc (default is the current NumProc)
 
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   NumProcDisplayCommand - display a NumProc
-
-   SYNOPSIS:
-   static INT NumProcDisplayCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This command displays current num proc.
-
-   npdisplay
-
-   . <num~proc~name> - name of an existing NumProc
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT NumProcDisplayCommand (INT argc, char **argv)
@@ -10063,32 +9997,6 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
    'numerics', 'NUM_PROC',  'NP_TYPE_BASIC', 'NP_TYPE_SMOOTHER',
    'NP_TYPE_SOLVER', 'NP_TYPE_ASSEMBLE'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   NumProcCreateCommand - Create NumProc
-
-   SYNOPSIS:
-   static INT NumProcCreateCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function creates NumProc.
-   It creates a num proc from a num proc type.
-
-   npcreate <num proc name> $t <num proc type> $f <format>
-
-   . <num~proc~name> - name of an existing NumProc
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT NumProcCreateCommand (INT argc, char **argv)
@@ -10181,30 +10089,6 @@ static INT NumProcCreateCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*
-   NumProcInitCommand - Init NumProc
-
-   SYNOPSIS:
-   static INT NumProcInitCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function inits NumProc.
-   It initialises current numproc.
-
-   npinit <argument list to be passed>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
 static INT NumProcInitCommand (INT argc, char **argv)
 {
   NUM_PROC *theNumProc;
@@ -10241,30 +10125,6 @@ static INT NumProcInitCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*
-   SetCurrentNumProcCommand - Make a NumProc the current NumProc
-
-   SYNOPSIS:
-   static INT SetCurrentNumProcCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function makes a NumProc the current NumProc.
-   It sets current num proc.
-
-   scnp <num proc name>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
 static INT SetCurrentNumProcCommand (INT argc, char **argv)
 {
   NUM_PROC *theNumProc;
@@ -10291,157 +10151,6 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
     return (CMDERRORCODE);
 
   return(OKCODE);
-}
-
-/****************************************************************************/
-/*D
-        newformat - init a format and allocate symbols
-
-        SYNTAX:
-   .vb
-        newformat <format_name> [$V <vec_size>: {<vec_sym_name>}+ [$comp <comp_names> {$sub <sub_sym_name> <comps>}*]]
-                            [$M <mat_size>: {<mat_sym_name>}+ [$comp <comp_names> {$sub <sub_sym_name> <matsizes+comps>}*]
-                            [$d <mtype> <depth>]
-
-      $V            # enrol storage for vector data: the specified size per type is multiplied
- # by the number of <vec_sym_name> specified. SYMBOLs are allocated with the
- # specified names, also scalar SYMBOLs are allocated
-
-         <vec_size> := {<tp><size> }+, where <tp> is a char of
-                                               n for NODE
-                                               k for EDGE
-                                               e for ELEM
-                                               s for SIDE (3D only)
-                       and <size> is a integer
-
-
-      $comp         # optionally specify names for the components
-         <comp_names> := one char per component of the symbol (without spaces)
-
-
-      $sub          # if comp names have been specified optionally specify sub symbols for
- # each of the previously allocated symbols by sppecifying their comps
-
-         <comps> := list of comps as specified in <comp_names>
-
-
-          $M            # enrol storage for matrix data: the specified size per type is multiplied
- # by the number of <mat_sym_name> specified. SYMBOLs are allocated with the
- # specified names, also scalar SYMBOLs are allocated
-
-         <mat_size> := {<rtp><rsize>x<ctp><csize> }+, where r and c refer to rows and columns of the matrix
-
-
-      $comp         # optionally specify names for the components
-         <comp_names> := TWO chars per component of the symbol (without spaces)
-
-
-         <matsizes+comps> := {<rsize>x<csize> <comp_names>}+
-
-
-      $d <mtype> <depth>  # set connection depth (default 0)
-
-         <mtype> := <rtp>x<ctp>
-   .ve
-
-        DESCRIPTION:
-        The 'newformat' command enrols a format for multigrid user data and creates symbols for the format.
-        It also creates scalar and possibly other sub symbols.
-
-        EXAMPLE:
-   .vb
-    newformat nsr                                                 # format name
-              $V k2 e1: sol rhs tmp cor                           # 2 components per symbol and edge vector
- # 1 component per symbol and element vector
-                        $comp uvp                                 # components are named u,v,p
-                              $sub vel u v                        # create a sub symbol for each symbol with components u,v
-              $M k2xk2 k2xe1 e1xk2: MAT                           # 2x2 components in edge-edge matrices
- # 2x1 components in edge-element matrices
- # 1x2 components in element-edge matrices
-                        $comp uuuvvuvvupvppupv                    # components are named uu,uv,vu,vv...
-                              $sub mom 2x2 uu uv vu vv 2x1 up vp  # create a sub symbol for each symbol with
- # components uu,uv,vu,vv in edge-edge matrices and
- # components up,vp in edge-element matrices
-                              $sub velp 2x1 up vp
-                              $sub off 2x1 up vp 1x2 pu pv
-              $M k2xk2 k2xe1 e1xk2 e1xe1: LU
-                        $comp uuuvvuvvupvppupvpp
-              $d exe 1;                                           # set connection depth for element-element matrices 1
-   .ve
-        This format description will result in
-   .       - 2*4 DOUBLEs in edge vectors
-   .       - 1*4 DOUBLEs in element vectors
-   .       - 4*1+4*1 DOUBLEs in edge-edge matrices
-   .       - 2*1+2*1 DOUBLEs in edge-element matrices
-   .       - 2*1+2*1 DOUBLEs in element-edge matrices
-   .       - 1*1 DOUBLEs in element-element matrices
-   and element-element matrices are connected with depth 1.
-
-   The 'SYMBOL's created are
-   .vb
-   sol
-   usol
-   vsol
-   psol
-   velsol
-   rhs
-   urhs
-   vrhs
-   prhs
-   velrhs
-   tmp
-   utmp
-   vtmp
-   ptmp
-   veltmp
-   cor
-   ucor
-   vcor
-   pcor
-   velcor
-   MAT
-   MATuu
-   MATuv
-   MATvu
-   MATvv
-   MATup
-   MATvp
-   MATpu
-   MATpv
-   MATmom
-   MAToff
-   LU
-   LUuu
-   LUuv
-   LUvu
-   LUvv
-   LUup
-   LUvp
-   LUpu
-   LUpv
-   LUpp
-   LUvelp
-   .ve
-    (To see this list enter 'ls /Formats/nsr' into the shell window after executing the above command.)
-
-    SEE ALSO:
-    'symlist'
-   D*/
-/****************************************************************************/
-
-static INT CreateFormatCommand (INT argc, char **argv)
-{
-  INT err;
-
-  err = CreateFormatCmd(argc,argv);
-
-  switch (err)
-  {
-  case 0 : return (OKCODE);
-  case 1 : PrintHelp("newformat",HELPITEM,NULL);
-    return (PARAMERRORCODE);
-  default : return (CMDERRORCODE);
-  }
 }
 
 /****************************************************************************/
@@ -10529,6 +10238,369 @@ static INT ShowPrintingFormatCommand (INT argc, char **argv)
 
   return (OKCODE);
 }
+
+#endif /* __NUMERICS__ */
+
+/* see formats.c for the man page */
+
+static INT CreateFormatCommand (INT argc, char **argv)
+{
+  INT err;
+
+  err = CreateFormatCmd(argc,argv);
+
+  switch (err)
+  {
+  case 0 : return (OKCODE);
+  case 1 : PrintHelp("newformat",HELPITEM,NULL);
+    return (PARAMERRORCODE);
+  default : return (CMDERRORCODE);
+  }
+}
+
+#ifdef __NP__
+
+static NP_BASE *currNumProc=NULL;               /* current numerical procedure		*/
+
+/****************************************************************************/
+/*D
+   GetCurrentNumProc - return a pointer to the current numproc
+
+   SYNOPSIS:
+   static NUM_PROC *GetCurrentNumProc (void);
+
+   PARAMETERS:
+   .  void -
+
+   DESCRIPTION:
+   This function returns a pointer to the current numproc.
+
+   RETURN VALUE:
+   NUM_PROC *
+   .n      pointer to numproc
+   .n      NULL if there is no current numproc.
+   D*/
+/****************************************************************************/
+
+static NP_BASE *GetCurrentNumProc (void)
+{
+  return (currNumProc);
+}
+
+/****************************************************************************/
+/*D
+   SetCurrentNumProc -	Set the current NumProc if it is valid
+
+   SYNOPSIS:
+   static INT SetCurrentNumProc (NUM_PROC *theNumProc);
+
+   PARAMETERS:
+   .  theNumProc - pointer to multigrid
+
+   DESCRIPTION:
+   This function sets the current NumProc if it is valid, i. e.
+   the function checks whether 'theNumProc' acually points to a numproc.
+   It can be NULL only if no numproc is defined.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if theNumProc is not in the numproc list
+   D*/
+/****************************************************************************/
+
+static INT SetCurrentNumProc (NP_BASE *theNumProc)
+{
+  currNumProc = theNumProc;
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   npexecute - execute a NumProc
+
+   DESCRIPTION:
+   This command executes a NumProc.
+   It calls the function 'ExecuteNumProc'.
+
+   'npexecute [<num proc name>] <argument list to be passed>'
+
+   . <num~proc~name> - name of an existing NumProc
+
+   SEE ALSO
+   'numerics', 'NUM_PROC'
+   D*/
+/****************************************************************************/
+
+static INT ExecuteNumProcCommand (INT argc, char **argv)
+{
+  char theNumProcName[NAMESIZE];
+  NP_BASE *theNumProc;
+  MULTIGRID *theMG;
+  INT err;
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
+    return (CMDERRORCODE);
+  }
+
+  /* get NumProc */
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" npexecute %",NAMELENSTR,"[ -~]")),theNumProcName)!=1) || (strlen(theNumProcName)==0))
+  {
+    theNumProc = GetCurrentNumProc();
+    if (theNumProc == NULL)
+    {
+      PrintErrorMessage('E',"npexecute","there is no current numerical procedure");
+      return (CMDERRORCODE);
+    }
+  }
+  else
+  {
+    theNumProc = GetNumProcByName (theMG,theNumProcName);
+    if (theNumProc == NULL)
+    {
+      PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
+      return (CMDERRORCODE);
+    }
+  }
+  if ((err=((*theNumProc->Execute)(theNumProc,argc,argv)))!=0)
+  {
+    sprintf(buffer,"execution of '%s' failed (error code %d)",theNumProcName,err);
+    PrintErrorMessage('E',"npexecute",buffer);
+    return (CMDERRORCODE);
+  }
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   npdisplay - display a NumProc
+
+   DESCRIPTION:
+   This command displays a NumProc.
+   It calls the function 'DisplayNumProc'.
+
+   'npdisplay [<num proc name>]'
+
+   . <num~proc~name> - name of an existing NumProc (default is the current NumProc)
+
+   D*/
+/****************************************************************************/
+
+static INT NumProcDisplayCommand (INT argc, char **argv)
+{
+  char theNumProcName[NAMESIZE];
+  NP_BASE *theNumProc;
+  MULTIGRID *theMG;
+  INT err;
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
+    return (CMDERRORCODE);
+  }
+
+  /* get NumProc */
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" npdisplay %",NAMELENSTR,"[ -~]")),theNumProcName)!=1) || (strlen(theNumProcName)==0))
+  {
+    theNumProc = GetCurrentNumProc();
+    if (theNumProc == NULL)
+    {
+      PrintErrorMessage('E',"npexecute","there is no current numerical procedure");
+      return (CMDERRORCODE);
+    }
+  }
+  else
+  {
+    theNumProc = GetNumProcByName (theMG,theNumProcName);
+    if (theNumProc == NULL)
+    {
+      PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
+      return (CMDERRORCODE);
+    }
+  }
+  if ((err=((*theNumProc->Display)(theNumProc)))!=0)
+  {
+    sprintf(buffer,"execution of '%s' failed (error code %d)",theNumProcName,err);
+    PrintErrorMessage('E',"npexecute",buffer);
+    return (CMDERRORCODE);
+  }
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   npcreate - creating a NumProc
+
+   DESCRIPTION:
+   This command creates a NumProc.
+   It calls the function 'CreateNumProc'.
+
+   'npcreate <num proc name> $c <constructor>'
+
+   . <num~proc~name> - name of the new NumProc
+   . $c~<num~proc~type> - name of an existing constructor
+
+   SEE ALSO
+   'NUM_PROC'
+   D*/
+/****************************************************************************/
+
+static INT NumProcCreateCommand (INT argc, char **argv)
+{
+  char theNumProcName[NAMESIZE];
+  char ConstructName[NAMESIZE];
+  NP_BASE *theNumProc;
+  MULTIGRID *theMG;
+  INT err;
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
+    return (CMDERRORCODE);
+  }
+  /* get NumProc name */
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" npcreate %",
+                                        NAMELENSTR,"[ -~]")),
+              theNumProcName)!=1) || (strlen(theNumProcName)==0)) {
+    PrintErrorMessage('E',"npcreate",
+                      "specify the name of the theNumProcName to create");
+    return (PARAMERRORCODE);
+  }
+  if (ReadArgvChar("c",ConstructName,argc,argv)) {
+    PrintErrorMessage('E',"npcreate",
+                      "specify the name of the constructor");
+    return (PARAMERRORCODE);
+  }
+  if ((err=CreateObject (theMG,theNumProcName,ConstructName))!=0) {
+    UserWriteF("execution of '%s' failed (error code %d)",
+               theNumProcName,err);
+    return (CMDERRORCODE);
+  }
+  theNumProc = GetNumProcByName(theMG,theNumProcName);
+  if (SetCurrentNumProc(theNumProc))
+    return(PARAMERRORCODE);
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   npinit - inizialize a NumProc
+
+   DESCRIPTION:
+   This command inizializes a NumProc.
+   It calls the function 'SetNumProc'.
+
+   'npinit <argument list to be passed>'
+
+   SEE ALSO:
+   'numerics', 'NUM_PROC'
+   D*/
+/****************************************************************************/
+
+static INT NumProcInitCommand (INT argc, char **argv)
+{
+  char theNumProcName[NAMESIZE];
+  NP_BASE *theNumProc;
+  MULTIGRID *theMG;
+  INT err;
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
+    return (CMDERRORCODE);
+  }
+
+  /* get NumProc */
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" npinit %",NAMELENSTR,"[ -~]")),theNumProcName)!=1) || (strlen(theNumProcName)==0))
+  {
+    theNumProc = GetCurrentNumProc();
+    if (theNumProc == NULL)
+    {
+      PrintErrorMessage('E',"npexecute","there is no current numerical procedure");
+      return (CMDERRORCODE);
+    }
+  }
+  else
+  {
+    theNumProc = GetNumProcByName (theMG,theNumProcName);
+    if (theNumProc == NULL)
+    {
+      PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
+      return (CMDERRORCODE);
+    }
+  }
+  err = (*theNumProc->Init)(theNumProc,argc,argv);
+  switch (err) {
+  case NP_NOT_INIT :
+    UserWriteF("num proc %s has status NOT_INIT\n",theNumProcName);
+  case NP_NOT_ACTIVE :
+    UserWriteF("num proc %s has status NOT_ACTIVE\n",theNumProcName);
+  case NP_ACTIVE :
+    UserWriteF("num proc %s has status NOT_ACTIVE\n",theNumProcName);
+  case NP_EXECUTABLE :
+    UserWriteF("num proc %s has status EXECUTABLE\n",theNumProcName);
+  }
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   scnp - make a NumProc the current NumProc
+
+   DESCRIPTION:
+   This command makes a NumProc the current NumProc.
+   It sets current num proc.
+   It calls the function 'GetNumProcFromName'.
+
+   'scnp <num proc name>'
+
+   . <num~proc~name> - name of an existing NumProc
+   D*/
+/****************************************************************************/
+
+static INT SetCurrentNumProcCommand (INT argc, char **argv)
+{
+  NP_BASE *theNumProc;
+  MULTIGRID *theMG;
+  char npname[NAMESIZE];
+
+  NO_OPTION_CHECK(argc,argv);
+
+  /* get solver name */
+  if (sscanf(argv[0],expandfmt(CONCAT3(" scnp %",NAMELENSTR,"[ -~]")),npname)!=1)
+  {
+    PrintHelp("scnp",HELPITEM," (specify current NumProc name)");
+    return(PARAMERRORCODE);
+  }
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
+    return (CMDERRORCODE);
+  }
+  theNumProc = GetNumProcByName (theMG,npname);
+  if (theNumProc == NULL)
+  {
+    PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
+    return (CMDERRORCODE);
+  }
+
+  if (SetCurrentNumProc(theNumProc))
+    return (CMDERRORCODE);
+
+  return(OKCODE);
+}
+#endif /* __NP__ */
 
 /****************************************************************************/
 /*D
@@ -12359,7 +12431,6 @@ INT InitCommands ()
 
   /* commands for NumProc management */
   if (CreateCommand("npexecute",          ExecuteNumProcCommand                   )==NULL) return (__LINE__);
-  if (CreateCommand("nplist",                     NumProcListCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("npdisplay",          NumProcDisplayCommand                   )==NULL) return (__LINE__);
   if (CreateCommand("npcreate",           NumProcCreateCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("npinit",                     NumProcInitCommand                              )==NULL) return (__LINE__);
@@ -12373,8 +12444,11 @@ INT InitCommands ()
 
   /* formats */
   if (CreateCommand("newformat",          CreateFormatCommand                             )==NULL) return (__LINE__);
+#ifdef __NUMERICS__
   if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
   if (CreateCommand("showpf",             ShowPrintingFormatCommand               )==NULL) return (__LINE__);
+  if (CreateCommand("nplist",                     NumProcListCommand                              )==NULL) return (__LINE__);
+#endif /* __NUMERICS__ */
 
   /* miscellaneous commands */
   if (CreateCommand("setkey",             SetCommandKeyCommand                    )==NULL) return (__LINE__);
