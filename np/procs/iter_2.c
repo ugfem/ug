@@ -86,6 +86,7 @@ typedef struct
 
   VEC_SCALAR damp;
   DOUBLE alpha,Gamma;
+  INT reg;
   MATDATA_DESC *B;
 } NP_SOR_A;
 
@@ -95,6 +96,7 @@ typedef struct
 
   VEC_SCALAR damp;
   DOUBLE alpha,Gamma;
+  INT reg;
   MATDATA_DESC *B;
 } NP_SSOR_A;
 
@@ -104,6 +106,7 @@ typedef struct
 
   VEC_SCALAR damp;
   DOUBLE alpha,Gamma;
+  INT reg;
   MATDATA_DESC *B;
 } NP_ILU_A;
 
@@ -132,7 +135,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-static INT AutoDamp_CopyMatrix (MULTIGRID *mg, INT level, MATDATA_DESC *B, MATDATA_DESC *A, DOUBLE alpha, DOUBLE Gamma)
+static INT AutoDamp_CopyMatrix (MULTIGRID *mg, INT level, MATDATA_DESC *B, MATDATA_DESC *A, DOUBLE alpha, DOUBLE Gamma, INT regularize)
 {
   INT i,j,Acomp0,Bcomp0,Acomp,Bcomp,nc,nr;
   DOUBLE scale;
@@ -145,6 +148,7 @@ static INT AutoDamp_CopyMatrix (MULTIGRID *mg, INT level, MATDATA_DESC *B, MATDA
   assert(nc==nr);
   Acomp0=MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,0);
   Bcomp0=MD_MCMP_OF_RT_CT(B,NODEVEC,NODEVEC,0);
+
   for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,level)); v!=NULL; v=SUCCVC(v))
   {
     for (i=0; i<nc; i++)
@@ -173,18 +177,19 @@ static INT AutoDamp_CopyMatrix (MULTIGRID *mg, INT level, MATDATA_DESC *B, MATDA
     }
 
     /* set scale according to stability of diagonal block */
-    switch (nc)
-    {
-    case 1 :
-      /* nothing to do */
-      break;
-    case 2 :
-      scale=ABS(MVALUE(VSTART(v),Bcomp0)*MVALUE(VSTART(v),Bcomp0+3)-MVALUE(VSTART(v),Bcomp0+1)*MVALUE(VSTART(v),Bcomp0+2));
-      assert(scale!=0.0);
-      scale=(ABS(MVALUE(VSTART(v),Bcomp0)*MVALUE(VSTART(v),Bcomp0+3))+ABS(MVALUE(VSTART(v),Bcomp0+1)*MVALUE(VSTART(v),Bcomp0+2)))/scale;
-      for (i=0; i<4; i++) MVALUE(VSTART(v),Bcomp0+i)*=scale;
-      break;
-    }
+    if (regularize)
+      switch (nc)
+      {
+      case 1 :
+        /* nothing to do */
+        break;
+      case 2 :
+        scale=ABS(MVALUE(VSTART(v),Bcomp0)*MVALUE(VSTART(v),Bcomp0+3)-MVALUE(VSTART(v),Bcomp0+1)*MVALUE(VSTART(v),Bcomp0+2));
+        assert(scale!=0.0);
+        scale=(ABS(MVALUE(VSTART(v),Bcomp0)*MVALUE(VSTART(v),Bcomp0+3))+ABS(MVALUE(VSTART(v),Bcomp0+1)*MVALUE(VSTART(v),Bcomp0+2)))/scale;
+        for (i=0; i<4; i++) MVALUE(VSTART(v),Bcomp0+i)*=scale;
+        break;
+      }
   }
 
   return(0);
@@ -221,7 +226,6 @@ static INT AutoDamp_CopyMatrix (MULTIGRID *mg, INT level, MATDATA_DESC *B, MATDA
    D*/
 /****************************************************************************/
 
-
 static INT SOR_A_Init (NP_BASE *theNP, INT argc , char **argv)
 {
   INT i;
@@ -230,9 +234,9 @@ static INT SOR_A_Init (NP_BASE *theNP, INT argc , char **argv)
   for (i=0; i<MAX_VEC_COMP; i++) np->damp[i]=1.0;
   sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv);
   if (ReadArgvDOUBLE("alpha",&(np->alpha),argc,argv)) np->alpha = 1.5;
-  if (np->alpha<0.0) REP_ERR_RETURN (1);
   if (ReadArgvDOUBLE("Gamma",&(np->Gamma),argc,argv)) np->Gamma = 1.0;
   if (np->Gamma<0.0) REP_ERR_RETURN (1);
+  if (ReadArgvINT("reg",&(np->reg),argc,argv)) np->reg=1;
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -246,6 +250,7 @@ static INT SOR_A_Display (NP_BASE *theNP)
   if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"alpha",np->alpha);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"Gamma",np->Gamma);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"reg",(int)np->reg);
 
   return (0);
 }
@@ -257,7 +262,7 @@ static INT SOR_A_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDAT
   if (l_setindex(NP_GRID(theNP,level))) NP_RETURN(1,result[0]);
   np->B=NULL;
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->B)) NP_RETURN(1,result[0]);
-  if (AutoDamp_CopyMatrix(NP_MG(theNP),level,np->B,A,np->alpha,np->Gamma)) NP_RETURN(1,result[0]);
+  if (AutoDamp_CopyMatrix(NP_MG(theNP),level,np->B,A,np->alpha,np->Gamma,np->reg)) NP_RETURN(1,result[0]);
   *baselevel = level;
 
   return (0);
@@ -339,9 +344,9 @@ static INT SSOR_A_Init (NP_BASE *theNP, INT argc , char **argv)
   for (i=0; i<MAX_VEC_COMP; i++) np->damp[i]=1.0;
   sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv);
   if (ReadArgvDOUBLE("alpha",&(np->alpha),argc,argv)) np->alpha = 1.5;
-  if (np->alpha<0.0) REP_ERR_RETURN (1);
   if (ReadArgvDOUBLE("Gamma",&(np->Gamma),argc,argv)) np->Gamma = 1.0;
   if (np->Gamma<0.0) REP_ERR_RETURN (1);
+  if (ReadArgvINT("reg",&(np->reg),argc,argv)) np->reg=1;
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -355,6 +360,7 @@ static INT SSOR_A_Display (NP_BASE *theNP)
   if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"alpha",np->alpha);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"Gamma",np->Gamma);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"reg",(int)np->reg);
 
   return (0);
 }
@@ -366,7 +372,7 @@ static INT SSOR_A_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDA
   if (l_setindex(NP_GRID(theNP,level))) NP_RETURN(1,result[0]);
   np->B=NULL;
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->B)) NP_RETURN(1,result[0]);
-  if (AutoDamp_CopyMatrix(NP_MG(theNP),level,np->B,A,np->alpha,np->Gamma)) NP_RETURN(1,result[0]);
+  if (AutoDamp_CopyMatrix(NP_MG(theNP),level,np->B,A,np->alpha,np->Gamma,np->reg)) NP_RETURN(1,result[0]);
   *baselevel = level;
 
   return (0);
@@ -463,6 +469,7 @@ static INT ILU_A_Init (NP_BASE *theNP, INT argc , char **argv)
   sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv);
   if (ReadArgvDOUBLE("alpha",&(np->alpha),argc,argv)) np->alpha = 1.5;
   if (ReadArgvDOUBLE("Gamma",&(np->Gamma),argc,argv)) np->Gamma = 1.0;
+  if (ReadArgvINT("reg",&(np->reg),argc,argv)) np->reg=1;
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -476,6 +483,7 @@ static INT ILU_A_Display (NP_BASE *theNP)
   if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"alpha",np->alpha);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"Gamma",np->Gamma);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"reg",(int)np->reg);
 
   return (0);
 }
@@ -487,7 +495,7 @@ static INT ILU_A_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDAT
   if (l_setindex(NP_GRID(theNP,level))) NP_RETURN(1,result[0]);
   np->B=NULL;
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->B)) NP_RETURN(1,result[0]);
-  if (AutoDamp_CopyMatrix(NP_MG(theNP),level,np->B,A,np->alpha,np->Gamma)) NP_RETURN(1,result[0]);
+  if (AutoDamp_CopyMatrix(NP_MG(theNP),level,np->B,A,np->alpha,np->Gamma,np->reg)) NP_RETURN(1,result[0]);
   if (l_ilubthdecomp(GRID_ON_LEVEL(NP_MG(theNP),level),np->B,0,NULL,NULL,NULL)!=NUM_OK)
   {
     PrintErrorMessage('E',"ILUAPreProcess","decomposition failed");
