@@ -139,6 +139,89 @@ static DOUBLE Rand[54][2] = {
   {189,22.5}
 };
 
+static DOUBLE kiel[79][2] = {
+  {1.,.46},
+  {1.,1.},
+  {0.,1.},
+  {0.,.87},
+  {.03,.88},
+  {.095,.875},
+  {.13,.835},
+  {.17,.805},
+  {.24,.745},
+  {.265,.740},
+  {.270,.725},
+  {.255,.710},
+  {.245,.685},
+  {.220,.675},
+  {.221,.650},
+  {.219,.635},
+  {.218,.600},
+  {.205,.550},
+  {.230,.520},
+  {.245,.480},
+  {.240,.460},
+  {.225,.400},
+  {.220,.400},
+  {.140,.370},
+  {.145,.355},
+  {.165,.340},
+  {.145,.325},
+  {.140,.305},
+  {.100,.310},
+  {.090,.270},
+  {.120,.255},
+  {.115,.245},
+  {.095,.250},
+  {.090,.205},
+  {.140,.170},
+  {.145,.145},
+  {.125,.125},
+  {.110,.090},
+  {.080,.065},
+  {.075,.045},
+  {.070,.020},
+  {.085,.000},
+  {.105,.020},
+  {.115,.040},
+  {.125,.030},
+  {.140,.045},
+  {.135,.050},
+  {.155,.045},
+  {.170,.060},
+  {.175,.080},
+  {.215,.085},
+  {.185,.120},
+  {.190,.135},
+  {.195,.150},
+  {.200,.155},
+  {.210,.165},
+  {.205,.195},
+  {.245,.205},
+  {.255,.215},
+  {.250,.265},
+  {.255,.285},
+  {.280,.295},
+  {.330,.465},
+  {.335,.485},
+  {.365,.525},
+  {.405,.535},
+  {.440,.535},
+  {.500,.535},
+  {.515,.535},
+  {.520,.560},
+  {.495,.570},
+  {.495,.585},
+  {.520,.595},
+  {.600,.630},
+  {.630,.630},
+  {.745,.605},
+  {.820,.585},
+  {.885,.525},
+  {1.,.46}
+};
+
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -1241,6 +1324,81 @@ static INT InitWolfgangsee (void)
                               rechtesWolfgangseeUfer,NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("WolfgangseeUfer2",1,0,2,2,0,20,40.0,53.0,
                               oberesWolfgangseeUfer,NULL)==NULL) return(1);
+
+  return(0);
+}
+
+/****************************************************************************/
+/*                                                                          */
+/*  define the Kiel domain                                                  */
+/*                                                                          */
+/****************************************************************************/
+
+static INT kiel_lower (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda = param[0];
+  DOUBLE c;
+  INT i,j;
+
+  if ((lambda<0.0)||(lambda>20.0)) return(1);
+  c=lambda-floor(lambda);
+  i=(INT)ceil(lambda);
+  j=(INT)floor(lambda);
+  result[0] = (1.0-c)*kiel[j][0] + c*kiel[i][0];
+  result[1] = (1.0-c)*kiel[j][1] + c*kiel[i][1];
+
+  return(0);
+}
+
+static INT kiel_right (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda = param[0];
+  DOUBLE c;
+  INT i,j;
+
+  if ((lambda<20.0)||(lambda>40.0)) return(1);
+  c=lambda-floor(lambda);
+  i=(INT)ceil(lambda);
+  j=(INT)floor(lambda);
+  result[0] = (1.0-c)*kiel[j][0] + c*kiel[i][0];
+  result[1] = (1.0-c)*kiel[j][1] + c*kiel[i][1];
+
+  return(0);
+}
+
+static INT kiel_upper (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda = param[0];
+  DOUBLE c;
+  INT i,j;
+
+  if ((lambda<40.0)||(lambda>78.0)) return(1);
+  c=lambda-floor(lambda);
+  i=(INT)ceil(lambda);
+  j=(INT)floor(lambda);
+  result[0] = (1.0-c)*kiel[j][0] + c*kiel[i][0];
+  result[1] = (1.0-c)*kiel[j][1] + c*kiel[i][1];
+
+  return(0);
+}
+
+static INT InitKiel (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] =0.5;
+  MidPoint[1] =0.5;
+  radius =2;
+  if (CreateDomain("Kiel",MidPoint,radius,3,3,NO)==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("kiel_lower",1,0,0,0,1,20,0.0,20.0,
+                              kiel_lower,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("kiel_right",1,0,1,1,2,20,20.0,40.0,
+                              kiel_right,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("kiel_upper",1,0,2,2,0,20,40.0,78.0,
+                              kiel_upper,NULL)==NULL) return(1);
 
   return(0);
 }
@@ -4822,6 +4980,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Segment") == 0)
     {
       if (InitSegment())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Kiel") == 0)
+    {
+      if (InitKiel())
         return(1);
     }
     else if (strcmp(DomainName,"Wolfgangsee") == 0)
