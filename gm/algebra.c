@@ -1118,6 +1118,7 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
 CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to)
 {
   CONNECTION *pc;
+
   pc = CreateConnection(theGrid,from,to);
   if (pc==NULL) return(NULL);
   SETCEXTRA(pc,1);
@@ -3748,13 +3749,14 @@ INT CheckAlgebra (GRID *theGrid)
                         #ifdef ModelP
       if (prio != PrioHGhost)
                         #endif
-      if (MUSED(theMatrix) != 1)
+      if (MUSED(theMatrix)!=1 &&  !CEXTRA(MMYCON(theMatrix)))
       {
         errors++;
         UserWriteF(PFMT "ERROR: connection dead vec=" VINDEX_FMTX
-                   " vecto=" VINDEX_FMTX " con=%x mat=%x matadj=%x\n",
+                   " vector=" VINDEX_FMTX " con=%x mat=%x matadj=%x level(vec)=%d is_extra_con %d\n",
                    me,VINDEX_PRTX(theVector),VINDEX_PRTX(MDEST(theMatrix)),
-                   MMYCON(theMatrix),MDEST(theMatrix),MDEST(MADJ(theMatrix)));
+                   MMYCON(theMatrix),MDEST(theMatrix),MDEST(MADJ(theMatrix)),
+                   GLEVEL(theGrid),CEXTRA(MMYCON(theMatrix)));
       }
 
                         #ifdef ModelP
