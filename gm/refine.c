@@ -433,6 +433,81 @@ static INT InitClosureFIFO (void)
 	return (GM_OK);
 }
 
+static INT UpdateFIFOLists (GRID *theGrid, ELEMENT *theElement, INT thePattern, INT NewPattern)
+{
+	INT 	j;
+	ELEMENT *NbElement;
+	EDGE	*theEdge;
+
+	if (MARKCLASS(theElement)==RED_CLASS && thePattern!=NewPattern)
+	{
+		#ifdef __TWODIM__
+		for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+		{
+			 if (EDGE_IN_PAT(thePattern,j)==0 && 
+				 EDGE_IN_PAT(NewPattern,j))
+			 {
+
+				theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
+								CORNER_OF_EDGE_PTR(theElement,j,1));
+				ASSERT(theEdge != NULL);
+
+				SETPATTERN(theEdge,1);
+			  
+				/* boundary case */
+				if (SIDE_ON_BND(theElement,j)) continue;
+
+				/* add the element sharing this edge to fifo_queue */
+				NbElement = NBELEM(theElement,j);
+
+				if (NbElement==NULL) continue; 
+
+				PRINTDEBUG(gm,1,("   ADDING to FIFO: NBID=%d\n",
+					ID(NbElement)))
+
+				/* unlink element from element list */
+				if (PREDE(NbElement) != NULL)
+					SUCCE(PREDE(NbElement)) = SUCCE(NbElement);
+				if (SUCCE(NbElement) != NULL)
+					PREDE(SUCCE(NbElement)) = PREDE(NbElement);
+				if (FIRSTELEMENT(theGrid) == NbElement) 
+					FIRSTELEMENT(theGrid) = SUCCE(NbElement);
+
+				SUCCE(NbElement) = PREDE(NbElement) = NULL;
+				/* insert into fifo */
+				if (fifo_insertfirst == NULL)
+				{
+					fifo_insertfirst = fifo_insertlast = NbElement;
+				}
+				else
+				{
+					SUCCE(fifo_insertlast) = NbElement;
+					PREDE(NbElement) = fifo_insertlast;
+					fifo_insertlast = NbElement;
+				}
+			}
+
+			if (EDGE_IN_PAT(thePattern,j) && 
+				EDGE_IN_PAT(NewPattern,j)==0)
+			{
+
+				UserWriteF("UpdateFIFOLists(): ERROR EID=%d in fifo "
+					"thePattern=%d has edge=%d refined but "
+					"NewPattern=%d NOT!\n",
+					ID(theElement),thePattern,j,NewPattern);
+				RETURN(-1);
+			}
+		}
+		#endif
+		#ifdef __THREEDIM__
+		UserWriteF("UpdateFIFOLists(): ERROR fifo for 3D NOT implemented!\n");
+		ASSERT(0);
+		#endif
+	}
+
+	return(GM_OK);
+}
+
 static INT UpdateClosureFIFO (GRID *theGrid)
 {
 	ELEMENT *theElement;
@@ -531,7 +606,7 @@ static INT PrepareGridClosure (GRID *theGrid)
 
 	/* reset USED flag of elements and PATTERN and */
 	/* ADDPATTERN flag on the edges                */
-	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
@@ -551,6 +626,108 @@ static INT PrepareGridClosure (GRID *theGrid)
 
 	return(GM_OK);
 }
+
+#ifdef ModelP
+#ifdef __TWODIM__
+static int Gather_ElemSideandEdgePattern (DDD_OBJ obj, void *data)
+{
+	INT 	i;
+	ELEMENT *theElement = (ELEMENT *)obj;
+	EDGE	*theEdge;
+
+	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+	{
+		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+						  CORNER_OF_EDGE_PTR(theElement,i,1));
+		ASSERT(theEdge!=NULL);
+
+		((INT *)data)[i] = PATTERN(theEdge);
+	}
+
+	((INT *)data)[4] = SIDEPATTERN(theElement);
+
+	return(GM_OK);
+}
+
+static int Scatter_ElemSideandEdgePattern (DDD_OBJ obj, void *data)
+{
+	INT		i;
+	ELEMENT *theElement = (ELEMENT *)obj;
+	EDGE	*theEdge;
+
+	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+	{
+		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+						  CORNER_OF_EDGE_PTR(theElement,i,1));
+		ASSERT(theEdge!=NULL);
+
+		SETPATTERN(theEdge,PATTERN(theEdge)|((INT *)data)[i]);
+	}
+
+	SETSIDEPATTERN(theElement,SIDEPATTERN(theElement)|((INT *)data)[4]);
+
+	return(GM_OK);
+}
+
+static INT ExchangePatterns (GRID *theGrid)
+{
+	/* exchange sidepattern of edges */
+	DDD_IFAOneway(ElementIF,IF_FORWARD,GLEVEL(theGrid),5*sizeof(INT),
+		Gather_ElemSideandEdgePattern, Scatter_ElemSideandEdgePattern);
+
+	return(GM_OK);
+}
+#endif
+
+#ifdef __THREEDIM__
+static int Gather_EdgePattern (DDD_OBJ obj, void *data)
+{
+	EDGE *theEdge = (EDGE *)obj;
+	
+	*((INT *)data) = PATTERN(theEdge);
+	return(GM_OK);
+}
+
+static int Scatter_EdgePattern (DDD_OBJ obj, void *data)
+{
+	EDGE *theEdge = (EDGE *)obj;
+
+	SETPATTERN(theEdge,PATTERN(theEdge)|*((INT *)data));
+	return(GM_OK);
+}
+
+static int Gather_ElemSidePattern (DDD_OBJ obj, void *data)
+{
+	ELEMENT *theElement = (ELEMENT *)obj;
+	
+	*((INT *)data) = SIDEPATTERN(theElement);
+
+	return(GM_OK);
+}
+
+static int Scatter_ElemSidePattern (DDD_OBJ obj, void *data)
+{
+	ELEMENT *theElement = (ELEMENT *)obj;
+
+	SETSIDEPATTERN(theElement,SIDEPATTERN(theElement)|*((INT *)data));
+
+	return(GM_OK);
+}
+
+static INT ExchangePatterns (GRID *theGrid)
+{
+	/* exchange patterns of edges */
+	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GLEVEL(theGrid),sizeof(INT),
+		Gather_EdgePattern, Scatter_EdgePattern);
+
+	/* exchange sidepattern of edges */
+	DDD_IFAOneway(ElementIF,IF_FORWARD,GLEVEL(theGrid),sizeof(INT),
+		Gather_ElemSidePattern, Scatter_ElemSidePattern);
+
+	return(GM_OK);
+}
+#endif
+#endif
 
 static INT ComputePatterns (GRID *theGrid)
 {
@@ -609,15 +786,124 @@ static INT ComputePatterns (GRID *theGrid)
 		}
 	}
 
+	#ifdef ModelP
+	if (ExchangePatterns(theGrid) != GM_OK) return(GM_ERROR);
+	#endif
+
 	return(GM_OK);
 }
 
-static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor, INT i, INT theEdgePattern)
+#ifdef TET_RULESET
+static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *theNeighbor, INT j)
 {
-	INT		j,k;
-	INT		theEdgeNum;
+	INT		k;
+	INT		theEdgeNum,theEdgePattern;
 	INT		NbEdgeNum,NbEdgePattern,NbSidePattern,NbSideMask;
 	EDGE	*theEdge,*NbEdge;
+
+	if (TAG(theElement)==PYRAMID || TAG(theElement)==PRISM) 
+		return(GM_OK);
+
+	for (i=EDGES_OF_ELEM(theElement)-1; i>=0; i--)
+	{
+		theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+						CORNER_OF_EDGE_PTR(theElement,i,1));
+		ASSERT(theEdge!=NULL);
+
+		theEdgePattern = (theEdgePattern<<1) | PATTERN(theEdge);
+	}
+
+	/* because SIDEPATTERN is set to zero, */
+	/* I choose TriSectionEdgeŠŠ[0] 		 */
+	theEdgeNum = TriSectionEdge[theEdgePattern
+					&CondensedEdgeOfSide[i]][0];
+
+	if (theEdgeNum == -2) RETURN(-1);
+
+	if (theEdgeNum == -1) return(GM_OK);
+	
+	switch (TAG(theNeighbor))
+	{
+		
+		case TETRAHEDRON:
+
+			NbEdgePattern = 0;
+
+			for (k=0; k<EDGES_OF_ELEM(theNeighbor); k++)
+			{
+				NbEdge=GetEdge(CORNER_OF_EDGE_PTR(theNeighbor,k,0),
+							   CORNER_OF_EDGE_PTR(theNeighbor,k,1));
+				ASSERT(NbEdge!=NULL);
+				NbEdgePattern = NbEdgePattern | (PATTERN(NbEdge)<<k);
+			}
+
+			NbEdgeNum = TriSectionEdge[NbEdgePattern
+							&CondensedEdgeOfSide[j]][0];
+
+			if (NbEdgeNum == -2 || NbEdgeNum == -1)
+				RETURN(-1);
+			
+			if (!(CORNER_OF_EDGE_PTR(theElement,theEdgeNum,0) == 
+				  CORNER_OF_EDGE_PTR(theNeighbor,NbEdgeNum,0) &&
+				  CORNER_OF_EDGE_PTR(theElement,theEdgeNum,1) == 
+				  CORNER_OF_EDGE_PTR(theNeighbor,NbEdgeNum,1)	) 
+				&&
+				!(CORNER_OF_EDGE_PTR(theElement,theEdgeNum,0) == 
+				  CORNER_OF_EDGE_PTR(theNeighbor,NbEdgeNum,1) &&
+				  CORNER_OF_EDGE_PTR(theElement,theEdgeNum,1) == 
+				  CORNER_OF_EDGE_PTR(theNeighbor,NbEdgeNum,0)	) )
+			{
+				NbSidePattern = SIDEPATTERN(theNeighbor);
+				NbSideMask = (1<<j);
+
+				if ( NbSidePattern & NbSideMask )
+					NbSidePattern &= ~NbSideMask;
+				else
+					NbSidePattern |= NbSideMask;
+
+				SETSIDEPATTERN(theNeighbor,NbSidePattern);
+			}
+			break;
+
+		case PYRAMID: 
+		case PRISM: 
+		{
+			NODE *edgenode=NULL;
+			INT trisectionedge=-1;
+
+			for (k=0; k<CORNERS_OF_SIDE(theNeighbor,j); k++)
+			{
+				INT edge;
+
+				edge = EDGE_OF_SIDE(theElement,j,k);
+
+				NbEdge=GetEdge(CORNER_OF_EDGE_PTR(theNeighbor,edge,0),
+							   CORNER_OF_EDGE_PTR(theNeighbor,edge,1));
+				ASSERT(NbEdge!=NULL);
+
+				if (PATTERN(NbEdge) && (edge>trisectionedge))
+					trisectionedge = edge;
+			}
+			assert(trisectionedge != -1);
+
+			if (theEdgeNum != trisectionedge)
+				SETSIDEPATTERN(theNeighbor,
+					SIDEPATTERN(theNeighbor)|(1<<j)); 
+
+			break;
+		}
+
+		default:
+			ASSERT(0);
+	}
+
+	return(GM_OK);
+}
+#endif
+
+static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor, INT i)
+{
+	INT		j,NbSidePattern;
 
 	/* search neighbors side */
 	for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++)
@@ -628,103 +914,15 @@ static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor,
 	/* side is triangle or quadrilateral */
 	switch (CORNERS_OF_SIDE(theElement,i))
 	{
-#ifdef TET_RULESET
 		case 3:
-			if (TAG(theElement)==PYRAMID || TAG(theElement)==PRISM) 
-				break;
-
-			/* because SIDEPATTERN is set to zero, */
-			/* I choose TriSectionEdgeŠŠ[0] 		 */
-			theEdgeNum = TriSectionEdge[theEdgePattern
-							&CondensedEdgeOfSide[i]][0];
-
-			if (theEdgeNum == -2) RETURN(-1);
-
-			if (theEdgeNum == -1) break;
-			
-			switch (TAG(theNeighbor))
-			{
-				
-				case TETRAHEDRON:
-
-					NbEdgePattern = 0;
-
-					for (k=0; k<EDGES_OF_ELEM(theNeighbor); k++)
-					{
-						NbEdge=GetEdge(CORNER_OF_EDGE_PTR(theNeighbor,k,0),
-									   CORNER_OF_EDGE_PTR(theNeighbor,k,1));
-						ASSERT(NbEdge!=NULL);
-						NbEdgePattern = NbEdgePattern | (PATTERN(NbEdge)<<k);
-					}
-
-					NbEdgeNum = TriSectionEdge[NbEdgePattern
-									&CondensedEdgeOfSide[j]][0];
-
-					if (NbEdgeNum == -2 || NbEdgeNum == -1)
-						RETURN(-1);
-					
-					if (!(CORNER_OF_EDGE_PTR(theElement,theEdgeNum,0) == 
-						  CORNER_OF_EDGE_PTR(theNeighbor,NbEdgeNum,0) &&
-						  CORNER_OF_EDGE_PTR(theElement,theEdgeNum,1) == 
-						  CORNER_OF_EDGE_PTR(theNeighbor,NbEdgeNum,1)	) 
-						&&
-						!(CORNER_OF_EDGE_PTR(theElement,theEdgeNum,0) == 
-						  CORNER_OF_EDGE_PTR(theNeighbor,NbEdgeNum,1) &&
-						  CORNER_OF_EDGE_PTR(theElement,theEdgeNum,1) == 
-						  CORNER_OF_EDGE_PTR(theNeighbor,NbEdgeNum,0)	) )
-					{
-						NbSidePattern = SIDEPATTERN(theNeighbor);
-						NbSideMask = (1<<j);
-
-						if ( NbSidePattern & NbSideMask )
-							NbSidePattern &= ~NbSideMask;
-						else
-							NbSidePattern |= NbSideMask;
-
-						SETSIDEPATTERN(theNeighbor,NbSidePattern);
-					}
-					break;
-
-				case PYRAMID: 
-				case PRISM: 
-				{
-					NODE *edgenode=NULL;
-					INT trisectionedge=-1;
-
-					for (k=0; k<CORNERS_OF_SIDE(theNeighbor,j); k++)
-					{
-						INT edge;
-
-						edge = EDGE_OF_SIDE(theElement,j,k);
-
-						NbEdge=GetEdge(CORNER_OF_EDGE_PTR(theNeighbor,edge,0),
-									   CORNER_OF_EDGE_PTR(theNeighbor,edge,1));
-						ASSERT(NbEdge!=NULL);
-
-						if (PATTERN(NbEdge) && (edge>trisectionedge))
-							trisectionedge = edge;
-					}
-					assert(trisectionedge != -1);
-
-					if (theEdgeNum != trisectionedge)
-						SETSIDEPATTERN(theNeighbor,
-							SIDEPATTERN(theNeighbor)|(1<<j)); 
-
-					break;
-				}
-
-				default:
-					ASSERT(0);
-			}
+			#ifdef TET_RULESET
+			/* handle case with 2 edges of the side refined */
+			if (CorrectTetrahedronSidePattern(theElement,i,theNeighbor,j) != GM_OK)
+				RETURN(GM_ERROR);
+			#endif
 			break;
-#else
-		case 3:
-			/* TODO: handle case with 2 edges of the side refined */
-			break;
-#endif
 
 		case 4:
-
 			/* if side of one of the neighboring elements has a */
 			/* sidenode, then both need a sidenode              */
 			NbSidePattern = SIDEPATTERN(theNeighbor);
@@ -750,7 +948,7 @@ static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor,
 
 static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 {
-	INT		i,j,theEdgePattern;
+	INT		i,j;
 	ELEMENT *theElement,*theNeighbor;
 	EDGE	*theEdge;
 
@@ -763,24 +961,11 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 		/* make edgepattern consistent with pattern of edges */
 		SETUSED(theElement,1);
 
-		theEdgePattern = 0;
-#ifdef TET_RULESET
-		for (i=EDGES_OF_ELEM(theElement)-1; i>=0; i--)
-		{
-			theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-						    CORNER_OF_EDGE_PTR(theElement,i,1));
-			ASSERT(theEdge!=NULL);
-
-			theEdgePattern = (theEdgePattern<<1) | PATTERN(theEdge);
-		}
-#endif
-		
 		#ifdef __THREEDIM__
 		/* TODO: change this for red refinement of pyramids */
 		if (DIM==3 && TAG(theElement)==PYRAMID) continue;
 
 		/* make sidepattern consistent with neighbors	*/
-		/* TODO: compute this in a separate function?	*/
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 		{
 			theNeighbor = NBELEM(theElement,i);
@@ -791,7 +976,7 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 
 			/* edgepatterns from theElement and theNeighbor are in final state */
 
-			if (CorrectElementSidePattern(theElement,theNeighbor,i,theEdgePattern) != GM_OK) RETURN(GM_ERROR);
+			if (CorrectElementSidePattern(theElement,theNeighbor,i) != GM_OK) RETURN(GM_ERROR);
 		}
 		#endif
 	}
@@ -864,11 +1049,7 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 			}
 		}
 
-		IFDEBUG(gm,1)
-		UserWriteF("    ID=%d TAG=%d thePattern=%d Mark=%d theEdgePattern=%d "
-			"theSidePattern=%d\n",ID(theElement),TAG(theElement),thePattern,
-			Mark,theEdgePattern,theSidePattern);
-		ENDDEBUG
+		REFINE_ELEMENT_LIST(1,theElement,"");
 
 		#ifdef __THREEDIM__
 		/* choose best tet_red rule according to (*theFullRefRule)() */
@@ -899,73 +1080,7 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 
 		if (fifoFlag)
 		{
-			ELEMENT *NbElement;
-
-			if (MARKCLASS(theElement)==RED_CLASS && thePattern!=NewPattern)
-			{
-				#ifdef __TWODIM__
-				for (j=0; j<EDGES_OF_ELEM(theElement); j++)
-				{
-                     if (EDGE_IN_PAT(thePattern,j)==0 && 
-						 EDGE_IN_PAT(NewPattern,j))
-					 {
-
-						theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
-										CORNER_OF_EDGE_PTR(theElement,j,1));
-						ASSERT(theEdge != NULL);
-
-						SETPATTERN(theEdge,1);
-                      
-						/* boundary case */
-						if (SIDE_ON_BND(theElement,j)) continue;
-
-						/* add the element sharing this edge to fifo_queue */
-						NbElement = NBELEM(theElement,j);
-
-                        if (NbElement==NULL) continue; 
-
-						PRINTDEBUG(gm,1,("   ADDING to FIFO: NBID=%d\n",
-							ID(NbElement)))
-
-						/* unlink element from element list */
-						if (PREDE(NbElement) != NULL)
-							SUCCE(PREDE(NbElement)) = SUCCE(NbElement);
-						if (SUCCE(NbElement) != NULL)
-							PREDE(SUCCE(NbElement)) = PREDE(NbElement);
-                        if (FIRSTELEMENT(theGrid) == NbElement) 
-							FIRSTELEMENT(theGrid) = SUCCE(NbElement);
-
-						SUCCE(NbElement) = PREDE(NbElement) = NULL;
-						/* insert into fifo */
-						if (fifo_insertfirst == NULL)
-						{
-							fifo_insertfirst = fifo_insertlast = NbElement;
-						}
-						else
-						{
-							SUCCE(fifo_insertlast) = NbElement;
-							PREDE(NbElement) = fifo_insertlast;
-							fifo_insertlast = NbElement;
-						}
-					}
-
-					if (EDGE_IN_PAT(thePattern,j) && 
-						EDGE_IN_PAT(NewPattern,j)==0)
-					{
-
-						UserWriteF("SetElementRules(): ERROR EID=%d in fifo "
-							"thePattern=%d has edge=%d refined but "
-							"NewPattern=%d NOT!\n",
-							ID(theElement),thePattern,j,NewPattern);
-						RETURN(-1);
-					}
-				}
-				#endif
-				#ifdef __THREEDIM__
-				UserWriteF("SetElementRules(): ERROR fifo for 3D NOT implemented!\n");
-				ASSERT(0);
-				#endif
-			}
+			if (UpdateFIFOLists(theGrid,theElement,thePattern,NewPattern) != GM_OK) return(GM_OK);
 		}
 
 		if (Mark) (*cnt)++;
@@ -974,6 +1089,82 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 
 	return(GM_OK);
 }
+
+#ifdef ModelP
+#ifdef __TWODIM__
+static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
+{
+	INT 	i;
+	ELEMENT *theElement = (ELEMENT *)obj;
+	EDGE	*theEdge;
+
+	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+	{
+		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+						  CORNER_OF_EDGE_PTR(theElement,i,1));
+		ASSERT(theEdge!=NULL);
+
+		((INT *)data)[i] = ADDPATTERN(theEdge);
+	}
+
+	return(GM_OK);
+}
+
+static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
+{
+	INT		i;
+	ELEMENT *theElement = (ELEMENT *)obj;
+	EDGE	*theEdge;
+
+	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+	{
+		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+						  CORNER_OF_EDGE_PTR(theElement,i,1));
+		ASSERT(theEdge!=NULL);
+
+		SETADDPATTERN(theEdge,ADDPATTERN(theEdge)|((INT *)data)[i]);
+	}
+
+	return(GM_OK);
+}
+
+static INT ExchangeAddPatterns (GRID *theGrid)
+{
+	/* exchange addpatterns of edges */
+	DDD_IFAOneway(ElementIF,IF_FORWARD,GLEVEL(theGrid),4*sizeof(INT),
+		Gather_AddEdgePattern, Scatter_AddEdgePattern);
+
+	return(GM_OK);
+}
+#endif
+#ifdef __THREEDIM__
+static int Gather_EdgeAddPattern (DDD_OBJ obj, void *data)
+{
+	EDGE *theEdge = (EDGE *)obj;
+	
+	*((INT *)data) = ADDPATTERN(theEdge);
+	return(GM_OK);
+}
+
+static int Scatter_EdgeAddPattern (DDD_OBJ obj, void *data)
+{
+	EDGE *theEdge = (EDGE *)obj;
+
+	SETADDPATTERN(theEdge,ADDPATTERN(theEdge)|*((INT *)data));
+
+	return(GM_OK);
+}
+
+static INT ExchangeAddPatterns (GRID *theGrid)
+{
+	/* exchange addpatterns of edges */
+	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GLEVEL(theGrid),sizeof(INT),
+		Gather_EdgeAddPattern, Scatter_EdgeAddPattern);
+
+	return(GM_OK);
+}
+#endif
+#endif
 
 static INT SetAddPatterns (GRID *theGrid)
 {
@@ -1004,6 +1195,10 @@ static INT SetAddPatterns (GRID *theGrid)
 		}
 	}
 
+	#ifdef ModelP
+	ExchangeAddPatterns(theGrid);
+	#endif
+
 	return(GM_OK);
 }
 
@@ -1014,7 +1209,7 @@ static INT BuildGreenClosure (GRID *theGrid)
 	EDGE	*theEdge;
 
 	/* build a green covering around the red elements */
-	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 			theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
@@ -1149,15 +1344,10 @@ static int GridClosure (GRID *theGrid)
 	do
 	{
 		/* set side patterns on the elements */
-		if (SetElementSidePatterns(theGrid, firstElement) != GM_OK)		RETURN(GM_ERROR);
-
-		#ifdef ModelPTest
-		/* send the PATTERN flag from master to slave elements */
-		SendPatternFromMasterToSlaves(GLEVEL(theGrid));
-		#endif
+		if (SetElementSidePatterns(theGrid,firstElement) != GM_OK)		RETURN(GM_ERROR);
 
 		/* set rules on the elements */
-		if (SetElementRules(theGrid, firstElement,&cnt) != GM_OK)	RETURN(GM_ERROR);
+		if (SetElementRules(theGrid,firstElement,&cnt) != GM_OK)	RETURN(GM_ERROR);
 
 	}
 	/* exit only if fifo not active or fifo queue   */
@@ -4647,7 +4837,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 			{
 				if ((ECLASS(theElement)==RED_CLASS) && MARKCLASS(theElement)==RED_CLASS) continue;
 				SETMARK(theElement,NO_REFINEMENT);
-			for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+			}
 
 			PRINTDEBUG(gm,1,("Begin GridClosure(%d,up):\n",level));
 
