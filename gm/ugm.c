@@ -2789,19 +2789,14 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
                        me,EID_PRTX(theElement),EID_PRTX(SonList[i])));
       SET_EFATHER(SonList[i],NULL);
 
-                        #ifdef __THREEDIM__
       /* reset VFATHER of centernode vertex */
       for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
       {
         theNode = CORNER(SonList[i],j);
-        if (NTYPE(theNode) != CENTER_NODE) continue;
-
         theVertex = MYVERTEX(theNode);
         if (VFATHER(theVertex) != NULL && VFATHER(theVertex) == theElement)
           VFATHER(theVertex) = NULL;
       }
-                        #endif
-
       i++;
     }
   }
