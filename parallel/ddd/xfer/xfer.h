@@ -456,28 +456,56 @@ typedef struct
 /* OBJTAB_ENTRY: single entry of object table inside message                */
 /****************************************************************************/
 
-
-/* TODO: this should only store the offset of the DDD_HDR inside the
-   message. gid, typ, prio(?), attr can be derived from that and are
-   stored twice at present. */
-
 typedef struct
 {
-  DDD_GID gid;
-  int offset;                     /* offset from beginObjMem */
-  DDD_TYPE typ;                   /* type of object */
-  DDD_PRIO prio;                  /* new priority of object */
-  DDD_ATTR attr;                  /* attr of object */
+        #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+  int h_offset;                   /* header offset from beginObjMem */
+        #else
+  int o_offset;                   /* object offset from beginObjMem */
+        #endif
+
   int addLen;                     /* length of additional data */
   size_t size;                    /* size of object, ==desc->len for
                                       fixed-sized objects */
 
-  DDD_HDR hdr;                /* TODO this is probably not used on sender side */
+  DDD_HDR hdr;              /* TODO this is probably not used on sender side */
 
   /* TODO: the following data is only used on receiver side */
-  int is_new;
-  DDD_PRIO oldprio;
+  char is_new;
+  char oldprio;
+
+
+        #ifdef F_FRONTEND
+  /* F_FRONTEND has a different storage layout inside message */
+  DDD_GID gid;
+  DDD_TYPE typ;                   /* type of object */
+  DDD_PRIO prio;                  /* new priority of object */
+  DDD_ATTR attr;                  /* attr of object */
+        #endif
+
 } OBJTAB_ENTRY;
+
+
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+
+/* NOTE: the following macros require the DDD_HEADER being copied
+         directly into the message! (with its LDATA!) */
+
+#define OTE_HDR(objmem,ote)    ((DDD_HDR)(((char *)(objmem))+((ote)->h_offset)))
+#define OTE_OBJ(objmem,ote)    OBJ_OBJ(OTE_HDR(objmem,ote))
+#define OTE_GID(objmem,ote)    OBJ_GID(OTE_HDR(objmem,ote))
+#define OTE_PRIO(objmem,ote)   OBJ_PRIO(OTE_HDR(objmem,ote))
+#define OTE_TYPE(objmem,ote)   OBJ_TYPE(OTE_HDR(objmem,ote))
+#define OTE_ATTR(objmem,ote)   OBJ_ATTR(OTE_HDR(objmem,ote))
+
+#else
+
+#define OTE_GID(objmem,ote)    ((ote)->gid)
+#define OTE_PRIO(objmem,ote)   ((ote)->prio)
+#define OTE_TYPE(objmem,ote)   ((ote)->type)
+#define OTE_ATTR(objmem,ote)   ((ote)->attr)
+
+#endif
 
 
 
@@ -541,6 +569,7 @@ void FreeAllXIAddData (void);
 int *AddDataAllocSizes(int);
 void xfer_SetTmpMem (int);
 void *xfer_AllocHeap (size_t);
+void xfer_FreeHeap (void *);
 void *xfer_AllocSend (size_t);
 void xfer_FreeSend (void *);
 /* and others, via template mechanism */

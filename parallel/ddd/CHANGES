@@ -1,5 +1,23 @@
 ---------------------------
 
+CHANGES 1.8.18 -> 1.8.19
+
+---------------------------
+980519 kb
+bugfix in memory handling.
+	- the send-message buffers during ConsCheck where allocated
+	  from a wrong source.
+980518 kb
+reduced size of Xfer-messages.
+	- during Xfer, message buffers are allocated for send and
+	  receive messages. The size of these message buffers (and
+	  the size of the transferred messages) depend mostly on the
+	  number of objects which must be transferred. Each message
+	  contains an ObjectTable, which serves as a directory for
+	  the objects contained in that messages. This object table
+	  has been reduced by about 12%.
+---------------------------
+
 CHANGES 1.8.17 -> 1.8.18
 
 ---------------------------

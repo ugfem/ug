@@ -702,31 +702,31 @@ void DDD_XferEnd (void)
   XICopyObjPtrArray_Free(arrayXICopyObj);
   XICopyObjSet_Reset(xferGlobals.setXICopyObj);
 
-  if (arrayNewOwners!=NULL) OO_Free (arrayNewOwners,0);
+  if (arrayNewOwners!=NULL) OO_Free (arrayNewOwners /*,0*/);
   FreeAllXIAddData();
 
   XISetPrioPtrArray_Free(arrayXISetPrio);
   XISetPrioSet_Reset(xferGlobals.setXISetPrio);
 
-  if (arrayXIDelCmd!=NULL) OO_Free (arrayXIDelCmd,0);
+  if (arrayXIDelCmd!=NULL) OO_Free (arrayXIDelCmd /*,0*/);
   FreeAllXIDelCmd();
 
-  if (arrayXIDelObj!=NULL) OO_Free (arrayXIDelObj,0);
+  if (arrayXIDelObj!=NULL) OO_Free (arrayXIDelObj /*,0*/);
   FreeAllXIDelObj();
 
-  if (arrayXINewCpl!=NULL) OO_Free (arrayXINewCpl,0);
+  if (arrayXINewCpl!=NULL) OO_Free (arrayXINewCpl /*,0*/);
   FreeAllXINewCpl();
 
-  if (arrayXIOldCpl!=NULL) OO_Free (arrayXIOldCpl,0);
+  if (arrayXIOldCpl!=NULL) OO_Free (arrayXIOldCpl /*,0*/);
   FreeAllXIOldCpl();
 
-  if (arrayXIDelCpl!=NULL) OO_Free (arrayXIDelCpl,0);
+  if (arrayXIDelCpl!=NULL) OO_Free (arrayXIDelCpl /*,0*/);
   FreeAllXIDelCpl();
 
-  if (arrayXIModCpl!=NULL) OO_Free (arrayXIModCpl,0);
+  if (arrayXIModCpl!=NULL) OO_Free (arrayXIModCpl /*,0*/);
   FreeAllXIModCpl();
 
-  if (arrayXIAddCpl!=NULL) OO_Free (arrayXIAddCpl,0);
+  if (arrayXIAddCpl!=NULL) OO_Free (arrayXIAddCpl /*,0*/);
   FreeAllXIAddCpl();
 
   FreeLocalCoupledObjectsList(localCplObjs);
@@ -734,7 +734,7 @@ void DDD_XferEnd (void)
   for(; sendMsgs!=NULL; sendMsgs=sm)
   {
     sm = sendMsgs->next;
-    OO_Free (sendMsgs,0);
+    OO_Free (sendMsgs /*,0*/);
   }
 
         #ifdef XferMemFromHeap

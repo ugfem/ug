@@ -155,20 +155,20 @@ static int sort_TENewCpl (const void *e1, const void *e2)
 
 static int sort_ObjTabPtrs (const void *e1, const void *e2)
 {
-	OBJTAB_ENTRY   *ci1, *ci2;
+	DDD_HDR   ci1, ci2;
 
-    ci1 = *(OBJTAB_ENTRY **)e1;
-    ci2 = *(OBJTAB_ENTRY **)e2;
+    ci1 = (*(OBJTAB_ENTRY **)e1)->hdr;
+    ci2 = (*(OBJTAB_ENTRY **)e2)->hdr;
 
 	/* sort with ascending gid */
-	if (ci1->gid < ci2->gid) return(-1);
-	if (ci1->gid > ci2->gid) return(1);
+	if (OBJ_GID(ci1) < OBJ_GID(ci2)) return(-1);
+	if (OBJ_GID(ci1) > OBJ_GID(ci2)) return(1);
 
 	/* sort with decreasing priority */
 	/* not necessary anymore. see first phase of
 	   AcceptReceivedObjects() for details. KB 970128
-	if (ci1->prio < ci2->prio) return(1);
-	if (ci1->prio > ci2->prio) return(-1);
+	if (OBJ_PRIO(ci1) < OBJ_PRIO(ci2)) return(1);
+	if (OBJ_PRIO(ci1) > OBJ_PRIO(ci2)) return(-1);
 	*/
 
 	return(0);
@@ -566,7 +566,7 @@ static void AcceptObjFromMsg (
 	for(i=0, j=0; i<lenObjTab; i++)
 	{
 		OBJTAB_ENTRY *ote = &theObjTab[i];
-		TYPE_DESC    *desc = &theTypeDefs[ote->typ];
+		TYPE_DESC    *desc = &theTypeDefs[OBJ_TYPE(ote->hdr)];
 
 		if (ote->is_new == OTHERMSG)
 		{
@@ -574,10 +574,10 @@ static void AcceptObjFromMsg (
 			continue;
 		}
 
-		while ((j<nLocalCplObjs) && (OBJ_GID(localCplObjs[j]) < ote->gid))
+		while ((j<nLocalCplObjs) && (OBJ_GID(localCplObjs[j]) < OBJ_GID(ote->hdr)))
 			j++;
 
-		if ((j<nLocalCplObjs) && (OBJ_GID(localCplObjs[j])==ote->gid))
+		if ((j<nLocalCplObjs) && (OBJ_GID(localCplObjs[j])==OBJ_GID(ote->hdr)))
 		{
 			/* object already here, compare priorities.
 			   this is the implementation of rule XFER-C3. */
@@ -593,7 +593,7 @@ static void AcceptObjFromMsg (
 			{
 #				if DebugUnpack<=1
 					sprintf(cBuffer, "%4d: NewPrio wins due to PruneDel. "
-						"%08x\n", me, ote->gid);
+						"%08x\n", me, OBJ_GID(ote->hdr));
 					DDD_PrintDebug(cBuffer);
 #				endif
 
@@ -601,14 +601,14 @@ static void AcceptObjFromMsg (
 				SET_OBJ_PRUNED(localCplObjs[j], 0);
 
 				/* simply copy new priority, disregard old one */
-				newprio = ote->prio;
+				newprio = OBJ_PRIO(ote->hdr);
 
 				ote->is_new = PRUNEDNEW;
 			}
 			else
 			{
 				ret = PriorityMerge(desc,
-					ote->prio, OBJ_PRIO(localCplObjs[j]), &newprio);
+					OBJ_PRIO(ote->hdr), OBJ_PRIO(localCplObjs[j]), &newprio);
 
 				if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)  /* incoming is higher or equal */
 				{
@@ -616,13 +616,13 @@ static void AcceptObjFromMsg (
 
 #				if DebugUnpack<=1
 					sprintf(cBuffer, "%4d: NewPrio wins. %07x\n",me,
-						ote->gid);
+						OBJ_GID(ote->hdr));
 					DDD_PrintDebug(cBuffer);
 #				endif
 	
 					/* new priority wins -> recreate */
 					/* all GDATA-parts are overwritten by contents of message */
-					copy = (DDD_OBJ)(theObjects+ote->offset);
+					copy = OTE_OBJ(theObjects,ote);
 					ObjCopyGlobalData(desc,
 						HDR2OBJ(localCplObjs[j],desc), copy, ote->size);
 
@@ -632,7 +632,7 @@ static void AcceptObjFromMsg (
 				{
 #					if DebugUnpack<=1
 						sprintf(cBuffer, "%4d: OldPrio wins. %07x\n",me,
-							ote->gid);
+							OBJ_GID(ote->hdr));
 						DDD_PrintDebug(cBuffer);
 #					endif
 	
@@ -642,11 +642,12 @@ static void AcceptObjFromMsg (
 			}
 
 			/* store pointer to local object */
+			/* overwrite pointer to hdr inside message */
 			ote->hdr = localCplObjs[j];
 
 			/* store old priority and set new one */
-			ote->prio    = newprio;
-			ote->oldprio = OBJ_PRIO(localCplObjs[j]);
+			OTE_PRIO(theObjects,ote) = newprio;
+			ote->oldprio             = OBJ_PRIO(localCplObjs[j]);
 
 			/* the next line is not useful. the current priority
 			   of the involved object will be changed to newprio-value
@@ -656,16 +657,20 @@ static void AcceptObjFromMsg (
 		else
 		{
 			DDD_OBJ msgcopy, newcopy;
+			DDD_PRIO new_prio = OBJ_PRIO(ote->hdr);
 
 #			if DebugUnpack<=1
-				sprintf(cBuffer, "%4d: NewObject        %07x\n",me,
-					ote->gid);
+				sprintf(cBuffer, "%4d: NewObject       %08x, prio=%d\n",me,
+					OBJ_GID(ote->hdr), new_prio);
 				DDD_PrintDebug(cBuffer);
 #			endif
 
 			/* new object, create local copy */
-			msgcopy = (DDD_OBJ)(theObjects+ote->offset);
-			newcopy = DDD_ObjNew(ote->size, ote->typ, ote->prio, ote->attr);
+			msgcopy = OTE_OBJ(theObjects,ote);
+			newcopy = DDD_ObjNew(ote->size,
+						OBJ_TYPE(ote->hdr), new_prio, OBJ_ATTR(ote->hdr));
+
+			/* overwrite pointer to hdr inside message */
 			ote->hdr = OBJ2HDR(newcopy,desc);
 
 			/* copy GDATA */
@@ -673,7 +678,7 @@ static void AcceptObjFromMsg (
 			ote->is_new = TOTALNEW;
 
 			/* construct HDR */
-			DDD_HdrConstructorCopy(ote->hdr, ote->prio);
+			DDD_HdrConstructorCopy(ote->hdr, new_prio);
 
 			/* construct LDATA */
 			if (desc->handlerLDATACONSTRUCTOR)
@@ -720,7 +725,7 @@ static void AcceptReceivedObjects (
 	/* 1. collision detection */
 	for(i=nRecObjs-1; i>0; i--)
 	{
-		if (allRecObjs[i]->gid != allRecObjs[i-1]->gid)
+		if (OBJ_GID(allRecObjs[i]->hdr) != OBJ_GID(allRecObjs[i-1]->hdr))
 		{
 			allRecObjs[i]->is_new = THISMSG;
 		}
@@ -729,15 +734,15 @@ static void AcceptReceivedObjects (
 			DDD_PRIO newprio;
 			int      ret;
 
-			ret = PriorityMerge(&theTypeDefs[allRecObjs[i]->typ],
-					allRecObjs[i]->prio, allRecObjs[i-1]->prio, &newprio);
+			ret = PriorityMerge(&theTypeDefs[OBJ_TYPE(allRecObjs[i]->hdr)],
+					OBJ_PRIO(allRecObjs[i]->hdr), OBJ_PRIO(allRecObjs[i-1]->hdr), &newprio);
 
 			if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)
 			{
 				/* item i is winner */
 				OBJTAB_ENTRY *tmp;
 
-				allRecObjs[i]->prio = newprio;
+				OBJ_PRIO(allRecObjs[i]->hdr) = newprio;
 
 				/* switch first item i in second position i-1 */
 				/* item on first position will be discarded */
@@ -748,7 +753,7 @@ static void AcceptReceivedObjects (
 			else
 			{
 				/* item i-1 is winner */
-				allRecObjs[i-1]->prio = newprio;
+				OBJ_PRIO(allRecObjs[i-1]->hdr) = newprio;
 			}
 
 			/* mark item i invalid */
@@ -844,7 +849,7 @@ static void UpdateCouplings (
 	for(iO=0, iNC=0, iDO=0; iO<nO; iO++)
 	{
 		REGISTER DDD_HDR hdr = itemsO[iO]->hdr;
-		REGISTER DDD_GID gid = itemsO[iO]->gid;
+		REGISTER DDD_GID gid = OBJ_GID(hdr);
 
 		/* scan DelObj-entries for given gid */
 		while (iDO<nDO && itemsDO[iDO]->gid < gid)
@@ -955,8 +960,8 @@ static void UpdateCouplings (
 			}
 
 			/* scan received objects */
-			while (iO<nO && itemsO[iO]->gid < gidNO) iO++;
-			if (iO<nO && itemsO[iO]->gid==gidNO)
+			while (iO<nO && OBJ_GID(itemsO[iO]->hdr) < gidNO) iO++;
+			if (iO<nO && OBJ_GID(itemsO[iO]->hdr)==gidNO)
 			{
 				/* obj has been deleted and received again */
 				assert(hdrNO==NULL || hdrNO==itemsO[iO]->hdr);
@@ -1097,11 +1102,11 @@ static void PropagateIncomings (
 			OBJTAB_ENTRY *ote = allRecObjs[iRO];
 
 			/* scan received objects */
-			while ((iNO<nNO) && (arrayNO[iNO]->gid < ote->gid))
+			while ((iNO<nNO) && (arrayNO[iNO]->gid < OBJ_GID(ote->hdr)))
 				iNO++;
 
 			/* communicate to all NEWOWNER-destinations */
-			while (iNO<nNO && arrayNO[iNO]->gid == ote->gid)
+			while (iNO<nNO && arrayNO[iNO]->gid == OBJ_GID(ote->hdr))
 			{
 				if (newness==PARTNEW || newness==PRUNEDNEW)
 				{
@@ -1110,7 +1115,7 @@ static void PropagateIncomings (
 						HARD_EXIT;
 
 					xc->to      = arrayNO[iNO]->dest; /* receiver of XIModCpl*/
-					xc->te.gid  = ote->gid;           /* the object's gid    */
+					xc->te.gid  = OBJ_GID(ote->hdr);  /* the object's gid    */
 					xc->te.prio = OBJ_PRIO(ote->hdr); /* the obj's new prio  */
 					xc->typ     = OBJ_TYPE(ote->hdr); /* the obj's ddd-type  */
 				}
@@ -1129,8 +1134,8 @@ static void PropagateIncomings (
 					if (xc==NULL)
 						HARD_EXIT;
 
-					xc->to      = cpl->proc;         /* receiver of XIModCpl*/
-					xc->te.gid  = ote->gid;           /* the object's gid   */
+					xc->to      = cpl->proc;          /* receiver of XIModCpl*/
+					xc->te.gid  = OBJ_GID(ote->hdr);  /* the object's gid   */
 					xc->te.prio = OBJ_PRIO(ote->hdr); /* the obj's new prio */
 					xc->typ     = OBJ_TYPE(ote->hdr); /* the obj's ddd-type  */
 /*
@@ -1188,10 +1193,10 @@ static void LocalizeSymTab (LC_MSGHANDLE xm,
 	/* insert new pointers in SymTab */
 	for(i=0, j=0; i<lenSymTab; i++)
 	{
-		while ((j<nRecObjs) && (allRecObjs[j]->gid<theSymTab[i].gid))
+		while ((j<nRecObjs) && (OBJ_GID(allRecObjs[j]->hdr)<theSymTab[i].gid))
 			j++;
 
-		if ((j<nRecObjs) && (allRecObjs[j]->gid==theSymTab[i].gid))
+		if ((j<nRecObjs) && (OBJ_GID(allRecObjs[j]->hdr)==theSymTab[i].gid))
 		{
 			theSymTab[i].adr.hdr = allRecObjs[j]->hdr;
 		}
@@ -1218,13 +1223,13 @@ static void LocalizeObjects (LC_MSGHANDLE xm, int required_newness)
 	{
 		if (required_newness==TOTALNEW && theObjTab[i].is_new==TOTALNEW)
 		{
-			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+			TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(theObjTab[i].hdr)];
 			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
 			if (desc->nPointers>0)
 			{
 				LocalizeObject(FALSE, desc,
-					(char *)(theObjects+theObjTab[i].offset),
+					(char *)(OTE_OBJ(theObjects,&(theObjTab[i]))),
 					obj,
 					theSymTab);
 			}
@@ -1239,19 +1244,19 @@ static void LocalizeObjects (LC_MSGHANDLE xm, int required_newness)
 				implemented merge_mode for Localize. references from all copies
 				will be merged into the local copy. 960813 KB
 			*/
-			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+			TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(theObjTab[i].hdr)];
 			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
 			if (desc->nPointers>0)
 			{
 				#ifdef DEBUG_MERGE_MODE
 				printf("%4d: LocalizeObject in merge_mode, %08x prio %d\n",
-					me, theObjTab[i].gid, theObjTab[i].prio);
+					me, OBJ_GID(theObjTab[i].hdr), OBJ_PRIO(theObjTab[i].hdr));
 				#endif
 
 				/* execute Localize in merge_mode */
 				LocalizeObject(TRUE, desc,
-					(char *)(theObjects+theObjTab[i].offset),
+					(char *)(OTE_OBJ(theObjects,&(theObjTab[i]))),
 					obj,
 					theSymTab);
 			}
@@ -1277,7 +1282,7 @@ static void CallUpdateHandler (LC_MSGHANDLE xm)
 	{
 		if (theObjTab[i].is_new == TOTALNEW)
 		{
-			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+			TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(theObjTab[i].hdr)];
 
 			/* call application handler for object updating */
 			if (desc->handlerUPDATE)
@@ -1345,7 +1350,7 @@ static void UnpackAddData (LC_MSGHANDLE xm, int required_newness)
 
 			if (newness!=-1)
 			{
-				TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+				TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(theObjTab[i].hdr)];
 				DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 				char      *data;
 			
@@ -1360,8 +1365,7 @@ static void UnpackAddData (LC_MSGHANDLE xm, int required_newness)
 					desc->len for fixed sized objects and different for variable
 					sized objects
 				*/
-				data = (char *)(theObjects +
-						theObjTab[i].offset +
+				data = (char *)(OTE_OBJ(theObjects,&(theObjTab[i])) +
 						CEIL(theObjTab[i].size));
 
 				PutDepData(data, desc, obj, theSymTab, newness);
@@ -1391,9 +1395,11 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 	OBJTAB_ENTRY *theObjTab;
 	int           lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
 	int          i;
+	char         *theObjects;
 
 	/* get table addresses inside message buffer */
-	theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
+	theObjTab  = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
+	theObjects = (char *)         LC_GetPtr(xm, xferGlobals.objmem_id);
 
 	for(i=0; i<lenObjTab; i++)         /* for all message items */
 	{
@@ -1411,24 +1417,25 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 			 theObjTab[i].is_new==PRUNEDNEW)
 		/*	&& (theObjTab[i].oldprio != theObjTab[i].prio) */  )
 		{
-			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+			TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(theObjTab[i].hdr)];
 
     		/* call application handler for object consistency */
 			if (desc->handlerSETPRIORITY)
 			{
 				/* restore old priority in object */
 				DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);
+				DDD_PRIO new_prio = OTE_PRIO(theObjects, &(theObjTab[i]));/* remember new prio */
 				OBJ_PRIO(theObjTab[i].hdr) = theObjTab[i].oldprio;
 
 				#if defined(C_FRONTEND) || defined(F_FRONTEND)
-				desc->handlerSETPRIORITY(_FADR obj, _FADR (theObjTab[i].prio));
+				desc->handlerSETPRIORITY(_FADR obj, _FADR new_prio);
 				#endif
 				#ifdef CPP_FRONTEND
-				CallHandler(desc,SETPRIORITY) (HParam(obj) theObjTab[i].prio);
+				CallHandler(desc,SETPRIORITY) (HParam(obj) new_prio);
 				#endif
 
 				/* restore new priority */
-				OBJ_PRIO(theObjTab[i].hdr) = theObjTab[i].prio;
+				OBJ_PRIO(theObjTab[i].hdr) = new_prio;
 			}
 		}
 	}
@@ -1473,7 +1480,7 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm, int required_newness)
 
 		if (newness!=-1)
 		{
-			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+			TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(theObjTab[i].hdr)];
 			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
 			assert(theObjTab[i].is_new!=OTHERMSG);
@@ -1531,12 +1538,12 @@ static void UnpackOldCplTab (
 			/* look for TEOldCpl-items with same gid.
 			   note: this relies on previous sorting via
 			   sort_XIOldCpl on sender side. */
-			while (iOC<nOC && tabOC[iOC].gid<tabO[iO].gid)
+			while (iOC<nOC && tabOC[iOC].gid<OBJ_GID(tabO[iO].hdr))
 				iOC++;
 
 			/* found some TEOldCpl-items with same gid */
 			/* add couplings now */
-			while (iOC<nOC && tabOC[iOC].gid==tabO[iO].gid)
+			while (iOC<nOC && tabOC[iOC].gid==OBJ_GID(tabO[iO].hdr))
 			{
 				AddCoupling(tabO[iO].hdr,tabOC[iOC].proc,tabOC[iOC].prio);
 				iOC++;
@@ -1678,6 +1685,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	for(i=0, pos1=pos2=0; i<nRecvMsgs; i++)
 	{
 		LC_MSGHANDLE xm = theMsgs[i];
+		char *theObjects = (char *) LC_GetPtr(xm, xferGlobals.objmem_id);
 
 		len = (int) LC_GetTableLen(xm, xferGlobals.newcpl_id);
 		if (len>0)
@@ -1695,7 +1703,12 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 			OBJTAB_ENTRY **all_ot = unionObjTab+pos2;
 			int  oti;
 			for(oti=0; oti<len; oti++, all_ot++, msg_ot++)
+			{
 				*all_ot = msg_ot;
+
+				/* enter pointer to HDR-copy inside message, temporarily */
+				msg_ot->hdr = OTE_HDR(theObjects,msg_ot);
+			}
 
 			pos2 += len;
 		}
@@ -1707,8 +1720,9 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	}
 
 	if (lenObjTab>0) 
-		qsort(unionObjTab, lenObjTab,
-			sizeof(OBJTAB_ENTRY *), sort_ObjTabPtrs);
+	{
+		qsort(unionObjTab, lenObjTab, sizeof(OBJTAB_ENTRY *), sort_ObjTabPtrs);
+	}
 
 
 #	if DebugUnpack<=2

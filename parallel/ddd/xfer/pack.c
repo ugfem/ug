@@ -122,20 +122,23 @@ static int sort_SymTabEntries (const void *e1, const void *e2)
 }
 
 
+
+static char *currentObjectMem;
+
 static int sort_ObjTabEntries (const void *e1, const void *e2)
 {
-  OBJTAB_ENTRY   *ci1, *ci2;
+  DDD_GID g1, g2;
 
 #ifdef SORT_STATISTIK
   n35++;
 #endif
 
-  ci1 = (OBJTAB_ENTRY *)e1;
-  ci2 = (OBJTAB_ENTRY *)e2;
+  g1 = OTE_GID(currentObjectMem, (OBJTAB_ENTRY *)e1);
+  g2 = OTE_GID(currentObjectMem, (OBJTAB_ENTRY *)e2);
 
   /* sort with ascending gid */
-  if (ci1->gid < ci2->gid) return(-1);
-  if (ci1->gid > ci2->gid) return(1);
+  if (g1 < g2) return(-1);
+  if (g1 > g2) return(1);
 
   return(0);
 }
@@ -523,15 +526,25 @@ static void XferPackSingleMsg (XFERMSG *msg)
      */
 
 
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+    copyhdr = OBJ2HDR(currObj,desc);
+#else
+    copyhdr = (DDD_HDR) currObj;
+#endif
+
     /* update object table */
-    theObjTab[actObj].offset = (int)(currObj-theObjects);
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+    theObjTab[actObj].h_offset = (int)(((char *)copyhdr)-theObjects);
+#else
+    theObjTab[actObj].o_offset = (int)(currObj-theObjects);
     theObjTab[actObj].typ    = OBJ_TYPE(hdr);
     theObjTab[actObj].gid    = OBJ_GID(hdr);
-    theObjTab[actObj].prio   = xi->prio;
     theObjTab[actObj].attr   = OBJ_ATTR(hdr);
-    theObjTab[actObj].hdr    = NULL;
-    theObjTab[actObj].addLen = xi->addLen;
-    theObjTab[actObj].size   = xi->size;              /* needed for variable-sized objects */
+    theObjTab[actObj].prio   = xi->prio;
+#endif
+    theObjTab[actObj].hdr      = NULL;
+    theObjTab[actObj].addLen   = xi->addLen;
+    theObjTab[actObj].size     = xi->size;              /* needed for variable-sized objects */
     actObj++;
 
 
@@ -546,10 +559,8 @@ static void XferPackSingleMsg (XFERMSG *msg)
        components are copied into message and sent to destination.
        then, on the receiving processor the data is sorted out... */
     memcpy(currObj, obj, xi->size);
-    copyhdr = OBJ2HDR(currObj,desc);
 #else
     ObjToMsg (obj, desc, currObj);
-    copyhdr = (DDD_HDR) currObj;
 #endif
     /*STAT_INCTIMER3(32);*/
 
@@ -626,6 +637,7 @@ static void XferPackSingleMsg (XFERMSG *msg)
   /*STAT_INCTIMER3(34); STAT_RESET3;*/
 
   /* sorting of objtab is necessary!! (see AcceptObjFromMsg) KB 960812 */
+  currentObjectMem = theObjects;
   qsort(theObjTab, msg->nObjects, sizeof(OBJTAB_ENTRY), sort_ObjTabEntries);
   /*STAT_INCTIMER3(35); STAT_RESET3;*/
 

@@ -177,12 +177,12 @@ void XferDisplayMsg (char *comment, LC_MSGHANDLE xm)
   for(i=0; i<lenObjTab; i++)
   {
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-    DDD_OBJ obj = (DDD_OBJ)(theObjects + theObjTab[i].offset);
+    DDD_OBJ obj = OTE_OBJ(theObjects, &(theObjTab[i]));
 
     sprintf(cBuffer, "%s 10 objtab    %06d typ=%1d gid=%08x "
             "hdr=%08x size=%05d add=%05d\n",
-            buf, theObjTab[i].offset, theObjTab[i].typ,
-            OBJ_GID(OBJ2HDR(obj,&theTypeDefs[theObjTab[i].typ])),
+            buf, (((char *)obj)-theObjects), OTE_TYPE(theObjects,&(theObjTab[i])),
+            OTE_GID(theObjects,&(theObjTab[i])),
             theObjTab[i].hdr, theObjTab[i].size, theObjTab[i].addLen);
 #else
     DDD_HDR hdr = (DDD_HDR)(theObjects + theObjTab[i].offset);

@@ -146,6 +146,17 @@ static void *cons_AllocHeap (size_t size)
   void *buffer = AllocHeap(size, theMarkKey);
   return(buffer);
 }
+
+static void *cons_AllocSend (size_t size)
+{
+  void *buffer = AllocTmpReq(size, TMEM_ANY);
+  return(buffer);
+}
+
+static void cons_FreeSend (void *buffer)
+{
+  FreeTmpReq(buffer, 0, TMEM_ANY);
+}
 #endif
 
 
@@ -700,6 +711,7 @@ int DDD_Library::ConsCheck (void)
         #ifdef ConsMemFromHeap
   MarkHeap(&theMarkKey);
   LC_SetMemMgrRecv(cons_AllocHeap, NULL);
+  LC_SetMemMgrSend(cons_AllocSend, cons_FreeSend);
         #endif
 
   DDD_Flush();
