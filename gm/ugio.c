@@ -105,6 +105,7 @@
 /****************************************************************************/
 
 static INT gridpaths_set=FALSE;
+static MGIO_RR_RULE *rr_rules;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -335,14 +336,15 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset)
   /* init */
   if (theMG==NULL) return (1);
   theHeap = MGHEAP(theMG);
+
+  /* write refrules general */
   nRules = 0; RefRuleOffset[0] = 0;
   for (i=0; i<TAGS; i++)
   {
     nRules += MaxRules[i];
     if (i>0) RefRuleOffset[i] = RefRuleOffset[i-1] +  MaxRules[i-1];
+    rr_general.RefRuleOffset[i] = RefRuleOffset[i];
   }
-
-  /* write refrules general */
   rr_general.nRules = nRules;
   if (Write_RR_General(&rr_general)) return (1);
 
@@ -407,7 +409,7 @@ static INT SetRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT 
   {
     if (i<=EDGES_OF_ELEM(theElement)) j=i;
     else j=CENTER_NODE_INDEX(theElement);
-    if (!theRule->pattern[j]) continue;
+    if (theRule->pattern[j]!=1) continue;
     theNode = CORNER(SON(theElement,theRule->sonandnode[j][0]),theRule->sonandnode[j][1]);
     if (theNode==NULL) return (1);
     refinement->newcornerid[n++] = ID(theNode);
@@ -796,10 +798,11 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
  */
 /****************************************************************************/
 
-static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement)
+static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement)
 {
-  INT i,j,n,nedge,type,sonRefined,n0,n1;
+  INT i,j,n,nedge,type,sonRefined,n0,n1,Sons_of_Side,Sons_of_Side_List[MAX_SONS];
   ELEMENT *theSonElem[MAX_SONS];
+  ELEMENT *SonList[MAX_SONS];
   NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
   NODE *SonNodeList[MAX_CORNERS_OF_ELEM];
   GRID *upGrid;
@@ -811,6 +814,10 @@ static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theE
   /* init */
   if (refinement!=NULL) ref=refinement;
   if (ref->refrule==-1) return (1);
+  SETREFINE(theElement,ref->refrule);
+  SETREFINECLASS(theElement,RED_CLASS);
+  SETMARK(theElement,ref->refrule);
+  SETMARKCLASS(theElement,RED_CLASS);
   theRule = rr_rules+ref->refrule;
   upGrid = UPGRID(theGrid);
 
@@ -827,7 +834,7 @@ static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theE
   nedge = EDGES_OF_ELEM(theElement);
   for (i=0; i<nedge; i++)
   {
-    if (!theRule->pattern[i]) continue;
+    if (theRule->pattern[i]!=1) continue;
     n0 = CORNER_OF_EDGE(theElement,i,0);
     n1 = CORNER_OF_EDGE(theElement,i,1);
     theEdge = GetEdge(CORNER(theElement,n0),CORNER(theElement,n1));
@@ -841,13 +848,13 @@ static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theE
 #ifdef __THREEDIM__
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
-    if (!theRule->pattern[i+nedge]) continue;
+    if (theRule->pattern[i+nedge]!=1) continue;
     NodeList[n] = CreateSideNode(upGrid,theElement,i);
     if (NodeList[n]==NULL) return (1);
     n++;
   }
 #endif
-  if (theRule->pattern[CENTER_NODE_INDEX(theElement)])
+  if (theRule->pattern[CENTER_NODE_INDEX(theElement)]==1)
   {
     NodeList[n] = CreateCenterNode(upGrid,theElement);
     if (NodeList[n]==NULL) return (1);
@@ -882,6 +889,15 @@ static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theE
     for (j=0; j<SIDES_OF_TAG(SonData->tag); j++)
       if (SonData->nb[j]<20)
         SET_NBELEM(theSonElem[i],j,theSonElem[SonData->nb[j]]);
+      else
+        SET_NBELEM(theSonElem[i],j,NULL);
+  }
+
+  /* connect to neighbors */
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+  {
+    if (IO_Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,SonList,Sons_of_Side_List,1)) return (1);
+    if (Connect_Sons_of_ElementSide(UPGRID(theGrid),theElement,i,Sons_of_Side,SonList,Sons_of_Side_List)) return (1);
   }
 
   /* jump to the sons ? */
@@ -893,9 +909,44 @@ static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theE
   /* call recoursively */
   for (i=0; i<theRule->nsons; i++)
     if (sonRefined & (1<<i))
-      if (InsertLocalTree (rr_rules,upGrid,theSonElem[i],NULL)) return (1);
+      if (InsertLocalTree (upGrid,theSonElem[i],NULL)) return (1);
 
   return (0);
+}
+
+INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy)
+{
+  INT i,j;
+  MGIO_RR_RULE *theRule;
+  struct mgio_sondata *son;
+
+  /* init */
+  *Sons_of_Side = 0;
+  theRule = rr_rules + REFINE(theElement);
+
+#ifdef __TWODIM__
+  for (i=0; i<NSONS(theElement); i++) SonList[i] = SON(theElement,i);
+#endif
+#ifdef __THREEDIM__
+  if (GetSons(theElement,SonList) != GM_OK) RETURN(GM_FATAL);
+#endif
+
+  for (i=0; i<theRule->nsons; i++)
+  {
+    son = &(theRule->sons[i]);
+    for (j=0; j<SIDES_OF_TAG(son->tag); j++)
+      if (son->nb[j]==20+side)
+      {
+        SonList[*Sons_of_Side] = SonList[i];
+        SonSides[*Sons_of_Side] = j;
+        (*Sons_of_Side)++;
+      }
+  }
+
+  /* fill remaining with zero */
+  for (i=*Sons_of_Side; i<MAX_SONS; i++) SonList[i] = NULL;
+
+  return(GM_OK);
 }
 
 MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, char *format, unsigned long heapSize)
@@ -903,12 +954,13 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   MULTIGRID *theMG;
   GRID *theGrid;
   ELEMENT *theElement;
+  ELEMENT *SonList[MAX_SONS],*theNeighbor;
+  INT Sons_of_NbSide_List[MAX_SONS];
   HEAP *theHeap;
   MGIO_MG_GENERAL mg_general;
   MGIO_GE_GENERAL ge_general;
   MGIO_GE_ELEMENT ge_element[TAGS];
   MGIO_RR_GENERAL rr_general;
-  MGIO_RR_RULE *rr_rules;
   MGIO_CG_GENERAL cg_general;
   MGIO_CG_POINT *cg_point;
   MGIO_CG_ELEMENT *cg_element;
@@ -923,7 +975,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   MESH theMesh;
   char FormatName[NAMESIZE], BndValName[NAMESIZE];
   INT i,j,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],**Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,*Element_nb_ids;
-  INT zip;
+  INT zip,Sons_of_Side,side,nbside;
 
 #ifndef __MWCW__
   /* unzip if */
@@ -1046,6 +1098,14 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* insert coarse mesh */
   if (InsertMesh(theMG,&theMesh))                                                                         {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    SETREFINE(theElement,0);
+    SETREFINECLASS(theElement,NO_CLASS);
+    SETMARK(theElement,0);
+    SETMARKCLASS(theElement,NO_CLASS);
+  }
 
   /* are we ready ? */
   if (mg_general.nLevel==1)
@@ -1064,12 +1124,38 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   for (i=0; i<cg_general.nElement; i++) max = MAX(max,cg_element[i].nhe);
   refinement = (MGIO_REFINEMENT*)GetTmpMem(theHeap,max*sizeof(MGIO_REFINEMENT));
   if (refinement==NULL)                                                                                           {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Set_Get_Sons_of_ElementSideProc(IO_Get_Sons_of_ElementSide))        {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     i = ID(theElement);
     if (cg_element[i].nhe==0) continue;
     if (Read_Refinement (cg_element[i].nhe,refinement))                     {DisposeMultiGrid(theMG); return (NULL);}
-    if (InsertLocalTree(rr_rules,theGrid,theElement,refinement))    {DisposeMultiGrid(theMG); return (NULL);}
+    if (InsertLocalTree(theGrid,theElement,refinement))                             {DisposeMultiGrid(theMG); return (NULL);}
+  }
+
+  /* postprocess */
+  for (i=0; i<TOPLEVEL(theMG); i++)
+    for (theElement = FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+    {
+      SETREFINE(theElement,REFINE(theElement)-rr_general.RefRuleOffset[TAG(theElement)]);
+      SETMARK(theElement,0);
+      SETMARKCLASS(theElement,NO_CLASS);
+    }
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    if (GridCreateConnection(theGrid))                                                              {DisposeMultiGrid(theMG); return (NULL);}
+    ClearVectorClasses(theGrid);
+    ClearNextVectorClasses(theGrid);
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    {
+      if (ECLASS(theElement)>=GREEN_CLASS)
+        SeedVectorClasses(theGrid,theElement);
+      if (REFINECLASS(theElement)>=GREEN_CLASS)
+        SeedNextVectorClasses(theGrid,theElement);
+    }
+    PropagateVectorClasses(theGrid);
+    PropagateNextVectorClasses(theGrid);
   }
 
   /* close file */
