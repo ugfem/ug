@@ -1,0 +1,24 @@
+#       ARCH MAKEFILE OPTIONS
+#
+#       for OPENSTEP and Rhapsody
+#
+
+ARCH_TYPE     = __OPENSTEP__
+
+ARCH_MAKE     = make
+ARCH_CC       = cc
+ARCH_C++      = cc++
+ARCH_LINK     = cc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = 
+
+ARCH_CFLAGS   = -g
+ARCH_C++FLAGS =
+ARCH_LFLAGS   = -L../pclib
+ARCH_ARFLAGS  = -r -vT
+
+ARCH_XINCLUDES =
+ARCH_XLIBS     = 
