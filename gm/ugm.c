@@ -1932,10 +1932,10 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
   SETLEVEL(pe,GLEVEL(theGrid));
         #if (defined ModelP) && (defined __THREEDIM__)
   DDD_AttrSet(PARHDR(pe), GRID_ATTR(theGrid));
+  /*SETPRIO(pe,PrioMaster);*/
+        #endif
         #ifdef IDENT_ONLY_NEW
   SETNEW_EDIDENT(pe,1);
-        #endif
-  /*SETPRIO(pe,PrioMaster);*/
         #endif
   NBNODE(link0) = to;
   NBNODE(link1) = from;
