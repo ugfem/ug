@@ -33,10 +33,11 @@ ARCH_ARFLAGS  = ru
 ARCH_FFLAGS   =
 ARCH_EXFLAGS  =
 
-# use these settings if you want to use X11
-ARCH_XINCLUDES = -I /usr/X11R6/include/
-ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lX11 -lXmu -lXext -lICE -lXau -lSM
-
 # use these settings if you want to use MacOS X GUI
 ARCH_XINCLUDES =
 ARCH_XLIBS     = -framework Cocoa
+
+# use these settings if you want to use X11
+ARCH_XINCLUDES = -I/usr/X11R6/include/
+ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lX11
+
