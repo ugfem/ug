@@ -63,7 +63,7 @@
 #define REP_ERR_INC             {rep_err_line[rep_err_count] = __LINE__;  \
                                  rep_err_file[rep_err_count] = this_file; \
                                  rep_err_count = (rep_err_count+1)%REP_ERR_MAX;}
-#define REP_ERR_RETURN(err)             { REP_ERR_INC  return (err);}
+#define REP_ERR_RETURN(err)             { if (err) REP_ERR_INC  return (err);}
 #define REP_ERR_RESET                   rep_err_count = 0;
 #define REP_ERR_FILE                    static char *this_file=__FILE__
 #else
