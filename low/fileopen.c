@@ -108,7 +108,6 @@ typedef struct
 static INT thePathsDirID;
 static INT thePathsVarID;
 
-static char based_filename[MAXPATHLENGTH];
 
 static char OldBasePath[BASE_PATH_SIZE];
 static char BasePath[BASE_PATH_SIZE] = "./";
@@ -259,12 +258,19 @@ const char *BasedConvertedFilename (const char *fname)
 {
   if (fname[0]!='/')                    /* use BasePath only if no absolute path specified */
   {
+    static char based_filename[MAXPATHLENGTH];
+
     strcpy(based_filename,BasePath);
     strcat(based_filename,fname);
     SimplifyPath(based_filename);
     PRINTDEBUG(low,1,("BasedConvertedFilename: based_filename= '%s'\n",based_filename));
+    return ConvertFileName(based_filename);
   }
-  return ConvertFileName(based_filename);
+  else
+  {
+    PRINTDEBUG(low,1,("BasedConvertedFilename: filename not based= '%s'\n",fname));
+    return ConvertFileName(fname);
+  }
 }
 
 FILE *fopen_r (const char *fname, const char *mode, int do_rename)
@@ -928,7 +934,7 @@ const char *SetBasePath (const char *path)
   strcpy(BasePath,path);
   AppendTrailingSlash(BasePath);
 
-  PRINTDEBUG(low,1,("SetBasePath: based_filename= '%s'\n",BasePath));
+  PRINTDEBUG(low,1,("SetBasePath: BasePath= '%s'\n",BasePath));
 
   return OldBasePath;
 }
@@ -941,7 +947,7 @@ const char *AddBasePath (const char *path)
 
   SimplifyPath(BasePath);
 
-  PRINTDEBUG(low,1,("AddBasePath: based_filename= '%s'\n",BasePath));
+  PRINTDEBUG(low,1,("AddBasePath: BasePath= '%s'\n",BasePath));
 
   return OldBasePath;
 }
