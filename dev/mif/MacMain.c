@@ -33,6 +33,8 @@
 /*																			*/
 /****************************************************************************/
 
+#include "MWCW.cmdlinedefs"
+
 /* standard C includes */
 #include <string.h>
 #include <math.h>

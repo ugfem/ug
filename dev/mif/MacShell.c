@@ -32,6 +32,8 @@
 /*																			*/
 /****************************************************************************/
 
+#include "MWCW.cmdlinedefs"
+
 #ifndef __MWCW__        /* don't need that: included MacHeadersPPC */
 
 /* Macintosh toolbox includes */
@@ -52,7 +54,6 @@
 #include <osevents.h>
 #include <Packages.h>
 #include <Files.h>
-
 #endif
 
 /* standard C library */

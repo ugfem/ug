@@ -29,6 +29,8 @@
 /*																			*/
 /****************************************************************************/
 
+#include "MWCW.cmdlinedefs"
+
 #ifndef __MWCW__        /* don't need that: included MacHeadersPPC */
 
 /* Macintosh toolbox includes */
