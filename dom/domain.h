@@ -61,12 +61,14 @@
 #define __TWODIM__
 #define DIM 2
 #define DIM_OF_BND 1
+#define DOM_PARAM_OFFSET DIM
 #endif
 
 #ifdef _3
 #define __THREEDIM__
 #define DIM 3
 #define DIM_OF_BND 2
+#define DOM_PARAM_OFFSET DIM
 #endif
 
 #ifndef _2
