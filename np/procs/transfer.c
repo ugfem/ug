@@ -84,7 +84,7 @@ enum {
   PT_N_IND
 };
 
-#define PT_SWAP(pt)                             ((pt)->swap)
+#define PT_SWAP(pt,i)                   ((pt)->swap[i])
 #define PT_MVT(pt)                              ((pt)->mvt)
 #define PT_NTRANS(pt)                   ((pt)->ntrans)
 #define PT_TRANS(pt,i)                  ((pt)->trans[i])
@@ -132,10 +132,10 @@ typedef struct
   NP_TRANSFER transfer;
 
   /* additional data */
-  INT swap;                                                     /* TREU or FALSE for swapping of data	*/
   const VEC_TEMPLATE *mvt;                      /* main vector template					*/
   INT ntrans;                                                   /* number of part transfer numprocs		*/
   NP_TRANSFER *trans[MAX_PT];                   /* pointers to part transfer numprocs	*/
+  INT swap[MAX_PT];                                     /* TRUE or FALSE for swapping of data	*/
   INT svt[MAX_PT];                                      /* indices of sub vector templates		*/
 
   /* sub XXXDATA_DESCs needed */
@@ -386,8 +386,8 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPTransferExecute","no RestrictDefect");
       return (1);
     }
-    if (np->x == NULL) {
-      PrintErrorMessage('E',"NPTransferExecute","no vector x");
+    if (np->b == NULL) {
+      PrintErrorMessage('E',"NPTransferExecute","no vector b");
       return (1);
     }
     if (np->A == NULL) {
@@ -895,7 +895,7 @@ static INT PartTransferInit (NP_BASE *theNP, INT argc , char **argv)
   NP_TRANSFER *trans;
   FORMAT *fmt;
   VEC_TEMPLATE *mvt;
-  INT i,ntrans,nsub;
+  INT i,j,ntrans,nsub;
   char name[NAMESIZE],buffer[VALUELEN];
 
   fmt = NP_FMT(theNP);
@@ -918,7 +918,7 @@ static INT PartTransferInit (NP_BASE *theNP, INT argc , char **argv)
   PT_MVT(thePT) = mvt;
 
   PT_NTRANS(thePT) = ntrans = nsub = 0;
-  PT_SWAP(thePT) = TRUE;
+  PT_NVD(thePT) = 0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -929,15 +929,15 @@ static INT PartTransferInit (NP_BASE *theNP, INT argc , char **argv)
         PrintErrorMessage('E',"PartTransferInit","specify a sub vector template with $s");
         REP_ERR_RETURN (NP_NOT_ACTIVE);
       }
-      for (i=0; i<VT_NSUB(mvt); i++)
-        if (strcmp(SUBV_NAME(VT_SUB(mvt,i)),name)==0)
+      for (j=0; j<VT_NSUB(mvt); j++)
+        if (strcmp(SUBV_NAME(VT_SUB(mvt,j)),name)==0)
           break;
-      if (i>=VT_NSUB(mvt))
+      if (j>=VT_NSUB(mvt))
       {
         PrintErrorMessageF('E',"PartTransferInit","name '%s' of sub template not found",name);
         REP_ERR_RETURN (NP_NOT_ACTIVE);
       }
-      PT_SVT(thePT,nsub++) = i;
+      PT_SVT(thePT,nsub++) = j;
       break;
 
     case 't' :
@@ -959,18 +959,18 @@ static INT PartTransferInit (NP_BASE *theNP, INT argc , char **argv)
                           "cannot find specified numerical procedure");
         REP_ERR_RETURN (NP_NOT_ACTIVE);
       }
+
+      /* noswap option following? */
+      if (strcmp(argv[i+1],"noswap")==0)
+      {
+        PT_SWAP(thePT,ntrans) = FALSE;
+        i++;
+      }
+      else
+        PT_SWAP(thePT,ntrans) = TRUE;
+
       PT_TRANS(thePT,ntrans++) = trans;
       break;
-
-    case 'n' :
-      if (strcmp(argv[i],"noswap")==0)
-        PT_SWAP(thePT) = FALSE;
-      else
-      {
-        PrintErrorMessageF('E',"PartTransferInit",
-                           "$%d meaning '$noswap'?",argv[i]);
-        REP_ERR_RETURN (NP_NOT_ACTIVE);
-      }
     }
 
   if (ntrans==0)
@@ -993,7 +993,6 @@ static INT PartTransferDisplay (NP_BASE *theNP)
   NP_PART_TRANSFER *thePT;
   const VEC_TEMPLATE *mvt;
   INT i;
-  char text1[16],text2[64];
 
   thePT = (NP_PART_TRANSFER *) theNP;
 
@@ -1001,15 +1000,15 @@ static INT PartTransferDisplay (NP_BASE *theNP)
 
   mvt = PT_MVT(thePT);
 
-  UserWriteF(DISPLAY_NP_FORMAT_SS,"swap data",BOOL_2_YN(PT_SWAP(thePT)));
   UserWriteF(DISPLAY_NP_FORMAT_SS,"main tplt",ENVITEM_NAME(mvt));
 
   UserWrite("\npart transfer numprocs and sub templates:\n");
   for (i=0; i<PT_NTRANS(thePT); i++)
   {
-    sprintf(text1,"trans+sub%d",i);
-    sprintf(text2,"%20s %20s",ENVITEM_NAME(PT_TRANS(thePT,i)),SUBV_NAME(VT_SUB(mvt,PT_SVT(thePT,i))));
-    UserWriteF(DISPLAY_NP_FORMAT_SS,text1,text2);
+    UserWriteF("number %d:\n",i);
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"  trans",ENVITEM_NAME(PT_TRANS(thePT,i)));
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"  sub",  SUBV_NAME(VT_SUB(mvt,PT_SVT(thePT,i))));
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"  swap data",BOOL_2_YN(PT_SWAP(thePT,i)));
   }
 
   return (0);
@@ -1019,6 +1018,13 @@ static INT ConstructSubVD (NP_PART_TRANSFER *thePT, const VECDATA_DESC *x, INT *
 {
   const VEC_TEMPLATE *mvt;
   INT i,k,n;
+
+  ASSERT(x!=NULL);
+
+  if (PT_NVD(thePT)==0)
+    /* indicate that decomposition into sub descriptors has to be done */
+    for (i=0; i<PT_N_IND; i++)
+      PT_IND(thePT,i) = PT_NOT_INIT;
 
   if (*index==PT_NOT_INIT)
   {
@@ -1058,6 +1064,8 @@ static INT ConstructSubMD (NP_PART_TRANSFER *thePT, const MATDATA_DESC *A)
   const VEC_TEMPLATE *mvt;
   INT i,n;
 
+  ASSERT(A!=NULL);
+
   n = PT_NTRANS(thePT);
   mvt = PT_MVT(thePT);
   for (i=0; i<n; i++)
@@ -1081,11 +1089,6 @@ static INT PartTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
   thePT = (NP_PART_TRANSFER *) theNP;
 
-  /* indicate that decomposition into sub descriptors has to be done */
-  for (i=0; i<PT_N_IND; i++)
-    PT_IND(thePT,i) = PT_NOT_INIT;
-  PT_NVD(thePT) = 0;
-
   /* get the VECDATA_DESCs needed */
   if (ConstructSubVD(thePT,x,&PT_IND(thePT,PT_PRE_x)))
     REP_ERR_RETURN(1);
@@ -1105,7 +1108,7 @@ static INT PartTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     trans = PT_TRANS(thePT,i);
     if (NPTR_PRE(trans)!=NULL)
     {
-      if (PT_SWAP(thePT))
+      if (PT_SWAP(thePT,i))
       {
         SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_PRE_x),i);
         SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_PRE_x),i);
@@ -1113,9 +1116,9 @@ static INT PartTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         SPID_VDI(&spid,1) = PT_SVDI(thePT,PT_IND(thePT,PT_PRE_b),i);
         SPID_MD(&spid,0)  = PT_SMD(thePT,i);
         SPID_MDI(&spid,0) = PT_SMDI(thePT,i);
-        if (SwapPartInterfaceData(*fl,tl,&spid,SPID_FORTH))
+        if (SwapPartInterfaceData(*fl-1,tl,&spid,SPID_FORTH))
           REP_ERR_RETURN(1);
-        if (SwapPartSkipflags(*fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PRE_x),i),SPID_FORTH))
+        if (SwapPartSkipflags(*fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PRE_x),i),SPID_FORTH))
           REP_ERR_RETURN(1);
       }
       if (NPTR_PRE(trans) (trans,fl,tl,
@@ -1125,11 +1128,11 @@ static INT PartTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                            result))
         REP_ERR_RETURN(1);
 
-      if (PT_SWAP(thePT))
+      if (PT_SWAP(thePT,i))
       {
-        if (SwapPartInterfaceData(*fl,tl,&spid,SPID_BACK))
+        if (SwapPartInterfaceData(*fl-1,tl,&spid,SPID_BACK))
           REP_ERR_RETURN(1);
-        if (SwapPartSkipflags(*fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PRE_x),i),SPID_BACK))
+        if (SwapPartSkipflags(*fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PRE_x),i),SPID_BACK))
           REP_ERR_RETURN(1);
       }
     }
@@ -1184,14 +1187,14 @@ static INT PartPreProcessSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
     if (NPTR_PRESOL(trans)==NULL)
       continue;
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data */
       SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_PRESOL_x),i);
       SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_PRESOL_x),i);
-      if (SwapPartInterfaceData(fl,tl,&spid,SPID_FORTH))
+      if (SwapPartInterfaceData(fl-1,tl,&spid,SPID_FORTH))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PRESOL_x),i),SPID_FORTH))
+      if (SwapPartSkipflags(fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PRESOL_x),i),SPID_FORTH))
         REP_ERR_RETURN(1);
     }
 
@@ -1200,12 +1203,12 @@ static INT PartPreProcessSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
                             result))
       REP_ERR_RETURN(1);
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data back */
-      if (SwapPartInterfaceData(fl,tl,&spid,SPID_BACK))
+      if (SwapPartInterfaceData(fl-1,tl,&spid,SPID_BACK))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PRESOL_x),i),SPID_BACK))
+      if (SwapPartSkipflags(fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PRESOL_x),i),SPID_BACK))
         REP_ERR_RETURN(1);
     }
   }
@@ -1237,7 +1240,7 @@ static INT PartRestrictDefect (NP_TRANSFER *theNP, INT level,
   /* call restrict defect of part transfer numprocs */
   for (i=0; i<PT_NTRANS(thePT); i++)
   {
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data */
       SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_REST_t),i);
@@ -1246,9 +1249,9 @@ static INT PartRestrictDefect (NP_TRANSFER *theNP, INT level,
       SPID_VDI(&spid,1) = PT_SVDI(thePT,PT_IND(thePT,PT_REST_f),i);
       SPID_MD(&spid,0)  = PT_SMD(thePT,i);
       SPID_MDI(&spid,0) = PT_SMDI(thePT,i);
-      if (SwapPartInterfaceData(level,level,&spid,SPID_FORTH))
+      if (SwapPartInterfaceData(level-1,level,&spid,SPID_FORTH))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(level,level,from,PT_SVDI(thePT,PT_IND(thePT,PT_REST_f),i),SPID_FORTH))
+      if (SwapPartSkipflags(level-1,level,from,PT_SVDI(thePT,PT_IND(thePT,PT_REST_f),i),SPID_FORTH))
         REP_ERR_RETURN(1);
     }
 
@@ -1260,12 +1263,12 @@ static INT PartRestrictDefect (NP_TRANSFER *theNP, INT level,
                               damp,result))
       REP_ERR_RETURN(1);
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data back */
-      if (SwapPartInterfaceData(level,level,&spid,SPID_BACK))
+      if (SwapPartInterfaceData(level-1,level,&spid,SPID_BACK))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(level,level,from,PT_SVDI(thePT,PT_IND(thePT,PT_REST_f),i),SPID_BACK))
+      if (SwapPartSkipflags(level-1,level,from,PT_SVDI(thePT,PT_IND(thePT,PT_REST_f),i),SPID_BACK))
         REP_ERR_RETURN(1);
     }
   }
@@ -1297,7 +1300,7 @@ static INT PartInterpolateCorrection (NP_TRANSFER *theNP, INT level,
   /* call interpolate correction of part transfer numprocs */
   for (i=0; i<PT_NTRANS(thePT); i++)
   {
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data */
       SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_ICOR_t),i);
@@ -1306,9 +1309,9 @@ static INT PartInterpolateCorrection (NP_TRANSFER *theNP, INT level,
       SPID_VDI(&spid,1) = PT_SVDI(thePT,PT_IND(thePT,PT_ICOR_f),i);
       SPID_MD(&spid,0)  = PT_SMD(thePT,i);
       SPID_MDI(&spid,0) = PT_SMDI(thePT,i);
-      if (SwapPartInterfaceData(level,level,&spid,SPID_FORTH))
+      if (SwapPartInterfaceData(level-1,level,&spid,SPID_FORTH))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(level,level,from,PT_SVDI(thePT,PT_IND(thePT,PT_ICOR_f),i),SPID_FORTH))
+      if (SwapPartSkipflags(level-1,level,from,PT_SVDI(thePT,PT_IND(thePT,PT_ICOR_f),i),SPID_FORTH))
         REP_ERR_RETURN(1);
     }
 
@@ -1320,12 +1323,12 @@ static INT PartInterpolateCorrection (NP_TRANSFER *theNP, INT level,
                             damp,result))
       REP_ERR_RETURN(1);
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data back */
-      if (SwapPartInterfaceData(level,level,&spid,SPID_BACK))
+      if (SwapPartInterfaceData(level-1,level,&spid,SPID_BACK))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(level,level,from,PT_SVDI(thePT,PT_IND(thePT,PT_ICOR_f),i),SPID_BACK))
+      if (SwapPartSkipflags(level-1,level,from,PT_SVDI(thePT,PT_IND(thePT,PT_ICOR_f),i),SPID_BACK))
         REP_ERR_RETURN(1);
     }
   }
@@ -1353,14 +1356,14 @@ static INT PartInterpolateNewVectors (NP_TRANSFER *theNP,  INT fl, INT tl,
   /* call interpolate new of part transfer numprocs */
   for (i=0; i<PT_NTRANS(thePT); i++)
   {
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data */
       SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_INEW_x),i);
       SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_INEW_x),i);
-      if (SwapPartInterfaceData(fl,tl,&spid,SPID_FORTH))
+      if (SwapPartInterfaceData(fl-1,tl,&spid,SPID_FORTH))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_INEW_x),i),SPID_FORTH))
+      if (SwapPartSkipflags(fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_INEW_x),i),SPID_FORTH))
         REP_ERR_RETURN(1);
     }
 
@@ -1370,12 +1373,12 @@ static INT PartInterpolateNewVectors (NP_TRANSFER *theNP,  INT fl, INT tl,
                             result))
       REP_ERR_RETURN(1);
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data back */
-      if (SwapPartInterfaceData(fl,tl,&spid,SPID_BACK))
+      if (SwapPartInterfaceData(fl-1,tl,&spid,SPID_BACK))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_INEW_x),i),SPID_BACK))
+      if (SwapPartSkipflags(fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_INEW_x),i),SPID_BACK))
         REP_ERR_RETURN(1);
     }
   }
@@ -1407,14 +1410,14 @@ static INT PartProjectSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
     if (NPTR_PROJSOL(trans)==NULL)
       continue;
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data */
       SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_PROJSOL_x),i);
       SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_PROJSOL_x),i);
-      if (SwapPartInterfaceData(fl,tl,&spid,SPID_FORTH))
+      if (SwapPartInterfaceData(fl-1,tl,&spid,SPID_FORTH))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PROJSOL_x),i),SPID_FORTH))
+      if (SwapPartSkipflags(fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PROJSOL_x),i),SPID_FORTH))
         REP_ERR_RETURN(1);
     }
 
@@ -1423,12 +1426,12 @@ static INT PartProjectSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
                              result))
       REP_ERR_RETURN(1);
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data back */
-      if (SwapPartInterfaceData(fl,tl,&spid,SPID_BACK))
+      if (SwapPartInterfaceData(fl-1,tl,&spid,SPID_BACK))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PROJSOL_x),i),SPID_BACK))
+      if (SwapPartSkipflags(fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_PROJSOL_x),i),SPID_BACK))
         REP_ERR_RETURN(1);
     }
   }
@@ -1463,7 +1466,7 @@ static INT PartAdaptCorrection (NP_TRANSFER *theNP, INT level,
     if (NPTR_ADPTCOR(trans)==NULL)
       continue;
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data */
       SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_ACOR_c),i);
@@ -1472,9 +1475,9 @@ static INT PartAdaptCorrection (NP_TRANSFER *theNP, INT level,
       SPID_VDI(&spid,1) = PT_SVDI(thePT,PT_IND(thePT,PT_ACOR_b),i);
       SPID_MD(&spid,0)  = PT_SMD(thePT,i);
       SPID_MDI(&spid,0) = PT_SMDI(thePT,i);
-      if (SwapPartInterfaceData(level,level,&spid,SPID_FORTH))
+      if (SwapPartInterfaceData(level-1,level,&spid,SPID_FORTH))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(level,level,c,PT_SVDI(thePT,PT_IND(thePT,PT_ACOR_c),i),SPID_FORTH))
+      if (SwapPartSkipflags(level-1,level,c,PT_SVDI(thePT,PT_IND(thePT,PT_ACOR_c),i),SPID_FORTH))
         REP_ERR_RETURN(1);
     }
 
@@ -1485,12 +1488,12 @@ static INT PartAdaptCorrection (NP_TRANSFER *theNP, INT level,
                              result))
       REP_ERR_RETURN(1);
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data back */
-      if (SwapPartInterfaceData(level,level,&spid,SPID_BACK))
+      if (SwapPartInterfaceData(level-1,level,&spid,SPID_BACK))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(level,level,c,PT_SVDI(thePT,PT_IND(thePT,PT_ACOR_c),i),SPID_FORTH))
+      if (SwapPartSkipflags(level-1,level,c,PT_SVDI(thePT,PT_IND(thePT,PT_ACOR_c),i),SPID_FORTH))
         REP_ERR_RETURN(1);
     }
   }
@@ -1544,14 +1547,14 @@ static INT PartPostProcessSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
     if (NPTR_POSTSOL(trans)==NULL)
       continue;
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data */
       SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_POSTSOL_x),i);
       SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_POSTSOL_x),i);
-      if (SwapPartInterfaceData(fl,tl,&spid,SPID_FORTH))
+      if (SwapPartInterfaceData(fl-1,tl,&spid,SPID_FORTH))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_POSTSOL_x),i),SPID_FORTH))
+      if (SwapPartSkipflags(fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_POSTSOL_x),i),SPID_FORTH))
         REP_ERR_RETURN(1);
     }
 
@@ -1560,12 +1563,12 @@ static INT PartPostProcessSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
                              result))
       REP_ERR_RETURN(1);
 
-    if (PT_SWAP(thePT))
+    if (PT_SWAP(thePT,i))
     {
       /* swap interface data back */
-      if (SwapPartInterfaceData(fl,tl,&spid,SPID_BACK))
+      if (SwapPartInterfaceData(fl-1,tl,&spid,SPID_BACK))
         REP_ERR_RETURN(1);
-      if (SwapPartSkipflags(fl,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_POSTSOL_x),i),SPID_BACK))
+      if (SwapPartSkipflags(fl-1,tl,x,PT_SVDI(thePT,PT_IND(thePT,PT_POSTSOL_x),i),SPID_BACK))
         REP_ERR_RETURN(1);
     }
   }
@@ -1617,6 +1620,7 @@ static INT PartTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         REP_ERR_RETURN(1);
     }
   }
+  PT_NVD(thePT) = 0;
 
   return (0);
 }

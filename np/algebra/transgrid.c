@@ -132,8 +132,8 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
 
   CoarseGrid = DOWNGRID(FineGrid);
 
-  toComp    = VD_ncmp_cmpptr_of_otype(to,NODEVEC,&ncomp);
-  fromComp  = VD_cmpptr_of_otype(from,NODEVEC);
+  toComp    = VD_ncmp_cmpptr_of_otype_mod(to,NODEVEC,&ncomp,NON_STRICT);
+  fromComp  = VD_cmpptr_of_otype_mod(from,NODEVEC,NON_STRICT);
   if (ncomp <= 0)
     return(NUM_ERROR);
   if (ncomp>MAX_SINGLE_VEC_COMP)
@@ -229,8 +229,8 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
 
   CoarseGrid = DOWNGRID(FineGrid);
 
-  toComp   = VD_ncmp_cmpptr_of_otype(to,NODEVEC,&ncomp);
-  fromComp = VD_cmpptr_of_otype(from,NODEVEC);
+  toComp   = VD_ncmp_cmpptr_of_otype_mod(to,NODEVEC,&ncomp,NON_STRICT);
+  fromComp = VD_cmpptr_of_otype_mod(from,NODEVEC,NON_STRICT);
   if (ncomp <= 0)
     return(NUM_ERROR);
 
@@ -322,7 +322,7 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
 
   CoarseGrid = DOWNGRID(FineGrid);
 
-  Comp   = VD_ncmp_cmpptr_of_otype(Cor,NODEVEC,&ncomp);
+  Comp   = VD_ncmp_cmpptr_of_otype_mod(Cor,NODEVEC,&ncomp,NON_STRICT);
   if (ncomp <= 0)
     return(NUM_ERROR);
 
@@ -397,24 +397,30 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
 
 INT StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
 {
-  INT vtype,rv;
+  FORMAT *fmt;
+  INT vtype,rv,otype;
   const SHORT *offset;
 
   if (DOWNGRID(FineGrid)==NULL)
     return (NUM_NO_COARSER_GRID);
 
   offset = VD_OFFSETPTR(to);
+  fmt = MGFORMAT(MYMG(FineGrid));
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
-    if (VD_ISDEF_IN_TYPE(to,vtype))
-      switch (GetUniqueOTypeOfVType(MGFORMAT(MYMG(FineGrid)),vtype))
+  for (otype=0; otype<MAXVOBJECTS; otype++)
+    if (VD_OBJ_USED(to) & BITWISE_TYPE(otype))
+      switch (otype)
       {
       case ELEMVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
       case NODEVEC :
-        if ((rv=StandardRestrictNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
-          return (rv);
+        for (vtype=0; vtype<NVECTYPES; vtype++)
+          if (VD_ISDEF_IN_TYPE(to,vtype))
+            if (GetUniqueOTypeOfVType(fmt,vtype)<0)
+              REP_ERR_RETURN(1)
+              if ((rv=StandardRestrictNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
+                return (rv);
         break;
       case EDGEVEC :
         UserWrite("not implemented");
@@ -458,24 +464,30 @@ INT StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC
 
 INT StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
 {
-  INT vtype,rv;
+  FORMAT *fmt;
+  INT vtype,rv,otype;
   const SHORT *offset;
 
   if (DOWNGRID(FineGrid)==NULL)
     return (NUM_NO_COARSER_GRID);
 
   offset = VD_OFFSETPTR(to);
+  fmt = MGFORMAT(MYMG(FineGrid));
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
-    if (VD_ISDEF_IN_TYPE(to,vtype))
-      switch (GetUniqueOTypeOfVType(MGFORMAT(MYMG(FineGrid)),vtype))
+  for (otype=0; otype<MAXVOBJECTS; otype++)
+    if (VD_OBJ_USED(to) & BITWISE_TYPE(otype))
+      switch (otype)
       {
       case ELEMVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
       case NODEVEC :
-        if ((rv=StandardIntCorNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
-          return (rv);
+        for (vtype=0; vtype<NVECTYPES; vtype++)
+          if (VD_ISDEF_IN_TYPE(to,vtype))
+            if (GetUniqueOTypeOfVType(fmt,vtype)<0)
+              REP_ERR_RETURN(1)
+              if ((rv=StandardIntCorNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
+                return (rv);
         break;
       case EDGEVEC :
         UserWrite("not implemented");
@@ -517,21 +529,28 @@ INT StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_DESC *to, const
 
 INT StandardInterpolateNewVectors (GRID *FineGrid, const VECDATA_DESC *Sol)
 {
-  INT vtype,rv;
+  FORMAT *fmt;
+  INT vtype,rv,otype;
 
   if (DOWNGRID(FineGrid)==NULL)
     return (NUM_NO_COARSER_GRID);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
-    if (VD_ISDEF_IN_TYPE(Sol,vtype))
-      switch (GetUniqueOTypeOfVType(MGFORMAT(MYMG(FineGrid)),vtype))
+  fmt = MGFORMAT(MYMG(FineGrid));
+
+  for (otype=0; otype<MAXVOBJECTS; otype++)
+    if (VD_OBJ_USED(Sol) & BITWISE_TYPE(otype))
+      switch (otype)
       {
       case ELEMVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
       case NODEVEC :
-        if ((rv=StandardIntNewNodeVector(FineGrid,Sol))!=NUM_OK)
-          return (rv);
+        for (vtype=0; vtype<NVECTYPES; vtype++)
+          if (VD_ISDEF_IN_TYPE(Sol,vtype))
+            if (GetUniqueOTypeOfVType(fmt,vtype)<0)
+              REP_ERR_RETURN(1)
+              if ((rv=StandardIntNewNodeVector(FineGrid,Sol))!=NUM_OK)
+                return (rv);
         break;
       case EDGEVEC :
         UserWrite("not implemented");
@@ -581,9 +600,9 @@ INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
   const SHORT *toComp,*fromComp,*edComp;
   INT i,j,m,ncomp,edcomp,nfrom,dt;
 
-  toComp   = VD_ncmp_cmpptr_of_otype(to,NODEVEC,&ncomp);
+  toComp   = VD_ncmp_cmpptr_of_otype_mod(to,NODEVEC,&ncomp,NON_STRICT);
   edComp   = VD_ncmp_cmpptr_of_otype(to,EDGEVEC,&edcomp);
-  fromComp = VD_ncmp_cmpptr_of_otype(from,NODEVEC,&nfrom);
+  fromComp = VD_ncmp_cmpptr_of_otype_mod(from,NODEVEC,&nfrom,NON_STRICT);
 
   if (ncomp <= 0)
     return (NUM_OK);
@@ -879,7 +898,7 @@ INT GetInterpolationMatrix (ELEMENT *theElement, ELEMENT *theFather,
   MATRIX *m;
   INT nev,nfv,ie,jf,ke,kf,nce,ncf;
   register SHORT i,j;
-  DOUBLE *mptr,val;
+  DOUBLE *mptr;
 
   nev = GetAllVectorsOfElementOfType (theElement,evec,theVD);
   nfv = GetAllVectorsOfElementOfType (theFather,fvec,theVD);
@@ -1617,10 +1636,10 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
   GRID *CoarseGrid;
   MATRIX *m,*im,*jm,*cm;
   VECTOR *v,*w,*iv,*jv;
-  register DOUBLE sum,*mptr,*cmptr,*imptr,*jmptr,mvalue,imvalue,fac;
-  register DOUBLE *imptr0,*imptr1,*jmptr0,*jmptr1,*madjptr,*cmadjptr;
+  register DOUBLE sum,*mptr,*cmptr,*imptr,*jmptr,mvalue,imvalue;
+  register DOUBLE *imptr0,*imptr1,*jmptr0,*jmptr1,*madjptr;
   INT vtype,ivtype,mtype,cmtype,vncomp,wncomp,ivncomp,jvncomp,rmask,cmask;
-  INT vindex,wtype,ivindex,windex;
+  INT wtype,ivindex;
   register SHORT i,j,k,l,mc,*mcomp,*cmcomp,*madjcomp;
 
   CoarseGrid = DOWNGRID(FineGrid);
