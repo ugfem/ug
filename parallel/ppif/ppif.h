@@ -62,8 +62,10 @@
  #endif
 #endif
 
-
-
+#ifdef CurrentTime
+#undef CurrentTime
+#error ****    CurrentTime defined before ****
+#endif
 
 #ifdef __cplusplus
  #ifndef PPIF_FRONTEND_CPP
