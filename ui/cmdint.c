@@ -1,5 +1,6 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+
 /****************************************************************************/
 /*																			*/
 /* File:	  cmdint.c                                                                                                              */
@@ -113,6 +114,7 @@ static char terminators[]               = ";}";         /* terminators for comma
 
 static INT scriptpaths_set=FALSE;
 static INT dontexit=FALSE;      /* if TRUE set ':cmdstatus' rather than exiting	*/
+static INT UseWithPerl=0;
 
 /****************************************************************************/
 /*																			*/
@@ -2645,7 +2647,10 @@ void CommandLoop (int argc, char **argv)
   {
     while (GetDoneFlag() == FALSE)
     {
-      WriteString(PROMPT);
+      if (UseWithPerl)
+        WriteString("EOO\n");
+      else
+        WriteString(PROMPT);
       if (UserIn(inpLine)!=0)
       {
         PrintErrorMessage('E',"CommandLoop","process event error");
@@ -2849,10 +2854,10 @@ int GetDoneFlag (void)
 /****************************************************************************/
 
 
-INT InitCommandInterpreter (void)
+INT InitCommandInterpreter (INT argc, char **argv)
 {
   char size[256];
-  int ival;
+  int i,ival;
 
   /* get cmdintbufsize from defaults file */
   if (GetDefaultValue(DEFAULTSFILENAME,"cmdintbufsize",size)==0)
@@ -2903,6 +2908,12 @@ INT InitCommandInterpreter (void)
   dontexit=FALSE;
 
   SetStringValue(":oldmute",GetMuteLevel());
+
+  /* use with perl? */
+  UseWithPerl=0;
+  for (i=0; i<argc; i++)
+    if(strcmp(argv[i],"-perl")==0)
+      UseWithPerl=1;
 
   /* return to application */
   return(0);

@@ -108,7 +108,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT InitUi ()
+INT InitUi (INT argc, char **argv)
 {
   INT err;
 
@@ -131,7 +131,7 @@ INT InitUi ()
     PrintErrorMessage('W',"InitUi","help mechanism not working properly");
 
   /* init command interpreter */
-  if ((err=InitCommandInterpreter())!=0)
+  if ((err=InitCommandInterpreter(argc,argv))!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);

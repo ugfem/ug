@@ -91,6 +91,6 @@ FILE   *FOpenScript                             (const char *script, const char 
 
 INT     InterpretCommand                (char *cmds);
 
-INT     InitCommandInterpreter  (void);
+INT     InitCommandInterpreter  (INT argc, char **argv);
 
 #endif

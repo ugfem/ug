@@ -279,7 +279,7 @@ INT InitUg (int *argcp, char ***argvp)
   }
 
   /* init the ui module */
-  if ((err=InitUi())!=0)
+  if ((err=InitUi(argcp[0],argvp[0]))!=0)
   {
     printf("ERROR in InitUg while InitUi (line %d): called routine line %d\n",
            (int) HiWrd(err), (int) LoWrd(err));
