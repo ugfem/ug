@@ -124,6 +124,7 @@ INT DistributeInitialList (AVECTOR **La, AVECTOR **Le, AVECTOR **Ta, AVECTOR **T
 INT CountStrongNeighbors  (AVECTOR *initialS, DOUBLE *avNrOfStrongNbsHnd, INT *maxNeighbors);
 INT CoarsenRugeStueben    (GRID *theGrid);
 INT CoarsenVanek          (GRID *theGrid);
+INT CoarsenAverage        (GRID *theGrid);
 INT IpAverage             (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpRugeStueben         (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpVanek               (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
