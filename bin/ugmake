@@ -40,7 +40,7 @@ then
 	ug)
 		cd $UGROOT
 		;;
-	dev | dom | gm | graphics | low | numerics | parallel | ui)
+	dev | dom | gm | graphics | low | numerics | parallel | ui | np)
 		cd $UGROOT/$1
 		;;
 	meta | xif | ps | sif)
