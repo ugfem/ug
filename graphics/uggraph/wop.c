@@ -9828,6 +9828,8 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, DOUBLE **Corners,
 					{
 						case (0):
 						case (1):
+							/* quick bug fix, this case shouldn't happen */
+							return(0);
 							RETURN(1);
 						case (2):
 						case (3):
@@ -10228,6 +10230,8 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, DOUBLE **Corners,
 			{
 				case (0):
 				case (1):
+					/* quick bug fix, this case shouldn't happen */
+					return(0);
 					RETURN(1);
 				case (2):
 				case (3):
@@ -10250,6 +10254,8 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, DOUBLE **Corners,
 			switch (count2)
 			{
 				case (0):
+					/* quick bug fix, this case shouldn't happen */
+					return(0);
 					RETURN(1);
 				case (1):
 					V3_COPY(x[1], Poly[0])
