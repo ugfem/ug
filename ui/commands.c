@@ -14731,6 +14731,7 @@ INT InitCommands ()
 #endif
         #ifdef __DLB__
   if (CreateCommand("lbmm",           LBMMCommand                     )==NULL) return(__LINE__);
+  if (CreateCommand("crcb",           CRCBCommand                     )==NULL) return(__LINE__);
   if (CreateCommand("dlb_config",     DLB_Config_Command                  )==NULL      ) return(__LINE__);
   if (CreateCommand("dlb_eval",           DLB_EvalCommand                             )==NULL) return (__LINE__);
         #endif
