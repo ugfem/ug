@@ -11611,13 +11611,12 @@ static INT LBCommand (INT argc, char **argv)
                    strategy,eigen,loc,dims,weights,coarse,mode,iopt));
   error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
                         strategy,eigen,loc,dims,weights,coarse,mode,iopt);
+  if (error>0) return(CMDERRORCODE);
                 #endif
                 #ifndef CHACOT
   sprintf(levelarg,"%d",minlevel);
   ddd_test(levelarg, theMG);
                 #endif
-
-  if (error>0) return(CMDERRORCODE);
 
   return(OKCODE);
                 #endif
