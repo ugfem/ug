@@ -8946,21 +8946,25 @@ static INT ClearCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   mflop - floating point speed meassuring
+   mflops - floating point speed meassuring
 
    DESCRIPTION:
    This function tests the performance of the UG specific blas routines.
 
-   'mflop $x <vec> [$y <tmp>] [$A <mat>] [$l <loop>]'
+   'mflops $x <vec> [$y <tmp>] [$A <mat>] [$l <loop>]'
 
    .  $x~<vec>   - vector
    .  $y~<tmp>   - second vector
    .  $A~<mat>   - matrix
    .  $l~<loop>  - loop number
+
+   REMARK:
+   Due to the inaccuracy of the most UNIX clock systems take a huge loop number
+   to get an good average.
    D*/
 /****************************************************************************/
 
-static INT MFLOPCommand (INT argc, char **argv)
+static INT MFLOPSCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *g;
@@ -9001,7 +9005,7 @@ static INT MFLOPCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   if (ReadArgvINT("loop",&loop,argc,argv))
   {
-    loop = 1;
+    loop = 100;
   }
 
   /* gather statistics */
@@ -9014,7 +9018,7 @@ static INT MFLOPCommand (INT argc, char **argv)
   }
   ncomp = VD_NCMPS_IN_TYPE(x,NODEVECTOR);
   if ((ncomp == 0) || (VD_NCOMP(x) != ncomp)) {
-    PrintErrorMessage('E',"mflop","olny for NODEVECTOR");
+    PrintErrorMessage('E',"mflops","only for NODEVECTOR");
     return (PARAMERRORCODE);
   }
 
@@ -9038,11 +9042,11 @@ static INT MFLOPCommand (INT argc, char **argv)
   FreeVD(theMG,l,l,y);
 
   nop = 2*n*ncomp*loop;
-  UserWriteF("DDOT t=%12.4lE op=%12.4lE mflop=%12.6lf\n",
+  UserWriteF("DDOT t=%12.4lE op=%12.4lE MFLOPs=%12.6lf\n",
              (double)time_ddot,(double)nop,
              (double)0.000001*nop/time_ddot);
   nop = m*ncomp*ncomp*2*loop;
-  UserWriteF("MMUL t=%12.4lE op=%12.4lE mflop=%12.6lf\n",
+  UserWriteF("MMUL t=%12.4lE op=%12.4lE MFLOPs=%12.6lf\n",
              (double)time_matmul,(double)nop,
              (double)0.000001*nop/time_matmul);
 
@@ -11958,7 +11962,7 @@ INT InitCommands ()
 
   /* vectors and matrices */
   if (CreateCommand("clear",                      ClearCommand                                    )==NULL) return (__LINE__);
-  if (CreateCommand("mflop",          MFLOPCommand                    )==NULL) return (__LINE__);
+  if (CreateCommand("mflops",         MFLOPSCommand                    )==NULL) return (__LINE__);
 
   if (CreateCommand("rand",                       RandCommand                                             )==NULL) return (__LINE__);
   if (CreateCommand("copy",                       CopyCommand                                             )==NULL) return (__LINE__);
