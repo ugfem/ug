@@ -31,10 +31,10 @@ $(UG_LIB): $(OBJECTS)
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 
 CBLAS:
-	cd cblas; make; cd ..;
+	cd cblas && make
 
 SUPERLU:
-	cd src; make; cd ..;
+	cd src && make
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $<
