@@ -71,7 +71,7 @@ static NG_ELEMENT Elem;
 typedef union
 {
   /* put RCS string here in order to get it into yacc-generated header file
-     static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 1.2
+     static char RCS_ID("$Header: /home/cvs/UG/ug/dom/lgm/ngin/ngin.y,v 1.3
      1998/02/20 16:58:46 birken Exp $",UG_RCS_STRING);
    */
 
@@ -234,7 +234,7 @@ static const short ngcheck[] = {     6,
                                      49,    11,     2,    50,    53,    34,    55,    34,    -1,    56,
                                      59,    -1,    -1,    62,    63};
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
-#line 3 "/rlocal/bison-1.25/share/bison.simple"
+#line 3 "/usr/share/bison.simple"
 
 /* Skeleton output parser for bison,
    Copyright (C) 1984, 1989, 1990 Free Software Foundation, Inc.
@@ -383,9 +383,13 @@ int ngdebug;                    /*  nonzero means print parse trace	*/
 #define YYMAXDEPTH 10000
 #endif
 
+#ifndef YYPARSE_RETURN_TYPE
+#define YYPARSE_RETURN_TYPE int
+#endif
+
 /* Prevent warning if -Wstrict-prototypes.  */
 #ifdef __GNUC__
-int ngparse (void);
+YYPARSE_RETURN_TYPE ngparse (void);
 #endif
 
 #if __GNUC__ > 1                /* GNU C and GNU C++ define this.  */
@@ -427,7 +431,7 @@ __ng_memcpy (char *to, char *from, int count)
 #endif
 #endif
 
-#line 196 "/rlocal/bison-1.25/share/bison.simple"
+#line 196 "/usr/share/bison.simple"
 
 /* The user can define YYPARSE_PARAM as the name of an argument to be passed
    into ngparse.  The argument should have type void *.
@@ -448,7 +452,7 @@ __ng_memcpy (char *to, char *from, int count)
 #define YYPARSE_PARAM_DECL
 #endif /* not YYPARSE_PARAM */
 
-int
+YYPARSE_RETURN_TYPE
 ngparse(YYPARSE_PARAM_ARG)
 YYPARSE_PARAM_DECL
 {
@@ -921,7 +925,7 @@ ngreduce:
      break;}
   }
   /* the action file gets copied in in place of this dollarsign */
-#line 498 "/rlocal/bison-1.25/share/bison.simple"
+#line 498 "/usr/share/bison.simple"
 
   ngvsp -= nglen;
   ngssp -= nglen;
