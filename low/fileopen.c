@@ -202,7 +202,7 @@ FILE *fileopen (const char *fname, const char *mode)
     case '/' :
       /* "/" --> ":" */
       fullpath[pos++] = ':';
-      fname++;
+      while (*fname=='/') fname++;
       break;
 
     default :
@@ -346,6 +346,7 @@ FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char 
       return (NULL);
 
     strcpy(fullname,thePaths->path[i]);
+    strcat(fullname,"/");
     strcat(fullname,fname);
 
     if ((theFile=fileopen(fullname,mode))!=NULL)
@@ -388,6 +389,7 @@ FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *
     return (NULL);
 
   strcpy(fullname,path);
+  strcat(fullname,"/");
   strcat(fullname,fname);
 
   if ((theFile=fileopen(fullname,mode))!=NULL)
