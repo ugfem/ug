@@ -108,6 +108,7 @@ INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, IN
 INT sc_read          (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const char *name, INT argc, char **argv);
 INT sc_disp      (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name);
 INT sc_cmp           (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD);
+INT sc_eq            (VEC_SCALAR x, const VEC_SCALAR y, DOUBLE ac, const VECDATA_DESC *theVD);
 INT sc_mul           (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z,
                       const VECDATA_DESC *theVD);
 INT sc_mul_check (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z,

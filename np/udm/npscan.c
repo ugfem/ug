@@ -40,6 +40,7 @@
 #include "gm.h"
 #include "ugenv.h"
 #include "devices.h"
+#include "evm.h"
 
 #include "formats.h"
 #include "pcr.h"
@@ -965,6 +966,40 @@ INT sc_cmp (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD)
 
   for (i=0; i<VD_NCOMP(theVD); i++)
     if (ABS(x[i])>=ABS(y[i]))
+      return (0);
+
+  return (1);
+}
+
+/****************************************************************************/
+/*D
+   sc_eq - Check if VEC_SCALARs are (nearly) equal
+
+   SYNOPSIS:
+   INT sc_eq (VEC_SCALAR x, const VEC_SCALAR y, DOUBLE ac, const VECDATA_DESC *theVD);
+
+   PARAMETERS:
+   .  x - DOUBLE for each component of a vector data descriptor
+   .  y - DOUBLE for each component of a vector data descriptor
+   .  ac - DOUBLE acuracy
+   .  theVD - vector data descriptor
+
+   DESCRIPTION:
+   This function compares VEC_SCALARs.
+
+   RETURN VALUE:
+   INT
+   .n    0 if VEC_SCALAR1 !=  VEC_SCALAR2
+   .n    1 if VEC_SCALAR1 = VEC_SCALAR2
+   D*/
+/****************************************************************************/
+
+INT sc_eq (VEC_SCALAR x, const VEC_SCALAR y, DOUBLE ac, const VECDATA_DESC *theVD)
+{
+  INT i;
+
+  for (i=0; i<VD_NCOMP(theVD); i++)
+    if (x[i]<0.0 || y[i]<0.0 || ABS(x[i]-y[i])>ac*SQRT(x[i]*y[i]))
       return (0);
 
   return (1);
