@@ -596,7 +596,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
 #endif
 
   /* open file */
-  if (Write_OpenFile (name)) return (1);
+  if (Write_OpenMGFile (name)) return (1);
 
   /* write general information */
   theBVP = MG_BVP(theMG);
@@ -607,6 +607,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   else if (strcmp(p,".bin")==0) mg_general.mode = BIO_BIN;
   else return (1);
   mg_general.dim                  = DIM;
+  mg_general.heapsize             = MGHEAP(theMG)->size/1024;
   mg_general.nLevel               = TOPLEVEL(theMG) + 1;
   mg_general.nNode = mg_general.nPoint = mg_general.nElement;
   for (i=0; i<=TOPLEVEL(theMG); i++)
@@ -616,7 +617,9 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
     mg_general.nPoint               += NV(theGrid);
     mg_general.nElement             += NT(theGrid);
   }
+  strcpy(mg_general.version,MGIO_VERSION);
   strcpy(mg_general.DomainName,BVPD_NAME(theBVPDesc));
+  strcpy(mg_general.MultiGridName,MGNAME(theMG));
   strcpy(mg_general.Formatname,ENVITEM_NAME(MGFORMAT(theMG)));
   mg_general.VectorTypes  = 0;
   if (Write_MG_General(&mg_general)) return (1);
@@ -740,7 +743,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   ReleaseTmpMem(theHeap);
 
   /* close file */
-  if (CloseFile ()) return (1);
+  if (CloseMGFile ()) return (1);
 
 #ifndef __MWCW__
   /* zip if */
@@ -1097,7 +1100,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   BVP *theBVP;
   BVP_DESC theBVPDesc;
   MESH theMesh;
-  char FormatName[NAMESIZE], BndValName[NAMESIZE];
+  char FormatName[NAMESIZE], BndValName[NAMESIZE], MGName[NAMESIZE];
   INT i,j,k,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],**Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,*Element_nb_ids;
   INT zip,Sons_of_Side,side,nbside;
 
@@ -1116,54 +1119,58 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 #endif
 
   /* open file */
-  if (Read_OpenFile (FileName))                                                                           {return (NULL);}
-  if (Read_MG_General(&mg_general))                                                                       {CloseFile (); return (NULL);}
-  if (mg_general.dim!=DIM)                                                                                        {UserWrite("ERROR: wrong dimension\n");CloseFile (); return (NULL);}
+  if (Read_OpenMGFile (FileName))                                                                         {return (NULL);}
+  if (Read_MG_General(&mg_general))                                                                       {CloseMGFile (); return (NULL);}
+  if (mg_general.dim!=DIM)                                                                                        {UserWrite("ERROR: wrong dimension\n");CloseMGFile (); return (NULL);}
+  if (strcmp(mg_general.version,MGIO_VERSION)!=0)                                         {UserWrite("ERROR: wrong version\n");CloseMGFile (); return (NULL);}
 
   /* BVP and format */
   if (BVPName==NULL) strcpy(BndValName,mg_general.DomainName);
   else strcpy(BndValName,BVPName);
+  if (MultigridName==NULL) strcpy(MGName,mg_general.MultiGridName);
+  else strcpy(MGName,MultigridName);
   if (format==NULL) strcpy(FormatName,mg_general.Formatname);
   else strcpy(FormatName,format);
+  if (heapSize==0) heapSize = mg_general.heapsize * 1024;
 
   /* create a virginenal multigrid on the BVP */
-  theMG = CreateMultiGrid(MultigridName,BndValName,FormatName,heapSize);
-  if (theMG==NULL)                                                                                                        {CloseFile (); return (NULL);}
-  if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (CreateNewLevel(theMG)==NULL)                                                                        {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize);
+  if (theMG==NULL)                                                                                                        {CloseMGFile (); return (NULL);}
+  if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (CreateNewLevel(theMG)==NULL)                                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   theHeap = MGHEAP(theMG);
   theBVP = MG_BVP(theMG);
-  if (theBVP==NULL)                                                                                                       {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc))                                                         {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (theBVP==NULL)                                                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (BVP_SetBVPDesc(theBVP,&theBVPDesc))                                                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   MarkTmpMem(theHeap);
 
   /* read general element information */
-  if (Read_GE_General(&ge_general))                                                                       {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (Read_GE_Elements(TAGS,ge_element))                                                          {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_GE_General(&ge_general))                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_GE_Elements(TAGS,ge_element))                                                          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read refrule information */
-  if (Read_RR_General(&rr_general))                                                                   {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_RR_General(&rr_general))                                                                   {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   rr_rules = (MGIO_RR_RULE *)GetTmpMem(theHeap,rr_general.nRules*sizeof(MGIO_RR_RULE));
-  if (rr_rules==NULL)                                                                                                     {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (Read_RR_Rules(rr_general.nRules,rr_rules))                                          {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (rr_rules==NULL)                                                                                                     {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_RR_Rules(rr_general.nRules,rr_rules))                                          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read general information about coarse grid */
-  if (Read_CG_General(&cg_general))                                                                       {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_CG_General(&cg_general))                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read coarse grid points and elements */
   cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,cg_general.nPoint*sizeof(MGIO_CG_POINT));
   cg_element = (MGIO_CG_ELEMENT *)GetTmpMem(theHeap,cg_general.nElement*sizeof(MGIO_CG_ELEMENT));
-  if (Read_CG_Points(cg_general.nPoint,cg_point))                                         {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (Read_CG_Elements(cg_general.nElement,cg_element))                           {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_CG_Points(cg_general.nPoint,cg_point))                                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_CG_Elements(cg_general.nElement,cg_element))                           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read general bnd information */
-  if (Read_BD_General (&bd_general))                                                                      {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_BD_General (&bd_general))                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read bnd points */
   BndPList = (BNDP**)GetTmpMem(theHeap,bd_general.nBndP*sizeof(BNDP*));
-  if (BndPList==NULL)                                                                                                     {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (Read_PBndDesc (theBVP,theHeap,bd_general.nBndP,BndPList))           {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (BndPList==NULL)                                                                                                     {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_PBndDesc (theBVP,theHeap,bd_general.nBndP,BndPList))           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* create and insert coarse mesh: prepare */
   theMesh.nBndP = cg_general.nBndPoint;
@@ -1178,12 +1185,12 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
       theMesh.Position[i][j] = cg_point[cg_general.nBndPoint+i].position[j];
   theMesh.nSubDomains = theBVPDesc.nSubDomains;
   theMesh.nElements = (INT*)GetTmpMem(theHeap,(theMesh.nSubDomains+1)*sizeof(INT));
-  if (theMesh.nElements==NULL)                                                                            {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (theMesh.nElements==NULL)                                                                            {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (i=0; i<=theMesh.nSubDomains; i++) theMesh.nElements[i] = 0;theMesh.nElements[1] = cg_general.nElement;
 
   /* nb of corners of elements */
   Element_corner_uniq_subdom  = (INT*)GetTmpMem(theHeap,cg_general.nElement*sizeof(INT));
-  if (Element_corner_uniq_subdom==NULL)                                                           {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_corner_uniq_subdom==NULL)                                                           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   max = 0;
   for (i=0; i<cg_general.nElement; i++)
   {
@@ -1196,9 +1203,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* corners ids of elements */
   Element_corner_ids_uniq_subdom  = (INT**)GetTmpMem(theHeap,cg_general.nElement*sizeof(INT*));
-  if (Element_corner_ids_uniq_subdom==NULL)                                                       {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_corner_ids_uniq_subdom==NULL)                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   Element_corner_ids  = (INT*)GetTmpMem(theHeap,max*cg_general.nElement*sizeof(INT));
-  if (Element_corner_ids==NULL)                                                                           {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_corner_ids==NULL)                                                                           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (i=0; i<cg_general.nElement; i++)
     Element_corner_ids_uniq_subdom[i] = Element_corner_ids+max*i;
   for (i=0; i<cg_general.nElement; i++)
@@ -1209,9 +1216,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* nb of elements */
   Element_nb_uniq_subdom  = (INT**)GetTmpMem(theHeap,cg_general.nElement*sizeof(INT*));
-  if (Element_nb_uniq_subdom==NULL)                                                                       {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_nb_uniq_subdom==NULL)                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   Element_nb_ids  = (INT*)GetTmpMem(theHeap,max*cg_general.nElement*sizeof(INT));
-  if (Element_nb_ids==NULL)                                                                                       {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_nb_ids==NULL)                                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (i=0; i<cg_general.nElement; i++)
     Element_nb_uniq_subdom[i] = Element_nb_ids+max*i;
   for (i=0; i<cg_general.nElement; i++)
@@ -1221,7 +1228,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   theMesh.nbElements = Enusdp;
 
   /* insert coarse mesh */
-  if (InsertMesh(theMG,&theMesh))                                                                         {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (InsertMesh(theMG,&theMesh))                                                                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   theGrid = GRID_ON_LEVEL(theMG,0);
   for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
@@ -1235,20 +1242,20 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   if (mg_general.nLevel==1)
   {
     ReleaseTmpMem(theHeap);
-    if (CloseFile ())                                                                                               {DisposeMultiGrid(theMG); return (NULL);}
+    if (CloseMGFile ())                                                                                             {DisposeMultiGrid(theMG); return (NULL);}
     return (theMG);
   }
 
   /* create grids */
   for (i=1; i<mg_general.nLevel; i++)
-    if (CreateNewLevel(theMG)==NULL)                                                                {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+    if (CreateNewLevel(theMG)==NULL)                                                                {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read hierarchical elements */
   theGrid = GRID_ON_LEVEL(theMG,0); max=0;
   for (i=0; i<cg_general.nElement; i++) max = MAX(max,cg_element[i].nhe);
   refinement = (MGIO_REFINEMENT*)GetTmpMem(theHeap,max*sizeof(MGIO_REFINEMENT));
-  if (refinement==NULL)                                                                                           {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (Set_Get_Sons_of_ElementSideProc(IO_Get_Sons_of_ElementSide))        {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (refinement==NULL)                                                                                           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Set_Get_Sons_of_ElementSideProc(IO_Get_Sons_of_ElementSide))        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     i = ID(theElement);
@@ -1300,7 +1307,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* close file */
   ReleaseTmpMem(theHeap);
-  if (CloseFile ())                                                                                                       {DisposeMultiGrid(theMG); return (NULL);}
+  if (CloseMGFile ())                                                                                                     {DisposeMultiGrid(theMG); return (NULL);}
 
 #ifndef __MWCW__
   /* zip if */
@@ -1516,6 +1523,8 @@ INT InitUgio ()
   gridpaths_set = FALSE;
   if (ReadSearchingPaths(DEFAULTSFILENAME,"gridpaths")==0)
     gridpaths_set = TRUE;
+
+  if (MGIO_Init ()) return (1);
 
   return (0);
 }

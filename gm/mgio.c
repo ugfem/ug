@@ -71,10 +71,6 @@
 /*																			*/
 /****************************************************************************/
 
-typedef int (*RW_mint_proc)(int n, int *intList);
-typedef int (*RW_mdouble_proc)(int n, double *doubleList);
-typedef int (*RW_string_proc)(char *string);
-
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -90,7 +86,7 @@ typedef int (*RW_string_proc)(char *string);
 /****************************************************************************/
 
 static FILE *stream;                            /* file                                                 */
-static int gridpathes_set;                      /* pathes used in ug			*/
+static int mgpathes_set;                        /* pathes used in ug			*/
 static int rw_mode;                                     /* ASCII or ... (see header)	*/
 static char buffer[MGIO_BUFFERSIZE]; /* general purpose buffer		*/
 static int intList[MGIO_INTSIZE];       /* general purpose integer list */
@@ -119,10 +115,10 @@ RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D
-   Read_OpenFile - opens file for reading
+   Read_OpenMGFile - opens file for reading
 
    SYNOPSIS:
-   int Read_OpenFile (char *filename);
+   int Read_OpenMGFile (char *filename);
 
    PARAMETERS:
    .  filename - name of file
@@ -139,11 +135,11 @@ RCSID("$Header$",UG_RCS_STRING)
    D*/
 /****************************************************************************/
 
-int Read_OpenFile (char *filename)
+int Read_OpenMGFile (char *filename)
 {
 
 #ifdef __MGIO_USE_IN_UG__
-  if (gridpathes_set) stream = FileOpenUsingSearchPaths(filename,"r","gridpathes");
+  if (mgpathes_set) stream = FileOpenUsingSearchPaths(filename,"r","mgpaths");
   else stream = fileopen(filename,"r");
 #else
   stream = fileopen(filename,"r");
@@ -156,10 +152,10 @@ int Read_OpenFile (char *filename)
 
 /****************************************************************************/
 /*D
-   Write_OpenFile - opens file for reading
+        Write_OpenMGFile - opens file for reading
 
    SYNOPSIS:
-   int Write_OpenFile (char *filename);
+   int Write_OpenMGFile (char *filename);
 
    PARAMETERS:
    .  filename - name of file
@@ -176,11 +172,11 @@ int Read_OpenFile (char *filename)
    D*/
 /****************************************************************************/
 
-int Write_OpenFile (char *filename)
+int Write_OpenMGFile (char *filename)
 {
 
 #ifdef __MGIO_USE_IN_UG__
-  if (gridpathes_set) stream = FileOpenUsingSearchPaths(filename,"w","gridpathes");
+  if (mgpathes_set) stream = FileOpenUsingSearchPaths(filename,"w","mgpaths");
   else stream = fileopen(filename,"w");
 #else
   stream = fileopen(filename,"w");
@@ -226,15 +222,18 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   if (Bio_Initialize(stream,mg_general->mode)) return (1);
 
   /* now special mode */
+  if (Bio_Read_string(mg_general->version)) return (1);
   if (Bio_Read_string(mg_general->DomainName)) return (1);
+  if (Bio_Read_string(mg_general->MultiGridName)) return (1);
   if (Bio_Read_string(mg_general->Formatname)) return (1);
-  if (Bio_Read_mint(6,intList)) return (1);
+  if (Bio_Read_mint(7,intList)) return (1);
   mg_general->dim                 = intList[0];
-  mg_general->nLevel              = intList[1];
-  mg_general->nNode               = intList[2];
-  mg_general->nPoint              = intList[3];
-  mg_general->nElement    = intList[4];
-  mg_general->VectorTypes = intList[5];
+  mg_general->heapsize    = intList[1];
+  mg_general->nLevel              = intList[2];
+  mg_general->nNode               = intList[3];
+  mg_general->nPoint              = intList[4];
+  mg_general->nElement    = intList[5];
+  mg_general->VectorTypes = intList[6];
 
   return (0);
 }
@@ -275,15 +274,18 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
   if (Bio_Initialize(stream,mg_general->mode)) return (1);
 
   /* now special mode */
+  if (Bio_Write_string(mg_general->version)) return (1);
   if (Bio_Write_string(mg_general->DomainName)) return (1);
+  if (Bio_Write_string(mg_general->MultiGridName)) return (1);
   if (Bio_Write_string(mg_general->Formatname)) return (1);
   intList[0] = mg_general->dim;
-  intList[1] = mg_general->nLevel;
-  intList[2] = mg_general->nNode;
-  intList[3] = mg_general->nPoint;
-  intList[4] = mg_general->nElement;
-  intList[5] = mg_general->VectorTypes;
-  if (Bio_Write_mint(6,intList)) return (1);
+  intList[1] = mg_general->heapsize;
+  intList[2] = mg_general->nLevel;
+  intList[3] = mg_general->nNode;
+  intList[4] = mg_general->nPoint;
+  intList[5] = mg_general->nElement;
+  intList[6] = mg_general->VectorTypes;
+  if (Bio_Write_mint(7,intList)) return (1);
 
   return (0);
 }
@@ -1164,10 +1166,10 @@ int Write_PBndDesc (int n, BNDP **BndPList)
 
 /****************************************************************************/
 /*
-   CloseFile - close the file
+   CloseMGFile - close the file
 
    SYNOPSIS:
-   int CloseFile ();
+   int CloseMGFile ();
 
    PARAMETERS:
 
@@ -1183,7 +1185,7 @@ int Write_PBndDesc (int n, BNDP **BndPList)
  */
 /****************************************************************************/
 
-int CloseFile ()
+int CloseMGFile ()
 {
   if (fclose(stream)!=NULL) return (1);
   return (0);
@@ -1216,9 +1218,9 @@ int MGIO_Init (void)
 #ifdef __MGIO_USE_IN_UG__
 
   /* path to grid-dirs */
-  gridpathes_set = 0;
-  if (ReadSearchingPaths(DEFAULTSFILENAME,"gridpathes")==0)
-    gridpathes_set = 1;
+  mgpathes_set = 0;
+  if (ReadSearchingPaths(DEFAULTSFILENAME,"mgpaths")==0)
+    mgpathes_set = 1;
 
 #endif
 

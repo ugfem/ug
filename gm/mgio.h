@@ -40,6 +40,8 @@
 /*																			*/
 /****************************************************************************/
 
+#define MGIO_VERSION                                    "UG_IO_1.1"
+
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
 
@@ -122,6 +124,7 @@ struct mgio_mg_general {
 
   /* information about the file */
   int mode;                                     /* macros see above								*/
+  char version[MGIO_NAMELEN];       /* version of i/o							*/
 
   /* number of objects */
   int nLevel;                                   /* nb of levels of the mg						*/
@@ -132,9 +135,11 @@ struct mgio_mg_general {
   /* information on geometry */
   int dim;                                                              /* dimension						*/
   char DomainName[MGIO_NAMELEN];                /* name of domain in ug				*/
+  char MultiGridName[MGIO_NAMELEN];             /* name of multigrid				*/
 
   /* information on algebraic structure */
   char Formatname[MGIO_NAMELEN];                /* name of format used in ug		*/
+  int heapsize;                                                 /* heapsize in kbyte, used in ug	*/
   int VectorTypes;                                              /* macros see above					*/
 };
 
@@ -250,7 +255,7 @@ typedef struct mgio_bd_general MGIO_BD_GENERAL;
 /****************************************************************************/
 
 /* read functions */
-int             Read_OpenFile           (char *filename);
+int             Read_OpenMGFile         (char *filename);
 int             Read_MG_General         (MGIO_MG_GENERAL *mg_general);
 int             Read_GE_General         (MGIO_GE_GENERAL *ge_general);
 int             Read_GE_Elements        (int n, MGIO_GE_ELEMENT *ge_element);
@@ -263,7 +268,7 @@ int     Read_Refinement         (int n, MGIO_REFINEMENT *refinement);
 int             Read_BD_General         (MGIO_BD_GENERAL *bd_general);
 
 /* write functions */
-int             Write_OpenFile          (char *filename);
+int             Write_OpenMGFile        (char *filename);
 int             Write_MG_General        (MGIO_MG_GENERAL *mg_general);
 int             Write_GE_General        (MGIO_GE_GENERAL *ge_general);
 int             Write_GE_Elements       (int n, MGIO_GE_ELEMENT *ge_element);
@@ -281,7 +286,7 @@ int             Write_PBndDesc          (int n, BNDP **BndPList);
 #endif
 
 /* general functions */
-int     CloseFile                       ();
+int     CloseMGFile                     ();
 int     MGIO_Init                       ();
 
 #endif
