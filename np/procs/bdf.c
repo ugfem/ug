@@ -113,6 +113,7 @@ typedef struct
   INT list_n;
   DOUBLE list_dt[50];
   DOUBLE list_work[50];
+  INT displayMode;
 
   /* statistics */
   INT number_of_nonlinear_iterations;       /* number of iterations             */
@@ -319,7 +320,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
   NP_NL_SOLVER *nlsolve;
-  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1,qfm_dt,dtfactor;
+  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1,qfm_dt,dtfactor,dt_old;
   DOUBLE Factor[MAX_VEC_COMP];
   INT n_unk;
   INT i,k,mg_changed,changed,ret;
@@ -330,6 +331,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   MULTIGRID *mg;
   char buffer[128];
   static INT qfm;
+  char text[DISPLAY_WIDTH+4];                           /* display text					*/
 
   /* get numprocs ... */
   bdf = (NP_BDF *) ts;                  /* this is the trick, tsolver is derived	*/
@@ -612,16 +614,23 @@ Continue:
   sprintf(buffer,"%12.4lE",bdf->dt);
   SetStringVar("TIMESTEP",buffer);
   SetStringVar(":BDF:DT",buffer);
-  sprintf(buffer,"%12.4lE",bdf->t_0/bdf->exec_time);
-  SetStringVar(":BDF:AEFF",buffer);
-  sprintf(buffer,"%12.4lE",bdf->dt/nlresult.exec_time);
-  SetStringVar(":BDF:EFF",buffer);
+  if (bdf->exec_time!=0.0)
+  {
+    sprintf(buffer,"%12.4lE",bdf->t_0/bdf->exec_time);
+    SetStringVar(":BDF:AEFF",buffer);
+  }
+  if (nlresult.exec_time!=0.0)
+  {
+    sprintf(buffer,"%12.4lE",bdf->dt/nlresult.exec_time);
+    SetStringVar(":BDF:EFF",buffer);
+  }
 
-  UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d QFM=%d\n",
-             bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
-             bdf->total_linear_iterations,bdf->max_linear_iterations,qfm);
+  /*UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d QFM=%d\n",
+                         bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
+                         bdf->total_linear_iterations,bdf->max_linear_iterations,qfm);*/
 
   /* chose new dt for next time step */
+  dt_old = bdf->dt;
   if ((bdf->optnlsteps) && (nlresult.converged))
   {
     qfm = 0;
@@ -702,6 +711,40 @@ Continue:
       bdf->dt = eresult.step;
       UserWrite("time step modified\n");
     }
+  }
+
+  /* output */
+  if (bdf->displayMode != PCR_NO_DISPLAY)
+  {
+    UserWriteF("\n");
+    CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(bdf),'%',"\n"); UserWrite(text);
+    UserWriteF("%-4d   Time:           t: %e\n",(int)bdf->step,(float)bdf->t_0);
+    UserWriteF("                      dt: %e\n",(float)dt_old);
+    UserWriteF("                    s_dt: %e\n",(float)bdf->dt);
+    UserWriteF("\n");
+  }
+  if (bdf->displayMode == PCR_RED_DISPLAY || bdf->displayMode == PCR_FULL_DISPLAY)
+  {
+    UserWriteF("       Exec:           t: %e sec.\n",(float)bdf->exec_time);
+    UserWriteF("                      nl: %4d it.\n",(int)bdf->number_of_nonlinear_iterations);
+    UserWriteF("                     lin: %4d it.\n",(int)bdf->total_linear_iterations);
+    UserWriteF("              max lin/nl: %4d it.\n",(int)bdf->max_linear_iterations);
+    UserWriteF("\n");
+  }
+  if (bdf->displayMode == PCR_FULL_DISPLAY)
+  {
+    if (nlresult.exec_time==0.0)
+      UserWriteF("       Misc:         eff: ---\n");
+    else
+      UserWriteF("       Misc:         eff: %e\n",(float)dt_old/nlresult.exec_time);
+    if (bdf->exec_time==0.0)
+      UserWriteF("                   a_eff: ---\n");
+    else
+      UserWriteF("                   a_eff: %e\n",(float)bdf->t_0/bdf->exec_time);
+    UserWriteF("                     qfm: %d\n",(int)qfm);
+    UserWriteF("\n");
+    CenterInPattern(text,DISPLAY_WIDTH,"%",'%',"\n");       UserWrite(text);
+    UserWriteF("\n");
   }
 
   /* save suggested timestep */
@@ -871,6 +914,9 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
 
   bdf->copyall = ReadArgvOption("copyall",argc,argv);
 
+  /* set display option */
+  bdf->displayMode = ReadArgvDisplay(argc,argv);
+
   return (r);
 }
 
@@ -935,6 +981,12 @@ static INT BDFDisplay (NP_BASE *theNumProc)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"y_m1",ENVITEM_NAME(bdf->y_m1));
   if (bdf->b    != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"b   ",ENVITEM_NAME(bdf->b   ));
+  if (bdf->displayMode == PCR_NO_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (bdf->displayMode == PCR_RED_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (bdf->displayMode == PCR_FULL_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
 
   return (0);
 }
