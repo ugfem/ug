@@ -74,7 +74,7 @@
 #include "ggm.h"
 #include "ggmain.h"
 #endif
-#if defined __THREEDIM__ && defined NETGEN_SUPPORT
+#if defined __THREEDIM__ && defined _NETGEN
 #include "gg3d.h"
 #endif
 
@@ -242,6 +242,8 @@ static INT piccounter=1;
 static INT theArrayDirID;
 static INT theArrayVarID;
 static INT arraypathes_set=FALSE;
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -2118,13 +2120,13 @@ static INT NewCommand (INT argc, char **argv)
       lastchar = argv[i][strlen(argv[i])-1];
       /* check for [kK]ilobyte-notation */
       if ( lastchar=='k' || lastchar=='K' )
-        heapSize *= (MEM)1024;
+        heapSize *= (MEM)KBYTE;
       /* check for [mM]igabyte-notation */
       if ( lastchar=='m' || lastchar=='M' )
-        heapSize *= (MEM)1024 * 1024;
+        heapSize *= (MEM)MBYTE;
       /* check for [gG]igabyte-notation */
       if ( lastchar=='g' || lastchar=='G' )
-        heapSize *= (MEM)1024 * 1024 * 1024;
+        heapSize *= (MEM)GBYTE;
       hopt = TRUE;
       break;
 
@@ -5119,7 +5121,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   GRID *theGrid;
   INT i,res,level,fromLevel,toLevel;
-  INT sign[DIM],order[DIM],which,xused,yused,zused,error,AlsoOrderMatrices,SpecialTreatSkipVecs;
+  INT sign[DIM],order[DIM],which,xused,yused,zused,rused,pused,error,AlsoOrderMatrices,SpecialTreatSkipVecs,mode;
   char ord[3];
 
   theMG = currMG;
@@ -5133,7 +5135,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
 
   /* read ordering directions */
         #ifdef __TWODIM__
-  res = sscanf(argv[0],expandfmt("lexorderv %2[rlud]"),ord);
+  res = sscanf(argv[0],expandfmt("lexorderv %2[rludIOPN]"),ord);
         #else
   res = sscanf(argv[0],expandfmt("lexorderv %3[rlbfud]"),ord);
         #endif
@@ -5144,10 +5146,10 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
   }
   if (strlen(ord)!=DIM)
   {
-    PrintHelp("lexorderv",HELPITEM," (specify DIM chars out of 'rlud' or 'rlbfud' resp.)");
+    PrintHelp("lexorderv",HELPITEM," (specify DIM chars out of 'rlud', 'IOPN' or 'rlbfud' resp.)");
     return(PARAMERRORCODE);
   }
-  error = xused = yused = zused = FALSE;
+  error = xused = yused = zused = rused = pused = FALSE;
   for (i=0; i<DIM; i++)
     switch (ord[i])
     {
@@ -5188,12 +5190,45 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
       zused = TRUE;
       order[i] = _Z_; sign[i] = -1; break;
                         #endif
+
+                        #ifdef __TWODIM__
+
+    /* polar coordiante directions */
+    case 'I' :                          /* capital i */
+      if (rused) error = TRUE;
+      rused = TRUE;
+      order[i] = 0; sign[i] =  1; break;
+
+    case 'O' :
+      if (rused) error = TRUE;
+      rused = TRUE;
+      order[i] = 0; sign[i] = -1; break;
+
+    case 'P' :
+      if (pused) error = TRUE;
+      pused = TRUE;
+      order[i] = 1; sign[i] =  1; break;
+
+    case 'N' :
+      if (pused) error = TRUE;
+      pused = TRUE;
+      order[i] = 1; sign[i] = -1; break;
+                        #endif
     }
   if (error)
   {
     PrintHelp("lexorderv",HELPITEM," (bad combination of 'rludr' or 'rlbfud' resp.)");
     return(PARAMERRORCODE);
   }
+  mode = OV_CARTES;
+  if (rused || pused)
+    if (!(rused && pused))
+    {
+      PrintHelp("lexorderv",HELPITEM," (bad combination of cartesian/polar direction)");
+      return(PARAMERRORCODE);
+    }
+    else
+      mode = OV_POLAR;
 
   /* check options */
   AlsoOrderMatrices = SpecialTreatSkipVecs = FALSE;
@@ -5256,7 +5291,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
 
     UserWriteF(" [%d:",level);
 
-    if (LexOrderVectorsInGrid(theGrid,order,sign,which,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
+    if (LexOrderVectorsInGrid(theGrid,mode,order,sign,which,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
     {
       PrintErrorMessage('E',"lexorderv","LexOrderVectorsInGrid failed");
       return (CMDERRORCODE);
@@ -5344,7 +5379,10 @@ static INT ShellOrderVectorsCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
   else
+  {
+    l_setindex(theGrid);
     return (OKCODE);
+  }
 }
 
 /****************************************************************************/
@@ -9210,8 +9248,8 @@ static INT MFLOPSCommand (INT argc, char **argv)
     l_dmatmul(g,y,EVERY_CLASS,A,x,EVERY_CLASS);
   time_matmul = CURRENT_TIME - time_matmul;
 
-  FreeMD(theMG,l,l,A);
-  FreeVD(theMG,l,l,y);
+  if (FreeMD(theMG,l,l,A)) REP_ERR_RETURN(CMDERRORCODE);
+  if (FreeVD(theMG,l,l,y)) REP_ERR_RETURN(CMDERRORCODE);
 
   nop = 2*n*ncomp*loop;
   UserWriteF("DDOT t=%12.4lE op=%12.4lE MFLOPs=%12.6lf\n",
@@ -9888,16 +9926,60 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
 
 static INT NumProcDisplayCommand (INT argc, char **argv)
 {
-  char theNumProcName[NAMESIZE];
   NP_BASE *theNumProc;
   MULTIGRID *theMG;
-  INT err;
+  INT i,All,Class,err;
+  char theNumProcName[NAMESIZE],ClassName[NAMESIZE];
 
   theMG = currMG;
   if (theMG==NULL)
   {
-    PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
+    PrintErrorMessage('E',"npdisplay","there is no current multigrid\n");
     return (CMDERRORCODE);
+  }
+
+  /* check options */
+  All = Class = FALSE;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      All = TRUE;
+      break;
+
+    case 'c' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("c %",NAMELENSTR,"[ -~]")),ClassName)!=1)
+      {
+        PrintErrorMessage('W',"npdisplay","no class specified\n");
+        UserWrite("enroled classes are:\n");
+        if (MGListNPClasses(theMG,UserWriteF))
+          return (CMDERRORCODE);
+        return (OKCODE);
+      }
+      Class = TRUE;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("npdisplay",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+  if (All && Class)
+  {
+    PrintErrorMessage('E',"npdisplay","a and c option are mutually exclusive");
+    return (CMDERRORCODE);
+  }
+  if (Class)
+  {
+    if (MGListNPsOfClass(theMG,ClassName,UserWriteF))
+      return (CMDERRORCODE);
+    return (OKCODE);
+  }
+  if (All)
+  {
+    if (MGListAllNPs(theMG,UserWriteF))
+      return (CMDERRORCODE);
+    return (OKCODE);
   }
 
   /* get NumProc */
@@ -9906,7 +9988,7 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
     theNumProc = GetCurrentNumProc();
     if (theNumProc == NULL)
     {
-      PrintErrorMessage('E',"npexecute","there is no current numerical procedure");
+      PrintErrorMessage('E',"npdisplay","there is no current numerical procedure");
       return (CMDERRORCODE);
     }
   }
@@ -9915,13 +9997,14 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
     theNumProc = GetNumProcByName (theMG,theNumProcName,"");
     if (theNumProc == NULL)
     {
-      PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
+      PrintErrorMessage('E',"npdisplay","cannot find specified numerical procedure");
       return (CMDERRORCODE);
     }
   }
+  UserWriteF("contents of num proc '%s':\n",ENVITEM_NAME(theNumProc));
   if ((err=((*theNumProc->Display)(theNumProc)))!=0)
   {
-    PrintErrorMessageF('E',"npexecute","execution of '%s' failed (error code %d)",theNumProcName,err);
+    PrintErrorMessageF('E',"npdisplay","execution of '%s' failed (error code %d)",theNumProcName,err);
     return (CMDERRORCODE);
   }
 
@@ -10331,9 +10414,9 @@ static INT SymListCommand (INT argc, char **argv)
 
 static INT SetCommandKeyCommand (INT argc, char **argv)
 {
-  INT i,j,odd;
+  INT opt,begin,i,j,odd,ShowBar;
   char *ChatPtr;
-  char CmdBuffer[INPUTBUFFERLEN];
+  char CmdBuffer[INPUTBUFFERLEN],comment[KEY_COMMENT_SIZE];
 
   /* check input */
   if (argc < 3 )
@@ -10345,18 +10428,40 @@ static INT SetCommandKeyCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
+  begin = 2;
+
+  /* comment given? */
+  comment[0] = '\0';
+  if (argv[begin][0]=='c')
+  {
+    if (sscanf(argv[begin],expandfmt(CONCAT3("c %",KEY_COMMENT_LEN_STR,"[ -~]")),comment)!=1)
+    {
+      PrintErrorMessage('E',"setkey","could not read comment");
+      return (PARAMERRORCODE);
+    }
+    begin++;
+  }
+
+  /* show bar before in keylist? */
+  ShowBar = FALSE;
+  if (argv[begin][0]=='-')
+  {
+    ShowBar = TRUE;
+    begin++;
+  }
+
   /* store input */
   ChatPtr = CmdBuffer;
-  for (i=2; i<argc; i++)
+  for (opt=begin; opt<argc; opt++)
   {
     *ChatPtr = '$';
     ChatPtr++;
-    strcpy(ChatPtr,argv[i]);
-    ChatPtr += strlen(argv[i]);
+    strcpy(ChatPtr,argv[opt]);
+    ChatPtr += strlen(argv[opt]);
   }
 
   /* check input */
-  if ((argv[2][0] != '\"') || (argv[argc-1][strlen(argv[argc-1])-1] != '\"'))
+  if ((argv[begin][0] != '\"') || (argv[argc-1][strlen(argv[argc-1])-1] != '\"'))
     return (CMDERRORCODE);
   j=0;
   for (i=0; i<strlen(CmdBuffer); i++)
@@ -10383,7 +10488,7 @@ static INT SetCommandKeyCommand (INT argc, char **argv)
   }
 
   /* create cmd key */
-  if (SetCmdKey(argv[1][0],CmdBuffer)!=0)
+  if (SetCmdKey(argv[1][0],comment,ShowBar,CmdBuffer)!=0)
   {
     PrintErrorMessage('E',"setkey","cannot create cmd key");
     return(CMDERRORCODE);
@@ -10463,9 +10568,19 @@ static INT DeleteCommandKeyCommand (INT argc, char **argv)
 
 static INT ListCommandKeysCommand (INT argc, char **argv)
 {
-  NO_OPTION_CHECK(argc,argv);
+  if (argc>2)
+  {
+    PrintErrorMessage('E',"setkey","max of one option exceeded");
+    return (PARAMERRORCODE);
+  }
+  if (argc==2)
+    if (argv[1][0]=='l')
+    {
+      ListCmdKeys(YES);
+      return (OKCODE);
+    }
 
-  ListCmdKeys();
+  ListCmdKeys(NO);
 
   return (OKCODE);
 }
