@@ -116,7 +116,8 @@ DDD_IF BorderVectorIF, BorderVectorSymmIF,
        VectorVIF, VectorVAllIF, VectorAllIF;
 DDD_IF VertexIF;
 #ifdef __THREEDIM__
-DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeAllIF;
+DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeVHIF,
+       EdgeSymmVHIF;
 #endif
 
 
@@ -783,7 +784,7 @@ static void ddd_IfInit (void)
   B[0] = PrioBorder; B[1] = PrioVGhost;
   B[2] = PrioVHGhost; B[3] = PrioHGhost;
   VectorAllIF = DDD_IFDefine(1,O,1,A,4,B);
-  DDD_IFSetName(VectorVAllIF, "VectorAllIF: Master->Border/VGhost/VHGhost/HGhost");
+  DDD_IFSetName(VectorAllIF, "VectorAllIF: Master->Border/VGhost/VHGhost/HGhost");
 
   /* define vertex interfaces */
   O[0] = TypeIVertex; O[1] = TypeBVertex;
@@ -813,10 +814,15 @@ static void ddd_IfInit (void)
   EdgeHIF = DDD_IFDefine(1,O,2,A,4,B);
   DDD_IFSetName(EdgeHIF, "EdgeHIF: Master/Border->Master/Border/PrioHGhost/PrioVHGhost");
 
+  A[0] = PrioMaster; A[1] = PrioBorder;
+  B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioVGhost; B[3] = PrioHGhost; B[4] = PrioVHGhost;
+  EdgeVHIF = DDD_IFDefine(1,O,2,A,5,B);
+  DDD_IFSetName(EdgeVHIF, "EdgeVHIF: Master/Border->Master/Border/VGhost/HGhost/VHGhost");
+
   A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioVGhost; A[3] = PrioHGhost; A[4] = PrioVHGhost;
   B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioVGhost; B[3] = PrioHGhost; B[4] = PrioVHGhost;
-  EdgeAllIF = DDD_IFDefine(1,O,5,A,5,B);
-  DDD_IFSetName(EdgeAllIF, "EdgeAllIF: All/All");
+  EdgeSymmVHIF = DDD_IFDefine(1,O,5,A,5,B);
+  DDD_IFSetName(EdgeSymmVHIF, "EdgeSymmVHIF: Master/Border/VGhost/HGhost/VHGhost");
 
         #endif
 }
