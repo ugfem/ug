@@ -364,7 +364,7 @@ static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
 }
 #endif
 
-static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
+static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
                           NODE *Nodes[MAX_SIDE_NODES], INT node, INT ncorners, INT Vec)
 {
   INT nobject,nident;
@@ -382,6 +382,10 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
         #endif
   /* return if already identified */
   if (NIDENT(theNode) == IDENT) return;
+
+  if (Vec)
+    if (GetVectorSize(theGrid,NODEVEC,(GEOM_OBJECT *)theNode) == 0)
+      Vec = 0;
 
   switch (NTYPE(theNode))
   {
@@ -513,7 +517,8 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
   return;
 }
 
-static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
+static INT IdentifyEdge (GRID *theGrid,
+                         ELEMENT *theElement, ELEMENT *theNeighbor,
                          NODE **SideNodes, INT ncorners, ELEMENT *Son,
                          INT SonSide, INT edgeofside, INT Vec)
 {
@@ -572,7 +577,8 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
   IdentObjectHdr[nobject++] = PARHDR(theEdge);
         #endif
   if (Vec)
-    IdentObjectHdr[nobject++] = PARHDR(EDVECTOR(theEdge));
+    if (GetVectorSize(theGrid,EDGEVEC,(GEOM_OBJECT *)theEdge) > 0)
+      IdentObjectHdr[nobject++] = PARHDR(EDVECTOR(theEdge));
 
         #ifdef __TWODIM__
   /* identify to proclist of neighbor */
@@ -604,8 +610,9 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
   else
     IdentHdr[nident++] = PARHDR(Nodes[1]);
 
-  Ident_FctPtr(IdentObjectHdr, nobject,
-               proclist+2, PrioGhost, IdentHdr, nident);
+  if (nobject > 0)
+    Ident_FctPtr(IdentObjectHdr, nobject,
+                 proclist+2, PrioGhost, IdentHdr, nident);
 
   /* debugging unlocks the edge */
         #ifdef Debug
@@ -644,7 +651,7 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
     ASSERT(theNode != NULL);
 
     /* identify new node including its vector and vertex        */
-    IdentifyNode(theNeighbor, theNode, SideNodes, j, ncorners,
+    IdentifyNode(theGrid,theNeighbor, theNode, SideNodes, j, ncorners,
                  VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC));
   }
 
@@ -671,7 +678,8 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
 
         /* identify the edge and vector */
         for (edgeofside=0; edgeofside<nedges; edgeofside++) {
-          IdentifyEdge(theElement,theNeighbor,SideNodes,ncorners,
+          IdentifyEdge(theGrid,
+                       theElement,theNeighbor,SideNodes,ncorners,
                        SonList[j],SonSides[j],edgeofside,
                        VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC));
         }

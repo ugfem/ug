@@ -58,7 +58,8 @@
   SETPRIO(n,prio);                                                 \
                                                                              \
   if (VEC_DEF_IN_OBJ_OF_GRID(g,NODEVEC))                           \
-    SETPRIO(NVECTOR(n),prio);
+    if (NVECTOR(n) != NULL)                                      \
+      SETPRIO(NVECTOR(n),prio);
 
 #ifdef __TWODIM__
 #define PRIO_SET_EDGE(e,prio)
@@ -73,7 +74,8 @@
                                                                              \
   /* set priority of edge vector */                                \
   if (VEC_DEF_IN_OBJ_OF_GRID(g,EDGEVEC))                           \
-    SETPRIO(EDVECTOR(e),prio);
+    if (EDVECTOR(e) != NULL)                                     \
+      SETPRIO(EDVECTOR(e),prio);
 
 #define CHECK_OBJECT_PRIO(o,prio,master,ghost,id,s)                          \
   if (USED(o)==1 && ! master (o))                                          \

@@ -976,14 +976,16 @@ void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
   if (dddctrl.nodeData)
   {
     vec = NVECTOR(theNode);
-    Size = sizeof(VECTOR)-sizeof(DOUBLE)
-           +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
+    if (vec != NULL) {
+      Size = sizeof(VECTOR)-sizeof(DOUBLE)
+             +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 
-    PRINTDEBUG(dddif,2,(PFMT " NodeXferCopy(): n=" ID_FMTX
-                        " Xfer NODEVEC=" VINDEX_FMTX " size=%d\n",
-                        me,ID_PRTX(theNode),VINDEX_PRTX(vec),Size))
+      PRINTDEBUG(dddif,2,(PFMT " NodeXferCopy(): n=" ID_FMTX
+                          " Xfer NODEVEC=" VINDEX_FMTX " size=%d\n",
+                          me,ID_PRTX(theNode),VINDEX_PRTX(vec),Size))
 
-    DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
+      DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
+    }
   }
 }
 
@@ -1257,12 +1259,14 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
       if (dddctrl.edgeData) {
         VECTOR *vec = EDVECTOR(edge);
 
-        Size = sizeof(VECTOR)-sizeof(DOUBLE)
-               +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
-        PRINTDEBUG(dddif,3,(PFMT " ElementXferCopy():  e=" EID_FMTX
-                            " EDGEVEC=" VINDEX_FMTX " size=%d\n",
-                            me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
-        DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
+        if (vec != NULL) {
+          Size = sizeof(VECTOR)-sizeof(DOUBLE)
+                 +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
+          PRINTDEBUG(dddif,3,(PFMT " ElementXferCopy():  e=" EID_FMTX
+                              " EDGEVEC=" VINDEX_FMTX " size=%d\n",
+                              me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
+          DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
+        }
       }
     }
   }
@@ -1273,14 +1277,17 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
   if (dddctrl.elemData)
   {
     vec = EVECTOR(pe);
-    Size = sizeof(VECTOR)-sizeof(DOUBLE)
-           +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 
-    PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy(): e=" EID_FMTX
-                        " ELEMVEC=" VINDEX_FMTX " size=%d\n",
-                        me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
+    if (vec != NULL) {
+      Size = sizeof(VECTOR)-sizeof(DOUBLE)
+             +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 
-    DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
+      PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy(): e=" EID_FMTX
+                          " ELEMVEC=" VINDEX_FMTX " size=%d\n",
+                          me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
+
+      DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
+    }
   }
 
   /* copy sidevectors */
@@ -1289,13 +1296,16 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
     for (i=0; i<SIDES_OF_ELEM(pe); i++)
     {
       vec = SVECTOR(pe,i);
-      Size = sizeof(VECTOR)-sizeof(DOUBLE)
-             +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 
-      PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy(): e=" EID_FMTX
-                          " SIDEVEC=" VINDEX_FMTX " size=%d\n",
-                          me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
-      DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
+      if (vec != NULL) {
+        Size = sizeof(VECTOR)-sizeof(DOUBLE)
+               +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
+
+        PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy(): e=" EID_FMTX
+                            " SIDEVEC=" VINDEX_FMTX " size=%d\n",
+                            me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
+        DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
+      }
     }
   }
 }
@@ -1468,10 +1478,11 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
     /* copy edge vector pointer */
     if (newness == XFER_NEW)
       if (dddctrl.edgeData)
-      {
-        EDVECTOR(enew) = EDVECTOR(ecopy);
-        VOBJECT(EDVECTOR(enew)) = (void *)enew;
-      }
+        if (GetVectorSize(theGrid,EDGEVEC,(GEOM_OBJECT *)enew) > 0)
+        {
+          EDVECTOR(enew) = EDVECTOR(ecopy);
+          VOBJECT(EDVECTOR(enew)) = (GEOM_OBJECT *)enew;
+        }
   }
 }
 #endif /* end __TWODIM__ */
