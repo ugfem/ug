@@ -241,16 +241,18 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
       DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
     }
   }
-  else
-  {
-    MATRIX *theMatrix,*next;
+  /*
+          else
+          {
+                  MATRIX *theMatrix,*next;
 
-    for (theMatrix=VSTART(pv); theMatrix!=NULL; theMatrix = next) {
-      next = MNEXT(theMatrix);
-      if (DisposeConnection(theGrid,MMYCON(theMatrix)))
-        ASSERT(0);
-    }
-  }
+                  for (theMatrix=VSTART(pv); theMatrix!=NULL; theMatrix = next) {
+                          next = MNEXT(theMatrix);
+                          if (DisposeConnection(theGrid,MMYCON(theMatrix)))
+                              ASSERT(0);
+                  }
+          }
+   */
 }
 
 void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
