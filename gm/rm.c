@@ -1466,7 +1466,7 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
     case (TRIANGLE) :
       switch (rule)
       {
-      case UNREFINE :
+      case COARSE :
         SETCOARSEN(theElement,1);
         SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
@@ -1527,7 +1527,7 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
     case (QUADRILATERAL) :
       switch (rule)
       {
-      case UNREFINE :
+      case COARSE :
         SETCOARSEN(theElement,1);
         SETMARKCLASS(theElement,0);
         SETMARK(theElement,NO_REFINEMENT);
@@ -1578,7 +1578,7 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
     case (TETRAHEDRON) :
       switch(rule)
       {
-      case (UNREFINE) :
+      case (COARSE) :
         SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         SETCOARSEN(theElement,1);
@@ -1603,7 +1603,7 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
     case (PYRAMID) :
       switch(rule)
       {
-      case (UNREFINE) :
+      case (COARSE) :
         SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         SETCOARSEN(theElement,1);
@@ -1628,7 +1628,7 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
     case (HEXAHEDRON) :
       switch(rule)
       {
-      case (UNREFINE) :
+      case (COARSE) :
         SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         SETCOARSEN(theElement,1);
@@ -1848,7 +1848,7 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
   {
   case NO_REFINEMENT :
     *rule=NO_REFINEMENT;
-    if (COARSEN(theElement)) *rule = UNREFINE;
+    if (COARSEN(theElement)) *rule = COARSE;
     break;
   case COPY : *rule=COPY; break;
   default : *rule=NO_REFINEMENT;  break;

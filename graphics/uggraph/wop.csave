@@ -4745,7 +4745,7 @@ static DRAWINGOBJ * InvertRefinementMark2D (ELEMENT *theElement, DRAWINGOBJ *the
     strcpy(DO_2cp(theDO),"COPY"); DO_inc_str(theDO);
     break;
 
-  case UNREFINE :
+  case COARSE :
     DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
     DO_2l(theDO) = 0; DO_inc(theDO);
     DO_2c(theDO) = TEXT_INVERSE; DO_inc(theDO)

@@ -177,7 +177,7 @@ static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
  {"bi_2t1", BISECTION_2_T1},
  {"bi_2t2", BISECTION_2_T2},
  {"bi_3",       BISECTION_3},
- {"coarse", UNREFINE}};
+ {"coarse", COARSE}};
 
 static clock_t Time0;                                   /* time offset for readclock		*/
 
