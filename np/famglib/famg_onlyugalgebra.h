@@ -42,12 +42,11 @@ extern "C"
 //
 // vector stuff
 //
-class FAMGVectorEntryRef; // forward declaration
+class FAMGVectorEntry; // forward declaration
+typedef FAMGVectorEntry FAMGVectorEntryRef;             // synonym; for compatibility only
 
 class FAMGVectorEntry
 {
-  friend class FAMGVectorEntryRef;
-
 public:
   FAMGVectorEntry() : vp(NULL) {}
   FAMGVectorEntry( const FAMGVectorEntry & ve ) : vp(ve.vp) {}
@@ -65,7 +64,9 @@ public:
   VECTOR *myvector() const {
     return vp;
   }
-  FAMGVectorEntryRef* GetPointer() const;
+  FAMGVectorEntryRef* GetPointer() const {
+    return (FAMGVectorEntryRef*)this;
+  }
   int GetIndex() const {
     return VINDEX(vp);
   }
@@ -73,18 +74,6 @@ public:
 private:
   VECTOR *vp;
 };
-
-class FAMGVectorEntryRef : public FAMGVectorEntry       // only for compatibility; don't use this class!
-{
-public:
-  VECTOR *myvector() {
-    return vp;
-  }
-};
-
-inline FAMGVectorEntryRef* FAMGVectorEntry::GetPointer() const {
-  return (FAMGVectorEntryRef*)this;
-}
 
 class FAMGGridVector
 {
@@ -163,13 +152,13 @@ public:
   FAMGVector& operator*=(double scale) {Scale(*this,scale); return *this;}
 
   int is_valid( const FAMGVectorEntry& ve ) const {
-    return GetGridVector().is_valid(ve);
+    return ve.myvector()!=NULL;
   }
   int is_end( const FAMGVectorEntry& ve ) const {
-    return GetGridVector().is_end(ve);
+    return ve.myvector()==NULL;
   }
   int is_beforefirst( const FAMGVectorEntry& ve ) {
-    return GetGridVector().is_beforefirst(ve);
+    return ve.myvector()==NULL;
   }
   FAMGVectorEntry firstEntry(const FAMGVectorEntry& ve) const {
     return GetGridVector().firstEntry();
@@ -178,20 +167,20 @@ public:
     return GetGridVector().lastEntry();
   }
   FAMGVectorEntry endEntry() const {
-    return GetGridVector().endEntry();
+    return (FAMGVectorEntry)NULL;
   }
 
   int IsCG( const FAMGVectorEntry& ve ) const {
-    return GetGridVector().IsCG(ve);
+    return VCCOARSE(ve.myvector());
   }
   int IsFG( const FAMGVectorEntry& ve ) const {
-    return GetGridVector().IsFG(ve);
+    return !IsCG(ve);
   }
   void SetCG( const FAMGVectorEntry& ve ) const {
-    GetGridVector().SetCG(ve);
+    SETVCCOARSE(ve.myvector(),1);
   }
   void SetFG( const FAMGVectorEntry& ve ) const {
-    GetGridVector().SetFG(ve);
+    SETVCCOARSE(ve.myvector(),0);
   }
 
   double norm() const {
@@ -285,6 +274,7 @@ private:
 class FAMGMatrixEntry
 {
   friend class FAMGMatrixAlg;
+  friend class FAMGMatrixIter;
 
 public:
   FAMGMatrixEntry() : matp(NULL) {}
@@ -352,7 +342,7 @@ public:
   double GetAdjData( const FAMGMatrixEntry& me ) const {
     return MVALUE(MADJ(me.GetMyMatrix()),GetComp());
   }
-
+  void AddEntry(double mval, const FAMGVectorEntry &row, const FAMGVectorEntry &col);
   int ConstructGalerkinMatrix( const FAMGGrid &fg ) {
     return ::ConstructGalerkinMatrix(*this, fg);
   }
@@ -366,7 +356,6 @@ public:
   MATDATA_DESC *GetMatDesc() const {
     return matdesc;
   }
-  void AddEntry(double mval, const FAMGVectorEntry &row, const FAMGVectorEntry &col);
 
 private:
   int n;                        // number of vectors
@@ -388,7 +377,7 @@ public:
   FAMGMatrixIter( const FAMGMatrixAlg & m, const FAMGVectorEntry & row_ve) : myMatrix(m), myrow_ve(row_ve), current_me(m.firstEntry(row_ve)) {}
 
   int operator() ( FAMGMatrixEntry& me ) {
-    int res = !myMatrix.is_end(myrow_ve,me=current_me); if(res) ++current_me;return res;
+    me=current_me; int res = (current_me.GetMyMatrix()!=NULL); if(res) ++current_me;return res;
   }
   void reset() {
     current_me = myMatrix.firstEntry(myrow_ve);

@@ -557,7 +557,7 @@ inline int FAMGugMatrix::ConstructGalerkinMatrix( const FAMGGrid &fg )
 //
 // stuff for compatibility
 //
-typedef class FAMGVectorEntryRef FAMGugVectorEntryRef;
+typedef FAMGVectorEntryRef FAMGugVectorEntryRef;
 typedef class FAMGVectorEntry FAMGugVectorEntry;
 typedef class FAMGGridVector FAMGugGridVector;
 typedef class FAMGVector FAMGugVector;
