@@ -41,6 +41,7 @@
 #include "gginterface.h"
 #include "general.h"
 #include "debug.h"
+#include "scan.h"
 
 #include "gg3d.h"
 
@@ -1139,14 +1140,14 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
 {
   NODE *theNode;
   VERTEX *theVertex;
-  INT sid,i,j, k, nodelist[6], Id[6], bnds_flag[6], k1, k2;
+  INT Scaling,sid,i,j, k, nodelist[6], Id[6], bnds_flag[6], k1, k2;
   char rulefilename[128];
   DOUBLE global[3], newglobal[3], det, vec[3], a1, a2, a3, n1[3], n2[3], n3[3], n[3], m[3], lam1, lam2, lam3, scal;
   DOUBLE T[3][3], T1[3][3], Diag[3][3], dummy[3][3];
   char buff[3], name[6];
   FILE *stream;
   ELEMENT *theElement;
-  char buffer[512];
+  char buffer[512],scale_name[128];
 
   GG3_MarkKey = MG_MARK_KEY(theMG);
   SAVE = save;
@@ -1223,19 +1224,35 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
 
   Allocate_Mem(mesh, from, to);
   /* triangulate every subdomain */
+  if (ReadArgvChar("Scaling",scale_name,argc,argv)) Scaling=0;
+  else Scaling=1;
   for (sid=from; sid<=to; sid++)
   {
     subdomain = sid;
 
-    sprintf(buffer,"%s%d","vx",(int)sid);
-    if (ReadArgvDOUBLE(buffer,&a1,argc,argv))
+    if (Scaling)
+    {
+      sprintf(buffer,"%s%s%d",scale_name,"X",(int)sid);
+      if (!GetStringValue(buffer,&a1))
+      {
+        sprintf(buffer,"%s%s%d",scale_name,"Y",(int)sid);
+        if (GetStringValue(buffer,&a2)) assert(0);
+        sprintf(buffer,"%s%s%d",scale_name,"Z",(int)sid);
+        if (GetStringValue(buffer,&a3)) assert(0);
+      }
+      else
+      {
+        a1 = 0.0;
+        a2 = 0.0;
+        a3 = 1.0;
+      }
+    }
+    else
+    {
       a1 = 0.0;
-    sprintf(buffer,"%s%d","vy",(int)sid);
-    if (ReadArgvDOUBLE(buffer,&a2,argc,argv))
       a2 = 0.0;
-    sprintf(buffer,"%s%d","vz",(int)sid);
-    if (ReadArgvDOUBLE(buffer,&a3,argc,argv))
       a3 = 1.0;
+    }
     vec[0] = a1;
     vec[1] = a2;
     vec[2] = a3;
@@ -1353,22 +1370,46 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
         return(1);
     }
 
-    name[0] = 'v';
-    name[1] = 'o';
-    name[2] = 'l';
-    sprintf(buff,"%d",subdomain);
-    name[3] = buff[0];
-    name[4] = buff[1];
-    name[5] = buff[2];
-
-    stream = fopen(name,"r+");
-    if (stream==NULL)
+    if(SAVE)
     {
-      fclose(stream);
-      printf("%s %d %s\n", "Subdomain ", subdomain, "not triangulated, do now");
+      name[0] = 'v';
+      name[1] = 'o';
+      name[2] = 'l';
+      sprintf(buff,"%d",subdomain);
+      name[3] = buff[0];
+      name[4] = buff[1];
+      name[5] = buff[2];
 
-      if(SAVE)
-        Write_SurfaceMesh(mesh, theMG);
+      stream = fopen(name,"r+");
+      if (stream==NULL)
+      {
+        fclose(stream);
+        printf("%s %d %s\n", "Subdomain ", subdomain, "not triangulated, do now");
+
+        if(SAVE)
+          Write_SurfaceMesh(mesh, theMG);
+        if(Check_Volume(mesh, sid))
+        {
+          UserWriteF("%s %d\n", "Surfaces identical in subdomain", sid);
+          UserWriteF("%s\n", "Check Surfaces");
+          return(1);
+        }
+                                #ifdef _NETGEN
+        if (StartNetgen(h,smooth,display, prism)) return(1);
+                                #endif
+        if(SAVE)
+          Write_VolumeMesh(mesh, theMG);
+      }
+      else
+      {
+        fclose(stream);
+        if(GG3_DEBUG) printf("%s %d\n", "Read Subdomain ", subdomain);
+        Read_VolumeMesh(mesh, theMG, GG3_MarkKey);
+      }
+    }
+    else
+    {
+      printf("%s %d %s\n", "Subdomain ", subdomain, "not triangulated, do now");
       if(Check_Volume(mesh, sid))
       {
         UserWriteF("%s %d\n", "Surfaces identical in subdomain", sid);
@@ -1378,14 +1419,6 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
                         #ifdef _NETGEN
       if (StartNetgen(h,smooth,display, prism)) return(1);
                         #endif
-      if(SAVE)
-        Write_VolumeMesh(mesh, theMG);
-    }
-    else
-    {
-      fclose(stream);
-      if(GG3_DEBUG) printf("%s %d\n", "Read Subdomain ", subdomain);
-      Read_VolumeMesh(mesh, theMG, GG3_MarkKey);
     }
     nb_inner_points = nb_inner_points + nInnP[subdomain];
   }
