@@ -1,0 +1,705 @@
+#!/usr/bin/perl -w #-d
+# $Header$
+# usage: ugexo2ng <exo2filename> <lgmfilename> <ngfilename>
+# 		<exo2filename> - exodus II file with volume meshing and nodeset/sideset 
+#					 assoziativity info
+#       <lgmfilename> - lgm file for which ng file will be created
+#       <ngfilename> - ng file to create
+
+# basic data types
+$num = '[3-5]';
+$int = '\d+';
+#$sint = '[+-]?\d+';
+$real = '[+-]?\d+(?:\.\d+)?';   # (?:\.\d+)? means: optional .nnnn part
+$exp = '[+-]?\d+(?:\.\d+(?:e[+-]?\d+)?)?';
+$string = '[a-z"_]\w*';
+
+%cdf = ();
+
+if ($#ARGV != 2)
+{
+	print "usage: ugexo2ng <exo2filename> <lgmfilename> <ngfilename>\n";
+ 	exit;
+}
+
+$exo2 = "$ARGV[0]";
+$lgm = "$ARGV[1]";
+$ng = "$ARGV[2]";
+
+
+print "processing $exo2\n";
+
+sub	scan_nsets
+{
+	my $nsets = $_[0];
+
+#	print "nsets: $nsets\n";
+	$nns = 0;
+	$ready = 0;
+	LOOP1: while (1)
+	{
+		if ($nns == $nsets) { last LOOP1; }
+		LOOP: while(<EXO2>)
+		{
+			if ( /^\s($string)/ )
+			{
+#				print "scan_node_sets: string $1\n";
+				$record = $1;
+				$i = 0;
+				$found = 0;
+			}
+			for $_ (split)
+			{
+#				if ( /($exp)/  || /($exp),/ ) { printf "$record %s\n", $1; }
+				if ( 
+					/($exp)/ || /($exp),/   ||
+					/($real)/ || /($real),/ ||
+					/($int)/  || /($int),/ || 
+ 					/($string)/ || /($string),/
+				   )
+				{
+#   					print "scan_node_sets: record $record $i $1\n";
+					$cdf{$record}{$i} = $1; 
+
+					$i++;
+				}
+ 				elsif ( /=/ ) { $found++; }
+				elsif ( /;/ ) { $nns++; last LOOP; }
+				elsif ( /}/ ) { $ready = 1; last LOOP; }
+				else { printf "error %s\n",$_;  print "ERROR while reading node_sets\n"; exit;}
+			}
+		}
+		if ($ready == 1) { last LOOP1; }
+#		print "scan_node_sets: $nns\n";
+	}
+}
+
+sub scan_dimension
+{
+	print "found dimensions block\n";
+
+	$token = 0; 
+	LOOP: while(<EXO2>)
+	{
+		if ( /\s*num_dim\s*=\s*($int)\s*;/ ) { $cdf{num_dim} = $1; $token++;}
+		if ( /\s*num_nodes\s*=\s*($int)\s*;/ ) { $cdf{num_nodes} = $1; $token++;}
+		if ( /\s*num_node_sets\s*=\s*($int)\s*;/ )
+		{
+			$cdf{num_node_sets} = $1; 
+ 			scan_nsets($cdf{num_node_sets});
+			$token++;
+#			print "scan_dimension: $token\n";
+		}
+		if ( /\s*num_el_blk\s*=\s*($int)\s*;/ )
+		{
+			$cdf{num_el_blk} = $1; 
+ 			scan_nsets(2*$cdf{num_el_blk});
+			$token++;
+#			print "scan_dimension: $token\n";
+		}
+		if ( /\s*num_side_sets\s*=\s*($int)\s*;/ )
+		{
+			$cdf{num_side_sets} = $1; 
+ 			scan_nsets(2*$cdf{num_side_sets});
+			$token++;
+#			print "scan_dimension: $token\n";
+		}
+		if ($token == 5) { last LOOP; }
+	}
+	if ($token != 5) { printf "ERROR reading dimensions block\n"; exit; }
+
+	return(0);
+}
+
+
+sub scan_variables
+{
+	print "found variables block\n";
+
+	LOOP: while(<EXO2>)
+	{
+		if ( /\s*num_dim\s*=\s*($int)\s*;/ ) { $cdf{num_dim} = $1; }
+		else {last LOOP; }
+	}
+
+	return(0);
+}
+
+sub scan_globalattributes
+{
+	print "found attributes block\n";
+
+	LOOP: while(<EXO2>)
+	{
+		if ( /\s*num_dim\s*=\s*($int)\s*;/ ) { $cdf{num_dim} = $1; }
+		else {last LOOP; }
+	}
+
+	return(0);
+}
+
+sub scan_coord
+{
+	$i = 0;
+	$dim = 0;
+	LOOP: while(<EXO2>)
+	{
+#		@coordline = split;
+#		print "$_\n";
+		for $_ (split)
+		{
+#			print "$cdf{num_nodes} $i\n";
+			if ( /($real),/ )
+			{
+				$cdf{coord}{$i}{$dim} = $1; $i++;
+				if ($i == $cdf{num_nodes})
+				{
+					$i = 0; $dim++;
+				}
+			}
+			elsif ( /($real)/ )
+			{
+				$cdf{coord}{$i}{$dim} = $1; $i++; $dim++;
+			}
+			elsif ( /;/ ) 
+			{
+				if ($i != $cdf{num_nodes})
+				{ print "ERROR: scaned coord=$i but num_nodes=$cdf{num_nodes}\n"; exit;}
+				if ($dim != $cdf{num_dim})
+				{ print "ERROR: scaned dim=$i but num_dim=$cdf{num_dim}\n"; exit;}
+				last LOOP;
+			} 
+			else { print "ERROR while reading coord\n";}
+		}
+	}
+}
+
+sub scan_node_sets
+{
+	# skip ns_status record
+	LOOP2: while(<EXO2>)
+	{
+		if ( /;/ ) { last LOOP2; }
+	}
+
+	# read ns_prop1 record +  n node_ns/dist_face_ns records
+ 	scan_nsets(2*$cdf{num_node_sets}+1);
+}
+
+sub scan_data
+{
+	print "found data block\n";
+
+	$found = 0;
+	LOOP: while(<EXO2>)
+	{
+		if ( /\s*coord\s*=\s*/ ) { scan_coord(); $found++}
+		elsif ( /\s*ns_status\s*=\s*/ ) { scan_node_sets(); $found++}
+		elsif ($found == 2) {last LOOP; }
+	}
+
+	return(0);
+}
+
+sub scan_modeldata ()
+{
+	$nunits = 0;
+	$cdf{unitsrev}{0} = 0;
+
+	LOOP: while(<EXO2>)
+	{
+		if ( /Volume\sEntity\s*\(Id\s=\s($int)\)/ )
+		{
+#			printf "unit %d material%d\n",$1,$1;
+			$cdf{units}{$nunits} = $1;
+			$cdf{unitsrev}{$1} = $nunits+1;
+			$nunits++;
+		}
+		if ( /Surface\sEntity\s*\(Id\s=\s($int)\)/ )
+		{
+			$surface = $1;
+			$nl = 0;
+			LOOP1: while(<EXO2>)
+			{
+				$surfacename = sprintf "surface%d",$surface; 
+				if ( /In\sVolume\s*($int)\./ )
+				{
+# 					printf "surface %d left=0 right=%d\n",$surface,$1;
+					$cdf{$surfacename}{left} = 0;
+					$cdf{$surfacename}{right} = $1;
+					last LOOP1;
+				}
+				elsif ( /In\sVolume\s*($int),\s*Volume\s*($int)\./ )
+				{
+# 					printf "surface %d left=%d right=%d\n",$surface,$1,$2;
+					$cdf{$surfacename}{left} = $1;
+					$cdf{$surfacename}{right} = $2;
+					last LOOP1;
+				}
+				elsif ( /\s*Curve\s*($int)\s*($int)/ )
+				{
+					$cdf{$surfacename}{lines}{$nl} = $2;
+					if ( $1 != $2 ) { printf "ERROR curve name $1 differs from its id $2\n"; }
+					$nl++;
+				}
+				else { printf "ERROR: left/right or curve information missing for surface %d\n",$surface; exit;}
+			}
+			$cdf{$surfacename}{lines}{nlines} = $nl;
+		}
+	}
+
+	$cdf{nunits} = $nunits;
+
+}
+
+# read exodus II format
+sub read_exo2_ng()
+{
+	open(EXO2, "<$exo2") || die "can't open $exo2\n";
+
+	BEGIN: while(<EXO2>)
+	{
+		last BEGIN if ( /^netcdf\s\w+\s\{/ ); 
+		print "$exo2 has no valid netcdf file format!\n";
+		exit;
+	}
+
+	$end = 0;
+	END: while(<EXO2>)
+	{
+		if ( /dimensions:/ ) { scan_dimension(); }
+		if ( /variables:/ ) { scan_variables(); }
+		if ( /global\sattributes:/ ) { scan_globalattributes(); }
+#		if ( /data:/) { scan_data(); }
+ 		if ( /data:/) { print "found data block\n"; scan_nsets(-1); }
+		if ( /\}/ ) { $end = 1; last END; }
+	}
+
+	if ($end == 0) { print "file $exo2 not complete!!\n"} 
+
+	close(EXO2);
+
+	return(0);
+}
+
+
+
+sub write_domain
+{
+	print NG "# Domain-Info\n";
+	print NG "name = default_name\n";
+	print NG "problemname = default_problem\n";
+	print NG "convex = 1\n";
+	print NG "\n";
+}
+
+sub write_unit
+{
+	print NG "# Unit-Info\n";
+	
+	LOOP: foreach $nus (0 .. $cdf{nunits}-1)
+	{
+		printf NG "unit %d MATERIAL%d\n",$nus+1, $nus+1;
+	}
+
+	print NG "\n";
+}
+
+sub write_line
+{
+	print NG "# Line-Info\n";
+	$nl = 0;
+	foreach $nns (1 .. $cdf{num_node_sets})
+	{
+#		print "$cdf{ns_prop1}{$nns}\n";
+		if ( $cdf{ns_prop1}{$nns} =~/\A4($int)/ )
+		{
+			$linestring = $1;
+#			print "match $cdf{ns_prop1}{$nns}\n"; 
+			printf NG "line %d:",$nl;
+			$ns = sprintf "node_ns%d",$nns; 
+			$numns = sprintf "num_nod_ns%d",$nns; 
+# 			print "$ns $numns $cdf{$numns}{1}\n";
+
+ 			print NG " points:";
+			$numnp = sprintf "node_ns%d",$nns; 
+			foreach $np (1 .. $cdf{$numns}{1})
+			{
+				printf NG " %d",$cdf{$numnp}{$np}-1;
+			}
+			print NG ";\n";
+			
+			$line = sprintf "%d",$linestring; 
+			$cdf{linemap}{$line} = $nl;
+#			printf "new line %s = %d %d\n", $line, $cdf{linemap}{$line}, $nl;
+			$nl++;
+		}
+	}
+	print NG "\n";
+}
+
+sub write_surflines
+{
+	my $surfacename = $_[0];
+
+	foreach $nns (0 .. $cdf{$surfacename}{lines}{nlines}-1)
+	{
+#		printf "line id %d\n", $cdf{$surfacename}{lines}{$nns};
+#		$test = $cdf{linemap}{$cdf{$surfacename}{lines}{$nns}}; 
+#		printf NG " %d", $test;
+		printf NG " %d", $cdf{linemap}{$cdf{$surfacename}{lines}{$nns}}; 
+	}
+}
+
+sub search_lines
+{
+	my $spoints = $_[0];
+	my $nsp = $_[1];
+
+#	printf "%s=%s",$spoints,$cdf{$spoints}{0};
+
+	$nl = 0;
+	LOOP: foreach $nns (1 .. $cdf{num_node_sets})
+	{
+		if ( $cdf{ns_prop1}{$nns} =~/\A4($int)/ )
+		{
+			$found = 1;
+			$ns = sprintf "node_ns%d",$nns; 
+			$numns = sprintf "num_nod_ns%d",$nns; 
+
+			$numnp = sprintf "node_ns%d",$nns; 
+			LOOP1: foreach $np (1 .. $cdf{$numns}{1})
+			{
+				foreach $ns (1 .. $cdf{$nsp}{1})
+				{
+					if ( $cdf{$spoints}{$ns} == $cdf{$numnp}{$np} ) { next LOOP1;}
+				}
+				$found = 0;
+				last LOOP1;
+			}
+			if ($found == 1)
+			{
+# 				if ($nl == 74) { print "ERROR line $nl added to surface $spoints\n"; }
+				printf NG " %d",$nl; 
+			}
+			$nl++;
+		}
+	}
+}
+
+sub write_surf
+{
+	print NG "# Surface-Info\n";
+	$nsurf = 0;
+	foreach $nns (1 .. $cdf{num_node_sets})
+	{
+#		print "$cdf{ns_prop1}{$nns}\n";
+		if ( $cdf{ns_prop1}{$nns} =~/\A3($int)/ )
+		{
+			$surf = $1;
+#			printf "writing surface $1 ";
+#			print "match $cdf{ns_prop1}{$nns}\n"; 
+			printf NG "surface %d:",$nsurf;
+			$nsurf++;
+
+			$surfacename = sprintf "surface%d",$surf;
+  			printf NG " left=%d; right=%d;",
+  				$cdf{unitsrev}{$cdf{$surfacename}{left}},
+  				$cdf{unitsrev}{$cdf{$surfacename}{right}};
+			
+			$ns = sprintf "node_ns%d",$nns; 
+			$numns = sprintf "num_nod_ns%d",$nns; 
+# 			print "$ns $numns $cdf{$numns}{1}\n";
+
+ 			print NG " points:";
+			$numnp = sprintf "node_ns%d",$nns; 
+			foreach $np (1 .. $cdf{$numns}{1})
+			{
+				printf NG " %d",$cdf{$numnp}{$np}-1;
+			}
+			print NG ";";
+
+ 			print NG " lines:";
+			write_surflines($surfacename);
+#			search_lines($numnp,$numns);
+			print NG ";";
+
+ 			print NG " triangles:";
+			# index of surface $1 in eb_prop1
+			$ncon = 0;
+			LOOP: foreach $nconnect (1 .. $cdf{num_el_blk})
+			{
+				if ( $cdf{eb_prop1}{$nconnect} =~/\A3($int)/ )
+				{
+					if ($surf == $1) { $ncon = $nconnect; last LOOP;}
+				}
+			}
+			# number of triangles in block $1
+			$numnt = sprintf "num_el_in_blk%d",$ncon; 
+			# hash of triangles
+			$connect = sprintf "connect%d",$ncon; 
+#			print "$numnt;\n";
+			# print triangles
+#			printf "ERROR %s %d\n", $numnt, $cdf{$numnt}{1};
+			foreach $nt (1 .. $cdf{$numnt}{1})
+			{
+				printf NG " %d", $cdf{$connect}{3*$nt-2}-1;
+				printf NG " %d", $cdf{$connect}{3*$nt-1}-1;
+				printf NG " %d;", $cdf{$connect}{3*$nt-0}-1;
+			}
+			print NG "\n";
+		}
+	}
+	print NG "\n";
+}
+
+sub	bnd_node
+{
+	LOOP: foreach $nns (1 .. $cdf{num_node_sets})
+	{
+#		print "$cdf{ns_prop1}{$nns}\n";
+		if ( $cdf{ns_prop1}{$nns} =~/\A($num)($int)/ )
+		{
+			$type = $1;
+			$id = sprintf "%d",$2;
+#			printf "%d\n", $cdf{ns_prop1}{$nns};
+			$ns = sprintf "node_ns%d",$nns; 
+			$numns = sprintf "num_nod_ns%d",$nns; 
+# 			print "$ns $numns $cdf{$numns}{1}\n";
+
+# 			print " bndcoord:";
+			$numnp = sprintf "node_ns%d",$nns; 
+			foreach $np (1 .. $cdf{$numns}{1})
+			{
+				$node = $cdf{$numnp}{$np}; 
+				$cdf{bndcoord}{$node}{bnd} = 1;
+
+				# node on surface
+				if ($type == 3)
+				{
+					if (!defined($cdf{bndcoord}{$node}{nsurf}))
+					{
+						$cdf{bndcoord}{$node}{nsurf} = 0;
+					}
+					$cdf{bndcoord}{$node}{surf}
+						{$cdf{bndcoord}{$node}{nsurf}} = $id;
+					$cdf{bndcoord}{$node}{nsurf}++;
+				}
+
+				# node on line
+				if ($type == 4)
+				{
+					if (!defined($cdf{bndcoord}{$node}{nline}))
+					{
+						$cdf{bndcoord}{$node}{nline} = 0;
+					}
+					$cdf{bndcoord}{$node}{line}
+						{$cdf{bndcoord}{$node}{nline}} = $id;
+					$cdf{bndcoord}{$node}{nline}++;
+				}
+			}
+		}
+	}	
+}
+
+sub bnd_elem
+{
+	foreach $nns (1 .. $cdf{num_side_sets})
+	{
+#		print "$cdf{ss_prop1}{$nns}\n";
+		if ( $cdf{ss_prop1}{$nns} =~/\A3($int)/ )
+		{
+#			printf "%d\n", $cdf{ss_prop1}{$nns};
+			$ess = sprintf "elem_ss%d",$nns; 
+			$sss = sprintf "side_ss%d",$nns; 
+			$numss = sprintf "num_side_ss%d",$nns; 
+# 			print "$ess $sss $cdf{$numss}{1}\n";
+
+			foreach $ns (1 .. $cdf{$numss}{1})
+			{
+				$elem = $cdf{$ess}{$ns};
+				if (!defined($cdf{bnd_elem_nside}{$elem}))
+				{
+					$cdf{bnd_elem_nside}{$elem} = 0;
+				}
+				$nside = $cdf{bnd_elem_nside}{$elem};
+				$cdf{bnd_elem_side}{$elem}{$nside} = $cdf{$sss}{$ns};
+				$cdf{bnd_elem_nside}{$elem}++;
+			}
+		}
+	}	
+}
+
+sub construct_bnddata
+{
+	bnd_node();
+	bnd_elem();
+}
+
+sub write_nodes
+{
+	print NG "# Points\n";
+#	printf "%d\n",$cdf{num_nodes};
+#	printf "%s %s\n", $cdf{coord}{0},$cdf{coord}{1};
+#	printf "%s\n", $cdf{coord};
+	foreach $nc (1 .. $cdf{num_nodes})
+	{
+#    		printf "%lf, %lf, %lf\n",$cdf{coord}{$nc-1},$cdf{coord}{2*$nc-1},$cdf{coord}{3*$nc-1};
+			if (defined($cdf{bndcoord}{$nc}{bnd}))
+			{
+    			printf NG "B %s %s %s;\n",
+					$cdf{coord}{$nc},$cdf{coord}{$nc+$cdf{num_nodes}},$cdf{coord}{$nc+2*$cdf{num_nodes}}; 
+
+				if (defined($cdf{bndcoord}{$nc}{nsurf}))
+				{
+					foreach $ns (0 .. $cdf{bndcoord}{$nc}{nsurf}-1)
+					{
+						printf NG " S %d",$cdf{bndcoord}{$nc}{surf}{$ns};
+    					printf NG "\n";
+					}
+				}
+				if (defined($cdf{bndcoord}{$nc}{nline}))
+				{
+					foreach $nl (0 .. $cdf{bndcoord}{$nc}{nline}-1)
+					{
+						printf NG " L %d",$cdf{bndcoord}{$nc}{line}{$nl};
+    					printf NG "\n";
+					}
+				}
+    			printf NG ";\n";
+			}
+	}	
+	foreach $nc (1 .. $cdf{num_nodes})
+	{
+#    		printf "%lf, %lf, %lf\n",$cdf{coord}{$nc-1},$cdf{coord}{2*$nc-1},$cdf{coord}{3*$nc-1};
+			if (!defined($cdf{bndcoord}{$nc}{bnd}))
+			{
+    			printf NG "I %s %s %s;\n",
+					$cdf{coord}{$nc},$cdf{coord}{$nc+$cdf{num_nodes}},$cdf{coord}{$nc+2*$cdf{num_nodes}}; 
+			}
+	}	
+	print NG "\n";
+}
+
+sub write_bnd_side
+{
+	my $co = $_[0];
+	my $ne = $_[1];
+	my $nn = $_[2];
+	my $neid = $_[3];
+	my $ns = $_[4];
+
+#	printf NG " F %d", $cdf{bnd_elem_side}{$neid}{$ns};
+	printf NG " F";
+	$side = $cdf{bnd_elem_side}{$neid}{$ns};
+	# tetrahedral case
+	if ($nn == 4)
+	{
+		if ($side == 1)
+		{
+				$n0 = $cdf{$connect}{4*$ne-3}-1;
+				$n1 = $cdf{$connect}{4*$ne-2}-1;
+				$n2 = $cdf{$connect}{4*$ne-0}-1;
+		}
+		elsif ($side == 2)
+		{
+				$n0 = $cdf{$connect}{4*$ne-2}-1;
+				$n1 = $cdf{$connect}{4*$ne-1}-1;
+				$n2 = $cdf{$connect}{4*$ne-0}-1;
+		}
+		elsif ($side == 3)
+		{
+				$n0 = $cdf{$connect}{4*$ne-3}-1;
+				$n1 = $cdf{$connect}{4*$ne-1}-1;
+				$n2 = $cdf{$connect}{4*$ne-0}-1;
+		}
+		elsif ($side == 4)
+		{
+				$n0 = $cdf{$connect}{4*$ne-3}-1;
+				$n1 = $cdf{$connect}{4*$ne-1}-1;
+				$n2 = $cdf{$connect}{4*$ne-2}-1;
+		}
+		else
+		{
+			printf "ERROR no valid side of tet\n";
+			exit;
+		}
+		printf NG " %d %d %d", $n0, $n1, $n2;
+	}
+	else
+	{
+		printf "ERROR no valid element node number \n";
+		exit;
+	}
+}
+
+sub write_elements
+{
+	print NG "# Elements\n";
+
+	# print the connect blocks with volume elements
+	$ncon = 0;
+	$volume = 1;
+	$neid = 1;
+	LOOP: foreach $nconnect (1 .. $cdf{num_el_blk})
+	{
+		if ( $cdf{eb_prop1}{$nconnect} =~/\A2($int)/ )
+		{
+			print NG "# elements of volume $volume \n";
+
+			# number of elements in block $ncon
+			$numne = sprintf "num_el_in_blk%d",$nconnect; 
+			# hash of elements
+			$connect = sprintf "connect%d",$nconnect; 
+			foreach $ne (1 .. $cdf{$numne}{1})
+			{
+				# print element node ids
+				# TODO: implement other element types
+				printf NG "E %d",$volume;
+				printf NG " %d", $cdf{$connect}{4*$ne-3}-1;
+				printf NG " %d", $cdf{$connect}{4*$ne-2}-1;
+				printf NG " %d", $cdf{$connect}{4*$ne-1}-1;
+				printf NG " %d", $cdf{$connect}{4*$ne-0}-1;
+
+				# print boundary side
+				$nn = 4;
+				if (defined($cdf{bnd_elem_nside}{$neid}))
+				{
+					foreach $ns (0 .. $cdf{bnd_elem_nside}{$neid}-1)
+					{
+						write_bnd_side($connect,$ne,$nn,$neid,$ns)
+					}
+				}
+				$neid++;
+				print NG ";\n";
+			}
+			print NG "\n";
+			$volume++;
+		}
+		$ncon++;
+	}
+}
+
+# write ng
+sub write_ng()
+{
+	print "writing ng geometry file $ng\n";
+	open(NG, ">$ng") || die "can't open $ng\n";
+
+  	write_nodes();
+  	write_elements();
+
+	close(NG);
+}
+
+sub main()
+{
+	read_exo2_ng();
+ 	construct_bnddata();
+  	write_ng();
+}
+
+main();
+
+exit;
+
