@@ -9,6 +9,8 @@
 #include <array.hh>
 #include <geom/geom3d.hh>
 
+extern void NewError (int dummy);
+
 Vec3d & Vec3d :: operator/= (double s)
 {
   if (s != 0)
@@ -19,7 +21,7 @@ Vec3d & Vec3d :: operator/= (double s)
   }
   else
   {
-    MyError ("Vec3d::operator /=: Divisioin by zero");
+    NewError (1);
   }
   return *this;
 }
