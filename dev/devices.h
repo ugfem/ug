@@ -184,7 +184,7 @@ struct outputdevice {
   void (*ErasePolygon)(SHORT_POINT *, INT );                            /* erase a polygon w. curr. col         */
   void (*Polymark)(short, SHORT_POINT *);                                       /* place markers					*/
   void (*InvPolymark)(short, SHORT_POINT *);                                    /* place inverse markers			*/
-  void (*DrawText)(const char *, INT);                                                  /* draw text in current size/font	*/
+  void (*DrawText)(const char *, INT);                                          /* draw text in current size/font	*/
   void (*CenteredText)(SHORT_POINT, const char *, INT);         /* draw text centered at x,y		*/
   void (*ClearViewPort)(void);                                                          /* clear a view port				*/
 
@@ -200,6 +200,8 @@ struct outputdevice {
   /* pointers to miscellaneous functions */
   void (*GetPaletteEntry)(long,short *,short *,short *);        /* read color tab					*/
   void (*Flush)(void);                                                                          /* flush graphics buffer			*/
+  void (*PlotPixelBuffer)(void *, void *, INT, int, int, int, int);
+  /* plot a pixel buffer              */
 
   /* operations for managing windows */
   OpenOutputPtr OpenOutput;                       /* function to open a window								*/
