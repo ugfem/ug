@@ -82,8 +82,7 @@ fi
 #	head_condition: regular expression, to which lines with Header-keyword 
 #	                must match (that is for ignoring third party software with
 #                   Header-entries).
-#                   current value: "\/host\/dom\/", i.e., "/hosts/dom/" as
-#	                part of a path.
+#                   current value: "hosts" as part of a path.
 #   verbose:  0 is verbose-off, 1 is verbose-on
 #   stdin:    input file, containing Header-lines and State-lines
 #
@@ -91,7 +90,7 @@ ident $thefile | $AWK -f $UGROOT/bin/ugbcheck_fix1.awk - | \
 	$AWK -f $UGROOT/bin/ugbcheck.awk \
 		toolname=`basename $0` \
 		filename=`basename $thefile` \
-		header_condition="\\\/hosts\\\/dom\\\/" \
+		header_condition="hosts" \
 		verbose=$verbose_mode \
 		-
 
