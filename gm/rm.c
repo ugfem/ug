@@ -3760,7 +3760,9 @@ INT NS_DIM_PREFIX GetRefinementMarkType (ELEMENT *theElement)
 
   switch (rule)
   {
-  case RED :                       return(1);
+  case RED :
+  case BLUE :
+    return(1);
   case COPY :
   case NO_REFINEMENT :     return(0);
   case COARSE :            return(-1);
