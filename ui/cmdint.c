@@ -818,6 +818,8 @@ static INT GetFactor (OPERAND *result)
   int signflag;
   DOUBLE sign,t;
   OPERAND newResult;
+  char *lastname;
+  ENVDIR *theDir;
 
   /* set error value */
   result->ro.type=EMPTYID;
@@ -958,6 +960,39 @@ static INT GetFactor (OPERAND *result)
 
         if (strcmp(buffer,"sqrt")==0)
           newResult.ro.value=sqrt(t);
+      }
+      else if (strcmp(buffer,"def")==0)
+      {
+        /* check wether a string variable or a struct is defined */
+
+        c=SkipBlanks();
+        if (c!='(')
+        {
+          PrintErrorMessage('E',"def","'(' missing");
+          return(8604);                                         /* ( missing */
+        }
+        cmdPtr++;
+
+        GetToken(buffer);
+
+        /* check for string variable */
+        newResult.ro.type  = NUMBERID;
+        newResult.ro.value = (GetStringVar(buffer)!=NULL);
+
+        if (newResult.ro.value==0)
+          /* check for struct */
+          if (((theDir=FindStructDir(buffer,&lastname))!=NULL)
+              && (FindStructure(theDir,lastname)!=NULL))
+            newResult.ro.value = 2;
+
+
+        c=SkipBlanks();
+        if (c!=')')
+        {
+          PrintErrorMessage('E',"def","')' missing");
+          return(8604);                                         /* ) missing */
+        }
+        cmdPtr++;
       }
       else
       {
@@ -1520,7 +1555,7 @@ static INT GetCondition (DOUBLE *result)
   if (c!=')')
   {
     PrintErrorMessage('E',"GetCondition","')' missing");
-    return(8604);               /* ( missing */
+    return(8604);               /* ) missing */
   }
 
   cmdPtr++;
@@ -1592,11 +1627,29 @@ static INT EvaluateExpression(OPERAND *result)
 static INT GetFullPathName (char *buffer)
 {
   char c;
-  int k;
+  char svarname[NAMESIZE],*sptr;
+  int k,error;
 
   c=SkipBlanks();
 
-  if (ISALPHA(c)||(c=='/')||(c=='~')||((c=='.')&&(cmdPtr[1]=='.')))
+  if (c=='@')
+  {
+    cmdPtr++;
+    if ((error=GetToken(svarname))!=DONE)
+    {
+      PrintErrorMessage('E',"InterpretString","syntax error");
+      return(error);                    /* syntax error */
+    }
+
+    if ((sptr=GetStringVar(svarname))==NULL)
+    {
+      PrintErrorMessage('E',"InterpretString","variable not found");
+      return(8522);                     /* variable not found */
+    }
+    strcpy(buffer,sptr);
+    return (DONE);
+  }
+  else if (ISALPHA(c)||(c=='/')||(c=='~')||((c=='.')&&(cmdPtr[1]=='.')))
   {
     k=0;
     do
@@ -2149,6 +2202,7 @@ static INT InterpretString (void)
 
       mutelevel = (INT) result.ro.value;
 
+      SetStringValue(":oldmute",GetMuteLevel());
       SetMuteLevel(mutelevel);
 
       continue;
@@ -2722,6 +2776,8 @@ INT InitCommandInterpreter (void)
     scriptpaths_set=TRUE;
 
   dontexit=FALSE;
+
+  SetStringValue(":oldmute",GetMuteLevel());
 
   /* return to application */
   return(0);
