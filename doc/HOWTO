@@ -143,3 +143,15 @@ A: Saving data without the multigrid is done by using the option '$p' in the
    Loading the data without the multigrid can be done by adding the option
    '$r' in the loaddata-command ('r' for read only data). Example:
         loaddata test $t xdr $a sol $r;
+
+
+UG/ug/dom/lgm:
+-------------
+
+Q: How is the left/right subdomain information of 3d-lgm surface defined?
+
+A: The right hand rule applies in the following way: Consider
+  the nodes of the first triangle. If you follow the rotation direction
+  of nodes 0, 1 and 2 the thumb of your right hand points into the 
+  left subdomain. 
+
