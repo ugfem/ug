@@ -1,14 +1,19 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/*! \file ggaccel.h
+ * \ingroup gg2
+ */
+
+
 /****************************************************************************/
 /*                                                                          */
 /* File:      ggaccel.h                                                         */
 /*                                                                          */
 /* Purpose:   header file for gg_accelerator                                */
 /*                                                                          */
-/* Author:    Dirk Feuchter													*/
+/* Author:    Dirk Feuchter                                                                                                     */
 /*                                                                          */
-/* History:   17.05.95														*/
+/* History:   17.05.95                                                                                                          */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */

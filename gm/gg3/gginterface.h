@@ -1,5 +1,9 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/*! \file gginterface.h
+ * \ingroup gg3
+ */
+
 /****************************************************************************/
 /*                                                                          */
 /* File:      gginterface.h                                                 */
@@ -7,12 +11,12 @@
 /* Purpose:   interface header file for netgen                                                  */
 /*                                                                          */
 /* Author:    Christian Wieners                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart, Germany										*/
-/*			  email: ug@ica3.uni-stuttgart.de		                                        */
-/*																			*/
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart, Germany                                                                              */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
 /* History:   18 March 96 begin, ug version 3.2                             */
 /*                                                                          */
 /* Remarks:                                                                 */

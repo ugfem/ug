@@ -1,19 +1,23 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/*! \file GenerateRules.h
+ * \ingroup gm
+ */
+
 /****************************************************************************/
-/*																			*/
-/* File:	GenerateRules.h                                                                                                 */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:        GenerateRules.h                                                                                                 */
+/*                                                                                                                                                      */
 /* Purpose: header file for GenerateRules.c                                                             */
-/*																			*/
-/* Author:	Henrik Reichert                                                                                                 */
-/*			Institut fuer Angewandte Mathematik                                                     */
-/*			Universitaet Heidelberg                                                                                 */
-/*			Im Neuenheimer Feld 294                                                                                 */
-/*			6900 Heidelberg                                                                                                 */
-/*																			*/
+/*                                                                                                                                                      */
+/* Author:      Henrik Reichert                                                                                                 */
+/*                      Institut fuer Angewandte Mathematik                                                     */
+/*                      Universitaet Heidelberg                                                                                 */
+/*                      Im Neuenheimer Feld 294                                                                                 */
+/*                      6900 Heidelberg                                                                                                 */
+/*                                                                                                                                                      */
 /* History: 10.9.1993 begin                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -22,9 +26,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __RULEGEN__
@@ -33,13 +37,13 @@
 #include <stdio.h>
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* macros for referencing of sons */
@@ -56,21 +60,21 @@
 
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
