@@ -159,6 +159,40 @@
 
 /****************************************************************************/
 /*																			*/
+/* macros for rules                                                                     */
+/*																			*/
+/****************************************************************************/
+
+#define TAG_OF_RULE(r)                          (r->tag)
+#define MARK_OF_RULE(r)                         (r->mark)
+#define CLASS_OF_RULE(r)                        (r->class)
+#define NSONS_OF_RULE(r)                        (r->nsons)
+#define PATTERN_OF_RULE(r,i)            (r->pattern[i])
+#define PAT_OF_RULE(r)                          (r->pat)
+#define SON_OF_NODE_OF_RULE(r,n)        (r->sonandnode[n][0])
+#define SONNODE_OF_NODE_OF_RULE(r,n)(r->sonandnode[n][0])
+#define EDGE_OF_RULE(r,e)                       (&(r->edges[e]))
+#define EDGE_TYPE_OF_RULE(r,e)          (r->edges[e].type)
+#define EDGE_FROM_OF_RULE(r,e)          (r->edges[e].from)
+#define EDGE_TO_OF_RULE(r,e)            (r->edges[e].to)
+#define EDGE_SIDE_OF_RULE(r,e)          (r->edges[e].side)
+#define SON_OF_RULE(r,s)                        (&(r->sons[s]))
+#define SON_TAG_OF_RULE(r,s)            (r->sons[s].tag)
+#define SON_CORNER_OF_RULE(r,s,n)       (r->sons[s].corners[n])
+#define SON_CORNER(s,n)                         (s->corners[n])
+#define SON_NB_OF_RULE(r,s,n)           (r->sons[s].nb[n])
+#define SON_NB(s,n)                                     (s->nb[n])
+#define SON_PATH_OF_RULE(r,s)           (r->sons[s].path)
+#define SON_PATH(s)                                     (s->path)
+
+#define NOCLASS(c)                                      (c == 0)
+#define YELLOWCLASS(c)                          (c & 1)
+#define GREENCLASS(c)                           (c & 2)
+#define REDCLASS(c)                                     (c & 3)
+#define SWITCHCLASS(c)                          (c & 4)
+
+/****************************************************************************/
+/*																			*/
 /* data structures exported by the corresponding source file				*/
 /*																			*/
 /****************************************************************************/

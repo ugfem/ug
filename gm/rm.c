@@ -104,7 +104,7 @@ static ElementVectorProcPtr theDirectionElemEval;
 
 #ifdef __TWODIM__
 static REFRULE Empty_Rule =
-{-1,-1,-1,-1,{-1,-1,-1,-1},-1,
+{-1,-1,NO_CLASS,-1,{-1,-1,-1,-1},-1,
  {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}},
  {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                         {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -117,7 +117,7 @@ static REFRULE Empty_Rule =
 /* define Rules for Triangles */
 static REFRULE TriangleRules[18] = {
   /* T_NOREF */
-  {TRIANGLE,T_NOREF,-1,0,
+  {TRIANGLE,T_NOREF,NO_CLASS,0,
    {0,0,0,0},0,
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}},
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -141,7 +141,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_RED */
-  {TRIANGLE,T_RED,RED_CLASS|GREEN_CLASS,4,
+  {TRIANGLE,T_RED,RED_CLASS|GREEN_CLASS|SWITCH_CLASS,4,
    {1,1,1,0},(1<<3)-1,
    {{0,1},{1,2},{0,2},{-1,-1},{-1,-1}},
    {{3,0,3,0},{3,3,1,0},{3,1,4,0},{3,4,2,0},
@@ -340,7 +340,7 @@ static REFRULE TriangleRules[18] = {
 static REFRULE QuadrilateralRules[17] =
 {
   /* Q_NOREF */
-  {QUADRILATERAL,Q_NOREF,-1,0,
+  {QUADRILATERAL,Q_NOREF,NO_CLASS,0,
    {0,0,0,0},0,
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}},
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -364,7 +364,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_RED */
-  {QUADRILATERAL,Q_RED,RED_CLASS|GREEN_CLASS,4,
+  {QUADRILATERAL,Q_RED,RED_CLASS|GREEN_CLASS|SWITCH_CLASS,4,
    {1,1,1,1,1},(1<<5)-1,
    {{0,1},{1,2},{2,3},{3,0},{0,2}},
    {{3,0,4,-1},{3,4,1,-1},{3,1,5,-1},{3,5,2,-1},
@@ -552,7 +552,7 @@ static REFRULE QuadrilateralRules[17] =
 static INT theBFRRDirID;      /* env type for BestFullRefRule       */
 
 static REFRULE Empty_Rule =
-{-1,-1,-1,-1,
+{-1,-1,NO_CLASS,-1,
  {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},-1,
  {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
                         {-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
@@ -589,7 +589,7 @@ static REFRULE Empty_Rule =
 static REFRULE PyramidRules[2] =
 {
   /* PYR_NO_REF */
-  {PYRAMID,0,-1,0,
+  {PYRAMID,0,NO_CLASS,0,
    {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},0,
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
                     {-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
@@ -661,7 +661,7 @@ static REFRULE PyramidRules[2] =
 static REFRULE HexahedronRules[3] =
 {
   /* HEX_NO_REF */
-  {HEXAHEDRON,0,-1,0,
+  {HEXAHEDRON,0,NO_CLASS,0,
    {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},0,
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
                     {-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
@@ -729,7 +729,7 @@ static REFRULE HexahedronRules[3] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
   /* HEX_RED */
-  {HEXAHEDRON,2,RED_CLASS,8,
+  {HEXAHEDRON,2,RED_CLASS|SWITCH_CLASS,8,
    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},(1<<19)-1,
 
    /* sonandnode */
