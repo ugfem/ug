@@ -12,6 +12,8 @@ then
 	echo "         GRAPE (set GRAPE = ON)";
 	echo "         NONETGEN (set NETGEN = OFF)";
 	echo "         NOGRAPE (set GRAPE = OFF)";
+	echo "         RIF (set REMOTE_IF = ON)";
+	echo "         NORIF (set REMOTE_IF = OFF)";
 	echo "         HP (set ARCH = HP)";
 	echo "         DEC (set ARCH = DEC)";
 	echo "         PARAGON (set ARCH = PARAGON)";
@@ -43,7 +45,7 @@ fi
 if test $# -eq 0
 then 
 	echo "current ug configuration is:";
-	egrep '^[ ]*ARCH|^[ ]*MODEL|^[ ]*DIM|^[ ]*GRAPE|^[ ]*NETGEN|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE' $UGROOT/ug.conf;
+	egrep '^[ ]*ARCH|^[ ]*MODEL|^[ ]*DIM|^[ ]*GRAPE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE' $UGROOT/ug.conf;
 	exit 0;
 fi
 
@@ -105,6 +107,20 @@ fi
 if test "$1" = "NOGRAPE"
 then
 sed 's/^GRAPE.*$/GRAPE = OFF/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
+fi			
+
+if test "$1" = "RIF"
+then
+sed 's/^REMOTE_IF.*$/REMOTE_IF = ON/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
+fi			
+
+if test "$1" = "NORIF"
+then
+sed 's/^REMOTE_IF.*$/REMOTE_IF = OFF/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
 exit 0;
 fi			
