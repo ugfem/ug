@@ -355,7 +355,7 @@ The parameter space is an interval [a,b] in two dimensions or a rectangle
 `3D boundary segments`
 .vb
     d +--------+     maps [a,b]x[c,d] to R x R x R
-      |2      3|
+      |3      2|
       |        |
       |        |
       |0      1|
