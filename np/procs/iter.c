@@ -275,34 +275,6 @@ static INT SmootherDisplay (NP_BASE *theNP)
   return (0);
 }
 
-static INT SmootherPreProcess  (NP_ITER *theNP, INT level,
-                                VECDATA_DESC *x, VECDATA_DESC *b,
-                                MATDATA_DESC *A, INT *baselevel, INT *result)
-{
-        #ifdef ModelP
-  NP_SMOOTHER *np;
-  GRID *theGrid;
-
-  np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
-    result[0] = __LINE__;
-    return (1);
-  }
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
-  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) {
-    result[0] = __LINE__;
-    return (1);
-  }
-  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
-    result[0] = __LINE__;
-    return (1);
-  }
-        #endif
-  *baselevel = level;
-
-  return (0);
-}
-
 static INT Smoother (NP_ITER *theNP, INT level,
                      VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                      INT *result)
@@ -377,6 +349,35 @@ static INT SmootherPostProcess (NP_ITER *theNP, INT level,
    D*/
 /****************************************************************************/
 
+static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
+                              VECDATA_DESC *x, VECDATA_DESC *b,
+                              MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+        #ifdef ModelP
+  NP_SMOOTHER *np;
+  GRID *theGrid;
+
+  np = (NP_SMOOTHER *) theNP;
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  if (l_matrix_consistent(theGrid,np->L,FALSE) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+        #endif
+  *baselevel = level;
+
+  return (0);
+}
+
+
 static INT JacobiStep (NP_SMOOTHER *theNP, INT level,
                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                        MATDATA_DESC *L,
@@ -406,7 +407,7 @@ static INT JacobiConstruct (NP_BASE *theNP)
   theNP->Execute = NPIterExecute;
 
   np = (NP_SMOOTHER *) theNP;
-  np->iter.PreProcess = SmootherPreProcess;
+  np->iter.PreProcess = JacobiPreProcess;
   np->iter.Iter = Smoother;
   np->iter.PostProcess = SmootherPostProcess;
   np->Step = JacobiStep;
@@ -444,6 +445,35 @@ static INT JacobiConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
+static INT GSPreProcess  (NP_ITER *theNP, INT level,
+                          VECDATA_DESC *x, VECDATA_DESC *b,
+                          MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+        #ifdef ModelP
+  NP_SMOOTHER *np;
+  GRID *theGrid;
+
+  np = (NP_SMOOTHER *) theNP;
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+        #endif
+  *baselevel = level;
+
+  return (0);
+}
+
+
 static INT GSStep (NP_SMOOTHER *theNP, INT level,
                    VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                    MATDATA_DESC *L,
@@ -473,7 +503,7 @@ static INT GSConstruct (NP_BASE *theNP)
   theNP->Execute = NPIterExecute;
 
   np = (NP_SMOOTHER *) theNP;
-  np->iter.PreProcess = SmootherPreProcess;
+  np->iter.PreProcess = GSPreProcess;
   np->iter.Iter = Smoother;
   np->iter.PostProcess = SmootherPostProcess;
   np->Step = GSStep;
@@ -544,20 +574,21 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_ILU *) theNP;
-
-  if (SmootherPreProcess(theNP,level,x,b,A,baselevel,result))
-    return(1);
   theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
   if (l_setindex(theGrid)) {
     result[0] = __LINE__;
     return (1);
   }
-        #ifndef ModelP /* in parallel all smoothers have a consistent matrix L */
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) {
     result[0] = __LINE__;
     return (1);
   }
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+        #ifdef ModelP
+  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
@@ -567,6 +598,7 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
     result[0] = __LINE__;
     return (1);
   }
+  *baselevel = level;
 
   return (0);
 }
@@ -648,20 +680,21 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
   char warn[255];
 
   np = (NP_SMOOTHER *) theNP;
-
-  if (SmootherPreProcess(theNP,level,x,b,A,baselevel,result))
-    return (1);
   theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
   if (l_setindex(theGrid)) {
     result[0] = __LINE__;
     return (1);
   }
-        #ifndef ModelP /* in parallel all smoothers have a consistent matrix L */
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
     result[0] = __LINE__;
     return (1);
   }
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+        #ifdef ModelP
+  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
@@ -694,6 +727,7 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
       return (1);
     }
   }
+  *baselevel = level;
 
   return (0);
 }
