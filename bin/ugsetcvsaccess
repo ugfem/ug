@@ -12,7 +12,7 @@ then
 	exit 1;
 fi
 
-DEFAULT=stefan,klaus,birken,henrik,peter,wieners
+DEFAULT=stefan,klaus,birken,henrik,peter,wieners,christian
 ERRORFILE=$UGROOT/bin/cvsaccess
 
 cd $UGROOT/..
@@ -32,10 +32,10 @@ cd $UGROOT/../cd;
 cvs admin -agabi * 2>> $ERRORFILE;
 
 cd $UGROOT/gm;
-cvs admin -aniko,christian,gabi * 2>> $ERRORFILE;
+cvs admin -aniko,gabi * 2>> $ERRORFILE;
 
 cd $UGROOT/numerics;
-cvs admin -achristian,gabi * 2>> $ERRORFILE;
+cvs admin -agabi * 2>> $ERRORFILE;
 
 cd $UGROOT/numerics;
 cvs admin -aniko * 2>> $ERRORFILE;
