@@ -37,14 +37,6 @@
 #include "devices.h"
 #include "shapes.h"
 
-#ifdef __TWODIM__
-#include "shapes2d.h"
-#endif
-
-#ifdef __THREEDIM__
-#include "shapes3d.h"
-#endif
-
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -738,7 +730,7 @@ static void GradNodeIndex (const ELEMENT *theElement, const COORD **theCorners, 
   COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM];
   DOUBLE v;
 
-  TetraDerivative(theCorners,theGradient);
+  TetraDerivative(theElement,theCorners,theGradient);
   V3_CLEAR(values)
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
