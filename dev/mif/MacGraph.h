@@ -110,7 +110,7 @@ typedef struct graphwindow GRAPH_WINDOW;
 OUTPUTDEVICE    *InitMacOutputDevice    (void);
 
 INT                      Mac_ActivateOutput     (WINDOWID win);
-INT                      Mac_UpdateOutput               (WINDOWID win, char *s, INT tool);
+INT                      Mac_UpdateOutput               (WINDOWID win, INT tool);
 GRAPH_WINDOW    *WhichGW                                (WindowPtr win);
 void                     SetCurrentGW                   (GRAPH_WINDOW *g);
 INT                      GrowGraphWindow                (GRAPH_WINDOW *gw, EventRecord *theEvent, DOC_GROW_EVENT *docGrow);

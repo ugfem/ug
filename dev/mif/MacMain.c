@@ -475,7 +475,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         gw = WhichGW(whichWindow);
         assert(gw!=NULL);
 
-        Mac_UpdateOutput((WINDOWID)gw,NULL,arrowTool);
+        Mac_UpdateOutput((WINDOWID)gw,arrowTool);
         reportEvent->Type                       = DOC_UPDATE;
         reportEvent->DocUpdate.win      = (WINDOWID) gw;
       }

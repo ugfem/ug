@@ -134,7 +134,7 @@ typedef struct
 typedef WINDOWID (*OpenOutputPtr)(const char *title, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error);
 typedef INT (*CloseOutputPtr)(WINDOWID win);
 typedef INT (*ActivateOutputPtr)(WINDOWID win);
-typedef INT (*UpdateOutputPtr)(WINDOWID win, char *s, INT tool);
+typedef INT (*UpdateOutputPtr)(WINDOWID win, INT tool);
 
 /* abstract graphical output device */
 struct outputdevice {

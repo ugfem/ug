@@ -817,7 +817,7 @@ static INT SetPSOutput (WINDOWID win)
  */
 /****************************************************************************/
 
-static INT UpdatePSOutput (WINDOWID win, char *s, INT tool)
+static INT UpdatePSOutput (WINDOWID win, INT tool)
 {
   return(0);
 }

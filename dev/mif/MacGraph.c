@@ -686,7 +686,7 @@ static INT ActivateMacWin (GRAPH_WINDOW *gw, INT tool)
 /* Purpose:   get tool from mouselocation									*/
 /*																			*/
 /* Input:	  WindowPtr *theWindow: get tool of THIS MacWindow				*/
-/*			  INT *MouseLocation: Š                                                                                 */
+/*			  INT *MouseLocation: ä                                                                                 */
 /*																			*/
 /* Output:	  INT *ChosenToolPtr: chosen tool								*/
 /*																			*/
@@ -1080,7 +1080,7 @@ INT Mac_ActivateOutput (WINDOWID win)
 /*																			*/
 /****************************************************************************/
 
-INT Mac_UpdateOutput (WINDOWID win, char *s, INT tool)
+INT Mac_UpdateOutput (WINDOWID win, INT tool)
 {
   GRAPH_WINDOW *gw;
   WindowPtr theWindow;

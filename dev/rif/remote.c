@@ -482,13 +482,12 @@ INT Remote_ActivateOutput (WINDOWID win)
 /*																			*/
 /****************************************************************************/
 
-INT Remote_UpdateOutput (WINDOWID win, char *s, INT tool)
+INT Remote_UpdateOutput (WINDOWID win, INT tool)
 {
   BUFSTART;
   BUFINT(DC_UpdateOutput);
   BUFINT(win);
   BUFINT(tool);
-  BUFTEXT(s);        /* text am schluss, wegen alignment */
   BUFEND;
 
   return(0);

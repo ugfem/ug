@@ -537,7 +537,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
     b -= delta;
     red[i] = r; green[i] = g; blue[i++] = b;
   }                                                             /* 128 = green */
-  /* grüeen nach gelb */
+  /* gr¸een nach gelb */
   for (j=0; j<res; j++)
   {
     r += delta;
@@ -731,7 +731,7 @@ static INT SetMetaOutput (WINDOWID win)
  */
 /****************************************************************************/
 
-static INT UpdateMetaOutput (WINDOWID win, char *s, INT tool)
+static INT UpdateMetaOutput (WINDOWID win, INT tool)
 {
   return(0);
 }

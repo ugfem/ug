@@ -335,11 +335,7 @@ static void ug_frontend (int sockfd)
       win = SocketReadINT(sockfd);
       tool = SocketReadINT(sockfd);
 
-      len = SocketReadINT(sockfd);
-      n = SocketRead(sockfd, buf, len);
-      buf[len] = 0;
-
-      (*theOutputDevice->UpdateOutput)(win,buf,tool);
+      (*theOutputDevice->UpdateOutput)(win,tool);
       break;
     }
 

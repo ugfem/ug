@@ -1136,7 +1136,7 @@ INT X11_ActivateOutput (WINDOWID win)
 /*																			*/
 /****************************************************************************/
 
-INT X11_UpdateOutput (WINDOWID win, char *s, INT tool)
+INT X11_UpdateOutput (WINDOWID win, INT tool)
 {
   int x,y,w,h,i;
   int lw,ts;
@@ -1202,13 +1202,6 @@ INT X11_UpdateOutput (WINDOWID win, char *s, INT tool)
 
   /* set cursor */
   XDefineCursor(display,gwin->win,cursors[i]);
-
-  /* draw info string */
-  x = (gwin->window_width-NTOOLS*CONTROLSIZE)/2;
-  y = gwin->window_height-(CONTROLSIZE/2);
-  w = XTextWidth(gwin->font_info,s,strlen(s));
-  ts = gwin->font_height;
-  /*XDrawString(display,gwin->win,gwin->gc,x-w/2,y+ts/2,s,strlen(s));*/
 
   /* draw separation line */
   y = gwin->window_height-CONTROLSIZE-1;
