@@ -2933,16 +2933,14 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
   return(GM_OK);
 }
 
-INT MarkForRefinementX (ELEMENT *t, INT fl, INT tl, INT rule, void *data)
+INT MarkForRefinementX (ELEMENT *e, INT fl, INT tl, INT rule, void *data)
 {
-  if ((ECLASS(t)==RED_CLASS) && (LEVEL(t) < tl))
-    return(MarkForRefinement(t,RED,0));
-  if ((ECLASS(t)==GREEN_CLASS) && (LEVEL(t) < tl+1))
-    return(MarkForRefinement(t,RED,0));
-  if ((ECLASS(t)==YELLOW_CLASS) && (LEVEL(t) < tl+1))
-    return(MarkForRefinement(t,RED,0));
-  if ((ECLASS(t)==RED_CLASS) && (LEVEL(t) > fl))
-    return(MarkForRefinement(t,COARSE,0));
+  ELEMENT *t = ELEMENT_TO_MARK(e);
+
+  assert(ECLASS(t)==RED_CLASS);
+
+  if (rule==RED && LEVEL(t)<tl) return(MarkForRefinement(t,rule,data));
+  if (rule==COARSE && LEVEL(t)>fl) return(MarkForRefinement(t,rule,data));
 
   return(GM_ERROR);
 }
