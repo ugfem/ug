@@ -11,6 +11,11 @@ include_HEADERS = initug.h
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libug.pc
 
+# !!! crazy trick to get include-dir compatibility
+install-data-hook:
+	find $(top_srcdir) -name \*.h -exec cp {} $(includedir)/ \;
+	rm -f $(includedir)/config.h
+	touch $(includedir)/config.h
 
 #
 ## automake-options
