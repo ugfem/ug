@@ -107,6 +107,10 @@
 #include "parallel.h"
 #endif
 
+#ifdef __DLB__
+#include "dlb.h"
+#endif
+
 #ifdef CHACOT
 #include "lb4.h"
 #endif
@@ -1750,11 +1754,11 @@ static INT LogOnCommand (INT argc, char **argv)
         #ifdef ModelP
   if (pext == TRUE)
   {
-    sprintf(logfile,"%s.p%03d",logfile,procs);
+    sprintf(logfile,"%s.p%04d",logfile,procs);
   }
   if (meext == TRUE)
   {
-    sprintf(logfile,"%s.%03d",logfile,me);
+    sprintf(logfile,"%s.%04d",logfile,me);
   }
   else if (me != master)
     return (OKCODE);
@@ -13694,6 +13698,11 @@ INT InitCommands ()
 #ifdef CHACOT
   if (CreateCommand("lb4",                        LB4Command                                              )==NULL) return (__LINE__);
 #endif
+        #ifdef __DLB__
+  if (CreateCommand("lbmm",           LBMMCommand                     )==NULL) return(__LINE__);
+  if (CreateCommand("dlb_config",     DLB_Config_Command )==NULL      ) return(__LINE__);
+        #endif
+
 #endif /* ModelP */
 
   /* array commands */
