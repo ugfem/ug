@@ -50,6 +50,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "compiler.h"
@@ -59,6 +60,7 @@
 
 #include "switch.h"
 #include "gm.h"
+#include "evm.h"
 #include "misc.h"
 #include "simplex.h"
 #include "algebra.h"
@@ -73,6 +75,12 @@
 /*																			*/
 /****************************************************************************/
 
+/* for LexAlgDep */
+#define ORDERRES                1e-3    /* resolution for LexAlgDep					*/
+
+/* for LexOrderVectorsInGrid */
+#define MATTABLESIZE    32
+
 /* constants for the direction of domain halfening */
 #define BV_VERTICAL     0
 #define BV_HORIZONTAL   1
@@ -84,13 +92,31 @@
 /*																			*/
 /****************************************************************************/
 
-INT MatrixType[MAXVECTORS][MAXVECTORS];
+/****************************************************************************/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
 
-static INT theAlgDepDirID;                      /* env type for Alg Dep dir                     */
-static INT theAlgDepVarID;                      /* env type for Format vars                     */
+INT MatrixType[MAXVECTORS][MAXVECTORS];
 
 /****************************************************************************/
 /*																			*/
+/* definition of variables global to this source file only (static!)		*/
+/*																			*/
+/****************************************************************************/
+
+static INT theAlgDepDirID;                      /* env type for Alg Dep dir                     */
+static INT theAlgDepVarID;                      /* env type for ALG_DEP vars                    */
+
+static INT theFindCutDirID;                     /* env type for FindCut dir                     */
+static INT theFindCutVarID;                     /* env type for FIND_CUT vars                   */
+
+static FindCutProcPtr FindCutSet;       /* pointer to find cut procedure		*/
+
+/****************************************************************************/
+/*
+ */
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
@@ -159,6 +185,11 @@ const BV_DESC_FORMAT one_level_bvdf =
 /****************************************************************************/
 
 static INT ConnectionType [2][MAXVECTORS][MAXVECTORS];
+
+/* for LexOrderVectorsInGrid */
+static const INT *Order,*Sign;
+static INT SkipV;
+static DOUBLE InvMeshSize;
 
 /* data for CVS */
 static char rcsid[] = "$Header$";
@@ -485,6 +516,7 @@ static VECTOR *GetFreeVector (MULTIGRID *theMG, INT VectorType)
 
    D*/
 /****************************************************************************/
+
 static CONNECTION *GetFreeConnection (MULTIGRID *theMG, INT Diag, INT RootType, INT DestType)
 {
   void **ptr;
@@ -1572,6 +1604,44 @@ INT GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
   return (GM_OK);
 }
 
+/****************************************************************************/
+/*D
+   GetVectorsOfType - Get a pointer list to all vector data of specified type
+
+   SYNOPSIS:
+   INT GetVectorsOfType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList)
+
+   PARAMETERS:
+   .  theElement -  that element
+   .  type - fill array with vectors of this type
+   .  cnt - how many vectors
+   .  vList - array to store vector list
+
+   DESCRIPTION:
+   This function returns a pointer array to all 'VECTOR's of the element of the specified type.
+
+   RETURN VALUE:
+   INT
+   .n     GM_OK if ok
+   .n     GM_ERROR	if error occured.
+   D*/
+/****************************************************************************/
+
+INT GetVectorsOfType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList)
+{
+  switch (type)
+  {
+  case NODEVECTOR :
+    return (GetVectorsOfNodes(theElement,cnt,vList));
+  case ELEMVECTOR :
+    return (GetVectorsOfElement(theElement,cnt,vList));
+  case EDGEVECTOR :
+    return (GetVectorsOfEdges(theElement,cnt,vList));
+  case SIDEVECTOR :
+    return (GetVectorsOfSides(theElement,cnt,vList));
+  }
+  return (GM_ERROR);
+}
 
 /****************************************************************************/
 /*D
@@ -2966,6 +3036,230 @@ INT MaxNextVectorClass (ELEMENT *theElement)
 }
 
 /****************************************************************************/
+/*                                                                          */
+/* Function:  LexCompare													*/
+/*                                                                          */
+/* Purpose:   defines a relation for lexicographic ordering                 */
+/*                                                                          */
+/* Input:                                                                                                                               */
+/*                                                                          */
+/* Output:    -                                                             */
+/*                                                                          */
+/*                                                                          */
+/****************************************************************************/
+
+static int LexCompare (VECTOR **pvec1, VECTOR **pvec2)
+{
+  COORD_VECTOR pv1,pv2;
+  COORD diff[DIM];
+
+  if (SkipV)
+  {
+    if (VECSKIP(*pvec1) && !VECSKIP(*pvec2))
+      if (SkipV==GM_PUT_AT_BEGIN)
+        return (-1);
+      else
+        return ( 1);
+
+    if (VECSKIP(*pvec2) && !VECSKIP(*pvec1))
+      if (SkipV==GM_PUT_AT_BEGIN)
+        return ( 1);
+      else
+        return (-1);
+  }
+  VectorPosition(*pvec1,pv1);
+  VectorPosition(*pvec2,pv2);
+
+  V_DIM_SUBTRACT(pv2,pv1,diff);
+  V_DIM_SCALE(InvMeshSize,diff);
+
+  if (fabs(diff[Order[DIM-1]])<ORDERRES)
+  {
+                #ifdef __THREEDIM__
+    if (fabs(diff[Order[DIM-2]])<ORDERRES)
+    {
+      if (diff[Order[DIM-3]]>0.0) return (-Sign[DIM-3]);
+      else return ( Sign[DIM-3]);
+    }
+    else
+                #endif
+    if (diff[Order[DIM-2]]>0.0) return (-Sign[DIM-2]);
+    else return ( Sign[DIM-2]);
+  }
+  else
+  {
+    if (diff[Order[DIM-1]]>0.0) return (-Sign[DIM-1]);
+    else return ( Sign[DIM-1]);
+  }
+}
+
+static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
+{
+  INT IND1,IND2;;
+
+  IND1 = INDEX(MDEST(*MatHandle1));
+  IND2 = INDEX(MDEST(*MatHandle2));
+
+  if (IND1>IND2)
+    return ( 1);
+  else
+    return (-1);
+}
+
+
+/****************************************************************************/
+/*D
+   LexOrderVectorsInGrid - order vectors lexicographically
+
+   SYNOPSIS:
+   INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign,
+                                INT SpecSkipVecs, INT AlsoOrderMatrices)
+
+   PARAMETERS:
+   .  theGrid - grid level
+   .  order - hierarchie of ordering directions (x,y[,z])
+   .  sign  - signs for the directions
+   .  SpecSkipVecs - if TRUE: GM_PUT_AT_BEGIN or GM_PUT_AT_END of vectors with skip TRUE
+   .  AlsoOrderMatrices - if TRUE order matrices in the same sense
+
+   DESCRIPTION:
+   This function orders the vectors of one level lexicographically.
+   It has the complexity of qsort which is n*log(n).
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT SpecSkipVecs, INT AlsoOrderMatrices)
+{
+  MULTIGRID *theMG;
+  VECTOR **table,*theVec;
+  MATRIX *theMat,*MatTable[MATTABLESIZE];
+  DOMAIN *theDomain;
+  INT i,entries,nm;
+  HEAP *theHeap;
+
+  theMG   = MYMG(theGrid);
+  entries = NVEC(theGrid);
+
+  /* calculate the diameter of the bounding rectangle of the domain */
+  theDomain = MGDOMAIN(theMG);
+  if (theDomain==NULL) return (1);
+  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / theDomain->radius;
+
+  /* allocate memory for the node list */
+  theHeap = MGHEAP(theMG);
+  Mark(theHeap,FROM_TOP);
+  if ((table=GetMem(theHeap,entries*sizeof(NODE *),FROM_TOP))==NULL)
+  {
+    Release(theHeap,FROM_TOP);
+    PrintErrorMessage('E',"LexOrderVectorsInGrid","could not allocate memory from the MGHeap");
+    return (2);
+  }
+
+  /* fill array of pointers to nodes */
+  entries = 0;
+  for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
+    table[entries++] = theVec;
+
+  /* sort array of pointers */
+  Order = order;
+  Sign  = sign;
+  SkipV = SpecSkipVecs;
+  qsort(table,entries,sizeof(*table),(int (*)(const void *, const void *))LexCompare);
+
+  /* reorder double linked list */
+  for (i=0; i<entries-1; i++)
+    SUCCVC(table[i]) = table[i+1];
+
+  for (i=1; i<entries; i++)
+  {
+    INDEX(table[i]) = i;
+    PREDVC(table[i]) = table[i-1];
+  }
+  INDEX(table[0]) = 0;
+
+  SUCCVC(table[entries-1])  = NULL;
+  PREDVC(table[0]) = NULL;
+
+  FIRSTVECTOR(theGrid) = table[0];
+  LASTVECTOR(theGrid)  = table[entries-1];
+
+
+  Release(theHeap,FROM_TOP);
+
+  if (!AlsoOrderMatrices)
+    return (0);
+
+  /* now we also order the matrices of each vector the same way (just using the new INDICES) */
+  /* but leaving the diag at its place of course */
+  for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
+  {
+    /* fill array for qsort */
+    for (nm=0, theMat=VSTART(theVec); theMat!=NULL; theMat=MNEXT(theMat))
+    {
+      if (nm>=MATTABLESIZE)
+        return (1);
+
+      MatTable[nm++] = theMat;
+    }
+    qsort(MatTable+1,nm-1,sizeof(LINK*),(int (*)(const void *, const void *))MatrixCompare);
+
+    /* establish pointer connections */
+    MNEXT(MatTable[--nm]) = NULL;
+    while (nm>0)
+    {
+      MNEXT(MatTable[nm-1]) = MatTable[nm];
+      --nm;
+    }
+    VSTART(theVec) = MatTable[0];
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   CreateFindCutProc - Create a new find cut procedure in environement
+
+   SYNOPSIS:
+   ALG_DEP *CreateFindCutProc (char *name, FindCutProcPtr FindCutProc);
+
+   PARAMETERS:
+   .  name - name
+   .  FindCutProc -  the find cut procedure
+
+   DESCRIPTION:
+   This function creates a new find cut dependency in environement.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error occured.
+   D*/
+/****************************************************************************/
+
+FIND_CUT *CreateFindCutProc (char *name, FindCutProcPtr FindCutProc)
+{
+  FIND_CUT *newFindCut;
+
+  if (ChangeEnvDir("/FindCut")==NULL)
+  {
+    UserWrite("cannot change to dir '/FindCut'\n");
+    return(NULL);
+  }
+  newFindCut = (FIND_CUT *) MakeEnvItem (name,theFindCutVarID,sizeof(FIND_CUT));
+  if (newFindCut==NULL) return(NULL);
+
+  newFindCut->FindCutProc = FindCutProc;
+
+  return (newFindCut);
+}
+
+/****************************************************************************/
 /*D
    CreateAlgebraicDependency - Create a new algebraic dependency in environement
 
@@ -3006,7 +3300,7 @@ ALG_DEP *CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc
 
 /****************************************************************************/
 /*
-   FeedbackVertexVectors - Reorder double linked node list by a streamline ordering
+   FeedbackVertexVectors - put `every` vector '!VCUSED' into the new order list
 
    SYNOPSIS:
    static INT FeedbackVertexVectors (GRID *theGrid, VECTOR **CutVectors,
@@ -3018,7 +3312,12 @@ ALG_DEP *CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc
    .  nb -
 
    DESCRIPTION:
-   This function reorders double linked node list by a streamline ordering.
+   This function can be used as a find-cut-procedure for the streamwise ordering
+   algorithm. But it just puts `all` the remaining vectors into the new order
+   list instead of removing only as much as neccessary to get rid of cyclic
+   dependencies.
+
+   It is used as default when no cut procedure is specified.
 
    RETURN VALUE:
    INT
@@ -3027,18 +3326,21 @@ ALG_DEP *CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc
  */
 /****************************************************************************/
 
-static INT FeedbackVertexVectors (GRID *theGrid, VECTOR **CutVectors, INT *nb)
+static VECTOR *FeedbackVertexVectors (GRID *theGrid, VECTOR *LastVector, INT *nb)
 {
   VECTOR *theVector;
 
+  /* push all remaining vectors */
   *nb = 0;
-  for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     if (!VCUSED(theVector))
     {
+      (*nb)++;
+      PREDVC(LastVector) = theVector;
+      LastVector = theVector;
       SETVCUSED(theVector,1);
-      CutVectors[(*nb)++] = theVector;
     }
-  return (0);
+  return (LastVector);
 }
 
 /****************************************************************************/
@@ -3046,11 +3348,13 @@ static INT FeedbackVertexVectors (GRID *theGrid, VECTOR **CutVectors, INT *nb)
    OrderVectorAlgebraic	- Reorder double linked node list by a streamline ordering
 
    SYNOPSIS:
-   static INT OrderVectorAlgebraic (GRID *theGrid, INT mode);
+   static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT skipPat);
 
    PARAMETERS:
    .  theGrid - pointer to grid
    .  mode
+   .  putSkipFirst - if TRUE put vectors with a skip pattern larger than SkipPat to begin of list
+   .  skipPat - s.a.
 
    DESCRIPTION:
    This function reorders double linked node list by a streamline ordering.
@@ -3062,58 +3366,29 @@ static INT FeedbackVertexVectors (GRID *theGrid, VECTOR **CutVectors, INT *nb)
  */
 /****************************************************************************/
 
-static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
+static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT skipPat)
 {
-  VECTOR **VectorList,**CutList;
-  VECTOR *theVector,*theNbVector;
+  VECTOR FIRST_handle,CUT_handle,LAST_handle;
+  VECTOR *FIRST_next_out,*FIRST_last_in;
+  VECTOR *LAST_next_out,*LAST_last_in;
+  VECTOR *CUT_next_out,*CUT_last_in,*CUT_begin;
+  VECTOR *theVector,*theNbVector,*succVector,*predVector;
   MATRIX *theMatrix;
-  HEAP *theHeap;
-  INT NoOfVectors,i,k;
-  INT FIRST_nextin,FIRST_nextout;
-  INT LAST_nextin,LAST_nextout;
-  INT ncut, currentCUT_start, up, down, l, f;
-  char buffer[64];
-  INT mutelevel;
+  INT i,k,cycle;
+  INT nFIRST,nCUT,nLAST;
+  INT up, down;
 
-  NoOfVectors = theGrid->nVector;
-
-  mutelevel = GetMuteLevel();
-
-  sprintf(buffer,"total=%d\n",(int)NoOfVectors);
-  if (mutelevel>=0) UserWrite(buffer);
-
-  /* get storage from the MG-heap for VectorList and CutList */
-  theHeap = theGrid->mg->theHeap;
-  Mark(theHeap,FROM_TOP);
-  VectorList = (VECTOR **) GetMem(theHeap,NoOfVectors*sizeof(VECTOR *),FROM_TOP);
-  if (VectorList==NULL)
-  {
-    UserWrite("could not allocate storage for VectorList\n");
-    return (1);
-  }
-
-  if (mode==GM_FFCCLL)
-  {
-    CutList = (VECTOR **) GetMem(theHeap,NoOfVectors/2*sizeof(VECTOR *),FROM_TOP);
-    if (CutList==NULL)
-    {
-      UserWrite("could not allocate storage for CutList\n");
-      return (1);
-    }
-  }
-
-
-  /********************************************************************/
-  /*	init	                                                                                                        */
-  /********************************************************************/
+  /****************************************************************************/
+  /*	init																	*/
+  /****************************************************************************/
 
   /* init USED, N_INFLOW and N_OUTFLOW */
-  for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
   {
-    /* reset used flag */
+    /* reset used flag (indicating the vector hasn't yet its new place in the list) */
     SETVCUSED(theVector,0);
 
-    /* count upward and downward matricees */
+    /* count upward and downward matrices */
     up = down = 0;
     for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
     {
@@ -3124,136 +3399,177 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
     SETVDOWN(theVector,down);
   }
 
-  /* init counters and set the first FIRST and LAST set */
-  FIRST_nextin = FIRST_nextout  = 0;
-  LAST_nextin = LAST_nextout      = NoOfVectors-1;
-  for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
+  /* in the sequel we use (and therefore destroy) the PREDVC-list for book keeping */
+
+  cycle = 0;
+
+  /* init pointers and set the first FIRST and LAST set */
+  FIRST_next_out = FIRST_last_in = &FIRST_handle;
+  nFIRST = 0;
+  LAST_next_out  = LAST_last_in  = &LAST_handle;
+  nLAST  = 0;
+  CUT_next_out   = CUT_last_in   = &CUT_handle;
+  nCUT   = 0;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
   {
-    if (VUP(theVector)==0)
+    if (((putSkipFirst) && (VECSKIP(theVector) & skipPat == skipPat)) ||
+        (VUP(theVector)==0))
     {
-      VectorList[FIRST_nextin++] = theVector;
+      nFIRST++;
+      /* append to FIRST list */
+      PREDVC(FIRST_last_in) = theVector;
+      FIRST_last_in = theVector;
       SETVCUSED(theVector,1);
+      VINDEX(theVector) = 0;
     }
     else if (VDOWN(theVector)==0)
     {
-      VectorList[LAST_nextin--] = theVector;
+      nLAST++;
+      /* append to last list */
+      PREDVC(LAST_last_in) = theVector;
+      LAST_last_in = theVector;
       SETVCUSED(theVector,1);
+      VINDEX(theVector) = 1;
     }
   }
+  PREDVC(FIRST_last_in) = PREDVC(LAST_last_in) = NULL;
 
-  if (mutelevel>=0)
+  UserWriteF("init: #first%d=%10d\n",(int)cycle,(int)nFIRST);
+  UserWriteF("init: #last%d =%10d\n",(int)cycle,(int)nLAST);
+
+  do
   {
-    sprintf(buffer,"init first=%d\n",(int)FIRST_nextin);
-    UserWrite(buffer);
-    sprintf(buffer,"init last= %d\n",(int)(NoOfVectors-1-LAST_nextin));
-    UserWrite(buffer);
-  }
-  f = FIRST_nextin; l = LAST_nextin;
+    cycle++;
 
-  currentCUT_start = 0;
-  while ((FIRST_nextin+currentCUT_start) <= LAST_nextin)
-  {
-    /********************************************************************/
-    /*	find next FIRST-set in vectors not used                                         */
-    /********************************************************************/
+    /****************************************************************************/
+    /*	find next FIRST-set in vectors not used                                                                 */
+    /****************************************************************************/
 
-    while (FIRST_nextout<FIRST_nextin)
-      for (theMatrix=MNEXT(VSTART(VectorList[FIRST_nextout++])); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+    nFIRST = nLAST = 0;
+
+    for (FIRST_next_out=PREDVC(FIRST_next_out); FIRST_next_out!=NULL; FIRST_next_out=PREDVC(FIRST_next_out))
+      for (theMatrix=MNEXT(VSTART(FIRST_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
       {
         theNbVector = MDEST(theMatrix);
-        if (!VCUSED(theNbVector) && MDOWN(theMatrix))
+
+        if (VCUSED(theNbVector)) continue;
+
+        if (MDOWN(theMatrix))
         {
           k = VUP(theNbVector);
-          assert(k>0);                                                  /* if 0 is supposed to be in VectorList already */
+          assert(k>0);                                                  /* if 0 is supposed to be VCUSED already */
           SETVUP(theNbVector,--k);
           if (k==0)
           {
-            /* this vector has only matricees going down */
-            VectorList[FIRST_nextin++] = theNbVector;
+            /* this vector has only matrices going down */
+
+            nFIRST++;
+            /* append to FIRST list */
+            PREDVC(FIRST_last_in) = theNbVector;
+            FIRST_last_in = theNbVector;
+            PREDVC(FIRST_last_in) = NULL;
             SETVCUSED(theNbVector,1);
+            VINDEX(theNbVector) = 3*cycle;
           }
         }
-      }
+        if ((nCUT>0) && (mode==GM_FCFCLL))
+          /* we also have to push LAST vectors */
+          if (MUP(theMatrix))
+          {
+            k = VDOWN(theNbVector);
+            assert(k>0);                                                        /* if 0 is supposed to be VCUSED already */
+            SETVDOWN(theNbVector,--k);
+            if (k==0)
+            {
+              /* this vector has only matrices going up */
 
-    sprintf(buffer,"first=%d\n",(int)(FIRST_nextin-f));
-    if (mutelevel>=0) UserWrite(buffer);
-    f = FIRST_nextin;
+              nLAST++;
+              /* append to last list */
+              PREDVC(LAST_last_in) = theNbVector;
+              LAST_last_in = theNbVector;
+              PREDVC(LAST_last_in) = NULL;
+              SETVCUSED(theNbVector,1);
+              VINDEX(theNbVector) = 3*cycle+1;
+            }
+          }
+      }
+    FIRST_next_out = FIRST_last_in;
+
+    UserWriteF("#first%d=%10d\n",(int)cycle,(int)nFIRST);
 
     /********************************************************************/
     /*	find next LAST-set in vectors not used			                        */
     /********************************************************************/
 
-    while (LAST_nextin<LAST_nextout)
-      for (theMatrix=MNEXT(VSTART(VectorList[LAST_nextout--])); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+    for (LAST_next_out=PREDVC(LAST_next_out); LAST_next_out!=NULL; LAST_next_out=PREDVC(LAST_next_out))
+      for (theMatrix=MNEXT(VSTART(LAST_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
       {
         theNbVector = MDEST(theMatrix);
         if (!VCUSED(theNbVector) && MUP(theMatrix))
         {
           k = VDOWN(theNbVector);
-          assert(k>0);                                                  /* if 0 is supposed to be in VectorList already */
+          assert(k>0);                                                  /* if 0 is supposed to be VCUSED already */
           SETVDOWN(theNbVector,--k);
           if (k==0)
           {
-            /* this vector has only matricees going up */
-            VectorList[LAST_nextin--] = theNbVector;
+            /* this vector has only matrices going up */
+
+            nLAST++;
+            /* append to last list */
+            PREDVC(LAST_last_in) = theNbVector;
+            LAST_last_in = theNbVector;
+            PREDVC(LAST_last_in) = NULL;
             SETVCUSED(theNbVector,1);
+            VINDEX(theNbVector) = 3*cycle+1;
           }
         }
       }
+    LAST_next_out = LAST_last_in;
 
+    UserWriteF("#last%d =%10d\n",(int)cycle,(int)nLAST);
 
-    sprintf(buffer,"last= %d\n",(int)(l-LAST_nextin));
-    if (mutelevel>=0) UserWrite(buffer);
-    l = LAST_nextin;
-
-    if (FIRST_nextin+currentCUT_start > LAST_nextin) break;                     /* we are done */
-
-    /*********************************************************************/
-    /*	get CUT (or Feedback Vertex)-set and do what need to be done	 */
-    /*********************************************************************/
+    /****************************************************************************/
+    /*	get CUT (or Feedback Vertex)-set and do what needs to be done			*/
+    /****************************************************************************/
 
     if (mode==GM_FCFCLL)
     {
-      if (FeedbackVertexVectors(theGrid,VectorList+FIRST_nextin,&ncut)) return (1);
-      if (ncut == 0)
-      {
-        UserWrite("no cut node can be found\n");
-        return (1);
-      }
-      FIRST_nextout = FIRST_nextin;
-      FIRST_nextin += ncut;
+      CUT_begin = FIRST_last_in;
 
-      /* find LAST vectors */
-      for (i=0; i<ncut; i++)
-        for (theMatrix=MNEXT(VSTART(VectorList[FIRST_nextout+i])); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
-        {
-          theNbVector = MDEST(theMatrix);
-          if (!VCUSED(theNbVector) && MUP(theMatrix))
-          {
-            k = VDOWN(theNbVector);
-            assert(k>0);                                                        /* if 0 is supposed to be in VectorList already */
-            SETVDOWN(theNbVector,--k);
-            if (k==0)
-            {
-              /* this vector has only matricees going up */
-              VectorList[LAST_nextin--] = theNbVector;
-              SETVCUSED(theNbVector,1);
-            }
-          }
-        }
+      FIRST_last_in = (*FindCutSet)(theGrid,FIRST_last_in,&nCUT);
+      if (FIRST_last_in==NULL)
+        nCUT = 0;
+      else
+        PREDVC(FIRST_last_in) = NULL;
+
+      /* set index */
+      for (theVector=PREDVC(CUT_begin); theVector!=NULL; theVector=PREDVC(theVector))
+        VINDEX(theVector) = 3*cycle+2;
+
+      UserWriteF("#cut%d  =%10d\n",(int)cycle,(int)nCUT);
     }
     else
     {
-      if (FeedbackVertexVectors(theGrid,CutList+currentCUT_start,&ncut)) return (1);
-      if (ncut == 0)
-      {
-        UserWrite("no cut node can be found\n");
-        return (1);
-      }
+      CUT_begin = CUT_last_in;
+
+      CUT_last_in = (*FindCutSet)(theGrid,CUT_last_in,&nCUT);
+      if (FIRST_last_in==NULL)
+        nCUT = 0;
+      else
+        PREDVC(CUT_last_in) = NULL;
+
+      /* set index */
+      for (theVector=PREDVC(CUT_begin); theVector!=NULL; theVector=PREDVC(theVector))
+        VINDEX(theVector) = 3*cycle+2;
+
+      UserWriteF("#cut$d  =%10d\n",(int)cycle,(int)nCUT);
+
+      if (nCUT==0) continue;
 
       /* find FIRST and LAST-vectors */
-      for (i=0; i<ncut; i++)
-        for (theMatrix=MNEXT(VSTART(CutList[currentCUT_start+i])); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+      if (CUT_next_out==&CUT_handle) CUT_next_out = PREDVC(CUT_next_out);
+      for (; CUT_next_out!=NULL; CUT_next_out=PREDVC(CUT_next_out))
+        for (theMatrix=MNEXT(VSTART(CUT_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
         {
           theNbVector = MDEST(theMatrix);
           if (!VCUSED(theNbVector))
@@ -3265,8 +3581,12 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
               SETVUP(theNbVector,--k);
               if (k==0)
               {
-                /* this vector has only matrices going up */
-                VectorList[FIRST_nextin++] = theNbVector;
+                /* this vector has only matrices going down */
+
+                nFIRST++;
+                /* append to FIRST list */
+                PREDVC(FIRST_last_in) = theNbVector;
+                FIRST_last_in = theNbVector;
                 SETVCUSED(theNbVector,1);
               }
             }
@@ -3278,83 +3598,73 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
               if (k==0)
               {
                 /* this vector has only matrices going up */
-                VectorList[LAST_nextin--] = theNbVector;
+
+                nLAST++;
+                /* append to last list */
+                PREDVC(LAST_last_in) = theNbVector;
+                LAST_last_in = theNbVector;
                 SETVCUSED(theNbVector,1);
               }
             }
           }
         }
-
-      /* set current ptr */
-      currentCUT_start += ncut;
+      CUT_next_out = CUT_last_in;
+      PREDVC(FIRST_last_in) = PREDVC(LAST_last_in) = NULL;
     }
-    sprintf(buffer,"cut=  %d\n",(int)(ncut));
-    UserWrite(buffer);
-  }
 
-  /* check if all vectors have been touched */
-  if (LAST_nextin - FIRST_nextin - currentCUT_start != -1)
+  } while (nCUT>0);
+
+  /* insert FIRST list one-by-one to LASTVECTOR list of grid */
+  LASTVECTOR(theGrid) = NULL;
+  for (theVector=PREDVC(&FIRST_handle); theVector!=NULL; theVector=predVector)
   {
-    UserWrite("vector list corrupted!!\n");
-    return (1);
+    predVector                      = PREDVC(theVector);
+    PREDVC(theVector)   = LASTVECTOR(theGrid);
+    LASTVECTOR(theGrid) = theVector;
   }
 
-  /* reorder double linked list of vectors */
-  if (mode==GM_FCFCLL)
+  if (mode==GM_FFCCLL)
   {
-    SUCCVC(VectorList[NoOfVectors-1]) = PREDVC(VectorList[0]) = NULL;
-    for (i=0; i<NoOfVectors-1; i++)
+    /* insert CUT list one-by-one to LASTVECTOR list of grid */
+    for (theVector=PREDVC(&CUT_handle); theVector!=NULL; theVector=predVector)
     {
-      SUCCVC(VectorList[i]) = VectorList[i+1];
-      PREDVC(VectorList[i+1]) = VectorList[i];
+      predVector                      = PREDVC(theVector);
+      PREDVC(theVector)   = LASTVECTOR(theGrid);
+      LASTVECTOR(theGrid) = theVector;
     }
-    theGrid->firstVector = (void*)VectorList[0];
-    theGrid->lastVector = (void*)VectorList[NoOfVectors-1];
   }
-  else
+
+  /* insert LAST list as a whole to LASTVECTOR list of grid */
+  PREDVC(LAST_last_in) = LASTVECTOR(theGrid);
+  LASTVECTOR(theGrid)  = PREDVC(&LAST_handle);
+
+  /* construct SUCCVC list */
+  succVector = NULL;
+  for (theVector=LASTVECTOR(theGrid); theVector!=NULL; theVector=PREDVC(theVector))
   {
-    /* order FIRST vectors */
-    PREDVC(VectorList[0]) = NULL;
-    for (i=0; i<FIRST_nextin-1; i++)
-    {
-      SUCCVC(VectorList[i]) = VectorList[i+1];
-      PREDVC(VectorList[i+1]) = VectorList[i];
-    }
-    SUCCVC(VectorList[FIRST_nextin-1]) = CutList[0];
-    theGrid->firstVector = (void*)VectorList[0];
-
-    /* order CUT vectors */
-    PREDVC(CutList[0]) = VectorList[FIRST_nextin-1];
-    for (i=0; i<currentCUT_start-1; i++)
-    {
-      SUCCVC(CutList[i]) = CutList[i+1];
-      PREDVC(CutList[i+1]) = CutList[i];
-    }
-    SUCCVC(CutList[currentCUT_start-1]) = VectorList[LAST_nextin+1];
-
-    /* order LAST vectors */
-    PREDVC(VectorList[0]) = CutList[currentCUT_start-1];
-    for (i=LAST_nextin+1; i<NoOfVectors-1; i++)
-    {
-      SUCCVC(VectorList[i]) = VectorList[i+1];
-      PREDVC(VectorList[i+1]) = VectorList[i];
-    }
-    SUCCVC(VectorList[NoOfVectors-1]) = NULL;
-    theGrid->lastVector = (void*)VectorList[NoOfVectors-1];
+    SUCCVC(theVector) = succVector;
+    succVector = theVector;
   }
+  FIRSTVECTOR(theGrid) = succVector;
+  PREDVC(succVector)   = NULL;
 
-  /* set index */
-  i=1;
-  for (theVector=theGrid->firstVector; theVector!= NULL; theVector=SUCCVC(theVector))
-    VINDEX(theVector) = i++;
-  if (NoOfVectors != i-1)
+  /* check # members of succ list */
+  i=0;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector)) i++;
+  if (NVEC(theGrid) != i)
   {
     UserWrite("vectorstructure corrupted\n");
     return (1);
   }
 
-  /* free heap */
-  Release(theHeap,FROM_TOP);
+  /* check # members of pred list */
+  i=0;
+  for (theVector=LASTVECTOR(theGrid); theVector!= NULL; theVector=PREDVC(theVector)) i++;
+  if (NVEC(theGrid) != i)
+  {
+    UserWrite("vectorstructure corrupted\n");
+    return (1);
+  }
 
   return (0);
 }
@@ -3364,13 +3674,15 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
    OrderVectors	-  Driver for general vector ordering
 
    SYNOPSIS:
-   INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode,
-   char *dependency, char *dep_options);
+   INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat,
+                                        const char *dependency, const char *dep_options, const char *findcut);
 
    PARAMETERS:
    .  theMG -  multigrid to order
    .  levels -  GM_ALL_LEVELS or GM_CURRENT_LEVEL
    .  mode - GM_FCFCLL or GM_FFCCLL (see 'orderv' command)
+   .  PutSkipFirst - if TRUE put vectors with a skip pattern larger than SkipPat to begin of list
+   .  SkipPat - s.a.
    .  dependency - name of user defined dependency item
    .  dep_options - options for user dependency function
 
@@ -3385,10 +3697,11 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
    D*/
 /****************************************************************************/
 
-INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, char *dependency, char *dep_options)
+INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut)
 {
   INT i, currlevel, baselevel;
   ALG_DEP *theAlgDep;
+  FIND_CUT *theFindCut;
   GRID *theGrid;
   DependencyProcPtr DependencyProc;
 
@@ -3408,8 +3721,30 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, char *dependency, char
   DependencyProc = theAlgDep->DependencyProc;
   if (DependencyProc==NULL)
   {
-    UserWrite("don't be stupid: implement a dependency !\n");
+    UserWrite("don't be stupid: implement a dependency!\n");
     return(GM_ERROR);
+  }
+
+  /* get find cut dependency */
+  if (findcut==NULL)
+  {
+    FindCutSet = FeedbackVertexVectors;
+    UserWrite("default cut set proc:\n    leaving order of cyclic dependencies unchanged\n");
+  }
+  else
+  {
+    theFindCut = (FIND_CUT *) SearchEnv(findcut,"/FindCut",theFindCutVarID,theFindCutDirID);
+    if (theFindCut==NULL)
+    {
+      UserWrite("find cut proc not found\n");
+      return(GM_ERROR);
+    }
+    FindCutSet = theFindCut->FindCutProc;
+    if (FindCutSet==NULL)
+    {
+      UserWrite("don't be stupid: implement a find cut proc!\n");
+      return(GM_ERROR);
+    }
   }
 
   /* go */
@@ -3421,7 +3756,7 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, char *dependency, char
   {
     theGrid = theMG->grids[i];
     if ((*DependencyProc)(theGrid,dep_options)) return(GM_ERROR);
-    if (OrderVectorAlgebraic(theGrid,mode)) return(GM_ERROR);
+    if (OrderVectorAlgebraic(theGrid,mode,PutSkipFirst,SkipPat)) return(GM_ERROR);
   }
 
   return (GM_OK);
@@ -3448,7 +3783,161 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, char *dependency, char
    D*/
 /****************************************************************************/
 
-static INT LexAlgDep (GRID *theGrid, char *data)
+static INT LexAlgDep (GRID *theGrid, const char *data)
+{
+  MULTIGRID *theMG;
+  DOMAIN *theDomain;
+  VECTOR *theVector,*NBVector;
+  MATRIX *theMatrix;
+  COORD_VECTOR pos,nbpos;
+  COORD diff[DIM];
+  DOUBLE InvMeshSize;
+  INT i,order,res;
+  INT Sign[DIM],Order[DIM],xused,yused,zused,error,SpecialTreatSkipVecs;
+  char ord[3];
+
+  /* read ordering directions */
+        #ifdef __TWODIM__
+  res = sscanf(data,expandfmt("%2[rlud]"),ord);
+        #else
+  res = sscanf(data,expandfmt("%2[rlbfud]"),ord);
+        #endif
+  if (res!=1)
+  {
+    PrintErrorMessage('E',"LexAlgDep","could not read order type");
+    return(1);
+  }
+  if (strlen(ord)!=DIM)
+  {
+                #ifdef __TWODIM__
+    PrintErrorMessage('E',"LexAlgDep","specify 2 chars out of 'rlud'");
+                #else
+    PrintErrorMessage('E',"LexAlgDep","specify 3 chars out of 'rlbfud'");
+                #endif
+    return(1);
+  }
+  error = xused = yused = zused = FALSE;
+  for (i=0; i<DIM; i++)
+    switch (ord[i])
+    {
+    case 'r' :
+      if (xused) error = TRUE;
+      xused = TRUE;
+      Order[i] = _X_; Sign[i] =  1; break;
+    case 'l' :
+      if (xused) error = TRUE;
+      xused = TRUE;
+      Order[i] = _X_; Sign[i] = -1; break;
+
+                        #ifdef __TWODIM__
+    case 'u' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      Order[i] = _Y_; Sign[i] =  1; break;
+    case 'd' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      Order[i] = _Y_; Sign[i] = -1; break;
+                        #else
+    case 'b' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      Order[i] = _Y_; Sign[i] =  1; break;
+    case 'f' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      Order[i] = _Y_; Sign[i] = -1; break;
+
+    case 'u' :
+      if (zused) error = TRUE;
+      zused = TRUE;
+      Order[i] = _Z_; Sign[i] =  1; break;
+    case 'd' :
+      if (zused) error = TRUE;
+      zused = TRUE;
+      Order[i] = _Z_; Sign[i] = -1; break;
+                        #endif
+    }
+  if (error)
+  {
+    PrintErrorMessage('E',"LexAlgDep","bad combination of 'rludr' or 'rlbfud' resp.");
+    return(1);
+  }
+
+  /* treat vectors with skipflag set specially? */
+  SpecialTreatSkipVecs = FALSE;
+  if              (strchr(data,'<')!=NULL)
+    SpecialTreatSkipVecs = GM_PUT_AT_BEGIN;
+  else if (strchr(data,'>')!=NULL)
+    SpecialTreatSkipVecs = GM_PUT_AT_END;
+
+  theMG   = MYMG(theGrid);
+
+  /* find an approximate measure for the mesh size */
+  theDomain = MGDOMAIN(theMG);
+  if (theDomain==NULL) return (1);
+  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / theDomain->radius;
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    VectorPosition(theVector,pos);
+
+    for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+    {
+      NBVector = MDEST(theMatrix);
+
+      SETMUP(theMatrix,0);
+      SETMDOWN(theMatrix,0);
+
+      if (SpecialTreatSkipVecs)
+      {
+        if (VECSKIP(theVector) && !VECSKIP(NBVector))
+          if (SpecialTreatSkipVecs==GM_PUT_AT_BEGIN)
+            order = -1;
+          else
+            order =  1;
+
+        if (VECSKIP(NBVector) && !VECSKIP(theVector))
+          if (SpecialTreatSkipVecs==GM_PUT_AT_BEGIN)
+            order =  1;
+          else
+            order = -1;
+      }
+      else
+      {
+        VectorPosition(NBVector,nbpos);
+
+        V_DIM_SUBTRACT(nbpos,pos,diff);
+        V_DIM_SCALE(InvMeshSize,diff);
+
+        if (fabs(diff[Order[DIM-1]])<ORDERRES)
+        {
+                                        #ifdef __THREEDIM__
+          if (fabs(diff[Order[DIM-2]])<ORDERRES)
+          {
+            if (diff[Order[DIM-3]]>0.0) order = -Sign[DIM-3];
+            else order =  Sign[DIM-3];
+          }
+          else
+                                        #endif
+          if (diff[Order[DIM-2]]>0.0) order = -Sign[DIM-2];
+          else order =  Sign[DIM-2];
+        }
+        else
+        {
+          if (diff[Order[DIM-1]]>0.0) order = -Sign[DIM-1];
+          else order =  Sign[DIM-1];
+        }
+      }
+      if (order==1) SETMUP(theMatrix,1);
+      else SETMDOWN(theMatrix,1);
+    }
+  }
+
+  return (0);
+}
+
+static INT LexAlgDep_old (GRID *theGrid, const char *data)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
@@ -4004,7 +4493,7 @@ INT InitAlgebra (void)
 {
   INT i, j, n;
 
-  /* install the /Formats directory */
+  /* install the /Alg Dep directory */
   if (ChangeEnvDir("/")==NULL)
   {
     PrintErrorMessage('F',"InitAlgebra","could not changedir to root");
@@ -4017,6 +4506,20 @@ INT InitAlgebra (void)
     return(__LINE__);
   }
   theAlgDepVarID = GetNewEnvVarID();
+
+  /* install the /FindCut directory */
+  if (ChangeEnvDir("/")==NULL)
+  {
+    PrintErrorMessage('F',"InitAlgebra","could not changedir to root");
+    return(__LINE__);
+  }
+  theFindCutDirID = GetNewEnvDirID();
+  if (MakeEnvItem("FindCut",theFindCutDirID,sizeof(ENVDIR))==NULL)
+  {
+    PrintErrorMessage('F',"InitAlgebra","could not install '/FindCut' dir");
+    return(__LINE__);
+  }
+  theFindCutVarID = GetNewEnvVarID();
 
   /* set MatrixType-field */
   n=0;
@@ -4045,6 +4548,9 @@ INT InitAlgebra (void)
 
   /* init standard algebraic dependencies */
   if (CreateAlgebraicDependency ("lex",LexAlgDep)==NULL) return(__LINE__);
+
+  /* init default find cut proc */
+  if (CreateFindCutProc ("lex",FeedbackVertexVectors)==NULL) return(__LINE__);
 
   return (0);
 }
