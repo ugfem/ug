@@ -107,8 +107,6 @@ inline double CalculateWeight( int penr, int OrderingFunctionType )
 {
 	switch( OrderingFunctionType )
 	{
-		case 1:
-			return penr;
 		case 2:
 			srand(penr+1);
 			return rand() / (double)(1<<15);
@@ -119,6 +117,9 @@ inline double CalculateWeight( int penr, int OrderingFunctionType )
 			cout << "CalculateWeight(): unknown ordering function type" << endl << fflush;
 			abort();
 	}
+
+	return 0.0;	// dummy to avoid compiler warnings
+
 }	
 
 static int ColorCompare( const void *c1, const void *c2 )

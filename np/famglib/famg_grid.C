@@ -977,11 +977,11 @@ int FAMGGrid::ConstructTransfer()
 	
 	VECTOR *vec;
 	FAMGNode *nodei;
-	int BorderCycles;
+	int BorderCycles, NrNbPe;
 	
 	GraphColorTime = CURRENT_TIME;
-	
-	if( ConstructColoringGraph(GRID_ATTR(mygrid)) )
+
+	if( (NrNbPe=ConstructColoringGraph(GRID_ATTR(mygrid),FAMGGetParameter()->GetColoringMethod())) < 0) 
 	{
 		cout << "FAMGGrid::ConstructTransfer(): ERROR in constructing the coloring graph"<<endl<<fflush;
 		FAMGReleaseHeap(FAMG_FROM_BOTTOM);
@@ -990,14 +990,14 @@ int FAMGGrid::ConstructTransfer()
 		
 	if( ConstructColoring( FAMGGetParameter()->GetColoringMethod() ) )
 	{
-		cout << "FAMGGrid::ConstructTransfer(): ERROR in coloring the graph"<<endl<<fflush;
+		cout << "FAMGGrid::ConstructTransfer(): ERROR ;in Noloring the graph"<<endl<<fflush;
 		FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 		RETURN(1);
 	}
 		
 	GraphColorTime = CURRENT_TIME - GraphColorTime;
 	BorderCycles = UG_GlobalMaxINT((int)FAMGMyColor);
-	cout <<me<<": level = "<<level<<" my color = "<<FAMGMyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<endl;
+  cout <<me<<": level = "<<level<<" my color = "<<FAMGMyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<" NrNbPe = "<<NrNbPe<<endl;
 
 	BorderTime = CURRENT_TIME_LONG;
 	for ( int color = 0; color <= BorderCycles; color++)
