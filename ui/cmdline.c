@@ -443,6 +443,8 @@ INT ExecCommand (char *cmdLine)
   error=(*commandItem->cmdProc)(optionCount,options);
   if (error==PARAMERRORCODE)
     UserWrite("ERROR: invalid parameters\n");
+  else if (error!=OKCODE)
+    UserWrite("ERROR in command\n");
 
   return(error);
 }
