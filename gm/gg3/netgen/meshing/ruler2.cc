@@ -47,27 +47,11 @@ static double CalcElementBadness_old (const ARRAY<Point2d> & points,
 static double CalcElementBadness (const ARRAY<Point2d> & points,
                                   const Element & elem)
 {
-  // groesster Innenwinkel bestimmt die Qualitaet des Elements
-
-  Vec2d v12, v13, v23, v21, v31, v32;
+  Vec2d v12, v13, v23, v21, v31, v32,v;
   double l12, l13, l23, l21, l31, l32, cir, area;
-  double alpha1, alpha2, alpha3, maxalpha, minalpha;
-
-
-  v12 = points.Get(elem.PNum(2)) - points.Get(elem.PNum(1));
-  v13 = points.Get(elem.PNum(3)) - points.Get(elem.PNum(1));
-  v23 = points.Get(elem.PNum(3)) - points.Get(elem.PNum(2));
-
-  l12 = v12.Length();
-  l13 = v13.Length();
-  l23 = v23.Length();
-
-  cir = l12 + l13 + l23;
-  area = 0.5 * (v12.X() * v13.Y() - v12.Y() * v13.X());
-  if (area < 1e-6)
-  {
-    return 1e8;
-  }
+  double alpha1, alpha2, alpha3, maxalpha, minalpha,max_l,l;
+  double v1x,v1y,v1z,v2x,v2y,v2z;
+  Vec3d n;
 
   v12 = points.Get(elem.PNum(1)) - points.Get(elem.PNum(2));
   v13 = points.Get(elem.PNum(1)) - points.Get(elem.PNum(3));
@@ -101,10 +85,30 @@ static double CalcElementBadness (const ARRAY<Point2d> & points,
   if(minalpha>alpha3)
     minalpha = alpha3;
 
-  if(minalpha<1e-3)
+  if(minalpha<1e-6)
     return(1e10);
-  //	cout << "quality:  " << 0.5-cos(maxalpha) << "  maxalpha: " << maxalpha << endl;
-  return 0.5-cos(maxalpha);
+
+  max_l = l12;
+  if(max_l<l13)
+    max_l = l13;
+  if(max_l<l23)
+    max_l = l23;
+
+  v = points.Get(1) - points.Get(2);
+  l = v.Length();
+
+  v12 = points.Get(elem.PNum(2)) - points.Get(elem.PNum(1));
+  v13 = points.Get(elem.PNum(3)) - points.Get(elem.PNum(1));
+  v23 = points.Get(elem.PNum(3)) - points.Get(elem.PNum(2));
+
+  area = 0.5 * (v12.X() * v13.Y() - v12.Y() * v13.X());
+  if (area < 1e-6)
+  {
+    return 1e8;
+  }
+
+  //	return((0.5-cos(maxalpha))  );
+  return( 0.5*(0.5-cos(maxalpha)) + 0.5*(max_l/l-0.707)/4 );
 }
 
 
