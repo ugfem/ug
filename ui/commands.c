@@ -2039,7 +2039,7 @@ static INT NewCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE], lastchar;
   MEM heapSize;
-  INT i,bopt,fopt,hopt;
+  INT i,bopt,fopt,hopt,IEopt;
 
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" new %",NAMELENSTR,"[ -~]")),Multigrid)!=1) || (strlen(Multigrid)==0))
@@ -2051,6 +2051,7 @@ static INT NewCommand (INT argc, char **argv)
   /* get problem, domain and format */
   heapSize = 0;
   bopt = fopt = hopt = FALSE;
+  IEopt = TRUE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -2070,6 +2071,10 @@ static INT NewCommand (INT argc, char **argv)
         return(PARAMERRORCODE);
       }
       fopt = TRUE;
+      break;
+
+    case 'n' :
+      IEopt = FALSE;
       break;
 
     case 'h' :
@@ -2104,7 +2109,7 @@ static INT NewCommand (INT argc, char **argv)
   }
 
   /* allocate the multigrid structure */
-  theMG = CreateMultiGrid(Multigrid,BVPName,Format,heapSize);
+  theMG = CreateMultiGrid(Multigrid,BVPName,Format,heapSize,IEopt);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"new","could not create multigrid");
@@ -2154,7 +2159,7 @@ static INT OpenCommand (INT argc, char **argv)
   char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE],type[NAMESIZE];
   char *theBVP,*theFormat,*theMGName;
   unsigned long heapSize;
-  INT i,force;
+  INT i,force,IEopt;
 
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" open %",NAMELENSTR,"[ -~]")),File)!=1) || (strlen(File)==0))
@@ -2192,6 +2197,10 @@ static INT OpenCommand (INT argc, char **argv)
       force = 1;
       break;
 
+    case 'n' :
+      IEopt = FALSE;
+      break;
+
     case 'm' :
       if (sscanf(argv[i],expandfmt(CONCAT3("m %",NAMELENSTR,"[ -~]")),Multigrid)!=1)
       {
@@ -2224,7 +2233,8 @@ static INT OpenCommand (INT argc, char **argv)
     }
 
   /* allocate the multigrid structure */
-  theMG = LoadMultiGrid(theMGName,File,type,theBVP,theFormat,heapSize,force);
+  theMG = LoadMultiGrid(theMGName,File,type,theBVP,theFormat,
+                        heapSize,force,IEopt);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
@@ -6310,7 +6320,6 @@ static INT QualityCommand (INT argc, char **argv)
 /*D
    makegrid - generate grid
 
-
    2D advancing front generator:
 
    DESCRIPTION:
@@ -6354,7 +6363,7 @@ static INT QualityCommand (INT argc, char **argv)
 static INT MakeGridCommand  (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  INT i=0,Single_Mode,display;
+  INT i,Single_Mode,display;
   MESH *mesh;
     #ifdef __TWODIM__
   CoeffProcPtr coeff;
@@ -6387,6 +6396,21 @@ static INT MakeGridCommand  (INT argc, char **argv)
                       "only a multigrid with exactly one level can be edited");
     RETURN(GM_ERROR);
   }
+  if (MG_COARSE_FIXED(theMG)) {
+    MG_COARSE_FIXED(theMG) = FALSE;
+    MarkTmpMem(MGHEAP(theMG));
+    if ((MGNDELEMPTRARRAY(theMG) =
+           GetTmpMem(MGHEAP(theMG),NDELEM_BLKS_MAX*sizeof(ELEMENT**)))
+        ==NULL) {
+      ReleaseTmpMem(MGHEAP(theMG));
+      PrintErrorMessage('E',"makegrid",
+                        "ERROR: could not allocate memory from the MGHeap");
+      return (CMDERRORCODE);
+    }
+    for (i=0; i<NDELEM_BLKS_MAX; i++)
+      MGNDELEMBLK(theMG,i) = NULL;
+  }
+
   Single_Mode = 0;
   display = 0;
 
@@ -6417,12 +6441,10 @@ static INT MakeGridCommand  (INT argc, char **argv)
     DisposeMultiGrid(theMG);
     return (CMDERRORCODE);
   }
-
-  Mark(MGHEAP(theMG),FROM_TOP);
   mesh = BVP_GenerateMesh (MGHEAP(theMG),MG_BVP(theMG),argc,argv);
   if (mesh == NULL)
   {
-    Release(MGHEAP(theMG),FROM_TOP);
+    ReleaseTmpMem(MGHEAP(theMG));
     return (CMDERRORCODE);
   }
   else
@@ -6525,7 +6547,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     if (GenerateGrid(theMG, &args, &params, mesh, coeff, Single_Mode, display) != 0)
     {
       PrintErrorMessage('E',"makegrid","execution failed");
-      Release(MGHEAP(theMG),FROM_TOP);
+      ReleaseTmpMem(MGHEAP(theMG));
       return (CMDERRORCODE);
     }
         #endif
@@ -6539,17 +6561,18 @@ static INT MakeGridCommand  (INT argc, char **argv)
       if (ReadArgvINT("c",&coeff,argc,argv))
         coeff = 0;
 
-    if (GenerateGrid3d(theMG,mesh,h,smooth,ReadArgvOption("d",argc,argv),coeff))
+    if (GenerateGrid3d(theMG,mesh,h,smooth,
+                       ReadArgvOption("d",argc,argv),coeff))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
-      Release(MGHEAP(theMG),FROM_TOP);
+      ReleaseTmpMem(MGHEAP(theMG));
       return (CMDERRORCODE);
     }
-    if (SetSubdomainIDfromBndInfo(theMG)) return (CMDERRORCODE);
-             #endif
+            #endif
   }
 
-  Release(MGHEAP(theMG),FROM_TOP);
+  if (FixCoarseGrid(theMG))
+    return (CMDERRORCODE);
 
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
