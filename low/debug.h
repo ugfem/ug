@@ -60,7 +60,7 @@
 
 #define IFDEBUG(m,n)    if (Debug ## m >=(n)) {
 #define PRINTDEBUG(m,n,s) IFDEBUG(m,n) PrintDebug s; ENDDEBUG
-#define PRINTDEBUG_EXT(m,n,s) IFDEBUG(m,n) PrintDebug("[" STR(m) "| "); PrintDebug s; PrintDebug("]"); ENDDEBUG
+#define PRINTDEBUG_EXT(m,n,s) IFDEBUG(m,n) PrintDebug("-" STR(m) "-"); PrintDebug s; ENDDEBUG
 #define ENDDEBUG  }
 #define RETURN(rcode)   {INT rc; rc = rcode; assert(!rc); return (rc);}
 #define HEAPFAULT(ptr)  assert(((int *)ptr)[1]!=-1);
