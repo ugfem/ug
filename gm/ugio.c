@@ -230,7 +230,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   /* find all boundary nodes witch are no corner nodes */
   fprintf(stream,BN_HEADER_FMT);
   id = 0;
-  for (theNode=LASTNODE(theGrid); theNode!= NULL; theNode=PREDN(theNode))
+  for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     theVertex = MYVERTEX(theNode);
     if (OBJT(theVertex) == IVOBJ)
@@ -239,10 +239,8 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
       RETURN(1);
     if (move == 0)
       ID(theNode) = id++;
-
-    PRINTDEBUG(dom,0,(" save id %d\n",id-1));
   }
-  for (theNode=LASTNODE(theGrid); theNode!= NULL; theNode=PREDN(theNode))
+  for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     theVertex = MYVERTEX(theNode);
     if (OBJT(theVertex) == IVOBJ)
@@ -260,7 +258,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   }
   /* find all inner nodes */
   fprintf(stream,IN_HEADER_FMT);
-  for (theNode=LASTNODE(theGrid); theNode!= NULL; theNode=PREDN(theNode))
+  for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     theVertex = MYVERTEX(theNode);
     if (OBJT(theVertex) == BVOBJ)
