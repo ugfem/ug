@@ -717,6 +717,21 @@ int CountRefinements (MERGE_REFINEMENT *ref)
   return (0);
 }
 
+static int MGSTAT_nhle;
+static MGIO_RR_RULE *MGSTAT_rr_rules;
+int MgStatistic (MERGE_REFINEMENT *ref)
+{
+  int i,key[2];
+
+  for (i=0; i<MGSTAT_rr_rules[ref->ref.refrule].nsons; i++)
+  {
+    assert((ref->sonex&(1<<i))!=0);
+    MGSTAT_nhle++;
+  }
+
+  return (0);
+}
+
 int FreeDataMap (DATA_MAP *map)
 {
   int i;
@@ -733,7 +748,7 @@ int FreeDataMap (DATA_MAP *map)
 int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
 {
   HASH_TABLE *ht_cgv,*ht_ref,*ht_bnp;
-  HASH_TABLE *ht_bn_l0,*ht_in_l0,*ht_cge;
+  HASH_TABLE *ht_bn_l0,*ht_in_l0,*ht_cge,*ht_vert;
   HASH_STAT hst;
   MGIO_MG_GENERAL mg_general,*mg_general_list,mg_general_dummy;
   MGIO_GE_GENERAL ge_general;
@@ -796,13 +811,7 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
   mg_general.nparfiles=1;
   mg_general.me=0;
   mg_general.nLevel=mg_general_list[0].nLevel;
-  mg_general.nNode=mg_general.nPoint=mg_general.nElement=0;
-  for (i=0; i<map->nparfiles; i++)
-  {
-    mg_general.nNode+=mg_general_list[i].nNode;
-    mg_general.nPoint+=mg_general_list[i].nPoint;
-    mg_general.nElement+=mg_general_list[i].nElement;
-  }
+  mg_general.nNode=mg_general.nPoint=mg_general.nElement=-1;
   mg_general.dim=mg_general_list[0].dim;
   strcpy(mg_general.DomainName,mg_general_list[0].DomainName);
   strcpy(mg_general.MultiGridName,mg_general_list[0].MultiGridName);
@@ -812,6 +821,7 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
 
   /* prepare hashes */
   ht_cgv = NULL;
+  ht_vert = NULL;
   ht_ref = NULL;
   ht_bnp = NULL;
   ht_bn_l0 = NULL;
@@ -903,6 +913,9 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
             l=o_element[j].cornerid[k];
             assert(map->in_lid2gid[i][l]==-1 || map->in_lid2gid[i][l]==cg_pinfo.n_ident[k]);
             map->in_lid2gid[i][l]=cg_pinfo.n_ident[k];
+            key[0]=1; key[1]=cg_pinfo.v_ident[k];
+            if (PushHashEntry(&ht_vert,key,NULL))
+            {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_vert' of proc %d file\n",i);return (1);}
 #ifdef MERGE_DEBUG
             key[0]=1; key[1]=cg_pinfo.n_ident[k];
             if (PushHashEntry(&ht_nodes,key,NULL))                          {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_nodes' of proc %d file\n",i);return (1);}
@@ -969,6 +982,9 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
                 key[0]=1; key[1]=ref->pinfo[l].n_ident[s];
                 if (PushHashEntry(&ht_nodes,key,NULL))                          {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_nodes' of proc %d file\n",i);return (1);}
 #endif
+                key[0]=1; key[1]=ref->pinfo[l].v_ident[s];
+                if (PushHashEntry(&ht_vert,key,NULL))
+                {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_vert' of proc %d file\n",i);return (1);}
               }
           for (l=0; l<rr_rules[ref->refrule].nsons; l++)
             if (ref->sonex & (1<<l))
@@ -1060,21 +1076,7 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
   /********************** write output file ********************************/
   /*************************************************************************/
 
-  /* create outname */
-  strcpy(tmp,mgdesc->mgname);p=strtok(tmp,".");
-  if (p==NULL)                                                                    {printf("ERROR in 'MergeMultigrid': cannot create outfilename\n");return (1);}
-  p+=strlen(p)+1;
-  strcpy(map->out,tmp);sprintf(tmp2,"_%d.",(int)map->nparfiles);strcat(map->out,tmp2);strcat(map->out,p);
-
-  /* write part 0 to output file */
-  if (Write_OpenMGFile(map->out,1))                               {printf("ERROR in 'MergeMultigrid': cannot open output file\n");return (1);}
-  if (Write_MG_General(&mg_general))                              {printf("ERROR in 'MergeMultigrid': cannot 'mg_general' to output file\n");return (1);}
-  if (Write_GE_General(&ge_general))                          {printf("ERROR in 'MergeMultigrid': cannot 'ge_general' to output file\n");return (1);}
-  if (Write_GE_Elements(TAGS,ge_element))             {printf("ERROR in 'MergeMultigrid': cannot 'ge_element' to output file\n");return (1);}
-  if (Write_RR_General(&rr_general))                          {printf("ERROR in 'MergeMultigrid': cannot 'rr_general' to output file\n");return (1);}
-  if (Write_RR_Rules(rr_general.nRules,rr_rules)) {printf("ERROR in 'MergeMultigrid': cannot 'rr_rules' to output file\n");return (1);}
-
-  /* write part 1 to output file */
+  /* create coarse-grid-output */
   HashTableStat(ht_cgv,&hst);
   cg_general_out.nPoint=hst.n_obj;
   HashTableStat(ht_bnp,&hst);
@@ -1103,7 +1105,38 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
          "                  nBndElem:    %d\n"
          ,cg_general_out.nPoint,cg_general_out.nInnerPoint,cg_general_out.nBndPoint,cg_general_out.nElement,cg_general_out.nInnerElement,cg_general_out.nBndElement);
 #endif
+  mg_general.nNode=map->ht_gol->n_obj;
+  MGSTAT_nhle=0;
+  MGSTAT_rr_rules=rr_rules;
+  for (i=0; i<map->nparfiles; i++)
+    for (j=0; j<ncge[i]; j++)
+      if (cg_element[i][j].ge!=-1)
+      {
+        elem=&(cg_element[i][j]);
+        for (k=0; k<ge_element[elem->ge].nCorner; k++)
+          key[k+1]=elem->cornerid[k];
+        key[0]=k;
+        if (ClimbRefinementTree(key,ht_ref,MgStatistic,ge_element,rr_rules))
+        {printf("ERROR in 'MergeMultigrid': cannot 'ClimbRefinementTree' for output file\n");return (1);}
+      }
+  mg_general.nElement=cg_general_out.nElement+MGSTAT_nhle;
+  HashTableStat(ht_vert,&hst);
+  mg_general.nPoint=hst.n_obj;
+
+  /* create outname */
+  strcpy(tmp,mgdesc->mgname);p=strtok(tmp,".");
+  if (p==NULL)                                                                    {printf("ERROR in 'MergeMultigrid': cannot create outfilename\n");return (1);}
+  p+=strlen(p)+1;
+  strcpy(map->out,tmp);sprintf(tmp2,"_%d.",(int)map->nparfiles);strcat(map->out,tmp2);strcat(map->out,p);
+
+  if (Write_OpenMGFile(map->out,1))                               {printf("ERROR in 'MergeMultigrid': cannot open output file\n");return (1);}
+  if (Write_MG_General(&mg_general))                              {printf("ERROR in 'MergeMultigrid': cannot 'mg_general' to output file\n");return (1);}
+  if (Write_GE_General(&ge_general))                          {printf("ERROR in 'MergeMultigrid': cannot 'ge_general' to output file\n");return (1);}
+  if (Write_GE_Elements(TAGS,ge_element))             {printf("ERROR in 'MergeMultigrid': cannot 'ge_element' to output file\n");return (1);}
+  if (Write_RR_General(&rr_general))                          {printf("ERROR in 'MergeMultigrid': cannot 'rr_general' to output file\n");return (1);}
+  if (Write_RR_Rules(rr_general.nRules,rr_rules)) {printf("ERROR in 'MergeMultigrid': cannot 'rr_rules' to output file\n");return (1);}
   if (Write_CG_General(&cg_general_out))                                              {printf("ERROR in 'MergeMultigrid': cannot write 'cg_general' to output file\n");return (1);}
+
   cg_point_out=(struct mgio_cg_point_seq*)ht_malloc(cg_general_out.nPoint*sizeof(struct mgio_cg_point_seq),"out");
   if (cg_point_out==NULL)                                                                         {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'cg_point for output file\n");return (1);}
   if (BeginHashGet(ht_cgv))                                                                       {printf("ERROR in 'MergeMultigrid': cannot 'BeginHashGet' of 'ht_cgv' for output file\n");return (1);}
@@ -1229,6 +1262,7 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
 #endif
 
   /* free hashtables */
+  FreeHashTable(&ht_vert);
   FreeHashTable(&ht_cgv);
   FreeHashTable(&ht_ref);
   FreeHashTable(&ht_bnp);
