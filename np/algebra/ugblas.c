@@ -840,7 +840,7 @@ INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
    l_ghostmatrix_collect - collects ghostmatrix entries for Galerkin assembling
 
    SYNOPSIS:
-   INT l_ghostvector_collect (GRID *g, const MATDATA_DESC *A);
+   INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A);
 
    PARAMETERS:
 .  g - pointer to grid 
@@ -906,6 +906,286 @@ INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
 	DDD_IFAOneway(ElementVIF, GRID_ATTR(g), IF_BACKWARD, 
 				  DataSizePerMatrix * sizeof(DOUBLE),
 				  Gather_MatrixCollect, Scatter_MatrixCollect);
+
+	return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   l_amgmatrix_collect - collects ghostmatrix entries for AMG method
+
+   SYNOPSIS:
+   INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A);
+
+   PARAMETERS:
+.  g - pointer to grid 
+.  A - matrix data descriptor
+
+   DESCRIPTION:
+   This function collects the matrix entries of vertical ghosts on the 
+   first AMG-level stored on one processor. 
+   It is called in 'AMGAgglomerate'.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK      if ok
+.n    NUM_ERROR   if error occurrs
+D*/
+/****************************************************************************/
+
+#ifdef ModelP
+
+static int Gather_AMGMatrixCollect (DDD_OBJ obj, void *data)
+{
+	VECTOR  *pv = (VECTOR *)obj;
+	MATRIX  *m;
+	DOUBLE  *msgbuf = (DOUBLE *)           data;
+	INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
+	DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
+	int i, *proclist,mc,vtype,mtype,masc;
+	const SHORT *Comp;	
+
+    printf("%3d: In Gather...\n",me);
+	*maxgid = 0;
+
+	if (VSTART(pv) == NULL) {
+	    return (NUM_OK);
+	}
+	
+	if (MD_IS_SCALAR(ConsMatrix)) {
+		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
+		    if (VECSKIP(pv) != 0) return (NUM_OK);
+		    mc = MD_SCALCMP(ConsMatrix);
+			masc =MD_SCAL_CTYPEMASK(ConsMatrix);
+			for (m=VSTART(pv); m!=NULL; m=MNEXT(m))
+			{
+			    *msgbuf = MVALUE(m,mc);
+				msgbuf++;
+
+				gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+				(*maxgid)++;
+			}
+			m=VSTART(pv);
+			MVALUE(m,mc) = 1.0;
+			for (m=MNEXT(m); m!=NULL; m=MNEXT(m))
+			    MVALUE(m,mc) = 0.0;
+		return (NUM_OK);
+		}
+	}
+
+	printf("%3d: MD_IS not _SCALAR\n",me);
+	vtype = VTYPE(pv);
+	for (m=(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+		mtype = MTP(vtype,MDESTTYPE(m));
+		Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+		for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
+				 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
+			msgbuf[i] = MVALUE(m,Comp[i]);
+		msgbuf+=MaxBlockSize;
+
+		gidbuf[*maxgid] = GID(MDEST(m));
+		(*maxgid)++;
+		}
+	for (m=(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+	    mtype = MTP(vtype,MDESTTYPE(m));
+	    Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+		for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
+				 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++) 
+			MVALUE(m,Comp[i]) = 0.0;
+	  }
+
+	return (NUM_OK);
+}
+
+static int Scatter_AMGMatrixCollect (DDD_OBJ obj, void *data)
+{
+	VECTOR  *pv = (VECTOR *)obj;
+	MATRIX  *m;
+	DOUBLE  *msgbuf = (DOUBLE *)           data;
+	INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
+	DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
+	INT     igid = 0;
+	int     i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
+	const SHORT *Comp;	
+
+    PRINTDEBUG(np,0,("%3d: In Scatter...\n",me));
+
+	if (VSTART(pv) == NULL) return (NUM_OK);
+	if (MD_IS_SCALAR(ConsMatrix)) {
+	    printf("%3d: MD_IS_SCALAR(ConsMatrix)\n",me);
+		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv))
+		{
+		    if (VECSKIP(pv) != 0) return (NUM_OK);
+			mc = MD_SCALCMP(ConsMatrix);
+			masc =MD_SCAL_CTYPEMASK(ConsMatrix);
+			for (m=VSTART(pv); m!=NULL; m=MNEXT(m)) {
+			    DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+
+				if (igid<*maxgid && (gidbuf[igid]==dest)) {
+				    MVALUE(m,mc) += *msgbuf;
+					msgbuf++;
+					igid++;
+				}
+			}
+		}
+		return (NUM_OK);
+	}
+
+	vtype = VTYPE(pv);
+	vecskip = VECSKIP(pv);
+	rcomp = MD_ROWS_IN_MTYPE(ConsMatrix,MTP(vtype,vtype));
+	if (vecskip == 0)
+	    for (m=(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+			DDD_GID dest = GID(MDEST(m));
+
+			while (igid<*maxgid && (gidbuf[igid]<dest))
+			{
+				msgbuf+=MaxBlockSize;
+				igid++;
+			}
+
+			if (igid<*maxgid && (gidbuf[igid]==dest))
+			{
+		    	mtype = MTP(vtype,MDESTTYPE(m));
+				Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+				for (j=0; j<MD_COLS_IN_MTYPE(ConsMatrix,mtype)*rcomp; j++)
+			    	MVALUE(m,Comp[j]) += msgbuf[j];
+				msgbuf+=MaxBlockSize;
+				igid++;
+			}
+		}
+	else
+	    for (m=(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+			DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+
+			while (igid<*maxgid && (gidbuf[igid]<dest))
+			{
+				msgbuf+=MaxBlockSize;
+				igid++;
+			}
+
+			if (igid<*maxgid && (gidbuf[igid]==dest))
+			{
+		    	mtype = MTP(vtype,MDESTTYPE(m));
+				ncomp = MD_COLS_IN_MTYPE(ConsMatrix,mtype);
+				Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+				for (k=0; k<rcomp; k++)
+			  		if (!(vecskip & (1<<k)))				
+			      		for (j=k*ncomp; j<(k+1)*ncomp; j++)
+						    MVALUE(m,Comp[j]) += msgbuf[j];
+				msgbuf+=MaxBlockSize;
+				igid++;
+			}
+		}
+
+	IFDEBUG(np,0)
+	igid = 0;
+	msgbuf = (DOUBLE *)data;
+	for (m=(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+		DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+
+		while (igid<*maxgid && (gidbuf[igid]<dest))  {
+			msgbuf+=MaxBlockSize;
+			igid++;
+		}
+
+		if (igid<*maxgid && (gidbuf[igid]==dest)) {
+			printf("%d: %d->%d:",me,GID(pv),GID(MDEST(m)));
+			mtype = MTP(vtype,MDESTTYPE(m));
+			ncomp = MD_COLS_IN_MTYPE(ConsMatrix,mtype);
+			Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+			for (k=0; k<rcomp; k++)
+				for (j=k*ncomp; j<(k+1)*ncomp; j++)
+				  printf(" %f",MVALUE(m,Comp[j]));
+			msgbuf+=MaxBlockSize;
+			igid++;
+			printf("\n");
+		}
+	}
+    ENDDEBUG
+
+	return (NUM_OK);
+}
+
+static int sort_MatArray (const void *e1, const void *e2)
+{
+    MATRIX  *m1 = *((MATRIX **)e1);
+    MATRIX  *m2 = *((MATRIX **)e2);
+	DDD_GID g1 = DDD_InfoGlobalId(PARHDR(MDEST(m1)));
+	DDD_GID g2 = DDD_InfoGlobalId(PARHDR(MDEST(m2)));
+
+	if (g1<g2) return(-1);
+	if (g1>g2) return(1);
+	return (NUM_OK);
+}
+
+static int CountAndSortMatrices (DDD_OBJ obj)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	MATRIX *m;
+	int    n, j;
+
+	if (PRIO(pv) != PrioVGhost)   {
+	    PRINTDEBUG(np,0,("%3d: I'm not counting\n",me));
+	    return(0);
+	}
+
+	PRINTDEBUG(np,0,("%3d: Counting and sorting matrices\n",me));
+
+	/* sort MATRIX-list according to gid of destination vector */
+    n = 0;
+	if (VSTART(pv)!=NULL)
+	{
+		ASSERT(MDEST(VSTART(pv))==pv);
+
+		for (m=VSTART(pv); m!=NULL; m=MNEXT(m))
+		    MatArrayRemote[n++] = m;
+	}
+	if (n>1)
+	    qsort(MatArrayRemote,MIN(n,MATARRAYSIZE),sizeof(MATRIX *),sort_MatArray);
+	if (MaximumInconsMatrices < n)
+		MaximumInconsMatrices = n;
+
+	return(0);
+}
+
+INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
+{
+    INT mt;
+	size_t sizePerVector;
+
+	PRINTDEBUG(np,0,("%3d: entering l_amgmatrix_collect...\n",me));
+	PRINTDEBUG(np,0,("%3d: Gridlevel %d\n",me,GLEVEL(g)));
+
+    ConsMatrix = (MATDATA_DESC *)A;
+	MaxBlockSize = 0;
+	for (mt=0; mt<NMATTYPES; mt++)
+	    MaxBlockSize = MAX(MaxBlockSize,MD_COLS_IN_MTYPE(ConsMatrix,mt)
+						   *MD_ROWS_IN_MTYPE(ConsMatrix,mt));
+	MaximumInconsMatrices=0;
+	DDD_IFAExecLocal(VectorVIF, GRID_ATTR(g), CountAndSortMatrices);
+	MaximumInconsMatrices = UG_GlobalMaxINT(MaximumInconsMatrices);
+	DataSizePerVector = MaximumInconsMatrices * MaxBlockSize * sizeof(DOUBLE);
+	DataSizePerVector = CEIL(DataSizePerVector);
+
+	PRINTDEBUG(np,0,("%3d: MaximumInconsMatrices: %d\n",me,MaximumInconsMatrices));
+	PRINTDEBUG(np,0,("%3d: MaxBlockSize: %d\n",me,MaxBlockSize));
+	PRINTDEBUG(np,0,("%3d: DataSizePerVector: %d\n",me,DataSizePerVector));
+
+	/* overall data sent per vector is its matrix entry data plus
+	   the number of valid entries plus a table of DDD-GIDs of 
+		destination vectors */
+	sizePerVector = DataSizePerVector + sizeof(INT) 
+		            + MaximumInconsMatrices*sizeof(DDD_GID);
+	sizePerVector = CEIL(sizePerVector);
+
+	PRINTDEBUG(np,0,("%3d: sizePerVector: %d\n",me,sizePerVector));
+
+	DDD_IFAOneway(VectorVIF, GRID_ATTR(g), IF_BACKWARD, sizePerVector,
+				  Gather_AMGMatrixCollect, Scatter_AMGMatrixCollect);
+
+	PRINTDEBUG(np,0,("%3d: exiting l_amgmatrix_collect...\n",me));
 
 	return (NUM_OK);
 }
@@ -1511,18 +1791,6 @@ static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
 	return (NUM_OK);
 }
 
-static int sort_MatArray (const void *e1, const void *e2)
-{
-    MATRIX  *m1 = *((MATRIX **)e1);
-    MATRIX  *m2 = *((MATRIX **)e2);
-	DDD_GID g1 = DDD_InfoGlobalId(PARHDR(MDEST(m1)));
-	DDD_GID g2 = DDD_InfoGlobalId(PARHDR(MDEST(m2)));
-
-	if (g1<g2) return(-1);
-	if (g1>g2) return(1);
-	return (NUM_OK);
-}
-
 static int CountAndSortInconsMatrices (DDD_OBJ obj)
 {
 	VECTOR *pv = (VECTOR *)obj;
@@ -1557,7 +1825,7 @@ static int CountAndSortInconsMatrices (DDD_OBJ obj)
 	if (nRemote>0)
 	{
 		if (nRemote>1)
-			qsort(MatArrayRemote,nRemote,sizeof(MATRIX *),sort_MatArray);
+			qsort(MatArrayRemote,MIN(nRemote,MATARRAYSIZE),sizeof(MATRIX *),sort_MatArray);
 
 		m=VSTART(pv);
 		for(j=0; j<nRemote; j++)
@@ -3913,6 +4181,13 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
 		REP_ERR_RETURN(err);
 #endif
+
+	if (fl==-1) {
+    UserWriteF("Entering s_ddot on level %d\n",fl);
+	PrintVector(GRID_ON_LEVEL(mg,fl),x,3,3);
+	v=FIRSTVECTOR(GRID_ON_LEVEL(mg,tl));
+	UserWriteF("firstvector = 0x%x\n",v);
+	}
 	
   	spoff = VD_OFFSETPTR(x);				
 	
@@ -3946,12 +4221,27 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 					break;
 				
 				case 3:
+				    if (tl==-1) UserWriteF("firstvector = 0x%x\n",v);
 					SET_VD_CMP_3(cx,x,vtype);
+				    if (tl==-1) UserWriteF("firstvector = 0x%x\n",v);
 					SET_VD_CMP_3(cy,y,vtype);
+				    if (tl==-1) UserWriteF("firstvector = 0x%x\n",v);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);}
+					if (tl==-1) UserWriteF("Now doing S_FINE_VLOOP__TYPE(%d,0x%x,0x%x,%d)\n",tl,v,mg,vtype);
+					for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,tl)); v!= NULL; v=SUCCVC(v)) {
+					    if (tl==-1) UserWriteF("v = 0x%x\n",v);
+					    if ((VTYPE(v)==vtype) && (NEW_DEFECT(v))) {
+							value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);	
+							value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); 
+							value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);
+						}
+						else {
+						  if (VTYPE(v)!=vtype) UserWrite("VTYPE(v)!=vtype\n");
+						  if (!NEW_DEFECT(v)) UserWrite("!NEW_DEFECT(v)\n");
+						}
+					}
+					if (tl==-1) UserWriteF("v = 0x%x\n",v); 
 					break;
 				
 				default:
@@ -3982,6 +4272,13 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 	UG_GlobalSumNDOUBLE(VD_NCOMP(x), sp);
 	#endif
 	#endif
+
+	if (fl==-1) {
+    UserWriteF("Leaving s_ddot on level %d\n",fl);
+    UserWriteF("ddot product is %f %f %f\n",sp[0], sp[1], sp[2]);
+	}
+	
+
 
 	return (NUM_OK);
 }
@@ -4186,7 +4483,9 @@ INT s_eunorm (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE
 	INT i;
 	INT err;
 
+if (tl==-1) UserWriteF("s_eunorm with fl=%d, tl=%d\n",fl,tl);
 	if ((err=s_ddot (mg,fl,tl,x,x,eu))!=0) 	REP_ERR_RETURN (err);
+if (tl==-1) UserWriteF("s_eunorm done, norm = %f %f %f \n",eu[0],eu[1],eu[2]);
 	for (i=0; i<VD_NCOMP(x); i++)
 		eu[i] = SQRT(eu[i]);
 	
