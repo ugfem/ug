@@ -818,7 +818,7 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 	const FAMGTransfer &transfer = *fg.GetTransfer();
 	
 	const typename MT::GridVector& fg_gridvec = (typename MT::GridVector&)fg.GetGridVector();
-	const MT& Mfg = (MT&)*fg.GetMatrix();
+	const MT& Mfg = (MT&)*fg.GetConsMatrix();	// consistent matrix is essential here!
 	const MT& Dfg = (MT&)*fg.GetDiagMatrix();
 	const VT &tvA = *fg.GetVector(FAMGTVA);
 	const VT &tvB = *fg.GetVector(FAMGTVB);
@@ -826,7 +826,10 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 	typename VT::VectorEntry i_fg, i_cg, j_fg, j_cg, s_fg, s_cg, t_cg;
 	FAMGTransferEntry *pjs, *pij, *pst;
 	typename VT::Iterator viter(fg_gridvec);
-	
+
+#ifdef ModelP
+	abort();// check the consistent mode of ALL occuring matrices!!! and remove this line then
+#endif
     
     // cast because GetSparseBlockPtr returns a const FAMGSparseBlock * pointer
     FAMGSparseBlock *cmatsb_d = (FAMGSparseBlock *)Mcg.GetDiagSparseBlockPtr();
@@ -877,6 +880,32 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 
 	while (viter(i_fg) )
 	{
+#ifdef ModelP
+		if ( IS_FAMG_GHOST(((FAMGugVectorEntryRef*)(i_fg.GetPointer()))->myvector()) )
+		{
+			// repair coarse grid matrix of border vector, if it has no diagonal matrix entry
+			if (fg_gridvec.IsCG(i_fg) )
+			{
+				transfer.GetFirstEntry(i_fg)->GetColInVar(i_cg);
+
+				typename MT::Iterator mijiter(Mcg,i_cg);
+
+				if( mijiter(mij) )	// test first matrix entry of i_cg
+				{
+					if( mij.dest() != i_cg )
+						Mcg.AddEntry(0.0, i_cg, i_cg);	// has no diag entry yet
+				}
+				else // i_cg has no matrix entry
+				{
+					Mcg.AddEntry(0.0, i_cg, i_cg);
+				}
+			}
+			continue;
+		}
+#endif
+
+		// i is now in core partition
+
 		if (fg_gridvec.IsCG(i_fg) )
 		{
 			// i is coarse
@@ -984,6 +1013,9 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 	return 0;
 }
 #else
+
+// #define prvec(v) KeyForObject((KEY_OBJECT *)(((FAMGugVectorEntryRef*)(v.GetPointer()))->myvector())),VINDEX((((FAMGugVectorEntryRef*)(v.GetPointer()))->myvector())) 
+
 template<class MT>
 int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 // this matrix lives on the coarse grid
@@ -995,15 +1027,47 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 	const FAMGTransfer &transfer = *fg.GetTransfer();
 	
 	const typename MT::GridVector& fg_gridvec = (typename MT::GridVector&)fg.GetGridVector();
-	const MT& Mfg = (MT&)*fg.GetMatrix();
+	const MT& Mfg = (MT&)*fg.GetConsMatrix();	// consistent matrix is essential here!
 	typename MT::MatrixEntry mij, mis;
 	typename VT::VectorEntry i_fg, i_cg, j_fg, j_cg, s_fg, s_cg, t_cg;
 	FAMGTransferEntry *pjs, *pij, *pst;
 
 	typename VT::Iterator viter(fg_gridvec);
-	
+
+// the next lines are for debugging only:
+//MATDATA_DESC *tmpA = ((FAMGugMatrix*)fg.GetConsMatrix())->GetMatDesc();
+//GRID *tmpgrid = fg.GetugGrid();
+//int tmpflevel = GLEVEL(tmpgrid);
+//printf("%d: GalerkinAss finelevel = %d\n",me,tmpflevel); prvGeom(tmpflevel,0); primGeom(tmpflevel); prmGeom(tmpflevel,MD_SCALCMP(tmpA)); prvGeom(tmpflevel-1,0);
+
 	while (viter(i_fg) )
 	{
+#ifdef ModelP
+		if ( IS_FAMG_GHOST(((FAMGugVectorEntryRef*)(i_fg.GetPointer()))->myvector()) )
+		{
+			// repair coarse grid matrix of border vector, if it has no diagonal matrix entry
+			if (fg_gridvec.IsCG(i_fg) )
+			{
+				transfer.GetFirstEntry(i_fg)->GetColInVar(i_cg);
+
+				typename MT::Iterator mijiter(Mcg,i_cg);
+
+				if( mijiter(mij) )	// test first matrix entry of i_cg
+				{
+					if( mij.dest() != i_cg )
+						Mcg.AddEntry(0.0, i_cg, i_cg);	// has no diag entry yet
+				}
+				else // i_cg has no matrix entry
+				{
+					Mcg.AddEntry(0.0, i_cg, i_cg);
+				}
+			}
+			continue;
+		}
+#endif
+
+		// i is now in core partition
+
 		if (fg_gridvec.IsCG(i_fg) )
 		{
 			// i is coarse
@@ -1019,6 +1083,8 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 				{
 					transfer.GetFirstEntry(j_fg)->GetColInVar(j_cg);
 					Mcg.AddEntry(Mfg[mij], i_cg, j_cg);               // Mcc
+					//printf("%d: G%d[%d] Mcc i f%d[%d] c%d[%d] j f%d[%d] c%d[%d] Mfg[mij]=%g\n",me, prvec(i_cg),
+					//	prvec(i_fg),prvec(i_cg),prvec(j_fg),prvec(j_cg),Mfg[mij]);
 				}
 				else
 				{
@@ -1026,6 +1092,9 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 					{
 						pjs->GetColInVar(s_cg);
 						Mcg.AddEntry(Mfg[mij]*pjs->GetProlongation(), i_cg, s_cg);      // Mcf*P
+						//printf("%d: G%d[%d] Mcf*P i f%d[%d] c%d[%d] j f%d[%d] s c%d[%d] Mfg[mij]=%g pjs=%g Mfg[mij]*pjs=%g\n",me, prvec(i_cg),
+						//	prvec(i_fg),prvec(i_cg),prvec(j_fg),prvec(s_cg),Mfg[mij],pjs->GetProlongation(),Mfg[mij]*pjs->GetProlongation());
+
 					}
 				}
 			}
@@ -1048,6 +1117,8 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 						transfer.GetFirstEntry(s_fg)->GetColInVar(s_cg);
 						// pij is equivalent to rji 
 						Mcg.AddEntry(pij->GetRestriction()*Mfg[mis], j_cg, s_cg);          // R*Mfc
+						//printf("%d: G%d[%d] R*Mfc j c%d[%d] i f%d[%d] s f%d[%d] c%d[%d] rji=%g Mfg[mis]=%g rji*Mfg[mis]=%g\n",me, prvec(j_cg),
+						//	prvec(j_cg),prvec(i_fg),prvec(s_fg),prvec(s_cg),pij->GetRestriction(), Mfg[mis], pij->GetRestriction()*Mfg[mis] );
 					}
 					else
 					{	// s is fine 
@@ -1056,6 +1127,9 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 							pst->GetColInVar(t_cg);
 							// pij is equivalent to rji
 							Mcg.AddEntry(pij->GetRestriction()*Mfg[mis]*pst->GetProlongation(), j_cg, t_cg);// R*Mff*P
+							//printf("%d: G%d[%d] R*Mff*P j c%d[%d] i f%d[%d] s f%d[%d] t c%d[%d] rji=%g Mfg[mis]=%g pst=%g rji*Mfg[mis]*pst=%g\n",me, prvec(j_cg),
+							//	prvec(j_cg),prvec(i_fg),prvec(s_fg),prvec(t_cg),pij->GetRestriction(),Mfg[mis],pst->GetProlongation(),pij->GetRestriction()*Mfg[mis]*pst->GetProlongation() );
+
 						}
 					}
 				}
@@ -1063,6 +1137,7 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 			}
 		}
 	}
+
 	return 0;
 }
 #endif
