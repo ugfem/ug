@@ -267,6 +267,7 @@ static void PSMarker (short n, short s, SHORT_POINT point)
   case GRAY_CIRCLE_MARKER :
     PSGrayForeground();
     PSFilledCircle(point,s);
+    cc = PScc;
     PSForeground(cc);
     break;
   case FILLED_CIRCLE_MARKER :
