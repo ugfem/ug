@@ -331,24 +331,16 @@ struct HGridPlotObj2D {
 
   struct PlotObjHead theHead;               /* the head                                     */
 
-  /* data for 2D-View of grid */
+  /* data for 3D-View of grid */
   DOUBLE ShrinkFactor;                      /* YES or NO                                    */
     #ifdef ModelP
   DOUBLE PartShrinkFactor;                  /* YES or NO                                    */
     #endif
   INT PlotElemID;                           /* YES or NO                                    */
-  INT PlotRefMarks;                         /* YES or NO                                    */
-  INT PlotIndMarks;                         /* YES or NO                                    */
-  INT PlotNodeID;                           /* YES or NO                                    */
-  INT PlotNodeType;                         /* YES or NO                                    */
-  INT PlotNodes;                            /* YES or NO                                    */
-  INT PlotBoundary;                         /* YES or NO                                    */
   INT PlotSubdomain;                        /* YES or NO                                    */
   INT WhichElem;                            /* see above                                    */
   INT ElemColored;                          /* YES or NO                                    */
-  INT EdgeColor;                            /* for coloring of edges                        */
   DOUBLE ZMax;                                                          /* z-coordinate to which CURRLEVEL is extended  */
-  VECDATA_DESC *FreeBnd;                    /* global coords of new free boundary           */
 };
 
 struct VecMatPlotObj2D {

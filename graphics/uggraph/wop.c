@@ -2526,7 +2526,7 @@ static INT MarkElements3D (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	
 	if (EE3D_PlotSelection && SELECTIONMODE(theMG)==elementSelection)
 	{
-		for (i=fromLevel; i<toLevel; i++)
+		for (i=fromLevel; i<=toLevel; i++)
 			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 				SETUSED(theElement,0);
 		for (i=0; i<SELECTIONSIZE(theMG); i++)
@@ -6788,8 +6788,6 @@ static INT EW_PreProcess_HPlotElements2D (PICTURE *thePicture, WORK *theWork)
 		EE2D_NoColor[COLOR_IRR] 		= 1;	
 		EE2D_NoColor[COLOR_REG] 		= 1;	
 	}
-	if (theGpo->PlotBoundary == YES)
-		EE2D_NoColor[COLOR_BND] 		= 0;	
 	
 	
 	EE2D_Color[COLOR_COPY]			= theOD->yellow;
@@ -6819,16 +6817,11 @@ static INT EW_PreProcess_HPlotElements2D (PICTURE *thePicture, WORK *theWork)
 		case PO_REG:
 			EE2D_Elem2Plot[PLOT_REG] = 1;
 	}
-	EE2D_RefMark					= theGpo->PlotRefMarks;
-	EE2D_ColorRefMark				= theOD->magenta;
-	EE2D_IndMark					= theGpo->PlotIndMarks;
-	EE2D_ColorIndMark				= theOD->red;
 	EE2D_ElemID 					= theGpo->PlotElemID;
 	EE2D_Subdom 					= theGpo->PlotSubdomain;
 	EE2D_ShrinkFactor				= theGpo->ShrinkFactor;
-	EE2D_EdgeColor					= theGpo->EdgeColor;
-	if (TOPLEVEL(theMG)>0)
-		EE2D_ZScale					= theGpo->ZMax/TOPLEVEL(theMG);
+	if (CURRENTLEVEL(theMG)>0)
+		EE2D_ZScale					= theGpo->ZMax/CURRENTLEVEL(theMG);
 	else
 		EE2D_ZScale					= 1;
 
@@ -8964,9 +8957,6 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	for (i=0; i<coe; i++)
 		x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
-	if (EE2D_IndMark)
-	  GetRefinementMark (theElement,&rule,&data);
-
 	/* store viewable sides on drawing obj */
 	if (EE2D_Property)
 	{
@@ -8982,8 +8972,7 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	}
 	else
 	{
-		if (((EE2D_NoColor[ECLASS(theElement)] && !EE2D_IndMark)) ||
-			(((rule != RED) && EE2D_IndMark)) )
+		if (EE2D_NoColor[ECLASS(theElement)])
 		{
 			DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
 			DO_2c(theDO) = coe; DO_inc(theDO) 
@@ -8992,10 +8981,7 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		{
 			DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
 			DO_2c(theDO) = coe; DO_inc(theDO) 
-			if (EE2D_IndMark)
-			  DO_2l(theDO) = edgecolor = EE2D_ColorIndMark;
-			else
-			  DO_2l(theDO) = edgecolor = EE2D_Color[ECLASS(theElement)]; 
+			DO_2l(theDO) = edgecolor = EE2D_Color[ECLASS(theElement)]; 
 			DO_inc(theDO);
 			DO_2Cp(theDO)[0]=intensity; DO_inc(theDO);
 		}
@@ -9090,10 +9076,6 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			DO_2Cp(theDO)[0]=Element_Z; DO_inc(theDO);
         }
 
-	/* plot refinement mark */
-	if (EE2D_RefMark)
-		theDO = InvertRefinementMark2D(theElement,theDO);
-	
 	/* plot element ID */
 	if (EE2D_ElemID || EE2D_Subdom)
 	{

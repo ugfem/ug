@@ -3448,17 +3448,9 @@ static INT InitHGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PartShrinkFactor        = 1.0;
                 #endif
     theGpo->ElemColored             = 1;
-    theGpo->EdgeColor                       = 0;
     theGpo->WhichElem                       = PO_ALL;
-    theGpo->PlotBoundary            = YES;
     theGpo->PlotElemID                      = NO;
-    theGpo->PlotNodeID                      = NO;
-    theGpo->PlotNodeType            = NO;
-    theGpo->PlotNodes                       = NO;
-    theGpo->PlotRefMarks            = NO;
-    theGpo->PlotIndMarks            = NO;
     theGpo->ZMax                            = BVPD_RADIUS(theBVPDesc);
-    theGpo->FreeBnd                 = NULL;
   }
 
   /* scan options */
@@ -3473,21 +3465,12 @@ static INT InitHGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     }
   ReadArgvDOUBLE("s",&theGpo->ShrinkFactor,       argc,argv);
   ReadArgvINT   ("c",&theGpo->ElemColored,        argc,argv);
-  ReadArgvINT   ("x",&theGpo->EdgeColor,          argc,argv);
-  ReadArgvINT   ("b",&theGpo->PlotBoundary,       argc,argv);
-  ReadArgvINT   ("r",&theGpo->PlotRefMarks,       argc,argv);
-  ReadArgvINT   ("i",&theGpo->PlotIndMarks,       argc,argv);
   ReadArgvINT   ("e",&theGpo->PlotElemID,         argc,argv);
   ReadArgvINT   ("S",&theGpo->PlotSubdomain,      argc,argv);
-  ReadArgvINT   ("n",&theGpo->PlotNodeID,         argc,argv);
-  ReadArgvINT   ("type",&theGpo->PlotNodeType,argc,argv);
-  ReadArgvINT   ("m",&theGpo->PlotNodes,          argc,argv);
   ReadArgvDOUBLE("z",&theGpo->ZMax,                       argc,argv);
   PO_MIDPOINT(thePlotObj)[2]=0.5*theGpo->ZMax;
   PO_RADIUS(thePlotObj) = SQRT(BVPD_RADIUS(theBVPDesc)*BVPD_RADIUS(theBVPDesc)+0.25*theGpo->ZMax*theGpo->ZMax);
 
-  vd = ReadArgvVecDesc(PO_MG(thePlotObj),"free",argc,argv);
-  if (vd!=NULL) theGpo->FreeBnd = vd;
         #ifdef ModelP
   ReadArgvDOUBLE("p",&theGpo->PartShrinkFactor,argc,argv);
   if (theGpo->PartShrinkFactor<=0.0 || theGpo->PartShrinkFactor>1.0)
@@ -3498,24 +3481,6 @@ static INT InitHGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   if (theGpo->ShrinkFactor<=0.0 || theGpo->ShrinkFactor>1.0)
     return (NOT_ACTIVE);
   if (theGpo->ElemColored<0 || theGpo->ElemColored>2) return (NOT_ACTIVE);
-  if (theGpo->PlotIndMarks == YES)
-  {
-    if ((theGpo->ElemColored == YES) ||
-        (theGpo->PlotRefMarks == YES))
-    {
-      UserWrite("use i option only without c and r option\n");
-      return (NOT_ACTIVE);
-    }
-  }
-
-  if (theGpo->FreeBnd!=NULL)
-  {
-    if (VD_ncmps_in_otype_mod(theGpo->FreeBnd,NODEVEC,NON_STRICT)!=DIM)
-      return (NOT_ACTIVE);
-
-    if (!VD_SUCC_COMP(theGpo->FreeBnd))
-      return (NOT_ACTIVE);
-  }
 
   return (ACTIVE);
 }
@@ -3551,18 +3516,9 @@ static INT DisplayHGridPlotObject_2D (PLOTOBJ *thePlotObj)
         #ifdef ModelP
   UserWriteF(DISPLAY_PO_FORMAT_SF,"PartShrinkFactor",(float)theGpo->PartShrinkFactor);
         #endif
-  if (theGpo->PlotBoundary == YES)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"BND","YES");
-  else
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"BND","NO");
 
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"Node markers",         BOOL_2_YN(theGpo->PlotNodes));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"ref marks",            BOOL_2_YN(theGpo->PlotRefMarks));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"indicator marks",      BOOL_2_YN(theGpo->PlotIndMarks));
   UserWriteF(DISPLAY_PO_FORMAT_SS,"ElemID",                       BOOL_2_YN(theGpo->PlotElemID));
   UserWriteF(DISPLAY_PO_FORMAT_SS,"subdomID",                     BOOL_2_YN(theGpo->PlotSubdomain));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeID",                       BOOL_2_YN(theGpo->PlotNodeID));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeType",                     BOOL_2_YN(theGpo->PlotNodeType));
   UserWriteF(DISPLAY_PO_FORMAT_SF,"ZMax",                         (float)theGpo->ZMax);
 
   switch (theGpo->WhichElem)
@@ -3582,12 +3538,6 @@ static INT DisplayHGridPlotObject_2D (PLOTOBJ *thePlotObj)
   }
 
   UserWriteF(DISPLAY_PO_FORMAT_SI,"COLORED",(int)theGpo->ElemColored);
-  UserWriteF(DISPLAY_PO_FORMAT_SI,"EDGECOLOR",(int)theGpo->EdgeColor);
-
-  if (theGpo->FreeBnd!=NULL)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"free bnd",ENVITEM_NAME(theGpo->FreeBnd));
-  else
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"free bnd","NO");
 
   return (0);
 }
@@ -4289,7 +4239,7 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEvpo->PlotGrid               = NO;
     theEvpo->max                    = 1.0;
     theEvpo->CutVectors     = YES;
-    theEvpo->RasterSize     = PO_RADIUS(thePlotObj)/10.0;
+    theEvpo->RasterSize     = 20.0;
     theEvpo->CutLenFactor   = 1.0;
   }
 
