@@ -11,7 +11,7 @@
 # include configuration and all makefile macro definitions
 include ../ug.conf
 
-OBJECTS = domain.o
+OBJECTS = 
 
 # local C compiler flags
 LCFLAGS = -I../include
@@ -25,8 +25,12 @@ all : $(OBJECTS) $(DOM_MODULE) Makefile.dom
 STD_DOMAIN:
 	cd std; make -f Makefile.std; cd ..;
 
+GSF_DOMAIN:
+	cd gsf; make -f Makefile.gsf; cd ..;
+
 clean:
 	rm -f $(OBJECTS)
-	cd std;  make -f Makefile.std  clean; cd ..;
+	cd std;  make -f Makefile.std clean; cd ..;
+	cd gsf;  make -f Makefile.gsf clean; cd ..;
 
 
