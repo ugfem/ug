@@ -1303,7 +1303,6 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	VERTEX *CenterVertex;
 	EDGEDATA *edata;
 	REFRULE *rule, *nbrule;
-	COORD *x, *xi, sx, sy;
 	INT Mark,Refine,toBisect,toDelete,toCreate;
 	INT k,l;
 	char buffer[64];
@@ -1736,7 +1735,6 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	NODE *theNode, *theEdgeNode, *theNode0, *theNode1;
 	NODE *theSideNodes[8];
 	VERTEX *CenterVertex, *myvertex;
-	VSEGMENT *vs;
 	EDGE *theEdge;
 	ELEMENT *theSon;
 	ELEMENT *NbElement;
@@ -1746,7 +1744,6 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	NODE **CenterNode;
 	REFRULE *NbRule;
 	SONDATA *sdata2;
-	COORD *x,*xi;
 	int i,j,k,l,m,n,o,p,q,r,s,s2,t,found,points;
 	int NbrSide,side,nbside,NbSonIndex,nelem,nedges,node,node0,nsi;
 	int bdy,edge, sides[4], side0, side1;
@@ -2403,38 +2400,7 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 				oldSide = SIDE(theElement,i);
 				assert(oldSide != NULL);
 
-				newSide = CreateElementSide(theGrid);
-				if (newSide == NULL) {assert(0);return(GM_FATAL);}
-				SET_SIDE(sons[i*5+j].theSon,0,newSide);
-				ES_PATCH(newSide) = ES_PATCH(oldSide);
-
-				for (k=0; k<CORNERS_OF_SIDE(sons[i*5+j].theSon,side); k++) {
-					node = CORNER_OF_SIDE(sons[i*5+j].theSon,side,k);
-					for (l=0; l<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; l++)
-						if (theContext[l] == CORNER(sons[i*5+j].theSon,node)) break;
-					assert(l<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM);
-
-					if (l<CORNERS_OF_ELEM(theElement)) { /* a corner of theElement */
-						nsi = CORNER_OF_SIDE_INV(theElement,i,l); /* position of corner in side numeration */
-						assert(nsi != -1);
-						PARAM(newSide,k,0) = PARAM(oldSide,nsi,0);
-						PARAM(newSide,k,1) = PARAM(oldSide,nsi,1);
-					}
-					else { /* a midpoint of an edge or side of theElement */
-						myvertex = MYVERTEX(theContext[l]);
-						assert(myvertex!=NULL);
-						assert (OBJT(myvertex) == BVOBJ);
-						assert (VSEG(myvertex) != NULL);
-
-						/* find common boundary segment */
-						for( vs=VSEG(myvertex); vs!=NULL; vs = NEXTSEG(vs) ) {
-								if (VS_PATCH(vs) == ES_PATCH(oldSide)) break;
-						}
-						assert(vs!=NULL);
-						PARAM(newSide,k,0) =  LAMBDA(vs,0);
-						PARAM(newSide,k,1) =  LAMBDA(vs,1);
-					}
-				}
+				if (CreateSonElementSide(theGrid,theElement,i,sons[i*5+j].theSon,0)!=GM_OK) RETURN(GM_FATAL);
 			}
 			else {
 				/* search neighboring element */
@@ -2664,10 +2630,7 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	ELEMENT *NbSideSons[5];
 	ELEMENTSIDE *oldSide,*newSide;
 	VERTEX *myvertex;
-	VSEGMENT *vs;
 	NODE *mynode;
-	COORD *v0,*v1,*v2, vd[3];
-	COORD *x;
 	INT boundaryelement, found;
 	REFRULE *rule, *rule2;
 	EDGEDATA *edata;
@@ -2760,39 +2723,7 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 					side -= FATHER_SIDE_OFFSET;
 					if ((oldSide = SIDE(theElement,side)) == NULL) continue;
 
-					newSide = CreateElementSide(theGrid);
-					if (newSide==NULL) {assert(0);return(GM_FATAL);}
-					SET_SIDE(SonList[s],j,newSide);
-					ES_PATCH(newSide) = ES_PATCH(oldSide);
-	
-					for (i=0; i<CORNERS_OF_SIDE(SonList[s],j); i++)
-					{
-							ni = CORNER_OF_SIDE(SonList[s],j,i);		  /* node index of son	 */
-							pi = rule->sons[s].corners[ni];   /* point in theElement */
-
-							if (pi<CORNERS_OF_ELEM(theElement)) /* a corner of theElement */
-							{
-								nsi = CORNER_OF_SIDE_INV(theElement,side,pi); /* position of corner in side numeration */
-								assert(nsi != -1);
-								PARAM(newSide,i,0) = PARAM(oldSide,nsi,0);
-								PARAM(newSide,i,1) = PARAM(oldSide,nsi,1);
-							}
-							else /* a midpoint of an edge of theElement */
-							{
-								myvertex = MYVERTEX(theElementContext[pi]);
-								assert (OBJT(myvertex) == BVOBJ);
-								assert (VSEG(myvertex) != NULL);
-					
-								/* find common boundary segment */
-								for( vs=VSEG(myvertex); vs!=NULL; vs = NEXTSEG(vs) )
-								{
-										if (VS_PATCH(vs) == ES_PATCH(oldSide)) break;
-								}
-								assert(vs!=NULL);
-								PARAM(newSide,i,0) =  LAMBDA(vs,0);
-								PARAM(newSide,i,1) =  LAMBDA(vs,1);
-							}
-					}
+					if (CreateSonElementSide(theGrid,theElement,side,SonList[s],j)!=GM_OK) RETURN(GM_FATAL);
 				}
 		}
 	
