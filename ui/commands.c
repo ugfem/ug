@@ -5237,10 +5237,11 @@ static INT MarkCommand (INT argc, char **argv)
    This command invokes hierarchical multigrid smoother,
    calling the function 'SmoothMultiGrid'.
 
-   'smooth <nIt> [$b]'
+   'smooth <nIt> [$b] [$nc]'
 
    .    <nIt>   - number of iterations
    .    $b      - also smooth boundary nodes
+   .    $nc     - improvement for nonconvex domains
    D*/
 /****************************************************************************/
 
@@ -5272,7 +5273,11 @@ static INT SmoothMGCommand (INT argc, char **argv)
     switch (argv[i][0])
     {
     case 'b' :
-      smbdry = GM_MOVE_BOUNDARY_NODES;
+      smbdry = 1;
+      break;
+
+    case 'n' :
+      smbdry = 2;
       break;
 
     default :
@@ -11957,6 +11962,8 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("low",argv[1])==0) Debuglow                = atoi(argv[2]);
     else if (strcmp("machines",argv[1])==0) Debugmachines   = atoi(argv[2]);
     else if (strcmp("numerics",argv[1])==0) Debugnumerics   = atoi(argv[2]);
+    else if (strcmp("np",argv[1])==0) Debugnp             = atoi(argv[2]);
+    else if (strcmp("dom",argv[1])==0) Debugdom        = atoi(argv[2]);
     else if (strcmp("ui",argv[1])==0) Debugui                 = atoi(argv[2]);
     else
     {
@@ -11975,6 +11982,8 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("low",argv[1])==0)              {module="low";          l=Debuglow;}
     else if (strcmp("machines",argv[1])==0) {module="machines";     l=Debugmachines;}
     else if (strcmp("numerics",argv[1])==0) {module="numerics";     l=Debugnumerics;}
+    else if (strcmp("np",argv[1])==0)           {module="np";           l=Debugnp;}
+    else if (strcmp("dom",argv[1])==0)          {module="dom";          l=Debugdom;}
     else if (strcmp("ui",argv[1])==0)               {module="ui";           l=Debugui;}
     else
     {
