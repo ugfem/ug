@@ -48,6 +48,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "ugenv.h"
+#include "debug.h"
 
 #include "devices.h"
 
@@ -275,6 +276,9 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 
   if (obj != NULL)
     memset(obj,0,size);
+
+  if (obj == NULL)
+    PRINTDEBUG(gm,0,("GetMemoryForObject: cannot allocate %d bytes\n",size));
 
   return(obj);
 }
@@ -946,13 +950,13 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *after)
       /* as if the node was not moved.           */
       V3_LINCOMB(0.5,LOCAL_COORD_OF_ELEM(theElement,ni0),0.5,LOCAL_COORD_OF_ELEM(theElement,ni1),r)
 
-      /* Compute local coordinates */
-      if (GlobalToLocal3d(n,Corners,x,r)!=0) {
-        UserWrite(" *** CreateMidNodeHEX: can't move node !\n");
-        return (NULL);
-      }
-      else
-        V3_COPY(r,LCVECT(theVertex));
+      /* Compute local coordinates
+         if (GlobalToLocal3d(n,Corners,x,r)!=0) {
+              UserWrite(" *** CreateMidNodeHEX: can't move node !\n");
+              return (NULL);
+         }
+         else */
+      V3_COPY(r,LCVECT(theVertex));
     }
   }
 
@@ -1131,14 +1135,14 @@ NODE *CreateSideNode (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1
     r[1] = 0.5*(ETA(v1)+ETA(v2));
     r[2] = 0.5*(NU(v1)+NU(v2));
 
-    /* Compute local coordinates */
-    if (GlobalToLocal3d(n,Corners,x,r)!=0)
-    {
-      UserWrite(" *** CreateSideNode: can't move node !\n");
-      return (NULL);
-    }
-    else
-      V3_COPY(r,LCVECT(theVertex));
+    /* Compute local coordinates
+       if (GlobalToLocal3d(n,Corners,x,r)!=0)
+       {
+            UserWrite(" *** CreateSideNode: can't move node !\n");
+            return (NULL);
+       }
+       else */
+    V3_COPY(r,LCVECT(theVertex));
   }
 
   return(theNode);
@@ -1867,6 +1871,8 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   theHeap = NewHeap(SIMPLE_HEAP, heapSize, malloc(heapSize));
   if (theHeap==NULL)
   {
+    PRINTDEBUG(gm,0,("CreateMultiGrid: cannot allocate %d bytes\n",
+                     heapSize));
     DisposeMultiGrid(theMG);
     return(NULL);
   }
@@ -5563,7 +5569,7 @@ INT PointInElement (const COORD *global, const ELEMENT *theElement)
     V3_VECTOR_PRODUCT(a,b,rot);
     V3_SUBTRACT(global,x[CORNER_OF_SIDE(theElement,i,0)],b);
     V3_SCALAR_PRODUCT(rot,b,det);
-    if (det < 0.0)
+    if (det > SMALL_C)
       return(0);
   }
 
