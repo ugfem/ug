@@ -2546,7 +2546,6 @@ static INT SaveDataCommand (INT argc, char **argv)
 
 static INT LoadDataCommand (INT argc, char **argv)
 {
-  MULTIGRID *theMG;
   char FileName[NAMESIZE],type[NAMESIZE];
   VECDATA_DESC *theVDList[5];
   INT i,m,n,number,force;
@@ -6480,11 +6479,11 @@ static INT MakeGridCommand  (INT argc, char **argv)
   MULTIGRID *theMG;
   INT i,Single_Mode,display;
   MESH *mesh;
-  INT smooth;
 #ifdef __TWODIM__
   CoeffProcPtr coeff;
   GG_ARG args;
   GG_PARAM params;
+  INT smooth;
   long ElemID,m;
   int iValue;
   float tmp;
