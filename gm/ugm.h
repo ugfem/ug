@@ -49,7 +49,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MAX_PAR_DIST    1.0E-5          /* max.dist between different parameter */
+#define MAX_PAR_DIST    1.0E-6          /* max.dist between different parameter */
 
 #ifndef DYNAMIC_MEMORY_ALLOCMODEL
         #ifdef ModelP
