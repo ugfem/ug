@@ -1950,6 +1950,7 @@ enum GM_OBJECTS {
 
 #define NFATHER(p)                      ((NODE*)(p)->father)
 #define SETNFATHER(p,n)         ((p)->father = n)
+#define NFATHEREDGE(p)          ((EDGE*)(p)->father)
 /*
    #define NFATHER(p)			((NTYPE(p) == CORNER_NODE) ? (p)->father : NULL)
    #define NFATHEREDGE(p)		((NTYPE(p) == MID_NODE) ? (EDGE *)(p)->father : NULL)
