@@ -214,10 +214,10 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
 
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
-  if (ChangeEnvDir("Vectors") == NULL)
+  if (ChangeEnvDir("Vectors") == NULL) {
     MakeEnvItem("Vectors",VectorDirID,sizeof(ENVDIR));
-  if (ChangeEnvDir("Vectors") == NULL) return (NULL);
-
+    if (ChangeEnvDir("Vectors") == NULL) return (NULL);
+  }
   if (name == NULL)
     if (GetNewVectorName(theMG,name)) return (NULL);
   ConstructVecOffsets(NCmpInType,offset);
@@ -267,8 +267,6 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, VECDATA_DESC *theVD,
 
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
-  if (ChangeEnvDir("Vectors") == NULL)
-    MakeEnvItem("Vectors",VectorDirID,sizeof(ENVDIR));
   if (ChangeEnvDir("Vectors") == NULL) return (NULL);
 
   if (name == NULL)
@@ -425,10 +423,10 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
 
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
-  if (ChangeEnvDir("Matrices") == NULL)
+  if (ChangeEnvDir("Matrices") == NULL) {
     MakeEnvItem("Matrices",MatrixDirID,sizeof(ENVDIR));
-  if (ChangeEnvDir("Matrices") == NULL) return (NULL);
-
+    if (ChangeEnvDir("Matrices") == NULL) return (NULL);
+  }
   if (name == NULL)
     if (GetNewMatrixName(theMG,name)) return (NULL);
   ConstructMatOffsets(RowsInType,ColsInType,offset);
@@ -480,8 +478,6 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *theMD,
 
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
-  if (ChangeEnvDir("Matrices") == NULL)
-    MakeEnvItem("Matrices",MatrixDirID,sizeof(ENVDIR));
   if (ChangeEnvDir("Matrices") == NULL) return (NULL);
 
   if (name == NULL)

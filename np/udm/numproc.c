@@ -113,10 +113,10 @@ INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct)
 
   /* create class directory under root if necessary */
   if (ChangeEnvDir("/") == NULL) return (1);
-  if (ChangeEnvDir("NumProcClasses") == NULL)
+  if (ChangeEnvDir("NumProcClasses") == NULL) {
     MakeEnvItem("NumProcClasses",ClassDirID,sizeof(ENVDIR));
-  if (ChangeEnvDir("NumProcClasses") == NULL) return (1);
-
+    if (ChangeEnvDir("NumProcClasses") == NULL) return (1);
+  }
   /* allocate memory for constructor structure */
   constructor = (NP_CONSTRUCTOR *) MakeEnvItem (classname,ClassVarID,sizeof(NP_CONSTRUCTOR));
   if (constructor==NULL) return(1);
@@ -165,9 +165,7 @@ INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname)
   char name[NAMESIZE];
 
   /* first find constructor */
-  if (ChangeEnvDir("/") == NULL) return (1);
-  if (ChangeEnvDir("NumProcClasses") == NULL) return(1);
-  constructor = (NP_CONSTRUCTOR *) SearchTree(classname,ClassVarID,ClassDirID);
+  constructor = (NP_CONSTRUCTOR *) SearchEnv(classname,"/NumProcClasses",ClassVarID,ClassDirID);
   if (constructor==NULL) return(1);
 
   /* create objects directory in multigrid if necessary */
@@ -184,6 +182,11 @@ INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname)
   if (object==NULL) return(1);
 
   /* initialize object with constructor */
+  object->mg = theMG;
+  object->status =  NP_NOT_INIT;
+  object->Init = NULL;
+  object->Display = NULL;
+  object->Execute = NULL;
   if ((*constructor->Construct)(object)!=0) return(1);
 
   /* return OK */
