@@ -103,7 +103,7 @@ extern int StartSurfaceNetgen (double h, int smooth, int display, int D);
 extern int InitSurfaceNetgen (char * rulefilename);
 #endif
 extern INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n);
-extern INT NS_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
+extern INT NS_DIM_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
 
 static LGM_SURFACE *theSurface;
 static HEAP *Heap;
