@@ -378,7 +378,10 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
                               VINDEX_FMTX " conn=%x Size=%d, DIAG\n",
                               me,VINDEX_PRTX(vec),conn,MSIZE(mcopy)))
 
-          memcpy(conn,mcopy,MSIZE(mcopy));
+
+          /* TODO: define clearly
+             memcpy(conn,mcopy,MSIZE(mcopy)); */
+          memcpy(conn,mcopy,sizeof(MATRIX)-sizeof(DOUBLE));
 
           if (first==NULL) first = conn;
           else MNEXT(last) = conn;
@@ -456,7 +459,9 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
                                 VINDEX_PRTX(MDEST(mcopy))))
           }
 
-          memcpy(newm, mcopy, MSIZE(mcopy));
+          /* TODO: define clearly
+             memcpy(newm,mcopy,MSIZE(mcopy)); */
+          memcpy(newm,mcopy,sizeof(MATRIX)-sizeof(DOUBLE));
 
           if (first==NULL) first = newm;
           else MNEXT(last) = newm;
