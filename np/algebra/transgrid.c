@@ -1609,9 +1609,9 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
     }
   }
         #ifdef ModelP
-  /*	if (DOWNGRID(CoarseGrid) != NULL)
-      if (l_ghostmatrix_collect(CoarseGrid,Mat))
-              return(NUM_ERROR);*/
+  if (DOWNGRID(CoarseGrid) != NULL)
+    if (l_ghostmatrix_collect(CoarseGrid,Mat))
+      return(NUM_ERROR);
         #endif
 
   return(NUM_OK);
