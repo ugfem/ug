@@ -10958,10 +10958,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
   /* allocate memory for the element list on level 0 (but at least for maximal number of sons of an element) */
   theGrid = theMG->grids[0];
   if (theGrid->nElem<2)
-  {
-    UserWrite("elements need not to be ordered\n");
     return(0);
-  }
   theHeap = theMG->theHeap;
   Mark(theHeap,FROM_TOP);
   if ( (table=(ELEMENT **)GetMem(theHeap,MAX(theGrid->nElem,MAX_SONS)*sizeof(ELEMENT *),FROM_TOP)) == NULL )
@@ -12207,14 +12204,10 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 
   /* Find local coordinates of polygon verticies */
   for (i=0; i<n; ++i)
-  {
-    glob[0]=Poly[i][0]; glob[1]=Poly[i][1]; glob[2]=Poly[i][2];
-    loc[0]=loc[1]=loc[2]=0.5;
     if (GlobalToLocal3d(CORNERS_OF_ELEM(theElement),
-                        (const COORD **)x,glob,loc)!=0)
-      return(1);
-    PolyLoc[i][0]=loc[0]; PolyLoc[i][1]=loc[1]; PolyLoc[i][2]=loc[2];
-  }
+                        (const COORD **)x,Poly[i],PolyLoc[i]))
+      PrintErrorMessage('W',"EW_EScalar3D",
+                        "could not compute global coordinates");
 
   switch (EScalar3D_mode)
   {
