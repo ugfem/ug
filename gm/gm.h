@@ -967,11 +967,11 @@ struct grid {
   unsigned INT control;                         /* object identification, various flags */
   INT status;                                           /* possible values see defines above	*/
   INT level;                                                    /* level of that grid					*/
-  INT nVert;                                                    /* number of vertices					*/
-  INT nNode;                                                    /* number of nodes						*/
-  INT nElem;                                                    /* number of elements					*/
+  INT nVert[MAX_PRIOS];                         /* number of vertices					*/
+  INT nNode[MAX_PRIOS];                         /* number of nodes						*/
+  INT nElem[MAX_PRIOS];                         /* number of elements					*/
   INT nEdge;                                                    /* number of edges						*/
-  INT nVector;                                          /* number of vectors					*/
+  INT nVector[MAX_PRIOS];                       /* number of vectors					*/
   INT nCon;                                                     /* number of Connections				*/
 #ifdef __INTERPOLATION_MATRIX__
   INT nIMat;                        /* number of interpolation matrices     */
@@ -2415,12 +2415,18 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define UPGRID(p)                       ((p)->finer)
 #define DOWNGRID(p)             ((p)->coarser)
 #define MYMG(p)                         ((p)->mg)
-#define NV(p)                           ((p)->nVert)
-#define NN(p)                           ((p)->nNode)
-#define NT(p)                           ((p)->nElem)
+#define NV(p)                           ((p)->nVert[0])
+#define NN(p)                           ((p)->nNode[0])
+#define NT(p)                           ((p)->nElem[0])
+#define NVEC(p)                         ((p)->nVector[0])
+#ifdef ModelP
+#define NV_PRIO(p,prio)                         ((p)->nVert[prio])
+#define NN_PRIO(p,prio)                         ((p)->nNode[prio])
+#define NT_PRIO(p,prio)                         ((p)->nElem[prio])
+#define NVEC_PRIO(p,prio)                       ((p)->nVector[prio])
+#endif
 #define NE(p)                           ((p)->nEdge)
 #define NS(p)                           ((p)->nSide)
-#define NVEC(p)                         ((p)->nVector)
 #define NC(p)                           ((p)->nCon)
 #define VEC_DEF_IN_OBJ_OF_GRID(p,tp)     (GFORMAT(p)->OTypeUsed[(tp)]>0)
 #define NIMAT(p)                        ((p)->nIMat)
