@@ -731,7 +731,10 @@ extern "C" {
 #define F77SYM(lsym,usym)  lsym
 
 /* current time as DOUBLE value */
-#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+#ifndef CLOCKS_PER_SEC
+#define CLOCKS_PER_SEC 1000000
+#endif
+#define CURRENT_TIME   (((DOUBLE)times(NULL))/((DOUBLE)CLK_TCK))
 
 #endif
 
