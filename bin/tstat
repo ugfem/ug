@@ -1,0 +1,21 @@
+#!/bin/csh -f
+set timescale = 1;
+if ( $1 == "-a" ) then
+set timescale = 31536000; shift;
+endif
+if ( $1 == "-m" ) then
+set timescale = 2592000; shift;
+endif
+if ( $1 == "-d" ) then
+set timescale = 86400; shift;
+endif
+if ( $1 == "-h" ) then
+set timescale = 3600; shift;
+endif
+set PREFIX = $1
+if ( $2 != "" ) then 
+set OUT = $2
+else 
+set OUT = "out.gnu"
+endif
+ugmgs $PREFIX.ug.data.* | awk 'BEGIN   {i=0;} $1=="Time:"     {print i,$2/(ts+0);i++;}' ts=$timescale - > $OUT
