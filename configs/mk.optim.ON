@@ -1,0 +1,3 @@
+# this file is for internal ug configuration. don't change it!
+
+UG_OFLAGS = $(ARCH_OPTIM)

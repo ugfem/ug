@@ -37,6 +37,9 @@ include $(UGROOT)/configs/mk.dom.$(DOM_MODULE)
 # include macro definitions for debugging
 include $(UGROOT)/configs/mk.debug.$(DEBUG_MODE)
 
+# include macro definitions for debugging
+include $(UGROOT)/configs/mk.optim.$(OPTIM_MODE)
+
 # include macro definitions for netgen
 include $(UGROOT)/configs/mk.netgen.$(NETGEN)
 
@@ -58,7 +61,7 @@ include $(UGROOT)/configs/mk.gui.$(GUI)
 
 # construct new macro definitions from given ones
 UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
-			$(ARCH_CFLAGS) $(PPIF_CFLAGS) $(MODEL_CFLAGS) \
+			$(ARCH_CFLAGS) $(UG_OFLAGS) $(PPIF_CFLAGS) $(MODEL_CFLAGS) \
 			$(ARCH_XINCLUDES) $(ENV_CFLAGS) \
 			$(RIF_CFLAGS) $(CHACO_CFLAGS) \
 			$(NETGEN_CFLAGS) $(COVISE_CFLAGS) $(GRAPE_CFLAGS) \
