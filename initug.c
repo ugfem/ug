@@ -113,10 +113,17 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 INT InitUg (int *argcp, char ***argvp)
 {
   INT err;
-        #if (defined Debug && defined __MWCW__)
   char buffer[256];
+        #if (defined Debug && defined __MWCW__)
   char debugfilename[NAMESIZE];
         #endif
+  int ival;
+
+  /* get cmdintbufsize from defaults file */
+  if (GetDefaultValue(DEFAULTSFILENAME,"mutelevel",buffer)==0) {
+    sscanf(buffer," %d ",&ival);
+    SetMuteLevel ((INT) ival);
+  }
 
   /* init the low module */
   if ((err=InitLow())!=0)
@@ -127,7 +134,6 @@ INT InitUg (int *argcp, char ***argvp)
 
     return (1);
   }
-
 
   /* init parallelization module */
         #ifdef ModelP
