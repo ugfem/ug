@@ -65,6 +65,10 @@
 #include "misc.h"
 #endif
 
+#ifndef __DEBUG__
+#include "debug.h"
+#endif
+
 #ifndef __DOMAIN__
 #include "domain.h"
 #endif
@@ -230,9 +234,11 @@
 
 #define MAXVOBJECTS                                             4                       /* four different data types					*/
 #define MAXVECTORS                                              4                       /* max number of abstract vector types			*/
-/* MAXVOBJECTS <= MAXVECTORS <= (2<<VTYPE_LEN)	*/
+#if (MAXVECTORS<MAXVOBJECTS)
+        #error *** MAXVECTORS must not be smaller than MAXVOBJECTS ***
+#endif
 #define NOVTYPE                                                 -1                      /* to indicate type not defined					*/
-#define MAXDOMPARTS                                             4                       /* MAXDOMPARTS <= (1<<VPART_LEN)				*/
+#define MAXDOMPARTS                                             4                       /* max number of geometric domain parts			*/
 
 #define BITWISE_TYPE(t) (1<<(t))                                        /* transforms type into bitpattern				*/
 
@@ -1170,7 +1176,9 @@ extern CONTROL_ENTRY
 
 /* dynamic control words */
 #define _DEBUG_CW_
-#if (defined _DEBUG_CW_) && !(defined __COMPILE_CW__)
+#if (defined _DEBUG_CW_) && \
+  !(defined __COMPILE_CW__)                             /* to avoid infinite recursion during ReadCW */
+
 /* map cw read/write to functions */
         #define CW_READ(p,ce)                                   ReadCW(p,ce)
         #define CW_READ_STATIC(p,s,t)                   ReadCW(p,s ## CE)
@@ -1365,16 +1373,25 @@ enum GM_CE {
 #define VOTYPE_LEN                                      2
 #define VOTYPE(p)                                       CW_READ_STATIC(p,VOTYPE_,VECTOR_)
 #define SETVOTYPE(p,n)                          CW_WRITE_STATIC(p,VOTYPE_,VECTOR_,n)
+#if (MAXVOBJECTS > POW2(VOTYPE_LEN))
+        #error  *** VOTYPE_LEN too small ***
+#endif
 
 #define VTYPE_SHIFT                             2
 #define VTYPE_LEN                                       2
 #define VTYPE(p)                                        CW_READ_STATIC(p,VTYPE_,VECTOR_)
 #define SETVTYPE(p,n)                           CW_WRITE_STATIC(p,VTYPE_,VECTOR_,n)
+#if (MAXVTYPES > POW2(VTYPE_LEN))
+        #error  *** VTYPE_LEN too small ***
+#endif
 
 #define VDATATYPE_SHIFT                         4
 #define VDATATYPE_LEN                           4
 #define VDATATYPE(p)                            CW_READ_STATIC(p,VDATATYPE_,VECTOR_)
 #define SETVDATATYPE(p,n)                       CW_WRITE_STATIC(p,VDATATYPE_,VECTOR_,n)
+#if (MAXVTYPES > VDATATYPE_LEN)
+        #error  *** VDATATYPE_LEN too small ***
+#endif
 
 #define VCLASS_SHIFT                            8
 #define VCLASS_LEN                                      2
@@ -1422,6 +1439,9 @@ enum GM_CE {
 #define VPART_LEN                                       2
 #define VPART(p)                                        CW_READ_STATIC(p,VPART_,VECTOR_)
 #define SETVPART(p,n)                           CW_WRITE_STATIC(p,VPART_,VECTOR_,n)
+#if (MAXDOMPARTS > POW2(VPART_LEN))
+        #error  *** VPART_LEN too small ***
+#endif
 
 #define VCFLAG(p)                                       THEFLAG(p)
 #define SETVCFLAG(p,n)                          SETTHEFLAG(p,n)
@@ -1490,11 +1510,17 @@ enum GM_CE {
 #define MROOTTYPE_LEN                           2
 #define MROOTTYPE(p)                            CW_READ_STATIC(p,MROOTTYPE_,MATRIX_)
 #define SETMROOTTYPE(p,n)                       CW_WRITE_STATIC(p,MROOTTYPE_,MATRIX_,n)
+#if (MAXVTYPES > POW2(MROOTTYPE_LEN))
+        #error  *** MROOTTYPE_LEN too small ***
+#endif
 
 #define MDESTTYPE_SHIFT                         3
 #define MDESTTYPE_LEN                           2
 #define MDESTTYPE(p)                            CW_READ_STATIC(p,MDESTTYPE_,MATRIX_)
 #define SETMDESTTYPE(p,n)                       CW_WRITE_STATIC(p,MDESTTYPE_,MATRIX_,n)
+#if (MAXVTYPES > POW2(MDESTTYPE_LEN))
+        #error  *** MDESTTYPE_LEN too small ***
+#endif
 
 #define MDIAG_SHIFT                             5
 #define MDIAG_LEN                                       1
@@ -1751,11 +1777,6 @@ enum GM_OBJECTS {
 #define TAG(p)                                          CW_READ_STATIC(p,TAG_,GENERAL_)
 #define SETTAG(p,n)                             CW_WRITE_STATIC(p,TAG_,GENERAL_,n)
 
-/* use this to allocate space for general flags in all control words */
-/* of geometric objects                                                                                          */
-#define GENERAL_SHIFT                           16
-#define GENERAL_LEN                             15
-
 #define CTRL(p)         (*((unsigned INT *)(p)))
 #define ID(p)           (((INT *)(p))[1])
 
@@ -1795,11 +1816,11 @@ enum GM_OBJECTS {
 #define SETONNBSIDE(p,n)                        CW_WRITE_STATIC(p,ONNBSIDE_,VERTEX_,n)
 
 #define NOOFNODE_SHIFT                          9
-#define NOOFNODEMAX                                     32
+#define NOOFNODE_LEN                            5
+#define NOOFNODEMAX                                     POW2(NOOFNODE_LEN)
 #if (MAXLEVEL > NOOFNODEMAX)
 #error  ****  set NOOFNODEMAX/_LEN appropriate to MAXLEVEL: 2^NOOFNODE_LEN = NOOFNODEMAX >= MAXLEVEL ****
 #endif
-#define NOOFNODE_LEN                            5
 #define NOOFNODE(p)                                     CW_READ_STATIC(p,NOOFNODE_,VERTEX_)
 #define SETNOOFNODE(p,n)                        CW_WRITE_STATIC(p,NOOFNODE_,VERTEX_,n)
 #define INCNOOFNODE(p)                          SETNOOFNODE(p,NOOFNODE(p)+1)
@@ -2675,11 +2696,11 @@ INT             AllocateControlEntry    (INT cw_id, INT length, INT *ce_id);
 INT             FreeControlEntry                (INT ce_id);
 void            ListCWofObject                  (const void *obj, INT offset);
 void            ListAllCWsOfObject              (const void *obj);
+void            ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf);
 unsigned INT ReadCW                                     (const void *obj, INT ce);
+void            WriteCW                                 (void *obj, INT ce, INT n);
 void            ResetCEstatistics               (void);
 void            PrintCEstatistics               (void);
-void            WriteCW                                 (void *obj, INT ce, INT n);
-INT         PrintCW                 (void);
 INT             DefineMGUDBlock                 (BLOCK_ID id, MEM size);
 INT             FreeMGUDBlock                   (BLOCK_ID id);
 BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id);
