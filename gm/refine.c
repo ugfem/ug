@@ -71,6 +71,7 @@
 #include "heaps.h"
 #include "misc.h"
 #include "general.h"
+#include "ugtimer.h"
 
 /* dev module */
 #include "devices.h"
@@ -294,6 +295,24 @@ static ELEMENT *debugelem=NULL;
 	}                                                                        \
 	ENDDEBUG
 
+#ifndef STAT_OUT
+#undef NEW_TIMER(n)
+#undef DEL_TIMER(n)
+#undef START_TIMER(n)
+#undef STOP_TIMER(n)
+#undef DIFF_TIMER(n)
+#undef SUM_TIMER(n)
+#undef EVAL_TIMER(n)
+
+#define NEW_TIMER(n)
+#define DEL_TIMER(n)
+#define START_TIMER(n)
+#define STOP_TIMER(n)
+#define DIFF_TIMER(n)
+#define SUM_TIMER(n)
+#define EVAL_TIMER(n)
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -341,10 +360,12 @@ static INT Green_Marks;					/* green refined element counter	*/
 static INT refine_seq = 0;				/* 0/1: do/do not parallel part		*/
 static INT fifoloop = 0;				/* counter for FIFO loops			*/
 
-
+#ifdef STAT_OUT
 /* timing variables */
-static DOUBLE ident_begin,ident_end,t_ident;
-static DOUBLE overlap_begin,overlap_end,t_overlap;
+static int adapt_timer,closure_timer,gridadapt_timer,gridadapti_timer;
+static int gridadaptl_timer,ident_timer,overlap_timer,gridcons_timer;
+static int algebra_timer;
+#endif
 
 /* determine number of edge from reduced (i.e. restricted to one side) edgepattern */
 /* if there are two edges marked for bisection, if not deliver -1. If the edge-    */
@@ -3558,7 +3579,9 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 		}
 
 		case GREEN_CLASS:
+		#ifdef ModelP
 		case RED_CLASS:
+		#endif
 		{
 			/* determine sonnodes of side */
 			NODE *SideNodes[MAX_SIDE_NODES];
@@ -3726,8 +3749,9 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 		}
 
 /* old style           */
-/* 		case RED_CLASS:*/
-		if (0)
+		#ifndef ModelP
+		case RED_CLASS:
+		#endif
 		{
 			SONDATA *sondata;
 
@@ -5805,6 +5829,8 @@ static int AdaptGrid (GRID *theGrid, INT toplevel, INT level, INT newlevel, INT 
 {
 	GRID *FinerGrid = UPGRID(theGrid);
 
+	START_TIMER(gridadapti_timer)
+
 	#ifdef UPDATE_FULLOVERLAP	
 	DDD_XferBegin();
 	{
@@ -5825,10 +5851,14 @@ static int AdaptGrid (GRID *theGrid, INT toplevel, INT level, INT newlevel, INT 
 DDD_CONSCHECK;
 
 	/* now really manipulate the next finer level */		
+	START_TIMER(gridadaptl_timer)
+
 	if (level<toplevel || newlevel)
 		if (AdaptLocalGrid(theGrid,nadapted)!=GM_OK)				RETURN(GM_FATAL);
 
 		DDD_XferEnd();
+
+	SUM_TIMER(gridadaptl_timer)
 
 DDD_CONSCHECK;
 
@@ -5855,6 +5885,9 @@ if (0) {
 	{
 		if (!IDENT_IN_STEPS)
 			DDD_IdentifyEnd();
+
+		SUM_TIMER(gridadapti_timer)
+
 		return(GM_OK);
 	}
 
@@ -5863,6 +5896,8 @@ if (IDENT_IN_STEPS)
 	DDD_IdentifyBegin();
 
 DDD_CONSCHECK;
+
+	START_TIMER(ident_timer)
 
 	if (Identify_SonObjects(theGrid))	RETURN(GM_FATAL);
 
@@ -5873,12 +5908,9 @@ if (0) {
 	Synchronize();
 }
 
-	ident_begin = CURRENT_TIME;
-
 	DDD_IdentifyEnd();
 
-	ident_end = CURRENT_TIME;
-	t_ident += (ident_end-ident_begin);
+	SUM_TIMER(ident_timer)
 	/* DDD_JoinEnd(); */
 
 
@@ -5887,18 +5919,15 @@ DDD_CONSCHECK;
 
 	if (level<toplevel || newlevel)
 	{
+		START_TIMER(overlap_timer)
 		DDD_XferBegin();
 if (0)  /* delete sine this is already done in     */
 		/* ConstructConsistentGrid() (s.l. 980522) */
 		if (SetGridBorderPriorities(theGrid)) 		RETURN(GM_FATAL);
 		if (UpdateGridOverlap(theGrid))				RETURN(GM_FATAL);
 
-		overlap_begin = CURRENT_TIME;
 
 		DDD_XferEnd();
-
-		overlap_end = CURRENT_TIME;
-		t_overlap += (overlap_end-overlap_begin);
 
 DDD_CONSCHECK;
 
@@ -5919,6 +5948,8 @@ DDD_CONSCHECK;
 		#ifndef NEW_GRIDCONS_STYLE
 		ConstructConsistentGrid(FinerGrid);
 		#endif
+
+		SUM_TIMER(overlap_timer)
 	}
 
 DDD_CONSCHECK;
@@ -5930,6 +5961,8 @@ CheckConsistency(MYMG(theGrid),level,debugstart,gmlevel,&check);
 }
 
 if (0) CheckGrid(FinerGrid,1,0,1,1);
+
+	SUM_TIMER(gridadapti_timer)
 
 	return(GM_OK);
 }
@@ -6017,6 +6050,55 @@ static INT CheckMultiGrid (MULTIGRID *theMG)
 }
 
 
+#ifdef STAT_OUT
+void Manage_Adapt_Timer (int alloc)
+{
+	if (alloc)
+	{
+		NEW_TIMER(adapt_timer)
+		NEW_TIMER(closure_timer)
+		NEW_TIMER(gridadapt_timer)
+		NEW_TIMER(gridadapti_timer)
+		NEW_TIMER(gridadaptl_timer)
+		NEW_TIMER(ident_timer)
+		NEW_TIMER(overlap_timer)
+		NEW_TIMER(gridcons_timer)
+		NEW_TIMER(algebra_timer)
+	}
+	else
+	{
+		DEL_TIMER(adapt_timer)
+		DEL_TIMER(closure_timer)
+		DEL_TIMER(gridadapt_timer)
+		DEL_TIMER(gridadapti_timer)
+		DEL_TIMER(gridadaptl_timer)
+		DEL_TIMER(ident_timer)
+		DEL_TIMER(overlap_timer)
+		DEL_TIMER(gridcons_timer)
+		DEL_TIMER(algebra_timer)
+	}
+}
+
+void Print_Adapt_Timer (int total_adapted)
+{
+	UserWriteF("ADAPT: total_adapted=%d t_adapt=%.2f: t_closure=%.2f t_gridadapt=%.2f t_gridadapti=%.2f "
+		"t_gridadaptl=%.2f t_overlap=%.2f t_ident=%.2f t_gridcons=%.2f t_algebra=%.2f\n",
+		total_adapted,EVAL_TIMER(adapt_timer),EVAL_TIMER(closure_timer),EVAL_TIMER(gridadapt_timer),
+		EVAL_TIMER(gridadapti_timer),EVAL_TIMER(gridadaptl_timer),EVAL_TIMER(overlap_timer),
+		EVAL_TIMER(ident_timer),EVAL_TIMER(gridcons_timer),EVAL_TIMER(algebra_timer));
+	UserWriteF("ADAPTMAX: total_adapted=%d t_adapt=%.2f: t_closure=%.2f t_gridadapt=%.2f "
+		"t_gridadapti=%.2f "
+		"t_gridadaptl=%.2f t_overlap=%.2f t_ident=%.2f t_gridcons=%.2f t_algebra=%.2f\n",
+		total_adapted,UG_GlobalMaxDOUBLE(EVAL_TIMER(adapt_timer)),
+		UG_GlobalMaxDOUBLE(EVAL_TIMER(closure_timer)),
+		UG_GlobalMaxDOUBLE(EVAL_TIMER(gridadapt_timer)),UG_GlobalMaxDOUBLE(EVAL_TIMER(gridadapti_timer)),
+		UG_GlobalMaxDOUBLE(EVAL_TIMER(gridadaptl_timer)),
+		UG_GlobalMaxDOUBLE(EVAL_TIMER(overlap_timer)),
+		UG_GlobalMaxDOUBLE(EVAL_TIMER(ident_timer)),UG_GlobalMaxDOUBLE(EVAL_TIMER(gridcons_timer)),
+		UG_GlobalMaxDOUBLE(EVAL_TIMER(algebra_timer)));
+}
+#endif
+
 /****************************************************************************/
 /*
    AdaptMultiGrid - adapt whole multigrid structure
@@ -6047,7 +6129,6 @@ INT AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
 	NODE *theNode;
 	GRID *theGrid, *FinerGrid;
 	ELEMENT *theElement;
-	DOUBLE adapt_begin, adapt_end;
 
 /*
 CheckMultiGrid(theMG);
@@ -6069,9 +6150,11 @@ if (0)
 }
 #endif
 
-	adapt_begin = CURRENT_TIME;
-	t_ident = 0.0;
-	t_overlap = 0.0;
+	#ifdef STAT_OUT
+	Manage_Adapt_Timer(1);
+	#endif
+
+	START_TIMER(adapt_timer)
 
 	/* set up information in refine_info */
 	#ifndef ModelP
@@ -6119,13 +6202,19 @@ if (0)
 		if (DropMarks(theMG)) RETURN(GM_ERROR);
 
 	/* prepare algebra (set internal flags correctly) */
+	START_TIMER(algebra_timer)
+
 	PrepareAlgebraModification(theMG);
+
+	SUM_TIMER(algebra_timer)
 
 	toplevel = TOPLEVEL(theMG);
 
 	REFINE_MULTIGRID_LIST(1,theMG,"AdaptMultiGrid()","","")
 
 	/* compute modification of coarser levels from above */
+	START_TIMER(closure_timer)
+
 	for (level=toplevel; level>0; level--)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,level);
@@ -6149,6 +6238,9 @@ if (0)
 		REFINE_GRID_LIST(1,theMG,level-1,("End RestrictMarks(%d,down):\n",level),"");
 	}
 
+	SUM_TIMER(closure_timer)
+
+
 	#ifdef ModelP
 	IdentifyInit(theMG);
 	#endif
@@ -6160,6 +6252,8 @@ if (0)
 
 		theGrid = GRID_ON_LEVEL(theMG,level);
 		if (level<toplevel) FinerGrid = GRID_ON_LEVEL(theMG,level+1); else FinerGrid = NULL;
+
+		START_TIMER(closure_timer)
 
 		/* reset MODIFIED flags for grid and nodes */
 		SETMODIFIED(theGrid,0);
@@ -6233,14 +6327,19 @@ if (0)
 		PRINTDEBUG(gm,1,(PFMT "AdaptMultiGrid(): toplevel=%d nrefined=%d newlevel=%d\n",
 			me,toplevel,nrefined,newlevel));
 
+		SUM_TIMER(closure_timer)
 
 		/* now really manipulate the next finer level */		
+		START_TIMER(gridadapt_timer)
+
 		if (level<toplevel || newlevel)
 			#ifndef ModelP
 			if (AdaptGrid(theGrid,&nadapted)!=GM_OK)							RETURN(GM_FATAL);
 			#else
 			if (AdaptGrid(theGrid,toplevel,level,newlevel,&nadapted)!=GM_OK)	RETURN(GM_FATAL);
 			#endif
+
+		SUM_TIMER(gridadapt_timer)
 
 		/* if no grid adaption has occured adapt next level */
 		if (nadapted == 0) continue;
@@ -6249,6 +6348,8 @@ if (0)
 
 		if (level<toplevel || newlevel)
 		{
+			START_TIMER(algebra_timer)
+
 			/* now rebuild connections in neighborhood of elements which have EBUILDCON set */
 			/* This flag has been set either by GridDisposeConnection or by CreateElement	*/
 			if (GridCreateConnection(FinerGrid)) RETURN(GM_FATAL);
@@ -6261,16 +6362,22 @@ if (0)
 				  SeedVectorClasses(FinerGrid,theElement);
 
 			PropagateVectorClasses(FinerGrid);
+
+			SUM_TIMER(algebra_timer)
 		}
 	}
 
-	#ifdef ModelP
+	#ifdef ModelP 
 	IdentifyExit();
 
 	#ifdef NEW_GRIDCONS_STYLE
 	/* now repair inconsistencies                   */
 	/* former done on each grid level (s.l. 980522) */
+	START_TIMER(gridcons_timer);
+
 	ConstructConsistentMultiGrid(theMG);
+
+	SUM_TIMER(gridcons_timer)
 	#endif
 	#endif
 
@@ -6278,8 +6385,11 @@ if (0)
 	if (TOPLEVEL(theMG) > 0) DisposeTopLevel(theMG);
 	CURRENTLEVEL(theMG) = TOPLEVEL(theMG);
 
+	START_TIMER(algebra_timer)
+
 	if (CreateAlgebra(theMG) != GM_OK)
         REP_ERR_RETURN (GM_ERROR);
+	SUM_TIMER(algebra_timer)
 
 	REFINE_MULTIGRID_LIST(1,theMG,"END AdaptMultiGrid():\n","","");
 
@@ -6292,7 +6402,7 @@ if (0)
 	/* increment step count */
 	SETREFINESTEP(REFINEINFO(theMG),REFINESTEP(REFINEINFO(theMG))+1);
 
-	adapt_end = CURRENT_TIME;
+	SUM_TIMER(adapt_timer)
 /*
 CheckMultiGrid(theMG);
 */
@@ -6305,9 +6415,8 @@ if (GetVecDataDescByName(theMG,"sol") != NULL)
 */
 
 	#ifdef STAT_OUT
-	UserWriteF("ADAPT: total_adapted=%d t_adapt=%.2f t_overlap=%.2f "
-		"t_ident=%.2f\n",
-		total_adapted,adapt_end-adapt_begin,t_overlap,t_ident);
+	Print_Adapt_Timer(total_adapted);
+	Manage_Adapt_Timer(0);
 	#endif
 
 	return(GM_OK);
