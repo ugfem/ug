@@ -484,9 +484,9 @@ static INT MirrorAtPlane (COORD *in, COORD *pp, COORD *pn, COORD *out)
 										(e)[1] = 0.25*((a)[1]+(b)[1]+(c)[1]+(d)[1]);\
 										(e)[2] = 0.25*((a)[2]+(b)[2]+(c)[2]+(d)[2]);}
 
-INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv, COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv, COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LIP[MAX_EDGES_OF_ELEM])
 {
-	COORD sp, alpha, check[2];
+	COORD sp, alpha, check[2], M[9], Inv[9];
 	COORD_VECTOR a, b, c, d, e, cm, normal, param, EdgeMidPoints[6], SideMidPoints[4];
 	INT i, help, noutflow, ninflow, outflow[4], inflow[4], OpEdge[3], GrEdge[3], side[3], OpCorner, corner[3], inverted, First;
 	INT BackEdge, FrontEdge, BackCorner[2], FrontCorner[2], EdgeF0B0, EdgeF0B1, EdgeF1B0, EdgeF1B1, flags, changed;
@@ -496,7 +496,7 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 	{
 		V3_CLEAR(Area[i])
 		V3_CLEAR(GIP[i])
-		V3_COPY(LIP[i],LUIP[i])
+		V3_COPY(LIP[i],LIP[i])
 	}
 	
 	/* edge mid points */
@@ -728,7 +728,7 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 						else											V3_COPY(c,Area[EdgeF1B1])
 							
 						/* the local upwind intergration points */
-						V3_COPY(TRefCoord[FrontCorner[0]],LUIP[FrontEdge])
+						V3_COPY(TRefCoord[FrontCorner[0]],LIP[FrontEdge])
 					}
 					break;
 				case 2:
@@ -828,7 +828,7 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 						else											V3_COPY(c,Area[EdgeF1B1])
 							
 						/* the local upwind intergration points */
-						V3_COPY(TRefCoord[BackCorner[1]],LUIP[BackEdge])
+						V3_COPY(TRefCoord[BackCorner[1]],LIP[BackEdge])
 					}
 					break;
 				case 3:
@@ -992,7 +992,7 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 						V3_SCALAR_PRODUCT(conv,c,sp) sp = ABS(sp); if (sp>0.0) V3_SCALE(1.0/sp,GIP[EdgeF1B1])
 							
 						/* the local upwind intergration points */
-						V3_COPY(TRefCoord[BackCorner[1]],LUIP[BackEdge])
+						V3_COPY(TRefCoord[BackCorner[1]],LIP[BackEdge])
 					}
 					break;
 				default :
@@ -1000,10 +1000,10 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 			}
 						
 			/* the local upwind intergration points */
-			V3_COPY(TRefCoord[BackCorner[0]],LUIP[EdgeF0B0])
-			V3_COPY(TRefCoord[BackCorner[0]],LUIP[EdgeF1B0])
-			V3_COPY(TRefCoord[BackCorner[1]],LUIP[EdgeF0B1])
-			V3_COPY(TRefCoord[BackCorner[1]],LUIP[EdgeF1B1])
+			V3_COPY(TRefCoord[BackCorner[0]],LIP[EdgeF0B0])
+			V3_COPY(TRefCoord[BackCorner[0]],LIP[EdgeF1B0])
+			V3_COPY(TRefCoord[BackCorner[1]],LIP[EdgeF0B1])
+			V3_COPY(TRefCoord[BackCorner[1]],LIP[EdgeF1B1])
 			break;
 		case 1:
 			/* one in-, three outflow */
@@ -1075,7 +1075,7 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 				 	    (inverted && First && sp<0.0) ||	
 				   	    (inverted && !First && sp>0.0))	
 						V3_SCALE(-1.0,Area[GrEdge[i]])
-					V3_COPY(TRefCoord[corner[(i+1)%3]],LUIP[GrEdge[i]])
+					V3_COPY(TRefCoord[corner[(i+1)%3]],LIP[GrEdge[i]])
 				}
 				else if (param[0]<0.0)
 				{
@@ -1116,7 +1116,7 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 				 	  	   (inverted && First && sp>0.0) ||	
 				   	   	   (inverted && !First && sp<0.0))	
 							V3_SCALE(-1.0,Area[GrEdge[i]])
-						V3_COPY(TRefCoord[corner[i]],LUIP[GrEdge[i]])
+						V3_COPY(TRefCoord[corner[i]],LIP[GrEdge[i]])
 					}
 				}
 				else
@@ -1129,7 +1129,7 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 				if (sp>0.0)	V3_SCALE(1.0/sp,GIP[OpEdge[i]])
 			}*/
 			
-			/* turn to the right direction and set LUIPs */			
+			/* turn to the right direction and set LIPs */			
 			for (i=0; i<3; i++)
 			{
 				/* the main connections */
@@ -1142,18 +1142,25 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 					V3_SCALE(-1.0,Area[OpEdge[i]])
 				
 				if (inverted)
-					V3_COPY(TRefCoord[OpCorner],LUIP[OpEdge[i]])
+					V3_COPY(TRefCoord[OpCorner],LIP[OpEdge[i]])
 				else
-					V3_COPY(TRefCoord[corner[i]],LUIP[OpEdge[i]])
+					V3_COPY(TRefCoord[corner[i]],LIP[OpEdge[i]])
 			}
 			break;			
 		default:
 			return (1);		
 	}
 	
-	/* project areas to be parallel to 'conv' */
+	/* local IP's from global IP's */
+	V3_SUBTRACT(CornerPoints[1],CornerPoints[0],M)
+	V3_SUBTRACT(CornerPoints[2],CornerPoints[0],M+3)
+	V3_SUBTRACT(CornerPoints[3],CornerPoints[0],M+6);
+	if (M3_Invert(Inv,M)) return (1);
 	for (i=0; i<6; i++)
-		if (V3_Project(Area[i],conv,Area[i])) return (1);
+	{ 
+		V3_SUBTRACT(GIP[i],CornerPoints[0],a)
+		M3_TIMES_V3(Inv,a,LIP[i])
+	}
 	
 	return (0);
 }
