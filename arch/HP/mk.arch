@@ -7,7 +7,7 @@
 ARCH_TYPE     = __HP__
 
 ARCH_CC       = cc
-ARCH_C++      = cc
+ARCH_C++      = CC
 ARCH_LINK     = cc
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
@@ -17,6 +17,7 @@ ARCH_LIBS     = -lm -lc
 ARCH_PLIBS    = /usr/lib/libV3.a
 
 ARCH_CFLAGS   = -y -z -Aa +w2 # -g 
+ARCH_C++FLAGS = -y -Aa -g
 ARCH_LFLAGS   = -z /usr/lib/end.o
 ARCH_ARFLAGS  = ru
 
