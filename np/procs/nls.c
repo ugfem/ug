@@ -102,11 +102,48 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    'INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv);'
 
    .vb
+   typedef struct {
+        INT error_code;                     // error code
+        INT converged;                      // error code
+        VEC_SCALAR first_defect;            // first defect
+        VEC_SCALAR last_defect;             // last defect
+        INT number_of_nonlinear_iterations; // number of iterations
+        INT number_of_line_searches;        // number of line search steps
+        INT rho_first;                      // first rho
+    INT total_linear_iterations;        // total number
+    INT max_linear_iterations;          // max number of linear iterations
+    DOUBLE exec_time;                   // for this nonlinear solve ...
+   } NLRESULT;
 
+   struct np_nl_solver {
+        NP_BASE base;                        // inherits base class
 
-   ..... fill in data structure here when the realizition is finished
+        // data (optinal, necessary for calling the generic execute routine)
+    VECDATA_DESC *x;                     // solution
+    NP_NL_ASSEMBLE *Assemble;            // the assemble numproc
+        VEC_SCALAR reduction;                // reduction factor
+        VEC_SCALAR abslimit;                 // absolute limit for the defect
 
-
+        // functions
+        INT (*PreProcess)
+             (struct np_nl_solver *,         // pointer to (derived) object
+                  INT,                           // level
+                  INT *);                        // result
+    INT (*Solver)                        // b := b - Ax
+             (struct np_nl_solver *,         // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+          NP_NL_ASSEMBLE *,			     // the assemble numproc
+                  VEC_SCALAR,                    // absolute limit for the defect
+                  VEC_SCALAR,                    // reduction factor
+                  NLRESULT *);                   // result structure
+        INT (*PostProcess)
+             (struct np_nl_solver *,         // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  INT *);                        // result
+   };
+   typedef struct np_nl_solver NP_NL_SOLVER;
    .ve
 
    SEE ALSO:

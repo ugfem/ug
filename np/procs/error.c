@@ -113,11 +113,46 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    'INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv);'
 
    .vb
+   typedef struct {
+        INT error_code;                     // error code
+        INT nel;                            // number of surface elements
+        INT refine;                         // nb. el. marked for refinement
+        INT coarse;                         // nb. el. marked for coarsening
+        DOUBLE error;                       // error estimate
+   } ERESULT;
 
+   struct np_error {
 
-   ..... fill in data structure here when the realizition is finished
+        NP_BASE base;                        // inherits base class
 
+        // data (optinal, necessary for calling the generic execute routine)
+    VECDATA_DESC *x;                     // solution
+    VECDATA_DESC *o;                     // old solution
 
+        // functions
+        INT (*PreProcess)
+             (struct np_error *,             // pointer to (derived) object
+                  INT,                           // level
+                  INT *);                        // result
+    INT (*Error)
+             (struct np_error *,             // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  ERESULT *);                    // result
+    INT (*TimeError)
+             (struct np_error *,             // pointer to (derived) object
+                  INT,                           // level
+                  DOUBLE,                        // time
+                  DOUBLE *,                      // time step
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // old solution vector
+                  ERESULT *);                    // result
+        INT (*PostProcess)
+             (struct np_error *,             // pointer to (derived) object
+                  INT,                           // level
+                  INT *);                        // result
+   };
+   typedef struct np_error NP_ERROR;
    .ve
 
    SEE ALSO:
@@ -237,13 +272,13 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
    surface elements and marks them for coarsening or refinement.
    It requieres node values and uses the shapefunctions defined in shapes.c.
 
-   'npinit $x <vec sym> [$coarse <val>] [$refine <val>]'
+   'npinit <name> $x <vec sym> [$coarse <val>] [$refine <val>];'
 
    .  $x~<vec~sym> - symbol for the (solution) vector
    .  $coarse~<val> - bound for coarsening
    .  $refine~<val> - bound for refinement
 
-   'npexecute <name> [$p] [$r] [$i]'
+   'npexecute <name> [$p] [$r] [$i];'
 
    .  $p - calls StandardProject
    .  $r - calls RefineMultigrid
@@ -253,8 +288,8 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
 
    EXAMPLE:
    .vb
-   npcreate indicator $t error;
-   npinit $x sol $coarse 0.5;
+   npcreate coarse $c indicator;
+   npinit coarse $x sol $coarse 0.5;
 
    npexecute coarse $p;
    .ve

@@ -319,11 +319,40 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    'INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv);'
 
    .vb
+   struct np_iter {
 
+        NP_BASE base;                        // inherits base class
 
-   ..... fill in data structure here when the realizition is finished
+        // data (optinal, necessary for calling the generic execute routine)
+    VECDATA_DESC *c;                     // correction
+    VECDATA_DESC *b;                     // defect
+    MATDATA_DESC *A;                     // matrix
 
-
+        // functions
+        INT (*PreProcess)
+             (struct np_iter *,              // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *,                         // baselevel used by iter
+                  INT *);                        // result
+    INT (*Iter)
+             (struct np_iter *,              // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // correction vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+        INT (*PostProcess)
+             (struct np_iter *,              // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+   };
+   typedef struct np_iter NP_ITER;
    .ve
 
    SEE ALSO:
@@ -496,20 +525,20 @@ static INT SmootherPostProcess (NP_ITER *theNP, INT level,
    'l_jac'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+       $damp <sc double list>;
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
    .  $damp~<sc~double~list> - damping factors for each component
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
-   'npexecute <name> [$i] [$s] [$p]'
+   'npexecute <name> [$i] [$s] [$p];'
 
    .  $i - preprocess
    .  $s - smooth
@@ -535,7 +564,6 @@ static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
 
   return (0);
 }
-
 
 static INT JacobiStep (NP_SMOOTHER *theNP, INT level,
                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
@@ -577,20 +605,20 @@ static INT JacobiConstruct (NP_BASE *theNP)
    'l_lgs'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+       $damp <sc double list>;
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
    .  $damp~<sc~double~list> - damping factors for each component
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
-   'npexecute <name> [$i] [$s] [$p]'
+   'npexecute <name> [$i] [$s] [$p];'
 
    .  $i - preprocess
    .  $s - smooth
@@ -659,20 +687,24 @@ static INT GSConstruct (NP_BASE *theNP)
    This numproc executes a bi-cg-stab as smoother.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>] [$I iter]
-       $n <it> $damp <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$I iter]
+       $m <it> $damp <sc double list> [$I <iteration>] [$R <restart>];
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
+   .  $m~<it> - number of iterations
    .  $damp~<sc~double~list> - damping factors for each component
+       $m <maxit>  [$w <sc double list>];
+   .  $I~<iteration> - iteration numproc
+   .  $R~<restart> - restart index
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
-   'npexecute <name> [$i] [$s] [$p]'
+   'npexecute <name> [$i] [$s] [$p];'
 
    .  $i - preprocess
    .  $s - smooth
@@ -875,27 +907,28 @@ static INT BCGSSConstruct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
-   sgs - numproc for Gauss-Seidel smoother
+   sgs - numproc for symmetric Gauss-Seidel smoother
 
    DESCRIPTION:
-   This numproc executes a symmetric Gauss-Seidel smoother, using the blas routines
+   This numproc executes a symmetric Gauss-Seidel smoother,
+   using the blas routines
    'l_lgs' and 'l_ugs'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+       $damp <sc double list>;
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
    .  $damp~<sc~double~list> - damping factors for each component
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
-   'npexecute <name> [$i] [$s] [$p]'
+   'npexecute <name> [$i] [$s] [$p];'
 
    .  $i - preprocess
    .  $s - smooth
@@ -1036,20 +1069,20 @@ static INT SGSConstruct (NP_BASE *theNP)
    'l_lsor'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+       $damp <sc double list>;
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
    .  $damp~<sc~double~list> - damping factors for each component
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
-   'npexecute <name> [$i] [$s] [$p]'
+   'npexecute <name> [$i] [$s] [$p];'
 
    .  $i - preprocess
    .  $s - smooth
@@ -1142,11 +1175,15 @@ static INT SORConstruct (NP_BASE *theNP)
    It can be used in 'lmgc'.
 
    .vb
-   npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym>
-   $D {no|red|full} $damp <sc double list>
-   $Blocking <sc int list> $BlockOrder <ord list> $BlockIter <sc numproc list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+               $damp <sc double list>
+               $Blocking <sc int list> $BlockOrder <ord list>
+               $BlockIter <sc numproc list>;
    .ve
 
+   .  $c~<cor> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
    .  $Blocking~<sc~int~list> - describes the block structure (in ascending order starting always with 0)
    .  $BlockOrder~<ord~list> - describes the order of the blocks
    .  $BlockIter~<numproc~list> - smoother per block
@@ -1154,8 +1191,13 @@ static INT SORConstruct (NP_BASE *theNP)
    .  <sc~int~list>     - [nd <int list>] | [ed <int list>] | [el <int list>] | [si <int list>]
    . <sc~numproc~list>  - [nd <numproc list>] | [ed <numproc list>] | [el <numproc list>] | [si <numproc list>]
    . <ord~list>         - nd|ed|el|sd<number>{ nd|ed|el|sd<number>}+
+   .  <double~list>  - <double> {: <double>}*
 
-   'npexecute <name>'
+   'npexecute <name> [$i] [$s] [$p];'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
 
    EXAMPLE:
    For the Navier-Sokes problem class library we have three unknowns per node
@@ -1170,9 +1212,9 @@ static INT SORConstruct (NP_BASE *theNP)
  # creation of smoother numproc realizations
 
  # inner (inexact) solvers for the sbgs: pbilu
-   npcreate u_ilu $c pbilu;
-   npcreate v_ilu $c pbilu;
-   npcreate p_ilu $c pbilu;
+   npcreate u_ilu $c ilu;
+   npcreate v_ilu $c ilu;
+   npcreate p_ilu $c ilu;
 
  # equation block Gauss-Seidel
    npcreate sbgs  $c sbgs;
@@ -1571,12 +1613,17 @@ static INT SBGSConstruct (NP_BASE *theNP)
    'l_lrdecompB' and 'l_lgsB'. It can be used in 'lmgc'.
 
    .vb
-   npinit $x <sol sym> $b <rhs sym> $t <temp sym> $A <mat sym> $n <it>
-   $D{no|red|full} $damp <sc double list> $L <mat sym>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+              [$damp <sc double list>] [$L <mat>]
    .ve
 
+   .  $c~<cor> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $L~<mat> - decomposition matrix
    .  $damp~<sc~double~list> - damping factors for each component
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
    'npexecute <name> [$i] [$s] [$p]'
@@ -1650,18 +1697,19 @@ static INT GBGSConstruct (NP_BASE *theNP)
    'l_ilubthdecomp' and 'l_luiter'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list> $beta <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>]
+       [$damp <sc double list>] [$beta <sc double list>]
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
+   .  $L~<mat> - decomposition matrix
    .  $damp~<sc~double~list> - damping factors for each component
    .  $beta~<sc~double~list> - parameter for modification of the diagonal
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
    'npexecute <name> [$i] [$s] [$p]'
@@ -1760,18 +1808,19 @@ static INT ILUConstruct (NP_BASE *theNP)
    'l_ilubthdecomp_fine' and 'l_luiter_fine'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list> $beta <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>]
+       [$damp <sc double list>] [$beta <sc double list>]
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
+   .  $L~<mat> - decomposition matrix
    .  $damp~<sc~double~list> - damping factors for each component
    .  $beta~<sc~double~list> - parameter for modification of the diagonal
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
    'npexecute <name> [$i] [$s] [$p]'
@@ -1839,26 +1888,28 @@ static INT FILUConstruct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
-   thilu - numproc for point block beta-modified ilu smoother with threshold for extending
-                        the sparsity pattern
+   thilu - numproc for point block beta-modified ilu smoother with threshold for extending the sparsity pattern
 
    DESCRIPTION:
    This numproc executes a point block ilu smoother, using the blas routines
    'l_ilubthdecomp' and 'l_luiter'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list> $beta <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>]
+       [$damp <sc double list>] [$beta <sc double list>]
+           [$thresh <sc double list>];
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
+   .  $L~<mat> - decomposition matrix
    .  $damp~<sc~double~list> - damping factors for each component
    .  $beta~<sc~double~list> - parameter for modification of the diagonal
+   .  $thresh~<sc~double~list> - parameter for the threshold
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
    'npexecute <name> [$i] [$s] [$p]'
@@ -1945,18 +1996,21 @@ static INT THILUConstruct (NP_BASE *theNP)
    'l_iluspbthdecomp' and 'l_luiter'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list> $beta <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>]
+       [$damp <sc double list>] [$beta <sc double list>]
+           $mode {local|global};
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
+   .  $L~<mat> - decomposition matrix
    .  $damp~<sc~double~list> - damping factors for each component
    .  $beta~<sc~double~list> - parameter for modification of the diagonal
+   .  $mode~{local|global} - global or local shift
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
    'npexecute <name> [$i] [$s] [$p]'
@@ -2064,18 +2118,18 @@ static INT SPILUConstruct (NP_BASE *theNP)
    'l_icdecomp' and 'l_lltiter'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list> $beta <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>]
+       [$damp <sc double list>];
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
+   .  $L~<mat> - decomposition matrix
    .  $damp~<sc~double~list> - damping factors for each component
-   .  $beta~<sc~double~list> - parameter for modification of the diagonal
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
    'npexecute <name> [$i] [$s] [$p]'
@@ -2150,18 +2204,18 @@ static INT ICConstruct (NP_BASE *theNP)
    'l_lrdecomp' and 'l_luiter'. It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>]
+       [$damp <sc double list>];
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
+   .  $L~<mat> - decomposition matrix
    .  $damp~<sc~double~list> - damping factors for each component
-   .  $beta~<sc~double~list> - parameter for modification of the diagonal
 
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
    'npexecute <name> [$i] [$s] [$p]'
@@ -2241,18 +2295,24 @@ static INT LUConstruct (NP_BASE *theNP)
    ff - numproc for frequency filtering solvers
 
    DESCRIPTION:
-   This numproc solves an equation with the tangential frequency filtering method.
+   This numproc solves an equation with the tangential frequency filtering
+   method.
 
    .vb
-   npinit $FF <FF-mat sym> $FF3D <3D FF-mat sym> $L <LU mat sym> $aux <temp sym>
-           $tv <testvector sym> $tv2 <2. testvector sym>
-           $aux3D <3D temp sym> $aux2_3D <2. 3D temp sym> $t <update for correction sym>
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$damp <sc double list>]
+       [$FF <FF-mat sym>] [$FF3D <3D FF-mat sym>] [$L <LU mat sym>]
+       [$aux <temp sym>] [$tv <testvector sym>] [$tv2 <2. testvector sym>]
+           [$aux3D <3D temp sym>] [$aux2_3D <2. 3D temp sym>] [
+       $t <update for correction sym>]
            $display {no|red|full} $wr <"all"|number> $wr3D <number> $type <FF|TFF>
-           $aux2 <temp2 sym> $aux3 <temp3 sym> $aux4 <temp4 sym>
-           $aux5 <temp5 sym> $aux6 <temp6 sym>
-           and the other parameters from SMOOTHER
+           [$aux2 <temp2 sym>] [$aux3 <temp3 sym>] [$aux4 <temp4 sym>]
+           [$aux5 <temp5 sym>] [$aux6 <temp6 sym>];
    .ve
 
+   .  $c~<cor> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $damp~<sc~double~list> - damping factors for each component
    .  $FF~<FF-mat~sym> - symbol for the frequency filtered matrix
    .  $FF3D~<3D~FF-mat~sym> - symbol for an additional frequency filtered matrix for 3D
    .  $L~<LU-mat~sym> - symbol for the LU decomposed matrix
@@ -2272,17 +2332,27 @@ static INT LUConstruct (NP_BASE *theNP)
    .  $wr - relative frequency [0..1] for 2D OR 'all' for the whole logarithmic sequence of frequencies
    .  $wr3D - relative frequency [0..1] for 3D
 
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+
    EXAMPLE:
-   .vb
    FF as smoother:
+
+   .vb
         npcreate smooth $c ff;
         npinit smooth $wr 0.5 $wr3D 0.5 $type TFF $display full;
 
         npcreate ls_iter $c lmgc;
         npinit ls_iter $S smooth smooth basesolver $T transfer
                         $b @BASELEVEL $n1 1 $n2 1 $g 1;
+   .ve
 
    FF as solver:
+
+   .vb
         npcreate ls_iter $c ff;
         npinit ls_iter $wr ALL $wr3D -1.0 $type TFF $display full;
 
@@ -2508,8 +2578,9 @@ static INT FFDisplay (NP_BASE *theNP)
 
    SYNOPSIS:
    static INT FFPreProcess (NP_ITER *theNP, INT level,
-                                                  VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                                                  INT *baselevel, INT *result);
+   VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+   INT *baselevel, INT *result);
+
    PARAMETERS:
    .  theNP - pointer to numproc
    .  level - gridlevel to be prepared
@@ -2793,8 +2864,8 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 
    SYNOPSIS:
    static INT FFPostProcess (NP_ITER *theNP, INT level,
-                                                                VECDATA_DESC *x, VECDATA_DESC *b,
-                                                                MATDATA_DESC *A, INT *result);
+   VECDATA_DESC *x, VECDATA_DESC *b,
+   MATDATA_DESC *A, INT *result);
 
    PARAMETERS:
    .  theNP - pointer to numproc
@@ -3053,12 +3124,12 @@ static INT FFConstruct (NP_BASE *theNP)
    This numproc executes
 
    .vb
-   npinit [$c <cor>] [$r <rhs>] [$A <mat>]
+   npinit <name> [$c <cor>] [$r <rhs>] [$A <mat>]
        $S <pre post base> $T <transfer>
        [$b <baselevel>] [$g <gamma>] [$n1 <it>] [$n2 <it>]
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $c~<cor> - correction vector
    .  $r~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
    .  $T~<transfer> - transfer numproc
@@ -3073,6 +3144,9 @@ static INT FFConstruct (NP_BASE *theNP)
    .  $i - preprocess
    .  $s - solve
    .  $p - postprocess
+
+   SEE ALSO:
+   ls
    D*/
 /****************************************************************************/
 

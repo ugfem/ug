@@ -120,22 +120,19 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    DESCRIPTION:
    The clear vector numproc sets a vector to zero.
 
-   'npinit $x <symbol>'
+   'npinit <name> $x <vec sym>'
 
-   .  $x~<sol~sym> - name of a vector symbol
+   .  <name> - num proc name
+   .  $x~<vec~sym> - name of a vector symbol
 
    'npexecute <name>'
 
    EXAMPLE:
    .vb
-   npcreate clearsol $t cv $f scalar_1_5;
-   npcreate clearrhs $t cv $f scalar_1_5;
-   scnp clearsol;
-   npinit $x x;
-   scnp clearrhs;
-   npinit $x b;
+   npcreate clearsol $c cv;
+   npinit ckearsol $x x;
+
    npexecute clearsol;
-   npexecute clearrhs;
    .ve
    D*/
 /****************************************************************************/
@@ -196,17 +193,18 @@ static INT CV_Construct (NP_BASE *theNP)
    DESCRIPTION:
    The clear matrix numproc sets a matrix to zero.
 
-   'npinit $A <symbol>'
+   'npinit <name> $A <mat sym>'
 
-   .  $x~<sol~sym> - name of a matrix symbol
+   .  <name> - num proc name
+   .  $A~<mat~sym> - matrix descriptor
 
    'npexecute <name>'
 
    EXAMPLE:
    .vb
-   npcreate clearA $t cm $f scalar_1_5;
-   scnp clearA;
-   npinit $A MAT;
+   npcreate clearA $c cm;
+   npinit clearA $A MAT;
+
    npexecute clearA;
    .ve
    D*/
@@ -268,17 +266,18 @@ static INT CM_Construct (NP_BASE *theNP)
    DESCRIPTION:
    The numproc computes the euklidian norm of a vector.
 
-   'npinit $x <symbol>'
+   'npinit <name> $x <vec sym>'
 
-   .  $x~<sol~sym> - name of a vector symbol
+   .  <name> - num proc name
+   .  $x~<vec~sym> - name of a vector descriptor
 
    'npexecute <name>'
 
    EXAMPLE:
    .vb
-   npcreate euklid $t eu $f scalar_1_5;
-   scnp euklid;
-   npinit $x cor;
+   npcreate euklid $c eu;
+   npinit euklid $x cor;
+
    npexecute euklid;
    .ve
    D*/
@@ -356,18 +355,18 @@ static INT EU_Construct (NP_BASE *theNP)
    DESCRIPTION:
    This num proc copys a vector
 
-   'npinit $f <from sym> $t <to sym>'
+   'npinit <name>  $f <from sym> $t <to sym>'
 
-   .  $f~<from~sym> - name of the source vector symbol
-   .  $t~<to~sym> - name of the destination vector symbol
+   .  <name> - num proc name
+   .  $f~<from~sym> - name of the source vector descriptor
+   .  $t~<to~sym> - name of the destination vector descriptor
 
    'npexecute <name>'
 
    EXAMPLE:
    .vb
-   npcreate copya2b $t copyv $f scalar_1_5;
-   scnp copya2b;
-   npinit $s a $d b;
+   npcreate copya2b $c copyv;
+   npinit copya2b $s a $d b;
    npexecute copya2b;
    .ve
    D*/

@@ -103,11 +103,39 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    'INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv);'
 
    .vb
+   struct np_assemble {
 
+        NP_BASE base;                        // inherits base class
 
-   ..... fill in data structure here when the realizition is finished
+        // data (optinal, necessary for calling the generic execute routine)
+    VECDATA_DESC *x;                     // solution
+    VECDATA_DESC *b;                     // defect
+    MATDATA_DESC *A;                     // matrix
 
-
+        // functions
+        INT (*PreProcess)
+             (struct np_assemble *,          // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // rhs vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+    INT (*Assemble)
+             (struct np_assemble *,          // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,			     // current solution	(initial)
+                  VECDATA_DESC *,			     // right hand side
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+        INT (*PostProcess)
+             (struct np_assemble *,          // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+   };
+   typedef struct np_assemble NP_ASSEMBLE;
    .ve
 
    SEE ALSO:
@@ -211,28 +239,73 @@ INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 
 /****************************************************************************/
 /*D
-   NP_NLASSEMBLE - type definition for nonlinear assembling
+   NP_NL_ASSEMBLE - type definition for nonlinear assembling
 
    DESCRIPTION:
    This numproc type is used for the description of assembling.
    It can be called by the given interface from a nonlinear solver.
    Initializing the data is optional; it can be done with
 
-   'INT NPNLAssembleInit (NP_ASSEMBLE *theNP, INT argc , char **argv);'
+   'INT NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv);'
 
    This routine returns 'EXECUTABLE' if the initizialization is complete
    and  'ACTIVE' else.
    The data can be displayed and the num proc can be executed by
 
-   'INT NPNLAssembleDisplay (NP_ASSEMBLE *theNP);'
+   'INT NPNLAssembleDisplay (NP_BASE *theNP);'
    'INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv);'
 
    .vb
+   struct np_nl_assemble {
 
+        NP_BASE base;                        // inherits base class
 
-   ..... fill in data structure here when the realizition is finished
+        // data (optinal, necessary for calling the generic execute routine)
+    VECDATA_DESC *x;                     // solution
+    VECDATA_DESC *c;                     // correction
+    VECDATA_DESC *b;                     // defect
+    MATDATA_DESC *A;                     // matrix
 
-
+        // functions
+        INT (*PreProcess)
+             (struct np_nl_assemble *,       // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  INT *);                        // result
+    INT (*NLAssembleSolution)
+             (struct np_nl_assemble *,       // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  INT *);                        // result
+    INT (*NLAssembleDefect)
+             (struct np_nl_assemble *,       // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+    INT (*NLAssembleMatrix)
+             (struct np_nl_assemble *,       // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,			     // current solution	(initial)
+                  VECDATA_DESC *,			     // defect for current solution
+                  VECDATA_DESC *,			     // correction to be computed
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+        INT (*PostProcess)
+             (struct np_nl_assemble *,       // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+   };
+   typedef struct np_nl_assemble NP_NL_ASSEMBLE;
    .ve
 
    SEE ALSO:
@@ -371,13 +444,13 @@ INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
    solver.
    Initializing the data is optional; it can with
 
-   'INT NPLocalAssembleInit (NP_ASSEMBLE *theNP, INT argc , char **argv);'
+   'INT NPLocalAssembleInit (NP_LOCAL_ASSEMBLE *theNP, INT argc , char **argv);'
 
    This routine returns 'EXECUTABLE' if the initizialization is complete
    and  'ACTIVE' else.
    The data can be displayed and the num proc can be executed by
 
-   'INT NPLocalAssembleDisplay (NP_ASSEMBLE *theNP);'
+   'INT NPLocalAssembleDisplay (NP_LOCAL_ASSEMBLE *theNP);'
    'INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv);'
 
    The interface functions 'AssemblePreProcess', 'Assemble'
@@ -388,11 +461,50 @@ INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
    'INT LocalAssembleConstruct (NP_ASSEMBLE *theNP);'
 
    .vb
+   struct np_local_assemble {
 
+        NP_ASSEMBLE assemble;                // inherits assemble class
 
-   ..... fill in data structure here when the realizition is finished
+        // data
+        INT galerkin;                        // Galerkin assembling
 
-
+        // functions
+        INT (*PreProcess)
+             (struct np_local_assemble *,    // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+          DOUBLE **,                     // local solution
+          DOUBLE **,                     // local defect
+          DOUBLE **,                     // local matrix
+          INT **,                        // local vecskip
+                  INT *);                        // result
+    INT (*AssembleLocal)
+             (ELEMENT *,                     // pointer to an element
+                  INT *);                        // result
+    INT (*AssembleLocalDefect)
+             (ELEMENT *,                     // pointer to an element
+                  INT *);                        // result
+    INT (*AssembleLocalMatrix)
+             (ELEMENT *,                     // pointer to an element
+                  INT *);                        // result
+        INT (*PostMatrix)
+             (struct np_local_assemble *,    // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+        INT (*PostProcess)
+             (struct np_local_assemble *,    // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+   };
+   typedef struct np_local_assemble NP_LOCAL_ASSEMBLE;
    .ve
 
    SEE ALSO:
@@ -527,7 +639,6 @@ INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
   return(0);
 }
 
-
 /****************************************************************************/
 /*D
    NP_T_ASSEMBLE - type definition for time dependent assembling
@@ -537,13 +648,72 @@ INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
    by the tsolver. An NP_T_ASSEMBLE object is never executable, only its
    functional interface is used.
 
-
    .vb
+   struct np_t_assemble {
 
+        NP_BASE base;                        // inherits base class
 
-   ..... fill in data structure here when the realizition is finished
-
-
+        // functions
+        INT (*TAssemblePreProcess)               // call at begin of timestep
+             (struct np_t_assemble *,        // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  DOUBLE,						 // time t_k+1
+                  DOUBLE,						 // time t_k
+                  DOUBLE,						 // time t_k-1
+                  VECDATA_DESC *,                // (unknown) solution at t_k+1
+                  VECDATA_DESC *,                // solution vector at t_k
+                  VECDATA_DESC *,                // solution vector at t_k-1
+                  INT *);                        // result
+    INT (*TAssembleInitial)                      // set initial values
+             (struct np_t_assemble *,        // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  DOUBLE,						 // time value t
+                  VECDATA_DESC *,                // solution vector at time t
+                  INT *);                        // result
+    INT (*TAssembleSolution)             // set dirichlet conditions in sol.
+             (struct np_t_assemble *,        // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  DOUBLE,						 // time value t
+                  VECDATA_DESC *,                // solution vector at time t
+                  INT *);                        // result
+    INT (*TAssembleDefect)                   // accumulate to defect vector
+             (struct np_t_assemble *,        // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  DOUBLE,						 // time value t
+                  DOUBLE,						 // scaling for m-term: s_m
+                  DOUBLE,						 // scaling for a-term: s_a
+                  VECDATA_DESC *,                // solution vector y
+                  VECDATA_DESC *,                // accumulate s_m*m(t,y)+s_a*a(t,y)
+                  MATDATA_DESC *,                // matrix may be handy for Picard
+                  INT *);                        // result
+    INT (*TAssembleMatrix)                       // compute linearization (Jacobian)
+             (struct np_t_assemble *,        // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  DOUBLE,						 // time value t
+                  DOUBLE,						 // scaling for a-term: s_a	(s_m=1!)
+                  VECDATA_DESC *,			     // current sol (linearization pt)
+                  VECDATA_DESC *,			     // defect for current solution
+                  VECDATA_DESC *,			     // correction to be computed
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+        INT (*TAssemblePostProcess)          // call after solution t_k+1 known
+             (struct np_t_assemble *,        // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  DOUBLE,						 // time t_k+1
+                  DOUBLE,						 // time t_k
+                  DOUBLE,						 // time t_k-1
+                  VECDATA_DESC *,                // solution t_k+1 (just computed!)
+                  VECDATA_DESC *,                // solution vector at t_k
+                  VECDATA_DESC *,                // solution vector at t_k-1
+                  INT *);                        // result
+   };
+   typedef struct np_t_assemble NP_T_ASSEMBLE;
    .ve
 
    SEE ALSO:

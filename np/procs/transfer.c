@@ -375,8 +375,8 @@ INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
    It can be used in 'lmgc'.
 
    .vb
-   npinit [$x <sol>] [$c <cor>] [$b <rhs>] [$A <mat>]
-       [$M] [$L] [$m] [$d {full|red|no}]
+   npinit <name> [$x <sol>] [$c <cor>] [$b <rhs>] [$A <mat>]
+              [$M] [$L] [$m] [$d {full|red|no}] [$S <cut>];
    .ve
 
    .  $x~<sol> - solution vector
@@ -387,8 +387,9 @@ INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
    .  $m - parallel nonconforming interpolation
    .  $L - level optimization
    .  $d - display modus
+   .  $S~<cut> - scaled restriction with cut (in combination with standard prologation)
 
-   'npexecute <name> [$i] [$R] [$I] [$N] [$P] [$p]'
+   'npexecute <name> [$i] [$R] [$I] [$N] [$P] [$p];'
 
    .  $i - preprocess
    .  $R - restrict defect
@@ -396,7 +397,6 @@ INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
    .  $N - interpolate new vectors
    .  $P - project solution
    .  $p - postprocess
-   .ve
    D*/
 /****************************************************************************/
 
@@ -431,7 +431,7 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
       np->intcor = StandardInterpolateCorrection;
       np->intnew = StandardInterpolateNewVectors;
     }
-  np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
+  np->L = ReadArgvMatDesc(theNP->mg,"B",argc,argv);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
 
   return (NPTransferInit(&np->transfer,argc,argv));

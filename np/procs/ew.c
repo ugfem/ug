@@ -144,11 +144,62 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    'INT NPEWSolverExecute (NP_BASE *theNP, INT argc , char **argv);'
 
    .vb
+   typedef struct {
+        INT error_code;                     // error code
+    LRESULT lresult[MAX_NUMBER_EW];     // result of linear solver
+    VEC_SCALAR defect[MAX_NUMBER_EW];   // defect
+        INT converged[MAX_NUMBER_EW];       // convergence flag
+        INT number_of_iterations[MAX_NUMBER_EW];  // number of iterations
+   } EWRESULT;
 
+   struct np_ew_solver {
 
-   ..... fill in data structure here when the realizition is finished
+        NP_BASE base;                        // inherits base class
 
+        // data (optional, necessary for calling the generic execute routine)
+    INT nev;                             // number of eigenvectors
+    VECDATA_DESC *ev[MAX_NUMBER_EW];     // eigenvectors
+    DOUBLE ew[MAX_NUMBER_EW];            // eigenvalues
+    NP_NL_ASSEMBLE *Assemble;            // assembling stiffness matrix
+                                         // and right hand side
+        VEC_SCALAR reduction;                // reduction factor
+        VEC_SCALAR abslimit;                 // absolute limit for the defect
 
+        // functions
+        INT (*PreProcess)
+             (struct np_ew_solver *,         // pointer to (derived) object
+                  INT,                           // level
+                  INT,                           // number of eigenvectors
+                  VECDATA_DESC **,               // eigenvectors
+                  NP_NL_ASSEMBLE *,              // matrix and right hand side
+                  INT *);                        // result
+    INT (*Rayleigh)
+             (struct np_ew_solver *,         // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // eigenvector
+                  NP_NL_ASSEMBLE *,              // matrix and right hand side
+                  DOUBLE *,                      // numerator and denominator
+                  DOUBLE *,                      // quotient
+                  INT *);                        // result
+    INT (*Solver)
+             (struct np_ew_solver *,         // pointer to (derived) object
+                  INT,                           // level
+                  INT,                           // number of eigenvectors
+                  VECDATA_DESC **,               // eigenvectors
+                  DOUBLE *,                      // eigenvalues
+                  NP_NL_ASSEMBLE *,              // matrix and right hand side
+                  VEC_SCALAR,                    // reduction factor
+                  VEC_SCALAR,                    // absolut limit for the defect
+                  EWRESULT *);                   // result structure
+        INT (*PostProcess)
+             (struct np_ew_solver *,         // pointer to (derived) object
+                  INT,                           // level
+                  INT,                           // number of eigenvectors
+                  VECDATA_DESC **,               // eigenvectors
+                  NP_NL_ASSEMBLE *,              // matrix and right hand side
+                  INT *);                        // result
+   };
+   typedef struct np_ew_solver NP_EW_SOLVER;
    .ve
 
    SEE ALSO:
@@ -526,10 +577,10 @@ static INT Orthogonalize (MULTIGRID *theMG, INT level, INT m,
    eigenvalues and eigenvectors of symmetric elliptic problems.
 
    .vb
-   npinit $e <sym list> [$t <tmp sym>] [$r <rhs sym>] [$M <mat sym>]
-       [$d {no|red|full}] $m <maxit> [$O] [$N]
-           $red <sc double list> [$damp <sc double list>]
-           $L <linear solver> $A <assemble> $T <transfer>;
+   npinit <name> $e <sym list> [$t <tmp sym>] [$r <rhs sym>] [$M <mat sym>]
+              [$d {no|red|full}] $m <maxit> [$O] [$N]
+                  $red <sc double list> [$damp <sc double list>]
+                  $L <linear solver> $A <assemble> $T <transfer>;
    .ve
 
    .  $L~<linear~solver> - linear solver num proc
@@ -539,7 +590,6 @@ static INT Orthogonalize (MULTIGRID *theMG, INT level, INT m,
    .  $r~<rhs~sym> - symbol for the right hnd side vector
    .  $t~<tmp~sym> - symbol for a tempory vector
    .  $m~<maxit> - maximal number of multigrid cylces
-   .  $l~<linear~solver> - linear solver used in every step, e. g. 'lmgc'
    .  $O - orthogonalize using right hand side
    .  $N - set the first eigenvector = 1 for Neumann problems
    .  $d - no, reduced or full display
@@ -548,7 +598,7 @@ static INT Orthogonalize (MULTIGRID *theMG, INT level, INT m,
    .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
    .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
 
-   'npexecute <name> [$i] [$a] [$r]'
+   'npexecute <name> [$i] [$a] [$r];'
 
    .  $r - reset solution
    .  $i - interpolate by the standard interpolation
@@ -556,9 +606,33 @@ static INT Orthogonalize (MULTIGRID *theMG, INT level, INT m,
 
    EXAMPLE:
    .vb
+   npcreate smooth $c ilu;
+   npinit smooth;
 
-   ...
+   npcreate baseiter $c lu;
+   npinit baseiter;
 
+   npcreate basesolver $c ls;
+   npinit basesolver $red 0.001 $m 1 $I baseiter;
+
+   npcreate transfer $c transfer;
+   npinit transfer;
+
+   npcreate lmgc $c lmgc;
+   npinit lmgc $S smooth smooth basesolver $T transfer $n1 1 $n2 1;
+
+   npcreate mgs $c cg;
+   npinit mgs $m 8 $red 0.00001 $I lmgc $display no;
+
+   npcreate assemble $c ewassemble;
+   npinit assemble $w weight $ew;
+
+   npcreate ew $c ew;
+   npinit ew $e ew0 ew1 $m 10 $red 0.000001
+          $A assemble $T transfer $L mgs $display full $N;
+
+   clear weight $v 1.0 $a;
+   npexecute ew $r $a;
    .ve
    D*/
 /****************************************************************************/

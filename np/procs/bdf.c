@@ -800,13 +800,108 @@ static INT BDFConstruct (NP_BASE *theNP)
   return(0);
 }
 
+/****************************************************************************/
+/*D
+   bdf - BDF time stepping scheme
+
+   DESCRIPTION:
+   This numproc executes a BDF time stepping scheme of first and second order.
+   In every time step it calls a nonlinear solver, where the linearization
+   in the nonlinear solver is constructed from a time dependent assembling
+   routine of type 'NP_T_ASSEMBLE'.
+
+   .vb
+   npinit <name> $y <sol> $A <tnlass> $S <nlsolver>
+          $T <transfer> [$baselevel <bl>] $order {1|2}
+                  $predictorder {0|1} $nested {0|1}
+          $tstart <time> $dtstart <step> $dtmin <min step> $dtmax <max step>
+          $dtscale <fac> $rhogood <rho> [$J <mat>];
+   .ve
+
+   .  $y~<sol>            - solution vector
+   .  $A~<tnlass>         - assemble numproc of type 'NP_T_ASSEMBLE'
+   .  $S~<nlsolver>       - nonlinear solver numproc of type 'NP_NL_SOLVER'
+   .  $T~<transfer>       - transfer numproc
+   .  $baselevel~<bl>     - baselevel for nested iteration
+   .  $order~{1|2}        - order of the time stepping scheme
+   .  $predictorder~{0|1} - order of the predictor for the next start vector
+   .  $nested~{0|1}       - flag nested nonlinear solver in every time step
+   .  $tstart~<time>      - start time
+   .  $dtstart~<step>     - time step to begin with
+   .  $dtmin~<min step>   - smallest time step allowed
+   .  $dtmax~<max step>   - largest time step allowed
+   .  $dtscale~<fac>      - scaling factor applied after step
+   .  $rhogood~<rho>      - threshold for step doubling
+
+   'npexecute <name> [$pre] [$init] [$bdf1|$bdf1n|$bdf2|$bdf2n] [$post];'
+
+   .  $pre - preprocess
+   .  $init - initialization
+   .  $bdf1 - backward Euler of first order
+   .  $bdf1n - nested backward Euler of first order
+   .  $bdf1 - backward Euler of second order
+   .  $bdf1n - nested backward Euler of second order
+   .  $post - postprocess
+
+   EXAMPLE:
+   .vb
+ # grid transfer numproc
+   npcreate transfer $c transfer;
+   npinit transfer;
+
+ # assemble numproc
+   npcreate tnlass $c boxtnl;
+   npinit tnlass;
+
+ # linear solver and iteration numprocs
+   npcreate smooth $c gs;
+   npinit smooth;
+
+   npcreate basesolver $c ls;
+   npinit basesolver $red 0.001 $m 10 $I smooth;
+
+   npcreate lmgc $c lmgc;
+   npinit lmgc $S smooth smooth basesolver $T transfer $n1 2 $n2 2;
+
+   npcreate mgs $c ls;
+   npinit mgs $m 40 $I lmgc $display full;
+
+ # nonlinear solver numproc to be used by time solver
+   npcreate newton $c newton;
+   npinit newton $red 1.0E-8 $T transfer $S mgs
+              $rhoreass 0.8 $lsteps 6 $maxit 50 $line 1 $linrate 0
+              $lambda 1.0 $linminred 1.0E-2 $display full;
+
+ # the time solver
+   npcreate ts $c bdf;
+   npinit ts $y sol $A tnlass $S newton
+          $T transfer $baselevel 0 $order 1 $predictorder 0 $nested 0
+          $dtstart 0.00125 $dtmin 0.001 $dtmax 0.00125 $dtscale 1.0
+          $rhogood 0.001;
+
+ # first time step
+   TIMESTEPS = 100;
+   step = 1;
+   npexecute ts $pre $init;
+   npexecute ts $bdf1;
+
+ # time step loop
+   repeat {
+    if (step==TIMESTEPS) break;
+    step = step+1;
+    npexecute ts $bdf2;
+   }
+   npexecute ts $post;
+   .ve
+   D*/
+/****************************************************************************/
 
 /****************************************************************************/
 /*
-   InitNewtonSolver  - Init this file
+   InitBDFSolver  - Init this file
 
    SYNOPSIS:
-   INT InitNewtonSolver (void);
+   INT InitBDFSolver (void);
 
    PARAMETERS:
    .  void -

@@ -241,11 +241,66 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    'INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv);'
 
    .vb
+   typedef struct {
+        INT error_code;                     // error code
+        INT converged;                      // error code
+        VEC_SCALAR first_defect;            // first defect
+        VEC_SCALAR last_defect;             // last defect
+        INT number_of_linear_iterations;    // number of iterations
+   } LRESULT;
 
+   struct np_linear_solver {
+        NP_BASE base;                        // inherits base class
 
-   ..... fill in data structure here when the realizition is finished
+        // data (optional, necessary for calling the generic execute routine)
+    VECDATA_DESC *x;                     // solution
+    VECDATA_DESC *b;                     // defect
+    MATDATA_DESC *A;                     // matrix
+        VEC_SCALAR reduction;                // reduction factor
+        VEC_SCALAR abslimit;                 // absolute limit for the defect
 
-
+        // functions
+        INT (*PreProcess)
+             (struct np_linear_solver *,     // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *,                         // baselevel used by the solver
+                  INT *);                        // result
+    INT (*Defect)                        // b := b - Ax
+             (struct np_linear_solver *,     // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+    INT (*Residuum)                      // computes norm of the defect
+             (struct np_linear_solver *,     // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  LRESULT *);                    // result structure
+    INT (*Solver)                        // b := b - Ax
+             (struct np_linear_solver *,     // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  VEC_SCALAR,                    // reduction factor
+                  VEC_SCALAR,                    // absolute limit for the defect
+                  LRESULT *);                    // result structure
+        INT (*PostProcess)
+             (struct np_linear_solver *,     // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+   };
+   typedef struct np_linear_solver NP_LINEAR_SOLVER;
    .ve
 
    SEE ALSO:
@@ -562,19 +617,26 @@ static INT LinearSolverPostProcess (NP_LINEAR_SOLVER *theNP,
    up to convergence.
 
    .vb
-   npinit [$x <sol>] [$b <rhs>] [$A <mat sym>]
+   npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>]
        [$red <sc double list>] [$abslimit <sc double list>]
-       $m <maxit> $I <iteration> [$d {full|red|no}]
+       $m <maxit> $I <iteration> [$d {full|red|no}];
    .ve
 
    .  $x~<sol> - solution vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
+   .  $red~<sc~double~list> - reduction factor
+   .  $abslimit~<sc~double~list> - absolute limit for the defect (default 1E-10)
    .  $m~<maxit> - maximal number of iterations
    .  $I~<iteration> - iteration numproc
-   .  $d - display modus
+   .  $d~{full|red|no} - display modus
 
-   'npexecute <name> [$i] [$d] [$r] [$s] [$p]'
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
+   .n   nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+   .n   if only a single value is specified, this will be used for all components
+
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p];'
 
    .  $i - preprocess
    .  $d - replace right hand side by the defect
@@ -592,6 +654,7 @@ static INT LinearSolverPostProcess (NP_LINEAR_SOLVER *theNP,
    npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
    npcreate mgs $c ls;            npinit mgs $A MAT $x sol $b rhs
                                           $red 0.00001 $I lmgc $d full;
+   npexecute mgs $i $d $r $s $p;
    .ve
    D*/
 /****************************************************************************/
@@ -636,33 +699,34 @@ static INT LSConstruct (NP_BASE *theNP)
    by an iteration numproc, e. g. a multi grid cycle or a smoother.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $I <iteration> [$d {full|red|no}]
+   npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>]
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}]
+       [$p <con>] [$t <tmp>];
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $x~<sol> - solution vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $P~<iteration> - preconditioner
-   .  $d - display modus
+   .  $red~<sc~double~list> - reduction factor
+   .  $abslimit~<sc~double~list> - absolute limit for the defect (default 1E-10)
+   .  $m~<maxit> - maximal number of iterations
+   .  $I~<iteration> - iteration numproc
+   .  $d~{full|red|no} - display modus
+   .  $p~<con> - conjugate vector
+   .  $t~<tmp> - temporaty vector
+   .  $r~<restart> - restart index
 
-   'npexecute <name> [$i] [$s] [$p]'
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p];'
 
    .  $i - preprocess
-   .  $s - smooth
+   .  $d - replace right hand side by the defect
+   .  $r - compute the residuum of the defect
+   .  $s - solve
    .  $p - postprocess
 
-   EXAMPLE:
-   .vb
-   npcreate pre $c ilu;           npinit pre;
-   npcreate post $c ilu;          npinit post;
-   npcreate base $c ilu;          npinit base $n 3;
-   npcreate basesolver $c cg;     npinit basesolver $red 0.001 $I base;
-   npcreate transfer $c transfer; npinit transfer;
-   npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
-   npcreate mgs $c cg;            npinit mgs $A MAT $x sol $b rhs
-                                          $red 0.00001 $I lmgc $d full;
-   .ve
+   SEE ALSO:
+   ls
    D*/
 /****************************************************************************/
 
@@ -792,34 +856,36 @@ static INT CGConstruct (NP_BASE *theNP)
    by an iteration numproc, e. g. a multi grid cycle or a smoother.
 
    .vb
-   npinit [$x <sol>] [$b <rhs>] [$A <mat>]
-       [$p <condir>] [$h1 <help1>] [$h2 <help2>]
-       $I <iteration> [$d {full|red|no}]
+   npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>]
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}]
+       [$p <con>] [$t <tmp>]
+           [$r <restart>] [$w <sc double list>];
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $x~<sol> - solution vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $P~<iteration> - preconditioner
-   .  $d - display modus
+   .  $m~<maxit> - maximal number of iterations
+   .  $red~<sc~double~list> - reduction factor
+   .  $abslimit~<sc~double~list> - absolute limit for the defect (default 1E-10)
+   .  $I~<iteration> - iteration numproc
+   .  $d~{full|red|no} - display modus
+   .  $p~<con> - conjugate vector
+   .  $t~<tmp> - temporaty vector
+   .  $r~<restart> - restart index
+   .  $w~<sc~double~list> - weighting factor
 
-   'npexecute <name> [$i] [$d] [$r] [$s] [$p]'
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p];'
 
    .  $i - preprocess
-   .  $s - smooth
+   .  $d - replace right hand side by the defect
+   .  $r - compute the residuum of the defect
+   .  $s - solve
    .  $p - postprocess
 
-   EXAMPLE:
-   .vb
-   npcreate pre $c ilu;           npinit pre;
-   npcreate post $c ilu;          npinit post;
-   npcreate base $c ilu;          npinit base $n 3;
-   npcreate basesolver $c cg;     npinit basesolver $red 0.001 $I base;
-   npcreate transfer $c transfer; npinit transfer;
-   npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
-   npcreate mgs $c cr;            npinit mgs $A MAT $x sol $b rhs
-                                          $red 0.00001 $I lmgc $d full;
-   .ve
+   SEE ALSO:
+   ls
    D*/
 /****************************************************************************/
 
@@ -1085,34 +1151,37 @@ static INT CRConstruct (NP_BASE *theNP)
    This numproc executes the bi-conjugate gradient method.
 
    .vb
-   npinit [$x <sol>] [$b <rhs>] [$A <mat>]
-       [$p <p>] [$pb <p-bar>] [$rb <r-bar>] [$h <help>]
-       [$d {full|red|no}] [$weight <VEC_SCALAR>]
+   npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>]
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}]
+       [$p <con>] [$pb <p-bar>] [$rb <r-bar>] [$h <help>]
+           [$r <restart>];
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $x~<sol> - solution vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $P~<iteration> - preconditioner
-   .  $d - display modus
+   .  $m~<maxit> - maximal number of iterations
+   .  $red~<sc~double~list> - reduction factor
+   .  $abslimit~<sc~double~list> - absolute limit for the defect (default 1E-10)
+   .  $I~<iteration> - iteration numproc
+   .  $d~{full|red|no} - display modus
+   .  $p~<con> - conjugate vector
+   .  $pb~<p-bar> - temporaty vector
+   .  $rb~<r-bar> - temporaty vector
+   .  $h~<tmp> - temporaty vector
+   .  $r~<restart> - restart index
 
-   'npexecute <name> [$i] [$d] [$r] [$s] [$p]'
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p];'
 
    .  $i - preprocess
-   .  $s - smooth
+   .  $d - replace right hand side by the defect
+   .  $r - compute the residuum of the defect
+   .  $s - solve
    .  $p - postprocess
 
-   EXAMPLE:
-   .vb
-   npcreate pre $c ilu;           npinit pre;
-   npcreate post $c ilu;          npinit post;
-   npcreate base $c ilu;          npinit base $n 3;
-   npcreate basesolver $c cg;     npinit basesolver $red 0.001 $I base;
-   npcreate transfer $c transfer; npinit transfer;
-   npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
-   npcreate mgs $c cr;            npinit mgs $A MAT $x sol $b rhs
-                                          $red 0.00001 $I lmgc $d full;
-   .ve
+   SEE ALSO:
+   ls
    D*/
 /****************************************************************************/
 
@@ -1291,34 +1360,36 @@ static INT BCGConstruct (NP_BASE *theNP)
    This numproc executes the bi-conjugate gradient method.
 
    .vb
-   npinit [$x <sol>] [$b <rhs>] [$A <mat>]
-       [$p <p>] [$pb <p-bar>] [$rb <r-bar>] [$h <help>]
-       [$d {full|red|no}] [$weight <VEC_SCALAR>]
+   npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>]
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}]
+       [$p <con>] [$t <tmp>]
+           [$R <restart>] [$w <sc double list>];
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $x~<sol> - solution vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $P~<iteration> - preconditioner
-   .  $d - display modus
+   .  $red~<sc~double~list> - reduction factor
+   .  $abslimit~<sc~double~list> - absolute limit for the defect (default 1E-10)
+   .  $m~<maxit> - maximal number of iterations
+   .  $I~<iteration> - iteration numproc
+   .  $d~{full|red|no} - display modus
+   .  $p~<con> - conjugate vector
+   .  $t~<tmp> - temporaty vector
+   .  $R~<restart> - restart index
+   .  $w~<sc~double~list> - weighting factor
 
-   'npexecute <name> [$i] [$d] [$r] [$s] [$p]'
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p];'
 
    .  $i - preprocess
-   .  $s - smooth
+   .  $d - replace right hand side by the defect
+   .  $r - compute the residuum of the defect
+   .  $s - solve
    .  $p - postprocess
 
-   EXAMPLE:
-   .vb
-   npcreate pre $c ilu;           npinit pre;
-   npcreate post $c ilu;          npinit post;
-   npcreate base $c ilu;          npinit base $n 3;
-   npcreate basesolver $c cg;     npinit basesolver $red 0.001 $I base;
-   npcreate transfer $c transfer; npinit transfer;
-   npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
-   npcreate mgs $c cr;            npinit mgs $A MAT $x sol $b rhs
-                                          $red 0.00001 $I lmgc $d full;
-   .ve
+   SEE ALSO:
+   ls
    D*/
 /****************************************************************************/
 
@@ -1337,10 +1408,12 @@ static INT BCGSInit (NP_BASE *theNP, INT argc , char **argv)
   np->s = ReadArgvVecDesc(theNP->mg,"s",argc,argv);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
   np->q = ReadArgvVecDesc(theNP->mg,"q",argc,argv);
-  if (ReadArgvINT("m",&(np->maxiter),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvINT("m",&(np->maxiter),argc,argv))
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
   if (ReadArgvINT("R",&(np->restart),argc,argv))
     np->restart = 0;
-  if (np->restart<0) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (np->restart<0)
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
   np->display = ReadArgvDisplay(argc,argv);
   np->baselevel = 0;
   np->Iter = (NP_ITER *) ReadArgvNumProc(theNP->mg,"I",ITER_CLASS_NAME,argc,argv);
@@ -1603,37 +1676,38 @@ static INT BCGSConstruct (NP_BASE *theNP)
    sqcg - numproc for the squared cg method
 
    DESCRIPTION:
-   This numproc executes the bi-conjugate gradient method.
+   This numproc executes the squared conjugate gradient method.
 
    .vb
-   npinit [$x <sol>] [$b <rhs>] [$A <mat>]
-       [$p <p>] [$pb <p-bar>] [$rb <r-bar>] [$h <help>]
-       [$d {full|red|no}] [$weight <VEC_SCALAR>]
+   npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>]
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}]
+       [$p <con>] [$h <tmp>]
+           [$R <restart>];
    .ve
 
-   .  $c~<sol> - correction vector
+   .  $x~<sol> - solution vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $P~<iteration> - preconditioner
-   .  $d - display modus
+   .  $red~<sc~double~list> - reduction factor
+   .  $abslimit~<sc~double~list> - absolute limit for the defect (default 1E-10)
+   .  $m~<maxit> - maximal number of iterations
+   .  $I~<iteration> - iteration numproc
+   .  $d~{full|red|no} - display modus
+   .  $p~<con> - conjugate vector
+   .  $h~<tmp> - temporaty vector
+   .  $R~<restart> - restart index
 
-   'npexecute <name> [$i] [$d] [$r] [$s] [$p]'
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p];'
 
    .  $i - preprocess
-   .  $s - smooth
+   .  $d - replace right hand side by the defect
+   .  $r - compute the residuum of the defect
+   .  $s - solve
    .  $p - postprocess
 
-   EXAMPLE:
-   .vb
-   npcreate pre $c ilu;           npinit pre;
-   npcreate post $c ilu;          npinit post;
-   npcreate base $c ilu;          npinit base $n 3;
-   npcreate basesolver $c cg;     npinit basesolver $red 0.001 $I base;
-   npcreate transfer $c transfer; npinit transfer;
-   npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
-   npcreate mgs $c cr;            npinit mgs $A MAT $x sol $b rhs
-                                          $red 0.00001 $I lmgc $d full;
-   .ve
+   SEE ALSO:
+   ls
    D*/
 /****************************************************************************/
 
@@ -1806,26 +1880,29 @@ static INT SQCGConstruct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
-   ls - numproc for linear solvers
+   ldcs - numproc for defect correction linear solvers
 
    DESCRIPTION:
-   This numproc executes a linear solver: it performs an iteration
-   up to convergence.
+   This numproc executes a defect correction scheme for a linear solver.
 
    .vb
-   npinit [$x <sol>] [$b <rhs>] [$A <mat sym>]
+   npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>]
        [$red <sc double list>] [$abslimit <sc double list>]
-       $m <maxit> $I <iteration> [$d {full|red|no}]
+       $m <maxit> $LS <linear solver [$d {full|red|no}]
+       $DC <mat sym>;
    .ve
 
    .  $x~<sol> - solution vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
+   .  $red~<sc~double~list> - reduction factor
+   .  $abslimit~<sc~double~list> - absolute limit for the defect (default 1E-10)
    .  $m~<maxit> - maximal number of iterations
-   .  $I~<iteration> - iteration numproc
-   .  $d - display modus
+   .  $LS~<linear~solver> - linear solver numproc
+   .  $d~{full|red|no} - display modus
+   .  $DC~<mat~sym> - defect correction matrix
 
-   'npexecute <name> [$i] [$d] [$r] [$s] [$p]'
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p];'
 
    .  $i - preprocess
    .  $d - replace right hand side by the defect
@@ -1835,14 +1912,28 @@ static INT SQCGConstruct (NP_BASE *theNP)
 
    EXAMPLE:
    .vb
-   npcreate pre $c ilu;           npinit pre;
-   npcreate post $c ilu;          npinit post;
-   npcreate base $c ilu;          npinit base $n 3;
-   npcreate basesolver $c ls;     npinit basesolver $red 0.001 $I base;
-   npcreate transfer $c transfer; npinit transfer;
-   npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
-   npcreate mgs $c ls;            npinit mgs $A MAT $x sol $b rhs
-                                          $red 0.00001 $I lmgc $d full;
+   npcreate damp		$c smd;
+   npcreate cdeq		$c cd;
+   npcreate transfer    $c transfer;
+   npcreate lu			$c lu;
+   npcreate base		$c ls;
+   npcreate sm			$c scgs;
+   npcreate lmgc                $c lmgc;
+   npcreate lin                 $c ls;
+   npcreate dc			$c ldcs;
+
+   npinit transfer;
+   npinit damp $rp 0 $off 0;
+   npinit lu;
+   npinit base $red 1e-8 $m 50 $I lu $display no $abslimit 0;
+   npinit sm $n 1 $mode ff $limit 0 $bl 0 $gamma 1 $display no;
+   npinit lmgc $S sm sm base $T transfer $n1 1 $n2 1 $g 1 $b @:BL;
+   npinit lin $red 1e-8 $m 100 $I lmgc $display no $abslimit 0;
+   npinit dc $A mat $DC dcmat $x x $b b $red 0 $m 20 $LS lin $display full;
+   npinit cdeq $A mat $b b $x x $v @:VELO $p 1 $d 0 $m fu $a 1;
+   npex cdeq;
+   orderv $m CCFFLL $c @:CUT $a;
+   npex dc $i $r $d $s $p;
    .ve
    D*/
 /****************************************************************************/

@@ -116,6 +116,91 @@ typedef struct
 
 } NP_NEWTON;    /* this is a final class */
 
+
+/****************************************************************************/
+/*D
+   newton - nonlinear solver numproc
+
+   DESCRIPTION:
+   This numproc executes a newton iteration based on the linearizazion
+   provided by an assemble numproc. Depending of the linearized problem,
+   the method can be applied as an inexact newton solver resp. a fixpoint
+   iteration as well.
+   This numproc can be configuered for several damping and line search
+   strategies.
+
+   .vb
+   npinit <name> $x <sol>
+              $A <assemble> $T <transfer> $S <solver>
+              $abslimit <sc double list> $red <sc double list>
+              $rhoreass <double> $lsteps <l> $maxit <m> $line {0|1}
+                          $linrate {0|1|2} [$lambda {double}]
+                          $linminred <sc double list> [$display {no|red|full}] [$J <mat>];
+   .ve
+
+   .  $x~<sol>           - solution vector
+   .  $A~<assemble>      - assemble numproc of type 'NP_NL_ASSEMBLE'
+   .  $S~<linear solver> - linear solver numproc of type 'NP_LINEAR_SOLVER'
+   .  $T~<transfer>      - transfer numproc
+   .  $abslimit~<sc~double~list>  - absolute limit for the defect (default 1.0E-10)
+   .  $red~<sc~double~list> - reduction factor
+   .  $rhoreass~<double>    - reassemble if nonlinear convergence rate worse than this
+   .  $lsteps~<l>           - maximum number of line search steps
+   .  $maxit~<m>            - maximum number of nonlinear iterations
+   .  $line~{0|1}           - do line search
+   .  $linrate~{0|1|2}      - 0: quadratic nonlin rate assumed, 1: nonquadratic nonlin rate assumed, 2: accept the corretion always
+   .  $lambda~{double}      - nonlinear damp factor
+   .  $linminred~<sc~double~list> - minimum reduction for linear solver
+   .  $display~{no|red|full}] - display mode
+   .  $J~<mat>                - Jacobi matrix (optional)
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
+   .n   nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+   .n   if only a single value is specified, this will be used for all components
+
+   'npexecute <name> [$i] [$s] [$p];
+
+   .  $i - preprocess
+   .  $s - solve
+   .  $p - postprocess
+
+   EXAMPLE:
+   .vb
+ # grid transfer numproc
+   npcreate transfer $c transfer;
+   npinit transfer;
+
+ # assemble numproc
+   npcreate nlass $c boxnl;
+   npinit nlass;
+
+ # linear solver and iteration numprocs
+   npcreate smooth $c ilu;
+   npinit smooth $damp 0.92;
+
+   npcreate basesolver $c ls;
+   npinit basesolver $red 0.0001 $m 50 $I smooth;
+
+   npcreate lmgc $c lmgc;
+   npinit lmgc $S smooth smooth basesolver $T transfer $n1 2 $n2 2 $g 1 $b 0;
+
+   npcreate mgs $c ls;
+   npinit mgs $m 40 $I lmgc $display full;
+
+ # nonlinear solver numproc
+   npcreate newton $c newton;
+   npinit newton $x sol
+              $A nlass $T transfer $S mgs
+              $abslimit 1.0E-10 $red 1.0E-5
+              $rhoreass 0.8 $lsteps 6 $maxit 50 $line 1 $linrate 0
+              $lambda 1.0 $linminred 1.0E-2 $display full;
+
+   npexecute newton $i $s $p;
+   .ve
+   D*/
+/****************************************************************************/
+
 static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x, NP_NEWTON *newton, NP_NL_ASSEMBLE *ass, VEC_SCALAR defect)
 {
   LRESULT lr;                           /* result of linear solver				*/
@@ -186,42 +271,6 @@ static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
 
   return (0);
 }
-
-/****************************************************************************/
-/*D
-   newton - numproc for ...
-
-   DESCRIPTION:
-   This numproc executes ...
-
-   .vb
-   npinit [$x <sol>] [$A <assemble numproc>] [$red <sc double list>]
-       [$abslimit <sc double list>] ....
-   .ve
-
-   .  $x~<sol> - the solution vector
-   .  $abslimit~<sc~double~list> - absolute limit for the defect
-   .  $reduction~<sc~double~list> - reduction factor
-
-   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si
-   <double  list>]
-   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
-
-   'npexecute <name> [$i] [$s] [$p]'
-
-   .  $i - preprocess
-   .  $s - solve
-   .  $p - postprocess
-
-   EXAMPLE:
-   .vb
-   npcreate nl $t newton;
-   npinit $x sol $A box $red 0.0001 ..............
-
-   npexecute solver $i $d $r $s $p;
-   .ve
-   D*/
-/****************************************************************************/
 
 static INT NewtonPreProcess  (NP_NL_SOLVER *solve, INT level, INT *result)
 {

@@ -176,6 +176,66 @@ INT NPTSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 }
 
 /****************************************************************************/
+/*D
+   NP_T_SOLVER - type definition for time solvers
+
+   DESCRIPTION:
+   This numproc type is used for the description of time solvers.
+   It can be calls a nonlinear solver of type 'NP_NL_SOLVER'.
+   Therefore, it constructs a nonlinear assemble numpro
+   of type 'NP_NL_ASSEMBLE' using an assemble numproc of type
+   'NP_T_ASSEMBLE'.
+   Initializing the data is optional; it can be done with
+
+   'INT NPTSolverInit (NP_T_SOLVER *theNP, INT argc , char **argv);'
+
+   This routine returns 'EXECUTABLE' if the initizialization is complete
+   and  'ACTIVE' else.
+   The data they can be displayed and the num proc can be executed by
+
+   'INT NPTSolverDisplay (NP_T_SOLVER *theNP);'
+   'INT NPTSolverExecute (NP_BASE *theNP, INT argc , char **argv);'
+
+   .vb
+   struct np_t_solver {
+
+        NP_NL_ASSEMBLE nlass;                // derived from nonlinear assemble
+
+        // things to be initialized by generic init
+    VECDATA_DESC *y;                     // solution vector
+    NP_T_ASSEMBLE *tass;                 // time assemble numproc
+    NP_NL_SOLVER *nlsolve;               // nonlinear solver numproc
+        VEC_SCALAR reduction;                // reduction factor per time step
+        VEC_SCALAR abslimit;                 // absolute limit for the defect
+
+        // functions
+        INT (*TimePreProcess)                            // called before first time step
+             (struct np_t_solver *,          // pointer to (derived) object
+                  INT,                           // level
+                  INT *);                        // result
+    INT (*TimeInit)                      // initialize, set initial values
+             (struct np_t_solver *,          // pointer to (derived) object
+                  INT,                           // level
+                  INT *);                        // result
+    INT (*TimeStep)                      // b := b - Ax
+             (struct np_t_solver *,          // pointer to (derived) object
+                  INT,                           // level
+                  INT *);                        // result
+        INT (*TimePostProcess)                           // to be called after last timestep
+             (struct np_t_solver *,          // pointer to (derived) object
+                  INT,                           // level
+                  INT *);                        // result
+   };
+   typedef struct np_t_solver NP_T_SOLVER;
+   .ve
+
+   SEE ALSO:
+   num_proc
+   D*/
+/****************************************************************************/
+
+
+/****************************************************************************/
 /*                                                                          */
 /*  Init                                                                                        */
 /*                                                                          */
