@@ -23,7 +23,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MWCW
+#undef MWCW
 
 /****************************************************************************/
 /*																			*/
@@ -313,6 +313,40 @@ static int SetupSystem2D (int N) /* N is the number of points in one direction *
 /*																			*/
 /****************************************************************************/
 
+#define CHECKER3_XL 0.125
+#define CHECKER3_YL 0.125
+#define CHECKER3_ZL 0.125
+
+#define K000    20.0
+#define K001    0.002
+#define K010    0.2
+#define K011    2000.0
+#define K100    1000.0
+#define K101    0.001
+#define K110    0.1
+#define K111    10.0
+
+static double k_checker_3d (double x, double y, double z)
+{
+  int ix,iy,iz;
+
+  ix=((int)floor(x/CHECKER3_XL))%2;
+  iy=((int)floor(y/CHECKER3_YL))%2;
+  iz=((int)floor(z/CHECKER3_ZL))%2;
+
+  if ( iz==0 && iy==0 && ix==0 ) return(K000);
+  if ( iz==0 && iy==0 && ix==1 ) return(K001);
+  if ( iz==0 && iy==1 && ix==0 ) return(K010);
+  if ( iz==0 && iy==1 && ix==1 ) return(K011);
+  if ( iz==1 && iy==0 && ix==0 ) return(K100);
+  if ( iz==1 && iy==0 && ix==1 ) return(K101);
+  if ( iz==1 && iy==1 && ix==0 ) return(K110);
+  if ( iz==1 && iy==1 && ix==1 ) return(K111);
+
+  AMG_Print("kx_checker: fatal error!\n");
+  return(0.0);
+}
+
 static double u0_3d (double x, double y, double z)
 {
   return(x*x+y*y);
@@ -323,7 +357,7 @@ static double kx_3d (double x, double y, double z)
   double r;
 
   r = 0.0;
-  return(1.0);
+  return(k_checker_3d(x,y,z));
 }
 
 static double ky_3d (double x, double y, double z)
@@ -331,7 +365,7 @@ static double ky_3d (double x, double y, double z)
   double r;
 
   r = 0.0;
-  return(1.0);
+  return(k_checker_3d(x,y,z));
 }
 
 static double kz_3d (double x, double y, double z)
@@ -339,7 +373,7 @@ static double kz_3d (double x, double y, double z)
   double r;
 
   r = 0.0;
-  return(1.0E-6);
+  return(k_checker_3d(x,y,z));
 }
 
 /* !!! rx,ry,rz positive !!! */
@@ -489,30 +523,30 @@ int main (int argc, char *argv[])
   if ((N<0)||(N>10000000)) return(1);
 
   AMG_Print("Setting up system\n");
-  if (SetupSystem2D(N))
+  if (SetupSystem3D(N))
     AMG_Print("Error in setup\n");
   /*AMG_PrintMatrix(A0,"A initially");*/
 
   /* coarsen context */
   cc.alpha = 0.33333333;
   cc.beta = 1.0E-3;
-  cc.mincluster=4;
-  cc.maxcluster=6;
-  cc.maxdistance=2;
+  cc.mincluster=8;
+  cc.maxcluster=10;
+  cc.maxdistance=3;
   cc.maxconnectivity=15;
   cc.verbose=1;
   cc.depthtarget=20;
-  cc.coarsentarget=12;
+  cc.coarsentarget=25;
   cc.coarsenrate=1.2;
   cc.major=-1;
   cc.dependency=AMG_SYM;
 
   /* solver context */
   sc.verbose=1;
-  sc.solver=AMG_BCGS;
+  sc.solver=AMG_CG;
   sc.preconditioner=AMG_MGC;
   sc.maxit=800;
-  sc.red_factor=1.0E-10;
+  sc.red_factor=1.0E-6;
   sc.dnorm_min=1.0E-15;
   sc.coarse_smoother=AMG_EX;
   sc.coarse_maxit=200;
