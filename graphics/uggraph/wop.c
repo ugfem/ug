@@ -14281,6 +14281,7 @@ void NumberOfDesc(INT *nbDesc)
 		nbDesc[i] = 0;
 		noDesc    = (noDesc && WOP_DownChannel[i] == NULL);
 	}
+	if (procs < 2) return;
 	if (noDesc) {
 		sum  = 1;
 		umid = SendASync(WOP_UpChannel, &sum, sizeof(sum), &uerr);
