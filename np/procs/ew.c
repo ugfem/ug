@@ -958,10 +958,6 @@ static INT EWPostProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
     if ((*np->Transfer->ProjectSolution)
           (np->Transfer,bl,level,ev[i],result))
       NP_RETURN(1,result[0]);
-  if (np->Transfer->PostProcess != NULL)
-    if ((*np->Transfer->PostProcess)(np->Transfer,0,level,
-                                     ev[0],np->r,np->M,result))
-      NP_RETURN(1,result[0]);
   if (np->LS->PostProcess != NULL)
     if ((*np->LS->PostProcess)(np->LS,level,ev[0],np->r,np->M,result))
       NP_RETURN(1,result[0]);
