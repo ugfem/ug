@@ -136,8 +136,8 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 		    nerrors = 1;
 			ENDDEBUG
 		}
-        #endif
 		if (nerrors == 0) return(nerrors);
+        #endif
 		UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX " vertex=" VID_FMTX
 			" VFATHER=NULL vertex needs VFATHER\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
 			VID_PRTX(theVertex));
