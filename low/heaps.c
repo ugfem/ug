@@ -40,6 +40,22 @@
 #include "general.h"
 #include "debug.h"
 #include "ugdevices.h"
+#include "domain.h"
+
+#if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
+#include "gm.h"
+#include "commands.h"
+#include "mgheapmgr.h"
+NS_PREFIX MULTIGRID * NS_PREFIX GetCurrentMultigrid (void);
+#endif
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -291,13 +307,6 @@ HEAP *NewHeap (INT type, MEM size, void *buffer)
    .n        '((char *)theBlock)+ALIGNMENT' if OK by type of 'GENERAL_HEAP'
    D*/
 /****************************************************************************/
-
-#if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
-extern INT usefreelistmemory;
-#include "gm.h"
-#include "commands.h"
-NS_PREFIX MULTIGRID *GetCurrentMultigrid (void);
-#endif
 
 void *GetMem (HEAP *theHeap, MEM n, INT mode)
 {
@@ -633,13 +642,6 @@ void DisposeMem (HEAP *theHeap, void *buffer)
    .n   NULL if object of requested type is not available
    D*/
 /****************************************************************************/
-
-#if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
-extern INT usefreelistmemory;
-#include "gm.h"
-#include "commands.h"
-NS_PREFIX MULTIGRID *GetCurrentMultigrid (void);
-#endif
 
 void *GetFreelistMemory (HEAP *theHeap, INT size)
 {

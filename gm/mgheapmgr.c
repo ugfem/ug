@@ -32,6 +32,7 @@
 #include "heaps.h"
 #include "gm.h"
 #include "algebra.h"
+#include "mgheapmgr.h"
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -66,8 +67,8 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
-INT usefreelistmemory = 1;
-INT freelist_end_mark = 0;
+INT NS_PREFIX usefreelistmemory = 1;
+INT NS_PREFIX freelist_end_mark = 0;
 
 /****************************************************************************/
 /*																			*/
