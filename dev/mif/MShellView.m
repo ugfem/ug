@@ -48,42 +48,64 @@ the commands entered by the user and the results of those commands etc.
 */
 
 
-
 #import "MShellView.h"
 #import "MShellTextView.h"
+#import "MShell.h"
 
 @interface MShellView(MShellViewPrivate)
-- (MShellTextView *)shellView;
+- (MShellTextView *)textView;
 @end
+
+extern MShell *theUGshell;
+
 
 @implementation MShellView
 
 - (float)fontSize
-{ return [[[self shellView] font] pointSize]; }
+{ return [[[self textView] font] pointSize]; }
 
 - (id) _init  // construction and configuration of the view hierarchy
 {
-    NSScrollView *scrollview =[[[NSScrollView alloc] initWithFrame:[self bounds]] autorelease];
-    NSSize contentSize = [scrollview contentSize];
-    MShellTextView *shellView;
+    NSSize contentSize;
+    theScrollView =[[[NSScrollView alloc] initWithFrame:[self bounds]] autorelease];
+    contentSize = [theScrollView contentSize];
 
-    [scrollview setBorderType:NSNoBorder];
-    [scrollview setHasVerticalScroller:YES];
-    [scrollview setHasHorizontalScroller:NO];
-    [scrollview setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable]; 
+    [theScrollView setBorderType:NSNoBorder];
+    [theScrollView setHasVerticalScroller:YES];
+    [theScrollView setHasHorizontalScroller:YES];
+    [theScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)]; 
 
-    shellView = [[[MShellTextView alloc] initWithFrame:NSMakeRect(0, 0,[scrollview contentSize].width, [scrollview contentSize].height)] autorelease];
-    [shellView setMinSize:(NSSize){0.0, contentSize.height}];
-    [shellView setMaxSize:(NSSize){1e7, 1e7}];
-    [shellView setVerticallyResizable:YES];
-    [shellView setHorizontallyResizable:NO];
-    [shellView setAutoresizingMask:NSViewWidthSizable ];
-    [[shellView textContainer] setWidthTracksTextView:YES];
+    /* Create the MShellTextView */
+    theTextView = [[[MShellTextView alloc] initWithFrame:NSMakeRect(0, 0,
+           [theScrollView contentSize].width, [theScrollView contentSize].height)] autorelease];
+    // 2000.0 instead of [theScrollView contentSize].width?
 
-    [scrollview setDocumentView:shellView];
-    [self addSubview:scrollview];
-    [self setFontSize:[[NSUserDefaults standardUserDefaults] integerForKey:@"fontSize"]];
-    
+    [theTextView setMinSize:(NSSize){50.0, 50.0}];
+    [theTextView setMaxSize:(NSSize){1e7, 1e7}];
+    [theTextView setVerticallyResizable:YES];
+    [theTextView setHorizontallyResizable:YES];
+    [theTextView setAutoresizingMask:NSViewWidthSizable];
+    [[theTextView textContainer] setWidthTracksTextView:NO];
+
+    [theTextView setEditable:YES];
+    [theTextView setSelectable:YES];
+    [[NSFont userFixedPitchFontOfSize:10.0] set];
+    //[theTextView setFont:[NSFont userFixedPitchFontOfSize:10.0]];
+    [self addSubview:theScrollView];
+    [theScrollView setDocumentView:theTextView];
+
+    /*
+     * Get notification if text input ended:
+     * the MShellWindow object will from now on get a notification about
+     * all textDidEndEditing events in theTextView.
+     
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+        selector:@selector(textDidEndEditing:)
+        name:NSTextDidEndEditingNotification
+        object:theTextView];
+     */
+
     return self;
 }
 
@@ -97,7 +119,8 @@ the commands entered by the user and the results of those commands etc.
 
 - (id)initWithFrame:(NSRect)frameRect
 {
-  if (self = [super initWithFrame:frameRect])
+  self = [super initWithFrame:frameRect];
+  if ( self!=nil )
   {
     [self _init];
     [self setAutoresizesSubviews:YES];    
@@ -106,12 +129,14 @@ the commands entered by the user and the results of those commands etc.
   return nil;
 }
 
-
-// Private
-
-- (MShellTextView *)shellView
+- (MShellTextView *)textView
 {
-  return [[[self subviews] objectAtIndex:0] documentView];
+  return theTextView;
+}
+
+- (NSScrollView *)scrollView
+{
+  return theScrollView;
 }
 
 @end

@@ -28,8 +28,6 @@
   NSMutableString     *commandString;
 }
 
-- (void)keyDown:(NSEvent *)theEvent;
-
 - (id)initWithContentRect:(NSRect) contentRect
  styleMask:(unsigned int)styleMask
  backing:(NSBackingStoreType) backingType

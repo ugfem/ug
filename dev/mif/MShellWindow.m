@@ -42,9 +42,9 @@ unsigned int ugTextLength;
  TextView - all other keyDown events have to be treated differently.
  */
 {
-    
-	if ( self = [super initWithContentRect:contentRect styleMask:styleMask
-                             backing:backingType defer:flag] )
+    self = [super initWithContentRect:contentRect styleMask:styleMask
+                                 backing:backingType defer:flag];
+	if ( self )
     {
         NSMutableCharacterSet *workingSet = [[NSCharacterSet alphanumericCharacterSet] mutableCopy];
         [workingSet addCharactersInString:@";:,."];
@@ -54,37 +54,6 @@ unsigned int ugTextLength;
     }
     
 	return self;
-}
-
-- (void)keyDown:(NSEvent *)theEvent
-{
-    char newline = '\n';
-	NSString *theChars = [theEvent characters];		// get Character from theEvent
-
-	[super keyDown:theEvent];
-    printf("keyDown>>%c..%i<<\n",
-           (char)[theChars characterAtIndex:0],(int)[theChars characterAtIndex:0]);
-	return;
-    
-    if ([theChars length] > 1)
-        printf("MShellWindow, keyDown: theChar length is %d\n",[theChars length]);
-    
-    if ( [finalCharSet characterIsMember:[theChars characterAtIndex:0]] )	{
-        [super keyDown:theEvent];
-        }
-    else	{
-        printf ("not a character event\n");
-        }
-    
-    // append the key to the commandString
-    [commandString appendString:theChars];
-
-    if ([theChars characterAtIndex:0] == '\n')	{
-		/* Process command */
-        printf("\\n gepresst\n");
-        }
-
-    return;
 }
 
 @end

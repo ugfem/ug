@@ -30,6 +30,7 @@
 
 - (void)executeCommand:(id)sender
 {
+    [[MShell instantiate] interpretCommand:sender];
 }
 
 - (void)newGraphic:(id)sender

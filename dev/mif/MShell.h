@@ -22,20 +22,17 @@
 
 #import <AppKit.h>
 
+#import "MShellView.h"
 #import "MShellWindow.h"
 #import "MShellTextView.h"
-
-#define MAX_BUFFERED_COMMANDS 128
 
 @interface MShell : NSObject
 {
   MShellWindow    *theWindow;
+  MShellView          *theShellView;
   NSScrollView    *theScrollView;
   MShellTextView  *theTextView;
   NSMenu                  *theMenu;
-  NSMutableArray      *theCommandList;          // store the history of entered commands
-  unsigned int commandCount;                    // count the number of entered commands
-  unsigned int currCommandNumber;               // for scrolling through command list
   id shellFont;
   char                    *inpLine;
 }
@@ -44,12 +41,13 @@
 - (BOOL)        setUp;
 - (void)        applicationDidFinishLaunching:(NSNotification *)aNotification;
 - (void)        appendToText:(const char *)val;
+- (void)        appendPrompt;
 - (BOOL)        executeFile:(NSString *)fileName;
 - (NSPoint)     getMouseLocation;
-- (void)        textDidEndEditing:(NSNotification *)notification;
 - (void)        setScrollback:(int)sb;
 - (void)        setCharactersPerLine:(int)cpl;
 - (void)        setFontSize:(float)fsize;
+- (BOOL)        interpretCommand:(NSString*)command;
 
 - (MShellWindow*) window;
 /*- (BOOL)textView:(NSTextView *)aTextView shouldChangeTextInRange:(NSRange)affectedCharRange replacementString:(NSString *)replacementString;

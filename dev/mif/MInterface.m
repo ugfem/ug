@@ -82,7 +82,8 @@ static long guiHeapSize=32000;
 SHORT_POINT moveto_point;
 static GRAPH_WINDOW *currgw;
 static GRAPH_WINDOW *windowList=NULL;
-static OUTPUTDEVICE *MacOSXServerOutputDevice;
+
+OUTPUTDEVICE *MacOSXServerOutputDevice;
 
 struct ugcolortable	{
 	int red;
@@ -94,6 +95,9 @@ static UGColorTable ColorTable[256];
 NSColor	*currentColor=nil;
 
 NSAutoreleasePool *pool;
+NSDictionary *info;
+NSString *principalClassName;
+NSString *mainNibFile;
 
 MShell	*theUGshell;			/* the shell object */
 
@@ -368,7 +372,7 @@ void WriteString (const char *s)
 
 INT MouseStillDown (void)
 {
-	printf("MouseStillDown was called\n");
+    UserWrite("MouseStillDown was called\n");
     return (0);
 }
 
@@ -503,7 +507,9 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	int TermWinH=0,TermWinV=0,TermWinDH=400,TermWinDV=300;
 
     pool = [[NSAutoreleasePool alloc] init];
-	
+    info = [[NSBundle mainBundle] infoDictionary];
+    principalClassName = [info objectForKey: @"NSPrincipalClass"];
+    
 	/*
 	 * Get some default values
 	 */
@@ -530,6 +536,7 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	
 	[NSApplication sharedApplication];
     [NSBundle loadNibNamed:@"UG_MacOSXServer.nib" owner:[NSApplication sharedApplication]];
+    //[NSBundle loadNibNamed:@"UG_MacOSXServer.nib" owner:NSApp];
     
 	/* Create the unique shell object and set some of its values */
     theUGshell = [MShell instantiate];
@@ -653,7 +660,9 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	MacOSXServerOutputDevice->GetPaletteEntry	= MacOSXServerGetPaletteEntry;
 	MacOSXServerOutputDevice->Flush				= MacOSXServerFlush;
 
-	printf("output device 'screen' for MacOSXServer window manager created\n");
+	printf("output device 'screen' for ");
+    printf(ARCHNAME);
+    printf(" window manager created\n");
 
 	/* get gui heapsize */
 	if (GetDefaultValue(DEFAULTSFILENAME,"guimemory",buffer)==0)
@@ -697,7 +706,7 @@ D*/
 
 void MacOSXServerEventLoop (int argc, char **argv)
 {
-	[theUGshell appendToText:PROMPT];
+	[theUGshell appendPrompt];
 	[NSApp run];
 }
 

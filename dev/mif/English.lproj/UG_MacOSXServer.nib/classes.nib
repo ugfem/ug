@@ -21,29 +21,7 @@
             LANGUAGE = ObjC; 
             OUTLETS = {inspector = id; shell = id; }; 
             SUPERCLASS = NSObject; 
-        }, 
-        {CLASS = MGraphicView; LANGUAGE = ObjC; SUPERCLASS = NSView; }, 
-        {CLASS = MGraphicWindow; LANGUAGE = ObjC; SUPERCLASS = NSWindow; }, 
-        {
-            CLASS = MShell; 
-            LANGUAGE = ObjC; 
-            OUTLETS = {shellFont = id; }; 
-            SUPERCLASS = NSObject; 
-        }, 
-        {
-            ACTIONS = {paste = id; }; 
-            CLASS = MShellTextView; 
-            LANGUAGE = ObjC; 
-            OUTLETS = {commandHandler = id; }; 
-            SUPERCLASS = NSTextView; 
-        }, 
-        {
-            CLASS = MShellView; 
-            LANGUAGE = ObjC; 
-            OUTLETS = {commandHandler = id; }; 
-            SUPERCLASS = NSView; 
-        }, 
-        {CLASS = MShellWindow; LANGUAGE = ObjC; SUPERCLASS = NSWindow; }
+        }
     ); 
     IBVersion = 1; 
 }

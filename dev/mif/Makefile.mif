@@ -17,7 +17,6 @@ OBJECTS = MGraphicWindow.o MShellTextView.o MAppController.o MInterface.o \
 
 # local C compiler flags
 LCFLAGS = -I../../include -Wall \
-    -precomp-trustfile /Local/Users/reichenb/UG/ug/dev/mif/mif.build/derived_src/TrustedPrecomps.txt \
     -fno-common -pipe -I/System/Library/Frameworks/AppKit.framework/Headers
 
 all : $(OBJECTS) $(GUI) Makefile.mif

@@ -19,7 +19,28 @@
 
 #import <AppKit/AppKit.h>
 
+#import "MShellTextView.h"
+
+/* UG includes */
+#include "compiler.h"
+#include "misc.h"
+#include "defaults.h"
+#include "general.h"
+#include "devices.h"
+#include "cmdint.h"
+
 @interface MShellView : NSView
-{}
+{
+  NSScrollView        *theScrollView;
+  MShellTextView      *theTextView;
+}
+
+- (float)fontSize;
+- (id)initWithFrame:(NSRect)frameRect;
+- (id)initWithCoder:(NSCoder *)coder;
+- (id) _init;
+
+- (MShellTextView *)textView;
+- (NSScrollView *)scrollView;
 
 @end
