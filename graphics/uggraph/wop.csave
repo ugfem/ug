@@ -13194,7 +13194,6 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					DiscSync(gpipe);
 				}
 			}
-			Synchronize();
 			#endif
 
 				if (WOP_GEN_PostProcessProc!=NULL)
@@ -13293,7 +13292,6 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					DiscSync(gpipe);
 				}
 			}
-			Synchronize();
 			#endif
 
 				if (WOP_GEN_PostProcessProc!=NULL)
