@@ -105,6 +105,7 @@ GRID        *CreateNewLevelAMG      (MULTIGRID *theMG);
 /* dispose basic objects */
 INT              DisposeElement                 (GRID *theGrid, ELEMENT *theElement, INT dispose_connections);
 INT              DisposeTopLevel                (MULTIGRID *theMG);
+INT              DisposeNode                    (GRID *theGrid, NODE *theNode);
 
 /* miscellaneous */
 ELEMENT     *FindFather             (VERTEX *vptr);

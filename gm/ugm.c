@@ -148,7 +148,6 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex, GEOM_OBJECT *Father, INT
 static VERTEX *CreateBoundaryVertex     (GRID *theGrid);
 static VERTEX *CreateInnerVertex (GRID *theGrid);
 
-static INT DisposeNode (GRID *theGrid, NODE *theNode);
 static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
 static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
 
@@ -3272,7 +3271,7 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
    DisposeNode - Remove node including its edges from the data structure
 
    SYNOPSIS:
-   static INT DisposeNode (GRID *theGrid, NODE *theNode);
+   INT DisposeNode (GRID *theGrid, NODE *theNode);
 
    PARAMETERS:
    .  theGrid - grid to remove from
@@ -3289,7 +3288,7 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
    D*/
 /****************************************************************************/
 
-static INT DisposeNode (GRID *theGrid, NODE *theNode)
+INT DisposeNode (GRID *theGrid, NODE *theNode)
 {
   VERTEX *theVertex;
   GEOM_OBJECT *father;
@@ -3837,6 +3836,9 @@ INT Collapse (MULTIGRID *theMG)
 
 #ifdef ModelP
   DDD_XferBegin();
+    #ifdef DDDOBJMGR
+  DDD_ObjMgrBegin();
+    #endif
 #endif
   for (l=tl-1; l>=0; l--) {
     theGrid = GRID_ON_LEVEL(theMG,l);
@@ -3878,6 +3880,9 @@ INT Collapse (MULTIGRID *theMG)
   }
 
 #ifdef ModelP
+    #ifdef DDDOBJMGR
+  DDD_ObjMgrEnd();
+    #endif
   DDD_XferEnd();
 #endif
 
@@ -4162,7 +4167,11 @@ INT DisposeAMGLevels (MULTIGRID *theMG)
         #ifdef ModelP
   /* tell DDD that we will 'inconsistently' delete objects.
      this is a dangerous mode as it switches DDD warnings off. */
-  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_OFF);
+  /*DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_OFF);*/
+  DDD_XferBegin();
+    #ifdef DDDOBJMGR
+  DDD_ObjMgrBegin();
+        #endif
         #endif
 
   while ((err=DisposeAMGLevel(theMG))!=2)
@@ -4174,11 +4183,15 @@ INT DisposeAMGLevels (MULTIGRID *theMG)
 
         #ifdef ModelP
   /* stop dangerous mode. from now on DDD will issue warnings again. */
-  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);
+  /*DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);*/
 
   /* rebuild DDD-interfaces because distributed vectors have been
      deleted without communication */
-  DDD_IFRefreshAll();
+  /*DDD_IFRefreshAll();*/
+    #ifdef DDDOBJMGR
+  DDD_ObjMgrEnd();
+        #endif
+  DDD_XferEnd();
         #endif
 
   return(0);
