@@ -693,9 +693,11 @@ static COORD_POINT 	FE3D_MousePos;
 
 
 /*---------- working variables of 'EW_EScalar2D' ---------------------------*/
-#define ES2D_SETCOLOR(v,c)			{c = (long)(EScalar2D_V2C_factor*v+EScalar2D_V2C_offset);	\
-									 c = MIN(c,WOP_OutputDevice->spectrumEnd);					\
-									 c = MAX(c,WOP_OutputDevice->spectrumStart);}
+#define ES2D_SETCOLOR(v,c)	                                                 \
+  { c = (long)(EScalar2D_V2C_factor*v+EScalar2D_V2C_offset);	             \
+    c = MIN(c,WOP_OutputDevice->spectrumEnd);					             \
+    c = MAX(c,WOP_OutputDevice->spectrumStart);                              \
+    if (v == MAX_C) c = 0;}
 
 static PreprocessingProcPtr EScalar2D_PreProcess;
 static ElementEvalProcPtr EScalar2D_EvalFct;
@@ -711,6 +713,12 @@ static DOUBLE		EScalar2D_maxValue;
 
 
 /*---------- working variables of 'EW_EScalar3D' ---------------------------*/
+#define ES3D_SETCOLOR(v,c)	                                                 \
+  { c = (long)(EScalar3D_V2C_factor*v+EScalar3D_V2C_offset);	             \
+    c = MIN(c,WOP_OutputDevice->spectrumEnd);					             \
+    c = MAX(c,WOP_OutputDevice->spectrumStart);                              \
+    if (v == MAX_C) c = 0;}
+
 static PreprocessingProcPtr EScalar3D_PreProcess;
 static ElementEvalProcPtr EScalar3D_EvalFct;
 static DOUBLE		EScalar3D_V2C_factor;
@@ -16732,11 +16740,9 @@ DOUBLE *LP0, DOUBLE *LP1, DOUBLE *LP2, INT depth, DRAWINGOBJ **theDO)
 			EvalPoint[i] = (TP0[i]+TP1[i]+TP2[i])/3.0;
 			LocalCoord[i]= (LP0[i]+LP1[i]+LP2[i])/3.0;
 		}
-		value = (*EScalar3D_EvalFct)(theElement,
-									 (const DOUBLE **)CornersOfElem,LocalCoord);
-		Color = (long)(EScalar3D_V2C_factor*value+EScalar3D_V2C_offset);
-		Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-		Color = MAX(Color,WOP_OutputDevice->spectrumStart);
+		value = (*EScalar3D_EvalFct)
+		  (theElement,(const DOUBLE **)CornersOfElem,LocalCoord);
+		ES3D_SETCOLOR(value,Color);
 
 		/* draw */
 		DO_2c(*theDO) = DO_POLYGON; DO_inc(*theDO) 
@@ -16813,9 +16819,7 @@ DOUBLE *LQP0, DOUBLE *LQP1, DOUBLE *LQP2, DOUBLE *LQP3,INT depth, DRAWINGOBJ **t
 		/* get values */		
 		value = (*EScalar3D_EvalFct)(theElement,
 									 (const DOUBLE **)CornersOfElem,LEVP);
-		Color = (long)(EScalar3D_V2C_factor*value+EScalar3D_V2C_offset);
-		Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-		Color = MAX(Color,WOP_OutputDevice->spectrumStart);
+		ES3D_SETCOLOR(value,Color);	
 
 		/* draw */
 		DO_2c(*theDO) = DO_POLYGON; DO_inc(*theDO) 
@@ -17012,9 +17016,7 @@ static INT PlotContourTriangle3D (ELEMENT *theElement, DOUBLE **CornersOfElem,
 		for (i=min; i<=max; i++)
 		{
 			/* set color */
-			Color = (long)(EScalar3D_V2C_factor*EScalar3D_ContValues[i]+EScalar3D_V2C_offset);
-			Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-			Color = MAX(Color,WOP_OutputDevice->spectrumStart);
+		    ES3D_SETCOLOR(EScalar3D_ContValues[i],Color);
 
 			/* calculate points on each side of triangle having the right value */
 			n=0;
@@ -17139,9 +17141,7 @@ static INT PlotContourQuadrilateral3D (ELEMENT *theElement, DOUBLE **CornersOfEl
 		for (i=min; i<=max; i++)
 		{
 			/* set color */
-			Color = (long)(EScalar3D_V2C_factor*EScalar3D_ContValues[i]+EScalar3D_V2C_offset);
-			Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-			Color = MAX(Color,WOP_OutputDevice->spectrumStart);
+		    ES3D_SETCOLOR(EScalar3D_ContValues[i],Color);
 
 			/* calculate points on each side of triangle having the right value */
 			n=0;
