@@ -1228,8 +1228,9 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
       for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
       {
         /* skip node if it is a copy from a lower level */
-        if (CORNERTYPE(node))
-          continue;
+        if (l>0)
+          if (CORNERTYPE(node))
+            continue;
         vptr = MYVERTEX(node);
         /* skip node if it on the boundary */
         if (OBJT(vptr) == BVOBJ)
