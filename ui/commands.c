@@ -139,6 +139,12 @@
 /* for save command */
 #define NO_COMMENT                               "no comment"
 
+/* for array commands */
+#define AR_NVAR_MAX                     10
+#define AR_NVAR(p)                      ((p)->nVar)
+#define AR_VARDIM(p,i)          ((p)->VarDim[i])
+#define AR_DATA(p,i)            ((p)->data[i])
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -153,6 +159,18 @@ struct MarkRule
 };
 
 typedef struct MarkRule MARKRULE;
+
+typedef struct
+{
+  /* fields for environment directory */
+  ENVVAR v;
+
+  /* data */
+  INT nVar;
+  INT VarDim[AR_NVAR_MAX];
+  DOUBLE data[1];
+
+} ARRAY;
 
 /****************************************************************************/
 /*																			*/
@@ -193,6 +211,11 @@ static char mintext[32],maxtext[32],minmaxtext[32];
 /* counters for windows and pictures */
 static INT wincounter=1;
 static INT piccounter=1;
+
+/* stuff for the array commands */
+static INT theArrayDirID;
+static INT theArrayVarID;
+static INT arraypathes_set=FALSE;
 
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
@@ -669,10 +692,15 @@ static INT CreateMetafileNameCommand (INT argc, char **argv)
 static INT ReadClockCommand (INT argc, char **argv)
 {
   DOUBLE Time;
+  clock_t end_clock;
 
   NO_OPTION_CHECK(argc,argv);
 
-  Time = (clock()-Time0)/((DOUBLE) CLOCKS_PER_SEC);
+  end_clock = clock();
+  if (end_clock>Time0)
+    Time = (end_clock-Time0)/((DOUBLE)CLOCKS_PER_SEC);
+  else
+    Time = ((~0)-Time0+end_clock)/((DOUBLE)CLOCKS_PER_SEC);
 
   if (SetStringValue(":CLOCK",Time)!=0)
   {
@@ -3589,12 +3617,17 @@ static INT VMListCommand (INT argc, char **argv)
   if ((sym = ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),
                                    "vmlist",argc,argv))!=NULL)
   {
+                #ifdef __INTERPOLATION_MATRIX__
     if (ReadArgvOption("I",argc,argv))
       PrintIMatrix(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
                    SYM_VEC_DESC(sym),vclass,vnclass);
     else
       PrintVector(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
                   SYM_VEC_DESC(sym),vclass,vnclass);
+                #else
+    PrintVector(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
+                SYM_VEC_DESC(sym),vclass,vnclass);
+        #endif
     return(OKCODE);
   }
 
@@ -6476,7 +6509,7 @@ static INT QualityCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This command generates boundary nodes.
-   It reads the environ variables ':gg:RelRasterSize', ':gg:h_global',
+   It reads the environment variables ':gg:RelRasterSize', ':gg:h_global',
    ':gg:searchconst', ':gg:angle', ':gg:epsi'.
 
    'bnodes'
@@ -10868,6 +10901,921 @@ static INT DebugCommand (INT argc, char **argv)
 }
 #endif
 
+
+
+/****************************************************************************/
+/*D
+   array - family of ug-commands to handle n-dimensional arrays of doubles
+
+   DESCRIPTION:
+   Each array is a struct in the directory '\Array'. Besides some
+   administrational information it contains an ordinary, n-dimensional array
+   of doubles as a 'double[n_1][n_2]...[n_k]' definition in C would allocate.
+   The maximum number 'k' of dimensions is restricted to 'AR_NVAR_MAX'.
+
+   The provided commands to work with array are the following. The name of
+   each command conists of the 2 first letters of its action (e.g. 'sa' for
+   'save') and the postfix 'ar' for 'array'.
+
+   CONSTRUCTION and DESTRUCTION:
+   .  crar $n <name> {$n_i}+ - create array of specified size
+   .  dear $n <name> - delete array
+
+   ACCESS to values:
+   .  wrar $n <name> {$n_i}+ $v <value> - write array[n_1][n_2]...[n_k] := <value>
+   .  rear $n <name> {$n_i}+ - read array[n_1][n_2]...[n_k] to ':ARRAY_VALUE'
+   .  clar $n <name> - clear array, all entries := 0.0
+
+   FILEOPERATIONS:
+   .  saar $n <name> - save array to file '<name>.array'
+   .  loar $n <name> - load array from file '<name>.array'
+
+   EXAMPLE:
+   Use the array commands to realize a consecutively numbering of logfiles
+   across several runs of the programm.
+   .vb
+       loar $n filenumber;			# try to load a previously stored array
+       if ( :cmdstatus != "0" )
+       {                            # no previous array -> the first run
+        fnr = -1;					# init the number
+        crar $n filenumber $1;      # create an array for only one component
+       }
+       else
+       {                            # previous array is loaded
+        rear $n filenumber $0;      # put the filenumber into :ARRAY_VALUE
+        fnr = :ARRAY_VALUE;         # get this number
+       }
+       fnr = fnr + 1;                  # calculate the next number
+       wrar $n filenumber $0 $v @fnr;  # write this number (back) to the array
+       saar $n filenumber;             # save the array (back) to file
+       dear $n filenumber;             # delete array since not longer needed
+       set logname log@fnr;
+
+       logon @logname;
+   .ve
+
+   SEE ALSO:
+   crar, dear, wrar, rear, saar, loar, clar, defaults
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*
+   ClearArray - set all entries of the array to 0
+
+   SYNOPSIS:
+   static INT ClearArray (ARRAY *theAR);
+
+   PARAMETERS:
+   .  theAR - array structure to work on
+
+   DESCRIPTION:
+   Set all entries of the data field contained in the array structure to 0.
+
+   RETURN VALUE:
+   INT
+   .n    0 always
+ */
+/****************************************************************************/
+
+static INT ClearArray (ARRAY *theAR)
+{
+  INT i, size;
+
+  size = 1;
+  for (i=0; i<AR_NVAR(theAR); i++)
+    size *= AR_VARDIM(theAR,i);
+  for (i=0; i<size; i++)
+    AR_DATA(theAR,i) = 0.0;
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   CreateArray - allocate a new array structure
+
+   SYNOPSIS:
+   static ARRAY *CreateArray (char *name, INT nVar, INT *VarDim);
+
+   PARAMETERS:
+   .  name - name under which the array is allocated in '\Array'
+   .  nVar - number of dimensions of the data field
+   .  VarDim - extension of the data field in each dimension
+
+   DESCRIPTION:
+   Allocate a new array structure in the directory '\Array' and
+   allocate the data field. The maximum number of dimensions is
+   'AR_NVAR_MAX'.
+
+   RETURN VALUE:
+   ARRAY *
+   .n     pointer to allocated array
+   .n     NULL on error.
+ */
+/****************************************************************************/
+
+static ARRAY *CreateArray (char *name, INT nVar, INT *VarDim)
+{
+  INT i, size;
+  ARRAY *theAR;
+
+  if (nVar<1 || nVar>AR_NVAR_MAX) return (NULL);
+
+  /* change to directory */
+  if (ChangeEnvDir("/Array")==NULL)
+    return(NULL);
+
+  /* get size */
+  size = sizeof(DOUBLE);
+  for (i=0; i<nVar; i++)
+    size *= VarDim[i];
+  size += sizeof(ARRAY) - sizeof(DOUBLE);
+
+  /* allocate structure */
+  theAR = (ARRAY*)MakeEnvItem (name,theArrayVarID,size);
+  if (theAR==NULL) return (NULL);
+
+  /* init structure */
+  ENVITEM_LOCKED(theAR) = 0;
+  AR_NVAR(theAR) = nVar;
+  for (i=0; i<nVar; i++)
+    AR_VARDIM(theAR,i) = VarDim[i];
+
+  if (ClearArray(theAR)) return (NULL);
+
+  return (theAR);
+}
+
+/****************************************************************************/
+/*
+   WriteArray - set one single entry of the data field of the array
+
+   SYNOPSIS:
+   static INT WriteArray (ARRAY *theAR, INT *Point, DOUBLE value);
+
+   PARAMETERS:
+   .  theAR - array structure to work on
+   .  Point - specify the coordinate of the entry in each dimension
+   .  value - value to be stored
+
+   DESCRIPTION:
+   Set one single entry of the data field of the array to the given value.
+
+   RETURN VALUE:
+   INT
+   .n    0 always
+ */
+/****************************************************************************/
+
+static INT WriteArray (ARRAY *theAR, INT *Point, DOUBLE value)
+{
+  INT i, pos;
+
+  pos = Point[AR_NVAR(theAR)-1];
+  for (i=AR_NVAR(theAR)-2; i>=0; i--)
+    pos = Point[i] + AR_VARDIM(theAR,i)*pos;
+  AR_DATA(theAR,pos) = value;
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   ReadArray - read one single entry of the data field of the array
+
+   SYNOPSIS:
+   static INT ReadArray (ARRAY *theAR, INT *Point, DOUBLE *value);
+
+   PARAMETERS:
+   .  theAR - array structure to work on
+   .  Point - specify the coordinate of the entry in each dimension
+   .  value - read value
+
+   DESCRIPTION:
+   Read one single entry of the data field of the array.
+
+   RETURN VALUE:
+   INT
+   .n    0 always
+ */
+/****************************************************************************/
+
+static INT ReadArray (ARRAY *theAR, INT *Point, DOUBLE *value)
+{
+  INT i, pos;
+
+  pos = Point[AR_NVAR(theAR)-1];
+  for (i=AR_NVAR(theAR)-2; i>=0; i--)
+    pos = Point[i] + AR_VARDIM(theAR,i)*pos;
+  value[0] = AR_DATA(theAR,pos);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   crar - create a new array structure
+
+   DESCRIPTION:
+   Allocate a new array structure in the directory '\Array' and
+   allocate the data field of the specified size with the function
+   'CreateArray'. The data field is the same as a 'double[n_1][n_2]...[n_k]'
+   definition in C would allocate. The maximum number 'k' of dimensions
+   is 'AR_NVAR_MAX'. Give the 'n_i' only for the dimensions 'i' you need.
+
+   'crar $n <name> {$<n_i>}+'
+
+   .  <name> - name of the array structure
+   .  <n_i> - extension in the i.th dimension, 1 <= i <= 'AR_NVAR_MAX'
+
+   EXAMPLE:
+   .vb
+ # Create a 3x7 (2-dimensional) array
+   crar $n example_array $3$7;
+   .ve
+
+   SEE ALSO:
+   array, dear, wrar, rear, saar, loar, clar
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*
+   CreateArrayCommand - allocate a new array structure
+
+   SYNOPSIS:
+   static INT CreateArrayCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   Allocate a new array structure in the directory '\Array' and
+   allocate the data field of the specified size with the function
+   'CreateArray'. The data field is the same as a 'double[n_1][n_2]...[n_k]'
+   definition in C would allocate. The maximum number 'k' of dimensions
+   is 'AR_NVAR_MAX'. Give the 'n_i' only for the dimensions 'i' you need.
+
+   'crar $n <name> {$<n_i>}+'
+
+   .  <name> - name of the array structure
+   .  <n_i> - extension in the i.th dimension, 1 <= i <= 'AR_NVAR_MAX'
+
+   EXAMPLE:
+   .vb
+ # Create a 3x7 (2-dimensional) array
+   crar $n example_array $3$7;
+   .ve
+
+   RETURN VALUE:
+   INT
+   .n    OKCODE if ok
+   .n    CMDERRORCODE if error occured
+ */
+/****************************************************************************/
+
+static INT CreateArrayCommand (INT argc, char **argv)
+{
+  INT i, nVar, VarDim[AR_NVAR_MAX];
+  int iValue;
+  char name[128];
+
+  nVar = argc-2;
+  if (nVar<1 || nVar>AR_NVAR_MAX)
+    return (CMDERRORCODE);
+  if (argv[1][0]=='n')
+  {
+    if (sscanf(argv[1],"n %s",name)!=1)
+      return (CMDERRORCODE);
+  }
+  for (i=0; i<nVar; i++)
+  {
+    if (sscanf(argv[i+2],"%d",&iValue)!=1)
+      return (CMDERRORCODE);
+    if (iValue<1)
+      return (CMDERRORCODE);
+    VarDim[i] = iValue;
+  }
+
+  /* create Array */
+  if (CreateArray(name,nVar,VarDim)==NULL)
+    return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   dear - delete an existing array structure
+
+   DESCRIPTION:
+   Delete the already existing array. The entry in the directory '\Array'
+   is removed and the data field of the array is freed.
+
+   'dear $n <name>'
+
+   .  <name> - name of the array structure
+
+   SEE ALSO:
+   array, crar, wrar, rear, saar, loar, clar
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*
+   DeleteArrayCommand - delete an existing array structure
+
+   SYNOPSIS:
+   static INT DeleteArrayCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   Delete the already existing array. The entry in the directory '\Array'
+   is removed and the data field of the array is freed.
+
+   'dear $n <name>'
+
+   .  <name> - name of the array structure
+
+   RETURN VALUE:
+   INT
+   .n    OKCODE if ok
+   .n    CMDERRORCODE if error occured
+ */
+/****************************************************************************/
+
+static INT DeleteArrayCommand (INT argc, char **argv)
+{
+  char name[128];
+  ARRAY *theAR;
+
+  if (argv[1][0]=='n')
+  {
+    if (sscanf(argv[1],"n %s",name)!=1)
+      return (CMDERRORCODE);
+  }
+
+  /* find array */
+  if (ChangeEnvDir("/Array")==NULL)
+  {
+    PrintErrorMessage('F',"DeleteArrayCommand","could not changedir to /Array");
+    return(CMDERRORCODE);
+  }
+  theAR = (ARRAY *)SearchEnv(name,".",theArrayVarID,SEARCHALL);
+  if (theAR==NULL)
+    return (CMDERRORCODE);
+
+  /* delete Array */
+  if (RemoveEnvItem((ENVITEM *)theAR))
+    return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   saar - save an array to file
+
+   DESCRIPTION:
+   Store the content of the array into a file with name '<array name>.array'.
+   The 'arraypathes' entry in the 'defaults' file is considered.
+
+   'saar $n <name>'
+
+   .  <name> - name of the array structure
+
+   REMARK:
+   The file is written in the binary mode, thus be careful when exchanging
+   the computer architecture.
+
+   SEE ALSO:
+   array, crar, dear, wrar, rear, loar, clar, defaults
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*
+   SaveArrayCommand - save an array to file
+
+   SYNOPSIS:
+   static INT SaveArrayCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   Store the content of the array into a file with name '<array name>.array'.
+   The 'arraypathes' entry in the 'defaults' file is considered.
+
+   'saar $n <name>'
+
+   .  <name> - name of the array structure
+
+   REMARK:
+   The file is written in the binary mode, thus be careful when exchanging
+   the computer architecture.
+
+   RETURN VALUE:
+   INT
+   .n    OKCODE if ok
+   .n    CMDERRORCODE if error occured
+ */
+/****************************************************************************/
+
+static INT SaveArrayCommand (INT argc, char **argv)
+{
+  INT i, size;
+  char name[128];
+  ARRAY *theAR;
+  FILE *stream;
+
+  if (argv[1][0]=='n')
+  {
+    if (sscanf(argv[1],"n %s",name)!=1)
+      return (CMDERRORCODE);
+  }
+
+  /* find array */
+  if (ChangeEnvDir("/Array")==NULL)
+  {
+    PrintErrorMessage('F',"SaveArrayCommand","could not changedir to /Array");
+    return(CMDERRORCODE);
+  }
+  theAR = (ARRAY *)SearchEnv(name,".",theArrayVarID,SEARCHALL);
+  if (theAR==NULL)
+    return (CMDERRORCODE);
+
+  /* save Array */
+  strcat(name,".array");
+  if (arraypathes_set)
+    stream = FileOpenUsingSearchPaths(name,"w","arraypathes");
+  else
+    stream = fileopen(name,"w");
+  if (stream==NULL)
+  {
+    PrintErrorMessage('E',"SaveArrayCommand","cannot open file");
+    return(CMDERRORCODE);
+  }
+
+  /* store */
+  if (fwrite((void*)(&(theAR->nVar)),sizeof(INT),1,stream)!=1) return(CMDERRORCODE);
+  if (fwrite((void*)theAR->VarDim,sizeof(INT),AR_NVAR(theAR),stream)!=AR_NVAR(theAR)) return(CMDERRORCODE);
+  size = 1;
+  for (i=0; i<AR_NVAR(theAR); i++)
+    size *= AR_VARDIM(theAR,i);
+  if (fwrite((void*)(theAR->data),sizeof(DOUBLE),size,stream)!=size) return(CMDERRORCODE);
+  if (fclose(stream)) return(CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   loar - load and allocates an array from file
+
+   DESCRIPTION:
+   Load the content of the array from the file with name '<array name>.array'.
+   The 'arraypathes' entry in the 'defaults' file is considered. A new array
+   structure with the given name is allocated in the directory '\Array'.
+
+   'loar $n <name>'
+
+   .  <name> - name of the array structure
+
+   REMARK:
+   The file is written in the binary mode, thus be careful when exchanging
+   the computer architecture.
+
+   SEE ALSO:
+   array, crar, dear, wrar, rear, saar, clar, defaults
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*
+   LoadArrayCommand - load and allocates an array from file
+
+   SYNOPSIS:
+   static INT LoadArrayCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   Load the content of the array from the file with name '<array name>.array'.
+   The 'arraypathes' entry in the 'defaults' file is considered. A new array
+   structure with the given name is allocated in the directory '\Array'.
+
+   'loar $n <name>'
+
+   .  <name> - name of the array structure
+
+   REMARK:
+   The file is written in the binary mode, thus be careful when exchanging
+   the computer architecture.
+
+   RETURN VALUE:
+   INT
+   .n    OKCODE if ok
+   .n    CMDERRORCODE if error occured
+ */
+/****************************************************************************/
+
+static INT LoadArrayCommand (INT argc, char **argv)
+{
+  INT i, size, nVar, VarDim[AR_NVAR_MAX];
+  char name[128], filename[128];
+  ARRAY *theAR;
+  FILE *stream;
+
+  if (argv[1][0]=='n')
+  {
+    if (sscanf(argv[1],"n %s",name)!=1)
+      return (CMDERRORCODE);
+  }
+
+  strcpy(filename,name);
+  strcat(filename,".array");
+  if (arraypathes_set)
+    stream = FileOpenUsingSearchPaths(filename,"r","arraypathes");
+  else
+    stream = fileopen(filename,"r");
+  if (stream==NULL)
+  {
+    PrintErrorMessage('E',"LoadArrayCommand","cannot open file");
+    return(CMDERRORCODE);
+  }
+  if (fread((void*)(&nVar),sizeof(INT),1,stream)!=1)
+    return(CMDERRORCODE);
+  if (nVar>AR_NVAR_MAX)
+    return (CMDERRORCODE);
+  if (fread((void*)VarDim,sizeof(INT),nVar,stream)!=nVar)
+    return(CMDERRORCODE);
+  theAR = CreateArray (name,nVar,VarDim);
+  if (theAR==NULL)
+    return(CMDERRORCODE);
+  size = 1;
+  for (i=0; i<AR_NVAR(theAR); i++)
+    size *= AR_VARDIM(theAR,i);
+  if (fread((void*)(theAR->data),sizeof(DOUBLE),size,stream)!=size)
+    return(CMDERRORCODE);
+  if (fclose(stream))
+    return(CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   wrar - write value into one single entry of the array
+
+   DESCRIPTION:
+   Write the given double-value into the specified entry of the array.
+
+   'wrar $n <name> {$<n_i>}+ $v <value>'
+
+   .  <name> - name of the array structure
+   .  <n_i> - i.th coordinate of the entry, 0 <= n_i < allocated extension
+   .  <value> - double value to be stored
+
+   REMARK:
+   Like in C if the array is allocated with 'n' components in a dimension,
+   the valid indices for writing are 0,..,'n'-1. An index outside this
+   range causes an error. Give coordinate for all allocated dimensions.
+
+   EXAMPLE:
+   .vb
+ # perform array[2][5] := 1.0
+   wrar $n example_array $2$5 $v 1.0;
+   .ve
+
+   SEE ALSO:
+   array, crar, dear, rear, saar, loar, clar
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*
+   WriteArrayCommand - write value into one single entry of the array
+
+   SYNOPSIS:
+   static INT WriteArrayCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   Write the given double-value into the specified entry of the array.
+
+   'wrar $n <name> {$<n_i>}+ $v <value>'
+
+   .  <name> - name of the array structure
+   .  <n_i> - i.th coordinate of the entry, 0 <= n_i < allocated extension
+   .  <value> - double value to be stored
+
+   REMARK:
+   Like in C if the array is allocated with 'n' components in a dimension,
+   the valid indices for writing are 0,..,'n'-1. An index outside this
+   range causes an error. Give coordinate for all allocated dimensions.
+
+   EXAMPLE:
+   .vb
+ # perform array[2][5] := 1.0
+   wrar $n example_array $2$5 $v 1.0;
+   .ve
+
+   RETURN VALUE:
+   INT
+   .n    OKCODE if ok
+   .n    CMDERRORCODE if error occured
+ */
+/****************************************************************************/
+
+static INT WriteArrayCommand (INT argc, char **argv)
+{
+  INT i, Point[AR_NVAR_MAX];
+  int iValue;
+  float fValue;
+  char name[128];
+  ARRAY *theAR;
+
+  if (argv[1][0]=='n')
+  {
+    if (sscanf(argv[1],"n %s",name)!=1)
+      return (CMDERRORCODE);
+  }
+  if (ChangeEnvDir("/Array")==NULL)
+  {
+    PrintErrorMessage('F',"WriteArrayCommand","could not changedir to /Array");
+    return(CMDERRORCODE);
+  }
+  theAR = (ARRAY *)SearchEnv(name,".",theArrayVarID,SEARCHALL);
+  if (theAR==NULL)
+    return (CMDERRORCODE);
+
+  if (AR_NVAR(theAR) != argc-3)
+    return (CMDERRORCODE);
+  for (i=0; i<AR_NVAR(theAR); i++)
+  {
+    if (sscanf(argv[i+2],"%d",&iValue)!=1)
+      return (CMDERRORCODE);
+    if (iValue<0 || iValue>=AR_VARDIM(theAR,i))
+    {
+      PrintErrorMessage( 'E', "WriteArrayCommand", "Index Range Error" );
+      return (CMDERRORCODE);
+    }
+    Point[i] = iValue;
+  }
+
+  /* write */
+  if (sscanf(argv[argc-1],"v %f",&fValue)!=1)
+    return (CMDERRORCODE);
+  if (WriteArray(theAR,Point,(DOUBLE)fValue))
+    return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   rear - read the value from one single entry of the array
+
+   DESCRIPTION:
+   Read the the specified value from the array and store it in the
+   environment variable ':ARRAY_VALUE'.
+
+   'rear $n <name> {$<n_i>}+'
+
+   .  <name> - name of the array structure
+   .  <n_i> - i.th coordinate of the entry, 0 <= n_i < allocated extension
+
+   REMARK:
+   Like in C if the array is allocated with 'n' components in a dimension,
+   the valid indices for reading are 0,..,'n'-1. An index outside this
+   range causes an error. Give coordinate for all allocated dimensions.
+
+   EXAMPLE:
+   .vb
+ # retrieve array[2][5]
+   rear $n example_array $2$5;
+ # and display the value
+   set :ARRAY_VALUE;
+   .ve
+
+   SEE ALSO:
+   array, crar, dear, wrar, saar, loar, clar
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*
+   ReadArrayCommand - read the value from one single entry of the array
+
+   SYNOPSIS:
+   static INT ReadArrayCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   Read the the specified value from the array and store it in the
+   environment variable ':ARRAY_VALUE'.
+
+   'rear $n <name> {$<n_i>}+'
+
+   .  <name> - name of the array structure
+   .  <n_i> - i.th coordinate of the entry, 0 <= n_i < allocated extension
+
+   REMARK:
+   Like in C if the array is allocated with 'n' components in a dimension,
+   the valid indices for reading are 0,..,'n'-1. An index outside this
+   range causes an error. Give coordinate for all allocated dimensions.
+
+   EXAMPLE:
+   .vb
+ # retrieve array[2][5]
+   rear $n example_array $2$5;
+ # and display the value
+   set :ARRAY_VALUE;
+   .ve
+
+   RETURN VALUE:
+   INT
+   .n    OKCODE if ok
+   .n    CMDERRORCODE if error occured
+ */
+/****************************************************************************/
+
+static INT ReadArrayCommand (INT argc, char **argv)
+{
+  INT i, Point[AR_NVAR_MAX];
+  int iValue;
+  DOUBLE value;
+  char name[128];
+  ARRAY *theAR;
+
+  if (argv[1][0]=='n')
+  {
+    if (sscanf(argv[1],"n %s",name)!=1)
+      return (CMDERRORCODE);
+  }
+  if (ChangeEnvDir("/Array")==NULL)
+  {
+    PrintErrorMessage('F',"ReadArrayCommand","could not changedir to /Array");
+    return(CMDERRORCODE);
+  }
+  theAR = (ARRAY *)SearchEnv(name,".",theArrayVarID,SEARCHALL);
+  if (theAR==NULL)
+    return (CMDERRORCODE);
+
+  if (AR_NVAR(theAR) != argc-2)
+    return (CMDERRORCODE);
+  for (i=0; i<AR_NVAR(theAR); i++)
+  {
+    if (sscanf(argv[i+2],"%d",&iValue)!=1)
+      return (CMDERRORCODE);
+    if (iValue<0 || iValue>=AR_VARDIM(theAR,i))
+    {
+      PrintErrorMessage( 'E', "ReadArrayCommand", "Index Range Error" );
+      return (CMDERRORCODE);
+    }
+    Point[i] = iValue;
+  }
+
+  /* read */
+  if (ReadArray(theAR,Point,&value))
+    return (CMDERRORCODE);
+  if (SetStringValue(":ARRAY_VALUE",(double)value))
+    return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   clar - set all entries of the array to 0.0
+
+   DESCRIPTION:
+   Set all entries of the data field contained in the array structure to 0.0.
+
+   'clar $n <name>'
+
+   .  <name> - name of the array structure
+
+   SEE ALSO:
+   array, crar, dear, wrar, rear, saar, loar
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*
+   ClearArrayCommand - set all entries of the array to 0.0
+
+   SYNOPSIS:
+   static INT ClearArrayCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   Set all entries of the data field contained in the array structure to 0.0.
+
+   'clar $n <name>'
+
+   .  <name> - name of the array structure
+
+   RETURN VALUE:
+   INT
+   .n    OKCODE if ok
+   .n    CMDERRORCODE if error occured
+ */
+/****************************************************************************/
+
+static INT ClearArrayCommand (INT argc, char **argv)
+{
+  INT i, Point[AR_NVAR_MAX];
+  int iValue;
+  float fValue;
+  char name[128];
+  ARRAY *theAR;
+
+  if (argv[1][0]=='n')
+  {
+    if (sscanf(argv[1],"n %s",name)!=1)
+      return (CMDERRORCODE);
+  }
+  if (ChangeEnvDir("/Array")==NULL)
+  {
+    PrintErrorMessage('F',"ClearArrayCommand","could not changedir to /Array");
+    return(CMDERRORCODE);
+  }
+  theAR = (ARRAY *)SearchEnv(name,".",theArrayVarID,SEARCHALL);
+  if (theAR==NULL)
+    return (CMDERRORCODE);
+
+  if (ClearArray(theAR))
+    return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   InitArray - Initialization of the array commands
+
+   SYNOPSIS:
+   INT InitArray ();
+
+   PARAMETERS:
+   .  void -
+
+   DESCRIPTION:
+   This function does initialization of the ug-commands concerning arrays.
+
+   SEE ALSO:
+   array, crar, dear, wrar, rear, saar, loar, clar
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    __LINE__ if error occured.
+   D*/
+/****************************************************************************/
+
+static INT InitArray (void)
+{
+  /* install the /Array directory */
+  if (ChangeEnvDir("/")==NULL)
+  {
+    PrintErrorMessage('F',"InitArray","could not changedir to root");
+    return(__LINE__);
+  }
+  theArrayDirID = GetNewEnvDirID();
+  if (MakeEnvItem("Array",theArrayDirID,sizeof(ENVDIR))==NULL)
+  {
+    PrintErrorMessage('F',"InitArray","could not install '/Array' dir");
+    return(__LINE__);
+  }
+  theArrayVarID = GetNewEnvVarID();
+
+  /* path to dir for 'array' files */
+  arraypathes_set = FALSE;
+  if (ReadSearchingPaths(DEFAULTSFILENAME,"arraypathes")==0)
+    arraypathes_set = TRUE;
+
+  return (0);
+}
+
 /****************************************************************************/
 /*D
    InitCommands - Initialization of the commands
@@ -10881,7 +11829,8 @@ static INT DebugCommand (INT argc, char **argv)
    DESCRIPTION:
    This function does initialization of all ug-commands, using
    'CreateCommand'.
-   It initializes the 'clock', 'findrange' and 'screensize' comand.
+   It initializes 'clock', 'findrange', 'screensize' and 'array'
+   commands.
 
    SEE ALSO:
    commands
@@ -11018,9 +11967,9 @@ INT InitCommands ()
   if (CreateCommand("interpolate",        InterpolateCommand                              )==NULL) return (__LINE__);
 
   /* formats */
-  if (CreateCommand("newformat",          CreateFormatCommand                     )==NULL) return (__LINE__);
-  if (CreateCommand("setpf",                      SetPrintingFormatCommand        )==NULL) return (__LINE__);
-  if (CreateCommand("showpf",             ShowPrintingFormatCommand       )==NULL) return (__LINE__);
+  if (CreateCommand("newformat",          CreateFormatCommand                             )==NULL) return (__LINE__);
+  if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
+  if (CreateCommand("showpf",             ShowPrintingFormatCommand               )==NULL) return (__LINE__);
 
   /* miscellaneous commands */
   if (CreateCommand("setkey",             SetCommandKeyCommand                    )==NULL) return (__LINE__);
@@ -11041,9 +11990,19 @@ INT InitCommands ()
   if (CreateCommand("pstat",                      PStatCommand                                )==NULL) return (__LINE__);
 #endif /* ModelP */
 
+  /* array commands */
+  if (CreateCommand("crar",               CreateArrayCommand                                      )==NULL) return (__LINE__);
+  if (CreateCommand("dear",               DeleteArrayCommand                                      )==NULL) return (__LINE__);
+  if (CreateCommand("saar",               SaveArrayCommand                                        )==NULL) return (__LINE__);
+  if (CreateCommand("loar",               LoadArrayCommand                                        )==NULL) return (__LINE__);
+  if (CreateCommand("wrar",               WriteArrayCommand                                       )==NULL) return (__LINE__);
+  if (CreateCommand("rear",               ReadArrayCommand                                        )==NULL) return (__LINE__);
+  if (CreateCommand("clar",               ClearArrayCommand                                       )==NULL) return (__LINE__);
+
   if (InitClock()                 !=0) return (__LINE__);
   if (InitFindRange()     !=0) return (__LINE__);
   if (InitScreenSize()    !=0) return (__LINE__);
+  if (InitArray()                 !=0) return (__LINE__);
 
   return(0);
 }
