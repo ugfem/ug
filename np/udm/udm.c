@@ -1140,6 +1140,14 @@ INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
 
   cn = VM_COMP_NAMEPTR(md);
   offset = MD_OFFSETPTR(md);
+  if (cn[0]==' ')
+    cn = NULL;
+  for (i=0; i<offset[NMATTYPES]; i++)
+    if (cn[i]=='\0')
+    {
+      cn = NULL;
+      break;
+    }
 
   for (rt=0; rt<NVECTYPES; rt++)
   {
@@ -1171,7 +1179,7 @@ INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
     {
       /* compname line */
       buffer += sprintf(buffer,"\n%s",(i) ? "  " : TypeName[rt]);
-      if (cn[0]!=' ')
+      if (cn!=NULL)
       {
         for (ct=0; ct<NVECTYPES; ct++)
         {
