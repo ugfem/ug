@@ -1044,13 +1044,16 @@ INT CreateFormatCmd (INT argc, char **argv)
 
   /* move tempaltes into the new directory */
   dir = ChangeEnvDir("/newformat");
-  if (dir == NULL)
-    return (1);
-  for (item=ENVITEM_DOWN(dir); item!=NULL; item=NEXT_ENVITEM(item))
-    if (MoveEnvItem (item,dir,(ENVDIR *)newFormat))     {
-      PrintErrorMessage('E',"newformat","failed moving template");
-      return (4);
-    }
+  if (dir == NULL) {
+    PrintErrorMessage('E',"newformat","failed moving template");
+    return (4);
+  }
+  if (ENVITEM_DOWN((ENVDIR *)newFormat) != NULL) {
+    PrintErrorMessage('E',"newformat","failed moving template");
+    return (4);
+  }
+  ENVITEM_DOWN((ENVDIR *)newFormat) = ENVITEM_DOWN(dir);
+  ENVITEM_DOWN(dir) = NULL;
   if (RemoveEnvDir((ENVITEM *)dir))
     PrintErrorMessage('W',"InitFormats","could not remove newformat dir");
 
