@@ -496,6 +496,40 @@ struct PlotObjType {
   DispPlotObjProcPtr DispPlotObjProc;                   /* proc for displaying the PlotObj			*/
 };
 
+/*----------- structures for placement -------------------------------------*/
+
+#define WPM_PLM_PMAX           20
+
+struct placement_task {
+
+  /* window specification */
+  char win_name[NAMESIZE];                      /* name of the window                       */
+  INT winLL[2], winUR[2];                       /* size of UgWindow                         */
+
+  /* picture specification */
+  INT n;                                        /* number of pictures                       */
+  char pic_name[NAMESIZE][WPM_PLM_PMAX];        /* name of the pictures                     */
+  DOUBLE apect_ratio[WPM_PLM_PMAX];             /* aspect ratios                            */
+  DOUBLE rel_size[WPM_PLM_PMAX];                /* relative sizes of the pictures           */
+};
+
+struct placement_real {
+
+  /* window specification */
+  INT winLL[2], winUR[2];                       /* size of UgWindow                         */
+
+  /* picture specification */
+  INT n;                                        /* number of pictures                       */
+  INT picLL[WPM_PLM_PMAX][2];                   /* size of picture: output                  */
+  INT picUR[WPM_PLM_PMAX][2];
+};
+
+typedef struct placement_task PLACEMENT_TASK;
+typedef struct placement_real PLACEMENT_REAL;
+
+INT                     PlacePictures                           (PLACEMENT_TASK *task, PLACEMENT_REAL *real);
+INT             OpenPlacedPictures          (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task);
+
 /****************************************************************************/
 /*																			*/
 /*					typedef for structs                                                                     */

@@ -287,6 +287,91 @@ free(data);
 
 /****************************************************************************/
 /*D
+    OpenPlacedPictures - Plot toolbox and if necessary infobox
+
+   SYNOPSIS:
+   INT UpdateUgWindow (UGWINDOW *theUgWindow, const PICTURE *EvalPicture);
+
+   PARAMETERS:
+   .  theUgWindow - update that 'UGWINDOW'
+   .  EvalPicture - see DESCRIPTION
+
+   DESCRIPTION:
+   This function plots the toolbox of the 'UGWINDOW'. If the EvalPicture is a
+   'PICTURE' of the theUgWindow and if it is initialized the info-box is
+   plotted (the information comes from the corrisponding 'MULTIGRID').
+   Has only effect on windows on the monitor ('screen').
+
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT PlacePictures (PLACEMENT_TASK *task, PLACEMENT_REAL *real)
+{
+  INT w,h,nx,ny,p,i,j,npic;
+
+  w = task->winUR[0] - task->winLL[0] - 10;
+  h = task->winUR[1] - task->winLL[1] - 10;;
+
+  for (p=1000; p>90; p-=10)
+  {
+    nx = w/p;
+    ny = h/p;
+    if (nx*ny>=task->n) break;
+  }
+  if (p==90) return (1);
+
+  npic=0;
+  for (i=0; i<nx; i++)
+    for (j=0; j<ny; j++)
+    {
+      real->picLL[npic][0] = 10+i*p;
+      real->picLL[npic][1] = 10+j*p;
+      real->picUR[npic][0] = (i+1)*p;
+      real->picUR[npic][1] = (j+1)*p;
+      npic++;
+      if (npic>=task->n) return (0);
+    }
+
+  return (0);
+}
+
+INT OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task)
+{
+  INT i,j;
+  PLACEMENT_REAL real;
+  UGWINDOW *theWin;
+  PICTURE *thePic[WPM_PLM_PMAX];
+
+  /* check */
+  if (task->n<1) return (1);
+
+  /* place pictures */
+  if (PlacePictures(task,&real)) return (1);
+
+  /* realize pictures */
+  theWin = CreateUgWindow(theOutputDevice,task->win_name,task->winLL[0],task->winLL[1],task->winUR[0]-task->winLL[0],task->winUR[1]-task->winLL[1]);
+  if (theWin==NULL) return (1);
+  for (i=0; i<task->n; i++)
+  {
+    thePic[i] = CreatePicture (task->pic_name[i],theWin,real.picLL[i],real.picUR[i]);
+    if (thePic[i]==NULL)
+    {
+      for (j=0; j<i; j++)
+        DisposePicture(thePic[j]);
+      return (1);
+    }
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    UpdateUgWindow - Plot toolbox and if necessary infobox
 
    SYNOPSIS:
