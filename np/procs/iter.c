@@ -1860,6 +1860,10 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     CenterInPattern(text,DISPLAY_WIDTH,text1,' ',"\n");
     if (PreparePCR(np->q,np->display,text,&PrintID))
       NP_RETURN(1,result[0]);
+        #ifdef ModelP
+    if (l_vector_collect(GRID_ON_LEVEL(theMG,level),np->q)!=NUM_OK)
+      NP_RETURN(1,result[0]);
+        #endif
     if (dnrm2x(theMG,level,level,ALL_VECTORS,np->q,defect))
       NP_RETURN(1,result[0]);
     if (sc_mul_check(defect2reach,defect,np->red,np->q))
@@ -1885,6 +1889,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     if (ddot(theMG,level,level,ALL_VECTORS,np->s,np->r,&lambda))
       NP_RETURN(1,result[0]);
     rho = - lambda / rho;
+    PRINTDEBUG(np,1,("rho %f lambda %f\n",rho,lambda));
     if (daxpy(theMG,level,level,ALL_VECTORS,np->r,rho,np->p) != NUM_OK)
       NP_RETURN(1,result[0]);
     rho = - lambda;
@@ -1915,6 +1920,10 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     /* update Lagrange corrector */
     if (daxpy(theMG,level,level,ALL_VECTORS,np->px,lambda,np->p) != NUM_OK)
       NP_RETURN(1,result[0]);
+        #ifdef ModelP
+    if (l_vector_collect(GRID_ON_LEVEL(theMG,level),np->s)!=NUM_OK)
+      NP_RETURN(1,result[0]);
+        #endif
     if (dnrm2x(theMG,level,level,ALL_VECTORS,np->s,defect))
       NP_RETURN(1,result[0]);
     if (DoPCR(PrintID,defect,PCR_CRATE_SD))
@@ -5188,16 +5197,16 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
 
   /* get storage for matrix */
   bw = np->bw;
-  /* delete this
-     if (Mark(theHeap,FROM_BOTTOM,&np->MarkKey))											REP_ERR_RETURN(1);
-     np->Vec = (DOUBLE*)GetMem(theHeap,np->nv*sizeof(DOUBLE),FROM_BOTTOM);
-   */
-  np->Vec = (DOUBLE*)GetFreelistMemory(theHeap,np->nv*sizeof(DOUBLE));
-  if (np->Vec==NULL) REP_ERR_RETURN(1);
+  if (MarkTmpMem(theHeap,&np->MarkKey))
+    REP_ERR_RETURN(1);
+  np->Vec = (DOUBLE*)GetTmpMem(theHeap,np->nv*sizeof(DOUBLE),np->MarkKey);
+  /* np->Vec = (DOUBLE*)GetFreelistMemory(theHeap,np->nv*sizeof(DOUBLE)); */
+
   if (np->fmode == 1)
   {
     np->mem = np->nv*(2*bw+1)*sizeof(FLOAT);
-    np->FMat = (FLOAT*)GetFreelistMemory(theHeap,np->mem);
+    /*np->FMat = (FLOAT*)GetFreelistMemory(theHeap,np->mem); */
+    np->FMat = (FLOAT*)GetTmpMem(theHeap,np->mem,np->MarkKey);
     if (np->FMat==NULL) {
       UserWriteF("EX: cannot allocate %d bytes\n",np->mem);
       REP_ERR_RETURN(1);
@@ -5214,7 +5223,8 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   else
   {
     np->mem = np->nv*(2*bw+1)*sizeof(DOUBLE);
-    np->DMat = (DOUBLE*)GetFreelistMemory(theHeap,np->mem);
+    /*np->DMat = (DOUBLE*)GetFreelistMemory(theHeap,np->mem); */
+    np->DMat = (DOUBLE*)GetTmpMem(theHeap,np->mem,np->MarkKey);
     if (np->DMat==NULL) {
       UserWriteF("EX: cannot allocate %d bytes\n",np->mem);
       REP_ERR_RETURN(1);
@@ -5228,7 +5238,6 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
       if (EXCopyMatrixDOUBLEback(theGrid,x,np->smoother.L,np->bw,np->DMat))
         REP_ERR_RETURN(1);
   }
-
   return (0);
 }
 
@@ -5327,23 +5336,34 @@ static INT EXPostProcess (NP_ITER *theNP, INT level,VECDATA_DESC *x, VECDATA_DES
 
   theHeap = MGHEAP(NP_MG(theNP));
 
-  if (np->fmode) {
-    ASSERT(np->FMat!=NULL);
-    if (PutFreelistMemory(theHeap, np->FMat, np->mem))
-      REP_ERR_RETURN(1);
-  }
-  else {
-    ASSERT(np->DMat!=NULL);
-    if (PutFreelistMemory(theHeap, np->DMat, np->mem))
-      REP_ERR_RETURN(1);
-  }
-
-  ASSERT(np->Vec!=NULL);
-  if (PutFreelistMemory(theHeap, np->Vec, np->nv*sizeof(DOUBLE)))
-    REP_ERR_RETURN(1);
-
   if (np->smoother.L != NULL)
     if (FreeMD(NP_MG(theNP),level,level,np->smoother.L)) REP_ERR_RETURN(1);
+
+  /* we need a better concept ...
+     if (np->fmode) {
+          ASSERT(np->FMat!=NULL);
+          if (PutFreelistMemory(theHeap, np->FMat, np->mem))
+              REP_ERR_RETURN(1);
+     }
+     else {
+          ASSERT(np->DMat!=NULL);
+          if (PutFreelistMemory(theHeap, np->DMat, np->mem))
+              REP_ERR_RETURN(1);
+     }
+
+     UserWriteF("post: freelist %d used %d size %d\n",
+                     HeapFreelistUsed(theHeap),HeapUsed(theHeap),
+                     HeapSize(theHeap));
+
+     ASSERT(np->Vec!=NULL);
+     if (PutFreelistMemory(theHeap, np->Vec, np->nv*sizeof(DOUBLE)))
+          REP_ERR_RETURN(1);
+   */
+
+  ReleaseTmpMem(theHeap,np->MarkKey);
+  np->FMat = NULL;
+  np->DMat = NULL;
+  np->Vec = NULL;
 
   return(0);
 }
