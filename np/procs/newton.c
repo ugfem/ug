@@ -459,7 +459,13 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       if ((*newton->solve->PreProcess)(newton->solve,level,newton->v,newton->d,newton->J,&bl,&error)) {
         UserWriteF("NewtonSolver: solve->PreProcess failed, error code %d\n",error);
         res->error_code = __LINE__;
-        REP_ERR_RETURN(res->error_code);
+                #ifndef ModelP
+        REP_ERR_RETURN (res->error_code);
+                #endif
+        REP_ERR_INC;
+                                #ifndef Debug
+        return (res->error_code);
+                #endif
       }
     if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v,newton->d,newton->J,&lr))
     {

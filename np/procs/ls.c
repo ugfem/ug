@@ -391,6 +391,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 
   np = (NP_LINEAR_SOLVER *) theNP;
   level = CURRENTLEVEL(theNP->mg);
+  result = 0;
 
   if (np->x == NULL) {
     PrintErrorMessage('E',"NPLinearSolverExecute","no vector x");
@@ -413,7 +414,13 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     if ((*np->PreProcess)(np,level,np->x,np->b,np->A,&bl,&result)) {
       UserWriteF("NPLinearSolverExecute: PreProcess failed, error code %d\n",
                  result);
+            #ifndef ModelP
       REP_ERR_RETURN (1);
+            #endif
+      REP_ERR_INC;
+                #ifndef Debug
+      return (res->error_code);
+            #endif
     }
   }
 
@@ -425,7 +432,6 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     if ((*np->Defect)(np,level,np->x,np->b,np->A,&result)) {
       UserWriteF("NPLinearSolverExecute: Defect failed, error code %d\n",
                  result);
-      REP_ERR_RETURN (1);
     }
   }
 
@@ -545,7 +551,8 @@ static INT LinearDefect (NP_LINEAR_SOLVER *theNP, INT level,
   np = (NP_LS *) theNP;
   if (s_dmatmul_minus(theNP->base.mg,np->baselevel,level,b,A,x,EVERY_CLASS)
       != NUM_OK) NP_RETURN(1,result[0]);
-  return (0);
+
+  return (*result);
 }
 
 static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
@@ -557,9 +564,11 @@ static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
   np = (NP_LS *) theNP;
 
         #ifdef ModelP
-  if (a_vector_collect(theNP->base.mg,bl,level,b)) NP_RETURN(1,lresult->error_code);
+  if (a_vector_collect(theNP->base.mg,bl,level,b))
+    NP_RETURN(1,lresult->error_code);
         #endif
-  if (s_eunorm(theNP->base.mg,bl,level,b,lresult->last_defect)) NP_RETURN(1,lresult->error_code);
+  if (s_eunorm(theNP->base.mg,bl,level,b,lresult->last_defect))
+    NP_RETURN(1,lresult->error_code);
 
   return(0);
 }
@@ -810,7 +819,8 @@ static INT CGPrepare (NP_LS *theNP, INT level, VECDATA_DESC *x, INT *result)
   NP_CG *np;
 
   np = (NP_CG *) theNP;
-  if (AllocVDFromVD(theNP->ls.base.mg,theNP->baselevel,level,x,&np->p)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theNP->ls.base.mg,theNP->baselevel,level,x,&np->p))
+    NP_RETURN(1,result[0]);
   if (a_dset(theNP->ls.base.mg,theNP->baselevel,level,np->p,EVERY_CLASS,0.0)
       != NUM_OK) NP_RETURN(1,result[0]);
   np->rho = 1.0;

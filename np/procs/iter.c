@@ -120,6 +120,10 @@ struct np_smoother {
   VEC_SCALAR damp;
   MATDATA_DESC *L;
 
+    #ifdef ModelP
+  INT cons_mode;
+    #endif
+
   INT (*Step)
     (struct np_smoother *,                   /* pointer to (derived) object     */
     INT,                                         /* level                           */
@@ -443,6 +447,14 @@ static INT SmootherInit (NP_BASE *theNP, INT argc , char **argv)
   for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
   sc_read(np->damp,np->iter.b,"damp",argc,argv);
   np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
+        #ifdef ModelP
+  if (ReadArgvOption("M",argc,argv))
+    np->cons_mode = MAT_MASTER_CONS;
+  else if (ReadArgvOption("D",argc,argv))
+    np->cons_mode = MAT_DIAG_CONS;
+  else
+    np->cons_mode = MAT_CONS;
+        #endif
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -457,6 +469,9 @@ static INT SmootherDisplay (NP_BASE *theNP)
   if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
   if (np->L != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
+        #ifdef ModelP
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"cons_mode",(int)np->cons_mode);
+        #endif
 
   return (0);
 }
@@ -539,10 +554,12 @@ static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L))
+    NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK)
+    NP_RETURN(1,result[0]);
         #endif
   *baselevel = level;
 
@@ -619,10 +636,12 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L))
+    NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+    NP_RETURN(1,result[0]);
         #endif
   *baselevel = level;
 
@@ -635,12 +654,23 @@ static INT GSStep (NP_SMOOTHER *theNP, INT level,
                    MATDATA_DESC *L,
                    INT *result)
 {
-    #ifdef ModelP
-  if (l_vector_collect(NP_GRID(theNP,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
+  NP_SMOOTHER *np;
+  GRID *theGrid;
 
-  if (l_lgs(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  np = (NP_SMOOTHER *) theNP;
+  theGrid = NP_GRID(theNP,level);
+    #ifdef ModelP
+  if (np->cons_mode == MAT_CONS) {
+    if (l_vector_collect(theGrid,b)!=NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else {
+    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  if (l_lgs(theGrid,x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
     #else
-  if (l_lgs(NP_GRID(theNP,level),x,A,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_lgs(theGrid,x,A,b) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
 
   return (0);
@@ -955,7 +985,7 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
   theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK)
     NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK)
+  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
   *baselevel = level;
@@ -984,7 +1014,14 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
 
   /* iterate forward */
     #ifdef ModelP
-  if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
+  if (np->smoother.cons_mode == MAT_CONS) {
+    if (l_vector_collect(theGrid,b)!=NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else {
+    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
   if (l_lgs(theGrid,NP_SGS_t(np),np->smoother.L,b)
       != NUM_OK)
     NP_RETURN(1,result[0]);
@@ -995,7 +1032,8 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,NP_SGS_t(np),ACTIVE_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_dscale(theGrid,NP_SGS_t(np),ACTIVE_CLASS,np->smoother.damp)!=NUM_OK)
+    NP_RETURN(1,result[0]);
 
   /* update defect */
   if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,NP_SGS_t(np),ACTIVE_CLASS)
@@ -1003,7 +1041,14 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
 
   /* iterate backward */
     #ifdef ModelP
-  if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
+  if (np->smoother.cons_mode == MAT_CONS) {
+    if (l_vector_collect(theGrid,b)!=NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else {
+    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
   if (l_ugs(theGrid,x,np->smoother.L,b))
     NP_RETURN(1,result[0]);
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
@@ -1012,14 +1057,16 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->smoother.damp) != NUM_OK)
+    NP_RETURN(1,result[0]);
 
   /* update defect */
   if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)
       != NUM_OK) NP_RETURN(1,result[0]);
 
   /* now add the two corrections */
-  if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,NP_SGS_t(np)) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,NP_SGS_t(np)) != NUM_OK)
+    NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -1756,7 +1803,9 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->smoother.L,np->smoother.cons_mode)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
         #endif
   /*	if (np->mindiag[0] > 0.0)
       if (l_shift_diagonal(theGrid,np->smoother.L,np->mindiag) != NUM_OK)
@@ -1776,10 +1825,22 @@ static INT ILUStep (NP_SMOOTHER *theNP, INT level,
                     MATDATA_DESC *L,
                     INT *result)
 {
+  NP_ILU *np;
+  GRID *theGrid;
+
+  np = (NP_ILU *) theNP;
+  theGrid = NP_GRID(theNP,level);
     #ifdef ModelP
-  if (l_vector_collect(NP_GRID(theNP,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
+  if (np->smoother.cons_mode == MAT_CONS) {
+    if (l_vector_collect(theGrid,b)!=NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else {
+    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
     #endif
-  if (l_luiter(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_luiter(theGrid,x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
