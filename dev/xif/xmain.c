@@ -198,10 +198,15 @@ static Bool callback (Display *d, XEvent *report, char *arg)
  */
 /****************************************************************************/
 
+INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask);
+
 INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
 {
   char *s;
   int cmdKey, onlyCmdKey;
+
+  /* cancel X events */
+  GetNextUGEvent_XUI(theEvent,EventMask);
 
   /* no event as default */
   theEvent->Type = NO_EVENT;
