@@ -1373,13 +1373,13 @@ enum GM_CE {
    may not have a common divisor to ensure uniqueness of the result;
    take from this again the sigificant digits */
 #ifdef __TWODIM__
-#define COORDINATE_TO_KEY(coord,dummy_int_ptr)  ((INT)(SIGNIFICANT_DIGITS((SIGNIFICANT_DIGITS((coord)[0],(dummy_int_ptr)) + \
+#define COORDINATE_TO_KEY(coord,dummy_int_ptr)  ((INT)(SIGNIFICANT_DIGITS((SIGNIFICANT_DIGITS((coord)[0],(dummy_int_ptr))*1.246509423749342 + \
                                                                            SIGNIFICANT_DIGITS((coord)[1],(dummy_int_ptr))*PI)\
                                                                           , (dummy_int_ptr))))
 #endif
 
 #ifdef __THREEDIM__
-#define COORDINATE_TO_KEY(coord,dummy_int_ptr)  ((INT)(SIGNIFICANT_DIGITS((SIGNIFICANT_DIGITS((coord)[0],(dummy_int_ptr)) + \
+#define COORDINATE_TO_KEY(coord,dummy_int_ptr)  ((INT)(SIGNIFICANT_DIGITS((SIGNIFICANT_DIGITS((coord)[0],(dummy_int_ptr))*1.246509423749342 + \
                                                                            SIGNIFICANT_DIGITS((coord)[1],(dummy_int_ptr))*PI + \
                                                                            SIGNIFICANT_DIGITS((coord)[2],(dummy_int_ptr))*0.76453456834568356936598)\
                                                                           , (dummy_int_ptr))))
@@ -2789,5 +2789,8 @@ INT         FixCoarseGrid                       (MULTIGRID *theMG);
 INT                     ClearMultiGridUsedFlags                         (MULTIGRID *theMG, INT FromLevel, INT ToLevel, INT mask);
 void            CalculateCenterOfMass                           (ELEMENT *theElement, DOUBLE_VECTOR center_of_mass);
 INT             KeyForObject                                            (SELECTION_OBJECT *obj );
+
+/* TODO: remove the following functions after the code will never need any debugging */
+char *PrintElementInfo (ELEMENT *theElement,INT full);
 
 #endif

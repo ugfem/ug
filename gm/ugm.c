@@ -6282,7 +6282,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    The heuristic is: calculate a 2D/3D position for the geometric object and
    transform this position to a single number by a weighted summation of the
    leading digits of the 2 resp. 3 coordinates and taking from this again
-   the sigificant digits.
+   the sigificant digits and adding the level number.
 
    SEE ALSO:
    ELEMENT, NODE, VECTOR
@@ -6302,13 +6302,13 @@ INT KeyForObject( SELECTION_OBJECT *obj )
   case BEOBJ :
   case IEOBJ :                  /* both together cover all element types */
     CalculateCenterOfMass( (ELEMENT*)obj, coord );
-    return COORDINATE_TO_KEY(coord,&dummy);
+    return LEVEL(obj)+COORDINATE_TO_KEY(coord,&dummy);
 
-  case NDOBJ :     return COORDINATE_TO_KEY(CVECT(MYVERTEX((NODE*)obj)),&dummy);
+  case NDOBJ :     return LEVEL(obj)+COORDINATE_TO_KEY(CVECT(MYVERTEX((NODE*)obj)),&dummy);
 
 
   case VEOBJ :     VectorPosition( (VECTOR*)obj, coord );
-    return COORDINATE_TO_KEY(coord,&dummy);
+    return LEVEL(obj)+COORDINATE_TO_KEY(coord,&dummy);
 
   default :        PrintErrorMessage('E',"IDForObject","unrecognized object type");
     assert(0);
@@ -8774,4 +8774,158 @@ INT InitUGManager ()
     SET_FLAG(UsedOBJT,1<<i);
 
   return (GM_OK);
+}
+
+/* nur temporaer zum Debuggen drin (Christian Wrobel): */
+/* TODO: entfernen nach Debuggphase */
+char *PrintElementInfo (ELEMENT *theElement,INT full)
+{
+  char out[2000],tmp[200];
+  char etype[10];
+  char ekind[8];
+  int i,j;
+  ELEMENT *SonList[MAX_SONS];
+
+  if (theElement==NULL)
+  {
+    printf( "PrintElementInfo: element == NULL\n");
+    return 0;
+  }
+
+  if (DIM==2)
+    switch (TAG(theElement))
+    {
+    case TRIANGLE :          strcpy(etype,"TRI"); break;
+    case QUADRILATERAL :     strcpy(etype,"QUA"); break;
+    default :                strcpy(etype,"???"); break;
+    }
+  else
+    switch (TAG(theElement))
+    {
+    case TETRAHEDRON :       strcpy(etype,"TET"); break;
+    case PYRAMID :           strcpy(etype,"PYR"); break;
+    case PRISM :             strcpy(etype,"PRI"); break;
+    case HEXAHEDRON :        strcpy(etype,"HEX"); break;
+    default :                strcpy(etype,"???"); break;
+    }
+  switch (ECLASS(theElement))
+  {
+  case YELLOW_CLASS :      strcpy(ekind,"YELLOW "); break;
+  case GREEN_CLASS :       strcpy(ekind,"GREEN  "); break;
+  case RED_CLASS :         strcpy(ekind,"RED    "); break;
+  default :                strcpy(ekind,"???    "); break;
+  }
+  if(full)
+    sprintf(out,"ELEMID=" EID_FFMTE " %5s %5s CTRL=%8lx CTRL2=%8lx REFINE=%2d MARK=%2d LEVEL=%2d",
+            EID_PRTE(theElement),ekind,etype,
+            (long)CTRL(theElement),(long)FLAG(theElement),REFINE(theElement),MARK(theElement),LEVEL(theElement));
+  else
+    sprintf(out,"ELEMID=" EID_FFMTE, EID_PRTE(theElement));
+
+  if (COARSEN(theElement)) strcat(out," COARSEN");
+  strcat(out,"\n");
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+  {
+                #ifdef __TWODIM__
+    sprintf(tmp,"    N%d=" ID_FMTX " x=%g  y=%g\n",
+            i,
+            ID_PRTX(CORNER(theElement,i)),
+            CVECT(MYVERTEX(CORNER(theElement,i)))[0],
+            CVECT(MYVERTEX(CORNER(theElement,i)))[1]
+            );
+                #endif
+                #ifdef __THREEDIM__
+    sprintf(tmp,"    N%d=" ID_FMTX " x=%g  y=%g z=%g\n",
+            i,
+            ID_PRTX(CORNER(theElement,i)),
+            CVECT(MYVERTEX(CORNER(theElement,i)))[0],
+            CVECT(MYVERTEX(CORNER(theElement,i)))[1],
+            CVECT(MYVERTEX(CORNER(theElement,i)))[2]
+            );
+                #endif
+    strcat( out, tmp );
+  }
+
+  if (EFATHER(theElement))
+  {
+    sprintf(tmp,"    FA=" EID_FMTX "\n" ,EID_PRTX(EFATHER(theElement)));
+    strcat( out, tmp );
+  }
+  else
+    strcat( out,"    FA=NULL\n");
+
+  if( full)
+  {
+    UserWriteF("  NSONS=%d\n",NSONS(theElement));
+    if (GetAllSons(theElement,SonList)==0)
+    {
+      for (i=0; SonList[i] != NULL; i++)
+      {
+        sprintf(tmp,"    SON%d "EID_FMTX "\n" ,i,EID_PRTX(SonList[i]));
+        strcat( out, tmp );
+
+        for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
+        {
+                                        #ifdef __TWODIM__
+          sprintf(tmp,"        N%d= "ID_FMTX " x=%g  y=%g\n",
+                  j,
+                  ID_PRTX(CORNER(SonList[i],j)),
+                  CVECT(MYVERTEX(CORNER(SonList[i],j)))[0],
+                  CVECT(MYVERTEX(CORNER(SonList[i],j)))[1]
+                  );
+                                        #endif
+                                        #ifdef __THREEDIM__
+          sprintf(tmp,"        N%d= "ID_FMTX " x=%g  y=%g z=%g\n",
+                  j,
+                  ID_PRTX(CORNER(SonList[i],j)),
+                  CVECT(MYVERTEX(CORNER(SonList[i],j)))[0],
+                  CVECT(MYVERTEX(CORNER(SonList[i],j)))[1],
+                  CVECT(MYVERTEX(CORNER(SonList[i],j)))[2]
+                  );
+                                        #endif
+          strcat( out, tmp );
+        }
+      }
+    }
+  }
+  sprintf(tmp," key=%d\n", KeyForObject((SELECTION_OBJECT*)theElement) );
+  strcat( out, tmp );
+
+  if(full)
+  {
+    if (OBJT(theElement)==BEOBJ)
+      strcat( out," boundary element\n" );
+    else
+      strcat( out," no boundary element\n" );
+
+    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+    {
+      for(j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+      {
+                                #ifdef __TWODIM__
+        sprintf(tmp,"    NODE[ID=%ld]: x=%g y=%g",
+                (long)(ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j)))),
+                CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))))[0],
+                CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))))[1]);
+                                #endif
+                                #ifdef __THREEDIM__
+        sprintf(tmp,"    NODE[ID=%ld]: x=%g y=%g z=%g",
+                (long)(ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j)))),
+                CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))))[0],
+                CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))))[1],
+                CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))))[2]);
+                                #endif
+        strcat( out, tmp );
+      }
+      strcat( out,"\n");
+    }
+  }
+#ifdef ModelP
+  /*UserWriteF(PFMT"%s", me,out );*/
+  printf(PFMT "%s",me,out);
+#else
+  UserWrite(out);
+#endif
+
+  return out;
 }
