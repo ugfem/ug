@@ -61,6 +61,7 @@
 #include "initdev.h"
 #include "defaults.h"
 #include "general.h"
+#include "debug.h"
 
 /* Xif includes */
 #include "xmain.h"
@@ -76,8 +77,6 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
-
-/*#define DEBUG                   1*/
 
 /* hardcoded default values */
 #define DEFAULTXPOS     50
@@ -564,10 +563,10 @@ void ShellInsertChar (ShellWindow *sh, char c)
         (sh->line)++;
       sh->col = 0;
     }
-#ifdef DEBUG
+    IFDEBUG(dev,1)
     printf("char = %d x=%d y=%d line=%d col=%d bufferline=%d\n",(int)c,x,y,sh->line,sh->col,
            (sh->topLine+sh->line)%sh->numLines);
-#endif
+    ENDDEBUG
     break;
   }
 
@@ -725,9 +724,9 @@ void ShellResize (ShellWindow *sh, int width, int height)
   /* compute new size in characters */
   c_width = MIN(width/sh->font_width,MAXCOLS);
   c_height = MIN(height/sh->font_height,MAXLINES);
-#ifdef DEBUG
+  IFDEBUG(dev,1)
   printf("RESIZE: OLD: top=%2d nl=%2d line=%2d    ",sh->topLine,sh->numLines,sh->line);
-#endif
+  ENDDEBUG
   /* clear lines not in use */
   for (i=sh->numLines; i<MAXLINES; i++) sh->lineStart[i][0] = (char) 0;
 
@@ -769,9 +768,9 @@ void ShellResize (ShellWindow *sh, int width, int height)
   for (i=0; i<MAXLINES; i++) sh->lineStart[i][c_width] = (char) 0;
   sh->numCols = c_width;
   sh->col = MIN(sh->col,c_width-1);
-#ifdef DEBUG
+  IFDEBUG(dev,1)
   printf("NEW: top=%2d nl=%2d line=%2d\n",sh->topLine,sh->numLines,sh->line);
-#endif
+  ENDDEBUG
 }
 
 
@@ -797,10 +796,10 @@ void ShellHandleExposeEvent (ShellWindow *sh, XEvent *report)
   rectangle.width = (short) report->xexpose.width;
   rectangle.height = (short) report->xexpose.height;
   XUnionRectWithRegion(&rectangle,sh->region,sh->region);
-#ifdef DEBUG
+  IFDEBUG(dev,1)
   printf("EXPOSE EVENT: rect= %d %d %d %d cnt= %d\n",rectangle.x,rectangle.y,
          rectangle.width,rectangle.height,report->xexpose.count);
-#endif
+  ENDDEBUG
   if (report->xexpose.count!=0) return;
   ShellRefresh(sh);
 }

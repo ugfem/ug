@@ -19,8 +19,6 @@
 /*																			*/
 /****************************************************************************/
 
-/*#define DEBUG 1*/
-
 /****************************************************************************/
 /*																			*/
 /* include files															*/
@@ -245,9 +243,11 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
     theEvent->Type = DOC_ACTIVATE;
     theEvent->DocActivate.win = (WINDOWID) gw;
     SetCurrentGW(gw);
-#ifdef DEBUG
-    printf("reporting DOC_ACTIVATE for view %s\n",MY_VIEW(gw)->name);
-#endif
+    /*
+       IFDEBUG(dev,1)
+       printf("reporting DOC_ACTIVATE for view %s\n",MY_VIEW(gw)->name);
+       ENDDEBUG
+     */
     break;
 
   case ConfigureNotify :
@@ -255,17 +255,17 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
     {
                                 #ifdef USE_XAW
       flag=XtDispatchEvent(&report);
-                                #ifdef DEBUG
+      IFDEBUG(dev,1)
       if (flag==FALSE)
         PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"))
         else
           PRINTDEBUG(dev,1,("XtDispatchEvent(): handler for this event found\n"))
-                                #endif
+          ENDDEBUG
                                 #else /* USE_XAW */
       ShellHandleResizeEvent(&shell,&report);
       theEvent->NoEvent.InterfaceEvent = 1;
                                 #endif /* USE_XAW */
-      break;
+          break;
     }
     gw = WhichGW(report.xconfigure.window);
     if (gw==NULL) break;
@@ -297,11 +297,13 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
       gw->window_y = y;
       gw->window_width = w;
       gw->window_height = h;
-#ifdef DEBUG
-      printf("reporting DOC_GROW dxmin=%g dymin=%g dxmax=%g dymax=%g\n",
-             theEvent->DocGrow.LowerLeft[0],theEvent->DocGrow.LowerLeft[1],
-             theEvent->DocGrow.UpperRight[0],theEvent->DocGrow.UpperRight[1]);
-#endif
+      /*
+         IFDEBUG(dev,1)
+         printf("reporting DOC_GROW dxmin=%g dymin=%g dxmax=%g dymax=%g\n",
+              theEvent->DocGrow.LowerLeft[0],theEvent->DocGrow.LowerLeft[1],
+              theEvent->DocGrow.UpperRight[0],theEvent->DocGrow.UpperRight[1]);
+         ENDDEBUG
+       */
       break;
     }
     if (  (report.xconfigure.x!=gw->window_x)
@@ -320,11 +322,13 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
       theEvent->DocDrag.Global_UR[1] = display_height-(y+h);
       gw->window_x = report.xconfigure.x;
       gw->window_y = report.xconfigure.y;
-#ifdef DEBUG
-      printf("reporting DOC_DRAG dxmin=%g dymin=%g dxmax=%g dymax=%g\n",
-             theEvent->DocDrag.LowerLeft[0],theEvent->DocDrag.LowerLeft[1],
-             theEvent->DocDrag.UpperRight[0],theEvent->DocDrag.UpperRight[1]);
-#endif
+      /*
+         IFDEBUG(dev,1)
+         printf("reporting DOC_DRAG dxmin=%g dymin=%g dxmax=%g dymax=%g\n",
+              theEvent->DocDrag.LowerLeft[0],theEvent->DocDrag.LowerLeft[1],
+              theEvent->DocDrag.UpperRight[0],theEvent->DocDrag.UpperRight[1]);
+         ENDDEBUG
+       */
       break;
     }
     break;
@@ -353,9 +357,9 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
       theEvent->Type = DOC_CHANGETOOL;
       theEvent->DocChangeTool.win = (WINDOWID) gw;
       theEvent->DocChangeTool.Tool = tool;
-#ifdef DEBUG
+      IFDEBUG(dev,1)
       printf("reporting DOC_CHANGETOOL tool=%d\n",tool);
-#endif
+      ENDDEBUG
       break;
     }
     if (DrawRegion(gw,where_x,where_y))
@@ -380,12 +384,14 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
         cutbuffer = XFetchBytes(display,&cnt);
         if (cutbuffer == NULL)
         {
+          IFDEBUG(dev,1)
           printf("cut buffer empty\n");
+          ENDDEBUG
           break;
         }
-                                        #ifdef Debug
+        IFDEBUG(dev,1)
         printf("ButtonRelease with cnt=%d cutbuffer=%s\n",cnt,cutbuffer);
-                                        #endif
+        ENDDEBUG
 
         AppendOrInsertCutbuffer(&shell,cutbuffer,cnt);
         XFree(cutbuffer);
@@ -418,30 +424,30 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
         #ifdef USE_XAW
   /* Send all events to shell widget */
   flag=XtDispatchEvent(&report);
-        #ifdef DEBUG
+  IFDEBUG(dev,1)
   if (flag==FALSE)
     PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"))
     else
       PRINTDEBUG(dev,1,("XtDispatchEvent(): Handler for this event found\n"))
-        #endif
+      ENDDEBUG
 
-  switch (report.type)
-  {
-  case ButtonRelease :
-    if (report.xbutton.window == shell.win)
-    {
-      if (report.xbutton.button == Button1)
-        CutBeginPos = XawTextGetInsertionPoint(shell.wid);
-
-      if (report.xbutton.button == Button1 ||
-          report.xbutton.button == Button3 )
+      switch (report.type)
       {
-        XawTextSetInsertionPoint(shell.wid,CursorPos);
-        XawTextDisplayCaret(shell.wid,TRUE);
+      case ButtonRelease :
+        if (report.xbutton.window == shell.win)
+        {
+          if (report.xbutton.button == Button1)
+            CutBeginPos = XawTextGetInsertionPoint(shell.wid);
+
+          if (report.xbutton.button == Button1 ||
+              report.xbutton.button == Button3 )
+          {
+            XawTextSetInsertionPoint(shell.wid,CursorPos);
+            XawTextDisplayCaret(shell.wid,TRUE);
+          }
+        }
+        break;
       }
-    }
-    break;
-  }
         #endif
 
   return(0);

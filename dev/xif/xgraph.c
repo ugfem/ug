@@ -52,6 +52,7 @@
 #include "devices.h"
 #include "initdev.h"
 #include "general.h"
+#include "debug.h"
 
 /* Xif includes */
 #include "xmain.h"
@@ -66,8 +67,6 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
-
-/*#define DEBUG                 1*/
 
 #define CSIZE                   256                     /* ug supports at most 256 colors	*/
 
@@ -1099,11 +1098,11 @@ INT X11_UpdateOutput (WINDOWID win, char *s, INT tool)
   XRectangle rect;
   GraphWindow *gwin;
 
-#ifdef DEBUG
+  IFDEBUG(dev,1)
   printf("Draw Controls\n");
-#endif
+  ENDDEBUG
 
-  gwin = (GraphWindow *) win;
+    gwin = (GraphWindow *) win;
 
   /* save some values of graphics context */
   XGetGCValues(display, gwin->gc, GCForeground|GCBackground|GCLineWidth, &gcv);
