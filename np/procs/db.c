@@ -184,7 +184,7 @@ static INT List_GetListEntry_NextHigherEntry (NP_ORDERED_LIST *theNP, DOUBLE val
 INT List_Init (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_LIST *np;
-  INT i;
+  INT i,le,cmp;
   char buffer[NAMESIZE];
 
   np = (NP_LIST *)theNP;
@@ -209,7 +209,16 @@ INT List_Init (NP_BASE *theNP, INT argc, char **argv)
   if (np->n>1)
     qsort((void *)np->list,np->n,sizeof(DOUBLE),cmp_real);
 
-  return (NP_ACTIVE);
+  /* cancel double values */
+  for (le=0,cmp=1; cmp<np->n; cmp++)
+    if (np->list[cmp]!=np->list[le])
+    {
+      le++;
+      np->list[le]=np->list[cmp];
+    }
+  np->n=le+1;
+
+  return (NP_EXECUTABLE);
 }
 
 INT List_Display (NP_BASE *theNP)
@@ -229,6 +238,57 @@ INT List_Display (NP_BASE *theNP)
   return (0);
 }
 
+INT List_Execute (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_LIST *np;
+  INT i,found;
+  DOUBLE value,f,diff,dvalue;
+
+  np = (NP_LIST *)theNP;
+  if (ReadArgvDOUBLE ("I",&value,argc,argv)==0)
+  {
+    for (i=0; i<np->n-1; i++)
+      if (np->list[i]<=value && np->list[i+1]>value)
+        break;
+    if (i==np->n-1)
+    {
+      if (SetStringValue(":DB:INTERVAL",-1.0)) return (1);
+    }
+    else
+    {
+      if (SetStringValue(":DB:INTERVAL",(DOUBLE)i)) return (1);
+    }
+  }
+  if (ReadArgvDOUBLE ("E",&value,argc,argv)==0)
+  {
+
+    found=0;
+    for (i=0; i<np->n; i++)
+      if (np->list[i]==value)
+      {
+        found=1;
+        break;
+      }
+    if (np->regular_step>0.0)
+      if (ReadArgvDOUBLE ("D",&dvalue,argc,argv)==0 && dvalue>0.0)
+      {
+        f = floor(0.5+value/np->regular_step);
+        diff = ABS(value-f*np->regular_step);
+        if (diff/dvalue<=1e-3) found=1;
+      }
+    if (!found)
+    {
+      if (SetStringValue(":DB:ENTRY",-1.0)) return (1);
+    }
+    else
+    {
+      if (SetStringValue(":DB:ENTRY",(DOUBLE)i)) return (1);
+    }
+  }
+
+  return (0);
+}
+
 /****************************************************************************/
 static INT List_Construct (NP_BASE *theNP)
 {
@@ -236,7 +296,7 @@ static INT List_Construct (NP_BASE *theNP)
 
   theNP->Init = List_Init;
   theNP->Display = List_Display;
-  theNP->Execute = NULL;
+  theNP->Execute = List_Execute;
 
   np = (NP_ORDERED_LIST *)theNP;
   np->PreProcess                                          = List_PreProcess;

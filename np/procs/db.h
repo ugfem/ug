@@ -61,7 +61,7 @@ struct np_ordered_list {
     INT *);                                      /* result                          */
   INT (*GetListEntry_Index)
     (struct np_ordered_list *,               /* pointer to (derived) object     */
-    INT n,                               /* index of entry                  */
+    INT,                                 /* index of entry                  */
     DOUBLE *,                                    /* list entry                      */
     INT *);                                      /* result                          */
   INT (*GetListEntry_NextHigherEntry)
