@@ -119,10 +119,10 @@ static INT PreProcessNodeValue (const char *name, MULTIGRID *theMG)
     return (1);
   }
 
-  if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<1)
+  if (VD_ncmps_in_otype(theVD,NODEVEC)<1)
     return (1);
 
-  NodeValueComp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
+  NodeValueComp = VD_cmp_of_otype(theVD,NODEVEC,0);
 
   return (0);
 }
@@ -173,13 +173,13 @@ static INT PreProcessNodeVector (const char *name, MULTIGRID *theMG)
     PrintErrorMessage('E',"PreProcessNodeVector","cannot find symbol");
     return (1);
   }
-  NodeVectorComp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
-  if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<DIM)
+  NodeVectorComp = VD_cmp_of_otype(theVD,NODEVEC,0);
+  if (VD_ncmps_in_otype(theVD,NODEVEC)<DIM)
     GradientFlag = 1;
   else {
     GradientFlag = 0;
     for (i=1; i<DIM; i++)
-      if ((NodeVectorComp+i) != VD_CMP_OF_TYPE(theVD,NODEVECTOR,i))
+      if ((NodeVectorComp+i) != VD_cmp_of_otype(theVD,NODEVEC,i))
         return (1);
   }
   return (0);
