@@ -35,6 +35,9 @@
 #include "misc.h"
 #include "initlow.h"
 
+/* parallelization module */
+#include "parallel.h"
+
 /* devices module */
 #include "devices.h"
 
@@ -59,6 +62,9 @@
 
 /* own header */
 #include "initug.h"
+
+/* TODO: delete this */
+#include "debug.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -103,6 +109,18 @@ INT InitUg (int argc, char **argv)
 
     return (1);
   }
+
+  /* init parallelization module */
+        #ifdef ModelP
+  PRINTDEBUG(init,1,("%d:     InitParallel()...\n",me))
+  if ((err=InitParallel(argc, argv))!=0)
+  {
+    printf("ERROR in InitUg while InitParallel (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
+    #endif
 
   /* init the devices module */
   if ((err=InitDevices(argc,argv))!=0)
