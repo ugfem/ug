@@ -271,7 +271,6 @@ struct GridPlotObj2D {
   INT PlotBoundary;                                                     /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
   INT ElemColored;                                                      /* YES or NO									*/
-  INT Subdomain;                                                        /* YES or NO: plot grid in subdomain-colors		*/
 };
 
 struct VecMatPlotObj2D {

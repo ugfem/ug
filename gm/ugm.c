@@ -67,6 +67,7 @@
 #include "elements.h"
 #include "shapes.h"
 #include "refine.h"
+#include "domain.h"
 
 #ifdef ModelP
 #include "parallel.h"
@@ -1498,6 +1499,8 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   theMG->elemIdCounter = 0;
   theMG->topLevel = -1;
   MG_BVP(theMG) = theBVP;
+  MG_NPROPERTY(theMG) = BVPD_NSUBDOM(theBVPDesc);
+
   theMG->theHeap = theHeap;
   SELECTIONSIZE(theMG) = 0;
   for (i=0; i<MAXLEVEL; i++)

@@ -2571,7 +2571,7 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   if (PO_STATUS(thePlotObj)==NOT_INIT)
   {
     theGpo->ShrinkFactor    = 1.0;
-    theGpo->ElemColored     = NO;
+    theGpo->ElemColored     = 1;
     theGpo->WhichElem               = PO_ALL;
     theGpo->PlotBoundary    = YES;
     theGpo->PlotElemID              = NO;
@@ -2579,21 +2579,18 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PlotNodes               = NO;
     theGpo->PlotRefMarks    = NO;
     theGpo->PlotIndMarks    = NO;
-    theGpo->Subdomain       = NO;
   }
 
   /* color mode */
   for (i=1; i<argc; i++)
     if (argv[i][0]=='c')
     {
-      if (sscanf(argv[i],"c %d",&iValue)!=1)
-        break;
-      if (iValue==1)
-        theGpo->ElemColored = YES;
-      else if (iValue==0)
-        theGpo->ElemColored = NO;
+      if (sscanf(argv[i],"c %d",&iValue)!=1) break;
+      theGpo->ElemColored = iValue;
       break;
     }
+  if (theGpo->ElemColored<0 || theGpo->ElemColored>2) return (NOT_ACTIVE);
+
   for (i=1; i<argc; i++)
     if (argv[i][0]=='w')
     {
@@ -2634,19 +2631,6 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     }
   if (theGpo->ShrinkFactor<=0.0 || theGpo->ShrinkFactor>1.0)
     return (NOT_ACTIVE);
-
-  /* set subdomain-color option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='S')
-    {
-      if (sscanf(argv[i],"S %d",&iValue)!=1)
-        break;
-      if (iValue==1)
-        theGpo->Subdomain = YES;
-      else if (iValue==0)
-        theGpo->Subdomain = NO;
-      break;
-    }
 
   /* set refinement mark option */
   for (i=1; i<argc; i++)
@@ -2761,12 +2745,6 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","NO");
   UserWrite(buffer);
 
-  if (theGpo->Subdomain == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"SubDom","YES");
-  else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"SubDom","NO");
-  UserWrite(buffer);
-
   if (theGpo->PlotNodes == YES)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Node markers","YES");
   else
@@ -2814,11 +2792,7 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
   }
   UserWrite(buffer);
 
-  if (theGpo->ElemColored == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"COLORED","YES");
-  else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"COLORED","NO");
-  UserWrite(buffer);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"COLORED",(int)theGpo->ElemColored);
 
   return (0);
 }

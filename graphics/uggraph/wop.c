@@ -264,9 +264,9 @@ static long EE2D_ColorRefMark;  /* color of refinement marks				*/
 static INT EE2D_IndMark;                /* 1 if plot indicator marks				*/
 static long EE2D_ColorIndMark;  /* color of indicator marks	                        */
 static DOUBLE EE2D_ShrinkFactor; /* shrink factor, 1.0 if normal plot		*/
-static INT EE2D_SubDomain;              /* 1 if plot subdomains						*/
-static INT EE2D_NSubDomain;             /* nb of if plot subdomains					*/
-static long EE2D_SubdomColor[EE2D_MAX_SUBDOM];  /* colors used				*/
+static INT EE2D_Property;               /* 1 if plot property						*/
+static INT EE2D_NProperty;              /* nb of properties							*/
+static long EE2D_PropertyColor[EE2D_MAX_SUBDOM];        /* colors used			*/
 
 /* 3D */
 static INT EE3D_Elem2Plot[10];          /* 1 if element has to be plotted			*/
@@ -4708,7 +4708,7 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
   EE2D_NoColor[COLOR_EDGE]                        = 0;
   EE2D_NoColor[COLOR_LOWER_LEVEL]         = 1;
   EE2D_NoColor[COLOR_BND]                         = 1;
-  if (theGpo->ElemColored == YES)
+  if (theGpo->ElemColored == 1)
   {
     EE2D_NoColor[COLOR_COPY]                = 0;
     EE2D_NoColor[COLOR_IRR]                 = 0;
@@ -4759,19 +4759,19 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
   if (theGpo->PlotElemID == YES)
     EE2D_ElemID                             = 1;
   EE2D_ShrinkFactor                               = theGpo->ShrinkFactor;
-  EE2D_SubDomain                                  = theGpo->Subdomain;
-  if (EE2D_SubDomain)
+  if (theGpo->ElemColored==2)
   {
-    if (BVP_SetBVPDesc(MG_BVP(theMG),&theBVPDesc)) return (1);
-    EE2D_NSubDomain = BVPD_NSUBDOM(theBVPDesc);
-    if (EE2D_NSubDomain>1 && EE2D_NSubDomain<EE2D_MAX_SUBDOM)
+    EE2D_NProperty = MG_NPROPERTY(theMG);
+    EE2D_Property = 1;
+    if (EE2D_NProperty>1 && EE2D_NProperty<EE2D_MAX_SUBDOM)
     {
-      for (i=1; i<=EE2D_NSubDomain; i++)
-        EE2D_SubdomColor[i] = theOD->spectrumStart + i*(COORD)(theOD->spectrumEnd - theOD->spectrumStart)/(COORD)EE2D_NSubDomain;
+      for (i=1; i<=EE2D_NProperty; i++)
+        EE2D_PropertyColor[i] = theOD->spectrumStart + i*(COORD)(theOD->spectrumEnd - theOD->spectrumStart)/(COORD)EE2D_NProperty;
     }
     else
     {
-      EE2D_SubDomain = 0;
+      theGpo->ElemColored = 1;
+      EE2D_Property = 0;
       UserWrite("too many or too less subdomains, switch back to standard mode\n");
     }
   }
@@ -6552,12 +6552,12 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   /* store viewable sides on drawing obj */
   if (EE2D_ShrinkFactor==1.0)
   {
-    if (EE2D_SubDomain)
+    if (EE2D_Property)
     {
       DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO);
       DO_2c(theDO) = coe; DO_inc(theDO) ;
-      if (PROP(theElement)<1 || PROP(theElement)>EE2D_NSubDomain) return (1);
-      DO_2l(theDO) = EE2D_SubdomColor[(int)PROP(theElement)];
+      if (PROP(theElement)<1 || PROP(theElement)>EE2D_NProperty) return (1);
+      DO_2l(theDO) = EE2D_PropertyColor[(int)PROP(theElement)];
       DO_inc(theDO);
       DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
       for (j=0; j<coe; j++)
@@ -6624,12 +6624,12 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
       V2_ADD(MidPoint,x[i],MidPoint)
       V2_SCALE(1.0/(COORD)i,MidPoint)
 
-      if (EE2D_SubDomain)
+      if (EE2D_Property)
       {
         DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO);
         DO_2c(theDO) = coe; DO_inc(theDO) ;
-        if (PROP(theElement)<1 || PROP(theElement)>EE2D_NSubDomain) return (1);
-        DO_2l(theDO) = EE2D_SubdomColor[(int)PROP(theElement)];
+        if (PROP(theElement)<1 || PROP(theElement)>EE2D_NProperty) return (1);
+        DO_2l(theDO) = EE2D_PropertyColor[(int)PROP(theElement)];
         DO_inc(theDO);
         DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
         for (j=0; j<coe; j++)
