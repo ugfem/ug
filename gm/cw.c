@@ -148,6 +148,7 @@ static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
   CE_INIT(CE_LOCKED,      VECTOR_,                VCCOARSE_,              CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                FINE_GRID_DOF_, CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                NEW_DEFECT_,    CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VACTIVE_,       CW_VEOBJ),
 
   CE_INIT(CE_LOCKED,      MATRIX_,                MOFFSET_,               CW_MAOBJ),
   CE_INIT(CE_LOCKED,      MATRIX_,                MROOTTYPE_,             CW_MAOBJ),
@@ -158,6 +159,9 @@ static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
   CE_INIT(CE_LOCKED,      MATRIX_,                CEXTRA_,                CW_MAOBJ),
   CE_INIT(CE_LOCKED,      MATRIX_,                MDOWN_,                 CW_MAOBJ),
   CE_INIT(CE_LOCKED,      MATRIX_,                MUP_,                   CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MLOWER_,                CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MUPPER_,                CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MACTIVE_,               CW_MAOBJ),
 
   CE_INIT(CE_USED,        BLOCKVECTOR_,   BVDOWNTYPE_,    CW_BVOBJ),
   CE_INIT(CE_USED,        BLOCKVECTOR_,   BVLEVEL_,               CW_BVOBJ),
