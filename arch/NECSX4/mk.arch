@@ -1,0 +1,24 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for NEC SX4
+#
+
+ARCH_TYPE     = __NECSX4__
+
+ARCH_CC       = cc
+ARCH_C++      = CC 
+ARCH_LINK     = cc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lm -lc
+
+ARCH_CFLAGS   = -Xc -pvctl,nomsg
+ARCH_C++FLAGS = 
+ARCH_LFLAGS   = 
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDES = -I/usr/include/X11
+ARCH_XLIBS     = -L/usr/lib/X11 -lXaw -lXt -lXmu -lXext -lX11
