@@ -1950,7 +1950,7 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   /* TODO: repair this:
      InsertElement (MYMG(theGrid),n,Node,Neighbor); */
 
-  theElement = theGrid->elements;
+  theElement = FIRSTELEMENT(theGrid);
   theElementContext->thenewElement = theElement;
 
   /*
