@@ -217,8 +217,8 @@ static void MetaPolygon (SHORT_POINT *points, INT nb)
 
 static void MetaInversePolygon (SHORT_POINT *points, INT nb)
 {
-  int i,size1;
-  short n;
+  /*int i,size1;
+     short n;*/
   return;
 
   /* n = (short)nb;
@@ -247,8 +247,8 @@ static void MetaInversePolygon (SHORT_POINT *points, INT nb)
 
 static void MetaErasePolygon (SHORT_POINT *points, INT nb)
 {
-  int i,size1;
-  short n;
+  /*int i,size1;
+     short n;*/
   return;
 
   /* n = (short)nb;
@@ -279,7 +279,7 @@ static void MetaPolymark (short n, SHORT_POINT *points)
 {
   int i,size1;
 
-  if (n<2) return;
+  if (n<1) return;
   size1 = 3+n*4;
   if (currMW->blockUsed+size1>METABUFFERSIZE) flush_block();
 
@@ -522,6 +522,8 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
   thePort->range = 256;
   thePort->spectrumStart = 2;
   thePort->spectrumEnd = 254;
+  thePort->signx = 1;
+  thePort->signy = 1;
 
   /* initialize color table */
   res = 63;
@@ -549,7 +551,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
     b -= delta;
     red[i] = r; green[i] = g; blue[i++] = b;
   }                                                             /* 128 = green */
-  /* grŸeen nach gelb */
+  /* grüeen nach gelb */
   for (j=0; j<res; j++)
   {
     r += delta;
