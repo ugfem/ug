@@ -220,40 +220,38 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
   /* TODO: define this static global                    */
   /* TODO: take size as maximum of possible connections */
   size_t sizeArray[256];
+  INT flag;
 
   PRINTDEBUG(dddif,1,(PFMT " VectorXferCopy(): v=" VINDEX_FMTX " proc=%d "
                       "prio=%d vtype=%d\n",me,VINDEX_PRTX(pv),proc,prio,VTYPE(pv)))
 
-    #ifdef __EXCHANGE_CONNECTIONS__
-  if (!GHOSTPRIO(prio))
-  {
+  flag = (!GHOSTPRIO(prio));
+    #ifndef __EXCHANGE_CONNECTIONS__
+  flag = (flag && (level < 0));
+        #endif
+
+  if (flag) {
     if (DDD_XferWithAddData()) {
       for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat)) {
         ASSERT(nmat<256);
         sizeArray[nmat++] = MSIZE(mat);
       }
-
       PRINTDEBUG(dddif,2,(PFMT " VectorXferCopy(): v=" VINDEX_FMTX
                           " AddData nmat=%d\n",me,VINDEX_PRTX(pv),nmat))
       DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
     }
   }
-        #else
+  else
   {
     MATRIX *theMatrix,*next;
 
-    for (theMatrix=VSTART(pv); theMatrix!=NULL;
-         theMatrix = next)
-    {
+    for (theMatrix=VSTART(pv); theMatrix!=NULL; theMatrix = next) {
       next = MNEXT(theMatrix);
       if (DisposeConnection(theGrid,MMYCON(theMatrix)))
         ASSERT(0);
     }
   }
-        #endif
 }
-
-
 
 void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
 {
@@ -1247,8 +1245,7 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
   /* must be done before any XferCopyObj-call! herein */
   /* or directly after XferCopyObj-call */
 
-  if (OBJT(pe)==BEOBJ)
-  {
+  if (OBJT(pe)==BEOBJ) {
     nsides = SIDES_OF_ELEM(pe);
     for (i=0; i<nsides; i++)
       bnds[i] = ELEM_BNDS(pe,i);
@@ -1282,14 +1279,6 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
                         " Xfer n=" ID_FMTX " i=%d\n",
                         me,EID_PRTX(pe),ID_PRTX(node),i))
 
-                #ifdef __TWODIM__
-    if (NTYPE(node) == MID_NODE)
-    {
-      /* midnodes need information about their edge */
-      DDD_XferCopyObj(PARHDR(node), proc, prio);
-    }
-    else
-                #endif
     DDD_XferCopyObj(PARHDR(node), proc, prio);
   }
 
@@ -2169,8 +2158,6 @@ static void BElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 
 
 /****************************************************************************/
-
-
 
 /* init all handlers necessary for grid xfer */
 void ddd_HandlerInit (INT handlerSet)

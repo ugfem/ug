@@ -171,7 +171,8 @@ enum HandlerSets
 #define GRID_ATTR(g) ((unsigned char) (GLEVEL(g)+32))
 #define ATTR_TO_GLEVEL(i) (i-32)
 
-#define __EXCHANGE_CONNECTIONS__
+/* This exchanges in the load balancing the connections too.
+ #define __EXCHANGE_CONNECTIONS__                              */
 
 #endif /* ModelP */
 
