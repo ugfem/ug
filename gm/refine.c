@@ -1975,7 +1975,7 @@ static int NodeContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementCon
     theElementContext[i] = NULL;
 
   /* is element to refine */
-  if (!REFINED(theElement)) return(GM_OK);
+  if (!IS_REFINED(theElement)) return(GM_OK);
 
   /* get corner nodes */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
