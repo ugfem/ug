@@ -60,11 +60,17 @@ case $MODEL in
 		mpprun -n $PROC $1;
 		;;
 	SHMEMT3D)
-		if test ! -f $1$2
+		if test -f $1$2
 		then
-			echo fixing executable...
-			mppfixpe -o $1$2 -X $2 $1;
+			if test `find . -newer $1 | grep $1$2 | wc -l` -eq 1
+			then
+				echo mppexec $1$2;
+				mppexec $1$2;
+				exit 0;
+			fi
 		fi
+		echo fixing executable...
+		mppfixpe -o $1$2 -X $2 $1;
 		echo mppexec $1$2 $3 $4;
 		mppexec $1$2 $3 $4;
 		;;
