@@ -537,7 +537,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv);
+static INT SetAutoDamp (NP_ITER *theNP, GRID *g, INT mode, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv);
 
 /****************************************************************************/
 /*D
@@ -598,6 +598,33 @@ static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DE
    num_proc
    D*/
 /****************************************************************************/
+
+INT DPrintVector (MULTIGRID *mg, VECDATA_DESC *x)
+{
+  VECTOR *v;
+  DOUBLE_VECTOR pos;
+  INT vtype,comp,ncomp,j,lev;
+  FILE *c,*p;
+
+  c=fopen("c","w");
+  p=fopen("p","w");
+  for (vtype=0; vtype<NVECTYPES; vtype++)
+  {
+    ncomp = VD_NCMPS_IN_TYPE(x,vtype);
+    if (ncomp == 0) continue;
+    comp = VD_CMP_OF_TYPE(x,vtype,0);
+    S_FINE_VLOOP__TYPE(CURRENTLEVEL(mg),v,mg,vtype)
+    {
+      VectorPosition(v,pos);
+      fprintf(c,"x=%5.2f y=%5.2f z=%5.2f c=%15.8e\n",pos[0],pos[1],pos[2],VVALUE(v,comp));
+      fprintf(p,"x=%5.2f y=%5.2f z=%5.2f c=%15.8e\n",pos[0],pos[1],pos[2],VVALUE(v,comp+1));
+    }
+  }
+  fclose(c);
+  fclose(p);
+
+  return(NUM_OK);
+}
 
 INT NPIterInit (NP_ITER *np, INT argc , char **argv)
 {
@@ -1480,6 +1507,18 @@ static INT SSORDisplay (NP_BASE *theNP)
   return (0);
 }
 
+static INT cmp_comp;
+static INT CompareADV (const void *p, const void *q)
+{
+  VECTOR *v1, *v2;
+
+  v1 = *((VECTOR **)p);
+  v2 = *((VECTOR **)q);
+  if (VVALUE(v1,cmp_comp)<VVALUE(v2,cmp_comp)) {return (1);}
+  if (VVALUE(v1,cmp_comp)>VVALUE(v2,cmp_comp)) {return (-1);}
+  return (0);
+}
+
 static INT SSORPreProcess  (NP_ITER *theNP, INT level,
                             VECDATA_DESC *x, VECDATA_DESC *b,
                             MATDATA_DESC *A, INT *baselevel, INT *result)
@@ -1513,12 +1552,16 @@ static INT SSORPreProcess  (NP_ITER *theNP, INT level,
   myMat = A;
         #endif
 
+  /* get storage for extra temp */
+  if (AllocVDFromVD(NP_MG(theNP),level,level,x,&ssor->t))
+    NP_RETURN(1,result[0]);
+
+  /* set auto-damping iff */
   if (np->AutoDamp)
   {
-    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector))
-      NP_RETURN(1,result[0]);
-    if (SetAutoDamp(theGrid,myMat,ssor->omega,np->DampVector))
-      NP_RETURN(1,result[0]);
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
+    if (SetAutoDamp(theNP,theGrid,np->AutoDamp,myMat,ssor->omega,np->DampVector)) NP_RETURN(1,result[0]);
+    DPrintVector(MYMG(theGrid),np->DampVector);
   }
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,myMat,result)) NP_RETURN(1,result[0]);
@@ -1526,16 +1569,10 @@ static INT SSORPreProcess  (NP_ITER *theNP, INT level,
     NP_RETURN(1,result[0]);
   *baselevel = level;
 
-  /* get storage for extra temp */
-  if (AllocVDFromVD(NP_MG(theNP),level,level,x,&ssor->t))
-    NP_RETURN(1,result[0]);
-
   return (0);
 }
 
-static INT SSORSmoother (NP_ITER *theNP, INT level,
-                         VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                         INT *result)
+static INT SSORSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
 {
   NP_SSOR *np = (NP_SSOR *) theNP;
   GRID *theGrid=NP_GRID(theNP,level);
@@ -4371,7 +4408,103 @@ static INT BHRConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
+static INT GetSpec (DOUBLE *m, DOUBLE *l)
+{
+  DOUBLE s,t;
+
+  s=0.5*ABS(m[0]+m[3]);
+  t=s*s-m[0]*m[3]+m[1]*m[2];
+  if (t>=0.0)
+  {
+    t=sqrt(t);
+    l[0]=ABS(s-t);
+    l[1]=ABS(s+t);
+    if (l[0]>l[1])
+    {
+      s=l[0]; l[0]=l[1]; l[1]=s;
+    }
+  }
+  else
+  {
+    l[0]=l[1]=sqrt(s*s+t*t);
+  }
+  return(0);
+}
+
+static INT SetAutoDamp_SSpec (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
+{
+  INT n,comp,rtype;
+  SHORT *advcomp;
+  VECTOR *v;
+  MATRIX *m;
+  DOUBLE diag,sum,spec[2],d;
+
+  advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
+  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+  {
+    comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,0);
+    GetSpec(&MVALUE(VSTART(v),comp),spec);
+    diag=spec[0];
+    if (diag==0.0) return(1);
+    sum=0.0;
+    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+    {
+      GetSpec(&MVALUE(m,comp),spec);
+      sum+=spec[1];
+    }
+    if (diag>=sum)
+    {
+      VVALUE(v,advcomp[0])=damp[0];
+      VVALUE(v,advcomp[1])=damp[1];
+    }
+    else
+    {
+      d=diag/sum;
+      VVALUE(v,advcomp[0])=damp[0]*d;
+      VVALUE(v,advcomp[1])=damp[1]*d;
+    }
+  }
+
+  return(0);
+}
+
+static INT SetAutoDamp_WSpec (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
+{
+  INT n,comp,rtype;
+  SHORT *advcomp;
+  VECTOR *v;
+  MATRIX *m;
+  DOUBLE diag,sum,spec[2];
+
+  advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
+  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+  {
+    comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,0);
+    GetSpec(&MVALUE(VSTART(v),comp),spec);
+    diag=spec[1];
+    if (diag==0.0) return(1);
+    sum=0.0;
+    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+    {
+      GetSpec(&MVALUE(m,comp),spec);
+      sum+=spec[1];
+    }
+    if (diag>=sum)
+    {
+      VVALUE(v,advcomp[0])=damp[0];
+      VVALUE(v,advcomp[1])=damp[1];
+    }
+    else
+    {
+      VVALUE(v,advcomp[0])=damp[0]*diag/sum;
+      VVALUE(v,advcomp[1])=damp[1]*diag/sum;
+    }
+  }
+
+  return(0);
+}
+
+static INT SetAutoDamp_Scalar (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
 {
   INT i,n,comp,rtype;
   SHORT *advcomp;
@@ -4396,37 +4529,68 @@ static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DE
   return(0);
 }
 
-static INT SetAutoDamp_new (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
+static INT SetAutoDamp_EV (NP_ITER *theNP, GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv, INT n)
 {
-  INT i,n,comp,rtype;
-  SHORT *advcomp;
+  NP_SMOOTHER *np = (NP_SMOOTHER *) theNP;
+  INT i,r,level,nc,autodamp;
+  VECDATA_DESC *t,*p;
+  SHORT *advc,*pc;
   VECTOR *v;
-  MATRIX *m;
-  DOUBLE diag,sum;
 
-  advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
-  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+  level=GLEVEL(g);
+  t=p=NULL;
+  if (AllocVDFromVD(MYMG(g),level,level,adv,&t)) return(1);
+  if (AllocVDFromVD(MYMG(g),level,level,adv,&p)) return(1);
+  l_dsetrandom(g,adv,EVERY_CLASS,1.0);
+  l_dset(g,adv,EVERY_CLASS,1.0);
+  l_dset(g,t,EVERY_CLASS,0.0);
+  autodamp=np->AutoDamp; np->AutoDamp=0;
+  for (i=0; i<n; i++)
   {
-    comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,0);
-
-    diag=ABS(MVALUE(VSTART(v),comp));
-    if (diag==0.0) return(1);
-    sum=ABS(MVALUE(VSTART(v),comp+2));
-    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
-      sum+=ABS(MVALUE(m,comp))+ABS(MVALUE(m,comp+2));
-    if (diag>=sum) VVALUE(v,advcomp[0])=damp[0];
-    else VVALUE(v,advcomp[0])=damp[0]*diag/sum;
-
-    diag=ABS(MVALUE(VSTART(v),comp+3));
-    if (diag==0.0) return(1);
-    sum=ABS(MVALUE(VSTART(v),comp+1));
-    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
-      sum+=ABS(MVALUE(m,comp+3))+ABS(MVALUE(m,comp+1));
-    if (diag>=sum) VVALUE(v,advcomp[1])=damp[1];
-    else VVALUE(v,advcomp[1])=damp[1]*diag/sum;
+    if (dcopy(MYMG(g),level,level,ALL_VECTORS,p,adv)!= NUM_OK) return(1);
+    if (SSORSmoother(theNP,level,t,adv,A,&r)) return(1);
   }
+  np->AutoDamp=autodamp;
+  advc = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&nc);
+  pc = VD_ncmp_cmpptr_of_otype(p,NODEVEC,&nc);
+  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+    for (i=0; i<nc; i++)
+    {
+      if (ABS(VVALUE(v,advc[i]))>ABS(VVALUE(v,pc[i]))) VVALUE(v,advc[i])=sqrt(ABS(VVALUE(v,pc[i])/VVALUE(v,advc[i])));
+      else VVALUE(v,advc[i])=1.0;
+    }
+
+  if (FreeVD(MYMG(g),level,level,t)) return(1);
+  if (FreeVD(MYMG(g),level,level,p)) return(1);
 
   return(0);
+}
+
+static INT SetAutoDamp (NP_ITER *theNP, GRID *g, INT mode, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
+{
+  INT r,n;
+
+  switch (mode)
+  {
+  case 1 :
+    r=SetAutoDamp_Scalar(g,A,damp,adv);
+    break;
+  case 2 :
+    r=SetAutoDamp_SSpec(g,A,damp,adv);
+    break;
+  case 3 :
+    r=SetAutoDamp_WSpec(g,A,damp,adv);
+    break;
+  default :
+    r=1;
+    if (mode<0)
+    {
+      n=-mode;
+      r=SetAutoDamp_EV(theNP,g,A,damp,adv,n);
+    }
+  }
+
+  return(r);
 }
 
 static INT SORInit (NP_BASE *theNP, INT argc , char **argv)
@@ -4487,15 +4651,15 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
   myMat = A;
         #endif
 
-  if (np->AutoDamp)
-  {
-    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
-    if (SetAutoDamp(theGrid,myMat,np->damp,np->DampVector)) NP_RETURN(1,result[0]);
-  }
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,myMat,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid))
-    *baselevel = level;
+    if (np->AutoDamp)
+    {
+      if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
+      if (SetAutoDamp(theNP,theGrid,np->AutoDamp,myMat,np->damp,np->DampVector)) NP_RETURN(1,result[0]);
+    }
+  *baselevel = level;
 
   return (0);
 }
@@ -7337,7 +7501,7 @@ static INT LmgcPreProcess  (NP_ITER *theNP, INT level,
           REP_ERR_RETURN(1);
 
   *baselevel = MIN(np->baselevel,level);
-  if (np->BaseSolver->PreProcess != NULL)
+  if (np->gamma>0 && np->BaseSolver->PreProcess != NULL)
     if ((*np->BaseSolver->PreProcess)
           (np->BaseSolver,*baselevel,x,b,A,baselevel,result))
       REP_ERR_RETURN(1);
@@ -7564,7 +7728,7 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
 
   np = (NP_LMGC *) theNP;
 
-  if (np->BaseSolver->PostProcess != NULL)
+  if (np->gamma>0 && np->BaseSolver->PostProcess != NULL)
     if ((*np->BaseSolver->PostProcess)
           (np->BaseSolver,np->baselevel,x,b,A,result))
       REP_ERR_RETURN(1);
