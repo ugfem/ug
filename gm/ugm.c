@@ -1728,18 +1728,20 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
   if ((NSUBDOM(from) == 0) && (NSUBDOM(to) == 0)) {
     if (MIDTYPE(to))
       father = (EDGE*)NFATHER(to);
-    if (father != NULL) {
-      if ((SONNODE(NBNODE(LINK0(father)))==from)
-          ||(SONNODE(NBNODE(LINK1(father)))==from))
-        SETEDSUBDOM(pe,EDSUBDOM(father));
-    }
-    else if ((MIDTYPE(from)) &&
-             (father = (EDGE *)NFATHER(from)) != NULL) {
-      if ((SONNODE(NBNODE(LINK0(father)))==to)
-          ||(SONNODE(NBNODE(LINK1(father)))==to))
-        SETEDSUBDOM(pe,EDSUBDOM(father));
-    }
-
+    /*
+       if (father != NULL) {
+        if ((SONNODE(NBNODE(LINK0(father)))==from)
+       ||(SONNODE(NBNODE(LINK1(father)))==from))
+                SETEDSUBDOM(pe,EDSUBDOM(father));
+       }
+       else if (MIDTYPE(from)) {
+        father = (EDGE *)NFATHER(from);
+            if (father != NULL)
+                if ((SONNODE(NBNODE(LINK0(father)))==to)
+       ||(SONNODE(NBNODE(LINK1(father)))==to))
+                        SETEDSUBDOM(pe,EDSUBDOM(father));
+       }
+     */
                 #ifdef __TREEDIM__
     else if ((theFather = EFATHER(theElement)) != NULL)
       if (OBJT(theFather) == BEOBJ) {
