@@ -53,6 +53,7 @@
 
 #include "compiler.h"
 #include "heaps.h"
+#include "fifo.h"
 #include "ugenv.h"
 #include "debug.h"
 #include "general.h"
@@ -99,6 +100,12 @@
 /* for ordering of matrices */
 #define MATHPOS                 +1
 #define MATHNEG                 -1
+
+/* temp vector flag for LineOrderVectors */
+static INT ce_VCSTRONG;
+#define VCSTRONG_LEN                                    1
+#define VCSTRONG(p)                                             CW_READ(p,ce_VCSTRONG)
+#define SETVCSTRONG(p,n)                                CW_WRITE(p,ce_VCSTRONG,n)
 
 /****************************************************************************/
 /*																			*/
@@ -659,7 +666,7 @@ static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECT
   return (GM_OK);
 }
 
-INT CreatBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after)
+static INT CreateBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after)
 {
   BLOCKVECTOR *theBV;
 
@@ -1005,7 +1012,7 @@ INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
    D*/
 /****************************************************************************/
 
-void FreeBVList (GRID *grid, BLOCKVECTOR *bv)
+static void FreeBVList (GRID *grid, BLOCKVECTOR *bv)
 {
   register BLOCKVECTOR *bv_h;
 
@@ -3493,7 +3500,6 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   INT nFIRST,nCUT,nLAST;
   INT up, down;
   HEAP *theHeap;
-  INT nb[2];
 
   /********************************************************************/
   /*	init				                                                                                        */
@@ -3557,7 +3563,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   /* store in BLOCKVECTOR */
   if (nFIRST>0)
   {
-    if (CreatBlockvector_l0(theGrid,&theBV,NULL,1)!=GM_OK) RETURN (1);
+    if (CreateBlockvector_l0(theGrid,&theBV,NULL,1)!=GM_OK) RETURN (1);
     theFirstBV = theBV;
     BVNUMBER(theFirstBV)    = 3*cycle+0;
     BVFIRSTVECTOR(theFirstBV)       = BVPRED(&FIRST_handle);
@@ -3565,7 +3571,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
 
   if (nLAST>0)
   {
-    if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) RETURN (1);
+    if (CreateBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) RETURN (1);
     theLastBV = theBV;
     BVNUMBER(theLastBV)             = 3*cycle+1;
     BVFIRSTVECTOR(theLastBV)        = BVPRED(&LAST_handle);
@@ -3632,7 +3638,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     /* create first BLOCKVECTOR */
     if (nFIRST>0)
     {
-      if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) RETURN (1);
+      if (CreateBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) RETURN (1);
       theFirstBV = theBV;
       BVNUMBER(theFirstBV)            = 3*cycle+0;
       BVFIRSTVECTOR(theFirstBV)       = PREDVC(theFirstVector);
@@ -3670,7 +3676,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     /* create Last BLOCKVECTOR */
     if (nLAST>0)
     {
-      if (CreatBlockvector_l0(theGrid,&theBV,theLastBV,0)!=GM_OK) RETURN (1);
+      if (CreateBlockvector_l0(theGrid,&theBV,theLastBV,0)!=GM_OK) RETURN (1);
       theLastBV = theBV;
       BVNUMBER(theLastBV)             = 3*cycle+1;
       BVFIRSTVECTOR(theLastBV)        = LAST_last_in;
@@ -3688,7 +3694,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     /* create cut BLOCKVECTOR */
     if (nCUT>0)
     {
-      if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) RETURN (1);
+      if (CreateBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) RETURN (1);
       theCutBV = theBV;
       theFirstBV = theBV;
       BVNUMBER(theCutBV)                      = 3*(cycle+1)+2;
@@ -3953,6 +3959,715 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
   return (GM_OK);
 }
 
+static VECTOR *CutStrongLine (VECTOR *theVector, VECTOR *AppendVec)
+{
+  MATRIX *mat;
+
+  do
+  {
+    /* append to list */
+    PREDVC(AppendVec) = theVector;
+    AppendVec = theVector;
+    PREDVC(AppendVec) = NULL;
+    SETVCUSED(theVector,1);
+
+    /* look for strong nb */
+    for (mat=MNEXT(VSTART(theVector)); mat!=NULL; mat=MNEXT(mat))
+      if (MSTRONG(mat))
+      {
+        theVector = MDEST(mat);
+
+        if (!VCUSED(theVector))
+          break;
+      }
+  }
+  while (mat!=NULL);
+
+  return (AppendVec);
+}
+
+static VECTOR *FindOptimalStrong (FIFO *fifo)
+{
+  VECTOR *first,*vec,*nbvec,*minvec;
+  MATRIX *mat;
+  INT nStrong,minStrong,nUp,minUp;
+
+  /* drop leading vectors used */
+  while ((vec=(VECTOR*)fifo_out(fifo))!=NULL)
+    if (!VCUSED(vec))
+      break;
+
+  if (vec==NULL)
+    return (NULL);
+
+  first = vec;
+
+  /* determine minimal number of !used strong nbs */
+  minStrong = MAX_I;
+  do
+    if (!VCUSED(vec))
+    {
+      nStrong = 0;
+      for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+        if (MSTRONG(mat))
+        {
+          nbvec = MDEST(mat);
+          if (!VCUSED(nbvec))
+            nStrong++;
+        }
+      fifo_in(fifo,vec);
+
+      minStrong = MIN(minStrong,nStrong);
+    }
+  while ((vec=(VECTOR*)fifo_out(fifo))!=first);
+
+  /* determine vec with nStrong == minStrong and minimal number of up nbs */
+  /* NB: fifo contains no VCUSED(vec) anymore */
+  minUp = MAX_I;
+  do
+  {
+    nUp = nStrong = 0;
+    for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+      if (MSTRONG(mat))
+      {
+        nbvec = MDEST(mat);
+        if (!VCUSED(nbvec))
+          nStrong++;
+      }
+      else if (MUP(mat))
+      {
+        nbvec = MDEST(mat);
+        if (!VCUSED(nbvec))
+          nUp++;
+      }
+
+    fifo_in(fifo,vec);
+
+    if (nStrong==minStrong)
+      if (nUp<minUp)
+      {
+        minUp = nUp;
+        minvec = vec;
+      }
+  }
+  while ((vec=(VECTOR*)fifo_out(fifo))!=first);
+
+  /* remove minvec from fifo */
+  if (vec!=minvec)
+  {
+    do
+      if (vec!=minvec)
+        fifo_in(fifo,vec);
+    while ((vec=(VECTOR*)fifo_out(fifo))!=first);
+
+    /* push first again */
+    fifo_in(fifo,vec);
+  }
+
+  return (minvec);
+}
+
+/****************************************************************************/
+/*
+   LineOrderVectorsAlgebraic	- Reorder double linked vector list by a streamline ordering
+
+   SYNOPSIS:
+   static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT mode);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   This function reorders double linked vector list by a streamline ordering.
+
+   CAUTION:
+   The 'VCUSED' flag has to be initialized by the AlgDep procedure. If 'VCUSED==1
+   then the vector is pushed to the FIRST fifo at initialization.
+
+   The FindCutProc can only use the SUCCVC-list (the other one is destroyed).
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
+{
+  BLOCKVECTOR *theFirstBV, *theLastBV, *theCutBV, *theBV;
+  FIFO FFifo,LFifo;
+  VECTOR FIRST_handle,LAST_handle;
+  VECTOR *FIRST_next_out,*FIRST_last_in;
+  VECTOR *FIRST_line_start,*FIRST_line_end;
+  VECTOR *LAST_line_start,*LAST_line_end;
+  VECTOR *LAST_next_out,*LAST_last_in;
+  VECTOR *theVector,*theNbVector,*succVector,*predVector;
+  MATRIX *theMatrix;
+  DOUBLE a;
+  INT i,k,init,cycle,line,nCutTot,fifosize;
+  INT nCUT;
+  INT up, down, strong;
+  INT StrongInflow,nInflow,StrongOutflow,nOutflow,pushInflow,pushOutflow;
+  INT bvn;
+  char gen_label[3];
+
+  gen_label[GM_GEN_FIRST] = 'F';
+  gen_label[GM_GEN_LAST]  = 'L';
+  gen_label[GM_GEN_CUT]   = 'C';
+
+  /********************************************************************/
+  /*	init				                                                                                        */
+  /********************************************************************/
+
+  /* dispose all BLOCKVECTORS */
+  FreeAllBV(theGrid);
+
+  /* init fifos */
+  Mark(MGHEAP(MYMG(theGrid)),FROM_TOP);
+  fifosize = 30*floor(sqrt(NVEC(theGrid)))*sizeof(VECTOR*);
+  fifo_init(&FFifo,GetMem(MGHEAP(MYMG(theGrid)),fifosize,FROM_TOP),fifosize);
+  fifo_init(&LFifo,GetMem(MGHEAP(MYMG(theGrid)),fifosize,FROM_TOP),fifosize);
+
+  /* init USED, N_INFLOW and N_OUTFLOW */
+  StrongInflow = StrongOutflow = 0;
+  nInflow = nOutflow = 0;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    SETVCSTRONG(theVector,0);
+
+    /* reorder matrix lists in math pos sense */
+                #ifdef __TWODIM__
+    OrderMatrices(theVector,MATHNEG);
+                #endif
+
+    /* count upward, downward and strong matrices */
+    up = down = strong = 0;
+    for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+    {
+      if (MUP(theMatrix)) up++;
+      if (MDOWN(theMatrix)) down++;
+      if (MSTRONG(theMatrix)) strong++;
+    }
+    SETVUP(theVector,up);
+    SETVDOWN(theVector,down);
+    if (strong)
+      SETVCSTRONG(theVector,1);
+
+    if (VCUSED(theVector))
+    {
+      nInflow++;
+      if (strong)
+        StrongInflow++;
+    }
+    if (VCFLAG(theVector))
+    {
+      nOutflow++;
+      if (strong)
+        StrongOutflow++;
+    }
+  }
+  pushInflow  = (nInflow ==StrongInflow);
+  pushOutflow = (nOutflow==StrongOutflow);
+
+
+  /* in the sequel we use (and therefore destroy) the PREDVC-list for book keeping */
+
+  cycle = nCutTot = 0;
+  init  = 1;
+
+  /* init pointers and set the first FIRST and LAST set */
+  FIRST_next_out = FIRST_last_in = &FIRST_handle;
+  PREDVC(FIRST_last_in) = NULL;
+  LAST_next_out  = LAST_last_in  = &LAST_handle;
+  PREDVC(LAST_last_in) = NULL;
+  nCUT   = 0;
+  theFirstBV = theLastBV = theCutBV = NULL;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    if (VCUSED(theVector) && pushInflow)
+    {
+      if (fifo_in(&FFifo,theVector)!=0)
+      {
+        PrintErrorMessage('E',"LineOrderVectorsAlgebraic","fifo full");
+        return (__LINE__);
+      }
+      SETVCFLAG(theVector,0);
+      SETVCUSED(theVector,0);
+      continue;
+    }
+    if (VCFLAG(theVector) && pushOutflow)
+    {
+      if (fifo_in(&LFifo,theVector)!=0)
+      {
+        PrintErrorMessage('E',"LineOrderVectorsAlgebraic","fifo full");
+        return (__LINE__);
+      }
+      SETVCFLAG(theVector,0);
+      SETVCUSED(theVector,0);
+      continue;
+    }
+    SETVCFLAG(theVector,VCSTRONG(theVector));
+    SETVCUSED(theVector,0);
+    if (VUP(theVector)==0)
+    {
+      /* append to FIRST list */
+      PREDVC(FIRST_last_in) = theVector;
+      FIRST_last_in = theVector;
+      SETVCUSED(theVector,1);
+    }
+    else if (VDOWN(theVector)==0)
+    {
+      /* append to LAST list */
+      PREDVC(LAST_last_in) = theVector;
+      LAST_last_in = theVector;
+      SETVCUSED(theVector,1);
+    }
+  }
+  PREDVC(FIRST_last_in) = PREDVC(LAST_last_in) = NULL;
+
+  do
+  {
+    cycle++;
+
+    /****************************************************************************/
+    /*	find next FIRST-set in vectors not used                                                                 */
+    /****************************************************************************/
+
+    line = 0;
+    do
+    {
+      FIRST_line_start = PREDVC(FIRST_next_out);
+      FIRST_line_end   = FIRST_last_in;
+      for (FIRST_next_out=PREDVC(FIRST_next_out); FIRST_next_out!=NULL; FIRST_next_out=PREDVC(FIRST_next_out))
+      {
+        for (theMatrix=MNEXT(VSTART(FIRST_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+        {
+          theNbVector = MDEST(theMatrix);
+          if (VCUSED(theNbVector)) continue;
+
+          if (VCFLAG(theNbVector))
+          {
+            if (fifo_in(&FFifo,theNbVector)!=0)
+            {
+              PrintErrorMessage('E',"LineOrderVectorsAlgebraic","fifo full");
+              return (__LINE__);
+            }
+            SETVCFLAG(theNbVector,0);
+          }
+          else if (MDOWN(theMatrix))
+          {
+            k = VUP(theNbVector);
+            assert(k>0);                                                        /* if 0 is supposed to be VCUSED already */
+            SETVUP(theNbVector,--k);
+            if (k==0)
+            {
+              /* this vector has only matrices going down */
+
+              /* append to FIRST list */
+              PREDVC(FIRST_last_in) = theNbVector;
+              FIRST_last_in = theNbVector;
+              PREDVC(FIRST_last_in) = NULL;
+              SETVCUSED(theNbVector,1);
+            }
+          }
+          else if (MUP(theMatrix))
+          {
+            k = VDOWN(theNbVector);
+            /*assert(k>0);*/			/* if 0 is supposed to be VCUSED already */
+            if (k<=0)
+            {
+              PrintErrorMessage('E',"LineOrderVectorsAlgebraic","DOWN counter < 0");
+              return (__LINE__);
+            }
+            SETVDOWN(theNbVector,--k);
+            if (k==0)
+            {
+              /* this vector has only matrices going up */
+
+              /* append to last list */
+              PREDVC(LAST_last_in) = theNbVector;
+              LAST_last_in = theNbVector;
+              PREDVC(LAST_last_in) = NULL;
+              SETVCUSED(theNbVector,1);
+            }
+          }
+        }
+        if (FIRST_next_out==FIRST_line_end)
+        {
+          /* create block line */
+          if (CreateBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK)
+          {
+            PrintErrorMessage('E',"LineOrderVectorsAlgebraic","CreateBlockvector_l0 failed");
+            return (__LINE__);
+          }
+          theFirstBV = theBV;
+          if (nCUT>0)
+          {
+            SET_ORD_GCL(BVNUMBER(theFirstBV),GM_GEN_CUT,cycle,line);
+            nCUT = 0;
+          }
+          else if (init && (line==0))
+          {
+            SET_ORD_GCL(BVNUMBER(theFirstBV),GM_GEN_FIRST,0,line);
+          }
+          else
+          {
+            SET_ORD_GCL(BVNUMBER(theFirstBV),GM_GEN_FIRST,cycle,line);
+          }
+          BVFIRSTVECTOR(theFirstBV)       = FIRST_line_start;
+
+          line++;
+          FIRST_line_start = PREDVC(FIRST_next_out);
+          FIRST_line_end   = FIRST_last_in;
+        }
+      }
+      FIRST_next_out = FIRST_last_in;
+
+      /* check if there is a !used vec in the strong fifo */
+      if ((theVector=FindOptimalStrong(&FFifo))!=NULL)
+        FIRST_last_in = CutStrongLine(theVector,FIRST_last_in);
+    }
+    while (theVector!=NULL);
+
+    /********************************************************************/
+    /*	find next LAST-set in vectors not used			                        */
+    /********************************************************************/
+
+    line = 0;
+    do
+    {
+      LAST_line_start = PREDVC(LAST_next_out);
+      LAST_line_end   = LAST_last_in;
+      for (LAST_next_out=PREDVC(LAST_next_out); LAST_next_out!=NULL; LAST_next_out=PREDVC(LAST_next_out))
+      {
+        for (theMatrix=MNEXT(VSTART(LAST_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+        {
+          theNbVector = MDEST(theMatrix);
+          if (VCUSED(theNbVector)) continue;
+
+          if (VCFLAG(theNbVector))
+          {
+            /* this is a strongly coupled neighbour */
+            if (fifo_in(&LFifo,theNbVector)!=0)
+              return (__LINE__);
+            SETVCFLAG(theNbVector,0);
+          }
+          else if (MUP(theMatrix))
+          {
+            k = VDOWN(theNbVector);
+            assert(k>0);                                                        /* if 0 is supposed to be VCUSED already */
+            SETVDOWN(theNbVector,--k);
+            if (k==0)
+            {
+              /* this vector has only matrices going up */
+
+              /* append to LAST list */
+              PREDVC(LAST_last_in) = theNbVector;
+              LAST_last_in = theNbVector;
+              PREDVC(LAST_last_in) = NULL;
+              SETVCUSED(theNbVector,1);
+            }
+          }
+          else if (MDOWN(theMatrix))
+          {
+            k = VUP(theNbVector);
+            assert(k>0);                                                        /* if 0 is supposed to be VCUSED already */
+            SETVUP(theNbVector,--k);
+            if (k==0)
+            {
+              /* this vector has only matrices going down */
+
+              /* append to FIRST list */
+              PREDVC(FIRST_last_in) = theNbVector;
+              FIRST_last_in = theNbVector;
+              PREDVC(FIRST_last_in) = NULL;
+              SETVCUSED(theNbVector,1);
+            }
+          }
+        }
+        if (LAST_next_out==LAST_line_end)
+        {
+          if (theLastBV==NULL)
+          {
+            if (CreateBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) return (__LINE__);
+          }
+          else
+          {
+            if (CreateBlockvector_l0(theGrid,&theBV,theLastBV,0)!=GM_OK) return (__LINE__);
+          }
+          theLastBV = theBV;
+          if (init && (line==0))
+          {
+            SET_ORD_GCL(BVNUMBER(theLastBV),GM_GEN_LAST,0,line);
+          }
+          else
+          {
+            SET_ORD_GCL(BVNUMBER(theLastBV),GM_GEN_LAST,cycle,line);
+          }
+          BVFIRSTVECTOR(theLastBV)        = LAST_line_end;                                      /* end because order is reverted below */
+
+          line++;
+          LAST_line_start = PREDVC(LAST_next_out);
+          LAST_line_end   = LAST_last_in;
+        }
+      }
+      LAST_next_out = LAST_last_in;
+
+      /* check if there is a !used vec in the strong fifo */
+      if ((theVector=FindOptimalStrong(&LFifo))!=NULL)
+        LAST_last_in = CutStrongLine(theVector,LAST_last_in);
+    }
+    while (theVector!=NULL);
+
+    init = 0;
+
+    /****************************************************************************/
+    /*	get CUT (or Feedback Vertex)-set and do what needs to be done			*/
+    /****************************************************************************/
+
+    FIRST_last_in = (*FindCutSet)(theGrid,FIRST_last_in,&nCUT);
+    if (FIRST_last_in==NULL) nCUT = 0;
+    else PREDVC(FIRST_last_in) = NULL;
+
+    nCutTot += nCUT;
+
+  } while (nCUT>0);
+
+  /* insert FIRST list one-by-one to LASTVECTOR list of grid */
+  LASTVECTOR(theGrid) = NULL;
+  for (theVector=PREDVC(&FIRST_handle); theVector!=NULL; theVector=predVector)
+  {
+    predVector                      = PREDVC(theVector);
+    PREDVC(theVector)   = LASTVECTOR(theGrid);
+    LASTVECTOR(theGrid) = theVector;
+  }
+
+  /* insert LAST list as a whole to LASTVECTOR list of grid */
+  PREDVC(LAST_last_in) = LASTVECTOR(theGrid);
+  LASTVECTOR(theGrid)  = PREDVC(&LAST_handle);
+
+  /* construct SUCCVC list */
+  succVector = NULL;
+  for (theVector=LASTVECTOR(theGrid); theVector!=NULL; theVector=PREDVC(theVector))
+  {
+    SUCCVC(theVector) = succVector;
+    succVector = theVector;
+  }
+  FIRSTVECTOR(theGrid) = succVector;
+  PREDVC(succVector)   = NULL;
+
+  /* set pointers in BLOCKVECTORs */
+  BVENDVECTOR(GLASTBV(theGrid)) = NULL;
+  for (theBV=GLASTBV(theGrid); theBV!=NULL; theBV=BVPRED(theBV))
+  {
+    if (BVSUCC(theBV)!=NULL && BVENDVECTOR(theBV)==NULL)
+      BVENDVECTOR(theBV)=BVFIRSTVECTOR(BVSUCC(theBV));
+    if (BVFIRSTVECTOR(theBV)==NULL)
+      BVFIRSTVECTOR(theBV)=BVENDVECTOR(theBV);
+  }
+
+  /* set VCCUT */
+  for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
+  {
+    i = 0;
+    if (BV_GEN(theBV)==BV_GEN_C)
+      for (theVector=BVFIRSTVECTOR(theBV); theVector!=BVENDVECTOR(theBV); theVector=SUCCVC(theVector))
+      {
+        SETVCCUT(theVector,1);
+        i++;
+      }
+    else
+      for (theVector=BVFIRSTVECTOR(theBV); theVector!=BVENDVECTOR(theBV); theVector=SUCCVC(theVector))
+      {
+        SETVCCUT(theVector,0);
+        i++;
+      }
+    bvn = BVNUMBER(theBV);
+    if (verboselevel>1)
+      UserWriteF("# %d members in %c%d,%d\n",i,gen_label[ORD_GEN(bvn)],ORD_CYC(bvn),ORD_LIN(bvn));
+  }
+
+  if (verboselevel>0)
+  {
+    if (verboselevel>1)
+      UserWrite("#\n# summary:\n");
+    UserWriteF("# %d cycles: %d cut from %d\n",(int)cycle,(int)nCutTot,(int)NVEC(theGrid));
+    a = POW((DOUBLE)NVEC(theGrid),(DOUBLE)(DIM-1)/(DOUBLE)DIM);     a = (DOUBLE)nCutTot/a;
+    UserWriteF("# corr. to %6.2f hyp. planes\n",(float)a);
+  }
+
+  /* check # members of succ list */
+  i=0;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector)) i++;
+  if (NVEC(theGrid) != i)
+  {
+    UserWrite("vectorstructure corrupted\n");
+    return (__LINE__);
+  }
+
+  /* check # members of pred list */
+  i=0;
+  for (theVector=LASTVECTOR(theGrid); theVector!= NULL; theVector=PREDVC(theVector)) i++;
+  if (NVEC(theGrid) != i)
+  {
+    UserWrite("vectorstructure corrupted\n");
+    return (__LINE__);
+  }
+
+  /* set index w.r.t. new order, beginning with 1 */
+  i = 1;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
+    VINDEX(theVector) = i++;
+
+  Release(MGHEAP(MYMG(theGrid)),FROM_TOP);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   LineOrderVectors	-  Driver for general vector ordering
+
+   SYNOPSIS:
+   INT LineOrderVectors (MULTIGRID *theMG, INT levels,
+                        const char *dependency, const char *dep_options, const char *findcut);
+
+   PARAMETERS:
+   .  theMG -  multigrid to order
+   .  levels -  GM_ALL_LEVELS or GM_CURRENT_LEVEL
+   .  mode - GM_FCFCLL or GM_FFCCLL (see 'orderv' command)
+   .  dependency - name of user defined dependency item
+   .  dep_options - options for user dependency function
+
+   DESCRIPTION:
+   This function orders 'VECTOR's in a multigrid according to the dependency
+   function provided.
+
+   RETURN VALUE:
+   INT
+   .n     GM_OK if ok
+   .n     GM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+INT LineOrderVectors (MULTIGRID *theMG, INT levels, const char *dependency, const char *dep_options, const char *findcut, INT verboselevel)
+{
+  INT i, currlevel, baselevel;
+  ALG_DEP *theAlgDep;
+  FIND_CUT *theFindCut;
+  GRID *theGrid;
+  DependencyProcPtr DependencyProc;
+  INT err;
+
+  /* current level */
+  currlevel = theMG->currentLevel;
+
+  /* get algebraic dependency */
+  theAlgDep = (ALG_DEP *) SearchEnv(dependency,"/Alg Dep",theAlgDepVarID,theAlgDepDirID);
+  if (theAlgDep==NULL)
+  {
+    UserWrite("algebraic dependency not found\n");
+    return(GM_ERROR);
+  }
+  DependencyProc = theAlgDep->DependencyProc;
+  if (DependencyProc==NULL)
+  {
+    UserWrite("don't be stupid: implement a dependency!\n");
+    return(GM_ERROR);
+  }
+
+  /* get find cut dependency */
+  if (findcut==NULL)
+  {
+    FindCutSet = FeedbackVertexVectors;
+    UserWrite("default cut set proc:\n    leaving order of cyclic dependencies unchanged\n");
+  }
+  else
+  {
+    theFindCut = (FIND_CUT *) SearchEnv(findcut,"/FindCut",theFindCutVarID,theFindCutDirID);
+    if (theFindCut==NULL)
+    {
+      UserWrite("find cut proc not found\n");
+      return(GM_ERROR);
+    }
+    FindCutSet = theFindCut->FindCutProc;
+    if (FindCutSet==NULL)
+    {
+      UserWrite("don't be stupid: implement a find cut proc!\n");
+      return(GM_ERROR);
+    }
+  }
+  if (AllocateControlEntry(VECTOR_CW,VCSTRONG_LEN,&ce_VCSTRONG) != GM_OK)
+    return (GM_ERROR);
+
+  /* go */
+  if (levels==GM_ALL_LEVELS)
+    baselevel = 0;
+  else
+    baselevel = currlevel;
+  for (i=baselevel; i<=currlevel; i++)
+  {
+    theGrid = theMG->grids[i];
+    if ((*DependencyProc)(theGrid,dep_options))
+    {
+      PrintErrorMessage('E',"LineOrderVectors","DependencyProc failed");
+      return (GM_ERROR);
+    }
+    if ((err=LineOrderVectorsAlgebraic(theGrid,verboselevel))!=0)
+    {
+      PrintErrorMessage('E',"LineOrderVectors","LineOrderVectorsAlgebraic failed");
+      return (GM_ERROR);
+    }
+  }
+
+  FreeControlEntry(ce_VCSTRONG);
+
+  return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   RevertVecOrder - revert order in vector list
+
+   SYNOPSIS:
+   INT RevertVecOrder (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   This function revertes the order in the vector list.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT RevertVecOrder (GRID *theGrid)
+{
+  VECTOR *vec,*tmp;
+  BLOCKVECTOR     *bv;
+
+  for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=PREDVC(vec))
+  {
+    SWAP(PREDVC(vec),SUCCVC(vec),tmp);
+  }
+  SWAP(FIRSTVECTOR(theGrid),LASTVECTOR(theGrid),tmp);
+
+  /* also change the blockvectors */
+  for (bv=GFIRSTBV(theGrid); bv!=NULL; bv=BVSUCC(bv))
+  {
+    tmp = BVFIRSTVECTOR(bv);
+    BVFIRSTVECTOR(bv) = (BVENDVECTOR(bv)==NULL) ? FIRSTVECTOR(theGrid) : SUCCVC(BVENDVECTOR(bv));
+    BVENDVECTOR(bv)   = SUCCVC(tmp);
+  }
+
+  return (0);
+}
+
 /****************************************************************************/
 /*D
    LexAlgDep - Dependency function for lexicographic ordering
@@ -4128,95 +4843,184 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
   return (0);
 }
 
-static INT LexAlgDep_old (GRID *theGrid, const char *data)
-{
-  VECTOR *theVector;
-  MATRIX *theMatrix;
-  COORD_VECTOR begin, end;
-  INT i, index[3], c0, c1, c2, flags;
+/****************************************************************************/
+/*D
+   StrongLexAlgDep - Dependency function for lexicographic ordering
 
-  c0=c1=c2=0;
-  if (data!=NULL)
-    if (strlen(data)==3)
-    {
-      for(i=0; i<3; i++)
-        switch(data[i])
-        {
-        case 'x' :
-          index[i]=0;
-          c0=1;
-          break;
-        case 'y' :
-          index[i]=1;
-          c1=1;
-          break;
-        case 'z' :
-          index[i]=2;
-          c2=1;
-          break;
-        }
-    }
-    else if (strlen(data)==2)
-    {
-      c2 = 1;
-      index[2] = 2;
-      for(i=0; i<2; i++)
-        switch(data[i])
-        {
-        case 'x' :
-          index[i]=0;
-          c0=1;
-          break;
-        case 'y' :
-          index[i]=1;
-          c1=1;
-          break;
-        }
-    }
-  if (c0+c1+c2!=3)
+   SYNOPSIS:
+   static INT StrongLexAlgDep (GRID *theGrid, char *data);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+   .  data - option string from 'orderv' command
+
+   DESCRIPTION:
+   This function defines a dependency function for lexicographic ordering.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+static INT StrongLexAlgDep (GRID *theGrid, const char *data)
+{
+  MULTIGRID *theMG;
+  VECTOR *theVector,*NBVector;
+  MATRIX *theMatrix;
+  COORD_VECTOR pos,nbpos;
+  COORD diff[DIM];
+  INT i,order,res;
+  INT Sign[DIM],Order[DIM],xused,yused,zused,error,SpecialTreatSkipVecs;
+  char ord[3];
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+
+  /* read ordering directions */
+        #ifdef __TWODIM__
+  res = sscanf(data,expandfmt("%2[rlud]"),ord);
+        #else
+  res = sscanf(data,expandfmt("%3[rlbfud]"),ord);
+        #endif
+  if (res!=1)
   {
-    UserWrite("use default lex order: xyz\n");
-    index[0]=0;
-    index[1]=1;
-    index[2]=2;
+    PrintErrorMessage('E',"LexAlgDep","could not read order type");
+    return(1);
+  }
+  if (strlen(ord)!=DIM)
+  {
+                #ifdef __TWODIM__
+    PrintErrorMessage('E',"LexAlgDep","specify 2 chars out of 'rlud'");
+                #else
+    PrintErrorMessage('E',"LexAlgDep","specify 3 chars out of 'rlbfud'");
+                #endif
+    return(1);
+  }
+  error = xused = yused = zused = FALSE;
+  for (i=0; i<DIM; i++)
+    switch (ord[i])
+    {
+    case 'r' :
+      if (xused) error = TRUE;
+      xused = TRUE;
+      Order[i] = _X_; Sign[i] =  1; break;
+    case 'l' :
+      if (xused) error = TRUE;
+      xused = TRUE;
+      Order[i] = _X_; Sign[i] = -1; break;
+
+                        #ifdef __TWODIM__
+    case 'u' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      Order[i] = _Y_; Sign[i] =  1; break;
+    case 'd' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      Order[i] = _Y_; Sign[i] = -1; break;
+                        #else
+    case 'b' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      Order[i] = _Y_; Sign[i] =  1; break;
+    case 'f' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      Order[i] = _Y_; Sign[i] = -1; break;
+
+    case 'u' :
+      if (zused) error = TRUE;
+      zused = TRUE;
+      Order[i] = _Z_; Sign[i] =  1; break;
+    case 'd' :
+      if (zused) error = TRUE;
+      zused = TRUE;
+      Order[i] = _Z_; Sign[i] = -1; break;
+                        #endif
+    }
+  if (error)
+  {
+    PrintErrorMessage('E',"LexAlgDep","bad combination of 'rludr' or 'rlbfud' resp.");
+    return(1);
   }
 
-  for (theVector=theGrid->firstVector; theVector!= NULL; theVector=SUCCVC(theVector))
+  /* treat vectors with skipflag set specially? */
+  SpecialTreatSkipVecs = FALSE;
+  if              (strchr(data,'<')!=NULL)
+    SpecialTreatSkipVecs = GM_PUT_AT_BEGIN;
+  else if (strchr(data,'>')!=NULL)
+    SpecialTreatSkipVecs = GM_PUT_AT_END;
+
+  theMG   = MYMG(theGrid);
+
+  /* find an approximate measure for the mesh size */
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
   {
-    if (VectorPosition (theVector,begin)) RETURN (1);
+    VectorPosition(theVector,pos);
+
     for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
     {
-      if (VectorPosition (MDEST(theMatrix),end)) RETURN (1);
+      NBVector = MDEST(theMatrix);
+
       SETMUP(theMatrix,0);
       SETMDOWN(theMatrix,0);
-      flags = (begin[index[0]]<end[index[0]]);
-      flags |= ((begin[index[0]]>end[index[0]])<<1);
-      if (flags==0)
-      {
-        flags = (begin[index[1]]<end[index[1]]);
-        flags |= ((begin[index[1]]>end[index[1]])<<1);
-      }
-      if (flags==0)
-      {
-        flags = (begin[index[2]]<end[index[2]]);
-        flags |= ((begin[index[2]]>end[index[2]])<<1);
-      }
-      switch (flags)
-      {
-      case 0 :
-        break;
-      case 1 :
-        SETMDOWN(theMatrix,1);
-        break;
-      case 2 :
-        SETMUP(theMatrix,1);
-        break;
-      default :
-        RETURN(1);
+      SETMUSED(theMatrix,0);
 
+      VectorPosition(NBVector,nbpos);
+
+      V_DIM_SUBTRACT(nbpos,pos,diff);
+      V_DIM_SCALE(InvMeshSize,diff);
+
+      if (fabs(diff[Order[DIM-1]])<ORDERRES)
+      {
+                                #ifdef __THREEDIM__
+        if (fabs(diff[Order[DIM-2]])<ORDERRES)
+        {
+          if (diff[Order[DIM-3]]>0.0) order = -Sign[DIM-3];
+          else order =  Sign[DIM-3];
+        }
+        else
+                                #endif
+        if (diff[Order[DIM-2]]>0.0) order = -Sign[DIM-2];
+        else order =  Sign[DIM-2];
+        SETMUSED(theMatrix,1);
+      }
+      else
+      {
+        if (diff[Order[DIM-1]]>0.0) order = -Sign[DIM-1];
+        else order =  Sign[DIM-1];
+      }
+      switch (order)
+      {
+      case  1 : SETMUP(theMatrix,1); break;
+      case -1 : SETMDOWN(theMatrix,1); break;
+      case  0 : SETMUP(theMatrix,1); SETMDOWN(theMatrix,1); break;
       }
     }
   }
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    SETVCUSED(theVector,0);
+    SETVCFLAG(theVector,0);
+
+    for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+      if (MUP(theMatrix) && !MUSED(theMatrix))
+        break;
+    if (theMatrix==NULL)
+      SETVCUSED(theVector,1);
+  }
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+    for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+      if (MUSED(theMatrix) && MUSED(MADJ(theMatrix)))
+      {
+        SETMUP(theMatrix,1);
+        SETMDOWN(theMatrix,1);
+      }
 
   return (0);
 }
@@ -4387,7 +5191,10 @@ INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
 {
   BLOCKVECTOR *bv;
   INT ret;
-  register VECTOR *v, *end_v;
+  register VECTOR *end_v;
+    #ifdef __BLOCK_VECTOR_DESC__
+  register VECTOR *v
+        #endif
 
     #ifndef __BLOCK_VECTOR_DESC__
   return(1);
@@ -4474,7 +5281,7 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
   VECTOR *v, *vpred, *end_v, **v0, **v1, **vi;
   BLOCKVECTOR *bv0, *bv1, *bvi;
   register INT index, interface, nr_0, nr_1, nr_i;
-  VECTOR *pred_first_vec, *succ_last_vec;
+  VECTOR *pred_first_vec;
 
     #ifndef __BLOCK_VECTOR_DESC__
   return(1);
@@ -4922,6 +5729,7 @@ INT InitAlgebra (void)
 
   /* init standard algebraic dependencies */
   if (CreateAlgebraicDependency ("lex",LexAlgDep)==NULL) return(__LINE__);
+  if (CreateAlgebraicDependency ("stronglex",StrongLexAlgDep)==NULL) return(__LINE__);
 
   /* init default find cut proc */
   if (CreateFindCutProc ("lex",FeedbackVertexVectors)==NULL) return(__LINE__);
