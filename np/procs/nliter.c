@@ -66,8 +66,6 @@
 
 REP_ERR_FILE;
 
-#define DAMP_FACTOR     1.0
-
 #define BUFFER_SIZE                 MAX(256,2*DISPLAY_WIDTH+4)
 
 #define OPTIONLEN           32
@@ -125,7 +123,6 @@ typedef struct
 
   VECDATA_DESC *t;
 
-  INT displayMode;                       /* for PCR                         */
   INT niter;                             /* number of iterations            */
 
 } NP_NLGS;
@@ -391,8 +388,9 @@ static INT NLSmootherInit (NP_BASE *theNP, INT argc , char **argv)
 
   np = (NP_NL_SMOOTHER *) theNP;
 
-  for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = DAMP_FACTOR;
-  sc_read(np->damp,NP_FMT(np),np->c,"damp",argc,argv);
+  if (sc_read(np->damp,NP_FMT(np),np->c,"damp",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++)
+      np->damp[i] = 1.0;
 
   np->c = ReadArgvVecDesc(theNP->mg,"c",argc,argv);
   np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
@@ -438,11 +436,6 @@ static INT NLSmoother (NP_NL_ITER *theNP, INT level,
   np = (NP_NL_SMOOTHER *) theNP;
   theGrid = NP_GRID(theNP,level);
   /* check function pointers in numprocs */
-  if (ass->NLNAssembleDefect==NULL)
-  {
-    UserWrite("NLGS: ass->NLNAssembleDefect not defined\n");
-    REP_ERR_RETURN (1);
-  }
   if (ass->NLAssembleMatrix==NULL)
   {
     UserWrite("NLGS: ass->NLAssembleMatrix not defined\n");
@@ -534,7 +527,7 @@ static INT NLGSPreProcess  (NP_NL_ITER *theNP, INT level,
         #endif
   if (l_setindex(theGrid))
     NP_RETURN(1,result[0]);
-  *baselevel = level;
+  /**baselevel = level;*/
 
   return (0);
 }
@@ -546,20 +539,20 @@ static INT NLGSStep (NP_NL_SMOOTHER *theNP, INT level,
   NP_NLGS *nlgs;
   NP_NL_ASSEMBLE *ass;
   MULTIGRID *mg;
-  INT i,error;
+  INT i;
 
   nlgs = (NP_NLGS*) theNP;
   ass = nlgs->smoother.iter.Assemble;
 
   mg = nlgs->smoother.iter.base.mg;
 
+  /* iterate */
+  dmatset(mg,level,level,ALL_VECTORS,A,0.0);
+  dset (mg,level,level,ALL_VECTORS,theNP->c,0.0);
   for (i=0; i<nlgs->niter; i++)
   {
-    dmatset(mg,level,level,ALL_VECTORS,A,0.0);
-    dset (mg,level,level,ALL_VECTORS,theNP->c,0.0);
-
-    /* iterate */
-    if (l_nlgs(nlgs,ass,NP_GRID(theNP,level),theNP->damp,x,theNP->c,A,b) != NUM_OK) NP_RETURN(1,result[0]);
+    if (l_nlgs(nlgs,ass,NP_GRID(theNP,level),theNP->damp,x,theNP->c,A,b) != NUM_OK)
+      NP_RETURN(1,result[0]);
   }
 
   return (0);
@@ -602,7 +595,7 @@ INT l_nlgs (NP_NLGS *nlgs, NP_NL_ASSEMBLE *ass, GRID *grid, const DOUBLE *damp,
     vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
     myindex = VINDEX(vec);
 
-    /* Jacobi matrix */
+    /* local Jacobi matrix */
     if ((*ass->NLNAssembleMatrix)(ass,level,level,theNode,x,d,v,M,&error)) {
       error = __LINE__;
       REP_ERR_RETURN(error);
@@ -612,18 +605,18 @@ INT l_nlgs (NP_NLGS *nlgs, NP_NL_ASSEMBLE *ass, GRID *grid, const DOUBLE *damp,
     for (i=0; i<n; i++)
       r[i] = VVALUE(vec,dcomp[i]);
 
-    /* rhs
-       for (ctype=0; ctype<=NVECTYPES; ctype++)
-       if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
-            {
-                    SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
-                s0 = s1 = 0.0;
-                    for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
-                            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
-                                    MATMUL_22(s,mat,m,w,cy);
-                                    r[0] -= s0;
-                                    r[1] -= s1;
-       }*/
+    /* rhs */
+    for (ctype=0; ctype<=NVECTYPES; ctype++)
+      if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
+      {
+        SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
+        s0 = s1 = 0.0;
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+          if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
+            MATMUL_22(s,mat,m,w,cy);
+        r[0] -= s0;
+        r[1] -= s1;
+      }
 
     /* solve */
     if (MySolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
@@ -659,28 +652,17 @@ static INT NLGS_Init (NP_BASE *base, INT argc , char **argv)
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   }
 
-  /* set display option */
-  nlgs->displayMode = ReadArgvDisplay(argc,argv);
-
-  /*return (NPNLIterInit(&(nlgs->smoother.iter),argc,argv));*/
   return (NLSmootherInit(base,argc,argv));
 }
 
-static INT NLGS_Display (NP_BASE *theNumProc)
+static INT NLGS_Display (NP_BASE *theNP)
 {
   NP_NLGS *nlgs;
 
-  nlgs = (NP_NLGS*) theNumProc;
+  nlgs = (NP_NLGS*) theNP;
 
   /* general nl_iter display */
-  NLSmootherDisplay((NP_NL_SMOOTHER *)theNumProc);
-
-  if (nlgs->displayMode == PCR_NO_DISPLAY)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
-  else if (nlgs->displayMode == PCR_RED_DISPLAY)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
-  else if (nlgs->displayMode == PCR_FULL_DISPLAY)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+  NLSmootherDisplay((NP_NL_SMOOTHER *)theNP);
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)nlgs->niter);
 

@@ -73,6 +73,9 @@
 /*																			*/
 /****************************************************************************/
 
+static DOUBLE Factor_One[MAX_VEC_COMP];
+static DOUBLE Factor_Minus_One[MAX_VEC_COMP];
+
 /* variables for timing measurement		*/
 static int fas_c;
 static double fas_t;
@@ -100,9 +103,12 @@ typedef struct
   INT displayMode;                                     /* for PCR					                */
   INT baselevel;                                       /* baselevel					                */
   INT gamma;                                                   /* gamma						                */
+  INT nu1;                                 /* number of pre-smoothing steps     */
+  INT nu2;                                 /* number of post-smoothing steps    */
+  INT niter;                               /* number of basesolver steps        */
   INT maxit;                           /* maximal number of iterations      */
   DOUBLE damp[MAX_VEC_COMP];           /* damp factor for solution		    */
-  DOUBLE restriction[MAX_VEC_COMP];                /* restriction factor for solution           */
+  DOUBLE restriction[MAX_VEC_COMP];        /* restrict factor for solution              */
 
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved				        */
@@ -178,7 +184,6 @@ static INT RestrictSolNodeVector (GRID *FineGrid, const VECDATA_DESC *to, const 
     if (VCLASS(v)<NEWDEF_CLASS) continue;
     if (!V_IN_DATATYPE(v,dt)) continue;
 
-    /*if (NFATHER(theNode)!=NULL)*/
     if (CORNERTYPE(theNode))
     {
       vc = NVECTOR((NODE*)NFATHER(theNode));
@@ -192,26 +197,26 @@ static INT RestrictSolNodeVector (GRID *FineGrid, const VECDATA_DESC *to, const 
         if (vecskip)
           VVALUE(vc,toComp[i]) = VVALUE(v,fromComp[i]);
     }
-    else
-    {
-      theVertex  = MYVERTEX(theNode);
-      theElement = VFATHER(theVertex);
-      n = CORNERS_OF_ELEM(theElement);
-      GNs(n,LCVECT(theVertex),c);
-      for (i=0; i<ncomp; i++)
-        s[i] = damp[i] * VVALUE(v,fromComp[i]);
-      for (i=0; i<n; i++)
-      {
-        vc = NVECTOR(CORNER(theElement,i));
-        vecskip = VECSKIP(vc);
-        for (j=0; j<ncomp; j++)
-          if (!(vecskip & (1<<j)))
-            VVALUE(vc,toComp[j]) += c[i] * s[j];
-      }
-      for (i=0; i<ncomp; i++)
-        if (vecskip)
-          VVALUE(vc,toComp[i]) = VVALUE(v,fromComp[i]);
-    }
+    /*else
+       {
+            theVertex  = MYVERTEX(theNode);
+            theElement = VFATHER(theVertex);
+            n = CORNERS_OF_ELEM(theElement);
+            GNs(n,LCVECT(theVertex),c);
+            for (i=0; i<ncomp; i++)
+                    s[i] = damp[i] * VVALUE(v,fromComp[i]);
+            for (i=0; i<n; i++)
+            {
+                    vc = NVECTOR(CORNER(theElement,i));
+                    vecskip = VECSKIP(vc);
+                    for (j=0; j<ncomp; j++)
+                            if (!(vecskip & (1<<j)))
+                                    VVALUE(vc,toComp[j]) += c[i] * s[j];
+            }
+            for (i=0; i<ncomp; i++)
+                    if (vecskip)
+                            VVALUE(vc,toComp[i]) = VVALUE(v,fromComp[i]);
+       }*/
   }
 
   return (0);
@@ -353,6 +358,13 @@ static INT FasInitialStep (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
   /* get number of components */
   n_unk = VD_NCOMP(x);
 
+  /*if (fas->trans->PreProcess != NULL)
+          if ((*fas->trans->PreProcess)
+                  (fas->trans,&(fas->baselevel),level,x,fas->d,ass->A,&error)) {
+      error = __LINE__;
+          REP_ERR_RETURN(error);
+     }*/
+
   /* project solution to all grid levels */
   if (fas->trans->PreProcessProject!=NULL)
     if ((*fas->trans->PreProcessProject)
@@ -413,13 +425,16 @@ static INT FasInitialStep (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
 static INT FasPreProcess  (NP_NL_SOLVER *solve, INT level, VECDATA_DESC *x, INT *result)
 {
   NP_FAS *fas;
+  NP_NL_ASSEMBLE *ass;
   MULTIGRID *mg;
   GRID *g;
   NODE *theNode;
   ELEMENT *theElement;
   INT i,k;
+  INT baselevel;
 
   fas = (NP_FAS *) solve;
+  ass = (NP_NL_ASSEMBLE *) solve;
 
   /* read multigrid */
   mg = solve->base.mg;
@@ -428,17 +443,20 @@ static INT FasPreProcess  (NP_NL_SOLVER *solve, INT level, VECDATA_DESC *x, INT 
   if (AllocMDFromVD(mg,0,level,x,x,&(fas->J)))
     NP_RETURN(1,result[0]);
 
-  /* check function pointers in numprocs */
-  if (fas->trans->ProjectSolution==NULL)
-  {
-    UserWrite("Fas: fas->trans->ProjectSolution not defined\n");
-    NP_RETURN(1,result[0]);
-  }
-  if (fas->nliter->NLIter==NULL)
-  {
-    UserWrite("Fas: fas->nliter->NLIter not defined\n");
-    NP_RETURN(1,result[0]);
-  }
+  if (ass->A == NULL)
+    ass->A = fas->J;
+
+  if (fas->nliter->PreProcess != NULL)
+    for (i = fas->baselevel+1; i <= level; i++)
+      if ((*fas->nliter->PreProcess )
+            (fas->nliter,i,x,fas->d,ass->A,&fas->baselevel,result))
+        REP_ERR_RETURN (1);
+
+  baselevel = MIN(fas->baselevel,level);
+  if (fas->nliter->PreProcess != NULL)
+    if ((*fas->nliter->PreProcess)
+          (fas->nliter,baselevel,x,fas->d,ass->A,&fas->baselevel,result))
+      REP_ERR_RETURN(1);
 
   /* create ElementList */
   for (k=0; k<=level; k++)
@@ -465,10 +483,30 @@ static INT FasPreProcess  (NP_NL_SOLVER *solve, INT level, VECDATA_DESC *x, INT 
 static INT FasPostProcess (NP_NL_SOLVER *solve, INT level, VECDATA_DESC *x, INT *result)
 {
   NP_FAS *fas;
+  NP_NL_ASSEMBLE *ass;
+  INT i;
 
   fas = (NP_FAS *) solve;
+  ass = (NP_NL_ASSEMBLE *) solve;
+
   FreeVD(solve->base.mg,0,level,fas->l);
   FreeMD(solve->base.mg,0,level,fas->J);
+
+  if (fas->nliter->PostProcess != NULL)
+    for (i = fas->baselevel+1; i <= level; i++)
+      if ((*fas->nliter->PostProcess)
+            (fas->nliter,level,x,fas->d,ass->A,result))
+        REP_ERR_RETURN (1);
+
+  if (fas->nliter->PostProcess != NULL)
+    if ((*fas->nliter->PostProcess)
+          (fas->nliter,fas->baselevel,x,fas->d,ass->A,result))
+      REP_ERR_RETURN(1);
+
+  if (fas->trans->PostProcess != NULL)
+    if ((*fas->trans->PostProcess)
+          (fas->trans,&(fas->baselevel),level,x,fas->d,ass->A,result))
+      REP_ERR_RETURN(1);
 
   return(0);
 }
@@ -511,12 +549,6 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     res->error_code = __LINE__;
     REP_ERR_RETURN(res->error_code);
   }
-  if (ass->NLNAssembleDefect==NULL)
-  {
-    UserWrite("Fas: ass->NLNAssembleDefect not defined\n");
-    res->error_code = __LINE__;
-    REP_ERR_RETURN(res->error_code);
-  }
   if (ass->NLAssembleMatrix==NULL)
   {
     UserWrite("Fas: ass->NLAssembleMatrix not defined\n");
@@ -541,6 +573,11 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   /* get number of components */
   n_unk = VD_NCOMP(x);
 
+  for (i=0; i<n_unk; i++) {
+    Factor_One[i] = 1.0;
+    Factor_Minus_One[i] = -1.0;
+  }
+
   /* init ass once and compute nonlinear defect */
   if (FasInitialStep (mg,level,TRUE,x,fas,ass,defect)!=0)
   {
@@ -550,9 +587,15 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
   /* print norm of defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(fas),'#',"\n");
-  if (PreparePCR(fas->d,fas->displayMode,text,&PrintID)) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
-  if (sc_mul(defect2reach,defect,reduction,fas->d)) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
-  if (DoPCR(PrintID,defect,PCR_CRATE)) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  if (PreparePCR(fas->d,fas->displayMode,text,&PrintID)) {
+    res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);
+  }
+  if (sc_mul(defect2reach,defect,reduction,fas->d)) {
+    res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);
+  }
+  if (DoPCR(PrintID,defect,PCR_CRATE)) {
+    res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);
+  }
   for (i=0; i<n_unk; i++) res->first_defect[i] = defect[i];
 
   /* check if iteration is necessary */
@@ -572,9 +615,6 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     if (dset(mg,0,level,ALL_VECTORS,fas->v,0.0))
       return (1);
 
-    if (dcopy(mg,0,level,ALL_VECTORS,fas->l,x))
-      return (1);
-
     CSTART();
     /* iterate */
     if (FasStep(fas,ass,level,x))
@@ -590,7 +630,10 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
 
     /* print norm of defect */
-    if (DoPCR(PrintID,defect,PCR_CRATE)) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+    if (DoPCR(PrintID,defect,PCR_CRATE)) {
+      res->error_code = __LINE__;
+      REP_ERR_RETURN(res->error_code);
+    }
 
     /* check if limit reached */
     if (sc_cmp(defect,abslimit,fas->d)) {res->converged=1;  break;}
@@ -598,7 +641,10 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   }
 
   /* print norm of defect */
-  if (DoPCR(PrintID,defect,PCR_AVERAGE))  {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  if (DoPCR(PrintID,defect,PCR_AVERAGE)) {
+    res->error_code = __LINE__;
+    REP_ERR_RETURN(res->error_code);
+  }
 
   /* if converged, then report results */
   if (res->converged) {
@@ -608,7 +654,10 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   }
 
 exit:
-  if (PostPCR(PrintID,NULL)) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  if (PostPCR(PrintID,NULL)) {
+    res->error_code = __LINE__;
+    REP_ERR_RETURN(res->error_code);
+  }
 
   /* deallocate local XDATA_DESCs */
   FreeVD(mg,0,level,fas->v);
@@ -626,65 +675,47 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
   NODE *theNode;
   MULTIGRID *mg;
   GRID *g;
+  DOUBLE damp_factor[MAX_VEC_COMP];
   INT i,error;
   INT n_unk;
-  DOUBLE Factor_One[MAX_VEC_COMP],Factor_Minus_One[MAX_VEC_COMP];
-
-  /* get multigrid and grid */
-  mg = NP_MG(fas);
-  g = GRID_ON_LEVEL(mg,level);
 
   fas->nlsolver.Assemble = ass;
 
   /* get number of components */
   n_unk = VD_NCOMP(x);
 
-  for (i=0; i<n_unk; i++) {
-    Factor_One[i] = 1.0;
-    Factor_Minus_One[i] = -1.0;
-    fas->damp[i] *= -1.0;
-  }
+  for (i=0; i<n_unk; i++) damp_factor[i] = -1.0*fas->damp[i];
 
   if (level<=fas->baselevel)
   {
-    if ((*fas->nliter->PreProcess)
-          (fas->nliter,level,x,fas->d,ass->A,&fas->baselevel,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN (error);
-    }
-    if ((*fas->nliter->NLIter)
-          (fas->nliter,fas->baselevel,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN (error);
-    }
-    if ((*fas->nliter->PostProcess)
-          (fas->nliter,level,x,fas->d,ass->A,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN (error);
+    for (i=0; i<fas->niter; i++) {
+      if ((*fas->nliter->NLIter)
+            (fas->nliter,fas->baselevel,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
+        error = __LINE__;
+        REP_ERR_RETURN (error);
+      }
     }
     return(0);
   }
+  /* get multigrid and grid */
+  mg = NP_MG(fas);
+  g = GRID_ON_LEVEL(mg,level);
+
+  /* keep value */
+  if (dcopy(mg,level,level,ALL_VECTORS,fas->l,x))
+    return (1);
+
   /* presmooth */
-  if ((*fas->nliter->PreProcess)
-        (fas->nliter,level,x,fas->d,ass->A,&fas->baselevel,&error)) {
-    error = __LINE__;
-    REP_ERR_RETURN (error);
-  }
-  if ((*fas->nliter->NLIter)
-        (fas->nliter,level,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
-    error = __LINE__;
-    REP_ERR_RETURN(error);
-  }
-  if ((*fas->nliter->PostProcess)
-        (fas->nliter,level,x,fas->d,ass->A,&error)) {
-    error = __LINE__;
-    REP_ERR_RETURN (error);
+  for (i=0; i<fas->nu1; i++) {
+    if ((*fas->nliter->NLIter)
+          (fas->nliter,level,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
+      error = __LINE__;
+      REP_ERR_RETURN(error);
+    }
   }
 
   /* restrict value */
-  if (dset  (mg,level-1,level-1,ALL_VECTORS,fas->l,0.0))
-    return (1);
-  if (RestrictValue(g,fas->l,x,fas->restriction))
+  if (RestrictValue(g,x,x,fas->restriction))
     return (1);
 
   /* nonlinear defect on current level */
@@ -694,44 +725,36 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
   }
 
   /* restrict defect */
-  if (dset  (mg,level-1,level-1,ALL_VECTORS,fas->d,0.0))
-    return (1);
   if (StandardRestrict (g,fas->d,fas->d,Factor_One))
     return (1);
 
-  if (dcopy (mg,level-1,level-1,ALL_VECTORS,fas->v,fas->l))
+  if (dcopy (mg,level-1,level-1,ALL_VECTORS,fas->v,x))
     return (1);
 
   /* recursiv call */
   for (i=0; i<fas->gamma; i++)
-    if (FasStep(fas,ass,level-1,fas->v))
+    if (FasStep(fas,ass,level-1,x))
       return (1);
 
   /* interpolate correction */
+  if (dcopy(mg,level-1,level-1,ALL_VECTORS,fas->v,x))
+    return(1);
   if (daxpyx (mg,level-1,level-1,ALL_VECTORS,fas->v,Factor_Minus_One,fas->l))
     return (1);
-  if (StandardInterpolateCorrection (g,fas->v,fas->v,Factor_One))
-    return (1);
+  if (StandardInterpolateCorrection(g,fas->v,fas->v,Factor_One))
+    return(1);
 
   /* update solution */
-  if (daxpyx  (mg,level,level,ALL_VECTORS,x,fas->damp,fas->v))
+  if (daxpyx  (mg,level,level,ALL_VECTORS,x,damp_factor,fas->v))
     return(1) ;
 
   /* postsmooth */
-  if ((*fas->nliter->PreProcess)
-        (fas->nliter,level,x,fas->d,ass->A,&fas->baselevel,&error)) {
-    error = __LINE__;
-    REP_ERR_RETURN (error);
-  }
-  if ((*fas->nliter->NLIter)
-        (fas->nliter,level,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
-    error = __LINE__;
-    REP_ERR_RETURN(error);
-  }
-  if ((*fas->nliter->PostProcess)
-        (fas->nliter,level,x,fas->d,ass->A,&error)) {
-    error = __LINE__;
-    REP_ERR_RETURN (error);
+  for (i=0; i<fas->nu2; i++) {
+    if ((*fas->nliter->NLIter)
+          (fas->nliter,level,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
+      error = __LINE__;
+      REP_ERR_RETURN(error);
+    }
   }
 
   return (0);
@@ -763,9 +786,11 @@ static INT FasSolverInit (NP_BASE *base, INT argc, char **argv)
 
   /* set configuration parameters */
   if(sc_read(fas->damp,NP_FMT(fas),fas->l,"damp",argc,argv))
-    REP_ERR_RETURN(1);
+    for (i=0; i<MAX_VEC_COMP; i++)
+      fas->damp[i] = 1.0;
   if(sc_read(fas->restriction,NP_FMT(fas),fas->l,"res",argc,argv))
-    REP_ERR_RETURN(1);
+    for (i=0; i<MAX_VEC_COMP; i++)
+      fas->restriction[i] = 1.0;
   if (ReadArgvINT("maxit",&(fas->maxit),argc,argv))
     fas->maxit = 50;
   if ((fas->maxit<0)||(fas->maxit>100)) {
@@ -784,6 +809,12 @@ static INT FasSolverInit (NP_BASE *base, INT argc, char **argv)
     PrintErrorMessage('E',"FasSolverInit","baselevel <= 10");
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   }
+  if (ReadArgvINT("n1",&(fas->nu1),argc,argv))
+    fas->nu1 = 1;
+  if (ReadArgvINT("n2",&(fas->nu2),argc,argv))
+    fas->nu2 = 1;
+  if (ReadArgvINT("niter",&(fas->niter),argc,argv))
+    fas->niter = 1;
 
   /* set display option */
   fas->displayMode = ReadArgvDisplay(argc,argv);
@@ -823,6 +854,9 @@ static INT FasSolverDisplay (NP_BASE *theNumProc)
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"maxit",(int)fas->maxit);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"gamma",(int)fas->gamma);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n1",(int)fas->nu1);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n2",(int)fas->nu2);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"niter",(int)fas->niter);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)fas->baselevel);
   if (sc_disp(fas->damp,fas->l,"damp")) REP_ERR_RETURN (1);
   if (sc_disp(fas->restriction,fas->l,"res")) REP_ERR_RETURN (1);

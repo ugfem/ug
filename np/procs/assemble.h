@@ -314,15 +314,6 @@ struct np_nl_assemble {
     VECDATA_DESC *,                              /* defect vector                   */
     MATDATA_DESC *,                              /* matrix                          */
     INT *);                                      /* result                          */
-  INT (*NLNAssembleDefect)
-    (struct np_nl_assemble *,                /* pointer to (derived) object     */
-    INT,                                         /* from level                      */
-    INT,                                         /* to level                        */
-    NODE *,                              /* pointer to node                 */
-    VECDATA_DESC *,                              /* solution vector                 */
-    VECDATA_DESC *,                              /* defect vector                   */
-    MATDATA_DESC *,                              /* matrix                          */
-    INT *);                                      /* result                          */
   INT (*NLAssembleMatrix)
     (struct np_nl_assemble *,                /* pointer to (derived) object     */
     INT,                                         /* from level                      */
@@ -359,8 +350,6 @@ typedef INT (*NLAssembleSolutionProcPtr)                                     \
   (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, INT *);
 typedef INT (*NLAssembleDefectProcPtr)                                       \
   (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
-typedef INT (*NLNAssembleDefectProcPtr)                                       \
-  (NP_NL_ASSEMBLE *, INT, INT, NODE *, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 typedef INT (*NLAssembleMatrixProcPtr)                                       \
   (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, VECDATA_DESC *,\
   MATDATA_DESC *, INT *);
@@ -410,18 +399,6 @@ struct np_t_assemble {
     (struct np_t_assemble *,                 /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
-    DOUBLE,                                                              /* time value t					*/
-    DOUBLE,                                                              /* scaling for m-term: s_m			*/
-    DOUBLE,                                                              /* scaling for a-term: s_a			*/
-    VECDATA_DESC *,                              /* solution vector y               */
-    VECDATA_DESC *,                              /* accumulate s_m*m(t,y)+s_a*a(t,y)*/
-    MATDATA_DESC *,                              /* matrix may be handy for Picard  */
-    INT *);                                      /* result                          */
-  INT (*TNAssembleDefect)                    /* accumulate to defect vector		*/
-    (struct np_t_assemble *,                 /* pointer to (derived) object     */
-    INT,                                         /* from level                      */
-    INT,                                         /* to level                        */
-    NODE *,                              /* pointer to node                 */
     DOUBLE,                                                              /* time value t					*/
     DOUBLE,                                                              /* scaling for m-term: s_m			*/
     DOUBLE,                                                              /* scaling for a-term: s_a			*/
@@ -479,8 +456,6 @@ typedef INT (*TAssembleSolutionProcPtr)                                      \
   (NP_T_ASSEMBLE *, INT, INT, DOUBLE, VECDATA_DESC *, INT *);
 typedef INT (*TAssembleDefectProcPtr)                                        \
   (NP_T_ASSEMBLE *, INT, INT, DOUBLE, DOUBLE, DOUBLE, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
-typedef INT (*TNAssembleDefectProcPtr)                                        \
-  (NP_T_ASSEMBLE *, INT, INT, NODE *, DOUBLE, DOUBLE, DOUBLE, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 typedef INT (*TAssembleMatrixProcPtr)                                        \
   (NP_T_ASSEMBLE *, INT, INT, DOUBLE, DOUBLE, VECDATA_DESC *, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 typedef INT (*TNAssembleMatrixProcPtr)                                        \
