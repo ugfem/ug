@@ -825,6 +825,7 @@ int InfoARecv (VChannelPtr vc, msgid m)
   if (bytes!=mess->size)
   {
     printf("size inconsistent vc=%x bytes=%d size=%d\n",vc,bytes,mess->size);
+    assert(0);
     return(-1);
   }
 
