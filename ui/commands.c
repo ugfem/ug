@@ -7373,7 +7373,8 @@ static INT OpenWindowCommand (INT argc, char **argv)
   OUTPUTDEVICE *theOutDev;
   UGWINDOW *theWin;
   char devname[NAMESIZE],winname[NAMESIZE];
-  INT i;
+  INT i,rename,res;
+  int ropt;
 
   /* following variables: keep type for sscanf */
   int x,y,w,h;
@@ -7395,6 +7396,7 @@ static INT OpenWindowCommand (INT argc, char **argv)
   /* check options */
   theOutDev  = GetDefaultOutputDevice();
   winname[0] = '\0';
+  rename = 0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -7419,6 +7421,11 @@ static INT OpenWindowCommand (INT argc, char **argv)
       }
       break;
 
+    case 'r' :
+      res = sscanf(argv[i]," r %d",&ropt);
+      if (res==0 || (res==1 && ropt==1)) rename = 1;
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("openwindow",HELPITEM,buffer);
@@ -7437,7 +7444,7 @@ static INT OpenWindowCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
-  if ((theWin=CreateUgWindow(theOutDev,winname,x,y,w,h))==NULL)
+  if ((theWin=CreateUgWindow(theOutDev,winname,rename,x,y,w,h))==NULL)
   {
     PrintErrorMessage('E',"openwindow","failed to open a window");
     return (CMDERRORCODE);
@@ -7888,7 +7895,7 @@ static INT OpenPictureCommand (INT argc, char **argv)
 
 static INT OpenPlacedPicturesCommand (INT argc, char **argv)
 {
-  INT i,qopt,ropt,nPic,sopt,wopt;
+  INT i,qopt,ropt,nPic,sopt,wopt,res,rename;
   PLACEMENT_TASK task;
   int iValue,v,h,dv,dh;
   OUTPUTDEVICE *theOutDev;
@@ -7905,7 +7912,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
 
   /* check options */
   theOutDev  = GetDefaultOutputDevice();
-  sopt=wopt=qopt=ropt=0;
+  rename=sopt=wopt=qopt=ropt=0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -7934,6 +7941,11 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
         PrintErrorMessage('E',"openppic","specify an array name with q option");
         return (PARAMERRORCODE);
       }
+      break;
+
+    case 'R' :
+      res = sscanf(argv[i]," R %d",&iValue);
+      if (res==0 || (res==1 && iValue==1)) rename = 1;
       break;
 
     case 's' :
@@ -8023,7 +8035,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
   }
 
   /* place pictures */
-  theWin = OpenPlacedPictures(theOutDev,&task);
+  theWin = OpenPlacedPictures(theOutDev,&task,rename);
   if (theWin==NULL) return (PARAMERRORCODE);
   SetCurrentUgWindow(theWin);
 
