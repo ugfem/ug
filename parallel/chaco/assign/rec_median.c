@@ -41,7 +41,7 @@ int part_type;
    int maxsize;			/* number of vertices in larger subset */
    int nsets;			/* number of sets we are dividing into */
    int i, j;			/* loop counters */
-   int gray(), bit_reverse();
+   int _gray_(), bit_reverse();
    void rec_median_1(), median(), make_subgoal(), make_subvector();
    void make_maps(), merge_assignments();
 
@@ -118,7 +118,7 @@ int part_type;
       /* Hence the following is HYPERCUBE/MESH dependent. */
       /* For a mesh, I probably want bit-reverse, but not gray coded. */
       if (top) {
-         for (i=0; i<nsets; i++) inv_gray[i] = gray(bit_reverse(i, ndims));
+         for (i=0; i<nsets; i++) inv_gray[i] = _gray_(bit_reverse(i, ndims));
          for (i=1; i<=nvtxs; i++) assign[i] = inv_gray[assign[i]];
       }
 
