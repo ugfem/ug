@@ -839,6 +839,8 @@ static INT			 GElem_fromLevel;
 static INT			 GElem_toLevel;
 #ifdef ModelP
 static ELEMENT      *GElem_NextInLevel[MAXLEVEL];
+static INT           GElem_Consecutive;
+static INT           GElem_LastPID;
 #endif
 
 /*---------- working variables of 'FindRange' routines ---------------------*/
@@ -1594,7 +1596,7 @@ static ELEMENT *EW_GetNextElement_hor_bw_down (ELEMENT *theElement)
 
 static ELEMENT *EW_GetNextElement_vert_fw_up (ELEMENT *theElement)
 {
-    #ifndef ModelP
+#ifndef ModelP
 
 	do
 	{
@@ -1624,34 +1626,44 @@ static ELEMENT *EW_GetNextElement_vert_fw_up (ELEMENT *theElement)
 	
 	return (theElement);
 
-    #else
+#else
 
 	INT i, k, min;
-	ELEMENT *p;
 
-	/* get element with minimum plot id */
-	min = INT_MAX;
-	k   = -1;
-	for (i = GElem_fromLevel; i <= GElem_toLevel; i++) {
-		p = GElem_NextInLevel[i];
-		if (p == NULL) continue;
-		if (ID(p) < min) {
-			min = ID(p);
-			k = i;
+	GElem_Consecutive = YES;
+
+	do {
+		/* get element with minimum plot id */
+		min = INT_MAX;
+		k   = -1;
+		for (i = GElem_fromLevel; i <= GElem_toLevel; i++) {
+			theElement = GElem_NextInLevel[i];
+			if (theElement == NULL) continue;
+			if (ID(theElement) < min) {
+				min = ID(theElement);
+				k = i;
+			}
 		}
-	}
+		if (k == -1) return NULL;
 
-	/* advance in level next element was selected from */
-	if (k == -1) return NULL;
-	theElement = p = GElem_NextInLevel[k];
-	do {	
-		p = SUCCE(p);
-	}while (p != NULL && !USED(p));
-	GElem_NextInLevel[k] = p;
+		theElement = GElem_NextInLevel[k];
+
+		/* advance in level next element was selected from */
+		GElem_NextInLevel[k] = SUCCE(theElement);
+
+		/* unflag if non-consecutive PID */
+		if (ID(theElement) != GElem_LastPID+1)
+			GElem_Consecutive = NO;
+
+		GElem_LastPID = ID(theElement);
+
+	} while (!USED(theElement));
+
 	return theElement;
 
-    #endif
+#endif
 }
+
 /****************************************************************************/
 /*
    EW_GetNextElement_vert_bw_up - Return next Element in vertical, backward, upward direction 
@@ -1930,10 +1942,8 @@ static ELEMENT *EW_GetFirstElement_hor_bw_down (MULTIGRID *theMG, INT fromLevel,
 
 static ELEMENT *EW_GetFirstElement_vert_fw_up (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 {
-	ELEMENT *theElement;
-#	ifdef ModelP
+	ELEMENT *theElement, *next;
 	INT i;
-#	endif
 	
 	if (theMG==NULL)
 		return (NULL);
@@ -1951,7 +1961,7 @@ static ELEMENT *EW_GetFirstElement_vert_fw_up (MULTIGRID *theMG, INT fromLevel, 
 	GElem_fromLevel = fromLevel;
 	GElem_toLevel	= toLevel;
 
-	#ifndef ModelP
+#ifndef ModelP
 
 	theElement = FIRSTELEMENT(GRID_ON_LEVEL(GElem_MG,fromLevel));
 	
@@ -1962,7 +1972,7 @@ static ELEMENT *EW_GetFirstElement_vert_fw_up (MULTIGRID *theMG, INT fromLevel, 
 	else
 		return (EW_GetNextElement_vert_fw_up(theElement));
 
-	#else
+#else
 	
 	for (i = fromLevel; i <= toLevel; i++) {
 		theElement = FIRSTELEMENT(GRID_ON_LEVEL(GElem_MG, i));
@@ -1970,9 +1980,11 @@ static ELEMENT *EW_GetFirstElement_vert_fw_up (MULTIGRID *theMG, INT fromLevel, 
 			theElement = SUCCE(theElement);
 		GElem_NextInLevel[i] = theElement;
 	}
-	return (EW_GetNextElement_vert_fw_up(theElement));
-	
-	#endif
+	next = EW_GetNextElement_vert_fw_up(theElement);
+	GElem_Consecutive = YES;
+	return next;
+
+#endif
 }
 
 /****************************************************************************/
@@ -21456,7 +21468,7 @@ static void PWorkEW_Execute_3D(void)
 
 static void PWorkEW_Evaluate_3D(void)
 {
-	INT i;
+	INT i, consecutive;
 	DRAWINGOBJ *p, *p1, *p2;
 
 	i = WopDownChannels;
@@ -21496,12 +21508,12 @@ static void PWorkEW_Evaluate_3D(void)
 					/* prepare next element */
 					(*WOP_EW_EvaluateProc)(WOP_Element, WOP_DrawingObject);
 					WOP_nextID = ID(WOP_Element);
-					if (WOP_lastID < 0) WOP_lastID = WOP_nextID-1;
+					consecutive = GElem_Consecutive;
 					WOP_CurrDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
 					WOP_Element = (*WOP_EW_GetNextElementProc)(WOP_Element);
 				}
 			} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
-					 > WOP_CurrDoLen && WOP_nextID == WOP_lastID+1);
+					 > WOP_CurrDoLen && consecutive);
 
 		} while ( p == p2+2);
 
