@@ -122,12 +122,8 @@ INDEPFRONTLIST *CreateIndepFrontList (GRID *theGrid)
 {
   INDEPFRONTLIST *ipfl;
 
-  ipfl = GetFreeObject(theGrid->mg,IflObj);
-  if (ipfl==NULL)
-  {
-    ipfl = GetMem(theGrid->mg->theHeap,sizeof(INDEPFRONTLIST),FROM_BOTTOM);
-    if (ipfl==NULL) return(NULL);
-  }
+  ipfl = GetMemoryForObject(theGrid->mg,sizeof(INDEPFRONTLIST),IflObj);
+  if (ipfl==NULL) return(NULL);
 
   /* initialize data */
   CTRL(ipfl) = 0;
@@ -169,12 +165,8 @@ FRONTLIST *CreateFrontList (INDEPFRONTLIST *myIFL)
 {
   FRONTLIST *pfl;
 
-  pfl = GetFreeObject(MYGRID(myIFL)->mg,FlObj);
-  if (pfl==NULL)
-  {
-    pfl = GetMem(MYGRID(myIFL)->mg->theHeap,sizeof(FRONTLIST),FROM_BOTTOM);
-    if (pfl==NULL) return(NULL);
-  }
+  pfl = GetMemoryForObject(MYGRID(myIFL)->mg,sizeof(FRONTLIST),FlObj);
+  if (pfl==NULL) return(NULL);
 
   /* initialize data */
   CTRL(pfl) = 0;
@@ -228,12 +220,8 @@ FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE
 
   if  ( ncomp == 1 )
   {
-    pfc = GetFreeObject(theMG,FcObj);
-    if (pfc==NULL)
-    {
-      pfc = GetMem(theMG->theHeap,sizeof(FRONTCOMP),FROM_BOTTOM);
-      if (pfc==NULL) return(NULL);
-    }
+    pfc = GetMemoryForObject(theMG,sizeof(FRONTCOMP),FcObj);
+    if (pfc==NULL) return(NULL);
 
     /* initialize data */
     CTRL(pfc) = 0;
@@ -410,7 +398,7 @@ INT DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
   NIFL(myMGdata)--;
 
   /* delete the independent front list itself */
-  if (PutFreeObject(theGrid->mg,theIFL)>0) return(1);
+  PutFreeObject(theGrid->mg,theIFL,sizeof(INDEPFRONTLIST),IflObj);
 
   return(0);
 }
@@ -440,8 +428,7 @@ INT DisposeFrontList (FRONTLIST *theFL)
   /* remove front components of theFL */
   for (theFC=STARTFC(theFL); theFC!=NULL; theFC=SUCCFC(theFC))
   {
-
-    if (PutFreeObject(theGrid->mg,theFC)>0) return (1);
+    PutFreeObject(theGrid->mg,theFC,sizeof(FRONTCOMP),FcObj);
     if (theFC==LASTFC(theFL))
       break;
   }
@@ -459,7 +446,7 @@ INT DisposeFrontList (FRONTLIST *theFL)
   NFL(myIFL)--;
 
   /* delete the front list itself */
-  if (PutFreeObject(theGrid->mg,theFL)>0) return(1);
+  PutFreeObject(theGrid->mg,theFL,sizeof(FRONTLIST),FlObj);
 
   return(0);
 }
@@ -494,7 +481,7 @@ INT DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
   if (LASTFC(myList)==theFC)
     LASTFC(myList) = PREDFC(theFC);
 
-  if (PutFreeObject(MYGRID(myList)->mg,theFC)>0) return(1);
+  PutFreeObject(MYGRID(myList)->mg,theFC,sizeof(FRONTCOMP),FcObj);
 
   NFC(myList)--;
 
