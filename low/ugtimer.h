@@ -1,29 +1,28 @@
-// NOTE: The current revision of this file was left untouched when the DUNE source files were reindented!
-// NOTE: It contained invalid syntax that could not be processed by uncrustify.
-
+// -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+// vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
 /* File:	  ugtimer.h														*/
 /*																			*/
 /* Purpose:   implements a simple timing facility							*/
 /*																			*/
-/* Author:	  Stefan Lang                                                   */ 
-/*			  Institut fuer Computeranwendungen III 						*/
+/* Author:	  Stefan Lang                                                   */
+/*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70550 Stuttgart												*/
 /*			  email: ug@ica3.uni-stuttgart.de								*/
 /*																			*/
-/* History:   980805   begin                                                */ 
+/* History:   980805   begin                                                */
 /*																			*/
-/* Remarks: 																*/
+/* Remarks:                                                                                                                             */
 /*																			*/
 /****************************************************************************/
 
 
 /* RCS_ID
-$Header$
-*/
+   $Header$
+ */
 
 /****************************************************************************/
 /*																			*/
@@ -44,13 +43,15 @@ $Header$
 /*																			*/
 /****************************************************************************/
 
-#define NEW_TIMER(n)	{ new_timer(&(n)); }
-#define DEL_TIMER(n)	{ ug_timer[(n)].used = 0; }
+#define MAX_TIMER       30
+
+#define NEW_TIMER(n)    { new_timer(&(n)); }
+#define DEL_TIMER(n)    { ug_timer[(n)].used = 0; }
 #define START_TIMER(n)  { ug_timer[(n)].start = CURRENT_TIME; }
-#define STOP_TIMER(n)	{ ug_timer[(n)].stop = CURRENT_TIME; }
-#define DIFF_TIMER(n)	(ug_timer[(n)].stop-ug_timer[(n)].start}
-#define SUM_TIMER(n)	{ STOP_TIMER(n) ug_timer[(n)].sum += DIFF_TIMER(n); }
-#define EVAL_TIMER(n)	(ug_timer[(n)].sum)
+#define STOP_TIMER(n)   { ug_timer[(n)].stop = CURRENT_TIME; }
+#define DIFF_TIMER(n)   (ug_timer[(n)].stop-ug_timer[(n)].start)
+#define SUM_TIMER(n)    { STOP_TIMER(n) ug_timer[(n)].sum += DIFF_TIMER(n); }
+#define EVAL_TIMER(n)   (ug_timer[(n)].sum)
 
 
 /****************************************************************************/
@@ -59,6 +60,13 @@ $Header$
 /*																			*/
 /****************************************************************************/
 
+typedef struct {
+  char used;
+  double start;
+  double stop;
+  double sum;
+} UG_TIMER;
+
 
 /****************************************************************************/
 /*																			*/
@@ -66,6 +74,7 @@ $Header$
 /*																			*/
 /****************************************************************************/
 
+extern UG_TIMER ug_timer[MAX_TIMER];
 
 
 /****************************************************************************/

@@ -31,6 +31,7 @@
 #include <assert.h>
 
 #include "general.h"
+#include "ugtimer.h"
 
 /****************************************************************************/
 /*																			*/
@@ -42,8 +43,6 @@
 /*																			*/
 /****************************************************************************/
 
-#define MAX_TIMER       30
-
 
 /****************************************************************************/
 /*																			*/
@@ -52,12 +51,6 @@
 /*																			*/
 /****************************************************************************/
 
-typedef struct {
-  char used;
-  double start_timer;
-  double stop_timer;
-  double sum_timer;
-} UG_TIMER;
 
 /****************************************************************************/
 /*																			*/
@@ -113,9 +106,9 @@ void new_timer (int *n)
     {
       *n = i;
       ug_timer[i].used = 1;
-      ug_timer[i].start_timer = 0.0;
-      ug_timer[i].stop_timer = 0.0;
-      ug_timer[i].sum_timer = 0.0;
+      ug_timer[i].start = 0.0;
+      ug_timer[i].stop = 0.0;
+      ug_timer[i].sum = 0.0;
       break;
     }
   if (*n == -1)
