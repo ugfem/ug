@@ -45,8 +45,8 @@
 
 /* define this to protocol all alloc/free requests via hashtable */
 /*
+   #define WITH_HASH_CONTROL
  */
-#define WITH_HASH_CONTROL
 
 /* define this to map all PMEM, AMEM and TMEM requests to a UG general heap */
 /*
@@ -70,8 +70,7 @@
 
 #ifdef WITH_GENERAL_HEAP
 /* constants for UG general heap */
-#define HEAP_SIZE     20*1024*1024
-#define DIFFERENCE    10000
+#define HEAP_SIZE     3*1024*1024
 #endif
 
 
