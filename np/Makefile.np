@@ -50,5 +50,8 @@ clean:
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+	cd procs; make -f Makefile.procs extract; cd ..;
+	cd algebra; make -f Makefile.algebra extract; cd ..;
+	cd udm; make -f Makefile.udm extract; cd ..;
 
 xmc: extract all clean
