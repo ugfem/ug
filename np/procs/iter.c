@@ -501,6 +501,13 @@ REP_ERR_FILE;
 
 static VECDATA_DESC *FF_VECDATA_DESC_ARRAY[FF_MAX_VECS];
 
+#ifdef __MWCW__
+static DOUBLE mat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+static DOUBLE imat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+static DOUBLE rmat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+#endif
+
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -4466,9 +4473,11 @@ INT l_bdpreprocess2 (GRID *g, VECDATA_DESC *x,
   for (e=FIRSTELEMENT(g); e!=NULL; e=SUCCE(e)) {
     VECTOR *v[MAX_NODAL_VECTORS];
     INT cnt = GetAllVectorsOfElementOfType(e,v,x);
+                #ifndef __MWCW__
     DOUBLE mat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     DOUBLE imat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     DOUBLE rmat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+                #endif
     INT m = GetVlistMValues(cnt,v,A,mat);
     INT i,j,k;
 
@@ -4537,9 +4546,11 @@ INT l_bdpreprocess (GRID *g, VECDATA_DESC *x,
   for (e=FIRSTELEMENT(g); e!=NULL; e=SUCCE(e)) {
     VECTOR *v[MAX_NODAL_VECTORS];
     INT cnt = GetAllVectorsOfElementOfType(e,v,x);
+                #ifndef __MWCW__
     DOUBLE mat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     DOUBLE imat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     DOUBLE rmat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+                #endif
     INT m = GetVlistMValues(cnt,v,A,mat);
     INT i,j,k,ci,cj;
 
