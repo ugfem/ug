@@ -1200,7 +1200,9 @@ int ParExecCommand (char *s)
   /* broadcast command line to all processors */
   PRINTDEBUG(ui,4,("%d:         Broadcast(%.30s)...\n",me,s))
   s[cmdintbufsize-1] = (char) 0;
-  Broadcast(s,cmdintbufsize);
+  if (me == 0) n = strlen(s);
+  Broadcast(&n,sizeof(int));
+  Broadcast(s,n+1);
 
   /* execute command on each processor */
   PRINTDEBUG(ui,4,("%d:         ExecCommand(%.30s)...\n",me,s))
