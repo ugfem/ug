@@ -7700,7 +7700,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
   {
     sprintf(task.pic_name[i],"pic_%d",(int)i);
     sprintf(buffer,"%s%d",qarray,i);
-    if (GetStringValueDouble (buffer,&(task.apect_ratio[i])))
+    if (GetStringValueDouble (buffer,&(task.aspect_ratio[i])))
     {
       PrintErrorMessage('E',"openppic","q-array entry not found");
       return (PARAMERRORCODE);
