@@ -121,9 +121,9 @@
 #endif
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/*      other                                                                                                                                   */
-/*                                                                                                                                                      */
+/*																			*/
+/*	other																	*/
+/*																			*/
 /****************************************************************************/
 
 #define LGM_PROBLEM_NAME(p)                                     ENVITEM_NAME(p)
@@ -137,7 +137,7 @@
 #define LGM_PROBLEM_USERF(p,i)                          (UserProcPtr)(p)->CU_ProcPtr[(i)+LGM_PROBLEM_NCOEFF(p)]
 #define LGM_PROBLEM_SETUSERF(p,i,q)                     (p)->CU_ProcPtr[(i)+LGM_PROBLEM_NCOEFF(p)]=(void*)(q)
 #define LGM_PROBLEM_BNDCOND(p)                          ((p)->BndCond)
-#define LGM_PROBLEM_INNERBNDCOND(p)                                 ((p)->InnerBndCond)
+#define LGM_PROBLEM_INNERBNDCOND(p)                     ((p)->InnerBndCond)
 #define LGM_DOMAIN_S2P_PTR(p)                           ((p)->s2p)
 #define LGM_DOMAIN_S2P(p,s)                                     ((p)->s2p[s])
 
@@ -355,37 +355,37 @@ struct lgm_problem {
 
   /* fields for problem */
   InitProcPtr InitProblem;          /* procedure to initialize problem          */
-  ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem                */
+  ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem		*/
   DomainSizeConfig ConfigDomainSize;      /* procedure to reinitialize size of d*/
-  BndCondProcPtr BndCond;               /* global boundary condition                            */
-  BndCondProcPtr InnerBndCond;              /* global inner boundary condition                  */
-  INT numOfCoeffFct;                            /* number of coefficient functions                      */
-  INT numOfUserFct;                             /* number of User functions                                     */
-  void *CU_ProcPtr[1];                  /* coefficient functions                                        */
+  BndCondProcPtr BndCond;               /* global boundary condition				*/
+  BndCondProcPtr InnerBndCond;      /* global inner boundary condition                  */
+  INT numOfCoeffFct;                            /* number of coefficient functions			*/
+  INT numOfUserFct;                             /* number of User functions					*/
+  void *CU_ProcPtr[1];                  /* coefficient functions					*/
 };
 
 
 #if (LGM_DIM==2)
 /****************************************************************************/
-/*                                                                                                                                                      */
-/*      2D structures                                                                                                                   */
-/*                                                                                                                                                      */
+/*                                                                          */
+/*      2D structures                                                       */
+/*                                                                          */
 /****************************************************************************/
 
 struct lgm_point {
 
-  DOUBLE position[LGM_DIM];                             /* position of corner                                                   */
+  DOUBLE position[LGM_DIM];                              /* position of corner */
 };
 
 struct lgm_line {
 
-  INT id;                                                               /* id of the line               */
-  INT flag;                                                             /* general purpose flag                                                 */
-  INT nPoint;                                                           /* nb. of points on the line                                    */
-  INT left, right;                                              /* subdomain on left and right side                             */
-  INT begin, end;                                               /* global id's starting from 0                                  */
-  BndCondProcPtr Bndcond;                               /* boundary condition                                                   */
-  struct lgm_point point[1];                            /* points of line stored here                                   */
+  INT id;                               /* id of the line                               */
+  INT flag;                             /* general purpose flag                 */
+  INT nPoint;                           /* nb. of points on the line            */
+  INT left, right;                      /* subdomain on left and right side     */
+  INT begin, end;                       /* global id's starting from 0          */
+  BndCondProcPtr Bndcond;               /* boundary condition                   */
+  struct lgm_point point[1];                    /* points of line stored here           */
 };
 
 struct lgm_subdom_data {
@@ -540,15 +540,15 @@ struct lgm_triangle {
 struct lgm_surface {
 
   INT id;
-  INT flag;                                                             /* general purpose flag                                 */
-  INT nPoint;                                                           /* nb. of points on the surface                 */
-  INT nTriangle;                                                /* nb. of triangles on the surface              */
-  INT nLine;                                                            /* nb. of lines on the surface                  */
-  INT left, right;                                              /* subdomain on left and right side             */
-  BndCondProcPtr Bndcond;                               /* boundary condition                                   */
-  struct surfdisc *sdisc;                               /* discretization of the surface                */
-  struct lgm_point *point;                              /* ptr to first point                                   */
-  struct lgm_triangle *triangle;                /* ptr to first triangle                                */
+  INT flag;                                                             /* general purpose flag		                        */
+  INT nPoint;                                                           /* nb. of points on the surface			*/
+  INT nTriangle;                                                /* nb. of triangles on the surface		*/
+  INT nLine;                                                            /* nb. of lines on the surface			*/
+  INT left, right;                                              /* subdomain on left and right side		*/
+  BndCondProcPtr Bndcond;                               /* boundary condition					*/
+  struct surfdisc *sdisc;                               /* discretization of the surface		*/
+  struct lgm_point *point;                              /* ptr to first point					*/
+  struct lgm_triangle *triangle;                /* ptr to first triangle				*/
 
   /* specials for grape */
         #ifdef Grape
@@ -556,12 +556,12 @@ struct lgm_surface {
         #endif
 
   /* for fast triangle search OS_CHANGED */
-            #ifdef LGM_ACCELERATE
+        #ifdef LGM_ACCELERATE
   BBT_TREE *bbtree;
-            #endif
+        #endif
 
   /* references */
-  struct lgm_line *line[1];                             /* ptr to lines                                                 */
+  struct lgm_line *line[1];                             /* ptr to lines							*/
 };
 
 struct lgm_subdom_data {
@@ -661,11 +661,11 @@ struct lgm_bnds_triangle {
 struct lgm_bnds {
 
   INT nn;
-  struct lgm_surface *theSurf;                  /* surface                                                                              */
+  struct lgm_surface *theSurf;                  /* surface										*/
         #ifdef NO_PROJECT
-  DOUBLE global[4][3];                                  /* global coordinates                                                   */
+  DOUBLE global[4][3];                                  /* global coordinates							*/
         #else
-  DOUBLE local[3][2];                                           /* local coordinates                                                    */
+  DOUBLE local[4][2];                                           /* local coordinates							*/
         #endif
 };
 
