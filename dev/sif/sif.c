@@ -144,11 +144,11 @@ INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
    InitScreen - Init rest of GUI and return pointer to screen outputdevice
 
    SYNOPSIS:
-   OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error);
+   OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error);
 
    PARAMETERS:
-   .  argc - argument counter
-   .  argv - argument vector
+   .  argcp - pointer to argument counter
+   .  argv  - argument vector
    .  error - errorcode
 
    DESCRIPTION:
@@ -162,11 +162,16 @@ INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
  */
 /****************************************************************************/
 
-OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error)
+OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 {
   *error=0;
   return(NULL);
 }
+
+
+void ExitScreen (void)
+{}
+
 
 /****************************************************************************/
 /*
