@@ -16,8 +16,9 @@ include machines/mk.$(ARCHDIR)
 include ug.conf
 
 # the following list may be extended
-MODULES = LOW DDDIF DEV DOM GM NUMERICS GRAPH GRAPE PPIF UI GG 
+MODULES = LOW DEV DOM GM NUMERICS GRAPH GRAPE UI GG 
 UGMODULES = LOW GM NUMERICS GRAPH GRAPE UI GG 
+PARMODULES = DDDIF PPIF
 
 # dimension dependent targets
 version = $(DIM)Dversion
@@ -37,6 +38,10 @@ uglib: $(UGMODULES) $(OBJECTS)
 	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
 	echo "libug compiled"
 
+par: $(UGMODULES) $(OBJECTS) $(PARMODULES)
+	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
+	echo "libug compiled"
+
 LOW:
 	cd low; make -f Makefile.low; cd ..;
 
@@ -45,29 +50,29 @@ DDDIF:
 
 DEV:
 	cd dev; make -f Makefile.dev; cd ..;
-	
+
 DOM:
 	cd dom; make -f Makefile.dom; cd ..;
 
 GM:
 	cd gm; make -f Makefile.gm $(version); cd ..;
-	
+
 NUMERICS:
 	cd numerics; make -f Makefile.numerics $(version); cd ..;
 
 GRAPH:
 	cd graph; make -f Makefile.graph $(version); cd ..;
-	
+
 GRAPE:
 	cd grape; make -f Makefile.grape $(version)GRAPE$(GRAPE); cd ..;
-	
+
 UI:
 	cd ui; make -f Makefile.ui $(version); cd ..;
 
 GG:
 	cd gg; make -f Makefile.gg $(version); cd ..;
 	cd gg3d; make -f Makefile.gg3d $(version); cd ..;
-	
+
 PPIF:
 	cd machines/$(ARCHDIR); make; cd ..;
 
