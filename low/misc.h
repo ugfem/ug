@@ -161,7 +161,12 @@ void        SelectionSort       (void *base, INT n, INT size, int (*cmp)(const v
 /* this function is no external for the MetroWerks CodeWarrior: so just define it */
 int                     matherr                         (struct exception *x);
 #endif
-INT                     ReadMemSizeFromString   ( char *s, MEM *mem_size );
+#ifdef __NECSX4__
+/* special high performance time system for NEC SX4 */
+DOUBLE nec_clock( void );
+#endif
+
+INT             ReadMemSizeFromString   ( char *s, MEM *mem_size );
 INT                     MemoryParameters        (void);
 
 #endif

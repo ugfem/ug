@@ -37,6 +37,11 @@
 #include <limits.h>
 #include <float.h>
 
+#ifdef __NECSX4__
+#include <sys/types.h>
+#include <sys/syssx.h>
+#endif
+
 #include "compiler.h"
 #include "general.h"
 #include "misc.h"
@@ -751,3 +756,17 @@ INT MemoryParameters (void)
 
   return(0);
 }
+
+#ifdef __NECSX4__
+/* special high performance time system for NEC SX4 */
+DOUBLE nec_clock( void )
+{
+  struct htms timebuf;
+  DOUBLE dtime;
+
+  if (syssx (HTIMES, (struct htms *)&timebuf) < 0)
+    return -1.0;
+  dtime = (timebuf.hutime / 1000000.0)+(timebuf.hstime / 1000000.0);
+  return (dtime);
+}
+#endif
