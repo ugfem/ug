@@ -77,6 +77,17 @@ then
 	ddd)
 		cd $UGROOT/parallel/dddobj
 		;;
+	chaco)
+		cd $UGROOT/parallel/chaco
+		;;
+	links)
+		ugmakelinks;
+		exit 0;
+		;;
+	man)
+		ugmakeman;
+		exit 0;
+		;;
 	simple)
 		cd $UGROOT/../simple;
 		;;
