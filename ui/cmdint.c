@@ -2283,6 +2283,9 @@ static INT InterpretString (void)
           PrintErrorMessage('E',"InterpretString","buffer overflow");
           return(8517);                                 /* buffer overflow */
         }
+        else if (error=='\r')
+          /* convert PC-newlines into Mac ones */
+          executeBuffer[executePos++]=(char) '\n';
         else
           executeBuffer[executePos++]=(char) error;
       }
