@@ -6,7 +6,7 @@
 #include <fstream.h>
 #include <iostream.h>
 #include <iomanip.h>
-#include <strstream.h>
+//#include <strstream.h>
 #include <math.h>
 #include <new.h>
 #include <ctype.h>
@@ -41,7 +41,7 @@ static Point3d tripoint;
 extern int yyparse ();
 static int error;
 static ARRAY<Point3d> points;
-static int write;
+static int ng_write;
 static int DD;
 
 static ARRAY<Point3d> locpoints;
@@ -352,10 +352,10 @@ void surfacemeshing :: Write2Shell (int n)
 {
   if(n%DD==0)
   {
-    if(write%10==0)
+    if(ng_write%10==0)
       UserWriteF("\n");
     UserWriteF("%s%d%s","[",n,"]");
-    write++;
+    ng_write++;
   }
 }
 
@@ -929,7 +929,7 @@ int StartSurfaceNetgen (double h, int smooth, int display,int D)
   Point3d p1,p2,p3,p,p_in,p_out;
 
   nbp = points.Size();
-  write = 0;
+  ng_write = 0;
   DD = D;
 
   if(meshing -> Mesh (h)==1)

@@ -15,7 +15,7 @@
 #include <fstream.h>
 #include <iostream.h>
 #include <iomanip.h>
-#include <strstream.h>
+//#include <strstream.h>
 #include <math.h>
 #include <new.h>
 #include <ctype.h>
