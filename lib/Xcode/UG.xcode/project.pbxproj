@@ -3645,10 +3645,9 @@
 				114FA949064788990025A7B6,
 			);
 			isa = PBXGroup;
-			name = netgen;
-			path = /Volumes/Users/vcr/UGXcode/ug/dom/lgm/netgen;
-			refType = 0;
-			sourceTree = "<absolute>";
+			path = netgen;
+			refType = 4;
+			sourceTree = "<group>";
 		};
 		114FA949064788990025A7B6 = {
 			fileEncoding = 30;
