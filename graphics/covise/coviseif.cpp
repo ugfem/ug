@@ -29,18 +29,36 @@
 
 #include <string.h>
 
+#ifdef __HP__
+#include <stdio.h>
+#include <fcntl.h>
+#endif
 
 extern "C" {
 
   /* ug includes */
 #define ListElement UG_ListElement
+#ifdef __HP__
+#undef __cplusplus
+#endif
 #include "gm.h"
 #include "evm.h"
 #include "general.h"
 #undef ListElement
+#ifdef __HP__
+#define __cplusplus
+#endif
+
+#ifdef ModelP
+#include "parallel.h"
+#define DDD_InfoPriority(ddd_hdr)    ((ddd_hdr)->prio)
+#endif
 
 } /* extern "C" */
 
+#ifdef __HP__
+#undef _INCLUDE_POSIX_SOURCE
+#endif
 
 /* covise includes */
 #include "covise_connect.h"
