@@ -206,14 +206,15 @@ static double clampf(double x)
    only the data and not the grid at later time steps (if the grid is
    not changing).
 
-   'dataexplorer <filename> [$ns <nep> $s <vd>]* [$nv <nep> $s <vd>]*
-                                            [$cs <eep> $s <vd>]* [$cv <eep> $s <vd>]*
+   'dataexplorer <filename> [$ns <nep> $s <vd> [$v <ref>]]* [$nv <nep> $s <vd> [$v <ref>]]*
+                                            [$cs <eep> $s <vd> [$v <ref>]]* [$cv <eep> $s <vd> [$v <ref>]]*
                                                         [$b 0|1|2]* [$bin]* [$fgrid]* [$s [+|-]id]*'
 
    .  $ns...			- plot function for scalar nodal values
    .  $nv...			- plot function for vector nodal values
    .  $cs...			- plot function for scalar element values
    .  $cv...			- plot function for vector element values
+   .  $v...            - variable name to be used in DataExplorer
    .  $b...            - write boundary data 0=no (default) | 1=inner | 2=all
    .  $bin...          - write grid and data in binary format
    .  $fgrid...        - if not initial time step grid is not written
@@ -232,7 +233,7 @@ static double clampf(double x)
    graphics, plot, file, output, DataExplorer
 
    EXAMPLE:
-   'dataexplorer NavierStokesSolution.dx $ns nvalue $s psol $nv nvector $s velsol'
+   'dataexplorer NavierStokesSolution.dx $ns nvalue $s psol $v pressure $nv nvector $s velsol $v velocity'
    D*/
 /****************************************************************************/
 
@@ -266,19 +267,29 @@ static INT DataExplorerCommand (INT argc, char **argv)
   PFILE *pf_txt;                    /* file pointer for ascii output            */
   PFILE_BIN *pf_bin;                /* file pointer for binary output           */
 
+  INT np;                                               /* number of eval procs						*/
   INT ns;                                               /* number of scalar eval procs				*/
   INT nv;                                               /* number of vector eval procs				*/
   EVALUES *es[MAXVARIABLES];            /* pointers to scalar eval function desc	*/
   char es_name[MAXVARIABLES][NAMESIZE];         /* names for eval functions     */
+  char es_var[MAXVARIABLES][NAMESIZE];          /* DX variable name			        */
   EVECTOR *ev[MAXVARIABLES];            /* pointers to vector eval function desc	*/
   char ev_name[MAXVARIABLES][NAMESIZE];         /* names for eval functions     */
+  char ev_var[MAXVARIABLES][NAMESIZE];          /* DX variable name			        */
   INT ns_cell;                                  /* number of scalar eval procs				*/
   INT nv_cell;                                  /* number of vector eval procs				*/
   EVALUES *es_cell[MAXVARIABLES];       /* pointers to scalar eval function desc*/
   char es_cell_name[MAXVARIABLES][NAMESIZE];            /* names for eval functions	*/
+  char es_cell_var[MAXVARIABLES][NAMESIZE];             /* DX variable names		*/
   EVECTOR *ev_cell[MAXVARIABLES];       /* pointers to vector eval function desc*/
   char ev_cell_name[MAXVARIABLES][NAMESIZE];            /* names for eval functions	*/
+  char ev_cell_var[MAXVARIABLES][NAMESIZE];             /* DX variable names		*/
   char s[NAMESIZE];                             /* name of eval proc						*/
+
+  INT nv_bcell;                                 /* number of vector eval procs for inner bnd*/
+  EVECTOR *ev_bcell[MAXVARIABLES];      /* pointers to vector eval function desc*/
+  char ev_bcell_name[MAXVARIABLES][NAMESIZE];           /* names for eval functions	*/
+  char ev_bcell_var[MAXVARIABLES][NAMESIZE];            /* DX variable names		*/
 
   INT numVertices;                              /* number of data points locally			*/
   INT numVerticesTot;                           /* total number of data points locally		*/
@@ -329,7 +340,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
   }
 
   /* scan options	*/
-  ns = nv = ns_cell = nv_cell = 0;
+  ns = nv = ns_cell = nv_cell = nv_bcell = 0;
+  np = 1;
 
   for(i=1; i<argc; i++)
   {
@@ -355,6 +367,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       }
       else
         strcpy(es_name[ns],es[ns]->v.name);
+
+      if (sscanf(argv[i+2],"v %s", s) == 1)
+      {
+        strcpy(es_var[ns],s);
+        i++;
+      }
+      else
+        sprintf(es_var[ns],"data%d",np++);
+
       ns++;
       continue;
     }
@@ -381,6 +402,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       }
       else
         strcpy(ev_name[nv],ev[nv]->v.name);
+
+      if (sscanf(argv[i+2],"v %s", s) == 1)
+      {
+        strcpy(ev_var[nv],s);
+        i++;
+      }
+      else
+        sprintf(ev_var[nv],"data%d",np++);
+
       nv++;
       continue;
     }
@@ -407,6 +437,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       }
       else
         strcpy(es_cell_name[ns_cell],es_cell[ns_cell]->v.name);
+
+      if (sscanf(argv[i+2],"v %s", s) == 1)
+      {
+        strcpy(es_cell_var[ns_cell],s);
+        i++;
+      }
+      else
+        sprintf(es_cell_var[ns_cell],"data%d",np++);
+
       ns_cell++;
       continue;
     }
@@ -433,7 +472,54 @@ static INT DataExplorerCommand (INT argc, char **argv)
       }
       else
         strcpy(ev_cell_name[nv_cell],ev_cell[nv_cell]->v.name);
+
+      if (sscanf(argv[i+2],"v %s", s) == 1)
+      {
+        strcpy(ev_cell_var[nv_cell],s);
+        i++;
+      }
+      else
+        sprintf(ev_cell_var[nv_cell],"data%d",np++);
+
       nv_cell++;
+      continue;
+    }
+
+    /*
+     * Vector values for inner boundaries. Use centers of inner boundary element sides.
+     */
+    if (strncmp(argv[i],"bv",2)==0) {
+      if (nv_bcell>=MAXVARIABLES)
+      {
+        PrintErrorMessage('E',"dataexplorer","too many vector variables "\
+                          "specified in bv argument\n");
+        break;
+      }
+      sscanf(argv[i],"bv %s", s);
+      ev_bcell[nv_bcell] = GetElementVectorEvalProc(s);
+      if (ev_bcell[nv_bcell]==NULL)
+      {
+        PrintErrorMessageF('E',"dataexplorer","could not find vector "\
+                           "eval proc %s in bv argument\n",s);
+        break;
+      }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(ev_bcell_name[nv_bcell],s);
+        i++;
+      }
+      else
+        strcpy(ev_bcell_name[nv_bcell],ev_bcell[nv_bcell]->v.name);
+
+      if (sscanf(argv[i+2],"v %s", s) == 1)
+      {
+        strcpy(ev_bcell_var[nv_bcell],s);
+        i++;
+      }
+      else
+        sprintf(ev_bcell_var[nv_bcell],"data%d",np++);
+
+      nv_bcell++;
       continue;
     }
 
@@ -499,8 +585,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
   if (binaryOutput) {
     strcpy(filename_dat,filename);
     c_ptr=strrchr(filename_dat,'.');
-    /*                  if (c_ptr!=NULL) */
-    /*                          memset(c_ptr, '\0', 1); */
+    if (c_ptr!=NULL)
+      memset(c_ptr, '\0', 1);
     strcat(filename_dat, ".bin");
     pf_bin = pfile_open_bin(filename_dat);
     if (pf_bin==NULL) {
@@ -511,8 +597,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
   } else {
     strcpy(filename_dat,filename);
     c_ptr=strrchr(filename_dat,'.');
-    /*                  if (c_ptr!=NULL) */
-    /*                          memset(c_ptr, '\0', 1); */
+    if (c_ptr!=NULL)
+      memset(c_ptr, '\0', 1);
     strcat(filename_dat, ".dat");
     pf_txt = pfile_open(filename_dat);
     if (pf_txt==NULL) {
@@ -525,6 +611,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(filename_grid, filename_dat);
   else {
     strcpy(filename_grid, filename);
+    c_ptr=strrchr(filename_grid,'.');
+    memset(c_ptr, '\0', 1);
     c_ptr=strrchr(filename_grid,'.');
     memset(c_ptr, '\0', 1);
     if (binaryOutput)
@@ -637,7 +725,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   sprintf(it,"\n#\n# positions\n#\n");
   strcpy(item+ic,it); ic+=strlen(it);
   dat_pos = old_pos = 0;
-  sprintf(it,"object 1 class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
+  sprintf(it,"object \"positions\" class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
           DIM, gnumVertices, out_form, filename_grid, dat_pos);
   strcpy(item+ic,it); ic+=strlen(it);
   pfile_master_puts(pf,item); ic=0;
@@ -757,12 +845,12 @@ static INT DataExplorerCommand (INT argc, char **argv)
   sprintf(it,"\n#\n# connections\n#\n");
   strcpy(item+ic,it); ic+=strlen(it);
   if (notOnlyTetra) {
-    sprintf(it,"object 2 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+    sprintf(it,"object \"connections\" class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
             4*(DIM-1), gnumElements, out_form, filename_grid, dat_pos);
     if (binaryOutput)
       dat_pos+=4*(DIM-1)*gnumElements*sizeof(INT);
   } else {
-    sprintf(it,"object 2 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+    sprintf(it,"object \"connections\" class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
             DIM+1, gnumElements, out_form, filename_grid, dat_pos);
     if (binaryOutput)
       dat_pos+=(DIM+1)*gnumElements*sizeof(INT);
@@ -1042,18 +1130,18 @@ static INT DataExplorerCommand (INT argc, char **argv)
     sprintf(it,"\n#\n# connections for inner boundaries\n#\n");
     strcpy(item+ic,it); ic+=strlen(it);
 #ifdef __TWODIM__
-    sprintf(it,"object 3 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+    sprintf(it,"object \"ibndconnections\" class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
             2, gnibnd, out_form, filename_grid, dat_pos);
     if (binaryOutput)
       dat_pos+=2*gnibnd*sizeof(INT);
 #else
     if (notOnlyTriang) {
-      sprintf(it,"object 3 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+      sprintf(it,"object \"ibndconnections\" class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
               4, gnibnd, out_form, filename_grid, dat_pos);
       if (binaryOutput)
         dat_pos+=4*gnibnd*sizeof(INT);
     } else {
-      sprintf(it,"object 3 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+      sprintf(it,"object \"ibndconnections\" class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
               3, gnibnd, out_form, filename_grid, dat_pos);
       if (binaryOutput)
         dat_pos+=3*gnibnd*sizeof(INT);
@@ -1180,18 +1268,18 @@ static INT DataExplorerCommand (INT argc, char **argv)
     sprintf(it,"\n#\n# connections for outer boundaries\n#\n");
     strcpy(item+ic,it); ic+=strlen(it);
 #ifdef __TWODIM__
-    sprintf(it,"object 4 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+    sprintf(it,"object \"obndconnections\" class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
             2, gnobnd, out_form, filename_grid, dat_pos);
     if (binaryOutput)
       dat_pos+=2*gnobnd*sizeof(INT);
 #else
     if (notOnlyTriang) {
-      sprintf(it,"object 4 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+      sprintf(it,"object \"obndconnections\" class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
               4, gnobnd, out_form, filename_grid, dat_pos);
       if (binaryOutput)
         dat_pos+=4*gnobnd*sizeof(INT);
     } else {
-      sprintf(it,"object 4 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
+      sprintf(it,"object \"obndconnections\" class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
               3, gnobnd, out_form, filename_grid, dat_pos);
       if (binaryOutput)
         dat_pos+=3*gnobnd*sizeof(INT);
@@ -1323,8 +1411,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
     sprintf(it,"#\n# data block %d\n#\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
 
-    sprintf(it,"object %d class array type float rank 0 items %d %s\ndata file %s,%d\n",
-            blocks+2+writeBnds, gnumVertices, out_form, filename_dat, dat_pos);
+    sprintf(it,"object \"%s\" class array type float rank 0 items %d %s\ndata file %s,%d\n",
+            es_var[v], gnumVertices, out_form, filename_dat, dat_pos);
     if (binaryOutput)
       dat_pos+=gnumVertices*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
@@ -1389,15 +1477,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"positions\" value 1\n");
+    sprintf(it,"component \"positions\" value \"positions\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"connections\" value 2\n");
+    sprintf(it,"component \"connections\" value \"connections\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"data\" value %d\n\n", blocks+2+writeBnds);
+    sprintf(it,"component \"data\" value \"%s\"\n\n", es_var[v]);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
@@ -1407,15 +1495,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"positions\" value 1\n");
+      sprintf(it,"component \"positions\" value \"positions\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"connections\" value 3\n");
+      sprintf(it,"component \"connections\" value \"ibndconnections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      sprintf(it,"component \"data\" value \"%s\"\n", es_var[v]);
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
@@ -1426,15 +1514,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"positions\" value 1\n");
+      sprintf(it,"component \"positions\" value \"positions\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"connections\" value 4\n");
+      sprintf(it,"component \"connections\" value \"obndconnections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      sprintf(it,"component \"data\" value \"%s\"\n", es_var[v]);
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
@@ -1451,8 +1539,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
     sprintf(it,"#\n# data block %d\n#\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
 
-    sprintf(it,"object %d class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
-            blocks+2+writeBnds, DIM, gnumVertices, out_form, filename_dat, dat_pos);
+    sprintf(it,"object \"%s\" class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
+            ev_var[v], DIM, gnumVertices, out_form, filename_dat, dat_pos);
     if (binaryOutput)
       dat_pos+=DIM*gnumVertices*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
@@ -1529,15 +1617,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"positions\" value 1\n");
+    sprintf(it,"component \"positions\" value \"positions\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"connections\" value 2\n");
+    sprintf(it,"component \"connections\" value \"connections\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+    sprintf(it,"component \"data\" value \"%s\"\n", ev_var[v]);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
@@ -1547,15 +1635,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"positions\" value 1\n");
+      sprintf(it,"component \"positions\" value \"positions\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"connections\" value 3\n");
+      sprintf(it,"component \"connections\" value \"ibndconnections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      sprintf(it,"component \"data\" value \"%s\"\n", ev_var[v]);
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
@@ -1566,15 +1654,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"positions\" value 1\n");
+      sprintf(it,"component \"positions\" value \"positions\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"connections\" value 4\n");
+      sprintf(it,"component \"connections\" value \"obndconnections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      sprintf(it,"component \"data\" value \"%s\"\n", ev_var[v]);
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
@@ -1595,8 +1683,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
     sprintf(it,"#\n# data block %d\n#\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
 
-    sprintf(it,"object %d class array type float rank 0 items %d %s\ndata file %s,%d\n",
-            blocks+2+writeBnds, gnumElements, out_form, filename_dat, dat_pos);
+    sprintf(it,"object \"%s\" class array type float rank 0 items %d %s\ndata file %s,%d\n",
+            es_cell_var[v], gnumElements, out_form, filename_dat, dat_pos);
     if (binaryOutput)
       dat_pos+=gnumElements*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
@@ -1656,15 +1744,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"positions\" value 1\n");
+    sprintf(it,"component \"positions\" value \"positions\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"connections\" value 2\n");
+    sprintf(it,"component \"connections\" value \"connections\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+    sprintf(it,"component \"data\" value \"%s\"\n", es_cell_var[v]);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
@@ -1674,15 +1762,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"positions\" value 1\n");
+      sprintf(it,"component \"positions\" value \"connections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"connections\" value 3\n");
+      sprintf(it,"component \"connections\" value \"ibndconnections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      sprintf(it,"component \"data\" value \"%s\"\n", es_cell_var[v]);
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
@@ -1693,15 +1781,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"positions\" value 1\n");
+      sprintf(it,"component \"positions\" value \"connections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"connections\" value 4\n");
+      sprintf(it,"component \"connections\" value \"obndconnections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      sprintf(it,"component \"data\" value \"%s\"\n", es_cell_var[v]);
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
@@ -1718,8 +1806,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
     sprintf(it,"#\n# data block %d\n#\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
 
-    sprintf(it,"object %d class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
-            blocks+2+writeBnds, DIM, gnumElements, out_form, filename_dat, dat_pos);
+    sprintf(it,"object \"%s\" class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
+            ev_cell_var[v], DIM, gnumElements, out_form, filename_dat, dat_pos);
     if (binaryOutput)
       dat_pos+=DIM*gnumElements*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
@@ -1789,15 +1877,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"positions\" value 1\n");
+    sprintf(it,"component \"positions\" value \"positions\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"connections\" value 2\n");
+    sprintf(it,"component \"connections\" value \"connections\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+    sprintf(it,"component \"data\" value \"%s\"\n", ev_cell_var[v]);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
@@ -1807,15 +1895,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"positions\" value 1\n");
+      sprintf(it,"component \"positions\" value \"positions\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"connections\" value 3\n");
+      sprintf(it,"component \"connections\" value \"ibndconnections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      sprintf(it,"component \"data\" value \"%s\"\n", ev_cell_var[v]);
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
@@ -1826,15 +1914,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"positions\" value 1\n");
+      sprintf(it,"component \"positions\" value \"positions\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"connections\" value 4\n");
+      sprintf(it,"component \"connections\" value \"obndconnections\"\n");
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
 
-      sprintf(it,"component \"data\" value %d\n", blocks+2+writeBnds);
+      sprintf(it,"component \"data\" value \"%s\"\n", ev_cell_var[v]);
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
