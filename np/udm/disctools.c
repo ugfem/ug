@@ -2428,7 +2428,6 @@ static void PrintSingleVectorX (const VECTOR *v, const VECDATA_DESC *X, INT vcla
   if (VNCLASS(v) > vnclass) return;
   ncomp = VD_NCMPS_IN_TYPE(X,VTYPE(v));
   if (ncomp == 0) return;
-  comp = VD_CMP_OF_TYPE(X,VTYPE(v),0);
   /* Check if there is an object associated with the vector. */
   i = 0;
   if (VOBJECT(v) != NULL) {
@@ -2444,7 +2443,10 @@ static void PrintSingleVectorX (const VECTOR *v, const VECDATA_DESC *X, INT vcla
       i += sprintf(buffer+i,"        ");
   }
   for (j=0; j<ncomp; j++)
-    i += sprintf(buffer+i,"u[%d]=%15.8f ",j,VVALUE(v,comp+j));
+  {
+    comp = VD_CMP_OF_TYPE(X,VTYPE(v),j);
+    i += sprintf(buffer+i,"u[%d]=%15.8f ",j,VVALUE(v,comp));
+  }
   i += sprintf(buffer+i,"   cl %d %d sk ",VCLASS(v),VNCLASS(v));
   for (j=0; j<ncomp; j++)
     i += sprintf(buffer+i,"%d ",((VECSKIP(v) & (1<<j))!=0));
