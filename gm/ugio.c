@@ -2492,6 +2492,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   }
   Enusdp[1] = Element_nb_uniq_subdom;
   theMesh.nbElements = Enusdp;
+  theMesh.ElemSideOnBnd = NULL;
 
   /* create levels */
   for (i=1; i<mg_general.nLevel; i++)
