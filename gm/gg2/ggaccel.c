@@ -28,6 +28,7 @@
 #include  <stdlib.h>
 #include  "ggaccel.h"
 #include  "misc.h"
+#include  "devices.h"
 #include  "gm.h"
 #include  "ugm.h"
 #include  "ggm.h"
@@ -1949,7 +1950,7 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
   myPars = params;
 
   /* Adaption to the Multigrid: */
-  MG = GetCurrentMultigrid();
+  MG = MYMG(the_Grid);
   if (MG == NULL) PrintErrorMessage('E',"bnodes","no multigrid received");
 
   InitAccelObjs(MG);

@@ -12,8 +12,6 @@
 /*			  Pfaffenwaldring 27											*/
 /*			  70550 Stuttgart												*/
 /*			  email: ica3.uni-stuttgart.de									*/
-/*			  phone: 0049-(0)711-685-7003									*/
-/*			  fax  : 0049-(0)711-685-7000									*/
 /*																			*/
 /* History:   13.12.94 begin, ug version 3.0								*/
 /*																			*/

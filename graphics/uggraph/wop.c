@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: johannse@iwr1.iwr.uni-heidelberg.de                                 */
+/*			  internet: ug@ica3.uni-stuttgart.de                            */
 /*																			*/
 /* History:   21.06.93 begin, ug version ug21Xmas3d                                             */
 /*																			*/

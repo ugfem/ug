@@ -11,8 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: neuss@iwr1.iwr.uni-heidelberg.de					*/
-/*						bastian@iwr1.iwr.uni-heidelberg.de					*/
+/*			  email: ug@ica3.uni-stuttgart.de				                */
 /*																			*/
 /* History:   18.02.92 begin, ug version 2.0								*/
 /*			  10.05.92 begin, ug interpreter by Nicolas Neuss				*/

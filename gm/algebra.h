@@ -12,7 +12,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 294										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: johannse@iwr1.iwr.uni-heidelberg.de                                 */
+/*			  internet: ug@ica3.uni-stuttgart.de                            */
 /*																			*/
 /*			  blockvector data structure:									*/
 /*			  Christian Wrobel                                                                              */
@@ -20,9 +20,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: christian@ica3.uni-stuttgart.de					    */
-/*			  phone: 0049-(0)711-685-7006									*/
-/*			  fax  : 0049-(0)711-685-7000									*/
+/*			  email: ug@ica3.uni-stuttgart.de					    */
 /*																			*/
 /* History:    1.12.93 begin, ug 3d											*/
 /*			  27.09.95 blockvector implemented (Christian Wrobel)			*/

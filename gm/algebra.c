@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 294										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: johannse@iwr1.iwr.uni-heidelberg.de                                 */
+/*			  internet: ug@ica3.uni-stuttgart.de                            */
 /*																			*/
 /*			  blockvector data structure:									*/
 /*			  Christian Wrobel                                                                              */
@@ -19,9 +19,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: christian@ica3.uni-stuttgart.de						*/
-/*			  phone: 0049-(0)711-685-7006									*/
-/*			  fax  : 0049-(0)711-685-7000									*/
+/*			  email: ug@ica3.uni-stuttgart.de						*/
 /*																			*/
 /* History:    1.12.93 begin, ug 3d                                                                             */
 /*			  26.10.94 begin combination 2D/3D version						*/
@@ -60,6 +58,7 @@
 
 #include "switch.h"
 #include "gm.h"
+#include "ugm.h"
 #include "evm.h"
 #include "misc.h"
 #include "simplex.h"
@@ -734,7 +733,6 @@ INT CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
 {
   MULTIGRID *theMG;
   BLOCKVECTOR *bv;
-  INT ds, Size;
 
   theMG = MYMG(theGrid);
 
@@ -4265,7 +4263,6 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
   VECTOR *v, *end_v, **v0, **v1, **vi;
   BLOCKVECTOR *bv0, *bv1, *bvi;
   register INT index, interface;
-  INT bn_next;
 
   /* create a double linked list of 3 blockvectors */
   v = BVFIRSTVECTOR( bv );

@@ -11,9 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: peter@ica3.uni-stuttgart.de							*/
-/*			  phone: 0049-(0)711-685-7003									*/
-/*			  fax  : 0049-(0)711-685-7000									*/
+/*			  email: ug@ica3.uni-stuttgart.de							*/
 /*																			*/
 /* History:   16.12.94 restructured for ug version 3.0						*/
 /*																			*/

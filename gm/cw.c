@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: bastian@iwr1.iwr.uni-heidelberg.de					*/
+/*			  internet: ug@ica3.uni-stuttgart.de					*/
 /*																			*/
 /* History:   11.01.95 begin, ug version 3.0								*/
 /*																			*/
@@ -231,6 +231,8 @@ INT InitPredefinedControlEntries (void)
       ce->offset_in_object = cw->offset_in_object;
       ce->mask = (POW2(ce->length)-1)<<ce->offset_in_word;
       ce->xor_mask = ~ce->mask;
+      /*if (cw->used_mask & ce->mask)
+              UserWriteF("overlap defining predef ce %d\n",i);*/
       cw->used_mask |= ce->mask;
     }
   return (GM_OK);

@@ -1,6 +1,5 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-
 /***************************************************************************
 *																		   *
 *	File:		 simplex.h												   *
@@ -11,7 +10,7 @@
 *				 Mathematisches Institut								   *
 *				 Auf der Morgenstelle 10								   *
 *				 7400 Tuebingen                                                                                    *
-*				 email : juergen@tue-num2.mathematik.uni-tuebingen.de	   *
+*			     email: ug@ica3.uni-stuttgart.de					       *
 *																		   *
 *	History:	 10.12.92  begin										   *
 *																		   *

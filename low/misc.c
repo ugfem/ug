@@ -11,7 +11,7 @@
 /*              Universitaet Stuttgart                                      */
 /*              Pfaffenwaldring 27                                          */
 /*              70569 Stuttgart                                             */
-/*              internet: johannse@ica3.uni-stuttgart.de                    */
+/*              internet: ug@ica3.uni-stuttgart.de                    */
 /*                                                                          */
 /* History:   08.12.94 begin, ug3-version                                   */
 /*                                                                          */

@@ -11,9 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart, Germany										*/
-/*			  email: wolfgang@ica3.uni-stuttgart.de							*/
-/*			  fon: 0049-(0)711-685-7005										*/
-/*			  fax: 0049-(0)711-685-7000										*/
+/*			  email: ug@ica3.uni-stuttgart.de							*/
 /*																			*/
 /* History:   08.03.94 begin, ug version 2.2                                */
 /*                15.10.95 implemented in ug31                                  */
@@ -36,6 +34,7 @@
 #include <math.h>
 
 #include "compiler.h"
+#include "devices.h"
 #include "gm.h"
 #include "ggm.h"
 #include "heaps.h"
@@ -44,6 +43,7 @@
 #include "ugrefine.h"
 #include "algebra.h"
 #include "ugstruct.h"
+#include "uginterface.h"
 
 #include "memory.h"
 

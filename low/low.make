@@ -9,7 +9,7 @@
 #*			  Universitaet Heidelberg										*#
 #*			  Im Neuenheimer Feld 368										*#
 #*			  6900 Heidelberg												*#
-#*			  internet: bastian@iwr1.iwr.uni-heidelberg.de					*#
+#*			  internet: ug@ica3.uni-stuttgart.de					*#
 #*																			*#
 #* History:   24.05.92 begin, ug version 2.0								*#
 #*			  13.08.92 update for ug 2.0.2									*#

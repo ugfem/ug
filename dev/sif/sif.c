@@ -11,8 +11,6 @@
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
 /*            70569 Stuttgart                                               */
-/*            phone: 0049-(0)711-685-7003                                   */
-/*            fax  : 0049-(0)711-685-7000                                   */
 /*																			*/
 /* History:   22 Sep 95 begin, ug31                                                                             */
 /*																			*/

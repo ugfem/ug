@@ -10,7 +10,7 @@
 *				 Mathematisches Institut								   *
 *				 Auf der Morgenstelle 10								   *
 *				 7400 Tuebingen                                                                                    *
-*				 email : juergen@tue-num2.mathematik.uni-tuebingen.de	   *
+*			     email: ug@ica3.uni-stuttgart.de					       *
 *																		   *
 *	History:	 10.12.92  begin										   *
 *																		   *

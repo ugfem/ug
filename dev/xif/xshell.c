@@ -4,14 +4,14 @@
 /*																			*/
 /* File:	  xshell.c														*/
 /*																			*/
-/* Purpose:   shell window for ug3 based on Xlib or X Athena Widget set
-   /*																			*/
+/* Purpose:   shell window for ug3 based on Xlib or X Athena Widget set     */
+/*																			*/
 /* Author:	  Peter Bastian                                                                                                 */
 /*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: bastian@iwr1.iwr.uni-heidelberg.de					*/
+/*			  email: ug@ica3.uni-stuttgart.de		                                */
 /*																			*/
 /* History:   16.02.94 begin, ug version 3.0								*/
 /*            06.06.95 implementation of Athena Text widget as Shellwindow      */
