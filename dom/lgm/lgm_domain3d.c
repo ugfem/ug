@@ -5887,7 +5887,9 @@ BNDP *BNDP_InsertBndP (HEAP *Heap, BVP *aBVP, double *global)
       {
         UserWriteF("	S %d %d %f %f\n",
                    LGM_SURFACE_ID(theSurface),
-                   mi,(FLOAT)(local[0]-(DOUBLE)mi),(FLOAT)(local[1]-(DOUBLE)mi));
+                   mi,
+                   (FLOAT)(local[1]-(DOUBLE)mi),
+                   (FLOAT)(1.0-(local[0]-(DOUBLE)mi)-(local[1]-(DOUBLE)mi)));
       }
     }
   }
