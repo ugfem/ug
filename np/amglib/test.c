@@ -106,7 +106,7 @@ static double kx (double x, double y)
   double r;
 
   r = 0.0;
-  return(1.0);
+  return(1.0E-6);
 }
 
 static double ky (double x, double y)
@@ -114,12 +114,12 @@ static double ky (double x, double y)
   double r;
 
   r = 0.0;
-  return(1.0);
+  return(1.0E-6);
 }
 
 static double rx (double x, double y)
 {
-  return(0.0);
+  return(1.0);
 }
 
 static double ry (double x, double y)
@@ -449,24 +449,25 @@ int main (int argc, char *argv[])
   cc.verbose=1;
   cc.depthtarget=20;
   cc.coarsentarget=10;
-  cc.coarsenrate=1.5;
+  cc.coarsenrate=1.2;
+  cc.major=-1;
 
   /* solver context */
   sc.verbose=1;
-  sc.solver=AMG_CG;
+  sc.solver=AMG_BCGS;
   sc.preconditioner=AMG_MGC;
-  sc.maxit=80;
-  sc.red_factor=1.0E-10;
+  sc.maxit=800;
+  sc.red_factor=1.0E-8;
   sc.dnorm_min=1.0E-15;
   sc.coarse_smoother=AMG_SSOR;
-  sc.coarse_maxit=100;
+  sc.coarse_maxit=200;
   sc.coarse_red_factor=1.0E-3;
-  sc.n1=2;
-  sc.n2=2;
-  sc.gamma=2;
+  sc.n1=3;
+  sc.n2=3;
+  sc.gamma=1;
   sc.omega_p[0]=1.8;
-  sc.smoother=AMG_SSOR;
-  sc.omega[0]=1.0;
+  sc.smoother=AMG_DJAC;
+  sc.omega[0]=0.5;
 
   AMG_Build(&sc,&cc,A0);
   AMG_Solve(x0,b0);

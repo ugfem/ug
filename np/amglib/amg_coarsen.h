@@ -51,9 +51,9 @@
 
 #define AMG_MAX_LEVELS              32          /* max no of levels in hierarchy	*/
 #define AMG_MAX_FRONT                   1024    /* max number of front nodes		*/
-#define AMG_MAX_CLUSTER                 128             /* max size of a cluster			*/
+#define AMG_MAX_CLUSTER                 256             /* max size of a cluster			*/
 #define AMG_MAX_STACK                   256             /* size of seed stack				*/
-#define AMG_MAX_ROW                             196             /* max number of nonzeros in row	*/
+#define AMG_MAX_ROW                             512             /* max number of nonzeros in row	*/
 
 /****************************************************************************/
 /*																			*/

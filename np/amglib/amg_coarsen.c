@@ -1074,7 +1074,7 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
     }
 
     if (clustersize==1) m=MergeNeighbor(g,s);
-    if ((clustersize==1) && (m>=0))
+    if ((clustersize==1) && (m>=0) && (!ISOLATED(na[s])) )
     {
       /* merge */
       ca[s]=ca[m];
@@ -1302,7 +1302,8 @@ static AMG_MATRIX *Coarsen (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
     if (VISITED(na[i])) continue;             /* we have this cluster already */
     if (ReconstructCluster(g,i)!=AMG_OK)
     {
-      sprintf(buffer,"could not reconstruct cluster %d, i=%d\n",ca[i],i);
+      sprintf(buffer,"could not reconstruct cluster %d, i=%d, cls=%d\n",
+              ca[i],i,clustersize);
       AMG_Print(buffer);
       return(AMG_NULL);
     }
