@@ -16,7 +16,7 @@ include ../machines/mk.$(ARCHDIR)
 include ../ug.conf
 
 # local C compiler flags
-LCFLAGS = -I../low -I../dom -I../gm
+LCFLAGS = -I../low -I../dom -I../gm -I$(LD_LIBRARY_PATH)
 
 # object files for both dimensions
 OBJECTS = connectuggrape.o 
