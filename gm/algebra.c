@@ -2592,7 +2592,7 @@ INT ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
    D*/
 /****************************************************************************/
 
-INT CheckConnections (GRID *theGrid)
+static INT CheckConnections (GRID *theGrid)
 {
   ELEMENT *theElement;
   INT errors;
