@@ -1106,10 +1106,12 @@ static INT ComputePatterns (GRID *theGrid)
 			theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
-		#if defined(ModelP) && defined(__THREEDIM__)
+		#ifdef ModelP
 		if (EGHOST(theElement))
 		{
+			#ifdef __THREEDIM__
 			SETSIDEPATTERN(theElement,0);
+			#endif
 			continue;
 		}
 		#endif
