@@ -369,6 +369,21 @@ INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 /* domain interface function: for description see domain.h */
 BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 {
+
+        #ifdef __THREEDIM__
+  double global[3];
+
+  /* scan global coordinates */
+  if (sscanf(argv[0],"ngbn %lf %lf %lf",global,global+1,global+2) != DIM)
+  {
+    UserWriteF("could not scan");
+
+    return(NULL);
+  }
+
+  return(BNDP_InsertBndP(Heap,aBVP,global));
+        #endif
+
   return (NULL);
 }
 
