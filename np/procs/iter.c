@@ -2807,7 +2807,7 @@ static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, INT mcomp, VECDATA_DESC *adv)
     if (diag>=sum) VVALUE(v,advcomp[0])=1.0;
     else VVALUE(v,advcomp[0])=diag/sum;
     for (i=1; i<n; i++)
-      VVALUE(v,advcomp[1])=VVALUE(v,advcomp[0]);
+      VVALUE(v,advcomp[i]) = VVALUE(v,advcomp[0]);
   }
 
   return(0);
@@ -2818,10 +2818,26 @@ static INT SORInit (NP_BASE *theNP, INT argc , char **argv)
   NP_SMOOTHER *np;
 
   np = (NP_SMOOTHER *) theNP;
-  if (ReadArgvOption("autodamp",argc,argv)) np->AutoDamp=1;
-  else np->AutoDamp=0;
-  if (ReadArgvINT("comp",&np->mcomp,argc,argv)) np->mcomp=0;
+  np->AutoDamp = ReadArgvOption("autodamp",argc,argv);
+  if (ReadArgvINT("comp",&np->mcomp,argc,argv))
+    np->mcomp=0;
+  np->DampVector = ReadArgvVecDesc(NP_MG(np),"dv",argc,argv);
+
   return (SmootherInit(theNP,argc,argv));
+}
+
+static INT SORDisplay (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np = (NP_SMOOTHER *) theNP;
+
+  NPIterDisplay(&np->iter);
+  UserWrite("configuration parameters:\n");
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"autodamp",np->AutoDamp);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"comp",np->mcomp);
+  if (np->DampVector != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"dv",ENVITEM_NAME(np->DampVector));
+
+  return (0);
 }
 
 static INT SORPreProcess  (NP_ITER *theNP, INT level,
@@ -2835,8 +2851,10 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
   theGrid = NP_GRID(theNP,level);
   if (np->AutoDamp)
   {
-    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
-    if (SetAutoDamp(theGrid,A,np->mcomp,np->DampVector)) NP_RETURN(1,result[0]);
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector))
+      NP_RETURN(1,result[0]);
+    if (SetAutoDamp(theGrid,A,np->mcomp,np->DampVector))
+      NP_RETURN(1,result[0]);
   }
         #ifdef ModelP
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
@@ -2857,11 +2875,19 @@ static INT SORStep (NP_SMOOTHER *theNP, INT level,
                     MATDATA_DESC *L,
                     INT *result)
 {
-  NP_SMOOTHER *np;
+  NP_SMOOTHER *np = (NP_SMOOTHER *) theNP;
 
-  np = (NP_SMOOTHER *) theNP;
     #ifdef ModelP
-  if (l_lsor(NP_GRID(theNP,level),x,L,b,theNP->damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (np->AutoDamp)
+  {
+    if (l_lsor_ld(NP_GRID(theNP,level),x,L,b,np->DampVector) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else
+  {
+    if (l_lsor(NP_GRID(theNP,level),x,L,b,theNP->damp) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
     #else
   if (np->AutoDamp)
   {
@@ -2917,7 +2943,7 @@ static INT SORConstruct (NP_BASE *theNP)
   NP_SMOOTHER *np;
 
   theNP->Init = SORInit;
-  theNP->Display = SmootherDisplay;
+  theNP->Display = SORDisplay;
   theNP->Execute = NPIterExecute;
 
   np = (NP_SMOOTHER *) theNP;
