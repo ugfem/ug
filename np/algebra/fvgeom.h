@@ -4,19 +4,19 @@
 /*                                                                          */
 /* File:      fvgeom.h                                                          */
 /*                                                                          */
-/* Purpose:   geometry evaluation for Finite-Volume discretization			*/
-/*			  dimension independent, general elmement						*/
+/* Purpose:   geometry evaluation for Finite-Volume discretization                      */
+/*                        dimension independent, general elmement                                               */
 /*                                                                          */
-/* Author:	  Peter Bastian                                                                                         */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: peter@ica3.uni-stuttgart.de							*/
-/*			  fon: 0049-(0)711-685-7003										*/
-/*			  fax: 0049-(0)711-685-7000										*/
-/*																			*/
-/* History:   06.05.96 begin, ug version 3.2								*/
+/* Author:        Peter Bastian                                                                                         */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: peter@ica3.uni-stuttgart.de                                                    */
+/*                        fon: 0049-(0)711-685-7003                                                                             */
+/*                        fax: 0049-(0)711-685-7000                                                                             */
+/*                                                                                                                                                      */
+/* History:   06.05.96 begin, ug version 3.2                                                            */
 /*            06.08.96 modification and extension (Henrik Rentz-Reichert)   */
 /*                                                                          */
 /* Remarks:                                                                 */
@@ -43,14 +43,25 @@
 #include "gm.h"
 #endif
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef MAXNC
@@ -65,9 +76,9 @@
 #define MAXS            MAX_SIDES_OF_ELEM               /* just to make it more readable*/
 #endif
 
-#define MAXF            MAX_EDGES_OF_ELEM               /* max # scvf					*/
+#define MAXF            MAX_EDGES_OF_ELEM               /* max # scvf                                   */
 #define MAXBF           (MAX_SIDES_OF_ELEM*MAX_CORNERS_OF_SIDE)
-/* max # boundary faces			*/
+/* max # boundary faces                 */
 
 /* defines to specify data to be filled by EvaluateShapesAndDerivatives */
 #define FILL_CORNER_DATA                        (1<<0)
@@ -134,53 +145,53 @@
 #define SDV_DETJ(p)                                     ((p)->detJ)
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* shape functions and derivatives etc. */
 typedef struct {
-  DOUBLE shape[MAXNC];                          /* values of shape functions at ip		*/
-  DOUBLE_VECTOR grad[MAXNC];                    /* derivatives of shape functions at ip	*/
-  DOUBLE J[DIM][DIM];                               /* jacobian at ip			            */
-  DOUBLE Jinv[DIM][DIM];                        /* inverse of jacobian at ip			*/
-  DOUBLE detJ;                                          /* det of jacobian at ip				*/
+  DOUBLE shape[MAXNC];                          /* values of shape functions at ip              */
+  DOUBLE_VECTOR grad[MAXNC];                    /* derivatives of shape functions at ip */
+  DOUBLE J[DIM][DIM];                               /* jacobian at ip                               */
+  DOUBLE Jinv[DIM][DIM];                        /* inverse of jacobian at ip                    */
+  DOUBLE detJ;                                          /* det of jacobian at ip                                */
 
 } SD_VALUES;
 
 /* geometry related data */
 typedef struct {
-  INT co;                                                       /* # of corner							*/
-  DOUBLE_VECTOR center;                         /* node position						*/
-  DOUBLE volume;                                        /* volume (area) of scv					*/
-  INT node_property;                                    /* subdomain info						*/
-} SubControlVolume;                                     /* FV intersected with element			*/
+  INT co;                                                       /* # of corner                                                  */
+  DOUBLE_VECTOR center;                         /* node position                                                */
+  DOUBLE volume;                                        /* volume (area) of scv                                 */
+  INT node_property;                                    /* subdomain info                                               */
+} SubControlVolume;                                     /* FV intersected with element                  */
 
 typedef struct {
   INT i,j;                                                      /* scvf seperates corner i and j of elem*/
-  DOUBLE_VECTOR ip_local;                       /* integration point in local coords	*/
-  DOUBLE_VECTOR ip_global;                          /* integration point in global coords	*/
+  DOUBLE_VECTOR ip_local;                       /* integration point in local coords    */
+  DOUBLE_VECTOR ip_global;                          /* integration point in global coords       */
   DOUBLE_VECTOR normal;                         /* normal on face at ip pointing to CV j*/
-  SD_VALUES sdv;                                        /* shape fcts, deriv. etc. at scv-faces	*/
+  SD_VALUES sdv;                                        /* shape fcts, deriv. etc. at scv-faces */
 } SubControlVolumeFace;
 
 typedef struct {
-  INT co;                                                       /* corresponding corner					*/
-  INT side;                                                     /* boundary side of element				*/
-  DOUBLE_VECTOR ip_local;                       /* integration point in local coords	*/
+  INT co;                                                       /* corresponding corner                                 */
+  INT side;                                                     /* boundary side of element                             */
+  DOUBLE_VECTOR ip_local;                       /* integration point in local coords    */
   DOUBLE param[DIM-1];                  /* local side coordinates                       */
   DOUBLE_VECTOR normal;                         /* normal on face at ip pointing to CV j*/
-  DOUBLE area;                                          /* area of boundary face				*/
-  SD_VALUES sdv;                                        /* shape fcts, deriv. etc. at b-faces	*/
+  DOUBLE area;                                          /* area of boundary face                                */
+  SD_VALUES sdv;                                        /* shape fcts, deriv. etc. at b-faces   */
 } BoundaryFace;
 
 typedef struct {
-  const ELEMENT *e;                                     /* data for this element				*/
-  INT tag;                                                      /* element type							*/
-  INT n_scv;                                                    /* # sub control volumes (==corners)	*/
+  const ELEMENT *e;                                     /* data for this element                                */
+  INT tag;                                                      /* element type                                                 */
+  INT n_scv;                                                    /* # sub control volumes (==corners)    */
   INT n_scvf;                                                   /* # sub control volume faces (==ip's)  */
-  INT n_bf;                                                     /* # boundary faces						*/
+  INT n_bf;                                                     /* # boundary faces                                             */
 
   DOUBLE_VECTOR co_global[MAXNC];       /* points in global space, corners      */
   DOUBLE_VECTOR co_local[MAXNC];        /* points in local space, corners       */
@@ -191,18 +202,18 @@ typedef struct {
   DOUBLE_VECTOR s_global;                       /* points in global space, center       */
   DOUBLE_VECTOR s_local;                        /* points in local space, center        */
   SD_VALUES coe_sdv;                            /* shape fcts, deriv. etc. at coe       */
-  SD_VALUES co_sdv[MAXNC];                      /* shape fcts, deriv. etc. at corners	*/
-  SubControlVolume scv[MAXNC];          /* sub control volumes					*/
-  SubControlVolumeFace scvf[MAXF];      /* sub control volume faces				*/
-  BoundaryFace bf[MAXBF];                       /* boundary faces						*/
+  SD_VALUES co_sdv[MAXNC];                      /* shape fcts, deriv. etc. at corners   */
+  SubControlVolume scv[MAXNC];          /* sub control volumes                                  */
+  SubControlVolumeFace scvf[MAXF];      /* sub control volume faces                             */
+  BoundaryFace bf[MAXBF];                       /* boundary faces                                               */
 
-} FVElementGeometry;                            /* geometry data for a general element	*/
+} FVElementGeometry;                            /* geometry data for a general element  */
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* finite volume geometry */
@@ -234,5 +245,9 @@ INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const
 
 /* init */
 INT InitFiniteVolumeGeom                        (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

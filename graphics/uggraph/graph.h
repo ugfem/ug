@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  graph.h														*/
-/*																			*/
-/* Purpose:   defines data structure for graph.c							*/
-/*																			*/
-/* Author:	  Klaus Johannsen												*/
-/*			  Institut fuer Computeranwendungen                                                     */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  internet: ug@ica3.uni-stuttgart.de                                            */
-/*																			*/
-/* History:   8.12.94 begin, ug3-version									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          graph.h                                                                                                               */
+/*                                                                                                                                                      */
+/* Purpose:   defines data structure for graph.c                                                        */
+/*                                                                                                                                                      */
+/* Author:        Klaus Johannsen                                                                                               */
+/*                        Institut fuer Computeranwendungen                                                     */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        internet: ug@ica3.uni-stuttgart.de                                            */
+/*                                                                                                                                                      */
+/* History:   8.12.94 begin, ug3-version                                                                        */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __GRAPH__
@@ -51,14 +51,25 @@
 #include "evm.h"
 #endif
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define MAX_POINTS_OF_POLY                      32
@@ -67,15 +78,15 @@
 #define WAIT_001                                        MAX(0.01,1.0/CLOCKS_PER_SEC)
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* misc. functions */
@@ -83,6 +94,7 @@ INT     PrepareGraph                            (const PICTURE *thePicture);
 INT     PrepareGraphWindow                      (const UGWINDOW *theWindow);
 INT             SetTextFactor                           (DOUBLE textfactor);
 DOUBLE  GetTextFactor                           (void);
+INT SetLineFactor (DOUBLE linefactor);
 
 /* low level drawing functions */
 void    UgMove                                          (COORD_POINT in);
@@ -111,5 +123,9 @@ void    UgSetLineWidth                          (short width);
 /* miscellenious */
 void    UgFlush                                         (void);
 void    UgWait                                          (DOUBLE wait_sec);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

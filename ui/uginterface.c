@@ -45,6 +45,14 @@
 
 #include "xbc.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -198,12 +206,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
-        SetCurrentPicture - make the specified picture the current picture
-
-        SYNOPSIS:
-        INT SetCurrentPicture (PICTURE *thePicture)
-
+/** \brief Make the specified picture the current picture
         PARAMETERS:
    .   thePicture - the picture that will be the current picture (may be 'NULL')
 
@@ -215,10 +218,10 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
         RETURN VALUE:
         INT
    .n   0: ok
-   D*/
+ */
 /****************************************************************************/
 
-INT SetCurrentPicture (PICTURE *thePicture)
+INT NS_PREFIX SetCurrentPicture (PICTURE *thePicture)
 {
   if (thePicture!=currPicture)
   {
@@ -283,7 +286,7 @@ PICTURE *GetCurrentPicture (void)
    D*/
 /****************************************************************************/
 
-INT SetCurrentUgWindow (UGWINDOW *theUgWindow)
+INT NS_PREFIX SetCurrentUgWindow (UGWINDOW *theUgWindow)
 {
   UGWINDOW *win;
 
@@ -388,7 +391,8 @@ static INT DoCmdKey (char c, char *String)
    D*/
 /****************************************************************************/
 
-INT SetCmdKey (char c, const char *Comment, INT ShowBar, const char *String)
+INT NS_PREFIX SetCmdKey (char c, const char *Comment, INT ShowBar, const char *String)
+
 {
   CMDKEY *theCmdKey;
   char theCmdKeyName[2];

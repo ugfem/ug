@@ -1595,11 +1595,7 @@ DOUBLE GetTextFactor (void)
 }
 
 /****************************************************************************/
-/*D
-   SetLineFactor - change the factor all line widths are multiply with
-
-   SYNOPSIS:
-   INT SetLineFactor (DOUBLE linefactor)
+/** \brief Change the factor all line widths are multiply with
 
    PARAMETERS:
    .  linefactor - factor all line widths are multiply with
@@ -1610,10 +1606,10 @@ DOUBLE GetTextFactor (void)
    RETURN VALUE:
    INT
    .n     0 if ok
-   D*/
+ */
 /****************************************************************************/
 
-INT SetLineFactor (DOUBLE linefactor)
+INT NS_PREFIX SetLineFactor (DOUBLE linefactor)
 {
   LineFactor = linefactor;
   return (0);

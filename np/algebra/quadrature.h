@@ -6,13 +6,13 @@
 /*                                                                          */
 /* Purpose:   quadrature formulas (header file)                                 */
 /*                                                                          */
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							    */
-/*																			*/
+/* Author:        Christian Wieners                                                                             */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                           */
+/*                                                                                                                                                      */
 /* History:   Sep 25 95 begin                                                                           */
 /*                                                                          */
 /* Remarks:                                                                 */
@@ -34,6 +34,19 @@
 #define __QUADRATURE__
 
 #include "gm.h"
+
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -66,7 +79,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-typedef const struct {
+typedef const struct quadrature {
   INT nip;                                /* number of integration points     */
   INT order;        /* NEW ! */           /* order of quadrature rule         */
   const DOUBLE_VECTOR_3D *local;          /* array[nip] for local coordinates */
@@ -96,5 +109,9 @@ QUADRATURE *GetQuadrature(INT dim, INT n, INT order);
 QUADRATURE *GetQuadratureRule(INT dim, INT n, INT order);
 QUADRATURE *GetSymmetricQuadratureRule(INT dim, INT n, INT order);
 INT GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

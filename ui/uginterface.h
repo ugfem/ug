@@ -1,21 +1,21 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  uginterface.h                                                                                                 */
-/*																			*/
-/* Purpose:   defines data structure for ug interface						*/
-/*																			*/
-/* Author:	  Klaus Johannsen												*/
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          uginterface.h                                                                                                 */
+/*                                                                                                                                                      */
+/* Purpose:   defines data structure for ug interface                                           */
+/*                                                                                                                                                      */
+/* Author:        Klaus Johannsen                                                                                               */
+/*                        Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*                        Universitaet Heidelberg                                                                               */
+/*                        Im Neuenheimer Feld 368                                                                               */
+/*                        6900 Heidelberg                                                                                               */
+/*                                                                                                                                                      */
 /* History:   14.06.93 begin, ug version ug21Xmas3d                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -24,9 +24,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __UGINTERFACE__
@@ -41,14 +41,25 @@
 #include "wpm.h"
 #endif
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -67,9 +78,9 @@
 #define KEY_COMMENT_LEN_STR             "127"
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -93,5 +104,9 @@ INT                     UserIn                                                  
 INT                     UserRead                                                (char *String);
 
 INT SetRefreshState (INT status, INT bullet, DOUBLE factor);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

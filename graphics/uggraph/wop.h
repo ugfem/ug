@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  wop.h                                                                                                                 */
-/*																			*/
-/* Purpose:   header file for work functions on pictures					*/
-/*																			*/
-/* Author:	  Klaus Johannsen												*/
-/*			  Institut fuer Computeranwendungen                                                     */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  internet: ug@ica3.uni-stuttgart.de                                            */
-/*																			*/
-/* History:   8.12.94 begin, ug3-version									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          wop.h                                                                                                                 */
+/*                                                                                                                                                      */
+/* Purpose:   header file for work functions on pictures                                        */
+/*                                                                                                                                                      */
+/* Author:        Klaus Johannsen                                                                                               */
+/*                        Institut fuer Computeranwendungen                                                     */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        internet: ug@ica3.uni-stuttgart.de                                            */
+/*                                                                                                                                                      */
+/* History:   8.12.94 begin, ug3-version                                                                        */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __WOP__
@@ -47,14 +47,25 @@
 #include "evm.h"
 #endif
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* macros for matrix-vector operations */
@@ -75,9 +86,9 @@
 #define ROTMODE_SPHERE  2
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* Defines and Macros for DRAWINGOBJECT                                                                         */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #undef __DO_HEAP_USED__
@@ -144,8 +155,8 @@
 
 /****************************************************************************/
 /*                                                                          */
-/* Defines for Parallel Extensions					    */
-/*									    */
+/* Defines for Parallel Extensions                                          */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -156,9 +167,9 @@
 
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* Defines and Macros for WORKPROCS                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* defines for WorkMode field */
@@ -178,12 +189,12 @@
 #define WP_RECURSIVEWISE(p)                             (&((p)->RecursiveWorkProcs))
 
 /****************************************************************************/
-/*																			*/
-/* Defines and Macros for PLOTOBJHANDLING									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* Defines and Macros for PLOTOBJHANDLING                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
-#define NTOOLFCTS                       10      /* max number of tool functions				*/
+#define NTOOLFCTS                       10      /* max number of tool functions                         */
 
 #define PIC_POH(p)                                      ((PLOTOBJHANDLING*)PIC_POT(p))
 
@@ -199,9 +210,9 @@
 #define POH_CLICKACTION_AVAIL(p)        (POH_CLICKACTION(p)!=NULL)
 
 /****************************************************************************/
-/*																			*/
-/* Defines and Macros for WORK												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* Defines and Macros for WORK                                                                                          */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* WorkID's */
@@ -231,9 +242,9 @@
 #define W_ISSELECTWORK(p)               ((p)->WorkID==SELECTNODE_WORK || (p)->WorkID==SELECTELEMENT_WORK || (p)->WorkID==SELECTVECTOR_WORK)
 
 /****************************************************************************/
-/*																			*/
-/* miscellenious macros														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* miscellenious macros                                                                                                         */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define WOP_ACTIVE                              0
@@ -241,105 +252,105 @@
 #define WOP_WORKING                             2
 
 /****************************************************************************/
-/*																			*/
-/* structures and ...														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* structures and ...                                                                                                           */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct Draw_Work {
 
-  INT WorkID;                                   /* unique ID of the work					*/
+  INT WorkID;                                   /* unique ID of the work                                        */
 };
 
 struct FindRange_Work {
 
-  INT WorkID;                                   /* unique ID of the work					*/
+  INT WorkID;                                   /* unique ID of the work                                        */
 
   /* specification of the work */
-  INT put;                                              /* store values on PlotObj if YES			*/
-  INT symmetric;                                /* symmetrisize range if YES				*/
+  INT put;                                              /* store values on PlotObj if YES                       */
+  INT symmetric;                                /* symmetrisize range if YES                            */
   DOUBLE zoom;                                  /* factor to zoom the range                             */
 
   /* the result of the work */
-  DOUBLE min, max;                              /* range found								*/
+  DOUBLE min, max;                              /* range found                                                          */
 };
 
 struct SelectNode_Work {
 
-  INT WorkID;                                   /* unique ID of the work					*/
+  INT WorkID;                                   /* unique ID of the work                                        */
 
   /* specification of the work */
-  short PixelX;                                 /* x pixel coordinate						*/
-  short PixelY;                                 /* y pixel coordinate						*/
+  short PixelX;                                 /* x pixel coordinate                                           */
+  short PixelY;                                 /* y pixel coordinate                                           */
 };
 
 struct SelectElement_Work {
 
-  INT WorkID;                                   /* unique ID of the work					*/
+  INT WorkID;                                   /* unique ID of the work                                        */
 
   /* specification of the work */
-  short PixelX;                                 /* x pixel coordinate						*/
-  short PixelY;                                 /* y pixel coordinate						*/
+  short PixelX;                                 /* x pixel coordinate                                           */
+  short PixelY;                                 /* y pixel coordinate                                           */
 };
 
 struct SelectVector_Work {
 
-  INT WorkID;                                   /* unique ID of the work					*/
+  INT WorkID;                                   /* unique ID of the work                                        */
 
   /* specification of the work */
-  short PixelX;                                 /* x pixel coordinate						*/
-  short PixelY;                                 /* y pixel coordinate						*/
+  short PixelX;                                 /* x pixel coordinate                                           */
+  short PixelY;                                 /* y pixel coordinate                                           */
 };
 
 struct MarkElement_Work {
 
-  INT WorkID;                                   /* unique ID of the work					*/
+  INT WorkID;                                   /* unique ID of the work                                        */
 
   /* specification of the work */
-  short PixelX;                                 /* x pixel coordinate						*/
-  short PixelY;                                 /* y pixel coordinate						*/
-  INT rule;                                             /* mark rule								*/
+  short PixelX;                                 /* x pixel coordinate                                           */
+  short PixelY;                                 /* y pixel coordinate                                           */
+  INT rule;                                             /* mark rule                                                            */
 };
 
 struct InsertNode_Work {
 
-  INT WorkID;                                   /* unique ID of the work					*/
+  INT WorkID;                                   /* unique ID of the work                                        */
 
   /* specification of the work */
-  short PixelX;                                 /* x pixel coordinate						*/
-  short PixelY;                                 /* y pixel coordinate						*/
+  short PixelX;                                 /* x pixel coordinate                                           */
+  short PixelY;                                 /* y pixel coordinate                                           */
 };
 
 struct InsertBndNode_Work {
 
-  INT WorkID;                                   /* unique ID of the work					*/
+  INT WorkID;                                   /* unique ID of the work                                        */
 
   /* specification of the work */
-  short PixelX;                                 /* x pixel coordinate						*/
-  short PixelY;                                 /* y pixel coordinate						*/
+  short PixelX;                                 /* x pixel coordinate                                           */
+  short PixelY;                                 /* y pixel coordinate                                           */
 };
 
 struct MoveNode_Work {
 
-  INT WorkID;                                   /* unique ID of the work					*/
+  INT WorkID;                                   /* unique ID of the work                                        */
 
   /* specification of the work */
-  short PixelX;                                 /* x pixel coordinate						*/
-  short PixelY;                                 /* y pixel coordinate						*/
+  short PixelX;                                 /* x pixel coordinate                                           */
+  short PixelY;                                 /* y pixel coordinate                                           */
 };
 
 union Work {
 
-  INT WorkID;                                                                           /* unique ID of the work					*/
-  struct Draw_Work theDrawWork;                                         /* desc. for drawing an object				*/
+  INT WorkID;                                                                           /* unique ID of the work                                        */
+  struct Draw_Work theDrawWork;                                         /* desc. for drawing an object                          */
   struct FindRange_Work theFindRangeWork;                       /* desc. for finding the range of an object */
-  struct SelectNode_Work theSelectNodeWork;                     /* desc. for selecting a node of an object	*/
+  struct SelectNode_Work theSelectNodeWork;                     /* desc. for selecting a node of an object      */
   struct SelectElement_Work theSelectElementWork;       /* desc. for selecting an element of an obj.*/
   struct SelectVector_Work theSelectVectorWork;        /* desc. for selecting a vector of an obj.  */
-  struct MarkElement_Work theMarkElementWork;           /* desc. for marking an element of an obj.	*/
+  struct MarkElement_Work theMarkElementWork;           /* desc. for marking an element of an obj.      */
   struct InsertNode_Work theInsertNodeWork;                     /* desc. for inserting an inner node in obj.*/
-  struct InsertBndNode_Work theInsertBndNodeWork;       /* desc. for inserting a bnd node in obj.	*/
-  struct MoveNode_Work theMoveNodeWork;                         /* desc. for moving a node of an obj.		*/
+  struct InsertBndNode_Work theInsertBndNodeWork;       /* desc. for inserting a bnd node in obj.       */
+  struct MoveNode_Work theMoveNodeWork;                         /* desc. for moving a node of an obj.           */
 };
 
 typedef DOUBLE DRAWINGOBJ;
@@ -378,68 +389,68 @@ typedef INT (*RECURSIVE_EvaluateProcPtr)(DRAWINGOBJ *, GEN_ExecuteProcPtr execut
 
 struct ElemWiseWork {
 
-  INT WorkMode;                                                                                                         /* see above									*/
+  INT WorkMode;                                                                                                         /* see above                                                                    */
   GEN_PreProcessProcPtr EW_PreProcessProc;                                                      /* preprocess procedure                                                 */
-  GEN_ExecuteProcPtr EW_ExecuteProc;                                                                    /* execute procedure							*/
-  GEN_PostProcessProcPtr EW_PostProcessProc;                                            /* postprocess procedure						*/
+  GEN_ExecuteProcPtr EW_ExecuteProc;                                                                    /* execute procedure                                                    */
+  GEN_PostProcessProcPtr EW_PostProcessProc;                                            /* postprocess procedure                                                */
 
-  EW_GetFirstElementProcProcPtr EW_GetFirstElementProcProc;             /* proc for getting step function				*/
-  EW_GetNextElementProcProcPtr EW_GetNextElementProcProc;                       /* proc for getting step function				*/
+  EW_GetFirstElementProcProcPtr EW_GetFirstElementProcProc;             /* proc for getting step function                               */
+  EW_GetNextElementProcProcPtr EW_GetNextElementProcProc;                       /* proc for getting step function                               */
   EW_EvaluateProcPtr EW_EvaluateProc;                                                                   /* evaluation procedure                                                 */
 };
 
 struct NodeWiseWork {
 
-  INT WorkMode;                                                                                                         /* see above									*/
+  INT WorkMode;                                                                                                         /* see above                                                                    */
   GEN_PreProcessProcPtr NW_PreProcessProc;                                                      /* preprocess procedure                                                 */
-  GEN_ExecuteProcPtr NW_ExecuteProc;                                                                    /* execute procedure							*/
-  GEN_PostProcessProcPtr NW_PostProcessProc;                                            /* postprocess procedure						*/
+  GEN_ExecuteProcPtr NW_ExecuteProc;                                                                    /* execute procedure                                                    */
+  GEN_PostProcessProcPtr NW_PostProcessProc;                                            /* postprocess procedure                                                */
 
-  NW_GetFirstNodeProcProcPtr NW_GetFirstNodeProcProc;                                   /* proc for getting step function				*/
-  NW_GetNextNodeProcProcPtr NW_GetNextNodeProcProc;                                     /* proc for getting step function				*/
+  NW_GetFirstNodeProcProcPtr NW_GetFirstNodeProcProc;                                   /* proc for getting step function                               */
+  NW_GetNextNodeProcProcPtr NW_GetNextNodeProcProc;                                     /* proc for getting step function                               */
   NW_EvaluateProcPtr NW_EvaluateProc;                                                                   /* evaluation procedure                                                 */
 };
 
 struct VectorWiseWork {
 
-  INT WorkMode;                                                                                                         /* see above									*/
+  INT WorkMode;                                                                                                         /* see above                                                                    */
   GEN_PreProcessProcPtr VW_PreProcessProc;                                                      /* preprocess procedure                                                 */
-  GEN_ExecuteProcPtr VW_ExecuteProc;                                                                    /* execute procedure							*/
-  GEN_PostProcessProcPtr VW_PostProcessProc;                                            /* postprocess procedure						*/
+  GEN_ExecuteProcPtr VW_ExecuteProc;                                                                    /* execute procedure                                                    */
+  GEN_PostProcessProcPtr VW_PostProcessProc;                                            /* postprocess procedure                                                */
 
-  VW_GetFirstVectorProcProcPtr VW_GetFirstVectorProcProc;                       /* proc for getting step function				*/
-  VW_GetNextVectorProcProcPtr VW_GetNextVectorProcProc;                         /* proc for getting step function				*/
+  VW_GetFirstVectorProcProcPtr VW_GetFirstVectorProcProc;                       /* proc for getting step function                               */
+  VW_GetNextVectorProcProcPtr VW_GetNextVectorProcProc;                         /* proc for getting step function                               */
   VW_EvaluateProcPtr VW_EvaluateProc;                                                                   /* evaluation procedure                                                 */
 };
 
 struct ExternWork {
 
-  INT WorkMode;                                                                                 /* see above										*/
+  INT WorkMode;                                                                                 /* see above                                                                            */
   GEN_PreProcessProcPtr EXT_PreProcessProc;                     /* preprocess procedure                                                         */
-  GEN_ExecuteProcPtr EXT_ExecuteProc;                                           /* execute procedure								*/
-  GEN_PostProcessProcPtr EXT_PostProcessProc;                   /* postprocess procedure							*/
+  GEN_ExecuteProcPtr EXT_ExecuteProc;                                           /* execute procedure                                                            */
+  GEN_PostProcessProcPtr EXT_PostProcessProc;                   /* postprocess procedure                                                        */
 
   EXT_EvaluateProcPtr EXT_EvaluateProc;                                 /* evaluation procedure                                                         */
 };
 
 struct RecursiveWork {
 
-  INT WorkMode;                                                                                         /* see above										*/
+  INT WorkMode;                                                                                         /* see above                                                                            */
   GEN_PreProcessProcPtr RECURSIVE_PreProcessProc;                       /* preprocess procedure                                                         */
-  GEN_ExecuteProcPtr RECURSIVE_ExecuteProc;                                     /* execute procedure								*/
-  GEN_PostProcessProcPtr RECURSIVE_PostProcessProc;                     /* postprocess procedure							*/
+  GEN_ExecuteProcPtr RECURSIVE_ExecuteProc;                                     /* execute procedure                                                            */
+  GEN_PostProcessProcPtr RECURSIVE_PostProcessProc;                     /* postprocess procedure                                                        */
 
   RECURSIVE_EvaluateProcPtr RECURSIVE_EvaluateProc;                     /* evaluation procedure                                                         */
 };
 
 union WorkProcs {
 
-  INT WorkMode;                                                                                 /* see above										*/
-  struct ElemWiseWork ElemWiseWorkProcs;                                /* procedures for elementwise work					*/
+  INT WorkMode;                                                                                 /* see above                                                                            */
+  struct ElemWiseWork ElemWiseWorkProcs;                                /* procedures for elementwise work                                      */
   struct NodeWiseWork NodeWiseWorkProcs;                                /* procedures for nodewise work                                         */
-  struct VectorWiseWork VectorWiseWorkProcs;                    /* procedures for vectorwise work					*/
-  struct ExternWork ExternWorkProcs;                                            /* procedures for extern work						*/
-  struct RecursiveWork RecursiveWorkProcs;                              /* procedures for extern work						*/
+  struct VectorWiseWork VectorWiseWorkProcs;                    /* procedures for vectorwise work                                       */
+  struct ExternWork ExternWorkProcs;                                            /* procedures for extern work                                           */
+  struct RecursiveWork RecursiveWorkProcs;                              /* procedures for extern work                                           */
 };
 
 typedef INT (*DynamicInfoFct)(struct PICture *pic, INT tool, INT fct, const INT mp[2], char *text);
@@ -447,23 +458,23 @@ typedef INT (*ActionOnClickFct)(struct PICture *pic, INT tool, INT fct, const IN
 
 struct PlotObjHandling {
 
-  PLOTOBJTYPE thePlotObjType;                                                                                   /* abstract object definition		*/
+  PLOTOBJTYPE thePlotObjType;                                                                                   /* abstract object definition           */
 
   /* toolbox functionality */
-  INT ntoolfcts[nboftools];                                     /* 0 means disabled							*/
-  char toolnames[nboftools][NTOOLFCTS][INFO_SIZE];  /* names of the tool-functions			*/
-  DynamicInfoFct DynamicInfo;                                   /* function to return dynamic info text		*/
-  ActionOnClickFct ActionOnClick;                               /* function to act on click into picture	*/
+  INT ntoolfcts[nboftools];                                     /* 0 means disabled                                                     */
+  char toolnames[nboftools][NTOOLFCTS][INFO_SIZE];  /* names of the tool-functions                      */
+  DynamicInfoFct DynamicInfo;                                   /* function to return dynamic info text         */
+  ActionOnClickFct ActionOnClick;                               /* function to act on click into picture        */
 
   /* works */
   INT NbOfCycles[NB_WORK];                                                                                      /* number of working cycles             */
-  union WorkProcs theWorkProcs[NB_WORK][MAX_NO_CYCLES];                                 /* work procs						*/
+  union WorkProcs theWorkProcs[NB_WORK][MAX_NO_CYCLES];                                 /* work procs                                           */
 };
 
 /****************************************************************************/
-/*																			*/
-/*					typedef for structs                                                                     */
-/*																			*/
+/*                                                                                                                                                      */
+/*                                      typedef for structs                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 typedef union  WorkProcs WORKPROCS;
@@ -477,18 +488,18 @@ typedef union  Work WORK;
 typedef struct PlotObjHandling PLOTOBJHANDLING;
 
 /****************************************************************************/
-/*																			*/
-/* global variables															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* global variables                                                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 #ifdef ModelP
 extern DRAWINGOBJ        *WOP_DObjPnt;
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT             InitWOP                                 (void);
@@ -512,4 +523,9 @@ INT                     SetOrderStrategy                (INT OrderStrategy);
 PLOTOBJHANDLING *CreatePlotObjHandling (char *PlotObjTypeName);
 INT             Draw2D                                  (DRAWINGOBJ *q);
 INT             Draw3D                                  (DRAWINGOBJ *q);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
+
 #endif

@@ -126,6 +126,14 @@
 
 #include "initug.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -206,9 +214,9 @@ typedef struct
 } ARRAY;
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 static MULTIGRID *currMG=NULL;                  /* the current multigrid			*/
@@ -317,7 +325,7 @@ MULTIGRID *ConvertCADGrid  (char *theFormat, char *CADOutputFileName,unsigned lo
    D*/
 /****************************************************************************/
 
-MULTIGRID *GetCurrentMultigrid (void)
+MULTIGRID * NS_PREFIX GetCurrentMultigrid (void)
 {
   return (currMG);
 }
@@ -344,7 +352,7 @@ MULTIGRID *GetCurrentMultigrid (void)
    D*/
 /****************************************************************************/
 
-INT SetCurrentMultigrid (MULTIGRID *theMG)
+INT NS_PREFIX SetCurrentMultigrid (MULTIGRID *theMG)
 {
   MULTIGRID *mg;
 
@@ -7947,7 +7955,7 @@ static INT CheckCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
-INT QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
+INT NS_PREFIX QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
 {
   INT error;
 

@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  refine.h														*/
-/*																			*/
-/* Purpose:   definitions for two AND three dimensional refinement			*/
-/*																			*/
-/* Author:	  Peter Bastian                                                                                                 */
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*			  internet: bastian@iwr1.iwr.uni-heidelberg.de					*/
-/*																			*/
-/* History:   09.03.92 begin, ug version 2.0								*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          refine.h                                                                                                              */
+/*                                                                                                                                                      */
+/* Purpose:   definitions for two AND three dimensional refinement                      */
+/*                                                                                                                                                      */
+/* Author:        Peter Bastian                                                                                                 */
+/*                        Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*                        Universitaet Heidelberg                                                                               */
+/*                        Im Neuenheimer Feld 368                                                                               */
+/*                        6900 Heidelberg                                                                                               */
+/*                        internet: bastian@iwr1.iwr.uni-heidelberg.de                                  */
+/*                                                                                                                                                      */
+/* History:   09.03.92 begin, ug version 2.0                                                            */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __REFINE__
@@ -43,6 +43,17 @@
 
 #ifndef __ALGEBRA__
 #include "algebra.h"            /* just for ALGEBRA_N_CE */
+#endif
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
 #endif
 
 /****************************************************************************/
@@ -68,14 +79,14 @@
 
 
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* control word definitions                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 enum REFINE_CE {
 
-  PATTERN_CE = ALGEBRA_N_CE,            /* continue after algebra.h entries		*/
+  PATTERN_CE = ALGEBRA_N_CE,            /* continue after algebra.h entries             */
   ADDPATTERN_CE,
   REFINE_CE,
   MARK_CE,
@@ -223,9 +234,9 @@ enum REFINE_CE {
   ENDDEBUG
 
 /****************************************************************************/
-/*																			*/
-/* typedefs																	*/
-/*																			*/
+/*                                                                                                                                                      */
+/* typedefs                                                                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 typedef struct refineinfo
@@ -253,9 +264,9 @@ extern INT ce_NEW_EDIDENT;
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* functions exported														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* functions exported                                                                                                           */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT     Set_Get_Sons_of_ElementSideProc                 (Get_Sons_of_ElementSideProcPtr Proc);
@@ -263,5 +274,9 @@ INT     GetSonSideNodes                                                 (ELEMENT
 INT             Get_Sons_of_ElementSide                                 (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons, INT ioflag);
 INT     Connect_Sons_of_ElementSide                     (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag);
 INT             Refinement_Changes                                              (ELEMENT *theElement);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

@@ -26,6 +26,14 @@
 
 REP_ERR_FILE;
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /* MacOS doesn't support the non-standard (!) strdup function */
 #if ( defined(__MWCW__) || defined(__OPENSTEP__) )
 char *strdup(const char *text);  /* forward declaration to make ANSI compilers happy */

@@ -4,9 +4,9 @@
 /*                                                                          */
 /* File:      quadrature.c                                                  */
 /*                                                                          */
-/* Purpose:   quadrature formulas                                               */
+/* Purpose:   quadrature formulas                                           */
 /*                                                                          */
-/* Author:	  Christian Wieners                                                                             */
+/* Author:    Christian Wieners                                             */
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
@@ -34,6 +34,15 @@
 #include "quadrature.h"
 #include "ugdevices.h"
 #include "general.h"
+
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -3053,7 +3062,7 @@ static QUADRATURE Quadrature3D_Hex_P11_N90 = {
    D*/
 /****************************************************************************/
 
-QUADRATURE *GetQuadrature(INT dim, INT n, INT order)
+QUADRATURE *NS_PREFIX GetQuadrature(INT dim, INT n, INT order)
 {
   switch (dim)
   {

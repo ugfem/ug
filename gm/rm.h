@@ -1,21 +1,21 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  rule manager header file										*/
-/*																			*/
-/* Purpose:   defines data structures for refinement rules					*/
-/*																			*/
-/* Author:	  Stefan Lang                                                                           */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*																			*/
-/* History:   20.11.95 begin, ugp version 3.0								*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          rule manager header file                                                                              */
+/*                                                                                                                                                      */
+/* Purpose:   defines data structures for refinement rules                                      */
+/*                                                                                                                                                      */
+/* Author:        Stefan Lang                                                                           */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70550 Stuttgart                                                                                               */
+/*                                                                                                                                                      */
+/* History:   20.11.95 begin, ugp version 3.0                                                           */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -24,9 +24,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __RULEMANAGER__
@@ -44,14 +44,25 @@
 #include "refine.h"
 #endif
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* uncomment this if you want to use the full rule set for tetrahedra */
@@ -239,9 +250,9 @@
 
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* macros for rules                                                                     */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* Hacks for HITACHI SR2201 will be eliminated as soon as the HITACHI
@@ -297,9 +308,9 @@
 #define SWITCHCLASS(c)                          ((c) & 4)
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                          */
+/* data structures exported by the corresponding source file                */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 typedef INT (*FULLREFRULEPTR)(ELEMENT *);
@@ -331,7 +342,7 @@ struct edgedata {
 };
 
 struct sondata {
-  SHORT tag;                                     /* which element type is the son			    */
+  SHORT tag;                                     /* which element type is the son                           */
   SHORT corners[MAX_CORNERS_OF_ELEM_DIM];        /* corners of the son                                  */
   SHORT nb[MAX_SIDES_OF_ELEM_DIM];               /* neighbors of this son                               */
   /* < FATHER_SIDE_OFFSET if nb has same father  */
@@ -358,9 +369,9 @@ typedef struct refrule REFRULE;
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 extern INT MaxRules[TAGS];
@@ -373,9 +384,9 @@ extern FULLREFRULEPTR theFullRefRule;
 
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT ShowRefRule         (INT tag, INT nb);
@@ -390,6 +401,10 @@ ELEMENT         *ELEMENT_TO_MARK                (ELEMENT *theElement);
 #ifdef __THREEDIM__
 INT             SetAlignmentPtr                 (MULTIGRID *theMG, EVECTOR *direction);
 INT             GetRule_AnisotropicRed  (ELEMENT *theElement, INT *Rule);
+#endif
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
 #endif
 
 #endif

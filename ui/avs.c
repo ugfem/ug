@@ -56,6 +56,14 @@
 
 #include "avs.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -240,7 +248,7 @@ static INT AVSCommand (INT argc, char **argv)
   INT i,j,k,v;                                  /* counters etc.							*/
   INT counter;                                  /* for formatting output					*/
   char item[1024],it[256];              /* item buffers								*/
-  INT ic=0;                                             /* item length								*/
+  INT ic=0;                                             /* item length	*/
   VERTEX *vx;                                           /* a vertex pointer							*/
   ELEMENT *el;                                  /* an element pointer						*/
 

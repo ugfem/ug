@@ -47,6 +47,14 @@
 #include "boxtree.h"
 #include "fieldio.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order										        */
@@ -329,7 +337,9 @@ static int WriteElementData(STREAM *stream, MULTIGRID *mg,
   PreprocessingProcPtr pre;
   ElementEvalProcPtr eval_s;
   ElementVectorProcPtr eval_v;
-  double *cc[MAX_CORNERS_OF_ELEM], lc[DIM], lo[DIM], s, v[DIM];
+  //double *cc[MAX_CORNERS_OF_ELEM], lc[DIM], lo[DIM], s, v[DIM];
+  const double *cc[MAX_CORNERS_OF_ELEM];
+  double lc[DIM], lo[DIM], s, v[DIM];
   int i, j;
 
   if (WriteInt(stream, no_es)) return 1;

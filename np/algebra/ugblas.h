@@ -1,33 +1,33 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ugblas.h														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          ugblas.h                                                                                                              */
+/*                                                                                                                                                      */
 /* Purpose:   basic linear algebra routines                                                             */
-/*			  working on the matrix-vector and								*/
-/*			  matrix-blockvector structure									*/
-/*																			*/
-/* Author:	  Henrik Rentz-Reichert                                                                                 */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*																			*/
-/*			  blockvector routines from:									*/
-/*			  Christian Wrobel                                                                              */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*																			*/
-/*			  email: ug@ica3.uni-stuttgart.de					                */
-/*																			*/
-/* History:   06.03.95 begin, ug version 3.0								*/
-/*			  28.09.95 blockvector routines implemented (Christian Wrobel)	*/
-/*																			*/
+/*                        working on the matrix-vector and                                                              */
+/*                        matrix-blockvector structure                                                                  */
+/*                                                                                                                                                      */
+/* Author:        Henrik Rentz-Reichert                                                                                 */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                                                                                                                                                      */
+/*                        blockvector routines from:                                                                    */
+/*                        Christian Wrobel                                                                              */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                                                                                                                                                      */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
+/* History:   06.03.95 begin, ug version 3.0                                                            */
+/*                        28.09.95 blockvector routines implemented (Christian Wrobel)  */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -36,9 +36,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __UGBLAS__
@@ -46,14 +46,25 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define UPPER_TRIANGLE          1
@@ -66,7 +77,7 @@ enum TRACE_BLAS {
   TRBL_VECS
 };
 
-/* kinds of matrices														*/
+/* kinds of matrices                                                                                                            */
 #define R1C1                            RCKIND(1,1)
 #define R1C2                            RCKIND(1,2)
 #define R1C3                            RCKIND(1,3)
@@ -85,7 +96,7 @@ enum TRACE_BLAS {
 #define MAT_RCKIND(M,rt,ct)     (((rt)<4 && (ct)<4) ? RCKIND(MD_ROWS_IN_RT_CT(M,rt,ct),MD_COLS_IN_RT_CT(M,rt,ct)) : -1)
 #endif
 
-/* the vector loops used													*/
+/* the vector loops used                                                                                                        */
 #define L_VLOOP__CLASS(v,first_v,c)                                                                                     \
   for (v=first_v; v!= NULL; v=SUCCVC(v))                          \
     if (VCLASS(v)>=c)
@@ -125,7 +136,7 @@ enum TRACE_BLAS {
     if ((VTYPE(v)==t) && (NEW_DEFECT(v)))
 
 
-/* the matrix loops used													*/
+/* the matrix loops used                                                                                                        */
 #define L_MLOOP__RCTYPE(v,first_v,m,rt,ct)                                                                      \
   for (v=first_v; v!= NULL; v=SUCCVC(v))          \
     if (VTYPE(v)==rt)                                                               \
@@ -332,7 +343,7 @@ enum TRACE_BLAS {
              + MVALUE(MADJ(mat),m ## 12) * VVALUE(vec,c ## 1) \
              + MVALUE(MADJ(mat),m ## 22) * VVALUE(vec,c ## 2);}
 
-/* the blockvector loops used												*/
+/* the blockvector loops used                                                                                           */
 #define BLOCK_L_VLOOP(v,first_v,end_v)  \
   for (v=first_v; v!= end_v; v=SUCCVC(v))
 
@@ -341,7 +352,7 @@ enum TRACE_BLAS {
     if ((VTYPE(v)==t) && (VCLASS(v)>=c))
 
 
-/* the matrix-blockvector loops used										*/
+/* the matrix-blockvector loops used                                                                            */
 #define BLOCK_L_MLOOP(v,first_v,end_v,bvd_col,bvdf,m)   \
   for (v=first_v; v!= end_v; v=SUCCVC(v))                         \
     for (m=VSTART(v); m!=NULL; m=MNEXT(m))          \
@@ -354,20 +365,24 @@ enum TRACE_BLAS {
         if (VMATCH(MDEST(m),bvd_col,bvdf)&&(VTYPE(MDEST(m))==ct))
 
 
-/* ptr to begin of vector values (not to be confused with VVALUEPTR(v,n))	*/
+/* ptr to begin of vector values (not to be confused with VVALUEPTR(v,n))       */
 #define VVALPTR(v)                              ((v)->value)
 
-/* ptr to begin of matrix values (not to be confused with MVALUEPTR(m,n))	*/
+/* ptr to begin of matrix values (not to be confused with MVALUEPTR(m,n))       */
 #define MVALPTR(m)                              ((m)->value)
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT  VecCheckConsistency                        (const VECDATA_DESC *x, const VECDATA_DESC *y);
 INT  MatmulCheckConsistency             (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y);
 INT  TraceUGBlas                                        (INT trace);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

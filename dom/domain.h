@@ -78,6 +78,17 @@
 #endif
 #endif
 
+/***************************************************/
+/* The namespace prefix if this is compiled as c++ */
+/***************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+#define NS_PREFIX UG2d::
+#else
+#define NS_PREFIX UG3d::
+#endif
+#endif
+
 /* offset of additional parameters for boundary condition function call */
 enum DOM_IN_PARAMS {
 
@@ -86,7 +97,7 @@ enum DOM_IN_PARAMS {
 #ifdef __THREEDIM__
   DOM_GLB_Z,                                            /* general bnd cond. z-coordinate               */
 #endif
-  DOM_EVAL_FOR_SD,                              /* evaluate bc for this subdomain		*/
+  DOM_EVAL_FOR_SD,                              /* evaluate bc for this subdomain               */
   DOM_N_IN_PARAMS
 };
 
@@ -152,8 +163,8 @@ struct BVP_Descriptor
   INT convex;                        /* 1 if domain is convex, 0 if not     */
   INT nSubDomains;                   /* nb. of subdomains,
                                                                                 exterior not counted                */
-  INT nDomainParts;                                      /* number of parts in the domain		*/
-  INT *s2p;                                                      /* pointer to table subbdom --> part	*/
+  INT nDomainParts;                                      /* number of parts in the domain               */
+  INT *s2p;                                                      /* pointer to table subbdom --> part   */
 
   /* problem part */
   ConfigProcPtr ConfigProc;          /* configuration function              */
@@ -164,9 +175,9 @@ typedef struct BVP_Descriptor BVP_DESC;
 
 struct mesh
 {
-  INT mesh_status;                                       /* status see above					*/
+  INT mesh_status;                                       /* status see above                                    */
   INT nBndP;                         /* nb. of boundary points              */
-  BNDP **theBndPs;                                       /* list of boundary points	            */
+  BNDP **theBndPs;                                       /* list of boundary points                 */
   INT nInnP;                         /* nb. of inner nodes                  */
   DOUBLE **Position;                 /* positions of inner nodes            */
   INT nSubDomains;                   /* nb. of subdomains                   */
@@ -181,14 +192,14 @@ struct mesh
   INT **ElemSideOnBnd;               /* used bitwise: sides on bnd for elem */
 
   /* parallel part */
-  char *VertexLevel;                                     /* level of vertex						*/
-  /* NULL if all vertex on level 0		*/
-  char *VertexPrio;                                      /* priority of vertex					*/
-  /* NULL if all vertex are master		*/
-  char **ElementLevel;                                   /* level of element in subdomain	*/
-  /* NULL if all elements on level 0		*/
-  char **ElementPrio;                                    /* priority of element in subdomain	*/
-  /* NULL if all elements are master		*/
+  char *VertexLevel;                                     /* level of vertex                                             */
+  /* NULL if all vertex on level 0               */
+  char *VertexPrio;                                      /* priority of vertex                                  */
+  /* NULL if all vertex are master               */
+  char **ElementLevel;                                   /* level of element in subdomain       */
+  /* NULL if all elements on level 0             */
+  char **ElementPrio;                                    /* priority of element in subdomain    */
+  /* NULL if all elements are master             */
 };
 typedef struct mesh MESH;
 
@@ -206,9 +217,9 @@ typedef struct mesh MESH;
 
 
 /****************************************************************************/
-/*																			*/
-/* functions for BVP														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* functions for BVP                                                                                                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
@@ -446,9 +457,9 @@ typedef struct mesh MESH;
 
 
 /****************************************************************************/
-/*																			*/
-/* functions called by script commands										*/
-/*																			*/
+/*                                                                                                                                                      */
+/* functions called by script commands                                                                          */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
@@ -497,9 +508,9 @@ typedef struct mesh MESH;
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* functions for BNDP														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* functions for BNDP                                                                                                           */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
@@ -556,7 +567,7 @@ typedef struct mesh MESH;
 
    PARAMETERS:
    .  aBndP - BNDP structure
-   .  i	 - evaluate on patch i
+   .  i     - evaluate on patch i
    .  n     - number of BNDS
    .  in    - input vector (if !=NULL has to be allocated with >= DOM_N_IN_PARAMS DOUBLES)
    .  type  - type of bnd cond
@@ -581,7 +592,7 @@ typedef struct mesh MESH;
 
    PARAMETERS:
    .  aBndP - BNDP structure
-   .  i	 - evaluate on patch i
+   .  i     - evaluate on patch i
    .  n     - number of BNDS
 
    DESCRIPTION:
@@ -625,7 +636,7 @@ typedef struct mesh MESH;
    PARAMETERS:
    .  aBndP0 - first BNDP
    .  aBndP1 - second BNDP
-   .  part	  - domain part ID
+   .  part   - domain part ID
 
    DESCRIPTION:
    This function sets the descriptor for a BNDE.
@@ -748,9 +759,9 @@ typedef struct mesh MESH;
 
 
 /****************************************************************************/
-/*																			*/
-/* functions for BNDS														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* functions for BNDS                                                                                                           */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
