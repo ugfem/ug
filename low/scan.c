@@ -39,6 +39,8 @@
 #include "misc.h"
 #include "scan.h"
 
+#include "devices.h"    /* TODO (HRR 971105): hierarchy conflict */
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
