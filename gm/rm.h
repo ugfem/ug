@@ -222,15 +222,20 @@
 #define PRI_RED_HEX                     11
 #define PRI_ROT_L                       12
 #define PRI_ROT_R                       13
+#define PRI_QUADSECT_HEXPRI0 14
 
 #define HEXA_COPY                       1
-#define HEXA_RED                        2
 #define HEXA_RED                        2
 #define HEXA_BISECT_0_1     3
 #define HEXA_BISECT_0_2     4
 #define HEXA_BISECT_0_3     5
+#define HEXA_QUADSECT_0     6
+#define HEXA_QUADSECT_1     7
+#define HEXA_QUADSECT_2     8
 #define HEXA_TRISECT_0      9
 #define HEXA_TRISECT_5      10
+#define HEXA_BISECT_HEXPRI0 11
+#define HEXA_BISECT_HEXPRI1 12
 
 
 /****************************************************************************/

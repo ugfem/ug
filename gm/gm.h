@@ -341,12 +341,18 @@
 #define PRISM_BISECT_HEX2   6
 #define PRISM_ROTATE_LEFT   10
 #define PRISM_ROTATE_RGHT   11
+#define PRISM_QUADSECT_HEXPRI0 14
 
 #define HEX_BISECT_0_1          5
 #define HEX_BISECT_0_2          6
 #define HEX_BISECT_0_3          7
 #define HEX_TRISECT_0           8
 #define HEX_TRISECT_5           9
+#define HEX_QUADSECT_0          12
+#define HEX_QUADSECT_1          13
+#define HEX_QUADSECT_2          14
+#define HEX_BISECT_HEXPRI0      15
+#define HEX_BISECT_HEXPRI1      16
 
 #endif
 
