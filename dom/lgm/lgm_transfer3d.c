@@ -40,6 +40,7 @@ static FILE *stream;
 static INT lgmdomainpathes_set;
 static INT LGM_DEBUG = 0;
 static HEAP *theHeap;
+static int flag;
 
 
 /* RCS string */
@@ -508,6 +509,97 @@ int LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
   return (0);
 }
 
+static int Compare_Triangles(LGM_SURFACE_INFO *surface_info, int i, int j)
+{
+  int a, b, c, d, e, f, k, l;
+
+  a = surface_info->Triangle[j].corner[0];
+  b = surface_info->Triangle[j].corner[1];
+  c = surface_info->Triangle[j].corner[2];
+
+  d = surface_info->Triangle[i].corner[0];
+  e = surface_info->Triangle[i].corner[1];
+  f = surface_info->Triangle[i].corner[2];
+
+  for(k=0; k<3; k++)
+    for(l=0; l<3; l++)
+    {
+      a = surface_info->Triangle[j].corner[(k+1)%3];
+      b = surface_info->Triangle[j].corner[(k+2)%3];
+      c = surface_info->Triangle[i].corner[(l+2)%3];
+      d = surface_info->Triangle[i].corner[(l+1)%3];
+      if( (a==c) && (b==d) )
+        return(-1);
+      if( (a==d) && (b==c) )
+        return(1);
+    }
+
+  return(0);
+}
+static int Change_Triangle(LGM_SURFACE_INFO *surface_info, int n)
+{
+  int a, b;
+
+  a = surface_info->Triangle[n].corner[0];
+  b = surface_info->Triangle[n].corner[1];
+
+  surface_info->Triangle[n].corner[0] = b;
+  surface_info->Triangle[n].corner[1] = a;
+
+  a = surface_info->Triangle[n].neighbor[0];
+  b = surface_info->Triangle[n].neighbor[1];
+
+  surface_info->Triangle[n].neighbor[0] = b;
+  surface_info->Triangle[n].neighbor[1] = a;
+  /*	printf("%s\n", "triangle changed");*/
+  flag = 1;
+  return(0);
+}
+
+static int Check_Orientation(LGM_SURFACE_INFO *surface_info)
+{
+  int i, j, tr_used[1000], n, change, flag;
+
+  n = 1000;
+  for(i=0; i<n; i++)
+    tr_used[i] = -1;
+
+  /* erstes Freieck legt die Orientierung fest */
+  tr_used[0] = 1;
+
+  do
+  {
+    for(i=0; i<surface_info->nTriangles; i++)
+    {
+      if(tr_used[i]==-1)
+      {
+        /* versuche Orientierung von Nachbardreiecken zu vergleichen oder zu uebertragen */
+        for(j=0; j<3; j++)
+        {
+          if(surface_info->Triangle[i].neighbor[j]!=-1)
+          {
+            /* Nachbar existiert */
+            if(tr_used[surface_info->Triangle[i].neighbor[j]]==1)
+            {
+              change = Compare_Triangles(surface_info, i, surface_info->Triangle[i].neighbor[j]);
+              if(change==0)
+                printf("%s\n", "schotter");
+              if(change==1)
+                Change_Triangle(surface_info, i);
+              tr_used[i] = 1;
+            }
+          }
+        }
+      }
+    }
+    flag = 0;
+    for(i=0; i<surface_info->nTriangles; i++)
+      if(tr_used[i]==-1)                                        /* noch nicht fertig */
+        flag = 1;
+  }
+  while(flag);
+}
+
 static int Search_Neighbours(LGM_SURFACE_INFO *surface_info, int **point_list, int nPoints)
 {
   int ni,i,j,k,l,nTriangle,corner_id;
@@ -545,7 +637,7 @@ static int Search_Neighbours(LGM_SURFACE_INFO *surface_info, int **point_list, i
               b = surface_info->Triangle[point_list[ni][i]].corner[(k+2)%3];
               c = surface_info->Triangle[point_list[ni][j]].corner[(l+2)%3];
               d = surface_info->Triangle[point_list[ni][j]].corner[(l+1)%3];
-              if( (a==c) && (b==d) )
+              if( ((a==c) && (b==d)) || ((a==d) && (b==c)) )
               {
                 surface_info->Triangle[point_list[ni][i]].neighbor[k] = point_list[ni][j];
               }
@@ -555,7 +647,7 @@ static int Search_Neighbours(LGM_SURFACE_INFO *surface_info, int **point_list, i
 
 int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
 {
-  int i,k,n,i1,i2,i3;
+  int i,k,n,i1,i2,i3,surface_id;;
 
   if(dummy == 0)
     if (fsetpos(stream, &filepossurface))
@@ -563,6 +655,7 @@ int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
 
   if (fscanf(stream,"surface %d:",&i)!=1)
     return (1);
+  surface_id = i;
   if (SkipBTN())
     return (1);
   if (fscanf(stream,"left=%d;",&i)!=1)
@@ -633,6 +726,13 @@ int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
 
   /* search neighbours */
   Search_Neighbours(surface_info, surface_info->point_list, surface_info->length);
+
+  /* check orientation of triangles */
+  flag = 0;
+  Check_Orientation(surface_info);
+
+  if(flag)
+    UserWriteF("Warning: Orientation of inputtriangles on surface %4d changed\n",surface_id);
 
   return (0);
 }
