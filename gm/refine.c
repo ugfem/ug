@@ -79,7 +79,6 @@
 #include "algebra.h"
 #include "evm.h"
 #include "gm.h"
-#include "GenerateRules.h"
 #include "refine.h"
 #include "rm.h"
 #include "ugm.h"
