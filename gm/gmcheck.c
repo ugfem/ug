@@ -50,6 +50,7 @@
 #include "fifo.h"
 
 #include "ugdevices.h"
+#include "ugstruct.h"
 
 #include "evm.h"
 #include "gm.h"
