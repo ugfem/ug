@@ -2,9 +2,9 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      cmds.c                                                        */
+/* File:      jcmds.c                                                       */
 /*                                                                          */
-/* Purpose:   DDD-commands for Join Module                                  */
+/* Purpose:   DDD-commands for Join Environment                             */
 /*                                                                          */
 /* Author:    Klaus Birken                                                  */
 /*            Institut fuer Computeranwendungen III                         */
@@ -319,7 +319,7 @@ static void UnpackPhase1Msgs (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
         for(cpl=ObjCplList(localCplObjs[j]); cpl!=NULL; cpl=CPL_NEXT(cpl))
         {
           JIAddCpl *ji = JIAddCplSet_NewItem(joinGlobals.setJIAddCpl2);
-          ji->dest    = cpl->proc;
+          ji->dest    = CPL_PROC(cpl);
           ji->te.gid  = theJoin[i].gid;
           ji->te.proc = LC_MsgGetProc(jm);
           ji->te.prio = theJoin[i].prio;
@@ -341,7 +341,7 @@ static void UnpackPhase1Msgs (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
           JIAddCpl *ji = JIAddCplSet_NewItem(joinGlobals.setJIAddCpl3);
           ji->dest    = LC_MsgGetProc(jm);
           ji->te.gid  = OBJ_GID(localCplObjs[j]);
-          ji->te.proc = cpl->proc;
+          ji->te.proc = CPL_PROC(cpl);
           ji->te.prio = cpl->prio;
 
           if (! JIAddCplSet_ItemOK(joinGlobals.setJIAddCpl3))
@@ -796,26 +796,26 @@ static void UnpackPhase3Msgs (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
  */
 
 #ifdef C_FRONTEND
-void DDD_JoinEnd (void)
+DDD_RET DDD_JoinEnd (void)
 #endif
 #ifdef CPP_FRONTEND
-void DDD_Library::JoinEnd (void)
+DDD_RET DDD_Library::JoinEnd (void)
 #endif
 #ifdef F_FRONTEND
-void DDD_JoinEnd (void)
+DDD_RET DDD_JoinEnd (void)
 #endif
 {
-  JIJoinPtrArray   *arrayJIJoin;
-  JIAddCplPtrArray *arrayJIAddCpl2;
-  JIAddCplPtrArray *arrayJIAddCpl3;
+  JIJoinPtrArray   *arrayJIJoin    = NULL;
+  JIAddCplPtrArray *arrayJIAddCpl2 = NULL;
+  JIAddCplPtrArray *arrayJIAddCpl3 = NULL;
   int obsolete, nRecvMsgs1, nRecvMsgs2, nRecvMsgs3, nSendMsgs;
-  JOINMSG1    *sendMsgs1, *sm1=NULL;
-  JOINMSG2    *sendMsgs2, *sm2=NULL;
-  JOINMSG3    *sendMsgs3, *sm3=NULL;
-  LC_MSGHANDLE *recvMsgs1, *recvMsgs2, *recvMsgs3;
+  JOINMSG1    *sendMsgs1=NULL, *sm1=NULL;
+  JOINMSG2    *sendMsgs2=NULL, *sm2=NULL;
+  JOINMSG3    *sendMsgs3=NULL, *sm3=NULL;
+  LC_MSGHANDLE *recvMsgs1=NULL, *recvMsgs2=NULL, *recvMsgs3=NULL;
   DDD_HDR     *localCplObjs=NULL;
   size_t sendMem=0, recvMem=0;
-  JIPartner   *joinObjs;
+  JIPartner   *joinObjs = NULL;
   int nJoinObjs;
 
 
@@ -873,6 +873,12 @@ void DDD_JoinEnd (void)
   STAT_RESET;
   /* get sorted list of local objects with couplings */
   localCplObjs = LocalCoupledObjectsList();
+  if (localCplObjs==NULL && ddd_nCpls>0)
+  {
+    DDD_PrintError('E', 7020,
+                   "Cannot get list of coupled objects in DDD_JoinEnd(). Aborted");
+    HARD_EXIT;
+  }
 
 
   if (obsolete>0)
@@ -1189,6 +1195,8 @@ void DDD_JoinEnd (void)
 
 
   JoinStepMode(JMODE_BUSY);
+
+  return(DDD_RET_OK);
 }
 
 

@@ -29,6 +29,7 @@ ddd_all: $(LibPth)/libddd.a
 IdentPth = $(SrcPth)/ident
 IfPth    = $(SrcPth)/if
 XferPth  = $(SrcPth)/xfer
+PrioPth  = $(SrcPth)/prio
 JoinPth  = $(SrcPth)/join
 MgrPth   = $(SrcPth)/mgr
 
@@ -203,6 +204,7 @@ ifuse.o: $(SrcPth)/dddi.h	\
 ifcmds.o: $(SrcPth)/dddi.h	\
 		$(IfPth)/if.h	\
 		$(IfPth)/ifcmd.ct	\
+		$(IfPth)/ifstd.ct	\
 		$(IfPth)/ifcmds.c
 	$(DDD_CC) $(SrcOpt) $(IfPth)/ifcmds.c
 
@@ -287,6 +289,20 @@ supp.o: $(SrcPth)/dddi.h	\
 
 
 
+### Prio Module
+
+Prio-o = pcmds.o
+
+
+pcmds.o: $(SrcPth)/dddi.h	\
+		$(PrioPth)/pcmds.c
+	$(DDD_CC) $(SrcOpt) $(PrioPth)/pcmds.c
+
+
+###########################################################
+
+
+
 ### Join Module
 
 Join-o = join.o	\
@@ -355,6 +371,7 @@ DDD-o = $(Basic-o)	\
 	$(Ident-o)	\
 	$(If-o)	\
 	$(Xfer-o)	\
+	$(Prio-o)	\
 	$(Join-o)	\
 	$(Misc-o)	\
 	f2c.o		\

@@ -91,7 +91,7 @@ typedef int RETCODE;
  */
 #define OLDSTYLE(txt) \
   if (me==master && DDD_GetOption(OPT_WARNING_OLDSTYLE)==OPT_ON)  \
-  { DDD_PrintError('W', 8888, txt); }
+  { DDD_PrintError('W', 1080, txt); }
 
 
 
@@ -158,6 +158,7 @@ enum PrioMergeVals {
 };
 
 
+
 /****************************************************************************/
 
 /* string constants */
@@ -213,15 +214,15 @@ enum PrioMergeVals {
 typedef struct obj_coupl
 {
   struct obj_coupl *_next;
-  unsigned short proc;
+  unsigned short _proc;
   unsigned char prio;
-  unsigned char flags;
+  unsigned char _flags;
   DDD_HDR obj;
 } COUPLING;
 
 
 #define CPL_NEXT(cpl)   ((cpl)->_next)
-#define CPL_PROC(cpl)   ((cpl)->proc)
+#define CPL_PROC(cpl)   ((cpl)->_proc)
 
 
 
@@ -458,8 +459,16 @@ extern VChannelPtr *theTopology;
 /* usage of flags in COUPLING */
 /* usage of 0x03 while interface-building, temporarily */
 #define MASKCPLDIR 0x00000003
-#define CPLDIR(c) (((int)((c)->flags))&MASKCPLDIR)
-#define SETCPLDIR(c,d) ((c)->flags) = (((c)->flags)&(~MASKCPLDIR))|((d)&MASKCPLDIR)
+#define CPLDIR(c) (((int)((c)->_flags))&MASKCPLDIR)
+#define SETCPLDIR(c,d) ((c)->_flags) = (((c)->_flags)&(~MASKCPLDIR))|((d)&MASKCPLDIR)
+
+/* usage of 0x10 for remembering the memory origin for the COUPLING struct */
+#define MASKCPLMEM 0x00000010
+#define CPLMEM_EXTERNAL  0x00
+#define CPLMEM_FREELIST  0x10
+#define CPLMEM(c) (((int)((c)->_flags))&MASKCPLMEM)
+#define SETCPLMEM_EXTERNAL(c) ((c)->_flags) = (((c)->_flags)&(~MASKCPLMEM))|(CPLMEM_EXTERNAL)
+#define SETCPLMEM_FREELIST(c) ((c)->_flags) = (((c)->_flags)&(~MASKCPLMEM))|(CPLMEM_FREELIST)
 
 
 
@@ -522,6 +531,15 @@ extern VChannelPtr *theTopology;
 
 /* get default VChan to processor p */
 #define VCHAN_TO(p)   (theTopology[(p)])
+
+
+/****************************************************************************/
+
+/* types for StdIf-communication functions (see if/ifstd.ct) */
+typedef int (*ExecProcHdrPtr)(DDD_HDR);
+typedef int (*ExecProcHdrXPtr)(DDD_HDR, DDD_PROC, DDD_PRIO);
+typedef int (*ComProcHdrPtr)(DDD_HDR, void *);
+typedef int (*ComProcHdrXPtr)(DDD_HDR, void *, DDD_PROC, DDD_PRIO);
 
 
 /****************************************************************************/
@@ -797,11 +815,11 @@ void      DisposeCouplingList (COUPLING *);
 void      DDD_InfoCoupling (DDD_HDR);
 
 
-/* prio.c */
+/* mgr/prio.c */
 int PriorityMerge (TYPE_DESC *, DDD_PRIO, DDD_PRIO, DDD_PRIO *);
 
 
-/* if.c */
+/* if/if.c */
 void      ddd_IFInit (void);
 void      ddd_IFExit (void);
 void      IFAllFromScratch (void);
@@ -809,35 +827,48 @@ void      DDD_InfoIFImpl (DDD_IF);
 void      IFInvalidateShortcuts (DDD_TYPE);
 int       DDD_CheckInterfaces (void);
 
+/* if/ifcmds.c */
+void   ddd_StdIFExchange   (size_t, ComProcHdrPtr,ComProcHdrPtr);
+void   ddd_StdIFExecLocal  (        ExecProcHdrPtr);
+void   ddd_StdIFExchangeX  (size_t, ComProcHdrXPtr,ComProcHdrXPtr);
+void   ddd_StdIFExecLocalX (        ExecProcHdrXPtr);
 
-/* xfer.c */
+
+
+/* xfer/xfer.c */
 void      ddd_XferInit (void);
 void      ddd_XferExit (void);
-int       XferActive (void);
-void      XferRegisterDelete (DDD_HDR);
+int       ddd_XferActive (void);
+void      ddd_XferRegisterDelete (DDD_HDR);
 
 
-/* join.c */
+/* xfer/cmds.c */
+void      DDD_XferPrioChange (DDD_HDR, DDD_PRIO);
+
+
+/* prio/pcmds.c */
+void      ddd_PrioInit (void);
+void      ddd_PrioExit (void);
+int       ddd_PrioActive (void);
+
+
+/* join/join.c */
 void      ddd_JoinInit (void);
 void      ddd_JoinExit (void);
 int       ddd_JoinActive (void);
 
 
-/* ident.c */
+/* ident/ident.c */
 void      ddd_IdentInit (void);
 void      ddd_IdentExit (void);
 
 
-/* cons.c */
+/* basic/cons.c */
 void      ddd_ConsInit (void);
 void      ddd_ConsExit (void);
 
 
-/* cmds.c */
-void      DDD_XferPrioChange (DDD_HDR, DDD_PRIO);
-
-
-/* topo.c */
+/* basic/topo.c */
 void      ddd_TopoInit (void);
 void      ddd_TopoExit (void);
 DDD_PROC *DDD_ProcArray (void);
@@ -846,7 +877,7 @@ void      DDD_DisplayTopo (void);
 
 
 
-/* objmgr.c */
+/* mgr/objmgr.c */
 void      DDD_HdrConstructorCopy (DDD_HDR, DDD_PRIO);
 void      ObjCopyGlobalData (TYPE_DESC *, DDD_OBJ, DDD_OBJ, size_t);
 DDD_HDR  *LocalObjectsList (void);
@@ -860,13 +891,13 @@ DDD_OBJ  DDD_ObjNew (size_t, DDD_TYPE, DDD_PRIO, DDD_ATTR);
 void      DDD_HdrDestructor (DDD_HDR);
 #endif
 
-/* reduct.c */
+/* basic/reduct.c */
 int       ddd_GlobalSumInt  (int);
 int       ddd_GlobalMaxInt  (int);
 int       ddd_GlobalMinInt  (int);
 
 
-/* stat.c */
+/* ctrl/stat.c */
 void      ddd_StatInit (void);
 void      ddd_StatExit (void);
 

@@ -1,14 +1,82 @@
 ---------------------------
 
-CHANGES 1.8.20 -> 1.8.21
+CHANGES 1.8.23 -> 1.8.24
+---------------------------
+980922 kb
+new option OPT_CPLMGR_USE_FREELIST.
+	- if this option is set to OPT_ON (default), the Coupling-Manager
+	  will allocate all COUPLING-structs in segmented lists with
+	  freelist management. For applications which use a simple malloc-
+	  style MemMgr interface, this will lead to more performance due
+	  to allocation of larger blocks and avoidance of many malloc/free
+	  operations. If the application itself implements a powerful
+	  memory management, this option could be turned to OPT_OFF.
+	  Then, each COUPLING struct is allocated/freed separately.
+---------------------------
 
+CHANGES 1.8.22 -> 1.8.23
+---------------------------
+980909 kb
+new DDD module 'Prio'.
+	- when using the Xfer-module just for changing the priorities
+	  of distributed objects, a lot of communication and computation
+	  overhead is generated, which is not necessary due to the
+	  lack of information propagation.
+	- the new Prio-environment provides two functions
+	  DDD_PrioBegin()/DDD_PrioEnd() for starting and ending a
+	  Prio-environment and a third function DDD_PrioChange()
+	  for issueing PrioChange-commands.
+	- this environment is able to communicate the changed priorities
+	  directly via communication using the standard interface.
+980720 kb
+Renumbered error codes in TypeMgr.
+	- this update serves as a preparation for a more solid error
+	  code numbering scheme with well-documented errors. This is
+	  the beginning.
+980707 kb
+DDD_XferEnd will try to recover.
+	- using the exception-capability of DDD_Notify, XferEnd will
+	  try to give up if it cannot allocate necessary resources
+	  (most of all, memory allocation). If a certain point
+	  of-no-return hasn't been reached in the course of the
+	  Xfer-operation, the distributed algorithm is able to
+	  shutdown safely without changing the DDD data structures.
+	  This might be used to recover from a low-memory situation
+	  by speculative XferEnds.
+980707 kb
+DDD_Notify has exception-capability.
+	- during the global communication in Notify, each processor
+	  may initiate a global exception message instead of taking
+	  part in a normal Notify-operation. The DDD_Notify() call
+	  won't return the number of receive messages for the local
+	  processors, but will return the largest exception number
+	  instead (with changed sign).
+980706 kb
+memory-intensive DDD functions can return success codes now.
+	- NOTE: the API has changed! DDD_XferEnd, DDD_JoinEnd and
+	  DDD_IdentifyEnd are returning a DDD_RET code now.
+	- in future versions DDD will become more robust in terms
+	  of memory shortage. Up to now, the functions mentioned
+	  above are throwing corefiles on memory shortage, this
+	  will be replaced by returning DDD_RET_ERROR_NOMEM.
+---------------------------
+
+CHANGES 1.8.21 -> 1.8.22
+---------------------------
+980702 kb
+reduced overall memory requirements.
+	- DDD_PROC is now an 'unsigned short'.
+	- Xfer-Unpack needs less memory due to casting of PRIO and
+	  ATTR values to char in NewCpl-structures.
+---------------------------
+
+CHANGES 1.8.20 -> 1.8.21
 ---------------------------
 980527 kb
 bugfix in Ident memory handling.
 ---------------------------
 
 CHANGES 1.8.19 -> 1.8.20
-
 ---------------------------
 980525 kb
 changed memory handling in Ident.
@@ -19,7 +87,6 @@ changed memory handling in Ident.
 ---------------------------
 
 CHANGES 1.8.18 -> 1.8.19
-
 ---------------------------
 980519 kb
 bugfix in memory handling.
@@ -37,7 +104,6 @@ reduced size of Xfer-messages.
 ---------------------------
 
 CHANGES 1.8.17 -> 1.8.18
-
 ---------------------------
 980514 kb
 complete redesign of memory handling.
@@ -52,14 +118,12 @@ complete redesign of memory handling.
 ---------------------------
 
 CHANGES 1.8.16 -> 1.8.17
-
 ---------------------------
 980505 kb
 bugfix in DDD_XferObjIsResent().
 ---------------------------
 
 CHANGES 1.8.15 -> 1.8.16
-
 ---------------------------
 980427 kb
 added new error control feature for Ident-module.
@@ -82,7 +146,6 @@ additions for CPP_FRONTEND.
 ---------------------------
 
 CHANGES 1.8.14 -> 1.8.15
-
 ---------------------------
 980316 kb
 new command DDD_XferObjIsResent().
@@ -91,7 +154,6 @@ new command DDD_XferObjIsResent().
 ---------------------------
 
 CHANGES 1.8.13 -> 1.8.14
-
 ---------------------------
 980313 kb
 new command DDD_XferIsPrunedDelete().
@@ -100,7 +162,6 @@ new command DDD_XferIsPrunedDelete().
 ---------------------------
 
 CHANGES 1.8.12 -> 1.8.13
-
 ---------------------------
 980128 kb
 new DDD module 'Join'.
@@ -126,7 +187,6 @@ added healing-feature to ConsCheck.
 ---------------------------
 
 CHANGES 1.8.11 -> 1.8.12
-
 ---------------------------
 971024 kb
 improved memory handling.
@@ -157,7 +217,6 @@ new base level of container class data structures.
 ---------------------------
 
 CHANGES 1.8.10 -> 1.8.11
-
 ---------------------------
 971010 kb
 added error checks for various calls to PPIF.
@@ -189,7 +248,6 @@ added DDD_XferWithAddData().
 ---------------------------
 
 CHANGES 1.8.9 -> 1.8.10
-
 ---------------------------
 971007 kb
 Global coupling-table is now enlarged dynamically.
@@ -207,7 +265,6 @@ LowComm is now able to handle low-memory situations.
 ---------------------------
 
 CHANGES 1.8.8 -> 1.8.9
-
 ---------------------------
 970909 kb
 added inline documentation.
@@ -231,7 +288,6 @@ removed need for (very) large object table.
 ---------------------------
 
 CHANGES 1.8.7 -> 1.8.8
-
 ---------------------------
 970704 kb
 bugfix in Xfer module.
@@ -239,7 +295,6 @@ bugfix in Xfer module.
 ---------------------------
 
 CHANGES 1.8.6 -> 1.8.7
-
 ---------------------------
 970702 kb
 bugfix in Interface module.
@@ -253,7 +308,6 @@ bugfix in Identify module.
 ---------------------------
 
 CHANGES 1.8.5 -> 1.8.6
-
 ---------------------------
 970701 kb
 added check for PPIF initialization in DDD_Init().
@@ -305,7 +359,6 @@ fixed some bugs found by evaluation version of Purify.
 ---------------------------
 
 CHANGES 1.8.4 -> 1.8.5
-
 ---------------------------
 970414 kb
 fixed serious bug in xfer/unpack. NEVER USE 1.8.4!
@@ -327,7 +380,6 @@ fixed serious bug in xfer/unpack.c.
 ---------------------------
 
 CHANGES 1.8.3 -> 1.8.4
-
 ---------------------------
 970310 kb
 additional options OPT_INFO_XFER, with values XFER_SHOW_xxx.
@@ -339,7 +391,6 @@ bugfix in basic/topo.c (error occurred with procs>64).
 ---------------------------
 
 CHANGES 1.8.2 -> 1.8.3
-
 ---------------------------
 970306 kb
 increased MAX_TRIES timeout value to 50M.
@@ -354,14 +405,12 @@ added CtrlTimeouts(Detailed) switch in if/if.h.
 ---------------------------
 
 CHANGES 1.8.1 -> 1.8.2
-
 ---------------------------
 970304 kb
 increased size of notify buffer to 2*(n*(n-1)/2) (for message send/receive).
 ---------------------------
 
 CHANGES 1.8 -> 1.8.1
-
 ---------------------------
 970303 kb
 added new function DDD_IFInfoMemory().
@@ -384,7 +433,6 @@ removed lots of warnings with C++ on SGI.
 ---------------------------
 
 CHANGES 1.7.8 -> 1.8
-
 ---------------------------
 970217 kb
 started to C++-ize PPIF and extended functionality.
@@ -447,7 +495,6 @@ implemented object-oriented CPP_FRONTEND prototype.
 ---------------------------
 
 CHANGES 1.7.7 -> 1.7.8
-
 ---------------------------
 970205 kb
 added many USER_DATA streams feature.
@@ -468,7 +515,6 @@ revision for global ID construction.
 ---------------------------
 
 CHANGES 1.7.6 -> 1.7.7
-
 ---------------------------
 970131 kb
 new element type EL_GBITS.
@@ -484,7 +530,6 @@ new element type EL_GBITS.
 ---------------------------
 
 CHANGES 1.7.5 -> 1.7.6
-
 ---------------------------
 970129 kb
 new interface for general PriorityMerge.
@@ -514,7 +559,6 @@ NOTE: changing of XFERSCATTER parameterlist in applications necessary!
 ---------------------------
 
 CHANGES 1.7.4 -> 1.7.5
-
 ---------------------------
 970128 kb
 added OPT_INFO_XFER.
@@ -534,7 +578,6 @@ all applications!
 ---------------------------
 
 CHANGES 1.7.3 -> 1.7.4
-
 ---------------------------
 970124 kb
 fixed bug in interface communication.
@@ -545,7 +588,6 @@ increased size of NOTIFY-table.
 ---------------------------
 
 CHANGES 1.7.2 -> 1.7.3
-
 ---------------------------
 970121 kb
 changed order of handler calls in xfer-unpack implementation.
@@ -557,7 +599,6 @@ NOTE: changing of MKCONS parameterlist in applications necessary!
 ---------------------------
 
 CHANGES 1.7.1 -> 1.7.2
-
 ---------------------------
 970115 kb
 changed xfer-unpack implementation.
@@ -571,7 +612,6 @@ changed xfer-unpack implementation.
 ---------------------------
 
 CHANGES 1.7 -> 1.7.1
-
 ---------------------------
 970110 kb
 re-implementation of current interface functionality.
@@ -603,7 +643,6 @@ added second call to handler HANDLER_SETPRIORITY.
 ---------------------------
 
 CHANGES 1.6.10 -> 1.7
-
 ---------------------------
 961220 kb
 added option OPT_WARNING_REF_COLLISION, with default OPT_ON.
@@ -623,7 +662,6 @@ switched on merge-mode for xfer-unpack.
 ---------------------------
 
 CHANGES 1.6.9 -> 1.6.10
-
 ---------------------------
 961209 kb
 new function DDD_InfoNCopies().
@@ -638,14 +676,12 @@ updated README, arch and ppif.
 ---------------------------
 
 CHANGES 1.6.8 -> 1.6.9
-
 ---------------------------
 961128 kb
 bugfixes in Identify-module.
 ---------------------------
 
 CHANGES 1.6.7 -> 1.6.8
-
 ---------------------------
 961127 kb
 changed prototype of DDD_IFDefine.
@@ -674,7 +710,6 @@ additional functionality for Identify-module.
 ---------------------------
 
 CHANGES 1.6.6 -> 1.6.7
-
 ---------------------------
 961026 kb
 some changes due to comments from Klaus-Dieter Oertel.
@@ -691,7 +726,6 @@ added PITFALLS file to collect common errors by DDD users.
 ---------------------------
 
 CHANGES 1.6.5 -> 1.6.6
-
 ---------------------------
 960906 kb
 added consistent object deletion during xfer (from HANDLER_DELETE).
@@ -733,7 +767,6 @@ couplings.
 ---------------------------
 
 CHANGES 1.6.4 -> 1.6.5
-
 ---------------------------
 960618 kb
 restructured Makefile.ddd, in order to establish new structure
@@ -741,7 +774,6 @@ of arch/ppif/ddd and applications.
 ---------------------------
 
 CHANGES 1.6.3 -> 1.6.4
-
 ---------------------------
 960611 kb
 typemgr.c, changed behaviour on errors.
@@ -768,7 +800,6 @@ fixed bug in compiler.h.
 ---------------------------
 
 CHANGES 1.6.2 -> 1.6.3
-
 ---------------------------
 960528 kb
 integrated changes for F_FRONTEND.
@@ -785,7 +816,6 @@ integrated changes for F_FRONTEND.
 ---------------------------
 
 CHANGES 1.6.1 -> 1.6.2
-
 ---------------------------
 960512 kb
 unpack.c, complete rewrite
@@ -802,7 +832,6 @@ unpack.c, complete rewrite
 ---------------------------
 
 CHANGES 1.6 -> 1.6.1
-
 ---------------------------
 960507 kb
 ifcreate.c, improved memory complexity
@@ -816,7 +845,6 @@ ifcreate.c, improved memory complexity
 ---------------------------
 
 CHANGES 1.5 -> 1.6
-
 ---------------------------
 960402 kb
 typemgr.c, added EL_CONTINUE feature
@@ -844,7 +872,6 @@ renamed main.c to ddd.c.
 ---------------------------
 
 CHANGES 1.4 -> 1.5
-
 ---------------------------
 960110 kb
 objmgr.c, second complete rewrite
@@ -863,7 +890,6 @@ IF-module
 ---------------------------
 
 CHANGES 1.3 -> 1.4
-
 ---------------------------
 951103 kb
 DDD_StructRegister

@@ -99,7 +99,11 @@ Method_New_ (int size _NEWPARAMS)
   else
   {
     This->data = (CN(ArrayOf) *)ArrayAllocate (sizeof(CN(ArrayOf))*size);
-    _CHECKALLOC(This->data);
+    if (This->data==NULL)
+    {
+      Destruct(This);
+      return(NULL);
+    }
   }
 
   This->size = size;
@@ -111,6 +115,9 @@ Method_New_ (int size _NEWPARAMS)
 
 void Method(Free) (ParamThis)
 {
+  if (This==NULL)
+    return;
+
 #ifndef NoArrayFree
   if (This->data!=NULL)
     ArrayFree (This->data);
@@ -252,6 +259,8 @@ CN(SegmListOf) *Method(NewItem) (ParamThis)
   if (segm==NULL || segm->nItems==SegmSize)
   {
     segm = CALL(New,CSegm) ();
+    if (segm==NULL)
+      return(NULL);
     segm->next = This->first;
     This->first = segm;
     This->nSegms++;
@@ -435,6 +444,7 @@ ClassRef Method(Append) (ParamThis, CN(ListOf) *data)
 
   /* create item and link it into list */
   item = CALL(New,CListItem) (data);
+  assert(item!=NULL);
   if (This->first==NULL)
   {
     This->first = item;
@@ -599,8 +609,8 @@ static void Method(Free) (ParamThis)
 }
 
 
-static void Method(Split)  (ParamThis,
-                            CN(BTreeOf) **split_item, ClassPtr *new_rnode)
+static ClassPtr Method(Split)  (ParamThis,
+                                CN(BTreeOf) **split_item)
 {
   int split, l, r;
   Construct(rnode, _CHECKALLOC(rnode));
@@ -623,7 +633,7 @@ static void Method(Split)  (ParamThis,
 
   /* set return values */
   *split_item = This->data[split];
-  *new_rnode = rnode;
+  return(rnode);
 }
 
 
@@ -712,7 +722,8 @@ static int Method(Insert) (ParamThis,
     {
       ClassPtr new_r;
       CN(BTreeOf) *split_item;
-      Method(Split) (This->sons[i], &split_item, &new_r);
+      new_r = Method(Split) (This->sons[i], &split_item);
+      assert(new_r!=NULL);
 
       if (i<nData)
       {
@@ -881,6 +892,7 @@ int Method(Insert) (ParamThis, CN(BTreeOf) *item)
   if (This->root==NULL)
   {
     This->root = CALL(New,CBTreeNode) (item,NULL,NULL);
+    assert(This->root!=NULL);
     This->nItems++;
     return(TRUE);
   }
@@ -893,8 +905,10 @@ int Method(Insert) (ParamThis, CN(BTreeOf) *item)
     CN(BTreeOf) *split_item;
 
     new_l = This->root;
-    CALL(CBTreeNode,Split) (new_l, &split_item, &new_r);
+    new_r = CALL(CBTreeNode,Split) (new_l, &split_item);
+    assert(new_r!=NULL);
     This->root = CALL(New,CBTreeNode) (split_item, new_l, new_r);
+    assert(This->root!=NULL);
   }
 
   if (ret!=BTREE_FOUND)
@@ -920,8 +934,14 @@ CPtrArray *Method(GetArray) (ParamThis)
   CN(BTreeOf) **ptr;
 
   array = CALL(New,CPtrArray) (This->nItems);
-  if (This->nItems==0)
-    return(array);
+
+  /* if no items exist, we return empty array. */
+  if (This->nItems==0) return(array);
+
+
+  /* if there are items, but New returns NULL, we ran out of
+     memory. we return NULL to the caller in this case. */
+  if (array==NULL) return(NULL);
 
   ptr = CALL(CPtrArray,GetData) (array);
   CALL(CBTreeNode,Linearize) (This->root, ptr);
@@ -1037,8 +1057,13 @@ void    Method(GetResources)  (DefThis, int *, int *, int *, size_t *, size_t *)
 Method_New_ (_NEWPARAMS_OR_VOID)
 {
   Construct(This, _CHECKALLOC(This));
+
   This->list   = CALL(New, CSegmList) ();
+  assert(This->list!=NULL);
+
   This->tree   = CALL(New, CBTree) ();
+  assert(This->tree!=NULL);
+
   This->last_item = NULL;
   return(This);
 }

@@ -34,8 +34,9 @@
 /*            96/09/06 kb  xfer-module completely rewritten                 */
 /*            96/11/28 kb  merged F_FRONTEND functionality from code branch */
 /*            97/02/10 kb  started with CPP_FRONTEND implementation         */
-/*            98/01/28 kb  new ddd-module: Join.                            */
+/*            98/01/28 kb  new ddd-environment: Join.                       */
 /*            98/05/14 kb  redesigned memory handling.                      */
+/*            98/07/20 kb  new ddd-environment: Prio.                       */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -49,7 +50,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.21"
+#define DDD_VERSION    "1.8.24"
 
 
 /****************************************************************************/
@@ -129,10 +130,20 @@ extern "C" {
 /****************************************************************************/
 
 
+
+/* return types for DDD functions */
+/* NOTE: changes must be also done in fddd.f */
+typedef enum {
+  DDD_RET_OK            = 0,            /* function was executed ok             */
+  DDD_RET_ERROR_UNKNOWN = 1,            /* unknown error condition              */
+  DDD_RET_ERROR_NOMEM   = 2             /* function aborted due to mem shortage */
+} DDD_RET;
+
+
 /* types of elements for StructRegister */
 /* (use negative values for combination with positive DDD_TYPEs) */
 /* NOTE: changes must be also done in fddd.f */
-enum ElemType {
+typedef enum {
   EL_DDDHDR   =  0,                     /* element type: DDD header             */
   EL_GDATA    = -1,                     /* element type: global data            */
   EL_LDATA    = -2,                     /* element type: local data             */
@@ -141,14 +152,14 @@ enum ElemType {
   EL_OBJPTR   = -5,                     /* element type: object pointer         */
   EL_CONTINUE = -6,                     /* continued element definition list    */
   EL_END      = -7                      /* end of element definition list       */
-};
+} DDD_ELEM_TYPE;
 
 
 
 
 /* options for DDD_SetOption */
 /* NOTE: changes must be also done in fddd.f */
-enum OptionType {
+typedef enum {
   OPT_IDENTIFY_MODE=0,             /* one of the IDMODE_xxx constants           */
 
   OPT_WARNING_VARSIZE_OBJ=8,       /* warning on differing obj sizes            */
@@ -169,8 +180,10 @@ enum OptionType {
   OPT_IF_REUSE_BUFFERS,            /* reuse interface buffs as long as possible */
   OPT_IF_CREATE_EXPLICIT,          /* dont (re-)create interfaces automatically */
 
+  OPT_CPLMGR_USE_FREELIST,         /* use freelist for coupling-memory (default)*/
+
   OPT_END
-};
+} DDD_OPTION;
 
 
 /* NOTE: changes must be also done in fddd.f */
@@ -202,10 +215,10 @@ enum OptConstJoin {
 
 /* direction of interface communication (DDD_IFOneway) */
 /* NOTE: changes must be also done in fddd.f */
-enum IFDirection {
+typedef enum {
   IF_FORWARD  = 1,                     /* communicate from A to B               */
   IF_BACKWARD = 2                      /* communicate from B to A               */
-};
+} DDD_IF_DIR;
 
 
 /* ID of (predefined) standard interface */
@@ -260,7 +273,7 @@ enum PrioMatrixDefaults {
 
 
 /* constants for management of temporary memory allocation/deletion */
-enum TMemRequsts {
+enum TMemRequests {
   TMEM_ANY     = 0x0000,
   TMEM_MSG,
   TMEM_OBJLIST,
@@ -320,16 +333,9 @@ typedef struct _DDD_HEADER
         new DDD types, used during access of DDD functional interface
  */
 typedef unsigned int DDD_GID;
-/*
-   typedef unsigned short   DDD_TYPE;
-   typedef unsigned short   DDD_IF;
-   typedef unsigned short   DDD_PROC;
-   typedef unsigned short   DDD_PRIO;
-   typedef unsigned short   DDD_ATTR;
- */
 typedef unsigned int DDD_TYPE;
 typedef unsigned int DDD_IF;
-typedef unsigned int DDD_PROC;
+typedef unsigned short DDD_PROC;
 typedef unsigned int DDD_PRIO;
 typedef unsigned int DDD_ATTR;
 
@@ -347,8 +353,6 @@ typedef DDD_HEADER     * DDD_HDR;
 typedef int DDD_OBJ;
 typedef DDD_HEADER     * DDD_HDR;
 #endif
-
-typedef unsigned int DDD_OPTION;
 
 
 /* NULL values for DDD types */
@@ -480,7 +484,7 @@ typedef int (*ComProcXPtr)(DDD_OBJ _FPTR, void *, DDD_PROC _FPTR, DDD_PRIO _FPTR
 
 /**
         DDD Type class.
-        Each DDD object has a previously specified DDD_Type.
+        Each DDD object has a previously specified DDD\_Type.
 
         \todoTBC
  */
@@ -516,7 +520,7 @@ public:
   DDD_Library (int *, char ***);
   ~DDD_Library ();
 
-  /// DDD_Library is a Singleton
+  /// DDD\_Library is a Singleton
   static DDD_Library* Instance();
 
   /// shows status of DDD library
@@ -577,16 +581,20 @@ public:
   void PrioMergeDisplay (DDD_TYPE);
 
   // Identification
-  void IdentifyBegin (void);
-  void IdentifyEnd (void);
+  void    IdentifyBegin (void);
+  DDD_RET IdentifyEnd (void);
 
   // Transfer
   void XferBegin (void);
-  void XferEnd (void);
+  DDD_RET XferEnd (void);
+
+  // Prio
+  void PrioBegin (void);
+  DDD_RET PrioEnd (void);
 
   // Join
   void JoinBegin (void);
-  void JoinEnd (void);
+  DDD_RET JoinEnd (void);
 
   /* TODO some are missing here */
 
@@ -885,22 +893,22 @@ public:
   size_t InfoMemory (void);
 
 
-  void Exchange  (             size_t, DDD_GatherScatter*);
-  void Exchange  (             size_t, DDD_GatherScatter&);
-  void Oneway    (         int,size_t, DDD_GatherScatter*);
-  void Oneway    (         int,size_t, DDD_GatherScatter&);
+  void Exchange  (                    size_t, DDD_GatherScatter*);
+  void Exchange  (                    size_t, DDD_GatherScatter&);
+  void Oneway    (         DDD_IF_DIR,size_t, DDD_GatherScatter*);
+  void Oneway    (         DDD_IF_DIR,size_t, DDD_GatherScatter&);
   /* TODO: NIY
-                  void ExecLocal (                     DDD_Exec*);
-                  void AExchange (DDD_ATTR,    size_t, DDD_GatherScatter*);
-                  void AOneway   (DDD_ATTR,int,size_t, DDD_GatherScatter*);
-                  void AExecLocal(DDD_ATTR,            DDD_Exec*);
+                  void ExecLocal (                            DDD_Exec*);
+                  void AExchange (DDD_ATTR,           size_t, DDD_GatherScatter*);
+                  void AOneway   (DDD_ATTR,DDD_IF_DIR,size_t, DDD_GatherScatter*);
+                  void AExecLocal(DDD_ATTR,                   DDD_Exec*);
 
-                  void Exchange  (             size_t, DDD_GatherScatterX*);
-                  void Oneway    (         int,size_t, DDD_GatherScatterX*);
-                  void ExecLocal (                     DDD_ExecX*);
-                  void AExchange (DDD_ATTR,    size_t, DDD_GatherScatterX*);
-                  void AOneway   (DDD_ATTR,int,size_t, DDD_GatherScatterX*);
-                  void AExecLocal(DDD_ATTR,            DDD_ExecX*);
+                  void Exchange  (                    size_t, DDD_GatherScatterX*);
+                  void Oneway    (         DDD_IF_DIR,size_t, DDD_GatherScatterX*);
+                  void ExecLocal (                            DDD_ExecX*);
+                  void AExchange (DDD_ATTR,           size_t, DDD_GatherScatterX*);
+                  void AOneway   (DDD_ATTR,DDD_IF_DIR,size_t, DDD_GatherScatterX*);
+                  void AExecLocal(DDD_ATTR,                   DDD_ExecX*);
    */
 
 private:
@@ -1020,7 +1028,7 @@ size_t   DDD_InfoCplMemory (void);
 
 
 /*
-        Identification Module
+        Identification Environment Module
  */
 #ifdef F_FRONTEND
 #define  DDD_IdentifyBegin  F77SYM(ddd_identifybegin,DDD_IDENTIFYBEGIN)
@@ -1031,7 +1039,7 @@ size_t   DDD_InfoCplMemory (void);
 #endif
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void     DDD_IdentifyBegin (void);
-void     DDD_IdentifyEnd (void);
+DDD_RET  DDD_IdentifyEnd (void);
 void     DDD_IdentifyNumber (_OBJREF, DDD_PROC _FPTR, int _FPTR);
 void     DDD_IdentifyString (_OBJREF, DDD_PROC _FPTR, char *);
 void     DDD_IdentifyObject (_OBJREF, DDD_PROC _FPTR, _OBJREF);
@@ -1076,23 +1084,23 @@ size_t   DDD_IFInfoMemoryAll (void);
 size_t   DDD_IFInfoMemory (DDD_IF _FPTR);
 void     DDD_IFRefreshAll (void);
 
-void     DDD_IFExchange   (DDD_IF _FPTR,                         size_t _FPTR, ComProcPtr,ComProcPtr);
-void     DDD_IFOneway     (DDD_IF _FPTR,               int _FPTR,size_t _FPTR, ComProcPtr,ComProcPtr);
-void     DDD_IFExecLocal  (DDD_IF _FPTR,                                       ExecProcPtr);
-void     DDD_IFAExchange  (DDD_IF _FPTR,DDD_ATTR _FPTR,          size_t _FPTR, ComProcPtr,ComProcPtr);
-void     DDD_IFAOneway    (DDD_IF _FPTR,DDD_ATTR _FPTR,int _FPTR,size_t _FPTR, ComProcPtr,ComProcPtr);
-void     DDD_IFAExecLocal (DDD_IF _FPTR,DDD_ATTR _FPTR,                        ExecProcPtr);
-void     DDD_IFExchangeX  (DDD_IF _FPTR,                         size_t _FPTR, ComProcXPtr,ComProcXPtr);
-void     DDD_IFOnewayX    (DDD_IF _FPTR,               int _FPTR,size_t _FPTR, ComProcXPtr,ComProcXPtr);
-void     DDD_IFExecLocalX (DDD_IF _FPTR,                                       ExecProcXPtr);
-void     DDD_IFAExchangeX (DDD_IF _FPTR,DDD_ATTR _FPTR,          size_t _FPTR, ComProcXPtr,ComProcXPtr);
-void     DDD_IFAOnewayX   (DDD_IF _FPTR,DDD_ATTR _FPTR,int _FPTR,size_t _FPTR, ComProcXPtr,ComProcXPtr);
-void     DDD_IFAExecLocalX(DDD_IF _FPTR,DDD_ATTR _FPTR,                        ExecProcXPtr);
+void     DDD_IFExchange   (DDD_IF _FPTR,                                size_t _FPTR, ComProcPtr,ComProcPtr);
+void     DDD_IFOneway     (DDD_IF _FPTR,               DDD_IF_DIR _FPTR,size_t _FPTR, ComProcPtr,ComProcPtr);
+void     DDD_IFExecLocal  (DDD_IF _FPTR,                                              ExecProcPtr);
+void     DDD_IFAExchange  (DDD_IF _FPTR,DDD_ATTR _FPTR,                 size_t _FPTR, ComProcPtr,ComProcPtr);
+void     DDD_IFAOneway    (DDD_IF _FPTR,DDD_ATTR _FPTR,DDD_IF_DIR _FPTR,size_t _FPTR, ComProcPtr,ComProcPtr);
+void     DDD_IFAExecLocal (DDD_IF _FPTR,DDD_ATTR _FPTR,                               ExecProcPtr);
+void     DDD_IFExchangeX  (DDD_IF _FPTR,                                size_t _FPTR, ComProcXPtr,ComProcXPtr);
+void     DDD_IFOnewayX    (DDD_IF _FPTR,               DDD_IF_DIR _FPTR,size_t _FPTR, ComProcXPtr,ComProcXPtr);
+void     DDD_IFExecLocalX (DDD_IF _FPTR,                                              ExecProcXPtr);
+void     DDD_IFAExchangeX (DDD_IF _FPTR,DDD_ATTR _FPTR,                 size_t _FPTR, ComProcXPtr,ComProcXPtr);
+void     DDD_IFAOnewayX   (DDD_IF _FPTR,DDD_ATTR _FPTR,DDD_IF_DIR _FPTR,size_t _FPTR, ComProcXPtr,ComProcXPtr);
+void     DDD_IFAExecLocalX(DDD_IF _FPTR,DDD_ATTR _FPTR,                               ExecProcXPtr);
 #endif
 
 
 /*
-        Transfer Module
+        Transfer Environment Module
  */
 #ifdef F_FRONTEND
 #define DDD_XferBegin     F77SYM(ddd_xferbegin,DDD_XFERBEGIN)
@@ -1109,7 +1117,7 @@ int      DDD_XferObjIsResent (_OBJREF);
 #endif
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void     DDD_XferBegin (void);
-void     DDD_XferEnd (void);
+DDD_RET  DDD_XferEnd (void);
 void     DDD_XferCopyObj (_OBJREF, DDD_PROC _FPTR, DDD_PRIO _FPTR);
 void     DDD_XferCopyObjX (_OBJREF, DDD_PROC _FPTR, DDD_PRIO _FPTR, size_t _FPTR);
 void     DDD_XferDeleteObj (_OBJREF);
@@ -1118,11 +1126,22 @@ void     DDD_XferPrioChange (_OBJREF, DDD_PRIO _FPTR);
 
 
 /*
-        Join Module
+        Prio Environment Module
+ */
+#ifdef C_FRONTEND
+void     DDD_PrioBegin (void);
+DDD_RET  DDD_PrioEnd (void);
+void     DDD_PrioChange (_OBJREF, DDD_PRIO _FPTR);
+#endif
+
+
+
+/*
+        Join Environment Module
  */
 #ifdef C_FRONTEND
 void     DDD_JoinBegin (void);
-void     DDD_JoinEnd (void);
+DDD_RET  DDD_JoinEnd (void);
 void     DDD_JoinObj (_OBJREF, DDD_PROC _FPTR, DDD_GID _FPTR);
 #endif
 

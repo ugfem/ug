@@ -4,7 +4,7 @@
 /*                                                                          */
 /* File:      join.c                                                        */
 /*                                                                          */
-/* Purpose:   main module for object join                                   */
+/* Purpose:   main module for object join environment                       */
 /*                                                                          */
 /* Author:    Klaus Birken                                                  */
 /*            Institut fuer Computeranwendungen III                         */

@@ -4,7 +4,7 @@
 /*                                                                          */
 /* File:      join.h                                                        */
 /*                                                                          */
-/* Purpose:   header file for join module                                   */
+/* Purpose:   header file for join environment                              */
 /*                                                                          */
 /* Author:    Klaus Birken                                                  */
 /*            Institut fuer Computeranwendungen III                         */
@@ -76,7 +76,7 @@
 /*#define ClassPrefix*/
 
 
-/* overall mode of transfer */
+/* overall mode of Join */
 enum JoinMode {
   JMODE_IDLE = 0,                /* waiting for next DDD_JoinBegin() */
   JMODE_CMDS,                    /* after DDD_JoinBegin(), before DDD_JoinEnd() */
@@ -109,9 +109,11 @@ int  Method(Compare) (ClassPtr, ClassPtr);
 
 
 /* define container class */
+#ifndef SetOf  /* necessary for inline documentation only */
 #define SetOf          JIJoin
 #define Set_SegmSize   256
 #define Set_BTreeOrder 32
+#endif
 #include "basic/ooppcc.h"
 
 
@@ -153,9 +155,11 @@ int  Method(Compare) (ClassPtr, ClassPtr);
 
 
 /* define container class */
+#ifndef SetOf  /* necessary for inline documentation only */
 #define SetOf          JIAddCpl
 #define Set_SegmSize   256
 #define Set_BTreeOrder 32
+#endif
 #include "basic/ooppcc.h"
 
 

@@ -218,6 +218,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
   ddd_IdentInit();
   ddd_IFInit();
   ddd_XferInit();
+  ddd_PrioInit();
   ddd_JoinInit();
   ddd_ConsInit();
 
@@ -242,6 +243,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
   ddd_SetOption(OPT_XFER_PRUNE_DELETE,     OPT_OFF);
   ddd_SetOption(OPT_IF_REUSE_BUFFERS,      OPT_OFF);
   ddd_SetOption(OPT_IF_CREATE_EXPLICIT,    OPT_OFF);
+  ddd_SetOption(OPT_CPLMGR_USE_FREELIST,   OPT_ON);
 
 #ifdef CPP_FRONTEND
   // remember pointer to singleton
@@ -281,6 +283,7 @@ DDD_Library::~DDD_Library (void)
   /* close up all DDD components */
   ddd_ConsExit();
   ddd_JoinExit();
+  ddd_PrioExit();
   ddd_XferExit();
   ddd_IFExit();
   ddd_IdentExit();
@@ -440,7 +443,7 @@ void DDD_SetOption (DDD_OPTION *_option, int *_value)
 #endif
 if (option>=OPT_END)
 {
-  DDD_PrintError('E', 1999, "invalid DDD_OPTION in DDD_SetOption()");
+  DDD_PrintError('E', 1090, "invalid DDD_OPTION in DDD_SetOption()");
   return;
 }
 
@@ -465,7 +468,7 @@ int DDD_GetOption (DDD_OPTION option)
 {
   if (option>=OPT_END)
   {
-    DDD_PrintError('E', 1999, "invalid DDD_OPTION in DDD_GetOption()");
+    DDD_PrintError('E', 1091, "invalid DDD_OPTION in DDD_GetOption()");
     return 0;
   }
 

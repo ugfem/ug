@@ -190,7 +190,7 @@ static int CheckBounds (TYPE_DESC *desc, ELEM_DESC *el, int argno)
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
   if (CPP_STRUCT(desc) CPP_AND (el->offset<0))
   {
-    DDD_PrintError('E', 9900,
+    DDD_PrintError('E', 2400,
                    RegisterError(desc,argno, "negative offset"));
     return(ERROR);
   }
@@ -198,7 +198,7 @@ static int CheckBounds (TYPE_DESC *desc, ELEM_DESC *el, int argno)
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
   if (CPP_ARRAY(desc) CPP_AND (!el->array))
   {
-    DDD_PrintError ('E', 9999,
+    DDD_PrintError ('E', 2401,
                     RegisterError(desc,argno, "no array supplied"));
     return(ERROR);
   }
@@ -206,7 +206,7 @@ static int CheckBounds (TYPE_DESC *desc, ELEM_DESC *el, int argno)
 
   if (el->size<=0)
   {
-    DDD_PrintError('E', 9901,
+    DDD_PrintError('E', 2402,
                    RegisterError(desc,argno, "illegal element size"));
     return (ERROR);
   }
@@ -238,7 +238,7 @@ static int CheckOverlapEls (TYPE_DESC *desc)
       {
         ok = FALSE;
         sprintf(buf, "element too big (offset=%d)", e1->offset);
-        DDD_PrintError('E', 9902, RegisterError(desc, 0, buf));
+        DDD_PrintError('E', 2403, RegisterError(desc, 0, buf));
       }
 #endif
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
@@ -247,7 +247,7 @@ static int CheckOverlapEls (TYPE_DESC *desc)
       {
         ok = FALSE;
         sprintf(buf, "element too big (array=%d)", i);
-        DDD_PrintError('E', 9902, RegisterError(desc, 0, buf));
+        DDD_PrintError('E', 2404, RegisterError(desc, 0, buf));
       }
 #endif
     }
@@ -258,7 +258,7 @@ static int CheckOverlapEls (TYPE_DESC *desc)
       {
         ok = FALSE;
         sprintf(buf, "element too big (offset=%d)", e1->offset);
-        DDD_PrintError('E', 9903, RegisterError(desc, 0, buf));
+        DDD_PrintError('E', 2405, RegisterError(desc, 0, buf));
       }
     }
 #endif
@@ -297,7 +297,7 @@ static void ConstructEl (ELEM_DESC *elem, int t, int o, size_t s, DDD_TYPE rt)
     elem->gbits = (unsigned char *) AllocFix(s);
     if (elem->gbits==NULL)
     {
-      DDD_PrintError('E', 9932, STR_NOMEM " for EL_GBITS array");
+      DDD_PrintError('E', 2406, STR_NOMEM " for EL_GBITS array");
       HARD_EXIT;
     }
   }
@@ -338,7 +338,7 @@ static void ConstructEl (ELEM_DESC *elem, int t, char *a, size_t s, DDD_TYPE rt)
   {
     /* TODO: GBITS could be supported also for F_FRONTEND and
             CPP_FRONTEND with STORAGE_ARRAY */
-    DDD_PrintError('E', 9931, "EL_GBITS currently not supported");
+    DDD_PrintError('E', 2407, "EL_GBITS currently not supported");
     HARD_EXIT;
   }
 }
@@ -385,12 +385,12 @@ static int RecursiveRegister (TYPE_DESC *desc,
       if (desc->offsetHeader == d2->offsetHeader+offs)
       {
         errtxt=RegisterError(desc,argno, "two DDD_HDRs, same offset");
-        DDD_PrintError('W', 9904, errtxt);
+        DDD_PrintError('W', 2408, errtxt);
       }
       else
       {
         errtxt=RegisterError(desc,argno, "only one DDD_HDR allowed");
-        DDD_PrintError('E', 9905, errtxt);
+        DDD_PrintError('E', 2409, errtxt);
         return(ERROR);
       }
     }
@@ -412,7 +412,7 @@ static int RecursiveRegister (TYPE_DESC *desc,
   {
     errtxt=RegisterError(desc,argno,
                          "cannot include array-like type into array-like type");
-    DDD_PrintError('W', 9952, errtxt);
+    DDD_PrintError('W', 2410, errtxt);
     return(ERROR);
   }
 
@@ -435,7 +435,7 @@ static int RecursiveRegister (TYPE_DESC *desc,
     else
     {
       errtxt=RegisterError(desc,argno, "only one DDD_HDR allowed");
-      DDD_PrintError('E', 9953, errtxt);
+      DDD_PrintError('E', 2411, errtxt);
       return(ERROR);
     }
   }
@@ -466,7 +466,7 @@ static void ConstructDesc (TYPE_DESC *desc)
 #else
   if (! (desc->hdr = AllocHdr(sizeof(DDD_HEADER) * desc->arraySize) ) )
   {
-    DDD_PrintError('E', 9999,
+    DDD_PrintError('E', 2412,
                    RegisterError(desc,0, STR_NOMEM));
     HARD_EXIT;             /*return;*/
   }
@@ -582,7 +582,7 @@ static void AttachMask (TYPE_DESC *desc)
   desc->cmask = (unsigned char *)AllocFix(desc->size);
   if (desc->cmask==0)
   {
-    DDD_PrintError('E', 9906,
+    DDD_PrintError('E', 2413,
                    RegisterError(desc,0, STR_NOMEM));
     HARD_EXIT;             /*return;*/
   }
@@ -731,7 +731,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   /* test whether typ is valid */
   if (typ>=nDescr)
   {
-    DDD_PrintError('E', 9907,
+    DDD_PrintError('E', 2414,
                    "invalid DDD_TYPE in DDD_TypeDefine");
     HARD_EXIT;             /*return;*/
   }
@@ -744,12 +744,12 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   {
     if (desc->mode==DDD_TYPE_DEFINED)
     {
-      DDD_PrintError('E', 9908,
+      DDD_PrintError('E', 2415,
                      RegisterError(desc, 0, "DDD_TYPE already defined"));
     }
     else
     {
-      DDD_PrintError('E', 9908,
+      DDD_PrintError('E', 2416,
                      RegisterError(desc, 0, "undeclared DDD_TYPE"));
     }
     HARD_EXIT;             /*return;*/
@@ -835,7 +835,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       {
 
         /* get fourth argument: referenced DDD_TYPE */
-        argrefs = FTYPE va_arg(ap, DDD_TYPE FTYPE); argno++;
+        argrefs = (DDD_TYPE) FTYPE va_arg(ap, int FTYPE); argno++;
 
                                         #ifdef C_FRONTEND
         /* check whether target type is DDD_TYPE_BY_HANDLER */
@@ -854,7 +854,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
           {
             errtxt=RegisterError(desc,argno,
                                  "referencing invalid DDD_TYPE");
-            DDD_PrintError('E', 9909, errtxt);
+            DDD_PrintError('E', 2417, errtxt);
             HARD_EXIT;                                             /*return;*/
           }
         }
@@ -877,7 +877,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 #endif
       {
         errtxt=RegisterError(desc,argno, "invalid sizeof");
-        DDD_PrintError('E', 9910, errtxt);
+        DDD_PrintError('E', 2418, errtxt);
         HARD_EXIT;                                 /*return;*/
       }
 
@@ -996,7 +996,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 #endif
 #ifdef F_FRONTEND
       /* TODO */
-      DDD_PrintError('E', 9930, "EL_GBITS not supported in F_FRONTEND");
+      DDD_PrintError('E', 2419, "EL_GBITS not supported in F_FRONTEND");
       HARD_EXIT;                           /*return;*/
 #endif
       if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
@@ -1037,7 +1037,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
         char buf[40];
         sprintf(buf,"undefined DDD_TYPE=%d", argtyp);
         errtxt=RegisterError(desc,argno-1,buf);
-        DDD_PrintError('E', 9911, errtxt);
+        DDD_PrintError('E', 2420, errtxt);
         HARD_EXIT;                                 /*return;*/
       }
 
@@ -1078,14 +1078,14 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
         sprintf(buf,"undefined DDD_TYPE %s",
                 theTypeDefs[argtyp].name);
         errtxt=RegisterError(desc,argno-1,buf);
-        DDD_PrintError('E', 9912, errtxt);
+        DDD_PrintError('E', 2421, errtxt);
         HARD_EXIT;                                 /*return;*/
       }
 
 #endif
 #ifdef F_FRONTEND
       errtxt=RegisterError(desc,argno,"recursive DDD_TYPE not impl");
-      DDD_PrintError('E', 9912, errtxt);
+      DDD_PrintError('E', 2422, errtxt);
       HARD_EXIT;                           /*return;*/
 #endif
       break;
@@ -1097,7 +1097,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   if (i>=MAX_ELEMDESC && argtyp!=EL_END && argtyp!=EL_CONTINUE)
   {
     errtxt=RegisterError(desc,0, "too many elements");
-    DDD_PrintError('E', 1150, errtxt);
+    DDD_PrintError('E', 2423, errtxt);
     HARD_EXIT;             /*return;*/
   }
 
@@ -1185,7 +1185,7 @@ DDD_TYPE DDD_Library::TypeDeclareStruct (char *name)
   /* check whether there is one more DDD_TYPE */
   if (nDescr==MAX_TYPEDESC)
   {
-    DDD_PrintError('E', 9913, "no more DDD_TYPEs in DDD_TypeDeclare()");
+    DDD_PrintError('E', 2424, "no more DDD_TYPEs in DDD_TypeDeclare()");
     HARD_EXIT;             /*return(ERROR);*/
   }
 
@@ -1221,7 +1221,7 @@ void DDD_TypeDeclare (char *name, int *size, DDD_TYPE *type)
   if (nDescr==MAX_TYPEDESC)
   {
 #ifdef CPP_FRONTEND
-    DDD_PrintError('E', 9913, "no more DDD_TYPEs in DDD_TypeDeclare()");
+    DDD_PrintError('E', 2425, "no more DDD_TYPEs in DDD_TypeDeclare()");
     HARD_EXIT;             /*return(ERROR);*/
 #else
     *type = -1;
@@ -1260,7 +1260,7 @@ void DDD_Library::TypeChangeName (DDD_TYPE id, char *name)
   if (id>=nDescr)
   {
     sprintf(cBuffer, "invalid DDD_TYPE %d in DDD_TypeChangeName", id);
-    DDD_PrintError('E', 9933, cBuffer);
+    DDD_PrintError('E', 2426, cBuffer);
     HARD_EXIT;             /*return;*/
   }
 
@@ -1305,7 +1305,7 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
     if (id>=nDescr)
     {
       sprintf(cBuffer, "invalid DDD_TYPE %d in DDD_TypeDisplay", id);
-      DDD_PrintError('E', 9914, cBuffer);
+      DDD_PrintError('E', 2427, cBuffer);
       HARD_EXIT;                   /*return;*/
     }
 
@@ -1313,7 +1313,7 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
     if (desc->mode != DDD_TYPE_DEFINED)
     {
       sprintf(cBuffer, "undefined DDD_TYPE %d in DDD_TypeDisplay", id);
-      DDD_PrintError('E', 9915, cBuffer);
+      DDD_PrintError('E', 2428, cBuffer);
       HARD_EXIT;                   /*return;*/
     }
 
@@ -1605,7 +1605,7 @@ OLDSTYLE("   Advantage: static type checking for handler functions)");
 
 if (desc->mode != DDD_TYPE_DEFINED)
 {
-  DDD_PrintError('E', 9916,
+  DDD_PrintError('E', 2429,
                  "undefined DDD_TYPE in DDD_HandlerRegister()");
   HARD_EXIT;               /*return;*/
 }
@@ -1687,7 +1687,7 @@ while ((idx = FTYPE va_arg(ap, int FTYPE)) != HANDLER_END)
     break;
 #endif
   default :
-    DDD_PrintError('E', 9917,
+    DDD_PrintError('E', 2430,
                    "undefined HandlerId in DDD_HandlerRegister()");
     HARD_EXIT;
   }

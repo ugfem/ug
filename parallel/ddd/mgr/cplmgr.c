@@ -156,21 +156,50 @@ static COUPLING *NewCoupling (void)
 {
   COUPLING *cpl;
 
-  if (memlistCpl==NULL)
+  if (DDD_GetOption(OPT_CPLMGR_USE_FREELIST)==OPT_ON)
   {
-    CplSegm *segm = segmCpl;
+    /* allocate coupling from segments (which are allocated
+       from segment-freelists) */
 
-    if (segm==NULL || segm->nItems==CPLSEGM_SIZE)
+    if (memlistCpl==NULL)
     {
-      segm = NewCplSegm();
+      CplSegm *segm = segmCpl;
+
+      if (segm==NULL || segm->nItems==CPLSEGM_SIZE)
+      {
+        segm = NewCplSegm();
+      }
+
+      cpl = &(segm->item[segm->nItems++]);
+    }
+    else
+    {
+      cpl = memlistCpl;
+      memlistCpl = CPL_NEXT(cpl);
     }
 
-    cpl = &(segm->item[segm->nItems++]);
+    /* init private data */
+    cpl->_flags = 0;
+
+    /* remember memory origin for later disposal */
+    SETCPLMEM_FREELIST(cpl);
   }
   else
   {
-    cpl = memlistCpl;
-    memlistCpl = CPL_NEXT(cpl);
+    /* allocate coupling directly */
+    cpl = (COUPLING *) AllocTmpReq(sizeof(COUPLING), TMEM_CPL);
+
+    if (cpl==NULL)
+    {
+      DDD_PrintError('F', 2551, STR_NOMEM " during NewCoupling()");
+      HARD_EXIT;
+    }
+
+    /* init private data */
+    cpl->_flags = 0;
+
+    /* remember memory origin for later disposal */
+    SETCPLMEM_EXTERNAL(cpl);
   }
 
   nCplItems++;
@@ -181,8 +210,15 @@ static COUPLING *NewCoupling (void)
 
 static void DisposeCoupling (COUPLING *cpl)
 {
-  CPL_NEXT(cpl) = memlistCpl;
-  memlistCpl = cpl;
+  if (CPLMEM(cpl)==CPLMEM_FREELIST)
+  {
+    CPL_NEXT(cpl) = memlistCpl;
+    memlistCpl = cpl;
+  }
+  else
+  {
+    FreeTmpReq(cpl, sizeof(COUPLING), TMEM_CPL);
+  }
 
   nCplItems--;
 }
@@ -359,7 +395,7 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   {
     for(cp2=IdxCplList(objIndex); cp2!=NULL; cp2=CPL_NEXT(cp2))
     {
-      if (cp2->proc==proc)
+      if (CPL_PROC(cp2)==proc)
       {
         if (cp2->prio!=prio)
         {
@@ -386,9 +422,8 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
 
   /* init contents */
   cp->obj = hdr;
-  cp->proc = proc;
+  CPL_PROC(cp) = proc;
   cp->prio = prio;
-  cp->flags = 0;
 
   /* insert into theCpl array */
   CPL_NEXT(cp) = IdxCplList(objIndex);
@@ -446,7 +481,7 @@ COUPLING *ModCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
     /* look if coupling exists and change it */
     for(cp2=IdxCplList(objIndex); cp2!=NULL; cp2=CPL_NEXT(cp2))
     {
-      if (cp2->proc==proc)
+      if (CPL_PROC(cp2)==proc)
       {
         cp2->prio = prio;
         return(cp2);
@@ -490,7 +525,7 @@ void DelCoupling (DDD_HDR hdr, DDD_PROC proc)
   {
     for(cpl=IdxCplList(objIndex), cplLast=NULL; cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
-      if(cpl->proc==proc)
+      if(CPL_PROC(cpl)==proc)
       {
         if (cplLast==NULL)
         {
@@ -608,7 +643,7 @@ i=2;
 if (objIndex<NCpl_Get)
 {
   for(cpl=IdxCplList(objIndex); cpl!=NULL; cpl=CPL_NEXT(cpl), i+=2) {
-    localIBuffer[i]   = cpl->proc;
+    localIBuffer[i]   = CPL_PROC(cpl);
     localIBuffer[i+1] = cpl->prio;
   }
 }
@@ -647,7 +682,7 @@ DDD_PROC DDD_InfoProcPrio (DDD_HDR hdr, DDD_PRIO prio)
     for(cpl=IdxCplList(objIndex); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       if (cpl->prio == prio)
-        return(cpl->proc);
+        return(CPL_PROC(cpl));
     }
   }
 
@@ -708,7 +743,7 @@ void DDD_InfoCoupling (DDD_HDR hdr)
     for(cpl=IdxCplList(objIndex); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       sprintf(cBuffer, "%4d:    cpl %08x proc=%4d prio=%4d\n",
-              me, cpl, cpl->proc, cpl->prio);
+              me, cpl, CPL_PROC(cpl), cpl->prio);
       DDD_PrintLine(cBuffer);
     }
   }

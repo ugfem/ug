@@ -209,7 +209,7 @@ void IF_FUNCNAME (
 		#endif
 	#else
 		#ifdef IF_ONEWAY
-			int aDir,
+			DDD_IF_DIR aDir,
 		#endif
 		size_t aSize,
 #ifdef C_FRONTEND

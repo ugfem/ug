@@ -325,8 +325,15 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 
         #ifdef SUPPORT_RESENT_FLAG
   {
-    DDD_HDR *localCplObjs = LocalCoupledObjectsList();
     int iLCO, nLCO=NCpl_Get;
+    DDD_HDR *localCplObjs = LocalCoupledObjectsList();
+
+    if (localCplObjs==NULL && ddd_nCpls>0)
+    {
+      DDD_PrintError('E', 6525,
+                     "Cannot get list of coupled objects. Aborted.");
+      HARD_EXIT;
+    }
 
     /* set RESENT flag for objects which will receive another copy */
     iLCO=0;

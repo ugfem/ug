@@ -119,8 +119,10 @@ T *New(T) (SLLNewArgProtos)
 	list(T) = item;
 	n(T)++;
 
-	/* insert unique counter */
-	item->sll_n = n(T);
+	#ifdef SLL_WithOrigOrder
+		/* insert unique counter */
+		item->sll_n = n(T);
+	#endif
 
 #	ifdef SLL_DebugNew
 		strncpy(item->sll_file, file, SLL_NAMELEN);
@@ -150,7 +152,7 @@ T **SortedArray(T) (int (*compar) (const void *, const void *))
 		if (array==NULL)
 		{
 			DDD_PrintError('F', 6061, STR_NOMEM " during XferEnd()");
-			HARD_EXIT;
+			return(NULL);
 		}
 
 		/* fill array with pointer */
@@ -175,6 +177,8 @@ T **SortedArray(T) (int (*compar) (const void *, const void *))
 
 /****************************************************************************/
 
+#ifdef SLL_WithOrigOrder
+
 /*
 	sort array of items into order of their New(T) command
 	execution. the counter-component T.n is used for doing
@@ -196,6 +200,9 @@ void OrigOrder(T) (T **array, int n)
 {
 	qsort(array, n, sizeof(T *), sort_OrigOrder(T));
 }
+
+#endif
+
 
 
 /****************************************************************************/
@@ -301,6 +308,12 @@ void GetSizes(T) (int *nSegms, int *nItems, size_t *alloc_mem, size_t *used_mem)
 	*used_mem  = used;
 }
 
+
+/****************************************************************************/
+
+#ifdef SLL_WithOrigOrder
+#undef SLL_WithOrigOrder
+#endif
 
 /****************************************************************************/
 

@@ -302,10 +302,10 @@ static int sort_CplBufDest (const void *e1, const void *e2)
 
 static int ConsCheckGlobalCpl (void)
 {
-  CONS_INFO *cplBuf;
+  CONS_INFO *cplBuf=NULL;
   COUPLING     *cpl;
   int i, j, lenCplBuf, nRecvMsgs, nSendMsgs;
-  CONSMSG      *sendMsgs, *cm=0;
+  CONSMSG      *sendMsgs=NULL, *cm=NULL;
   LC_MSGHANDLE *recvMsgs;
   int error_cnt = 0;
   DDD_HDR      *locObjs = NULL;
@@ -334,19 +334,19 @@ static int ConsCheckGlobalCpl (void)
   {
     for(cpl=IdxCplList(i); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
-      if ((DDD_PROC)cpl->proc >= procs)
+      if ((DDD_PROC)CPL_PROC(cpl) >= procs)
       {
         error_cnt++;
         sprintf(cBuffer, "%4d: DDD-GCC Warning: invalid proc=%d (%08x/%08x)\n",
-                me, cpl->proc, OBJ_GID(cpl->obj),
+                me, CPL_PROC(cpl), OBJ_GID(cpl->obj),
                 OBJ_GID(ddd_ObjTable[i])
                 );
         DDD_PrintLine(cBuffer);
       }
       cplBuf[j].gid  = OBJ_GID(cpl->obj);
       cplBuf[j].typ  = OBJ_TYPE(cpl->obj);
-      cplBuf[j].dest = cpl->proc;
-      cplBuf[j].proc = cpl->proc;
+      cplBuf[j].dest = CPL_PROC(cpl);
+      cplBuf[j].proc = CPL_PROC(cpl);
       cplBuf[j].prio = cpl->prio;
       j++;
     }
@@ -362,6 +362,11 @@ static int ConsCheckGlobalCpl (void)
 
   /* init communication topology */
   nRecvMsgs = LC_Connect(consmsg_t);
+  if (nRecvMsgs==ERROR)
+  {
+    error_cnt = -1;
+    goto exit_ConsCheckGlobalCpl;
+  }
 
   /* build and send messages */
   ConsSend(sendMsgs);
@@ -372,14 +377,27 @@ static int ConsCheckGlobalCpl (void)
 
 
   /* perform checking of received data */
-  if (nRecvMsgs>0) locObjs = LocalObjectsList();
-  for(i=0; i<nRecvMsgs; i++)
+  if (nRecvMsgs>0)
   {
-    error_cnt += ConsCheckSingleMsg(recvMsgs[i], locObjs);
+    locObjs = LocalObjectsList();
+    if (locObjs==NULL && ddd_nObjs>0)
+    {
+      DDD_PrintLine(
+        "    DDD-GCC Warning: out of memory in ConsCheckGlobalCpl()\n");
+      error_cnt++;                   /* one additional error */
+      goto exit_ConsCheckGlobalCpl;
+    }
+
+    for(i=0; i<nRecvMsgs; i++)
+    {
+      error_cnt += ConsCheckSingleMsg(recvMsgs[i], locObjs);
+    }
+    FreeLocalObjectsList(locObjs);
   }
-  if (nRecvMsgs>0) FreeLocalObjectsList(locObjs);
 
 
+
+exit_ConsCheckGlobalCpl:
 
   /* cleanup low-comm layer */
   LC_Cleanup();
@@ -459,7 +477,7 @@ static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
           for(i2=i; i2<nItems && theCplBuf[i2].gid==theCplBuf[i].gid;
               i2++)
           {
-            if (theCplBuf[i2].proc==j2->proc)
+            if (theCplBuf[i2].proc==CPL_PROC(j2))
             {
               ifound = i2;
               break;
@@ -471,7 +489,7 @@ static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
             sprintf(cBuffer, "    DDD-GCC Warning: obj %08x type %d on %d has cpl"
                     " from%4d, but %d hasn't!\n",
                     theCplBuf[i].gid, theCplBuf[i].typ, me,
-                    j2->proc, LC_MsgGetProc(xm));
+                    CPL_PROC(j2), LC_MsgGetProc(xm));
             DDD_PrintLine(cBuffer);
 
             error_cnt++;
@@ -581,7 +599,7 @@ static int Cons2CheckGlobalCpl (void)
     {
       cplBuf[j].gid  = OBJ_GID(cpl->obj);
       cplBuf[j].typ  = OBJ_TYPE(cpl->obj);
-      cplBuf[j].dest = cpl->proc;
+      cplBuf[j].dest = CPL_PROC(cpl);
       cplBuf[j].proc = me;
       cplBuf[j].prio = OBJ_PRIO(cpl->obj);
       j++;
@@ -590,8 +608,8 @@ static int Cons2CheckGlobalCpl (void)
       {
         cplBuf[j].gid  = OBJ_GID(cpl->obj);
         cplBuf[j].typ  = OBJ_TYPE(cpl->obj);
-        cplBuf[j].dest = cpl->proc;
-        cplBuf[j].proc = cpl2->proc;
+        cplBuf[j].dest = CPL_PROC(cpl);
+        cplBuf[j].proc = CPL_PROC(cpl2);
         cplBuf[j].prio = cpl2->prio;
         j++;
       }
@@ -617,12 +635,24 @@ static int Cons2CheckGlobalCpl (void)
 
 
   /* perform checking of received data */
-  if (nRecvMsgs>0) locObjs = LocalObjectsList();
-  for(i=0; i<nRecvMsgs; i++)
+  if (nRecvMsgs>0)
   {
-    error_cnt += Cons2CheckSingleMsg(recvMsgs[i], locObjs);
+    locObjs = LocalObjectsList();
+    if (locObjs==NULL && ddd_nObjs>0)
+    {
+      DDD_PrintLine(
+        "    DDD-GCC Warning: out of memory in Cons2CheckGlobalCpl()\n");
+      error_cnt++;                   /* one additional error */
+    }
+    else
+    {
+      for(i=0; i<nRecvMsgs; i++)
+      {
+        error_cnt += Cons2CheckSingleMsg(recvMsgs[i], locObjs);
+      }
+      FreeLocalObjectsList(locObjs);
+    }
   }
-  if (nRecvMsgs>0) FreeLocalObjectsList(locObjs);
 
 
   /* cleanup low-comm layer */
@@ -654,6 +684,11 @@ static int ConsCheckDoubleObj (void)
   int i, error_cnt = 0;
 
   locObjs = LocalObjectsList();
+  if (locObjs==NULL && ddd_nObjs>0)
+  {
+    DDD_PrintLine("    DDD-GCC Warning: out of memory in ConsCheckDoubleObj()\n");
+    return(1);             /* report one error */
+  }
 
   for(i=1; i<ddd_nObjs; i++)
   {
@@ -724,18 +759,20 @@ int DDD_Library::ConsCheck (void)
 
   total_errors += ConsCheckDoubleObj();
 
-#ifdef CHECK_CPL_PAIRS
+        #ifdef CHECK_CPL_PAIRS
   cpl_errors = ConsCheckGlobalCpl();
-#endif
-#ifdef CHECK_CPL_ALLTOALL
+        #endif
+        #ifdef CHECK_CPL_ALLTOALL
   cpl_errors = Cons2CheckGlobalCpl();
-#endif
+        #endif
+
   if (cpl_errors==-1)
   {
-    DDD_PrintError('E', 9910, "ConsCheck aborted.");
-    HARD_EXIT;
+    DDD_PrintLine("    DDD-GCC Error: out of memory in ConsCheckGlobalCpl()\n");
+    total_errors++;
   }
-  total_errors += cpl_errors;
+  else
+    total_errors += cpl_errors;
 
   total_errors += DDD_CheckInterfaces();
 

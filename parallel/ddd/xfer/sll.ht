@@ -20,10 +20,9 @@
 
 /****************************************************************************/
 /*                                                                          */
-/* definition of data strcutures                                            */
+/* macros for SLL data structure definitions                                */
 /*                                                                          */
 /****************************************************************************/
-
 
 
 /****************************************************************************/
@@ -49,10 +48,22 @@ extern int n(T);
 T *New(T) (SLLNewArgProtos);
 T **SortedArray(T) (int (*) (const void *, const void *));
 int Unify(T) (T **, int (*) (T **, T **));
+#ifdef SLL_WithOrigOrder
 void OrigOrder(T) (T **, int);
+#endif
 void Init(T) (void);
 void FreeAll(T) (void);
 void GetSizes(T) (int *, int *, size_t *, size_t *);
+
+
+
+/****************************************************************************/
+
+/* undefine switches and helper macros */
+
+#ifdef SLL_WithOrigOrder
+#undef SLL_WithOrigOrder
+#endif
 
 /****************************************************************************/
 

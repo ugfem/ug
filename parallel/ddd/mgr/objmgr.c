@@ -600,7 +600,7 @@ DDD_Object::~DDD_Object (void)
   DDD_HDR hdr = this;
 #endif
 COUPLING   *cpl;
-int objIndex, xfer_active = XferActive();
+int objIndex, xfer_active = ddd_XferActive();
 
 #       ifdef DebugDeletion
 sprintf(cBuffer, "%4d: DDD_HdrDestructor(adr=%08x, "
@@ -623,7 +623,7 @@ if (IsHdrInvalid(hdr))
 
 /* if currently in xfer, register deletion for other processors */
 if (xfer_active)
-  XferRegisterDelete(hdr);
+  ddd_XferRegisterDelete(hdr);
 
 
 objIndex = OBJ_INDEX(hdr);

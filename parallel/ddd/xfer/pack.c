@@ -694,11 +694,11 @@ static void XferPackSingleMsg (XFERMSG *msg)
 /*                                                                          */
 /* Input:     theMsgs: list of message-send-infos                           */
 /*                                                                          */
-/* Output:    -                                                             */
+/* Output:    RET_ON_ERROR if error occured, RET_ON_OK otherwise            */
 /*                                                                          */
 /****************************************************************************/
 
-void XferPackMsgs (XFERMSG *theMsgs)
+RETCODE XferPackMsgs (XFERMSG *theMsgs)
 {
   XFERMSG      *xm;
 
@@ -754,11 +754,13 @@ void XferPackMsgs (XFERMSG *theMsgs)
       sprintf(cBuffer, STR_NOMEM " in XferPackMsgs (size=%ld)",
               (unsigned long) LC_GetBufferSize(xm->msg_h));
       DDD_PrintError('E', 6522, cBuffer);
-      HARD_EXIT;
+      RET_ON_ERROR;
     }
     XferPackSingleMsg(xm);
     LC_MsgSend(xm->msg_h);
   }
+
+  RET_ON_OK;
 }
 
 

@@ -179,8 +179,8 @@ static int sort_IFCouplings (const void *e1, const void *e2)
   cp1 = *((COUPLING **)e1);
   cp2 = *((COUPLING **)e2);
 
-  if (cp1->proc < cp2->proc) return(-1);
-  if (cp1->proc > cp2->proc) return(1);
+  if (CPL_PROC(cp1) < CPL_PROC(cp2)) return(-1);
+  if (CPL_PROC(cp1) > CPL_PROC(cp2)) return(1);
 
   if (CPLDIR(cp1) < CPLDIR(cp2)) return(-1);
   if (CPLDIR(cp1) > CPLDIR(cp2)) return(1);
@@ -453,7 +453,7 @@ static RETCODE IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
     COUPLING  *cpl = *cplp;
     DDD_ATTR attr = OBJ_ATTR(cpl->obj);
 
-    if (cpl->proc != lastproc)
+    if (CPL_PROC(cpl) != lastproc)
     {
       /* create new IfHead */
       theIF[ifId].nIfHeads++;
@@ -463,7 +463,7 @@ static RETCODE IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
       ifHead->obj      = NULL;
       ifHead->nAB      = ifHead->nBA   = ifHead->nABA   = 0;
       ifHead->cplAB    = ifHead->cplBA = ifHead->cplABA = NULL;
-      ifHead->proc     = cpl->proc;
+      ifHead->proc     = CPL_PROC(cpl);
       ifHead->next     = lastIfHead;
       lastIfHead = ifHead;
       lastproc   = ifHead->proc;
@@ -823,7 +823,7 @@ void DDD_InfoIFImpl (DDD_IF ifId)
       COUPLING *c = ifh->cplAB[i];
       sprintf(cBuffer, "|         gid=%08x proc=%04d prio=%02d "
               "osc=%08x/%08x\n",
-              OBJ_GID(c->obj), c->proc, c->prio,
+              OBJ_GID(c->obj), CPL_PROC(c), c->prio,
               ifh->objAB[i], OBJ_OBJ(c->obj)
               );
       DDD_PrintLine(cBuffer);
@@ -836,7 +836,7 @@ void DDD_InfoIFImpl (DDD_IF ifId)
       COUPLING *c = ifh->cplBA[i];
       sprintf(cBuffer, "|         gid=%08x proc=%04d prio=%02d "
               "osc=%08x/%08x\n",
-              OBJ_GID(c->obj), c->proc, c->prio,
+              OBJ_GID(c->obj), CPL_PROC(c), c->prio,
               ifh->objBA[i], OBJ_OBJ(c->obj)
               );
       DDD_PrintLine(cBuffer);
@@ -849,7 +849,7 @@ void DDD_InfoIFImpl (DDD_IF ifId)
       COUPLING *c = ifh->cplABA[i];
       sprintf(cBuffer, "|         gid=%08x proc=%04d prio=%02d "
               "osc=%08x/%08x\n",
-              OBJ_GID(c->obj), c->proc, c->prio,
+              OBJ_GID(c->obj), CPL_PROC(c), c->prio,
               ifh->objABA[i], OBJ_OBJ(c->obj)
               );
       DDD_PrintLine(cBuffer);

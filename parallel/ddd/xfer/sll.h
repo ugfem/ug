@@ -49,9 +49,7 @@
 
 /****************************************************************************/
 
-/*
-        which structure components are needed for each item?
- */
+
 #ifdef SLL_DebugNew
 
 #define SLLNewArgProtos     char * file, int line
@@ -60,6 +58,11 @@
 #define SLL_NAMELEN    30
 
 #define SLL_INFO(T)   \
+  struct T *sll_next;                     /* linked list          */  \
+  char sll_file[SLL_NAMELEN];             /* filename of New-call */  \
+  int sll_line                            /* lineno of New-call   */
+
+#define SLL_INFO_WITH_COUNTER(T)   \
   int sll_n;                              /* unique index number  */  \
   struct T *sll_next;                     /* linked list          */  \
   char sll_file[SLL_NAMELEN];             /* filename of New-call */  \
@@ -72,11 +75,13 @@
 
 
 #define SLL_INFO(T)   \
+  struct T *sll_next            /* linked list         */
+
+#define SLL_INFO_WITH_COUNTER(T)   \
   int sll_n;                    /* unique index number */  \
   struct T *sll_next            /* linked list         */
 
 #endif
-
 
 
 /****************************************************************************/

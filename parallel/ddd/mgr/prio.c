@@ -118,10 +118,15 @@ sprintf(cBuffer, "%4d: LOG DDD_PrioritySet %08x old=%d new=%d\n",
 DDD_PrintDebug(cBuffer);
 #       endif
 
-if (XferActive())
+if (ddd_XferActive())
 {
   /* we are during Xfer, therefore initiate PrioChange operation */
   DDD_XferPrioChange(hdr, prio);
+}
+else if(ddd_PrioActive())
+{
+  /* we are in a Prio-environment, therefore initiate consistent PrioChange operation */
+  DDD_PrioChange(hdr, prio);
 }
 else
 {

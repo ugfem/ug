@@ -20,7 +20,7 @@
 /****************************************************************************/
 
 /* RCS_ID
-   $Header: /hosts/dom/cvs/ddd/src/dddi.h,v 1.7 1997/07/24 15:49:05 birken Exp
+   $Header: /hosts/dom/cvs/ddd/src/dddi.h,v 1.8 1997/07/24 15:49:05 birken Exp
    $
  */
 
@@ -46,6 +46,10 @@
 /*                                                                          */
 /****************************************************************************/
 
+#define EXCEPTION_LOWCOMM_CONNECT  -10
+
+/* lowcomm users should use exceptions EXCEPTION_LOWCOMM_USER or lower */
+#define EXCEPTION_LOWCOMM_USER     -100
 
 
 /****************************************************************************/
@@ -91,6 +95,7 @@ LC_MSGCOMP LC_NewMsgChunk (char *, LC_MSGTYPE);
 void       LC_MsgSend (LC_MSGHANDLE);
 
 int           LC_Connect (LC_MSGTYPE);
+int           LC_Abort (int);
 LC_MSGHANDLE *LC_Communicate (void);
 void          LC_Cleanup (void);
 

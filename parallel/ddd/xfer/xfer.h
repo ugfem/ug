@@ -55,6 +55,11 @@
 #define SUPPORT_RESENT_FLAG
 
 
+/* define this to use as small types as possible. for debugging, try it
+   without this define */
+#define SMALL_TYPES_BY_CASTS
+
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -80,17 +85,13 @@
 
 /* map memory allocation calls */
 /* activate this to allocate memory from freelists */
-/*
-   #ifdef XferMemFromHeap
- */
+#ifdef XferMemFromHeap
 #define OO_Allocate  xfer_AllocHeap
 #define OO_Free      xfer_FreeHeap
-/*
-   #else
-   #define OO_Allocate  xfer_AllocTmp
-   #define OO_Free      xfer_FreeTmp
-   #endif
- */
+#else
+#define OO_Allocate  xfer_AllocTmp
+#define OO_Free      xfer_FreeTmp
+#endif
 
 
 /* extra prefix for all xfer-related data structures and/or typedefs */
@@ -115,6 +116,17 @@ enum XferMode {
   XMODE_BUSY                     /* during DDD_XferEnd() */
 };
 
+
+
+/****************************************************************************/
+
+#ifdef SMALL_TYPES_BY_CASTS
+#define DDD_PRIO_SMALL unsigned char
+#define DDD_TYPE_SMALL unsigned char
+#else
+#define DDD_PRIO_SMALL DDD_PRIO
+#define DDD_TYPE_SMALL DDD_TYPE
+#endif
 
 
 /****************************************************************************/
@@ -163,12 +175,14 @@ int  Method(Compare) (ClassPtr, ClassPtr);
 
 
 /* define container class */
+#ifndef SetOf  /* necessary for inline documentation only */
 #define SetOf          XICopyObj
 #define Set_SegmSize   256
 #define Set_BTreeOrder 32
 #ifdef XferMemFromHeap
 #define ArrayAllocate  xfer_AllocHeap
 #define NoArrayFree
+#endif
 #endif
 #include "basic/ooppcc.h"
 
@@ -196,7 +210,7 @@ int  Method(Compare) (ClassPtr, ClassPtr);
 /* XIDelCmd represents a XferDeleteObj-cmd by the application program */
 typedef struct _XIDelCmd
 {
-  SLL_INFO(_XIDelCmd);
+  SLL_INFO_WITH_COUNTER(_XIDelCmd);
   DDD_HDR hdr;
 
         #ifdef CPP_FRONTEND
@@ -207,6 +221,7 @@ typedef struct _XIDelCmd
 
 /* include template */
 #define T XIDelCmd
+#define SLL_WithOrigOrder
 #include "sll.ht"
 #undef T
 
@@ -250,12 +265,14 @@ int  Method(Compare) (ClassPtr, ClassPtr);
 
 
 /* define container class */
+#ifndef SetOf  /* necessary for inline documentation only */
 #define SetOf          XISetPrio
 #define Set_SegmSize   256
 #define Set_BTreeOrder 32
 #ifdef XferMemFromHeap
 #define ArrayAllocate  xfer_AllocHeap
 #define NoArrayFree
+#endif
 #endif
 #include "basic/ooppcc.h"
 
@@ -266,12 +283,30 @@ int  Method(Compare) (ClassPtr, ClassPtr);
 
 typedef struct _TENewCpl
 {
-  DDD_GID gid;                  /* obj-gid for which new copy will be created   */
-  DDD_PROC dest;                /* destination of new object copy               */
-  DDD_PRIO prio;                /* priority of new object copy                  */
-  DDD_TYPE type;                /* ddd-type of gid for PriorityMerge on receiver*/
+  DDD_GID _gid;                 /* obj-gid for which new copy will be created   */
+  DDD_PROC _dest;               /* destination of new object copy               */
+
+  DDD_PRIO_SMALL _prio;         /* priority of new object copy                  */
+  DDD_TYPE_SMALL _type;         /* ddd-type of gid for PriorityMerge on receiver*/
 
 } TENewCpl;
+
+#define NewCpl_GetGid(i)     ((i)._gid)
+#define NewCpl_SetGid(i,d)   ((i)._gid = (d))
+#define NewCpl_GetDest(i)    ((i)._dest)
+#define NewCpl_SetDest(i,d)  ((i)._dest = (d))
+
+#ifdef SMALL_TYPES_BY_CASTS
+#define NewCpl_GetPrio(i)    ((DDD_PRIO)(i)._prio)
+#define NewCpl_SetPrio(i,d)  ((i)._prio = (DDD_PRIO_SMALL)(d))
+#define NewCpl_GetType(i)    ((DDD_TYPE)(i)._type)
+#define NewCpl_SetType(i,d)  ((i)._type = (DDD_TYPE_SMALL)(d))
+#else
+#define NewCpl_GetPrio(i)    ((i)._prio)
+#define NewCpl_SetPrio(i,d)  ((i)._prio = (d))
+#define NewCpl_GetType(i)    ((i)._type)
+#define NewCpl_SetType(i,d)  ((i)._type = (d))
+#endif
 
 
 typedef struct _XINewCpl
@@ -521,6 +556,16 @@ typedef struct {
 
 
 /****************************************************************************/
+/* XFER_PER_PROC: data needed on a per-proc basis during xfer               */
+/****************************************************************************/
+
+typedef struct _XFER_PER_PROC
+{
+  int dummy;        /* not used yet */
+} XFER_PER_PROC;
+
+
+/****************************************************************************/
 /* XFER_GLOBALS: global data for xfer module                                */
 /****************************************************************************/
 
@@ -568,7 +613,9 @@ XFERADDDATA *NewXIAddData (void);
 void FreeAllXIAddData (void);
 int *AddDataAllocSizes(int);
 void xfer_SetTmpMem (int);
+void *xfer_AllocTmp (size_t);
 void *xfer_AllocHeap (size_t);
+void xfer_FreeTmp (void *);
 void xfer_FreeHeap (void *);
 void *xfer_AllocSend (size_t);
 void xfer_FreeSend (void *);
@@ -603,7 +650,7 @@ int XferStepMode(int);
 
 
 /* pack.c,   used only by cmds.c */
-void XferPackMsgs (XFERMSG *);
+RETCODE XferPackMsgs (XFERMSG *);
 
 
 /* unpack.c, used only by cmds.c */

@@ -5,9 +5,22 @@
 *  constants for F77-DDD (must correspond to ddd.h in actual version)
 *
 *  970212 kb  made consistent with ddd-1.8
-*
+*  980706 kb  added function return codes
 *
 ************************************************************************
+
+
+
+************************************************************************
+*
+*  constants for function return codes
+*
+************************************************************************
+
+       INTEGER DDD_RET_OK, DDD_RET_ERROR_UNKNOWN, DDD_RET_ERROR_NOMEM
+       PARAMETER(DDD_RET_OK=0)
+       PARAMETER(DDD_RET_ERROR_UNKNOWN=1)
+       PARAMETER(DDD_RET_ERROR_NOMEM=2)
 
 
 ************************************************************************

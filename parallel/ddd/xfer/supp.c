@@ -43,18 +43,21 @@
               source file by setting the following define.
  */
 #define ContainerImplementation
-#define _CHECKALLOC(ptr)   assert(ptr!=NULL)
+/* this is the hardliner version, for debugging only
+   #define _CHECKALLOC(ptr)   assert(ptr!=NULL)
+ */
+#define _CHECKALLOC(ptr)   if (ptr==NULL) return (NULL)
 
 
 static int TmpMem_kind = TMEM_ANY;
 
-static void *xfer_AllocTmp (size_t size)
+void *xfer_AllocTmp (size_t size)
 {
   void *buffer = AllocTmpReq(size, TmpMem_kind);
   return(buffer);
 }
 
-static void xfer_FreeTmp (void *buffer)
+void xfer_FreeTmp (void *buffer)
 {
   FreeTmpReq(buffer, 0, TmpMem_kind);
 }
@@ -307,6 +310,7 @@ void Method(Print) (ParamThis _PRINTPARAMS)
     include templates
  */
 #define T XIDelCmd
+#define SLL_WithOrigOrder
 #include "sll.ct"
 #undef T
 

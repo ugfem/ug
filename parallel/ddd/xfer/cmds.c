@@ -405,33 +405,34 @@ static void DisplayMemResources (void)
  */
 
 #ifdef C_FRONTEND
-void DDD_XferEnd (void)
+DDD_RET DDD_XferEnd (void)
 #endif
 #ifdef CPP_FRONTEND
-void DDD_Library::XferEnd (void)
+DDD_RET DDD_Library::XferEnd (void)
 #endif
 #ifdef F_FRONTEND
-void DDD_XferEnd (void)
+DDD_RET DDD_XferEnd (void)
 #endif
 {
-  XICopyObjPtrArray *arrayXICopyObj;
-  XICopyObj   **arrayNewOwners;
+  DDD_RET ret_code              = DDD_RET_OK;
+  XICopyObjPtrArray *arrayXICopyObj = NULL;
+  XICopyObj   **arrayNewOwners      = NULL;
   int nNewOwners;
-  XIDelCmd    **arrayXIDelCmd;
+  XIDelCmd    **arrayXIDelCmd       = NULL;
   int remXIDelCmd, prunedXIDelCmd;
-  XIDelObj    **arrayXIDelObj;
-  XISetPrioPtrArray *arrayXISetPrio;
-  XINewCpl    **arrayXINewCpl;
-  XIOldCpl    **arrayXIOldCpl;
-  XIDelCpl    **arrayXIDelCpl;
+  XIDelObj    **arrayXIDelObj       = NULL;
+  XISetPrioPtrArray *arrayXISetPrio = NULL;
+  XINewCpl    **arrayXINewCpl       = NULL;
+  XIOldCpl    **arrayXIOldCpl       = NULL;
+  XIDelCpl    **arrayXIDelCpl       = NULL;
   int remXIDelCpl;
-  XIModCpl    **arrayXIModCpl;
+  XIModCpl    **arrayXIModCpl       = NULL;
   int remXIModCpl;
-  XIAddCpl    **arrayXIAddCpl;
+  XIAddCpl    **arrayXIAddCpl       = NULL;
   int obsolete, nRecvMsgs, nSendMsgs;
-  XFERMSG     *sendMsgs, *sm=0;
-  LC_MSGHANDLE *recvMsgs;
-  DDD_HDR     *localCplObjs=NULL;
+  XFERMSG     *sendMsgs=NULL, *sm=NULL;
+  LC_MSGHANDLE *recvMsgs            = NULL;
+  DDD_HDR     *localCplObjs         = NULL;
   size_t sendMem=0, recvMem=0;
   int DelCmds_were_pruned;
 
@@ -452,6 +453,13 @@ void DDD_XferEnd (void)
   STAT_RESET;
   /* get sorted array of XICopyObj-items */
   arrayXICopyObj = XICopyObjSet_GetArray(xferGlobals.setXICopyObj);
+  if (arrayXICopyObj==NULL)
+  {
+    DDD_PrintError('W', 6080, "out of memory in DDD_XferEnd(), giving up.");
+    ret_code = DDD_RET_ERROR_NOMEM;
+    LC_Abort(EXCEPTION_LOWCOMM_USER);
+    goto exit;
+  }
   obsolete = XICopyObjSet_GetNDiscarded(xferGlobals.setXICopyObj);
 
   /* debugging output, write all XICopyObjs to file
@@ -482,6 +490,13 @@ void DDD_XferEnd (void)
     /* in case of pruning set to OPT_OFF, this sorting/unifying
        step is done lateron. */
     arrayXIDelCmd = SortedArrayXIDelCmd(sort_XIDelCmd);
+    if (arrayXIDelCmd==NULL && nXIDelCmd>0)
+    {
+      DDD_PrintError('W', 6081, "out of memory in DDD_XferEnd(), giving up.");
+      ret_code = DDD_RET_ERROR_NOMEM;
+      LC_Abort(EXCEPTION_LOWCOMM_USER);
+      goto exit;
+    }
     remXIDelCmd   = UnifyXIDelCmd(arrayXIDelCmd, unify_XIDelCmd);
     obsolete += (nXIDelCmd-remXIDelCmd);
 
@@ -510,12 +525,34 @@ void DDD_XferEnd (void)
   STAT_RESET;
   /* send Cpl-info about new objects to owners of other local copies */
   arrayNewOwners = CplClosureEstimate(arrayXICopyObj, &nNewOwners);
+  if (nNewOwners>0 && arrayNewOwners==NULL)
+  {
+    DDD_PrintError('W', 6082, "out of memory in DDD_XferEnd(), giving up.");
+    ret_code = DDD_RET_ERROR_NOMEM;
+    LC_Abort(EXCEPTION_LOWCOMM_USER);
+    goto exit;
+  }
 
   /* create sorted array of XINewCpl- and XIOldCpl-items.
      TODO. if efficiency is a problem here, use b-tree or similar
            data structure to improve performance. */
   arrayXINewCpl = SortedArrayXINewCpl(sort_XINewCpl);
+  if (arrayXINewCpl==NULL && nXINewCpl>0)
+  {
+    DDD_PrintError('W', 6083, "out of memory in DDD_XferEnd(), giving up.");
+    ret_code = DDD_RET_ERROR_NOMEM;
+    LC_Abort(EXCEPTION_LOWCOMM_USER);
+    goto exit;
+  }
+
   arrayXIOldCpl = SortedArrayXIOldCpl(sort_XIOldCpl);
+  if (arrayXIOldCpl==NULL && nXIOldCpl>0)
+  {
+    DDD_PrintError('W', 6084, "out of memory in DDD_XferEnd(), giving up.");
+    ret_code = DDD_RET_ERROR_NOMEM;
+    LC_Abort(EXCEPTION_LOWCOMM_USER);
+    goto exit;
+  }
 
 
   /* prepare msgs for objects and XINewCpl-items */
@@ -532,10 +569,51 @@ void DDD_XferEnd (void)
   /* init communication topology */
   nRecvMsgs = LC_Connect(xferGlobals.objmsg_t);
   STAT_TIMER(T_XFER_PREP_MSGS);
+  if (nRecvMsgs<0)
+  {
+    /* some processor raised an exception */
+    if (nRecvMsgs==EXCEPTION_LOWCOMM_CONNECT)
+    {
+      /* the dangerous exception: it occured only locally,
+         the other procs doesn't know about it */
+      DDD_PrintError('W', 6089,
+                     "local exception during LC_Connect() in DDD_XferEnd(), giving up.");
+
+      /* in this state the local processor hasn't initiated any send
+         or receive calls. however, there may be (and almost ever:
+         there will be!) other processors which already initiated their
+         receive calls. This is a tragic situation without a possibility
+         to escape.
+       */
+      HARD_EXIT;
+    }
+    else
+    {
+      /* all other exceptions are known globally, shutdown safely */
+      DDD_PrintError('W', 6085,
+                     "error during LC_Connect() in DDD_XferEnd(), giving up.");
+      ret_code = DDD_RET_ERROR_UNKNOWN;
+      goto exit;
+    }
+  }
+
+  /*** all exceptional errors which occur from here down to the
+       point of no return (some lines below) could be cleaned up
+       locally, but the communication situation cannot be cleaned
+       up with the current functionality of PPIF (i.e., discarding
+       of pending communication calls). therefore, the local processor
+       will be able to shutdown safely, but other processors might hang. ***/
 
   STAT_RESET;
   /* build obj msgs on sender side and start send */
-  XferPackMsgs(sendMsgs);
+  if (! IS_OK(XferPackMsgs(sendMsgs)))
+  {
+    DDD_PrintError('W', 6086,
+                   "error during message packing in DDD_XferEnd(), giving up.");
+    LC_Cleanup();
+    ret_code = DDD_RET_ERROR_UNKNOWN;
+    goto exit;
+  }
   STAT_TIMER(T_XFER_PACK_SEND);
 
   /*
@@ -545,6 +623,13 @@ void DDD_XferEnd (void)
   /* create sorted array of XISetPrio-items, and unify it */
   STAT_RESET;
   arrayXISetPrio = XISetPrioSet_GetArray(xferGlobals.setXISetPrio);
+  if (arrayXISetPrio==NULL)
+  {
+    DDD_PrintError('W', 6087, "out of memory in DDD_XferEnd(), giving up.");
+    LC_Cleanup();
+    ret_code = DDD_RET_ERROR_NOMEM;
+    goto exit;
+  }
   obsolete += XISetPrioSet_GetNDiscarded(xferGlobals.setXISetPrio);
 
 
@@ -552,9 +637,20 @@ void DDD_XferEnd (void)
   {
     /* create sorted array of XIDelCmd-items, and unify it */
     arrayXIDelCmd = SortedArrayXIDelCmd(sort_XIDelCmd);
+    if (arrayXIDelCmd==NULL && nXIDelCmd>0)
+    {
+      DDD_PrintError('W', 6088, "out of memory in DDD_XferEnd(), giving up.");
+      LC_Cleanup();
+      ret_code = DDD_RET_ERROR_NOMEM;
+      goto exit;
+    }
     remXIDelCmd   = UnifyXIDelCmd(arrayXIDelCmd, unify_XIDelCmd);
     obsolete += (nXIDelCmd-remXIDelCmd);
   }
+
+
+  /*** this is the point of no return. the next function manipulates
+       the data structure irreversibly.                              ***/
 
   /* execute local commands */
   /* NOTE: messages have been build before in order to allow
@@ -577,9 +673,6 @@ void DDD_XferEnd (void)
   ExecLocalXIDelObj(arrayXIDelObj,  nXIDelObj,
                     arrayNewOwners, nNewOwners);
 
-
-  /* get sorted list of local objects with couplings */
-  localCplObjs = LocalCoupledObjectsList();
 
   if (obsolete>0)
   {
@@ -643,6 +736,17 @@ void DDD_XferEnd (void)
     LC_PrintRecvMsgs();
   }
 
+
+  /* get sorted list of local objects with couplings */
+  localCplObjs = LocalCoupledObjectsList();
+  if (localCplObjs==NULL && ddd_nCpls>0)
+  {
+    DDD_PrintError('E', 6020,
+                   "Cannot get list of coupled objects in DDD_XferEnd(). Aborted.");
+    HARD_EXIT;
+  }
+
+
   /* unpack messages */
   STAT_RESET;
   XferUnpack(recvMsgs, nRecvMsgs,
@@ -659,6 +763,12 @@ void DDD_XferEnd (void)
   STAT_RESET;
   FreeLocalCoupledObjectsList(localCplObjs);
   localCplObjs = LocalCoupledObjectsList();
+  if (localCplObjs==NULL && ddd_nCpls>0)
+  {
+    DDD_PrintError('E', 6021,
+                   "Cannot get list of coupled objects in DDD_XferEnd(). Aborted.");
+    HARD_EXIT;
+  }
 
 
   /* create sorted array of XIDelCpl-, XIModCpl- and XIAddCpl-items.
@@ -696,9 +806,11 @@ void DDD_XferEnd (void)
 
 
   /*
-          free temporary storage
+          CLEAN-UP PHASE 2
    */
+exit:
 
+  /* free temporary storage */
   XICopyObjPtrArray_Free(arrayXICopyObj);
   XICopyObjSet_Reset(xferGlobals.setXICopyObj);
 
@@ -748,12 +860,16 @@ void DDD_XferEnd (void)
   DDD_PrintDebug(cBuffer);
 #       endif
 
-  /* re-create all interfaces and step XMODE */
-  STAT_RESET;
-  IFAllFromScratch();
-  STAT_TIMER(T_XFER_BUILD_IF);
+  if (ret_code==DDD_RET_OK)
+  {
+    /* re-create all interfaces and step XMODE */
+    STAT_RESET;
+    IFAllFromScratch();
+    STAT_TIMER(T_XFER_BUILD_IF);
+  }
 
   XferStepMode(XMODE_BUSY);
+  return(ret_code);
 }
 
 
@@ -820,7 +936,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
                               DDD_PROC dest,
                               DDD_PRIO prio)
 {
-  if (!XferActive())
+  if (!ddd_XferActive())
   {
     DDD_PrintError('E', 6012, "Missing DDD_XferBegin(). aborted");
     HARD_EXIT;
@@ -1409,22 +1525,23 @@ void DDD_XferBegin (void)
 /*                                                                          */
 /****************************************************************************/
 
-/**
-    Returns information about pruned DDD_XferDeleteObj() command.
-    If a \funk{XferDeleteObj} command has been pruned (i.e., option
-    OPT_XFER_PRUNE_DELETE is set to OPT_ON and another processor issued
-    a \funk{XferCopyObj}, command which sends an object copy to the
-    local processor), then this function will return XFER_PRUNED_TRUE,
-    otherwise it returns XFER_PRUNED_FALSE. If an error condition
-    occurs (e.g., when it is called at the wrong time), the function
-    returns XFER_PRUNED_ERROR.
+#ifdef C_FRONTEND
 
+/**
+    Returns information about pruned \funk{XferDeleteObj} command.
+    If a \funk{XferDeleteObj} command has been pruned (i.e., option
+   #OPT_XFER_PRUNE_DELETE# is set to #OPT_ON# and another processor issued
+    a \funk{XferCopyObj}, command which sends an object copy to the
+    local processor), then this function will return #XFER_PRUNED_TRUE#,
+    otherwise it returns #XFER_PRUNED_FALSE#. If an error condition
+    occurs (e.g., when it is called at the wrong time), the function
+    returns #XFER_PRUNED_ERROR#.
 
    @param hdr   DDD local object which has to be deleted.
-   @return  one of XFER_PRUNED_xxx
+   @return  one of #XFER_PRUNED_xxx#
  */
 
-#ifdef C_FRONTEND
+
 int DDD_XferIsPrunedDelete (DDD_HDR hdr)
 {
   if (XferMode() != XMODE_BUSY)
@@ -1437,6 +1554,7 @@ int DDD_XferIsPrunedDelete (DDD_HDR hdr)
 
   return(XFER_PRUNED_FALSE);
 }
+
 #endif
 
 
@@ -1448,26 +1566,27 @@ int DDD_XferIsPrunedDelete (DDD_HDR hdr)
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef SUPPORT_RESENT_FLAG
+
 /**
     Returns if an object will receive an additional copy.
     If another processor issued a \funk{XferCopyObj} in order
     to send a further copy of the given local object to the local
-    processor, this function will return XFER_RESENT_TRUE.
-    Otherwise this function will return XFER_RESENT_FALSE.
+    processor, this function will return #XFER_RESENT_TRUE#.
+    Otherwise this function will return #XFER_RESENT_FALSE#.
     If an error condition occurs (e.g., when it is called at the
-    wrong time), the function returns XFER_RESENT_ERROR.
+    wrong time), the function returns #XFER_RESENT_ERROR#.
 
-    This function will only work with option OPT_XFER_PRUNE_DELETE
-    set to OPT_ON. Otherwise, there will be no kind of communication
+    This function will only work with option #OPT_XFER_PRUNE_DELETE#
+    set to #OPT_ON#. Otherwise, there will be no kind of communication
     to supply this information.
 
    @param hdr   DDD local object which has to be deleted.
-   @return  one of XFER_RESENT_xxx
+   @return  one of #XFER_RESENT_xxx#
  */
 
-#ifdef SUPPORT_RESENT_FLAG
-
 #ifdef C_FRONTEND
+
 int DDD_XferObjIsResent (DDD_HDR hdr)
 {
   if (XferMode() != XMODE_BUSY)
@@ -1485,6 +1604,7 @@ int DDD_XferObjIsResent (DDD_HDR hdr)
 
   return(XFER_RESENT_FALSE);
 }
+
 #endif
 
 #endif /* SUPPORT_RESENT_FLAG */

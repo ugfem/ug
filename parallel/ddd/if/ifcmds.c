@@ -164,3 +164,44 @@ RCSID("$Header$",DDD_RCS_STRING)
 #endif
 
 /****************************************************************************/
+
+
+/*
+        description of input defines for ifstd.ct
+
+        IF_NAME:   name of interface function
+
+        These includes generate internal functions for communication
+        on the STD_INTERFACE (IF0). The Gather/Scatter-functions for
+        the STD_INTERFACE will get the DDD_HDR as a parameter, not the
+        DDD_OBJ.
+
+        TODO: more doc!
+ */
+
+
+/* with normal arguments for gather/scatter */
+
+#define IF_NAME Exchange
+#define IF_EXCHANGE
+#include "ifstd.ct"
+
+#define IF_NAME ExecLocal
+#define IF_EXECLOCAL
+#include "ifstd.ct"
+
+
+/* with extended arguments for gather/scatter */
+
+#define IF_NAME ExchangeX
+#define IF_EXCHANGE
+#define IF_WITH_XARGS
+#include "ifstd.ct"
+
+#define IF_NAME ExecLocalX
+#define IF_EXECLOCAL
+#define IF_WITH_XARGS
+#include "ifstd.ct"
+
+
+/****************************************************************************/

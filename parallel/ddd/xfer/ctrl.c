@@ -208,7 +208,9 @@ void XferDisplayMsg (char *comment, LC_MSGHANDLE xm)
   {
     sprintf(cBuffer, "%s 12 newcpl %04d - %08x %4d %4d\n",
             buf, i,
-            theNewCpl[i].gid, theNewCpl[i].dest, theNewCpl[i].prio);
+            NewCpl_GetGid(theNewCpl[i]),
+            NewCpl_GetDest(theNewCpl[i]),
+            NewCpl_GetPrio(theNewCpl[i]));
     DDD_PrintDebug(cBuffer);
   }
 

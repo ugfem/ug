@@ -136,11 +136,11 @@ static int sort_TENewCpl (const void *e1, const void *e2)
     ci1 = (TENewCpl *)e1;
     ci2 = (TENewCpl *)e2;
 
-    if (ci1->gid < ci2->gid) return(-1);
-    if (ci1->gid > ci2->gid) return(1);
+    if (ci1->_gid < ci2->_gid) return(-1);
+    if (ci1->_gid > ci2->_gid) return(1);
 
-    if (ci1->dest < ci2->dest) return(-1);
-    if (ci1->dest > ci2->dest) return(1);
+    if (ci1->_dest < ci2->_dest) return(-1);
+    if (ci1->_dest > ci2->_dest) return(1);
 
 	/* sorting according to priority is not necessary anymore,
 	   equal items with different priorities will be sorted
@@ -881,15 +881,17 @@ static void UpdateCouplings (
 
 
 		/* scan NewCpl-entries for given gid */
-		while (iNC<nNC && itemsNC[iNC].gid < gid)
+		while (iNC<nNC && NewCpl_GetGid(itemsNC[iNC]) < gid)
 			iNC++;
 
 		/* for all NewCpl-Items with same gid as incoming object */
-		while (iNC<nNC && itemsNC[iNC].gid == gid)
+		while (iNC<nNC && NewCpl_GetGid(itemsNC[iNC]) == gid)
 		{
 			/* there is a corresponding NewCpl-item */
-			AddCoupling(hdr, itemsNC[iNC].dest, itemsNC[iNC].prio);
-			NEW_AddCpl(itemsNC[iNC].dest, gid, me, OBJ_PRIO(hdr));
+			AddCoupling(hdr,
+				NewCpl_GetDest(itemsNC[iNC]),
+				NewCpl_GetPrio(itemsNC[iNC]));
+			NEW_AddCpl(NewCpl_GetDest(itemsNC[iNC]), gid, me, OBJ_PRIO(hdr));
 
 			iNC++;
 		}
@@ -918,7 +920,7 @@ static void UpdateCouplings (
 
 		/* scan all NewCpl-items with same gid, and set first/last indices */
 		firstNC = iNC;
-		while (iNC<nNC-1 && itemsNC[iNC+1].gid==itemsNC[iNC].gid)
+		while (iNC<nNC-1 && NewCpl_GetGid(itemsNC[iNC+1])==NewCpl_GetGid(itemsNC[iNC]))
 			iNC++;
 		lastNC = iNC;
 
@@ -929,7 +931,7 @@ static void UpdateCouplings (
 
 		/* set control flags */
 		moreNO = (iNO<nNO); if (moreNO) gidNO = setNO[0]->gid;
-		moreNC = (iNC<nNC); if (moreNC) gidNC = itemsNC[firstNC].gid;
+		moreNC = (iNC<nNC); if (moreNC) gidNC = NewCpl_GetGid(itemsNC[firstNC]);
 
 		curr_case = UCC_NONE;
 		if (moreNO && (!moreNC || gidNO<gidNC))
@@ -1001,8 +1003,9 @@ static void UpdateCouplings (
 				for(jNC=firstNC; jNC<=lastNC; jNC++)
 				{
 					if (hdrNC!=NULL)
-						AddCoupling(hdrNC, itemsNC[jNC].dest,
-							itemsNC[jNC].prio);
+						AddCoupling(hdrNC,
+							NewCpl_GetDest(itemsNC[jNC]),
+							NewCpl_GetPrio(itemsNC[jNC]));
 					/* else: dont need to AddCpl to deleted object */
 				}
 
@@ -1028,20 +1031,22 @@ static void UpdateCouplings (
 				for(jNO=0; jNO<nNOset; jNO++)
 				{
 					/* scan NewCpl-items for given dest processor */
-					while (jNC<=lastNC && itemsNC[jNC].dest < setNO[jNO]->dest)
+					while (jNC<=lastNC && NewCpl_GetDest(itemsNC[jNC]) < setNO[jNO]->dest)
 					{
-						AddAndSpread(hdr, gidNO, itemsNC[jNC].dest, itemsNC[jNC].prio,
+						AddAndSpread(hdr, gidNO,
+							NewCpl_GetDest(itemsNC[jNC]),
+							NewCpl_GetPrio(itemsNC[jNC]),
 							setNO, nNOset);
 						jNC++;
 					}
 
-					if (jNC<=lastNC && itemsNC[jNC].dest == setNO[jNO]->dest)
+					if (jNC<=lastNC && NewCpl_GetDest(itemsNC[jNC]) == setNO[jNO]->dest)
 					{
 						/* found NewCpl-item */
 						DDD_PRIO newprio;
 
-						PriorityMerge(&theTypeDefs[itemsNC[jNC].type],
-							setNO[jNO]->prio, itemsNC[jNC].prio, &newprio);
+						PriorityMerge(&theTypeDefs[NewCpl_GetType(itemsNC[jNC])],
+							setNO[jNO]->prio, NewCpl_GetPrio(itemsNC[jNC]), &newprio);
 
 						AddAndSpread(hdr, gidNO, setNO[jNO]->dest, newprio,
 							setNO, nNOset);
@@ -1056,7 +1061,9 @@ static void UpdateCouplings (
 				}
 				while (jNC<=lastNC)
 				{
-					AddAndSpread(hdr, gidNO, itemsNC[jNC].dest, itemsNC[jNC].prio,
+					AddAndSpread(hdr, gidNO,
+						NewCpl_GetDest(itemsNC[jNC]),
+						NewCpl_GetPrio(itemsNC[jNC]),
 						setNO, nNOset);
 					jNC++;
 				}
@@ -1134,7 +1141,7 @@ static void PropagateIncomings (
 					if (xc==NULL)
 						HARD_EXIT;
 
-					xc->to      = cpl->proc;          /* receiver of XIModCpl*/
+					xc->to      = CPL_PROC(cpl);      /* receiver of XIModCpl*/
 					xc->te.gid  = OBJ_GID(ote->hdr);  /* the object's gid   */
 					xc->te.prio = OBJ_PRIO(ote->hdr); /* the obj's new prio */
 					xc->typ     = OBJ_TYPE(ote->hdr); /* the obj's ddd-type  */
@@ -1579,24 +1586,24 @@ static int CompressNewCpl (TENewCpl *tabNC, int nNC)
 	while (iNC<nNC)
 	{
 		/* TENewCpl.type component is needed here (for merging priorities)! */
-		TYPE_DESC *desc  = &theTypeDefs[tabNC[iNC].type];
+		TYPE_DESC *desc  = &theTypeDefs[NewCpl_GetType(tabNC[iNC])];
 		DDD_PRIO  newprio;
 		int       ret;
 
-		newprio = tabNC[iNC].prio;
-		while (iNC<nNC-1 && tabNC[iNC+1].gid==tabNC[iNC].gid &&
-							tabNC[iNC+1].dest==tabNC[iNC].dest)
+		newprio = NewCpl_GetPrio(tabNC[iNC]);
+		while (iNC<nNC-1 && NewCpl_GetGid(tabNC[iNC+1])==NewCpl_GetGid(tabNC[iNC]) &&
+							NewCpl_GetDest(tabNC[iNC+1])==NewCpl_GetDest(tabNC[iNC]))
 		{
-			PriorityMerge(desc, newprio, tabNC[iNC+1].prio, &newprio);
+			PriorityMerge(desc, newprio, NewCpl_GetPrio(tabNC[iNC+1]), &newprio);
 			iNC++;
 		}
 
 		if (iNC<nNC)
 		{
-			tabNC[nNCnew].gid = tabNC[iNC].gid;
-			tabNC[nNCnew].dest = tabNC[iNC].dest;
-			tabNC[nNCnew].prio = newprio;
-			tabNC[nNCnew].type = tabNC[iNC].type;
+			NewCpl_SetGid(tabNC[nNCnew],  NewCpl_GetGid(tabNC[iNC]));
+			NewCpl_SetDest(tabNC[nNCnew], NewCpl_GetDest(tabNC[iNC]));
+			NewCpl_SetPrio(tabNC[nNCnew], newprio);
+			NewCpl_SetType(tabNC[nNCnew], NewCpl_GetType(tabNC[iNC]));
 			nNCnew++;
 
 			iNC++;

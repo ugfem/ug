@@ -373,16 +373,16 @@ char *IFCommLoopCplX (ComProcXPtr LoopProc,
   {
 #if defined(C_FRONTEND)
     error = (*LoopProc)(OBJ_OBJ(cpl[i]->obj),
-                        buffer, cpl[i]->proc, cpl[i]->prio);
+                        buffer, CPL_PROC(cpl[i]), cpl[i]->prio);
 #endif
 #if defined(CPP_FRONTEND)
     // TODO: dirty cast in first argument!
     error = (*LoopProc)((DDD_Object*)(cpl[i]->obj),
-                        buffer, cpl[i]->proc, cpl[i]->prio);
+                        buffer, CPL_PROC(cpl[i]), cpl[i]->prio);
 #endif
 #ifdef F_FRONTEND
     error = (*LoopProc)((IFObjPtr *) &(OBJ_INDEX(cpl[i]->obj)),
-                        buffer, (DDD_PROC *) &(cpl[i]->proc),
+                        buffer, (DDD_PROC *) &(CPL_PROC(cpl[i])),
                         (DDD_PRIO *) &(cpl[i]->prio));
 #endif
 
@@ -406,15 +406,15 @@ void IFExecLoopCplX (ExecProcXPtr LoopProc, COUPLING **cpl, int nItems)
   for(i=0; i<nItems; i++)
   {
 #if defined(C_FRONTEND)
-    error = (*LoopProc)(OBJ_OBJ(cpl[i]->obj), cpl[i]->proc, cpl[i]->prio);
+    error = (*LoopProc)(OBJ_OBJ(cpl[i]->obj), CPL_PROC(cpl[i]), cpl[i]->prio);
 #endif
 #if defined(CPP_FRONTEND)
     // TODO: dirty cast in first argument!
-    error = (*LoopProc)((DDD_Object*)(cpl[i]->obj), cpl[i]->proc, cpl[i]->prio);
+    error = (*LoopProc)((DDD_Object*)(cpl[i]->obj), CPL_PROC(cpl[i]), cpl[i]->prio);
 #endif
 #ifdef F_FRONTEND
     error = (*LoopProc)((IFObjPtr *) &(OBJ_INDEX(cpl[i]->obj)),
-                        (DDD_PROC *) &(cpl[i]->proc),
+                        (DDD_PROC *) &(CPL_PROC(cpl[i])),
                         (DDD_PRIO *) &(cpl[i]->prio));
 #endif
     /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
@@ -425,6 +425,102 @@ void IFExecLoopCplX (ExecProcXPtr LoopProc, COUPLING **cpl, int nItems)
 
 
 #endif  /* for debugging */
+
+
+/****************************************************************************/
+
+
+/***
+        interface loop functions for STD_INTERFACE communication.
+        (not DDD_OBJ will be passed as a parameter, but DDD_HDR
+        instead).
+ ***/
+
+
+/*
+        do loop over single list of couplings,
+        copy object data from/to message buffer
+ */
+char *IFCommHdrLoopCpl (ComProcHdrPtr LoopProc,
+                        COUPLING **cpl,
+                        char *buffer,
+                        size_t itemSize,
+                        int nItems)
+{
+  int i, error;
+
+  for(i=0; i<nItems; i++, buffer+=itemSize)
+  {
+    error = (*LoopProc)(cpl[i]->obj, buffer);
+
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
+  }
+
+  return(buffer);
+}
+
+
+/*
+        simple variant of above routine. dont communicate,
+        but call an application's routine.
+ */
+void IFExecHdrLoopCpl (ExecProcHdrPtr LoopProc, COUPLING **cpl, int nItems)
+{
+  int i, error;
+
+  for(i=0; i<nItems; i++)
+  {
+    error = (*LoopProc)(cpl[i]->obj);
+
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
+  }
+}
+
+
+/*
+        do loop over single list of couplings,
+        copy object data from/to message buffer
+
+        extended version: call ComProc with extended parameters
+ */
+char *IFCommHdrLoopCplX (ComProcHdrXPtr LoopProc,
+                         COUPLING **cpl,
+                         char *buffer,
+                         size_t itemSize,
+                         int nItems)
+{
+  int i, error;
+
+  for(i=0; i<nItems; i++, buffer+=itemSize)
+  {
+    error = (*LoopProc)(cpl[i]->obj,
+                        buffer, CPL_PROC(cpl[i]), cpl[i]->prio);
+
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
+  }
+
+  return(buffer);
+}
+
+
+/*
+        simple variant of above routine. dont communicate,
+        but call an application's routine.
+
+        extended version: call ExecProc with extended parameters
+ */
+void IFExecHdrLoopCplX (ExecProcHdrXPtr LoopProc, COUPLING **cpl, int nItems)
+{
+  int i, error;
+
+  for(i=0; i<nItems; i++)
+  {
+    error = (*LoopProc)(cpl[i]->obj, CPL_PROC(cpl[i]), cpl[i]->prio);
+
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
+  }
+}
+
 
 
 /****************************************************************************/
