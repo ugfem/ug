@@ -8,21 +8,28 @@
    compiler option '-D__HP__' ug is about to run on a HP computer. 
    Concerning this option the corresponding definitions of the standard 
    types in the file 'compiler.h' are taken.
+   (The file compiler.h is located in $UGROOT/low/)
 
    As this header file 'compiler.h' defines the standard types used in ug
-   it has to be included in `all` source codes of ug !!! 
+   it has to be included in `all` source files of ug!!! 
 
    The basic types (normally 'short', 'int', 'float' and 'double') are 
    replaced by 'SHORT', 'INT', 'FLOAT' and 'DOUBLE'. The type 'COORD' 
-   is used for all Cartesian coordinates of the (x,y,z)-directions of 
+   is used for all Cartesian coordinates of the (x,y[,z])-directions of 
    the grids and 'SCREEN_COORD' is used for all transformed coordinates 
-   of the graphic interface.
+   of the graphical interface.
 
-   The constant 'ALIGNMENT' has to set equal to '4' or '8' depending on 
-   the 32 or 64 bit architecture of the used machine. It is also related 
+   The constant 'ALIGNMENT' has to be set equal to '4' or '8' depending on 
+   the 32 or 64 bit architecture of the machine used. It is also related 
    to the constant 'ALIGNMASK', which has correspondingly to be set equal 
    to '0xFFFFFFFC' or '0xFFFFFFF8' to clear the last two or three bits 
    of a memory address.
+   
+   If you have to add a new mk.? file to support a new machine you also
+   have to provide a new entry in the 'compiler.h' file defining the basic data types
+   and memory alignment. To that end you include a flag -D<your new machine>
+   in the CFLAGS section of your new mk.<your new machine> file and add
+   a new paragraph depending on this flag in 'compiler.h'.
  
 D*/
 /***************************************************************************/
@@ -32,9 +39,9 @@ D*/
    fifo - Functions to handle a fifo (first in, first out) structure.
 
    DESCRIPTION:
-   These function support the handling of a fifo (first in, first out) structure.
+   These functions support the handling of a fifo (first in, first out stack) structure.
    
-   For a  detailed description see the manuals of each function.
+   For a  detailed description see the manual pages of each function.
 
    SEE ALSO:
    fifo_init, fifo_clear, fifo_empty, fifo_full, fifo_in, fifo_out
@@ -47,7 +54,7 @@ D*/
 
    DESCRIPTION:
    All these functions initialize ('InitHeaps', 'NewHeap') and support the
-   handling of the dynamic storage of memory used by 'ug'. The main idea
+   handling of the dynamic memory management used by 'ug'. The main idea
    is that ug allocates only once for one problem a big portion of memory,
    and administrates the internal, dynamic memory use with 'heaps' by itself.
 
@@ -98,7 +105,7 @@ D*/
       
    If the heap type is 'VIRTUAL_HEAP' some memory can be allocated virtually
    for later use and can be handled independently of the heaps. For example 
-   the memory management can be told to use a certain amout of memory at each
+   the memory management can be told to use a certain amount of memory at each
    time when a new heap is installed. As the management can handle virtual 
    heaps it offers the possibility to treat several heaps completely analogous. 
    The total size should then be determined by a call of 'CalcAndFixTotalSize' 
@@ -212,6 +219,8 @@ union envitem {
     ENVDIR d;
 };
 
+typedef union envitem ENVITEM;
+
 typedef struct {                // user defined variable                    
     INT type;                   // one of the variable types above          
     INT locked;                 // may not be changed or deleted            
@@ -233,26 +242,47 @@ typedef struct {                // directory
 
     DEFINES:
 .   NAMESIZE    - the size of the name strings of environment items
-.   NAMELEN     - maximal length of the name strins (NAMELEN-1)
+.   NAMELEN     - maximal length of the name strings (NAMELEN-1)
 .   NAMELENSTR  - 'NAMELEN' as string "'NAMELEN'"
 .   SEARCHALL   - argument for 'SearchEnv'
 .   DIRSEP      - the directory seperator character
     
     MACROS:
 .vb
-#define ENVITEM_DOWN(d)         (((ENVITEM *)(p))->d.down)
-#define ENVDIR_DOWN(d)          ((p)->down)
-#define NEXT_ENVITEM(p)         (((ENVITEM *)(p))->v.next)
-#define PREV_ENVITEM(p)         (((ENVITEM *)(p))->v.previous)
-#define ENVITEM_TYPE(p)         (((ENVITEM *)(p))->v.type)
-#define ENVITEM_NAME(p)         (((ENVITEM *)(p))->v.name)
-#define ENVITEM_LOCKED(p)       (((ENVITEM *)(p))->v.locked)
+ENVITEM *ENVITEM_DOWN   (ENVDIR *d)
 .ve
-    
-    MACRO PARAMETERS:
-.   d - 'ENVDIR *'
-.   p - 'ENVITEM *'
-    
+Return pointer to the first 'ENVITEM' contained in the directory.
+
+.vb
+ENVITEM *ENVDIR_DOWN    (ENVDIR *d)
+.ve
+Return pointer to the first 'ENVITEM' contained in the directory.
+
+.vb
+ENVITEM *NEXT_ENVITEM   (ENVITEM *p)
+.ve
+Return pointer to the next 'ENVITEM' in the doubly linked list.
+
+.vb
+ENVITEM *PREV_ENVITEM   (ENVITEM *p)
+.ve
+Return pointer to the previous 'ENVITEM' in the doubly linked list.
+
+.vb
+INT      ENVITEM_TYPE   (ENVITEM *p)
+.ve
+Return the type of the 'ENVITEM' (odd: 'ENVDIR', even: 'ENVVAR').
+
+.vb
+INT      ENVITEM_LOCKED (ENVITEM *p)
+.ve
+'RemoveEnvItem' checks this and returns an error if TRUE.
+
+.vb
+char    *ENVITEM_NAME   (ENVITEM *p)
+.ve
+This macro returns a pointer to the name string of the 'ENVITEM'.
+
     SEE ALSO:
     ugenv
 D*/
