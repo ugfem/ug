@@ -380,6 +380,13 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   if ((theSurfaceInfo.line=(int*)GetTmpMem(theHeap,sizeof(int)*MaxLinePerSurface))==NULL)
     return (NULL);
 
+  theSurfaceInfo.length = theDomInfo.nPoint;
+  if ((theSurfaceInfo.point_list=(int**)GetTmpMem(theHeap,sizeof(int*)*theDomInfo.nPoint))==NULL)
+    return (NULL);
+  for(i=0; i<theDomInfo.nPoint; i++)
+    if( (theSurfaceInfo.point_list[i] = (int*)GetTmpMem(theHeap,sizeof(int)*MAXTRIANGLES)) == NULL )
+      return(NULL);
+
   /* allocate lines */
   if ((LinePtrList=(LGM_LINE**)GetTmpMem(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL)
     return (NULL);
@@ -428,6 +435,8 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
            =(LGM_TRIANGLE*)GetFreelistMemory(theHeap,sizeof(LGM_TRIANGLE)*lgm_sizes.Surf_nTriangle[i])) == NULL)
       return (NULL);
 
+    theSurfaceInfo.nPoint = lgm_sizes.Surf_nPoint[i];
+    theSurfaceInfo.nTriangles = lgm_sizes.Surf_nTriangle[i];
     if ((*ReadSurface)(i,&theSurfaceInfo))
       return (NULL);
 
