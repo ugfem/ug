@@ -1,0 +1,6 @@
+#!/bin/csh
+# usage exo2lgm_amd <cubit_logfile> <exo2lgmfile>
+# exo2lgm_amd add model data to the end of
+# exodus II file needed for lgm file generation
+grep "Volume Entity" $1 >> $2
+egrep "Surface Entity|Curve |In Volume" $1 >> $2
