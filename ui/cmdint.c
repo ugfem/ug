@@ -2522,8 +2522,6 @@ void CommandLoop (int argc, char **argv)
   }
   inpLine[0] = (char) 0;
 
-  printf("%4d: CommandLoop with argc==%d\n", me, argc);
-
         #ifdef ModelP
   if (me==master)
   {
@@ -2620,7 +2618,6 @@ void CommandLoop (int argc, char **argv)
       if (argv[i][0]!='-')
       {
         sprintf(inpLine,"execute %s\n",argv[i]);
-        printf("%4d: cmdline %s", me, inpLine);
 
         InterpretCommand(inpLine);                 /* execute command line argument */
         if (i + 1 < argc)
@@ -2673,7 +2670,6 @@ else
   /* reset doneFlag */
   doneFlag = FALSE;
 
-  printf("%4d: Inside \n", me);
 
   while (!doneFlag)
   {
