@@ -41,5 +41,6 @@
 /****************************************************************************/
 
 INT InitFieldIO(void);
+INT LoadFieldCommand(INT argc, char **argv);
 
 #endif

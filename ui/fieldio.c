@@ -844,7 +844,7 @@ static int IntegrateElementData(STREAM *stream, BOXTREE *tree, int no_elements,
   return 0;
 }
 
-static INT LoadFieldCommand(INT argc, char **argv)
+/*static*/ INT LoadFieldCommand(INT argc, char **argv)
 {
   MULTIGRID *mg;
   HEAP *heap;
