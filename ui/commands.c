@@ -2501,6 +2501,7 @@ static INT OpenCommand (INT argc, char **argv)
   char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE],type[NAMESIZE];
   char *theBVP,*theFormat,*theMGName;
   unsigned long heapSize;
+  DOUBLE_VECTOR global0, global1, global2;
   INT i;
 
   /* get multigrid name */
@@ -2514,6 +2515,7 @@ static INT OpenCommand (INT argc, char **argv)
   strcpy(type,"asc");
   theBVP = theFormat = theMGName = NULL;
   heapSize = 0;
+  for (i=0; i<DIM; i++) global0[i]=global1[i]=global2[i]=0.0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -2560,6 +2562,23 @@ static INT OpenCommand (INT argc, char **argv)
       }
       break;
 
+#ifdef __THREEDIM__
+    case 'A' :
+      if (ReadArgvPosition("A",argc,argv,global0))
+        return (CMDERRORCODE);
+      break;
+
+    case 'B' :
+      if (ReadArgvPosition("B",argc,argv,global1))
+        return (CMDERRORCODE);
+      break;
+
+    case 'C' :
+      if (ReadArgvPosition("C",argc,argv,global2))
+        return (CMDERRORCODE);
+      break;
+#endif
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("open",HELPITEM,buffer);
@@ -2567,7 +2586,7 @@ static INT OpenCommand (INT argc, char **argv)
     }
 
   /* allocate the multigrid structure */
-  theMG = LoadMultiGrid(theMGName,File,type,theBVP,theFormat,heapSize);
+  theMG = LoadMultiGrid(theMGName,File,type,theBVP,theFormat,heapSize,global0,global1,global2);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
