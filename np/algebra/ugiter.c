@@ -6697,6 +6697,11 @@ static DOUBLE CheckNorm (MULTIGRID *theMG, INT level,
   return (nrm);
 }
 
+#define P21_1(i)     ((i+1)/(DIM+1)-1)
+#define P21_2(n,i)   (i-MIN((i)/(DIM+1),(n)))
+#define P1_21(i)     ((i)*(DIM+1)+DIM)
+#define P2_21(n,i)   (i+MIN((i)/DIM,(n)))
+
 static INT ElementGS (GRID *g, const VECDATA_DESC *v,
                       const MATDATA_DESC *M, const VECDATA_DESC *d,
                       INT depth, INT mode, DOUBLE vdamp)
@@ -6734,7 +6739,7 @@ static INT ElementGS (GRID *g, const VECDATA_DESC *v,
 
 
     /*UserWriteF("element %d\n",ID(theElement));*/
-    if (vdamp > 0.0)
+    if (vdamp == -1.0)
       for (i=0; i<m; i++)
       {
         for (j=0; j<m; j++) {
@@ -6797,6 +6802,122 @@ static INT ElementGS (GRID *g, const VECDATA_DESC *v,
   return (NUM_OK);
 }
 
+static INT ElementJAC (GRID *g, const VECDATA_DESC *v,
+                       const MATDATA_DESC *M, const VECDATA_DESC *d,
+                       DOUBLE vdamp)
+{
+  ELEMENT *theElement;
+  VECTOR *vec,*vlist[MAX_DEPTH],*w;
+  MATRIX *mat;
+  DOUBLE vval[LOCAL_DIM],dval[LOCAL_DIM];
+  DOUBLE check,nrm;
+  INT cnt,m,i,j,k,l,ncomp,vcnt,vtype,wtype,wncomp,n,mm;
+  const SHORT *Comp,*VComp;
+  DOUBLE A[LOCAL_DIM*LOCAL_DIM];
+  DOUBLE AI[LOCAL_DIM*LOCAL_DIM];
+  DOUBLE B[LOCAL_DIM*LOCAL_DIM];
+  DOUBLE C[LOCAL_DIM*LOCAL_DIM];
+  DOUBLE S[LOCAL_DIM*LOCAL_DIM];
+  DOUBLE BAIB[LOCAL_DIM*LOCAL_DIM];
+  DOUBLE K[LOCAL_DIM*LOCAL_DIM];
+  DOUBLE omega = 1.0 - 1.0 / vdamp;
+
+  t = NULL;
+  dset(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,v,0.0);
+  for (theElement=FIRSTELEMENT(g); theElement!= NULL;
+       theElement=SUCCE(theElement)) {
+    if (ECLASS(theElement) == YELLOW_CLASS) continue;
+    cnt = GetAllVectorsOfElementOfType(theElement,vlist,v);
+    ASSERT(cnt <= MAX_DEPTH);
+    m = GetVlistMValues(cnt,vlist,M,UGI_Mval);
+    if (m != GetVlistVValues(cnt,vlist,d,dval)) {
+      UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
+                 m,GetVlistVValues(cnt,vlist,d,dval));
+      REP_ERR_RETURN (__LINE__);
+    }
+    n = CORNERS_OF_ELEM(theElement);
+    mm = m - n;
+
+    for (i=0; i<n; i++)
+      for (j=0; j<n; j++)
+        C[i*n+j] = UGI_Mval[P1_21(i)*m+P1_21(j)];
+    for (i=0; i<mm; i++)
+      for (j=0; j<n; j++)
+        B[i*n+j] = UGI_Mval[P2_21(n,i)*m+P1_21(j)];
+    for (i=0; i<mm; i++)
+      for (j=0; j<mm; j++)
+        A[i*mm+j] = UGI_Mval[P2_21(n,i)*m+P2_21(n,j)];
+
+    IFDEBUG(np,1)
+    UserWriteF("element %d\n",ID(theElement));
+    for (i=0; i<m; i++) {
+      for (j=0; j<m; j++)
+        UserWriteF("%6.1g ",UGI_Mval[i*m+j]);
+      UserWriteF("\n");
+    }
+    for (i=0; i<n; i++) {
+      for (j=0; j<n; j++)
+        UserWriteF("%6.1g ",C[i*n+j]);
+      UserWriteF("\n");
+    }
+    for (i=0; i<mm; i++) {
+      for (j=0; j<n; j++)
+        UserWriteF("%6.1g ",B[i*n+j]);
+      UserWriteF("\n");
+    }
+    for (i=0; i<mm; i++) {
+      for (j=0; j<mm; j++)
+        UserWriteF("%6.1g ",A[i*mm+j]);
+      UserWriteF("\n");
+    }
+    ENDDEBUG
+
+    if (InvertFullMatrix_piv(mm,A,AI))
+      REP_ERR_RETURN (__LINE__);
+    for (i=0; i<n; i++)
+      for (j=0; j<n; j++) {
+        DOUBLE s = - UGI_Mval[P1_21(i)*m+P1_21(j)];
+        for (k=0; k<mm; k++)
+          for (l=0; l<mm; l++)
+            s += UGI_Mval[P1_21(i)*m+P2_21(n,k)]
+                 * AI[k*mm+l]
+                 * UGI_Mval[P2_21(n,l)*m+P1_21(j)];
+        UGI_Mval[P1_21(i)*m+P1_21(j)] += omega * s;
+      }
+    for (k=0; k<mm; k++)
+      for (l=0; l<mm; l++)
+        if (k != l)
+          UGI_Mval[P2_21(n,k)*m+P2_21(n,l)] = 0.0;
+
+    IFDEBUG(np,1)
+    for (i=0; i<m; i++) {
+      for (j=0; j<m; j++)
+        UserWriteF("%6.1g ",UGI_Mval[i*m+j]);
+      UserWriteF("\n");
+    }
+    ENDDEBUG
+
+    /*
+       for (i=0; i<n; i++)
+        for (j=0; j<n; j++)
+                C[i*n+j] = UGI_Mval[P1_21(i)*m+P1_21(j)];
+       for (i=0; i<n; i++) {
+        for (j=0; j<n; j++)
+                UserWriteF("%6.1g ",C[i*n+j]);
+            UserWriteF("\n");
+       }
+     */
+
+    if (SolveFullMatrix(m,vval,UGI_Mval,dval)) {
+      UserWriteF("l_pgs: solving on local patch failed\n");
+      REP_ERR_RETURN (__LINE__);
+    }
+    AddVlistVValues(cnt,vlist,v,vval);
+  }
+
+  return (NUM_OK);
+}
+
 INT l_pgs (GRID *g, const VECDATA_DESC *v,
            const MATDATA_DESC *M, const VECDATA_DESC *d,
            INT depth, INT mode, DOUBLE vdamp)
@@ -6814,6 +6935,8 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
 
   if (mode == 10)
     return(ElementGS(g,v,M,d,depth,mode,vdamp));
+  else if (mode == 11)
+    return(ElementJAC(g,v,M,d,vdamp));
 
   t = NULL;
   if (depth > MAX_DEPTH) {
