@@ -953,12 +953,31 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 
 NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
 {
-  COORD *global,*local;
-  INT n,j;
-  VERTEX *theVertex;
+  COORD *global,*local,lambda[DIM-1];
+  INT n,m,j,moved;
+  VERTEX *theVertex,*VertexOnEdge[MAX_EDGES_OF_ELEM];
   NODE *theNode;
+  EDGE *theEdge;
   DOUBLE fac;
   COORD *x[MAX_CORNERS_OF_ELEM];
+
+  /* check if moved side nodes exist */
+  moved = 0;
+  if (OBJT(theElement) == BEOBJ)
+    for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+    {
+      theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),
+                      CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)));
+      ASSERT(theEdge != NULL);
+      theNode = MIDNODE(theEdge);
+      if (theNode == NULL)
+        VertexOnEdge[j] = NULL;
+      else
+      {
+        VertexOnEdge[j] = MYVERTEX(theNode);
+        moved += MOVED(VertexOnEdge[j]);
+      }
+    }
 
   theVertex = CreateInnerVertex(theGrid);
   if (theVertex==NULL)
@@ -969,21 +988,39 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
     DisposeVertex(theGrid,theVertex);
     return(NULL);
   }
-  theGrid->status |= 1;
   CORNER_COORDINATES(theElement,n,x);
   global = CVECT(theVertex);
   local = LCVECT(theVertex);
-  V_DIM_CLEAR(local);
-  for (j=0; j<n; j++)
-    V_DIM_LINCOMB(1.0,local,1.0,LOCAL_COORD_OF_ELEM(theElement,j),local);
-  fac = 1.0 / n;
-  V_DIM_SCALE(fac,local);
-  LOCAL_TO_GLOBAL(n,x,local,global);
+  if (moved == 0)
+  {
+    V_DIM_CLEAR(local);
+    fac = 1.0 / n;
+    for (j=0; j<n; j++)
+      V_DIM_LINCOMB(1.0,local,
+                    fac,LOCAL_COORD_OF_ELEM(theElement,j),local);
+    LOCAL_TO_GLOBAL(n,x,local,global);
+  }
+  else
+  {
+    V_DIM_CLEAR(global);
+    m = EDGES_OF_ELEM(theElement);
+    fac = 1.0 / m;
+    for (j=0; j<m; j++)
+      if (VertexOnEdge[j] == NULL)
+      {
+        V_DIM_LINCOMB(1.0,global,0.5*fac,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)))),global);
+        V_DIM_LINCOMB(1.0,global,0.5*fac,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)))),global);
+      }
+      else
+        V_DIM_LINCOMB(1.0,global,fac,CVECT(VertexOnEdge[j]),global);
+    GlobalToLocal(n,(const COORD **)x,global,local);
+  }
   VFATHER(theVertex) = theElement;
   NFATHER(theNode) = NULL;
   MYVERTEX(theNode) = theVertex;
   TOPNODE(theVertex) = theNode;
   SETNTYPE(theNode,CENTER_NODE);
+  theGrid->status |= 1;
 
   return(theNode);
 }
@@ -3270,8 +3307,8 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
 
    PARAMETERS:
    .  theMG - pointer to multigrid
-   .  Node0 - left node
-   .  Node1 - right node
+   .  Node0 - left node of the edge
+   .  Node1 - right node of the edge
    .  MidNode - node to move
    .  lambda - local parameter
 
@@ -3297,7 +3334,7 @@ INT MoveMidNode (MULTIGRID *theMG,
   COORD *x[MAX_CORNERS_OF_ELEM],*lambda0,*lambda1,*mid_lambda,*global,*local;
   COORD_VECTOR oldPos,bnd_global;
   DOUBLE diff;
-  INT n,k,i,co0,co1,moved;
+  INT n,k,i,co0,co1,edge,moved;
 
   if ((lambda<0) || (lambda>1))
   {
@@ -3310,13 +3347,12 @@ INT MoveMidNode (MULTIGRID *theMG,
 
   theVertex = MYVERTEX(MidNode);
   theElement = VFATHER(theVertex);
-  co0 = co1 = -1;
-  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-  {
-    if (CORNER(theElement,i) == NFATHER(Node0)) co0 = i;
-    else if (CORNER(theElement,i) == NFATHER(Node1)) co1 = i;
-  }
-  if ((co0 == -1) || (co1 == -1))
+  edge = ONEDGE(theVertex);
+  co0 = CORNER_OF_EDGE(theElement,edge,0);
+  co1 = CORNER_OF_EDGE(theElement,edge,1);
+  if (CORNER(theElement,co0) != Node0)
+    return(GM_ERROR);
+  if (CORNER(theElement,co1) != Node1)
     return(GM_ERROR);
 
   global = CVECT(theVertex);
@@ -3350,7 +3386,7 @@ INT MoveMidNode (MULTIGRID *theMG,
             if (diff > MAX_PAR_DIST)
             {
               if (moved)
-                PrintErrorMessage('W',"CreateMidNode",
+                PrintErrorMessage('W',"MoveMidNode",
                                   "inconsistent boundary parametrization");
               else
               {
@@ -6043,9 +6079,16 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
 
   g = (SELECTION_OBJECT *) theElement;
   for (i=0; i<SELECTIONSIZE(theMG); i++)
-    if (SELECTIONOBJECT(theMG,i)==g) RETURN(GM_ERROR);
+    if (SELECTIONOBJECT(theMG,i)==g)
+    {
+      SELECTIONSIZE(theMG)--;
+      SELECTIONOBJECT(theMG,i) =
+        SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG));
+      return(GM_OK);
+    }
 
-  if (SELECTIONSIZE(theMG)>=MAXSELECTION) RETURN(GM_ERROR);
+  if (SELECTIONSIZE(theMG)>=MAXSELECTION)
+    RETURN(GM_ERROR);
 
   SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG)) = g;
   SELECTIONSIZE(theMG)++;
