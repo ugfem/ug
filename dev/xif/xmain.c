@@ -68,6 +68,10 @@
 #include "xshell.h"
 #include "xgraph.h"
 
+#ifdef __GUI__
+#include "gui.h"
+#endif
+
 
 /****************************************************************************/
 /*																			*/
@@ -559,6 +563,15 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 
   /* init cursors and tools */
   InitControls(shell.win);
+
+    #ifdef __GUI__
+  /* init gui */
+  if(GUI_Init(display,context))
+  {
+    printf("InitScreen(): GUI_Init() returned error");
+    return(NULL);
+  }
+    #endif
 
   *error = 0;
   return(d);
