@@ -165,6 +165,7 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define YELLOW_CLASS    1
 #define GREEN_CLASS             2
 #define RED_CLASS               3
+#define SWITCH_CLASS    4
 
 /* values for node types (relative to the father element of the vertex) */
 #define CORNER_NODE             0
