@@ -621,4 +621,125 @@ INT     ConnectVerticalOverlap (MULTIGRID *theMG)
   return(GM_OK);
 }
 
+INT     ConnectOverlapVerticalGrid (GRID *theGrid)
+{
+  INT i,j,k,found,edgenode0,edgenode1;
+  ELEMENT *theElement,*theSon,*SonList[MAX_SONS];
+  NODE    *theNode,*SonNode,*FatherNode,*EdgeNode0,*EdgeNode1;
+  EDGE    *theEdge,*FatherEdge;
+  DOUBLE  *songlobal,diff;
+  DOUBLE_VECTOR global;
+
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    /* reconstuct node relations using element relations */
+    if (GetAllSons(theElement,SonList) != GM_OK) REP_ERR_RETURN(1);
+    for (i=0; SonList[i]!=NULL; i++)
+    {
+      theSon = SonList[i];
+      for (j=0; j<CORNERS_OF_ELEM(theSon); j++)
+      {
+        found = 0;
+        SonNode = CORNER(theSon,j);
+        switch(NTYPE(SonNode))
+        {
+        case CORNER_NODE :
+          FatherNode = (NODE *) NFATHER(SonNode);
+          if (FatherNode != NULL)
+          {
+            assert(SONNODE(FatherNode) == SonNode);
+            break;
+          }
+          assert(!MOVED(MYVERTEX(SonNode)));
+          for (k=0; k<CORNERS_OF_ELEM(theElement); k++)
+          {
+            theNode = CORNER(theElement,k);
+            if (MYVERTEX(theNode) == MYVERTEX(SonNode))
+            {
+              assert(found == 0);
+              assert (SONNODE(theNode)==NULL ||
+                      SONNODE(theNode) == SonNode);
+              printf(PFMT "ConnectOverlapVerticalGrid(): new "
+                     " sonnode relation between theNode=" ID_FMTX
+                     " SonNode=" ID_FMTX "\n",
+                     me,ID_PRTX(theNode),ID_PRTX(SonNode));
+              SETNFATHER(SonNode,(GEOM_OBJECT *)theNode);
+              SONNODE(theNode) = SonNode;
+              found ++;
+            }
+          }
+          break;
+        case MID_NODE :
+          FatherEdge = (EDGE *) NFATHER(SonNode);
+          if (FatherEdge != NULL)
+          {
+            assert(MIDNODE(FatherEdge) == SonNode);
+            break;
+          }
+          assert(!MOVED(MYVERTEX(SonNode)));
+          for (k=0; k<EDGES_OF_ELEM(theElement); k++)
+          {
+            edgenode0 = CORNER_OF_EDGE(theElement,k,0);
+            edgenode1 = CORNER_OF_EDGE(theElement,k,1);
+            EdgeNode0 = CORNER(theElement,edgenode0);
+            EdgeNode1 = CORNER(theElement,edgenode1);
+            assert(EdgeNode0!=NULL && EdgeNode1!=NULL);
+
+            theEdge = GetEdge(EdgeNode0,EdgeNode1);
+            assert(theEdge != NULL);
+            songlobal = CVECT(MYVERTEX(SonNode));
+            V_DIM_LINCOMB(0.5, CVECT(MYVERTEX(EdgeNode0)),
+                          0.5, CVECT(MYVERTEX(EdgeNode1)),global);
+            V_DIM_EUKLIDNORM_OF_DIFF(songlobal,global,diff);
+            if (diff <= MAX_PAR_DIST)
+            {
+              assert(found == 0);
+              assert (MIDNODE(theEdge)==NULL ||
+                      MIDNODE(theEdge) == SonNode);
+
+                                                                #ifdef __TWODIM__
+              printf(PFMT "ConnectOverlapVerticalGrid(): new "
+                     " midnode relation between theEdge=%08x"
+                     " SonNode=" ID_FMTX "\n",
+                     me,theEdge,ID_PRTX(SonNode));
+                                                                #endif
+                                                                #ifdef __THREEDIM__
+              printf(PFMT "ConnectOverlapVerticalGrid(): new "
+                     " midnode relation between theEdge=" ID_FMTX
+                     " SonNode=" ID_FMTX "\n",
+                     me,ID_PRTX(theEdge),ID_PRTX(SonNode));
+                                                                #endif
+              SETNFATHER(SonNode,(GEOM_OBJECT *)theEdge);
+              MIDNODE(theEdge) = SonNode;
+              found ++;
+            }
+          }
+          break;
+        case SIDE_NODE :
+        case CENTER_NODE :
+          /* do nothing */
+          break;
+        default :
+          assert(0);
+        }
+      }
+    }
+  }
+
+  return(GM_OK);
+}
+
+INT     ConnectOverlapVerticalMultiGrid (MULTIGRID *theMG)
+{
+  INT i;
+  GRID    *theGrid;
+
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    if (ConnectOverlapVerticalGrid(theGrid)) return(GM_ERROR);
+  }
+  return(GM_OK);
+}
+
 #endif
