@@ -214,6 +214,7 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 			VECSKIP(ugnew_vec)=VECSKIP(ugfg_vec);
 			SETVCCOARSE(ugnew_vec,0);
 			VSTART(ugnew_vec) = NULL;
+			VISTART(ugnew_vec) = NULL;
 			
 			#ifdef ModelP
 			if (DDD_InfoPrioCopies(PARHDR(ugfg_vec)) > 0) {

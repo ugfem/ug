@@ -282,6 +282,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 				VECSKIP(newvec)=VECSKIP(vec);
 				SETVCCOARSE(newvec,0);
 				VSTART(newvec) = NULL;
+				VISTART(newvec) = NULL;
 				
 				// store a temporary link from the geometric-level vector to its amg-level copy
 				// use therefore the geom_object field
@@ -311,6 +312,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 			VECSKIP(newvec)=VECSKIP(vec);
 			SETVCCOARSE(newvec,0);
 			VSTART(newvec) = NULL;
+			VISTART(newvec) = NULL;
 			
 			// store a temporary link from the geometric-level vector to its amg-level copy
 			// use therefore the geom_object field
@@ -630,6 +632,7 @@ printm(0);
 
     for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
+		VINDEX(vec) = nrVec;
 		nrVec++;
         if( (!VSKIPME(vec,0)) && (VDATATYPE(vec)&bmask) && (NEW_DEFECT(vec)))
 		{
