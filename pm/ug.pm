@@ -31,6 +31,10 @@ BEGIN
 			open(DEBUG,">debug.scr");
 			DEBUG->autoflush(1);
 		}
+		elsif (-e 'debug.scr')
+		{
+			`rm debug.scr`;
+		}
 	}
 	sub submit
 	{
@@ -110,7 +114,7 @@ sub ug
 	}
 
 	# check for I/O channels
-	if ($command ne "start")
+	if ($command ne "start" && $command ne "running")
 	{
 		1==stat IN and 1==stat OUT or die "ERROR in '$command': IN/OUT channel missing\n";
 		1==stat IN or die "ERROR in '$command': IN channel missing\n";
@@ -122,6 +126,13 @@ sub ug
 	($dummy,%argv)=@in; 
 	SWITCH:
 	{
+		# running
+        if ($command eq "running")
+        {
+			if (1==stat IN and 1==stat OUT) { return 1; }
+			return 0;
+        }
+
 		# debug
 		if ($command eq "debug")
 		{

@@ -17,20 +17,27 @@ $VERSION = 1.0;
 use IO::File;
 use POSIX qw(tmpnam);
 
-BEGIN
+sub float
 {
-	my $end='';
-	END
-	{
-		eval $end;
-	}
-	sub getname
-	{
-		my $name;
-		do { $name=tmpnam(); } until IO::File->new($name,O_RDWR|O_CREAT|O_EXCL);
-		$end.="unlink('$name');";
-		return $name;
-	}
+    my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
+    my (@list,$f,$s,$in);
+
+    if (@_==1) { @list=grep /$real/,split /($real)/,$_[0]; }
+    elsif (@_==2)
+    {
+        $in=' '.$_[1];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+    }
+    else
+    {
+        $in=' '.$_[2];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+        if ($_[1]>=@list || $_[1]<0) { return undef;}
+        for ($s=0; $s<$_[1]; $s++) { shift @list; }
+    }
+    return wantarray ? @list : $list[0];
 }
 
 sub gnuplot
@@ -91,19 +98,21 @@ sub gnuplot
 			{
 				if ($a[$j] eq '%')
 				{
-					$name=getname;
+					$name="/tmp/gnu_$k"; 
 					$a[$j]='"'.$name.'"';
 					$s=$_[$k++];
 					open(TMP,">$name");
+					for $i (keys %$s) { if ($i ne (float $i) || $$s{$i} ne (float $$s{$i})) { die "ERROR: hash table contains invalid pair '$i $$s{$i}'\n" } }
 					for $i (sort {$a<=>$b} keys %$s) { print TMP "$i $$s{$i}\n"; }
 					close(TMP);
 				}
-				if ($a[$j] eq '#')
+				if ($a[$j] eq '@')
 				{
-					$name=getname;
+					$name="/tmp/gnu_$k"; 
 					$a[$j]='"'.$name.'"';
 					$s=$_[$k++];
 					open(TMP,">$name");
+					for ($i=0; $i<@$s; $i++)  { if ($$s[$i] ne float $$s[$i]) {die "ERROR: array contains invalid value '$$s[$i]'\n" } } 
 					for ($i=0; $i<@$s; $i+=2) { print TMP "$$s[$i] $$s[$i+1]\n"; }
 					close(TMP);
 				}
