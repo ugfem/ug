@@ -76,7 +76,7 @@ typedef struct {
   INT used;             /**< Used this entry					*/
   char *name;          /**< Name string						*/
   INT control_word_id;          /**< Index in control_words			*/
-  unsigned INT offset_in_object ;       /**< Where in object is it ?			*/
+  UINT offset_in_object ;       /**< Where in object is it ?			*/
   INT objt_used;                                /**< Bitwise object ID */
 } CONTROL_WORD_PREDEF;
 
@@ -242,7 +242,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /** \brief Print all control entries of an objects control word
 
  * @param obj - object pointer
- * @param offset - controlword offset in (unsigned INT) in object
+ * @param offset - controlword offset in (UINT) in object
 
    This function prints the contents of all control entries of an objects control word at a
    given offset.
@@ -347,7 +347,7 @@ void NS_DIM_PREFIX ListAllCWsOfObject (const void *obj)
 /** \brief Print used pattern of all control entries of an object types control word
 
  * @param obj - object pointer
- * @param offset - controlword offset in (unsigned INT) in object
+ * @param offset - controlword offset in (UINT) in object
  * @param myprintf - pointer to a printf function (maybe UserWriteF)
 
    This function prints the used pattern of all control entries of an object types control word at a
@@ -440,7 +440,7 @@ static void ListAllCWsOfObjectType (INT objt, PrintfProcPtr myprintf)
     if (min==MAX_I)
       break;
 
-    myprintf("cw %-20s with offset in object %3d (unsigned INTs):\n",control_words[cw].name,min);
+    myprintf("cw %-20s with offset in object %3d (UINTs):\n",control_words[cw].name,min);
     ListCWofObjectType(objt,min,myprintf);
     sub = min;
     last_cw = cw;
@@ -764,10 +764,10 @@ void NS_DIM_PREFIX PrintCEstatistics (void)
  */
 /****************************************************************************/
 
-unsigned INT NS_DIM_PREFIX ReadCW (const void *obj, INT ceID)
+UINT NS_DIM_PREFIX ReadCW (const void *obj, INT ceID)
 {
   CONTROL_ENTRY *ce;
-  unsigned INT off_in_obj,mask,i,off_in_wrd,cw,cw_objt;
+  UINT off_in_obj,mask,i,off_in_wrd,cw,cw_objt;
 
   ASSERT(obj!=NULL);
   HEAPFAULT(obj);
@@ -801,7 +801,7 @@ unsigned INT NS_DIM_PREFIX ReadCW (const void *obj, INT ceID)
   off_in_wrd = ce->offset_in_word;
   off_in_obj = ce->offset_in_object;
   mask = ce->mask;
-  cw = ((unsigned INT *)(obj))[off_in_obj];
+  cw = ((UINT *)(obj))[off_in_obj];
   i = cw & mask;
   i = i>>off_in_wrd;
 
@@ -839,8 +839,8 @@ unsigned INT NS_DIM_PREFIX ReadCW (const void *obj, INT ceID)
 void NS_DIM_PREFIX WriteCW (void *obj, INT ceID, INT n)
 {
   CONTROL_ENTRY *ce;
-  unsigned INT off_in_obj,mask,i,j,off_in_wrd,cw_objt,xmsk;
-  unsigned INT *pcw;
+  UINT off_in_obj,mask,i,j,off_in_wrd,cw_objt,xmsk;
+  UINT *pcw;
 
   ASSERT(obj!=NULL);
   HEAPFAULT(obj);
@@ -890,7 +890,7 @@ void NS_DIM_PREFIX WriteCW (void *obj, INT ceID, INT n)
   off_in_obj = ce->offset_in_object;
   mask = ce->mask;
   xmsk = ce->xor_mask;
-  pcw = ((unsigned INT *)(obj)) + off_in_obj;
+  pcw = ((UINT *)(obj)) + off_in_obj;
   i = (*pcw) & xmsk;
   j = n<<off_in_wrd;
 
@@ -959,7 +959,7 @@ INT NS_DIM_PREFIX AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
   INT free, i, offset;
   CONTROL_ENTRY *ce;
   CONTROL_WORD *cw;
-  unsigned INT mask;
+  UINT mask;
 
   /* check input */
   if ((length<0)||(length>=32)) return(GM_ERROR);

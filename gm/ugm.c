@@ -135,7 +135,7 @@ static VIRT_HEAP_MGMT *theGenMGUDM; /* general user data space management	*/
 static INT theMGDirID;                          /* env var ID for the multigrids		*/
 static INT theMGRootDirID;                      /* env dir ID for the multigrids		*/
 
-static unsigned INT UsedOBJT;           /* for the dynamic OBJECT management	*/
+static UINT UsedOBJT;           /* for the dynamic OBJECT management	*/
 
 /* used by OrderNodesInGrid */
 static const INT *Order,*Sign;

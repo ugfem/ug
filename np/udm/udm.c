@@ -4699,8 +4699,8 @@ INT NS_DIM_PREFIX SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, co
   struct {
     INT len;                                            /* number of bits		*/
     INT shift;                                          /* shift in global desc	*/
-    unsigned INT bits;                          /* mask for bits		*/
-    unsigned INT rest;                          /* mask for rest		*/
+    UINT bits;                          /* mask for bits		*/
+    UINT rest;                          /* mask for rest		*/
   } sps[NVECTYPES],*p;
   INT i,j,n,tp,shift,cmpi,lev,skip,bits,rest;
 

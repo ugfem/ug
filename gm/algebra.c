@@ -1026,7 +1026,7 @@ CONNECTION * NS_DIM_PREFIX CreateConnection (GRID *theGrid, VECTOR *from, VECTOR
   /* set sizes */
   if (!Diag)
   {
-    Size = (unsigned INT)pm - (unsigned INT)pc;
+    Size = (UINT)pm - (UINT)pc;
     SETMSIZE(pc,Size);
     SETMSIZE(pm,Size);
   }

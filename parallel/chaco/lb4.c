@@ -108,7 +108,7 @@
 #define DESCENDENTS(e)          ((e)->ge.ptmp2)
 #define SET_DESCENDENTS(e,n)    (e)->ge.ptmp2 = n
 #define MY_CLUSTER(e)           ((CLUSTER *)((e)->ge.ptmp1))
-#define SET_MY_CLUSTER(e,p)     (e)->ge.ptmp1 = ((unsigned INT) (p))
+#define SET_MY_CLUSTER(e,p)     (e)->ge.ptmp1 = ((UINT) (p))
 #define HAS_CLUSTER(e)          (((CLUSTER *)(e)->ge.ptmp1)!=NULL)
 #define MY_CLUSTER_ID(e)        (((CLUSTER *)(e)->ge.ptmp1)->edges[0])
 #define SET_PARTITION(e,p)		(PARTITION(e) = p)
@@ -1113,7 +1113,7 @@ int balance_ccptm (MULTIGRID *mg, int total_cnt_par, CLUSTER *clusters_par, CLUS
 	extern double *MEM_OK;   /* variable for memory overflow exeception */
 	int i,j,maxlevel,minlevel,first,last,x,y,p;
 	INT nc,N,M,ne;
-	unsigned INT NC;
+	UINT NC;
 	unsigned long max_size;
 	void *heap_memory;
 	CLUSTER *c;

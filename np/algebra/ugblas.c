@@ -1133,7 +1133,7 @@ static int Scatter_VectorVecskip (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
   INT i,type;
-  unsigned INT vecskip;
+  UINT vecskip;
   const SHORT *Comp;
 
   vecskip = ((DOUBLE *) data)[0];
@@ -1170,7 +1170,7 @@ static int Scatter_GhostVectorVecskip (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
   INT i,type;
-  unsigned INT vecskip;
+  UINT vecskip;
   const SHORT *Comp;
 
   vecskip = ((DOUBLE *) data)[0];

@@ -171,7 +171,7 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
 {
   struct generic_element  *ge=0;
   GENERAL_ELEMENT                 *desc = element_descriptors[tag];
-  unsigned INT gbits = 0;
+  UINT gbits = 0;
 
   size_t ps  = sizeof(void *);
   void   **r = ge->refs;
@@ -412,7 +412,7 @@ static void ddd_DefineTypes (void)
 
   MATRIX m;
   EDGE e;
-  unsigned INT gbits = 0;
+  UINT gbits = 0;
 
   /* 1. DDD objects (with DDD_HEADER) */
 

@@ -657,7 +657,7 @@ void *NS_PREFIX GetFreelistMemory (HEAP *theHeap, INT size)
 
   /* 'ptr' will be set equal to 'theHeap->freeObjects[k]' but with	        */
   /* different interpretation: void ** instead of void *. 'ptr'			*/
-  /* points to the first two bytes of the object (i.e. unsigned INT ctrl	*/
+  /* points to the first two bytes of the object (i.e. UINT ctrl	*/
   /* and INT id) but will be interpreted as a void * pointer, witch points*/
   /* to the next free object.                                                                                   */
 
@@ -738,7 +738,7 @@ INT NS_PREFIX PutFreelistMemory (HEAP *theHeap, void *object, INT size)
 
   /* 'ptr' will be set equal to 'object' but with different inter-		*/
   /* pretation: void ** instead of void *. 'ptr' points to the first		*/
-  /* two bytes of the object (i.e. unsigned INT ctrl	and INT id) but         */
+  /* two bytes of the object (i.e. UINT ctrl	and INT id) but         */
   /* will be interpreted as a void * pointer, witch will be set equal   */
   /* to 'theHeap->freeObjects[k]' i.e. the first free object.			    */
 
