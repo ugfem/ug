@@ -337,7 +337,7 @@ static INT AVSCommand (INT argc, char **argv)
   if (DIM==2 && zcoord!=NULL)
   {
     pre    = zcoord->PreprocessProc;
-    if (pre!=NULL) pre("zcoord_name",mg);
+    if (pre!=NULL) pre(zcoord_name,mg);
   }
 
   /* clear USED flag in vertices on all levels */
