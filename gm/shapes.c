@@ -1084,19 +1084,19 @@ INT D_GN (INT n, INT i, COORD *ip_local, DOUBLE *derivative)
 			derivative[2] = (1.0-Xi)*(1.0-Eta);
 			return(0);
 		  case 5: 
-			derivative[0] = (1.0-Eta)*(-Mu);
-			derivative[1] = -(Xi)*(-Mu);
-			derivative[2] = (Xi)*(-Eta);
+			derivative[0] = (1.0-Eta)*Mu;
+			derivative[1] = -(Xi)*Mu;
+			derivative[2] = (Xi)*(1.0-Eta);
 			return(0);
 		  case 6: 
-			derivative[0] = (Eta)*(-Mu);
-			derivative[1] = (Xi)*(-Mu);
+			derivative[0] = (Eta)*Mu;
+			derivative[1] = (Xi)*Mu;
 			derivative[2] = Xi*Eta;
 			return(0);
 		  case 7: 
-			derivative[0] = -(Eta)*(-Mu);
-			derivative[1] = (1.0-Xi)*(-Mu);
-			derivative[2] = (1.0-Xi)*(Eta);
+			derivative[0] = -(Eta)*Mu;
+			derivative[1] = (1.0-Xi)*Mu;
+			derivative[2] = (1.0-Xi)*Eta;
             return(0);
 		  }
 	  }
