@@ -1231,8 +1231,8 @@ extern CONTROL_ENTRY
 /*																			*/
 /* vertices:																*/
 /* MOVED	 |0     |*| | | | | |boundary vertex not lying on edge midpoint */
-/* ONEDGE	 |1 - 3 |*| | | | | |no. of edge in father element				*/
-/* MOVE          |4-5	|*| | | | | |vertex can be moved on a 0(1,2,3) dim subsp*/
+/* ONEDGE	 |1 - 4 |*| | | | | |no. of edge in father element				*/
+/* MOVE          |5-6	|*| | | | | |vertex can be moved on a 0(1,2,3) dim subsp*/
 /*																			*/
 /* nodes:																	*/
 /* CLASS	 |0-2	| |*| | | | |class of node on current level                     */
@@ -1343,7 +1343,7 @@ extern CONTROL_ENTRY
 #define VERTEX_GEN                                      24
 
 #define MOVE_CE                                         25
-#define MOVE_SHIFT                                      4
+#define MOVE_SHIFT                                      5
 #define MOVE_LEN                                        2
 #define MOVE(p)                                         CW_READ(p,MOVE_CE)
 #define SETMOVE(p,n)                            CW_WRITE(p,MOVE_CE,n)
@@ -1356,7 +1356,7 @@ extern CONTROL_ENTRY
 
 #define ONEDGE_CE                                       27
 #define ONEDGE_SHIFT                            1
-#define ONEDGE_LEN                                      3
+#define ONEDGE_LEN                                      4
 #define ONEDGE(p)                                       CW_READ(p,ONEDGE_CE)
 #define SETONEDGE(p,n)                          CW_WRITE(p,ONEDGE_CE,n)
 
