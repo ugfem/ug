@@ -1,0 +1,122 @@
+/**************************************************************************/
+/* File:   array.icc                                                      */
+/* Author: Joachim Schoeberl                                              */
+/* Date:   01. Jun. 95                                                    */
+/**************************************************************************/
+
+/* 
+   Abstract data type ARRAY
+*/
+
+template <class T>
+inline ARRAY<T> :: ARRAY(INDEX asize, INDEX ainc)
+  : BASE_ARRAY (asize, ainc, sizeof (T)) 
+  { 
+    ;
+  }
+
+template <class T>
+inline ARRAY<T> :: ~ARRAY ()
+  {
+  if (data) 
+    delete (void*)data;
+  }
+
+template <class T>
+inline INDEX ARRAY<T> :: Size() const
+  {
+  return actsize;
+  }
+
+template <class T>
+inline void ARRAY<T> :: SetSize(INDEX nsize)
+  {
+  if (nsize > allocsize)
+    ReSize (nsize, sizeof(T));
+  actsize = nsize;
+  }
+
+template <class T>
+inline void ARRAY<T> :: SetAllocSize (INDEX nallocsize)
+  {
+  if (nallocsize > allocsize)
+    ReSize (nallocsize, sizeof(T));
+  }
+
+template <class T>
+inline T & ARRAY<T> :: operator[] (INDEX i)
+  {
+  RangeOk (i);
+  return ((T*)data)[i-1];
+  }
+
+template <class T>
+inline const T & ARRAY<T> :: operator[] (INDEX i) const
+  {
+  RangeOk (i);
+  return ((const T*)data)[i-1];
+  }
+
+template <class T>
+inline T & ARRAY<T> :: Elem (INDEX i)
+  {
+  return ((T*)data)[i-1];
+  }
+
+template <class T>
+inline const T & ARRAY<T> :: Get (INDEX i) const
+  {
+  return ((const T*)data)[i-1];
+  }
+
+template <class T>
+inline void ARRAY<T> :: Set (INDEX i, const T & el)
+  {
+  ((T*)data)[i-1] = el;
+  }
+
+template <class T>
+inline T & ARRAY<T> :: Last ()
+  {
+  CheckNonEmpty ();
+  return ((T*)data)[actsize-1];
+  }
+
+template <class T>
+inline const T & ARRAY<T> :: Last () const
+  {
+  CheckNonEmpty ();
+  return ((const T*)data)[actsize-1];
+  }
+
+template <class T>
+inline INDEX ARRAY<T> :: Append (const T & el)
+  {
+  if (actsize == allocsize) ReSize (actsize+1, sizeof (T));
+  ((T*)data)[actsize] = el;
+  actsize++;
+  return actsize;
+  }
+
+template <class T>
+inline void ARRAY<T> :: DeleteElement (INDEX i)
+  {
+  RangeOk (i);
+  ((T*)data)[i-1] = ((T*)data)[actsize-1];
+  actsize--;
+  }
+
+template <class T>
+inline void ARRAY<T> :: DeleteLast ()
+  {
+  CheckNonEmpty ();
+  actsize--;
+  }
+
+template <class T>
+inline void ARRAY<T> :: DeleteAll ()
+  {
+  if (data) delete (void*)data;
+  data = NULL;
+  actsize = allocsize = 0;
+  }

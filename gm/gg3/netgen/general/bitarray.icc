@@ -1,0 +1,46 @@
+/**************************************************************************/
+/* File:   bitarray.icc                                                   */
+/* Author: Joachim Schoeberl                                              */
+/* Date:   01. Jun. 95                                                    */
+/**************************************************************************/
+
+/* 
+   data type BitArray
+*/
+
+
+inline
+INDEX BitArray :: Size () const
+  {
+  return size;
+  }
+
+inline
+unsigned char BitArray :: Mask (INDEX i) const
+  {
+  return char(1) << (i % CHAR_BIT);
+  }
+
+inline
+INDEX BitArray :: Addr (INDEX i) const
+  {
+  return (i / CHAR_BIT);
+  }
+
+inline
+void BitArray :: Set (INDEX i)
+  {
+  data[Addr(i)] |= Mask(i);
+  }
+
+inline
+void BitArray :: Clear (INDEX i)
+  {
+  data[Addr(i)] &= ~Mask(i);
+  }
+
+inline
+BOOL BitArray :: Test (INDEX i) const
+  {
+  return (data[i / CHAR_BIT] & (char(1) << (i % CHAR_BIT) ) ) ? 1 : 0;
+  }

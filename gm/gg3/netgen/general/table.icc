@@ -1,0 +1,60 @@
+/**************************************************************************/
+/* File:   table.icc                                                      */
+/* Author: Joachim Schoeberl                                              */
+/* Date:   01. Jun. 95                                                    */
+/**************************************************************************/
+
+/* 
+   Abstract data type TABLE
+*/
+
+template<class T>
+inline TABLE<T> :: TABLE () 
+  : BASE_TABLE (0)
+  {
+    ;
+  }
+
+template<class T>
+inline TABLE<T> :: TABLE (int size) 
+  : BASE_TABLE (size)
+  {
+    ;
+  }
+
+template<class T>
+inline void TABLE<T> :: SetSize (int size) 
+  {
+  BASE_TABLE::SetSize (size);
+  }
+
+template<class T>
+inline void TABLE<T> :: Add (INDEX i, const T & acont)
+  {
+  IncSize (i, sizeof (T));
+  ((T*)data.Elem(i).col)[data.Elem(i).size-1] = acont;
+  }
+
+template<class T>
+inline void TABLE<T> :: Set (INDEX i, int nr, const T & acont)
+  {
+  ((T*)data.Get(i).col)[nr-1] = acont;
+  }
+
+template<class T>
+inline const T & TABLE<T> :: Get (INDEX i, int nr) const
+  {
+  return ((T*)data.Get(i).col)[nr-1];
+  }
+
+template<class T>
+inline int TABLE<T> :: Size () const
+  {
+  return data.Size();
+  }
+
+template<class T>
+inline int TABLE<T> :: EntrySize (int i) const
+  {
+  return data.Get(i).size;
+  }
