@@ -5,7 +5,7 @@ set -e
 cp $UGROOT/ug.conf $UGROOT/ug.conf.orig
 # build 2TFFF lib
 cp $UGROOT/configs/2TFFF.conf $UGROOT/ug.conf
-cd $UGROOT; make -i clean
+ugmake ug -i clean
 ugmake ug
 cd $UGROOT/../diff2d/pclib
 make
@@ -18,7 +18,7 @@ make
 #make
 # build 3TFFF lib
 cp $UGROOT/configs/3TFFF.conf $UGROOT/ug.conf
-cd $UGROOT; make -i clean
+ugmake ug -i clean
 ugmake ug
 cd $UGROOT/../cd3d/pclib
 make
@@ -26,7 +26,7 @@ cd $UGROOT/../cd3d/appl
 make
 # build 2FTFF lib
 cp $UGROOT/configs/2FTFF.conf $UGROOT/ug.conf
-cd $UGROOT; make -i clean
+ugmake ug -i clean
 ugmake ug
 cd $UGROOT/../fem/pclib
 make
@@ -35,5 +35,5 @@ make
 # Test is ready
 # restore original state
 mv $UGROOT/ug.conf.orig $UGROOT/ug.conf 
-cd $UGROOT; make -i clean
+ugmake ug -i clean
 ugmake
