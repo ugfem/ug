@@ -80,7 +80,7 @@ typedef DOUBLE DOUBLE_VECTOR[DIM];
 /****************************************************************************/
 
 static DOUBLE_VECTOR x_quad[9];
-static DOUBLE alpha,left,top,rad1;
+static DOUBLE alpha,left,top,rad1,L,D,h;
 
 static DOUBLE Rand[54][2] = {
   {189,22.5},
@@ -2083,7 +2083,7 @@ static INT InitRings (void)
   MidPoint[0] = MidPoint[1] = 0.0;
   radius = 1.05;
 
-  if (CreateDomainWithParts("Rings",MidPoint,radius,6,6,YES,4,&ring_dpi)
+  if (CreateDomainWithParts("Rings",MidPoint,radius,6,6,YES,3,&ring_dpi)
       ==NULL) return(1);
 
   if (CreateBoundarySegment2D("ring2 bnd upper",
@@ -2260,6 +2260,675 @@ static INT InitFour (void)
 
   return(0);
 }
+
+/****************************************************************************/
+/*                                                                          */
+/*  define skin-domain                                                      */
+/*                                                                          */
+/****************************************************************************/
+
+
+static INT south0skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * lambda;
+  result[1] = 2 * h + D * 1.5;
+
+  return(0);
+}
+
+static INT east0skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L;
+  result[1] = 2 * h + (1.5*D) + (D *0.5)* lambda;
+
+  return(0);
+}
+
+static INT north0skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * (1.0-lambda);
+  result[1] = 2 * (D + h);
+
+  return(0);
+}
+
+static INT west0skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = 0;
+  result[1] = 2 * h + (1.5 * D) + (D * 0.5) * (1 - lambda);
+
+  return(0);
+}
+
+static INT south1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h + (L*0.5 * lambda);
+  result[1] = 2 * h + 1.5 * D;
+
+  return(0);
+}
+
+static INT east1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = 3*0.5 * L + h;
+  result[1] = 2 * h + (1.5 * D) + (D * 0.5) * lambda;
+
+  return(0);
+}
+
+static INT north1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h + (L*0.5 * (1 - lambda));
+  result[1] = 2 *(D + h);
+
+  return(0);
+}
+
+static INT west1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h;
+  result[1] = 2 * h + (1.5 * D) + (D * 0.5) * (1 - lambda);
+
+  return(0);
+}
+
+
+static INT south2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L*0.5 * lambda;
+  result[1] = D * 0.5 + h;
+
+  return(0);
+}
+
+static INT east2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L*0.5;
+  result[1] = (D * 0.5 + h) + (D * lambda);
+
+  return(0);
+}
+
+static INT north2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L*0.5 * (1.0-lambda);
+  result[1] = (D * 0.5 + h) + D;
+
+  return(0);
+}
+
+static INT west2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = 0;
+  result[1] = (D * 0.5 + h) + D * (1.0-lambda);
+
+  return(0);
+}
+
+
+static INT south3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (L*0.5 + h) + L * lambda;
+  result[1] = (D * 0.5 + h);
+
+  return(0);
+}
+
+static INT east3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (L*0.5 + h) + L;
+  result[1] = (D * 0.5 + h) + D * lambda;
+
+  return(0);
+}
+
+static INT north3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (L*0.5 + h) + L * (1 - lambda);
+  result[1] = (D * 0.5 + h) + D;
+
+  return(0);
+}
+
+static INT west3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (L*0.5 + h);
+  result[1] = (D * 0.5 + h) + D * (1 - lambda);
+
+  return(0);
+}
+
+
+static INT south4skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L *lambda;
+  result[1] = 0.0;
+
+  return(0);
+}
+
+static INT east4skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L ;
+  result[1] = (D * 0.5) * lambda;
+
+  return(0);
+}
+
+static INT north4skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * (1 - lambda);
+  result[1] = D * 0.5;
+
+  return(0);
+}
+
+static INT west4skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = 0.0;
+  result[1] = (D * 0.5) * (1 - lambda);
+
+  return(0);
+}
+
+
+static INT south5skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (L + h) + L*0.5 *lambda;
+  result[1] = 0.0;
+
+  return(0);
+}
+
+static INT east5skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (L + h) + L*0.5 ;
+  result[1] = (D * 0.5) * lambda;
+
+  return(0);
+}
+
+static INT north5skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (L + h) + L*0.5 * (1 - lambda);
+  result[1] = D * 0.5;
+
+  return(0);
+}
+
+static INT west5skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (L + h) ;
+  result[1] = (D * 0.5) * (1 - lambda);
+
+  return(0);
+}
+
+
+static INT north6_11skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h  + L * 0.5 * (1 - lambda);
+  result[1] = 0.5 * D + h ;
+
+  return(0);
+}
+
+static INT north6_12skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h * (1 - lambda);
+  result[1] = 0.5 * D + h ;
+
+  return(0);
+}
+
+static INT north6_13skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * 0.5 + h + (0.5 * L - h) * (1 - lambda);
+  result[1] = 0.5 * D + h ;
+
+  return(0);
+}
+
+
+
+static INT south6_31skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * 0.5 + h  + (L * 0.5 - h) * lambda ;
+  result[1] = 0.5 * D + h + D ;
+
+  return(0);
+}
+
+static INT south6_32skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h * lambda ;
+  result[1] = 0.5 * D + h + D ;
+
+  return(0);
+}
+
+static INT south6_33skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h + 0.5 * L * lambda ;
+  result[1] = 0.5 * D + h + D ;
+
+  return(0);
+}
+
+
+
+static INT north6_41skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * 0.5 + h  + (L * 0.5 - h ) * (1 - lambda);
+  result[1] = 0.5 * D + h + D + h;
+
+  return(0);
+}
+
+static INT north6_42skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * 0.5 + h * (1 - lambda);
+  result[1] = 0.5 * D + h + D + h ;
+
+  return(0);
+}
+
+static INT north6_43skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * 0.5 * (1 - lambda);
+  result[1] = 0.5 * D + h + D + h ;
+
+  return(0);
+}
+
+
+
+static INT south6_51skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * 0.5 * lambda ;
+  result[1] = 0.5 * D ;
+
+  return(0);
+}
+
+static INT south6_52skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * 0.5 + h * lambda ;
+  result[1] = 0.5 * D ;
+
+  return(0);
+}
+
+static INT south6_53skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L * 0.5 + h + (0.5 * L - h ) * lambda ;
+  result[1] = 0.5 * D ;
+
+  return(0);
+}
+
+
+static INT north6_3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h * (1 - lambda);
+  result[1] = 2 * (D + h);
+
+  return(0);
+}
+
+static INT west6_2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = 0.0;
+  result[1] = (D * 0.5 + h) + D + h * (1.0-lambda);
+
+  return(0);
+}
+
+
+static INT east6_4skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h + L*0.5 ;
+  result[1] = 1.5*D + h + h * lambda ;
+
+  return(0);
+}
+
+static INT west6_4skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = 0 ;
+  result[1] = 0.5 * D + (1 - lambda) * h ;
+
+  return(0);
+}
+
+static INT east6_2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + h + L*0.5 ;
+  result[1] = 0.5 * D + h * lambda ;
+
+  return(0);
+}
+
+static INT south6_1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = L + lambda * h ;
+  result[1] = 0 ;
+
+  return(0);
+}
+
+static const INT skin_sd2p[8] = {0,0,0,0,0,0,0,3};
+
+static const INT skin_sg2p[52] = {0,0,0,1,1,0,1,1,1,1,0,1,1,0,1,1,
+                                  1,1,0,1,1,0,0,0,3,2,2,2,2,3,3,2,
+                                  2,2,2,2,2,3,3,2,2,2,2,3,
+                                  2,2,2,2,2,2,2,2};
+static const INT skin_pt2p[52] = {0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,
+                                  1,1,1,1,0,1,1,0,3,3,3,3,3,3,3,3,
+                                  3,3,3,3,3,3,3,3,3,3,3,3,
+                                  3,3,3,3,3,3,3,3};
+
+
+static const DOMAIN_PART_INFO skin_dpi = {skin_sd2p,skin_sg2p,skin_pt2p};
+
+static INT InitSkin (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  MidPoint[0] = L*0.75 + h*0.5 ;
+  MidPoint[1] = h + D ;
+  radius = sqrt(MidPoint[0] * MidPoint[0] + MidPoint[1] * MidPoint[1]) ;
+
+  if (CreateDomainWithParts("Skin",MidPoint,radius,52,52,YES,3,&skin_dpi)
+      ==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("south0", 1, 7, 6, 4, 5,1,0.0,1.0,
+                              south0skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east0",  1, 7, 3, 5, 1,1,0.0,1.0,
+                              east0skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north0", 1, 0, 0, 1, 0,1,0.0,1.0,
+                              north0skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west0",  1, 0, 2, 0, 4,1,0.0,1.0,
+                              west0skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south1", 2, 7, 7, 6, 7,1,0.0,1.0,
+                              south1skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east1",  2, 0, 5, 7, 3,1,0.0,1.0,
+                              east1skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north1", 2, 0, 1, 3, 2,1,0.0,1.0,
+                              north1skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west1",  2, 7, 4, 2, 6,1,0.0,1.0,
+                              west1skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south2", 3, 7,14,12,13,1,0.0,1.0,
+                              south2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east2",  3, 7,11,13, 9,1,0.0,1.0,
+                              east2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north2", 3, 7, 8, 9, 8,1,0.0,1.0,
+                              north2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west2",  3, 0,10, 8,12,1,0.0,1.0,
+                              west2skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south3", 4, 7,15,14,15,1,0.0,1.0,
+                              south3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east3",  4, 0,13,15,11,1,0.0,1.0,
+                              east3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north3", 4, 7, 9,11,10,1,0.0,1.0,
+                              north3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west3",  4, 7,12,10,14,1,0.0,1.0,
+                              west3skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south4", 5, 0,22,20,21,1,0.0,1.0,
+                              south4skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east4",  5, 7,19,21,17,1,0.0,1.0,
+                              east4skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north4", 5, 7,16,17,16,1,0.0,1.0,
+                              north4skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west4",  5, 0,18,16,20,1,0.0,1.0,
+                              west4skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south5", 6, 0,23,22,23,1,0.0,1.0,
+                              south5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east5",  6, 0,21,23,19,1,0.0,1.0,
+                              east5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north5", 6, 7,17,19,18,1,0.0,1.0,
+                              north5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west5",  6, 7,20,18,22,1,0.0,1.0,
+                              west5skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south6_1", 7, 0,43,42,43,1,0.0,1.0,
+                              south6_1skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_1" , 6, 7,42,40,43,1,0.0,1.0,
+                              west5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_2", 6, 7,40,41,40,1,0.0,1.0,
+                              north5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_2" , 7, 0,38,41,37,1,0.0,1.0,
+                              east6_2skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("north6_11", 7, 4,49,37,49,1,0.0,1.0,
+                              north6_11skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_12", 7, 4,48,49,48,1,0.0,1.0,
+                              north6_12skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_13", 7, 4,36,48,36,1,0.0,1.0,
+                              north6_13skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_3" , 4, 7,34,32,36,1,0.0,1.0,
+                              west3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_31", 7, 4,32,32,46,1,0.0,1.0,
+                              south6_31skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_32", 7, 4,46,46,47,1,0.0,1.0,
+                              south6_32skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_33", 7, 4,47,47,33,1,0.0,1.0,
+                              south6_33skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_4" , 7, 0,30,33,29,1,0.0,1.0,
+                              east6_4skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("north6_2", 2, 7,28,28,29,1,0.0,1.0,
+                              south1skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_5" , 2, 7,26,25,28,1,0.0,1.0,
+                              west1skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_3", 7, 0,24,25,24,1,0.0,1.0,
+                              north6_3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_1" , 1, 7,25,27,24,1,0.0,1.0,
+                              east0skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("north6_41", 7, 1,45,27,45,1,0.0,1.0,
+                              north6_41skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_42", 7, 1,44,45,44,1,0.0,1.0,
+                              north6_42skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_43", 7, 1,27,44,26,1,0.0,1.0,
+                              north6_43skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_2" , 7, 0,29,26,30,1,0.0,1.0,
+                              west6_2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_4", 3, 7,31,31,30,1,0.0,1.0,
+                              north2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_3" , 3, 7,33,35,31,1,0.0,1.0,
+                              east2skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("north6_5", 3, 7,35,34,35,1,0.0,1.0,
+                              south2skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_4" , 7, 0,37,34,38,1,0.0,1.0,
+                              west6_4skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_51", 7, 5,39,38,50,1,0.0,1.0,
+                              south6_51skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_52", 7, 5,50,50,51,1,0.0,1.0,
+                              south6_52skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_53", 7, 5,51,51,39,1,0.0,1.0,
+                              south6_53skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_5" , 5, 7,41,42,39,1,0.0,1.0,
+                              east4skBoundary, NULL)==NULL) return(1);
+
+  return(0);
+}
+/* end of skin-domain-definition */
 
 INT STD_BVP_Configure (INT argc, char **argv)
 {
@@ -2445,6 +3114,20 @@ INT STD_BVP_Configure (INT argc, char **argv)
       alpha = 0.0;
     }
   }
+  else if (strcmp(DomainName,"Skin") == 0) {
+    if (ReadArgvDOUBLE("L",&L,argc,argv))
+    {
+      L = 10.0;
+    }
+    if (ReadArgvDOUBLE("D",&D,argc,argv))
+    {
+      D = 5.0 ;
+    }
+    if (ReadArgvDOUBLE("h",&h,argc,argv))
+    {
+      h = 0.5 ;
+    }
+  }
 
   theDomain = GetDomain(DomainName);
 
@@ -2518,6 +3201,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Holes") == 0)
     {
       if (InitHoles())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Skin") == 0)
+    {
+      if (InitSkin())
         return(1);
     }
     else
