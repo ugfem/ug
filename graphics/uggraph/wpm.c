@@ -598,12 +598,12 @@ PICTURE *GetNextPicture (const PICTURE *thePicture)
    D*/
 /****************************************************************************/
 
-#define WPL_FORMAT                              "%-2.1s%-15.12s%-15.12s%-15.12s%-15.120s%-15.12s%-15.12s\n"
+#define WPL_FORMAT                              "%-2.1s%-15.12s%-15.12s%-15.12s%-15.12s%-15.120s%-15.12s%-15.12s\n"
 
 void ListWindowPictureHeader (void)
 {
-  UserWriteF(WPL_FORMAT,"","UgWindow","Picture","VO_Status","PlotObjType","PO_Status","Multigrid");
-  UserWriteF(WPL_FORMAT,"","--------","-------","---------","-----------","---------","---------");
+  UserWriteF(WPL_FORMAT,"","UgWindow","Device","Picture","VO_Status","PlotObjType","PO_Status","Multigrid");
+  UserWriteF(WPL_FORMAT,"","--------","------","-------","---------","-----------","---------","---------");
   return;
 }
 /****************************************************************************/
@@ -627,8 +627,8 @@ void ListWindowPictureHeader (void)
 /****************************************************************************/
 void ListUgWindow (const UGWINDOW *theUgWindow, INT current)
 {
-  if (current) UserWriteF(WPL_FORMAT,"#",ENVITEM_NAME(theUgWindow),"","","","","");
-  else UserWriteF(WPL_FORMAT,"",ENVITEM_NAME(theUgWindow),"","","","","");
+  if (current) UserWriteF(WPL_FORMAT,"#",ENVITEM_NAME(theUgWindow),ENVITEM_NAME(UGW_OUTPUTDEV(theUgWindow)),"","","","","");
+  else UserWriteF(WPL_FORMAT,"",ENVITEM_NAME(theUgWindow),ENVITEM_NAME(UGW_OUTPUTDEV(theUgWindow)),"","","","","");
   return;
 }
 /****************************************************************************/
@@ -711,7 +711,7 @@ void ListPicture (const PICTURE *thePicture, INT current)
   default :
     return;
   }
-  UserWriteF(WPL_FORMAT,b1,ENVITEM_NAME(theUgW),ENVITEM_NAME(thePicture),b2,b3,b4,b5);
+  UserWriteF(WPL_FORMAT,b1,ENVITEM_NAME(theUgW),ENVITEM_NAME(PIC_OUTPUTDEV(thePicture)),ENVITEM_NAME(thePicture),b2,b3,b4,b5);
   return;
 }
 
@@ -2430,13 +2430,13 @@ static INT SpecifyPlotObject (PLOTOBJ *thePlotObj, MULTIGRID *theMG, const char 
   /* find objecttype */
   if (thePlotObjTypeName!=NULL)
   {
+    PO_STATUS(thePlotObj)=NOT_INIT;
     PO_POT(thePlotObj) = GetPlotObjType(thePlotObjTypeName);
     if (PO_POT(thePlotObj)==NULL)
     {
       UserWrite("cannot find specified PlotObjectType\n");
       return (0);
     }
-    PO_STATUS(thePlotObj)=NOT_INIT;
     PO_MG(thePlotObj) = theMG;
   }
 
