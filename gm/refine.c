@@ -4504,14 +4504,15 @@ SYNOPSIS:
                        /* and compute the vector classes on the new (or changed) level */
                        ClearVectorClasses(FinerGrid);
 
-                     if (ECLASS(theElement)>=GREEN_CLASS || (rFlag==GM_COPY_ALL))
-                       SeedVectorClasses(FinerGrid,theElement);
+                     for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
+                       if (ECLASS(theElement)>=GREEN_CLASS || (rFlag==GM_COPY_ALL))
+                         SeedVectorClasses(FinerGrid,theElement);
                      PropagateVectorClasses(FinerGrid);
-                     if (ECLASS(theElement)>=GREEN_CLASS)
-                       /* TODO: delete special debug */ PRINTELEMID(-1)
-                       DEBUG_TIME(0);
-
                    }
+                   /* TODO: delete special debug */ PRINTELEMID(-1)
+                   DEBUG_TIME(0);
+
+                 }
         #endif
 
                      DisposeTopLevel(theMG);
