@@ -798,9 +798,90 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
  */
 /****************************************************************************/
 
+#ifdef __THREEDIM__
+
+#define MGIO_PATHDEPTHMASK 0xF0000000
+#define MGIO_PATHDEPTHSHIFT 28
+#define MGIO_PATHDEPTH(i)                               (((i) & MGIO_PATHDEPTHMASK)>>MGIO_PATHDEPTHSHIFT)
+
+#define MGIO_NEXTSIDEMASK 0x00000003
+#define MGIO_NEXTSIDE(i,n)                              (((i) & (MGIO_NEXTSIDEMASK<<(2*(n))))>>(2*(n)))
+
+#define MGIO_NEXTSIDEMASKHEX 0x00000007
+#define MGIO_NEXTSIDEHEX(i,n)                                                   (((i) & (MGIO_NEXTSIDEMASKHEX<<(3*(n))))>>(3*(n)))
+
+static INT IO_GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
+{
+  MGIO_RR_RULE *theRule;
+  ELEMENT *theSon;
+  struct mgio_sondata *sonData;
+  INT SonID,PathPos;
+
+  if (theElement==NULL) return(1);
+  theRule = rr_rules+REFINE(theElement);
+  for (SonID=0; SonID<MAX_SONS; SonID++) SonList[SonID] = NULL;
+  if (NSONS(theElement) == 0) return(0);
+  SonList[0] = SON(theElement,0);
+  switch (TAG(theElement))
+  {
+  case (TETRAHEDRON) :
+    for (SonID=1; SonID<theRule->nsons; SonID++)
+    {
+      sonData = &(theRule->sons[SonID]);
+      theSon = SonList[0];
+      for (PathPos=0; PathPos<MGIO_PATHDEPTH(sonData->path); PathPos++)
+        theSon = NBELEM(theSon,MGIO_NEXTSIDE(sonData->path,PathPos));
+      if (theSon==NULL) return (1);
+      SonList[SonID] = theSon;
+    }
+    break;
+
+  case (HEXAHEDRON) :
+    for (SonID=1; SonID<theRule->nsons; SonID++)
+    {
+      sonData = &(theRule->sons[SonID]);
+      theSon = SonList[0];
+      for (PathPos=0; PathPos<MGIO_PATHDEPTH(sonData->path); PathPos++)
+        theSon = NBELEM(theSon,MGIO_NEXTSIDEHEX(sonData->path,PathPos));
+      if (theSon==NULL) return(1);
+      SonList[SonID] = theSon;
+    }
+    break;
+  default :
+    return(1);
+  }
+
+  return(0);
+}
+
+static INT IO_GetSideNode (ELEMENT *theElement, INT side, NODE **theNode, INT *nb_side)
+{
+  INT nbside,sidenode_index;
+  ELEMENT *theNeighbor;
+  MGIO_RR_RULE *nbrefrule;
+  ELEMENT *SonList[MAX_SONS];
+
+  theNeighbor = NBELEM(theElement,side);
+  if (theNeighbor==NULL || SON(theNeighbor,0)==NULL) {*theNode=NULL; return (0);}
+  for (nbside=0; nbside<SIDES_OF_ELEM(theNeighbor); nbside++)
+    if (NBELEM(theNeighbor,nbside)==theElement)
+      break;
+  if (nbside==SIDES_OF_ELEM(theNeighbor)) return (1);
+  *nb_side = nbside;
+  nbrefrule = rr_rules+REFINE(theNeighbor);
+  if (IO_GetSons (theNeighbor,SonList)) return (1);
+  sidenode_index = EDGES_OF_ELEM(theNeighbor)+nbside;
+  *theNode = CORNER(SonList[nbrefrule->sonandnode[sidenode_index][0]],nbrefrule->sonandnode[sidenode_index][1]);
+  if (*theNode==NULL) return (1);
+
+  return (0);
+}
+
+#endif
+
 static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement)
 {
-  INT i,j,n,nedge,type,sonRefined,n0,n1,Sons_of_Side,Sons_of_Side_List[MAX_SONS];
+  INT i,j,n,nedge,type,sonRefined,n0,n1,Sons_of_Side,Sons_of_Side_List[MAX_SONS],nbside;
   ELEMENT *theSonElem[MAX_SONS];
   ELEMENT *SonList[MAX_SONS];
   NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
@@ -810,6 +891,9 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   MGIO_RR_RULE *theRule;
   static MGIO_REFINEMENT *ref;
   struct mgio_sondata *SonData;
+
+  BNDS *bnds;
+  bnds = ELEM_BNDS(theElement,2);
 
   /* init */
   if (refinement!=NULL) ref=refinement;
@@ -821,16 +905,24 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   theRule = rr_rules+ref->refrule;
   upGrid = UPGRID(theGrid);
 
+  bnds = ELEM_BNDS(theElement,2);
+
   /* insert nodes */
   n=0;
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
     NodeList[n] = SONNODE(CORNER(theElement,i));
     if (NodeList[n]==NULL)
+    {
       NodeList[n] = CreateSonNode(upGrid,CORNER(theElement,i));
-    if (NodeList[n]==NULL) return (1);
+      if (NodeList[n]==NULL) return (1);
+      ID(NodeList[i]) = ref->newcornerid[n];
+    }
     n++;
   }
+
+  bnds = ELEM_BNDS(theElement,2);
+
   nedge = EDGES_OF_ELEM(theElement);
   for (i=0; i<nedge; i++)
   {
@@ -841,25 +933,44 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     if (theEdge==NULL) return (1);
     NodeList[n] = MIDNODE(theEdge);
     if (NodeList[n]==NULL)
+    {
       NodeList[n] = CreateMidNode(upGrid,theElement,i);
-    if (NodeList[n]==NULL) return (1);
+      if (NodeList[n]==NULL) return (1);
+      ID(NodeList[i]) = ref->newcornerid[n];
+    }
     n++;
   }
+
+  bnds = ELEM_BNDS(theElement,2);
+
 #ifdef __THREEDIM__
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
     if (theRule->pattern[i+nedge]!=1) continue;
-    NodeList[n] = CreateSideNode(upGrid,theElement,i);
-    if (NodeList[n]==NULL) return (1);
+    if (IO_GetSideNode(theElement,i,&(NodeList[n]),&nbside)) return (1);
+    if (NodeList[n]==NULL)
+    {
+      NodeList[n] = CreateSideNode(upGrid,theElement,i);
+      if (NodeList[n]==NULL) return (1);
+      ID(NodeList[i]) = ref->newcornerid[n];
+    }
+    else
+      SETONNBSIDE(MYVERTEX(NodeList[n]),nbside);
     n++;
   }
 #endif
+
+  bnds = ELEM_BNDS(theElement,2);
+
   if (theRule->pattern[CENTER_NODE_INDEX(theElement)]==1)
   {
     NodeList[n] = CreateCenterNode(upGrid,theElement);
     if (NodeList[n]==NULL) return (1);
+    ID(NodeList[i]) = ref->newcornerid[n];
     n++;
   }
+
+  bnds = ELEM_BNDS(theElement,2);
 
   /* insert elements */
   SETNSONS(theElement,theRule->nsons);
@@ -878,9 +989,16 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       SonNodeList[j] = NodeList[SonData->corners[j]];
     theSonElem[i] = CreateElement(upGrid,SonData->tag,type,SonNodeList,theElement);
     if (theSonElem[i]==NULL) return (1);
-    SET_SON(theElement,i,theSonElem[i]);
     SETECLASS(theSonElem[i],theRule->class);
   }
+#ifdef __TWODIM__
+  for (i=0; i<theRule->nsons; i++) SET_SON(theElement,i,theSonElem[i]);
+#endif
+#ifdef __THREEDIM__
+  SET_SON(theElement,0,theSonElem[0]);
+#endif
+
+  bnds = ELEM_BNDS(theElement,2);
 
   /* set neighbor relation between sons */
   for (i=0; i<theRule->nsons; i++)
@@ -893,7 +1011,13 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
         SET_NBELEM(theSonElem[i],j,NULL);
   }
 
+  bnds = ELEM_BNDS(theElement,2);
+
   /* connect to neighbors */
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+  {
+    bnds = ELEM_BNDS(theElement,i);
+  }
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
     if (IO_Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,SonList,Sons_of_Side_List,1)) return (1);
@@ -928,7 +1052,7 @@ INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side
   for (i=0; i<NSONS(theElement); i++) SonList[i] = SON(theElement,i);
 #endif
 #ifdef __THREEDIM__
-  if (GetSons(theElement,SonList) != GM_OK) RETURN(GM_FATAL);
+  if (IO_GetSons(theElement,SonList) != GM_OK) RETURN(GM_FATAL);
 #endif
 
   for (i=0; i<theRule->nsons; i++)
@@ -974,7 +1098,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   BVP_DESC theBVPDesc;
   MESH theMesh;
   char FormatName[NAMESIZE], BndValName[NAMESIZE];
-  INT i,j,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],**Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,*Element_nb_ids;
+  INT i,j,k,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],**Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,*Element_nb_ids;
   INT zip,Sons_of_Side,side,nbside;
 
 #ifndef __MWCW__
@@ -1144,6 +1268,22 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
+
+#ifdef __THREEDIM__
+    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+      for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+        for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+        {
+          theNeighbor = NBELEM(theElement,j);
+          if (theNeighbor==NULL) continue;
+          for (k=0; k<SIDES_OF_ELEM(theNeighbor); k++)
+            if (NBELEM(theNeighbor,k)==theElement)
+              break;
+          if (k==SIDES_OF_ELEM(theNeighbor))                                                                      {DisposeMultiGrid(theMG); return (NULL);}
+          if (DisposeDoubledSideVector (theGrid,theElement,j,theNeighbor,k))      {DisposeMultiGrid(theMG); return (NULL);}
+        }
+#endif
+
     if (GridCreateConnection(theGrid))                                                              {DisposeMultiGrid(theMG); return (NULL);}
     ClearVectorClasses(theGrid);
     ClearNextVectorClasses(theGrid);
