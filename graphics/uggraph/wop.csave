@@ -4421,7 +4421,6 @@ static INT BVEval_recurse( DRAWINGOBJ *theDO, GEN_ExecuteProcPtr ExecuteProc, BL
 	DRAWINGOBJ *theStartDO = theDO;
 	
 	width_own = BVNUMBEROFVECTORS( bv );
-printf( "%d %d %d %d\n", pos_parent,width_parent,	pos_own,width_own);
 
 	/* hor line at BVFIRSTVECTOR(BV_theBV) */
 	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
