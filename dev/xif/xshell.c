@@ -51,7 +51,9 @@
 
 /* standard C includes */
 #include <stdio.h>
+#ifndef __MACOSX__
 #include <malloc.h>
+#endif
 #include <string.h>
 #include <ctype.h>
 
