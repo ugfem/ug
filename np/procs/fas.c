@@ -189,13 +189,13 @@ static INT RestrictSolNodeVector (GRID *FineGrid, const VECDATA_DESC *to, const 
       vc = NVECTOR((NODE*)NFATHER(theNode));
       vecskip = VECSKIP(vc);
       for (i=0; i<ncomp; i++)
-      {
-        if (!(vecskip & (1<<j)))
-          VVALUE(vc,toComp[i]) = damp[i] * VVALUE(v,fromComp[i]);
-      }
-      for (i=0; i<ncomp; i++)
-        if (vecskip)
-          VVALUE(vc,toComp[i]) = VVALUE(v,fromComp[i]);
+        /*{
+                if (!(vecskip & (1<<j)))
+                        VVALUE(vc,toComp[i]) = damp[i] * VVALUE(v,fromComp[i]);
+           }*/
+        for (i=0; i<ncomp; i++)
+          if (vecskip)
+            VVALUE(vc,toComp[i]) = VVALUE(v,fromComp[i]);
     }
     /*else
        {
