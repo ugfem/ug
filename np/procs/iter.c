@@ -279,6 +279,7 @@ typedef struct
   INT nv;                                                       /* # vectors					*/
   INT bw;                                                       /* bandwidth					*/
   INT fmode;                                            /* apply float-matrix					*/
+  INT optimizeBand;                                     /* 1 for optimization of bandwidth	*/
   FLOAT *FMat;                                          /* float-matrix						*/
   DOUBLE *DMat;                                         /* double-matrix					*/
   DOUBLE *Vec;                                          /* vector						*/
@@ -3784,6 +3785,7 @@ static INT EXInit (NP_BASE *theNP, INT argc , char **argv)
 
   np = (NP_EX *) theNP;
   np->fmode = ReadArgvOption ("f",argc,argv);
+  if (ReadArgvINT ("o",&np->optimizeBand,argc,argv)) np->optimizeBand=1;
 
   return (SmootherInit(theNP,argc,argv));
 }
@@ -3971,44 +3973,47 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     return(0);
         #endif
 
-  /* reorder vector-list */
   theHeap = MGHEAP(NP_MG(theNP));
-  MarkTmpMem(theHeap);
-  n = NVEC(theGrid);
-  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
-  vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
-  fifo_init(&myfifo,buffer,sizeof(VECTOR*)*n);
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    SETUSED(theV,0);
-  fifo_in(&myfifo,(void *)FIRSTVECTOR(theGrid));
-  SETUSED(FIRSTVECTOR(theGrid),1);
-  while(!fifo_empty(&myfifo))
+  if (np->optimizeBand)
   {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-      if (!USED(MDEST(theM)))
-      {
-        fifo_in(&myfifo,(void *)MDEST(theM));
-        SETUSED(MDEST(theM),1);
-      }
+    /* reorder vector-list */
+    MarkTmpMem(theHeap);
+    n = NVEC(theGrid);
+    buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+    vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+    fifo_init(&myfifo,buffer,sizeof(VECTOR*)*n);
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+      SETUSED(theV,0);
+    fifo_in(&myfifo,(void *)FIRSTVECTOR(theGrid));
+    SETUSED(FIRSTVECTOR(theGrid),1);
+    while(!fifo_empty(&myfifo))
+    {
+      theV = (VECTOR *)fifo_out(&myfifo);
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+        if (!USED(MDEST(theM)))
+        {
+          fifo_in(&myfifo,(void *)MDEST(theM));
+          SETUSED(MDEST(theM),1);
+        }
+    }
+    fifo_in(&myfifo,(void *)theV);
+    SETUSED(theV,0); i=0;
+    while(!fifo_empty(&myfifo))
+    {
+      theV = (VECTOR *)fifo_out(&myfifo);
+      vlist[i++] = theV;
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+        if (USED(MDEST(theM)))
+        {
+          fifo_in(&myfifo,(void *)MDEST(theM));
+          SETUSED(MDEST(theM),0);
+        }
+    }
+    assert(i==n);
+    for (i=0; i<n; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
+    for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PrioMaster);
+    ReleaseTmpMem(theHeap);
   }
-  fifo_in(&myfifo,(void *)theV);
-  SETUSED(theV,0); i=0;
-  while(!fifo_empty(&myfifo))
-  {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    vlist[i++] = theV;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-      if (USED(MDEST(theM)))
-      {
-        fifo_in(&myfifo,(void *)MDEST(theM));
-        SETUSED(MDEST(theM),0);
-      }
-  }
-  assert(i==n);
-  for (i=0; i<n; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
-  for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PrioMaster);
-  ReleaseTmpMem(theHeap);
   if (MD_IS_SCALAR(A))
   {
     for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV),i++)
