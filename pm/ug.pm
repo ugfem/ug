@@ -39,20 +39,20 @@ BEGIN
 	{
 		close(DEBUG);
 	}
-}
-sub out
-{
-	my ($line,$ret,$error);
-	$ret=""; $error=0;
-	while($line=<OUT>)
+	sub out
 	{
-		if ($line=~/ERROR/) {$error=1;}
-		if ($line=~/^EOO$/) {last;}
-		if ($_[0] || $error) {print $line;}
-		$ret.=$line;
+		my ($line,$ret,$error);
+		$ret=""; $error=0;
+		while($line=<OUT>)
+		{
+			if ($line=~/ERROR/) {$error=1;}
+			if ($line=~/^EOO$/) {last;}
+			if ($_[0] || $error || $debug) {print $line;}
+			$ret.=$line;
+		}
+		if ($error) {die "ug aborted due to ERROR\n";}
+		return $ret;
 	}
-	if ($error) {die "ug aborted due to ERROR\n";}
-	return $ret;
 }
 sub set
 {
