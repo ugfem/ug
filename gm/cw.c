@@ -108,6 +108,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {2,VCNEW_CE,            VECTOR_CW,      VCNEW_SHIFT,            VCNEW_LEN       },
   {2,VCNB_CE,         VECTOR_CW,  VCNB_SHIFT,             VCNB_LEN        },
   {2,VCCUT_CE,            VECTOR_CW,      VCCUT_SHIFT,            VCCUT_LEN               },
+  {2,VCCOARSE_CE,         VECTOR_CW,      VCCOARSE_SHIFT,         VCCOARSE_LEN    },
 
   {2,MOFFSET_CE,          MATRIX_CW,      MOFFSET_SHIFT,          MOFFSET_LEN             },
   {2,MROOTTYPE_CE,        MATRIX_CW,      MROOTTYPE_SHIFT,        MROOTTYPE_LEN   },
@@ -192,8 +193,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
   {0,0,0,0,0},
-  {0,0,0,0,0},
-}; /* last entry used: 79 for NOOFNODE_CE */
+}; /* last entry used: 80 for VCCOARSE_CE */
 
 /****************************************************************************/
 /*                                                                          */

@@ -1126,6 +1126,12 @@ extern CONTROL_ENTRY
 #define VCCUT(p)                                        CW_READ_STATIC(p,VCCUT_,VECTOR_)
 #define SETVCCUT(p,n)                           CW_WRITE_STATIC(p,VCCUT_,VECTOR_,n)
 
+#define VCCOARSE_CE                                     80
+#define VCCOARSE_SHIFT                          27
+#define VCCOARSE_LEN                            1
+#define VCCOARSE(p)                                     CW_READ_STATIC(p,VCCOARSE_,VECTOR_)
+#define SETVCCOARSE(p,n)                        CW_WRITE_STATIC(p,VCCOARSE_,VECTOR_,n)
+
 #ifdef ModelP
 #define XFERVECTOR_CE                           69
 #define XFERVECTOR_SHIFT                        21
