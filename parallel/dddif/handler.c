@@ -440,7 +440,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
                                GetFreelistMemory(dddctrl.currMG->theHeap,
                                                  2 * MSIZE(mcopy));
                                                 #else
-                               GetMemoryForObject(dddctrl.currMG,MSIZE(mcopy),MAOBJ);
+                               GetMemoryForObject(dddctrl.currMG,2*MSIZE(mcopy),MAOBJ);
                                                 #endif
 
             nconn++; newconn++;
