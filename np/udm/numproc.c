@@ -38,6 +38,14 @@
 #include "np.h"
 #include "numproc.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -150,7 +158,7 @@ INT CreateClass (const char *classname, INT size, ConstructorProcPtr Construct)
    D*/
 /****************************************************************************/
 
-NP_CONSTRUCTOR *GetConstructor (const char *classname)
+NP_CONSTRUCTOR * NS_PREFIX GetConstructor (const char *classname)
 {
   ENVITEM *item;
   INT m,i;

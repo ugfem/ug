@@ -42,6 +42,14 @@
 #include "ppif.h"
 #endif
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -81,7 +89,7 @@ typedef struct {
 /*																			*/
 /****************************************************************************/
 
-INT BulletDim;
+INT NS_PREFIX BulletDim;
 
 /****************************************************************************/
 /*																			*/
@@ -584,7 +592,7 @@ static void DrawTriangle(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2,
    D*/
 /****************************************************************************/
 
-void BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
+void NS_PREFIX BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
 {
   POINT p1, p2;
   DOUBLE z1, z2;

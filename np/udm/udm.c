@@ -40,6 +40,14 @@
 #include "udm.h"
 #include "rm.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -320,7 +328,7 @@ INT FillCompsForOType (const FORMAT *fmt, INT otype, INT n, SHORT cmps[])
    D*/
 /****************************************************************************/
 
-INT ConstructVecOffsets (const SHORT *NCmpInType, SHORT *offset)
+INT NS_PREFIX ConstructVecOffsets (const SHORT *NCmpInType, SHORT *offset)
 {
   INT type;
 
@@ -435,7 +443,7 @@ static INT VDCompsSubsequent (const VECDATA_DESC *vd)
    D*/
 /****************************************************************************/
 
-INT FillRedundantComponentsOfVD (VECDATA_DESC *vd)
+INT NS_PREFIX FillRedundantComponentsOfVD (VECDATA_DESC *vd)
 {
   ConstructVecOffsets(VD_NCMPPTR(vd),VD_OFFSETPTR(vd));
   SetCompactTypesOfVec(vd);
@@ -464,7 +472,7 @@ INT FillRedundantComponentsOfVD (VECDATA_DESC *vd)
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *GetFirstVector (MULTIGRID *theMG)
+VECDATA_DESC * NS_PREFIX GetFirstVector (MULTIGRID *theMG)
 {
   ENVITEM *item;
 
@@ -498,7 +506,7 @@ VECDATA_DESC *GetFirstVector (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *GetNextVector (VECDATA_DESC *vd)
+VECDATA_DESC * NS_PREFIX GetNextVector (VECDATA_DESC *vd)
 {
   ENVITEM *item;
 
@@ -681,8 +689,8 @@ static INT GetNewVectorName (MULTIGRID *theMG, char *name)
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *compNames,
-                             const SHORT *NCmpInType, SHORT nId, SHORT *Ident)
+VECDATA_DESC * NS_PREFIX CreateVecDesc (MULTIGRID *theMG, const char *name, const char *compNames,
+                                        const SHORT *NCmpInType, SHORT nId, SHORT *Ident)
 {
   VECDATA_DESC *vd;
   SHORT offset[NVECOFFSETS],*Comp;
@@ -778,8 +786,8 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
-                                const SHORT *NCmpInType, const SHORT *Comps, const char *CompNames)
+VECDATA_DESC * NS_PREFIX CreateSubVecDesc (MULTIGRID *theMG, const char *name,
+                                           const SHORT *NCmpInType, const SHORT *Comps, const char *CompNames)
 {
   VECDATA_DESC *vd;
   SHORT offset[NVECOFFSETS];
@@ -1081,8 +1089,8 @@ static INT AllocVecDesc (MULTIGRID *theMG, INT fl, INT tl, const VECDATA_DESC *v
  */
 /****************************************************************************/
 
-INT AllocVDfromNCmp (MULTIGRID *theMG, INT fl, INT tl,
-                     const SHORT *NCmpInType, const char *compNames, VECDATA_DESC **new_desc)
+INT NS_PREFIX AllocVDfromNCmp (MULTIGRID *theMG, INT fl, INT tl,
+                               const SHORT *NCmpInType, const char *compNames, VECDATA_DESC **new_desc)
 {
   VECDATA_DESC *vd;
 
@@ -1143,8 +1151,8 @@ INT AllocVDfromNCmp (MULTIGRID *theMG, INT fl, INT tl,
  */
 /****************************************************************************/
 
-INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
-                   const VECDATA_DESC *vd, VECDATA_DESC **new_desc)
+INT NS_PREFIX AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
+                             const VECDATA_DESC *vd, VECDATA_DESC **new_desc)
 {
   if (AllocVDfromNCmp(theMG,fl,tl,vd->NCmpInType,vd->compNames,new_desc))
     REP_ERR_RETURN(1);
@@ -1432,7 +1440,7 @@ INT LockVD (MULTIGRID *theMG, VECDATA_DESC *vd)
  */
 /****************************************************************************/
 
-INT TransmitLockStatusVD (const VECDATA_DESC *vd, VECDATA_DESC *svd)
+INT NS_PREFIX TransmitLockStatusVD (const VECDATA_DESC *vd, VECDATA_DESC *svd)
 {
   if (!VM_LOCKED(vd) && VM_LOCKED(svd))
     REP_ERR_RETURN(1);
@@ -1464,7 +1472,7 @@ INT TransmitLockStatusVD (const VECDATA_DESC *vd, VECDATA_DESC *svd)
  */
 /****************************************************************************/
 
-INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
+INT NS_PREFIX FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
 {
   GRID *theGrid;
   INT i,j,tp;
@@ -1747,7 +1755,7 @@ INT DisplayVecDataDesc (const VECDATA_DESC *vd, INT modifiers, char *buffer)
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *GetVecDataDescByName (const MULTIGRID *theMG, char *name)
+VECDATA_DESC * NS_PREFIX GetVecDataDescByName (const MULTIGRID *theMG, char *name)
 {
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
@@ -2324,7 +2332,7 @@ INT VDusesVOTypeOnly (const VECDATA_DESC *vd, INT votype)
    D*/
 /****************************************************************************/
 
-INT ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset)
+INT NS_PREFIX ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset)
 {
   INT type;
 
@@ -2356,7 +2364,7 @@ INT ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT
    D*/
 /****************************************************************************/
 
-INT ConstructMatOffsetsAlt (const SHORT *CmpsInType, SHORT *offset)
+INT NS_PREFIX ConstructMatOffsetsAlt (const SHORT *CmpsInType, SHORT *offset)
 {
   INT type;
 
@@ -2470,7 +2478,7 @@ static INT MDCompsSubsequent (const MATDATA_DESC *md)
    D*/
 /****************************************************************************/
 
-INT FillRedundantComponentsOfMD (MATDATA_DESC *md)
+INT NS_PREFIX FillRedundantComponentsOfMD (MATDATA_DESC *md)
 {
   ConstructMatOffsets(MD_ROWPTR(md),MD_COLPTR(md),MD_OFFSETPTR(md));
   SetCompactTypesOfMat(md);
@@ -2499,7 +2507,7 @@ INT FillRedundantComponentsOfMD (MATDATA_DESC *md)
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *GetFirstMatrix (MULTIGRID *theMG)
+MATDATA_DESC * NS_PREFIX GetFirstMatrix (MULTIGRID *theMG)
 {
   ENVITEM *item;
 
@@ -2533,7 +2541,7 @@ MATDATA_DESC *GetFirstMatrix (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *GetNextMatrix (MATDATA_DESC *md)
+MATDATA_DESC * NS_PREFIX GetNextMatrix (MATDATA_DESC *md)
 {
   ENVITEM *item;
 
@@ -2757,9 +2765,9 @@ static MATDATA_DESC *CreateMatDesc_General (MULTIGRID *theMG, const char *name, 
   return (md);
 }
 
-MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *compNames,
-                             const SHORT *RowsInType, const SHORT *ColsInType,
-                             SHORT **CmpsInType)
+MATDATA_DESC * NS_PREFIX CreateMatDesc (MULTIGRID *theMG, const char *name, const char *compNames,
+                                        const SHORT *RowsInType, const SHORT *ColsInType,
+                                        SHORT **CmpsInType)
 {
   return(CreateMatDesc_General(theMG,name,compNames,RowsInType,ColsInType,
                                CmpsInType,0));
@@ -2953,7 +2961,7 @@ INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *GetMatDataDescByName (const MULTIGRID *theMG, char *name)
+MATDATA_DESC * NS_PREFIX GetMatDataDescByName (const MULTIGRID *theMG, char *name)
 {
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
@@ -2988,8 +2996,8 @@ MATDATA_DESC *GetMatDataDescByName (const MULTIGRID *theMG, char *name)
  */
 /****************************************************************************/
 
-INT CompMatDesc (const MATDATA_DESC *md, const SHORT *RowsInType,
-                 const SHORT *ColsInType, SHORT *const*CmpsInType)
+INT NS_PREFIX CompMatDesc (const MATDATA_DESC *md, const SHORT *RowsInType,
+                           const SHORT *ColsInType, SHORT *const*CmpsInType)
 {
   INT a,b,i,n,off,tp;
 
@@ -3113,8 +3121,8 @@ static INT AllocMatDesc (MULTIGRID *theMG, INT fl, INT tl, const MATDATA_DESC *m
  */
 /****************************************************************************/
 
-INT AllocMDFromMRowMCol (MULTIGRID *theMG, INT fl, INT tl,
-                         const SHORT *RowsInType,const SHORT *ColsInType,const char *compNames,MATDATA_DESC **new_desc)
+INT NS_PREFIX AllocMDFromMRowMCol (MULTIGRID *theMG, INT fl, INT tl,
+                                   const SHORT *RowsInType,const SHORT *ColsInType,const char *compNames,MATDATA_DESC **new_desc)
 {
   MATDATA_DESC *md;
 
@@ -3222,8 +3230,8 @@ INT AllocMDFromVRowVCol (MULTIGRID *theMG, INT fl, INT tl,
  */
 /****************************************************************************/
 
-INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
-                   const VECDATA_DESC *x, const VECDATA_DESC *y, MATDATA_DESC **new_desc)
+INT NS_PREFIX AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
+                             const VECDATA_DESC *x, const VECDATA_DESC *y, MATDATA_DESC **new_desc)
 {
   INT i,j,tp;
   SHORT RowsInType[NMATTYPES];
@@ -3452,7 +3460,7 @@ INT UnlockMD (MATDATA_DESC *md)
  */
 /****************************************************************************/
 
-INT TransmitLockStatusMD (const MATDATA_DESC *md, MATDATA_DESC *smd)
+INT NS_PREFIX TransmitLockStatusMD (const MATDATA_DESC *md, MATDATA_DESC *smd)
 {
   if (!VM_LOCKED(md) && VM_LOCKED(smd))
     REP_ERR_RETURN(1);
@@ -3484,7 +3492,7 @@ INT TransmitLockStatusMD (const MATDATA_DESC *md, MATDATA_DESC *smd)
  */
 /****************************************************************************/
 
-INT FreeMD (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
+INT NS_PREFIX FreeMD (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
 {
   GRID *theGrid;
   INT i,j,tp;

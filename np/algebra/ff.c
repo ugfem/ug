@@ -52,6 +52,14 @@
 #undef T
 #endif
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -743,13 +751,13 @@ INT TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest, const BV_DESC *bvd_dest, con
    D*/
 /****************************************************************************/
 
-INT TFFDecomp( DOUBLE wavenr,
-               DOUBLE wavenr3D,
-               const BLOCKVECTOR *bv,
-               const BV_DESC *bvd,
-               const BV_DESC_FORMAT *bvdf,
-               INT tv_comp,
-               GRID *grid )
+INT NS_PREFIX TFFDecomp( DOUBLE wavenr,
+                         DOUBLE wavenr3D,
+                         const BLOCKVECTOR *bv,
+                         const BV_DESC *bvd,
+                         const BV_DESC_FORMAT *bvdf,
+                         INT tv_comp,
+                         GRID *grid )
 {
   register BLOCKVECTOR *bv_i, *bv_im1, *bv_end;
   register BV_DESC *bvd_i, *bvd_im1, *bvd_temp;
@@ -1005,14 +1013,14 @@ INT TFFDecomp( DOUBLE wavenr,
    D*/
 /****************************************************************************/
 
-INT FFDecomp( DOUBLE wavenr,
-              DOUBLE wavenr3D,
-              const BLOCKVECTOR *bv,
-              const BV_DESC *bvd,
-              const BV_DESC_FORMAT *bvdf,
-              INT tv1_comp,
-              INT tv2_comp,
-              GRID *grid )
+INT NS_PREFIX FFDecomp( DOUBLE wavenr,
+                        DOUBLE wavenr3D,
+                        const BLOCKVECTOR *bv,
+                        const BV_DESC *bvd,
+                        const BV_DESC_FORMAT *bvdf,
+                        INT tv1_comp,
+                        INT tv2_comp,
+                        GRID *grid )
 {
   register BLOCKVECTOR *bv_i, *bv_im1, *bv_end;
   register BV_DESC *bvd_i, *bvd_im1, *bvd_temp;

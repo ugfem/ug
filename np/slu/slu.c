@@ -55,6 +55,18 @@
 #include "iter.h"
 #include "slu.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
+extern void    SLU_GetStat (float *ftime, float *fflops, float *stime, float *sflops);
+extern int     lsame_ (char *, char *);
+extern int     sp_ienv (int);
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -283,7 +295,7 @@ static int ReadMatrix (SuperMatrix *A, GRID *theGrid, VECDATA_DESC *x, MATDATA_D
   A->nrow=n;      A->ncol=n;
   A->Store=(void*)superlu_malloc(sizeof(NRformat));
   if (A->Store==NULL) REP_ERR_RETURN(1);
-  Astore = A->Store;
+  Astore = (NRformat*)A->Store;
   Astore->nnz=fe[n];
   Astore->nzval=a;
   Astore->colind=dest;
@@ -301,8 +313,8 @@ int ReadVector (INT n, SuperMatrix *B, GRID *theGrid, VECDATA_DESC *x)
   DNformat *Bstore;
   SHORT *comp;
 
-  Bstore=B->Store;
-  v=Bstore->nzval;
+  Bstore = (DNformat*)B->Store;
+  v=(double*)Bstore->nzval;
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
   {
     type=VTYPE(theV);
@@ -323,8 +335,8 @@ int WriteVector (INT n, SuperMatrix *B, GRID *theGrid, VECDATA_DESC *x)
   DNformat *Bstore;
   SHORT *comp;
 
-  Bstore=B->Store;
-  v=Bstore->nzval;
+  Bstore = (DNformat*)B->Store;
+  v = (double*)Bstore->nzval;
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
   {
     type=VTYPE(theV);
@@ -342,7 +354,7 @@ void *SLU_Malloc (int size)
   return((void*)GetTmpMem(SLU_Heap,size,SLU_MarkKey[SLU_MarkKey_nb]));
 }
 
-static INT SLU_Output (theNP)
+static INT SLU_Output (NP_BASE* theNP)
 {
   NP_SLU *np;
   SCformat *Lstore;
@@ -436,7 +448,7 @@ static INT SLUPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_D
   {
     CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
     UserWriteF(text);
-    if (SLU_Output(theNP)) REP_ERR_RETURN(1);
+    if (SLU_Output((NP_BASE*)theNP)) REP_ERR_RETURN(1);
   }
 
   return (0);

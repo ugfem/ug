@@ -44,6 +44,14 @@
 
 #include "npcheck.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -80,7 +88,7 @@ static INT pcheck;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-INT CheckSymmetryOfMatrix (GRID *theGrid, MATDATA_DESC *A)
+INT NS_PREFIX CheckSymmetryOfMatrix (GRID *theGrid, MATDATA_DESC *A)
 {
   MATRIX *m,*mt;
   VECTOR *v,*w;

@@ -51,6 +51,14 @@
 
 #include "fegeom.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -123,6 +131,8 @@
 /*																			*/
 /****************************************************************************/
 
+extern INT n_offset[TAGS];
+extern INT side_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/
@@ -140,25 +150,19 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
-   EvaluateFEGeometry - compute geometry information for given element
-
-   SYNOPSIS:
-   INT EvaluateFEGeometry (ELEMENT *e, FEElementGeometry *eg);
-
-   PARAMETERS:
-   .  e - given element
-   .  eg - data structure to be filled
-
-   DESCRIPTION:
-   This routine fills the given data structure with geometry related
-   values
-
-   RETURN VALUES:
-   0 when o.k.
-
-   1 if an error occured.
-   D*/
+/** \brief Compute geometry information for given element
+ *
+ * @param e given element
+ * @param eg data structure to be filled
+ *
+ * This routine fills the given data structure with geometry related
+ * values
+ *
+ * @return <ul>
+ *    <li> 0 when o.k. </li>
+ *    <li> 1 if an error occured. </li>
+ * </ul>
+ */
 /****************************************************************************/
 
 INT EvaluateFEGeometry (ELEMENT *e, FEElementGeometry *geo)

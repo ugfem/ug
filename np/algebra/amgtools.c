@@ -56,6 +56,14 @@
 
 #include "amgtools.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -323,7 +331,7 @@ INT MarkVanek(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
 /* Some routines marking strong connections  (!change for systems!)         */
 /****************************************************************************/
 
-INT SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR **initialEH, INT MarkKey)
+INT NS_PREFIX SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR **initialEH, INT MarkKey)
 {
   VECTOR *vect;
   AVECTOR *avect;
@@ -359,7 +367,7 @@ INT SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR 
   return(DONE);
 }
 
-INT DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Da, AVECTOR **De, AVECTOR **Ua, AVECTOR **Ue)
+INT NS_PREFIX DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Da, AVECTOR **De, AVECTOR **Ua, AVECTOR **Ue)
 {
   INT i;
   AVECTOR *avect;
@@ -400,7 +408,7 @@ INT DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Da, AVECTOR **De
   return(DONE);
 }
 
-INT CountStrongNeighbors(AVECTOR *initialS, DOUBLE *avNrOfStrongNbsHnd, INT *maxNeighbors)
+INT NS_PREFIX CountStrongNeighbors(AVECTOR *initialS, DOUBLE *avNrOfStrongNbsHnd, INT *maxNeighbors)
 {
   int nrOfPoints,sumOfStrongLinks;
   int nrOfNbs,nrOfStrongNbs;

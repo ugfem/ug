@@ -53,6 +53,15 @@
 #include "npscan.h"
 #include "field.h"
 
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /************************************************************************/
 /*																		*/
 /* defines in the following order										*/
@@ -89,9 +98,9 @@
 #define M1      259200
 #define M2      134456
 #define M3      243000
-#define RM1     (1.0 / (DOUBLE) M1)
-#define RM2     (1.0 / (DOUBLE) M2)
-#define RM3     (1.0 / (DOUBLE) M3)
+#define RM1     (1.0 / (DOUBLE)M1)
+#define RM2     (1.0 / (DOUBLE)M2)
+#define RM3     (1.0 / (DOUBLE)M3)
 #define IA1     7141
 #define IA2     8121
 #define IA3     4561
@@ -1177,7 +1186,7 @@ static void correct (DOUBLE *Feld, INT *NOfN, DOUBLE wantedMean, DOUBLE wantedVa
  */
 /************************************************************************/
 
-INT Field_genStochField(NP_STOCH_FIELD *np)
+INT NS_PREFIX Field_genStochField(NP_STOCH_FIELD *np)
 {
   DOUBLE *FieldH;
   DOUBLE F[DIM], Cor[DIM+1];       /* the last one is the product of the others */
@@ -1543,7 +1552,7 @@ static INT NPStochFieldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+INT NS_PREFIX Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_STOCH_FIELD *np;
   INT i, node[DIM];
@@ -1805,7 +1814,7 @@ static INT NPGetFieldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-INT Field_GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+INT NS_PREFIX Field_GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_GET_FIELD *np;
   NP_FIELD *npsd;
@@ -1957,7 +1966,7 @@ static INT NPanisoFldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-INT Field_RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+INT NS_PREFIX Field_RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_ANISO_FIELD  *np;
   DOUBLE transX[DIM];

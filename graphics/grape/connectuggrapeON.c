@@ -39,6 +39,14 @@
 #include "evm.h"
 #include "general.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /* COARSE is defined in gm.h and grape.h: we do not need it at all, so: */
 #ifdef COARSE
 #undef COARSE

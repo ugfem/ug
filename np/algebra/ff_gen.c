@@ -51,6 +51,14 @@
 #undef T
 #endif
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -75,27 +83,27 @@
 /****************************************************************************/
 
 /* mute level for FFs */
-INT mute_level  = 0;
+INT NS_PREFIX mute_level  = 0;
 
 /* value below them a division is refused calculating a testvector */
-DOUBLE FFsmallTV = 1e-3;
+DOUBLE NS_PREFIX FFsmallTV = 1e-3;
 
 /* ratio for a jump to be detected */
-DOUBLE FFmuchBigger = 100.0;
+DOUBLE NS_PREFIX FFmuchBigger = 100.0;
 
 /* value below them a number is considered as 0.0 */
 DOUBLE FFEPS = 1e-16;
 
 /* value below them an approximation error is considered as ok */
-DOUBLE FFaccuracy = 1e-10;
+DOUBLE NS_PREFIX FFaccuracy = 1e-10;
 
 /* global array to hold the matrix hierarchy */
-INT FF_Mats[FF_MAX_MATS];
+INT NS_PREFIX FF_Mats[FF_MAX_MATS];
 MATDATA_DESC *FF_MATDATA_DESC_ARRAY[FF_MAX_MATS];
 
 /* global array to hold the auxiliary vectors */
-INT FF_Vecs[FF_MAX_VECS];
-INT TOS_FF_Vecs = 0;
+INT NS_PREFIX FF_Vecs[FF_MAX_VECS];
+INT NS_PREFIX TOS_FF_Vecs = 0;
 
 
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
@@ -601,7 +609,7 @@ void printBV( const BV_DESC_FORMAT *bvdf )
 }
 
 
-void printBVgrid( GRID *grid, const BV_DESC_FORMAT *bvdf )
+void NS_PREFIX printBVgrid( GRID *grid, const BV_DESC_FORMAT *bvdf )
 {
   BLOCKVECTOR *bv;
   BV_DESC bvd;
@@ -623,7 +631,7 @@ void printBVgrid( GRID *grid, const BV_DESC_FORMAT *bvdf )
 }
 
 
-DOUBLE FFMeshwidthOfGrid( GRID *grid )
+DOUBLE NS_PREFIX FFMeshwidthOfGrid( GRID *grid )
 /* determine the meshwidth for a regular mesh */
 {
   VERTEX *vertex1, *vertex2;
@@ -1353,7 +1361,7 @@ INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
    D*/
 /****************************************************************************/
 
-INT FFMultWithMInv(
+INT NS_PREFIX FFMultWithMInv(
   const BLOCKVECTOR *bv,
   const BV_DESC *bvd,
   const BV_DESC_FORMAT *bvdf,

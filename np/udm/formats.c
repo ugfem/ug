@@ -48,6 +48,14 @@
 
 #include "formats.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -111,7 +119,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT DisplayPrintingFormat ()
+INT NS_PREFIX DisplayPrintingFormat ()
 {
   INT i;
 
@@ -466,8 +474,8 @@ VEC_TEMPLATE *GetVectorTemplate (const FORMAT *theFmt, const char *theTmplt)
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
-                                       const char *name, const char *theTmplt)
+VECDATA_DESC * NS_PREFIX CreateVecDescOfTemplate (MULTIGRID *theMG,
+                                                  const char *name, const char *theTmplt)
 {
   VECDATA_DESC *vd,*svd;
   VEC_TEMPLATE *vt;
@@ -605,8 +613,8 @@ MAT_TEMPLATE *GetMatrixTemplate (const FORMAT *theFmt, const char *theTmplt)
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
-                                       const char *name, const char *theTmplt)
+MATDATA_DESC * NS_PREFIX CreateMatDescOfTemplate (MULTIGRID *theMG,
+                                                  const char *name, const char *theTmplt)
 {
   MATDATA_DESC *md,*smd;
   MAT_TEMPLATE *mt;
@@ -819,7 +827,7 @@ static MAT_TEMPLATE *CreateMatTemplate (const char *name)
    D*/
 /****************************************************************************/
 
-INT VDmatchesVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt)
+INT NS_PREFIX VDmatchesVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt)
 {
   INT tp;
 
@@ -1009,7 +1017,7 @@ INT VDsubDescFromVS (const VECDATA_DESC *vd, const SUBVEC *subv, VECDATA_DESC **
    D*/
 /****************************************************************************/
 
-INT CompMDwithMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt)
+INT NS_PREFIX CompMDwithMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt)
 {
   INT a,b,i,n,off,tp;
 
@@ -1085,7 +1093,7 @@ INT MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
    D*/
 /****************************************************************************/
 
-INT MDmatchesVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt)
+INT NS_PREFIX MDmatchesVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt)
 {
   INT rt,ct,mt,nr,nc;
 

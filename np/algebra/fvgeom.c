@@ -51,6 +51,14 @@
 
 #include "fvgeom.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -143,6 +151,9 @@ static DOUBLE Param[2][4][2] = {
 /*																			*/
 /****************************************************************************/
 
+extern INT n_offset[TAGS];
+extern INT side_offset[TAGS];
+
 typedef struct {
   DOUBLE_VECTOR co[MAXNC];                      /* points in local space, corners       */
   DOUBLE_VECTOR em[MAXE];                       /* points in local space, edge midpoints*/
@@ -215,7 +226,7 @@ static DOUBLE F_q (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3)
    D*/
 /****************************************************************************/
 
-INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
+INT NS_PREFIX EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
 {
   INT i,j,k,l,n,coe,eoe;
   VERTEX *v;
@@ -691,7 +702,7 @@ static INT TriangleIsCut (INT tag, INT c1, INT c2, INT c3, const DOUBLE_VECTOR *
 }
 #endif
 
-INT SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y)
+INT NS_PREFIX SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y)
 {
 #       ifdef __TWODIM__
   DOUBLE_VECTOR v,r,coeff,M[DIM],MI[DIM];

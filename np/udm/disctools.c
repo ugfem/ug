@@ -44,6 +44,14 @@
 #include "parallel.h"   /* for PRIO */
 #endif
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -151,31 +159,24 @@ UserProcPtr MG_GetUserFct (MULTIGRID *theMG, INT n)
 }
 
 /****************************************************************************/
-/*D
-   GetAllVectorsOfElementOfType - get vector list
-
-   SYNOPSIS:
-   INT GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **vec,
-   VECDATA_DESC *theVD);
-
-   PARAMETERS:
-   .  theElement - pointer to an element
+/** \brief Get vector list
+ *
+ * @param theElement pointer to an element
    .  vec - vector list
    .  theVD - vector descriptor
 
-   DESCRIPTION:
    This function gets a list of vectors corresponding to an element.
    It uses GetVectorsOfDataTypesInObjects (which should be preferred).
 
    RETURN VALUE:
-   INT
+
    .n    number of components
    .n    -1 if error occured
    D*/
 /****************************************************************************/
 
-INT GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **vec,
-                                  const VECDATA_DESC *theVD)
+INT NS_PREFIX GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **vec,
+                                            const VECDATA_DESC *theVD)
 {
   INT cnt;
 
@@ -2470,7 +2471,7 @@ INT PrintVectorListX (const VECTOR *vlist[], const VECDATA_DESC *X, INT vclass, 
   return(NUM_OK);
 }
 
-INT PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
+INT NS_PREFIX PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
 {
   const VECTOR *v;
   INT info=FALSE;

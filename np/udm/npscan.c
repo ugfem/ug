@@ -47,6 +47,14 @@
 #include "numproc.h"
 #include "np.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -98,7 +106,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvPosition - Read command strings
 
    SYNOPSIS:
@@ -146,7 +154,7 @@ INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvVecDescX - Read command strings
 
    SYNOPSIS:
@@ -179,7 +187,7 @@ INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvVecDesc - Read command strings
 
    SYNOPSIS:
@@ -211,8 +219,8 @@ INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
-                                INT argc, char **argv, INT CreateIfNonExistent)
+VECDATA_DESC * NS_PREFIX ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
+                                           INT argc, char **argv, INT CreateIfNonExistent)
 {
   VECDATA_DESC *vd;
   char value[VALUELEN],vdname[NAMESIZE],tname[NAMESIZE];
@@ -241,7 +249,7 @@ VECDATA_DESC *ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvEVecDesc - Read command strings
 
    SYNOPSIS:
@@ -285,7 +293,7 @@ EVECDATA_DESC *ReadArgvEVecDescX (MULTIGRID *theMG, const char *name, INT argc, 
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvEMatDescX - Read command strings
 
    SYNOPSIS:
@@ -327,7 +335,7 @@ EMATDATA_DESC *ReadArgvEMatDescX (MULTIGRID *theMG, const char *name, INT argc, 
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvVecTemplate - read vec template from command string
 
    SYNOPSIS:
@@ -369,7 +377,7 @@ VEC_TEMPLATE *ReadArgvVecTemplate (const FORMAT *fmt, const char *name,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvVecTemplateSub - read vec template sub descriptor from command string
 
    SYNOPSIS:
@@ -435,7 +443,7 @@ VEC_TEMPLATE *ReadArgvVecTemplateSub (const FORMAT *fmt, const char *name,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvMatTemplateSub - read vec template sub descriptor from command string
 
    SYNOPSIS:
@@ -501,7 +509,7 @@ MAT_TEMPLATE *ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvMatDescX - Read command strings
 
    SYNOPSIS:
@@ -528,7 +536,7 @@ MAT_TEMPLATE *ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvMatDesc - Read command strings
 
    SYNOPSIS:
@@ -587,7 +595,7 @@ MATDATA_DESC *ReadArgvMatDescX (MULTIGRID *theMG, const char *name,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvNumProc - Read command strings
 
    SYNOPSIS:
@@ -626,7 +634,7 @@ NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *npclas
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ReadArgvDisplay - Read command strings
 
    SYNOPSIS:
@@ -751,18 +759,13 @@ INT ReadVecTypeINTs (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], 
 }
 
 /****************************************************************************/
-/*
-   ReadVecTypeDOUBLEs - Read a number of DOUBLEs from the input string
-
-   SYNOPSIS:
-   INT ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n,
-                                        INT nDOUBLE[MAXVECTORS], DOUBLE theDOUBLEs[][MAXVECTORS]);
-
+/** \brief Read a number of DOUBLEs from the input string
+ *
    PARAMETERS:
-   .  str - input string
-   .  n - maximal number of DOUBLEs
-   .  nDOUBLE[MAXVECTORS] - number per vector type
-   .  theDOUBLEs[][MAXVECTORS] - array to store the numbers
+   . @param str - input string
+   . @param  n - maximal number of DOUBLEs
+   . @param  nDOUBLE[MAXVECTORS] - number per vector type
+   . @param  theDOUBLEs[][MAXVECTORS] - array to store the numbers
 
    DESCRIPTION:
    This function reads a number of double values from the input string.
@@ -781,7 +784,7 @@ INT ReadVecTypeINTs (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], 
  */
 /****************************************************************************/
 
-INT ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECTORS], DOUBLE theDOUBLEs[][MAXVECTORS])
+INT NS_PREFIX ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECTORS], DOUBLE theDOUBLEs[][MAXVECTORS])
 {
   char *s,*tok,*typetok[MAXVECTORS],*notypetok;
   INT type,found;
@@ -1004,7 +1007,7 @@ INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, IN
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    sc_cmp - Compare VEC_SCALARs
 
    SYNOPSIS:
@@ -1025,7 +1028,7 @@ INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, IN
    D*/
 /****************************************************************************/
 
-INT sc_cmp (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD)
+INT NS_PREFIX sc_cmp (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD)
 {
   INT i;
 
@@ -1071,7 +1074,7 @@ INT esc_cmp (EVEC_SCALAR x, const EVEC_SCALAR y, const EVECDATA_DESC *theVD)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    sc_eq - Check if VEC_SCALARs are (nearly) equal
 
    SYNOPSIS:
@@ -1116,7 +1119,7 @@ INT esc_eq (EVEC_SCALAR x, const EVEC_SCALAR y, DOUBLE ac, const EVECDATA_DESC *
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    sc_mul - x[i] = y[i] * z[i]
 
    SYNOPSIS:
@@ -1184,21 +1187,15 @@ INT esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, cons
 }
 
 /****************************************************************************/
-/*D
-   sc_read - Read VEC_SCALAR from input
-
-   SYNOPSIS:
-   INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const char *name, INT argc, char **argv);
-
-   PARAMETERS:
-   .  x - DOUBLE for each component of a vector data descriptor
-   .  theVD - vector data descriptor (may be NULL)
-   .  fmt - corresponding format (theVD my be NULL)
-   .  name - name of the argument
-   .  argc - argument counter
-   .  argv - argument vector
-
-   DESCRIPTION:
+/** \brief Read VEC_SCALAR from input
+ *
+ * @param x - DOUBLE for each component of a vector data descriptor
+   .  @param theVD - vector data descriptor (may be NULL)
+   .  @param fmt - corresponding format (theVD my be NULL)
+   .  @param name - name of the argument
+   .  @param argc - argument counter
+   .  @param argv - argument vector
+ *
    This function reads VEC_SCALAR from input.
    It is used to read the arguments in 'npinit', e. g. the
    damping factors in the smoothers.
@@ -1215,7 +1212,7 @@ INT esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, cons
 #define VALUELEN                        64
 #define VALUELENSTR                     "63"
 
-INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const char *name, INT argc, char **argv)
+INT NS_PREFIX sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const char *name, INT argc, char **argv)
 {
   char option[OPTIONLEN],value[VALUELEN];
   INT i, n, found, type, err;
@@ -1290,7 +1287,7 @@ INT esc_read (EVEC_SCALAR x, const FORMAT *fmt, const EVECDATA_DESC *theVD, cons
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    sc_disp - Display VEC_SCALAR
 
    SYNOPSIS:
@@ -1312,7 +1309,7 @@ INT esc_read (EVEC_SCALAR x, const FORMAT *fmt, const EVECDATA_DESC *theVD, cons
    D*/
 /****************************************************************************/
 
-INT sc_disp (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name)
+INT NS_PREFIX sc_disp (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name)
 {
   const FORMAT *fmt;
   INT i, n, j, k;

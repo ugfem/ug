@@ -42,6 +42,14 @@
 #include "connectuggrape.h"
 
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
