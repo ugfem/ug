@@ -10,7 +10,11 @@
 # include configuration and all makefile macro definitions
 include ../../../ug.conf
 
-OBJECTS = nginterface3d.o surface.o gt.o
+ifeq ($(NETGEN),ON)
+	OBJECTS = nginterface3d.o surface.o gt.o
+else
+	OBJECTS = surface.o
+endif
 
 .PRECIOUS:   .cc
 .SUFFIXES:   .cc
