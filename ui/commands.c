@@ -532,11 +532,28 @@ static INT CheckHelpCommand (INT argc, char **argv)
 
 static INT CreateMetafileNameCommand (INT argc, char **argv)
 {
-  INT res;
+  INT res,i,nopt;
   int frame;
-  char name[LONGSTRSIZE];
+  char name[LONGSTRSIZE],varname[LONGSTRSIZE];
   char fullname[LONGSTRSIZE];
   char *ext;
+
+  nopt = 0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'n' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("n %",NAMELENSTR,"[ -~]")),varname)!=1)
+      {
+        PrintErrorMessage('E',"cmfn","can't read varname");
+        return(PARAMERRORCODE);
+      }
+      nopt = 1;
+      break;
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      return (PARAMERRORCODE);
+    }
 
   res = sscanf(argv[0],expandfmt(CONCAT3(" cmfn %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[0-9:.a-zA-Z_]")),name,buffer);
   if (res!=2) return(CMDERRORCODE);
@@ -549,7 +566,14 @@ static INT CreateMetafileNameCommand (INT argc, char **argv)
   else
     sprintf(fullname,"%s.%04d.%s",name,frame,ext);
 
-  if (SetStringVar(name,fullname)) return(CMDERRORCODE);
+  if (nopt)
+  {
+    if (SetStringVar(varname,fullname)) return(CMDERRORCODE);
+  }
+  else
+  {
+    if (SetStringVar(name,fullname)) return(CMDERRORCODE);
+  }
 
   return (OKCODE);
 }
