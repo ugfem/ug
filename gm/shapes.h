@@ -488,12 +488,12 @@
 #endif
 
 #ifdef __TWODIM__
-#define GlobalToLocal(n,c,e,l)		 GlobalToLocal2d (n,c,e,l)
-#define LocalToGlobal(n,c,e,l)		 LocalToGlobal2d (n,c,e,l)
+#define GlobalToLocal2d(n,c,e,l)	 GlobalToLocal (n,c,e,l)
+#define LocalToGlobal2d(n,c,e,l)	 LocalToGlobal (n,c,e,l)
 #endif
 #ifdef __THREEDIM__
-#define GlobalToLocal(n,c,e,l)		 GlobalToLocal3d (n,c,e,l)
-#define LocalToGlobal(n,c,e,l)		 LocalToGlobal3d (n,c,e,l)
+#define GlobalToLocal3d(n,c,e,l)	 GlobalToLocal (n,c,e,l)
+#define LocalToGlobal3d(n,c,e,l)	 LocalToGlobal (n,c,e,l)
 #endif
 
 /****************************************************************************/
