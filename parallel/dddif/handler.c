@@ -177,7 +177,7 @@ void VectorUpdate (DDD_OBJ obj)
 
 
 
-void VectorXferCopy (DDD_OBJ obj, int proc, int prio)
+void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
 	INT		nmat	= 0;
 	MATRIX	*mat;
@@ -205,7 +205,7 @@ void VectorXferCopy (DDD_OBJ obj, int proc, int prio)
 
 
 
-void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
+void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
 {
 	VECTOR	*vec = (VECTOR *)obj;
 	MATRIX	*mat;
@@ -244,7 +244,7 @@ void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 }
 
 
-void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
+void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, int newness)
 {
 	VECTOR		*vec		= (VECTOR *)obj;
 	CONNECTION	*first		= NULL,
@@ -540,7 +540,7 @@ void VectorDelete (DDD_OBJ obj)
 		ASSERT(0);
 }
 
-void VectorPriorityUpdate (DDD_OBJ obj, int new)
+void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
 	VECTOR	*pv			= (VECTOR *)obj;
 	INT		level		= DDD_InfoAttr(PARHDR(pv));
@@ -649,7 +649,7 @@ void VertexUpdate (DDD_OBJ obj)
 }
 
 
-void BVertexXferCopy (DDD_OBJ obj, int proc, int prio)
+void BVertexXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
 	VERTEX	*pv			= (VERTEX *) obj;
 
@@ -667,13 +667,13 @@ void BVertexGather (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
 }
 
 
-void BVertexScatter (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
+void BVertexScatter (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data, int newness)
 {
     BVertexScatterBndP (&(V_BNDP((VERTEX *)obj)),cnt,Data);
 }
 
 
-void VertexPriorityUpdate (DDD_OBJ obj, int new)
+void VertexPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
     VERTEX	*pv			= (VERTEX *)obj;
     INT		level		= DDD_InfoAttr(PARHDRV(pv));
@@ -814,7 +814,7 @@ void NodeUpdate (DDD_OBJ obj)
 /*																			*/
 /****************************************************************************/
 
-void NodeXferCopy (DDD_OBJ obj, int proc, int prio)
+void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
 	INT		nlink 	= 0;
 	INT		Size,i	= 0;
@@ -951,7 +951,7 @@ void NodeScatterEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 	MNEXT(link) = NULL;
 }
 	
-void NodePriorityUpdate (DDD_OBJ obj, int new)
+void NodePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
 	NODE	*pn			= (NODE *)obj;
 	INT		level		= DDD_InfoAttr(PARHDR(pn));
@@ -1126,7 +1126,7 @@ void ElementDelete (DDD_OBJ obj)
 /*																			*/
 /****************************************************************************/
 
-void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
+void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
 	INT		i,nsides;
 	INT		Size;
@@ -1394,7 +1394,7 @@ void ElemGatherI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 }
 
 
-void ElemScatterI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
+void ElemScatterI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data, int newness)
 {
 	if (type_id == DDD_USER_DATA) {
 		ElemScatterEdata((ELEMENT *)obj, cnt, (char *)data);
@@ -1435,7 +1435,7 @@ void ElemGatherB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 }
 
 
-void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
+void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data, int newness)
 {
 	INT		i,nsides;
 	BNDS	*bnds[MAX_SIDES_OF_ELEM];
@@ -1580,7 +1580,7 @@ void ElementObjMkCons_Refine (DDD_OBJ obj, int newness)
 }
 
 
-void ElementPriorityUpdate (DDD_OBJ obj, int new)
+void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
 	ELEMENT	*pe			= (ELEMENT *)obj;
 	INT		level		= DDD_InfoAttr(PARHDRE(pe));
@@ -1682,32 +1682,24 @@ void EdgeXferCopy (DDD_OBJ obj, int proc, int prio)
 /* init handlers for all element */
 static void ElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 {
-	DDD_HandlerRegister(etype,
-		HANDLER_LDATACONSTRUCTOR, ElementLDataConstructor,
-		#ifdef __THREEDIM__
-		HANDLER_UPDATE,           ElementUpdate,
-		#endif
-		HANDLER_DELETE,           ElementDelete,
-		HANDLER_XFERCOPY,		  ElementXferCopy,
-		HANDLER_SETPRIORITY,	  ElementPriorityUpdate,
-		HANDLER_END
-	);
+	DDD_SetHandlerLDATACONSTRUCTOR(etype, ElementLDataConstructor);
+	DDD_SetHandlerDELETE          (etype, ElementDelete);
+	DDD_SetHandlerXFERCOPY        (etype, ElementXferCopy);
+	DDD_SetHandlerSETPRIORITY     (etype, ElementPriorityUpdate);
+
+	#ifdef __THREEDIM__
+	DDD_SetHandlerUPDATE          (etype, ElementUpdate);
+	#endif
 
 
 	switch (handlerSet)
 	{
 		case HSET_XFER:
-			DDD_HandlerRegister(etype,
-				HANDLER_OBJMKCONS,        ElementObjMkCons_Xfer,
-				HANDLER_END
-			);
+			DDD_SetHandlerOBJMKCONS(etype, ElementObjMkCons_Xfer);
 			break;
 
 		case HSET_REFINE:
-			DDD_HandlerRegister(etype,
-				HANDLER_OBJMKCONS,        ElementObjMkCons_Refine,
-				HANDLER_END
-			);
+			DDD_SetHandlerOBJMKCONS(etype, ElementObjMkCons_Refine);
 			break;
 	}
 }
@@ -1720,11 +1712,8 @@ static void IElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 	ElemHandlerInit(etype, handlerSet);
 
 	/* init additional handlers, necessary for inside management */
-	DDD_HandlerRegister(etype,
-		HANDLER_XFERGATHER,		  ElemGatherI,
-		HANDLER_XFERSCATTER,	  ElemScatterI,
-		HANDLER_END
-	);
+	DDD_SetHandlerXFERGATHER (etype, ElemGatherI);
+	DDD_SetHandlerXFERSCATTER(etype, ElemScatterI);
 }
 
 
@@ -1735,11 +1724,8 @@ static void BElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 	ElemHandlerInit(etype, handlerSet);
 
 	/* init additional handlers, necessary for boundary management */
-	DDD_HandlerRegister(etype,
-		HANDLER_XFERGATHER,		  ElemGatherB,
-		HANDLER_XFERSCATTER,	  ElemScatterB,
-		HANDLER_END
-	);
+	DDD_SetHandlerXFERGATHER (etype, ElemGatherB);
+	DDD_SetHandlerXFERSCATTER(etype, ElemScatterB);
 }
 
 
@@ -1750,44 +1736,33 @@ static void BElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 /* init all handlers necessary for grid xfer */
 void ddd_HandlerInit (INT handlerSet)
 {
-	DDD_HandlerRegister(TypeVector,
-		HANDLER_UPDATE,		    VectorUpdate,
+	DDD_SetHandlerUPDATE           (TypeVector, VectorUpdate);
+	DDD_SetHandlerXFERCOPY         (TypeVector, VectorXferCopy);
+	DDD_SetHandlerXFERGATHERX      (TypeVector, VectorGatherMatX);
+	DDD_SetHandlerXFERSCATTERX     (TypeVector, VectorScatterConnX);
+	DDD_SetHandlerOBJMKCONS        (TypeVector, VectorObjMkCons);
+	DDD_SetHandlerSETPRIORITY      (TypeVector, VectorPriorityUpdate);
 /* TODO: not used  
-		HANDLER_DELETE,         VectorDelete,
+	DDD_SetHandlerDELETE           (TypeVector, VectorDelete);
 */
-		HANDLER_XFERCOPY,		VectorXferCopy,
-		HANDLER_XFERGATHERX,	VectorGatherMatX,
-		HANDLER_XFERSCATTERX,	VectorScatterConnX,
-		HANDLER_OBJMKCONS,		VectorObjMkCons,
-		HANDLER_SETPRIORITY,	VectorPriorityUpdate,
-		HANDLER_END
-	);	
 
-	DDD_HandlerRegister(TypeIVertex,
-		HANDLER_UPDATE,		    	VertexUpdate,
-		HANDLER_SETPRIORITY,		VertexPriorityUpdate,
-		HANDLER_END
-	);
+	DDD_SetHandlerUPDATE           (TypeIVertex, VertexUpdate);
+	DDD_SetHandlerSETPRIORITY      (TypeIVertex, VertexPriorityUpdate);
 
-	DDD_HandlerRegister(TypeBVertex,
-		HANDLER_LDATACONSTRUCTOR,	BVertexLDataConstructor,
-		HANDLER_UPDATE,		    	VertexUpdate,
-		HANDLER_XFERCOPY,			BVertexXferCopy,
-		HANDLER_XFERGATHER,			BVertexGather,
-		HANDLER_XFERSCATTER,		BVertexScatter,
-		HANDLER_SETPRIORITY,		VertexPriorityUpdate,
-		HANDLER_END
-	);
+	DDD_SetHandlerLDATACONSTRUCTOR (TypeBVertex, BVertexLDataConstructor);
+	DDD_SetHandlerUPDATE           (TypeBVertex, VertexUpdate);
+	DDD_SetHandlerXFERCOPY         (TypeBVertex, BVertexXferCopy);
+	DDD_SetHandlerXFERGATHER       (TypeBVertex, BVertexGather);
+	DDD_SetHandlerXFERSCATTER      (TypeBVertex, BVertexScatter);
+	DDD_SetHandlerSETPRIORITY      (TypeBVertex, VertexPriorityUpdate);
 
-	DDD_HandlerRegister(TypeNode,
-		HANDLER_LDATACONSTRUCTOR,	NodeObjInit,
-		HANDLER_DESTRUCTOR,			NodeDestructor,
-		HANDLER_OBJMKCONS,			NodeObjMkCons,
-		HANDLER_UPDATE,				NodeUpdate,
-		HANDLER_XFERCOPY,			NodeXferCopy,
-		HANDLER_SETPRIORITY,		NodePriorityUpdate,
-		HANDLER_END
-	);
+	DDD_SetHandlerLDATACONSTRUCTOR (TypeNode, NodeObjInit);
+	DDD_SetHandlerDESTRUCTOR       (TypeNode, NodeDestructor);
+	DDD_SetHandlerOBJMKCONS        (TypeNode, NodeObjMkCons);
+	DDD_SetHandlerUPDATE           (TypeNode, NodeUpdate);
+	DDD_SetHandlerXFERCOPY         (TypeNode, NodeXferCopy);
+	DDD_SetHandlerSETPRIORITY      (TypeNode, NodePriorityUpdate);
+
 
 
 	#ifdef __TWODIM__
@@ -1813,11 +1788,8 @@ void ddd_HandlerInit (INT handlerSet)
 	#endif
 
 	#ifdef __THREEDIM__
-	DDD_HandlerRegister(TypeEdge,
-		HANDLER_UPDATE,		EdgeUpdate,
-		HANDLER_XFERCOPY,	EdgeXferCopy,
-		HANDLER_END
-	);
+	DDD_SetHandlerUPDATE      (TypeEdge, EdgeUpdate);
+	DDD_SetHandlerXFERCOPY    (TypeEdge, EdgeXferCopy);
 	#endif
 
     DomHandlerInit(handlerSet);
