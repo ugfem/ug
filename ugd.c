@@ -414,14 +414,14 @@ static void ug_frontend (int sockfd)
       break;
     }
 
-    case DC_Text :
+    case DC_DrawText :
     {
       INT mode = SocketReadINT(sockfd);
       len = SocketReadINT(sockfd);
       n = SocketRead(sockfd, buf, len);
       buf[len] = 0;
 
-      (*theOutputDevice->Text)(buf, mode);
+      (*theOutputDevice->DrawText)(buf, mode);
       break;
     }
 
