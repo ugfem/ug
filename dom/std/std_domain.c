@@ -841,6 +841,7 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   INT i;
 
   currBVP = theBVP;
+  SetBVPType(theBVP->type);
 
   STD_BVP_NDOMPART(theBVP) = 1;
   STD_BVP_NSUBDOM(theBVP) = 1;
@@ -2155,6 +2156,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   if (theBVP == NULL)
     return(NULL);
   currBVP = theBVP;
+  SetBVPType(theBVP->type);
 
   if (theBVP->type == BVP_MARC)
     return(Init_MarcBVP(theBVP,Heap,Mesh,MarkKey));
@@ -4859,6 +4861,8 @@ INT BNDP_SaveBndP (BNDP *BndP)
   return(0);
 }
 
+#define IO_MARC
+
 INT BNDP_SaveBndP_Ext (BNDP *BndP)
 {
   BND_PS *bp;
@@ -4866,8 +4870,19 @@ INT BNDP_SaveBndP_Ext (BNDP *BndP)
   int iList[2];
   double dList[DIM-1];
 
-  IF_MARC(BndP)
-  return(M_BNDP_SaveBndP(BndP));
+#ifdef IO_MARC
+  {
+    M_BNDP *p = (M_BNDP *)BndP;
+
+    iList[0] = p->patch_id;
+    if (Bio_Write_mint(1,iList)) return (1);
+
+    for (j=0; j<DIM; j++)
+      dList[j] = p->pos[j];
+    if (Bio_Write_mdouble(DIM,dList)) return (1);
+    return(0);
+  }
+#endif
 
   /* TODO: save free boundary points */
   iList[0] = BND_PATCH_ID(BndP);
@@ -4928,6 +4943,21 @@ BNDP *BNDP_LoadBndP_Ext (void)
   int i,j,pid,n;
   int iList[2];
   double dList[DIM-1];
+
+#ifdef IO_MARC
+  {
+    M_BNDP *p = (M_BNDP *)malloc(sizeof(M_BNDP));
+
+    if (Bio_Read_mint(1,iList)) return (NULL);
+    p->patch_id = iList[0];
+    if (Bio_Read_mdouble(DIM,dList)) return (NULL);
+
+    for (j=0; j<DIM; j++)
+      p->pos[j] = dList[j];
+
+    return((BNDP *)p);
+  }
+#endif
 
   if (Bio_Read_mint(2,iList)) return (NULL);
   pid = iList[0]; n = iList[1];
