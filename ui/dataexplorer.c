@@ -189,7 +189,7 @@ static double clampf(double x)
    .  $bin...          - write grid and data in binary format
    .  $fgrid...        - if not initial time step grid is not written
    .  $s...             - write only specified subdomains. Positive id means that the
-                                        subdomain is written.  Negative ids means that the subdomain is
+                                        subdomain is written.  Negative id means that the subdomain is
                                         not included.  If you use $s, default is that subdomains are not
                                         written unless specified.  However, if the first argument
                                         to $s is negative, all subdomains are selected for output (except
@@ -252,8 +252,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
   char s[NAMESIZE];                             /* name of eval proc						*/
 
   INT numVertices;                              /* number of data points locally			*/
+  INT numVerticesTot;                           /* total number of data points locally		*/
   INT numElements;                              /* number of elements locally				*/
   INT gnumVertices;                             /* number of data points globally			*/
+  INT gnumVerticesTot;              /* total number of data points globally		*/
   INT gnumElements;                             /* number of elements globallay				*/
 
   PreprocessingProcPtr pre;             /* pointer to prepare function				*/
@@ -413,8 +415,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
     if (strncmp(argv[i],"fgrid",5)==0)
       writeGrid=0;
 
-    if (strncmp(argv[i],"s",1)==0) {
-      if ( sscanf(argv[i],"s %d",&j) )
+    if (strncmp(argv[i],"sd",1)==0) {
+      if ( sscanf(argv[i],"sd %d",&j) )
       {
         if ( subdom==NULL )
         {
@@ -427,11 +429,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
             return(PARAMERRORCODE);
           }
           /* default is that all subdomains are used */
-          for (k=1; k<mg->theBVPD.nSubDomains; k++) subdom[k]=(j>0) ? 0 : 1;
+          for (k=1; k<=mg->theBVPD.nSubDomains; k++) subdom[k]=(j>0) ? 0 : 1;
         }
 
         k = (j>0) ? j : -j;
-        if ( j <= mg->theBVPD.nSubDomains && -j <= mg->theBVPD.nSubDomains ) subdom[k] = (j>0) ? 1 : 0;
+        if ( k <= mg->theBVPD.nSubDomains && k > 0) subdom[k] = (j>0) ? 1 : 0;
         else UserWriteF("There is no subdomain %d\n",k);
         subdomains = 1;
       }
@@ -549,6 +551,32 @@ static INT DataExplorerCommand (INT argc, char **argv)
       }
     }
 
+  if (subdomains)
+  {
+    /*
+     * Total #vertices neccessary for correct data allocation.
+     * If only some subdomains are drawn, we still need the total
+     * number of vertices.
+     */
+    for (k=0; k<=TOPLEVEL(mg); k++)
+      for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
+        SETUSED(vx,0);
+    numVerticesTot = 0;
+    for (k=0; k<=TOPLEVEL(mg); k++)
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
+        if (!EstimateHere(el)) continue;
+        for (i=0; i<CORNERS_OF_ELEM(el); i++) {
+          vx = MYVERTEX(CORNER(el,i));
+          if (USED(vx)) continue;
+          SETUSED(vx,1);
+          numVerticesTot++;
+        }
+      }
+  }
+  else
+    numVerticesTot = numVertices;
+
+
   /* count surface elements */
   numElements = 0;
   for (k=0; k<=TOPLEVEL(mg); k++)
@@ -560,6 +588,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
 #ifdef ModelP
   gnumVertices = UG_GlobalSumINT(numVertices);
+  gnumVerticesTot = UG_GlobalSumINT(numVerticesTot);
   gnumElements = UG_GlobalSumINT(numElements);
   LocallyUniqueIDs(mg);
   ov = get_offset(numVertices);
@@ -593,7 +622,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   heap = mg->theHeap;
   MarkTmpMem(heap, &key);
   /* FIXME: false assumption that for n vertices ids are from 0..n-1 */
-  Id2Position = (INT *)GetTmpMem(heap, (numVertices+1)*sizeof(INT), key);
+  Id2Position = (INT *)GetTmpMem(heap, (numVerticesTot+1)*sizeof(INT), key);
   if (Id2Position == NULL) {
     ReleaseTmpMem(heap, key);
     UserWrite("dataexplorer: out of memory\n");
@@ -775,6 +804,13 @@ static INT DataExplorerCommand (INT argc, char **argv)
                     Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
                     Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov);
         } else {                                         /* in 3D and only Tetrahedrons in grid */
+          if ((ID(MYVERTEX(CORNER(el,0))) > numVerticesTot+1) ||
+              (ID(MYVERTEX(CORNER(el,1))) > numVerticesTot+1) ||
+              (ID(MYVERTEX(CORNER(el,2))) > numVerticesTot+1) ||
+              (ID(MYVERTEX(CORNER(el,3))) > numVerticesTot+1)) {
+            assert(0);
+          }
+
           if (binaryOutput) {
             buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
             buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
