@@ -80,6 +80,7 @@ extern INT cmdintbufsize;
 
 void    CommandLoop                     (int argc, char **argv);
 void    SetDoneFlag                     (void);
+FILE   *FOpenScript                             (const char *script);
 
 INT     InterpretCommand                (char *cmds);
 

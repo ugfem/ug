@@ -1698,7 +1698,13 @@ static INT GetFullPathName (char *buffer)
   }
 }
 
-
+FILE *FOpenScript (const char *script)
+{
+  if (scriptpaths_set)
+    return FileOpenUsingSearchPaths(script,"r","scriptpaths");
+  else
+    return fileopen(script,"r");
+}
 
 /****************************************************************************/
 /*D
@@ -2242,20 +2248,12 @@ static INT InterpretString (void)
       if ((error=GetFullPathName(buffer))!=DONE)
         return(error);
 
-      if (scriptpaths_set)
-        filePtr = FileOpenUsingSearchPaths(buffer,"r","scriptpaths");
-      else
-        filePtr = fileopen(buffer,"r");
-
+      filePtr = FOpenScript(buffer);
       if (filePtr==NULL)
       {
         strcpy(filename,buffer);
         strcat(filename,".scr");
-        if (scriptpaths_set)
-          filePtr = FileOpenUsingSearchPaths(filename,
-                                             "r","scriptpaths");
-        else
-          filePtr = fileopen(filename,"r");
+        filePtr = FOpenScript(filename);
       }
 
       if (filePtr==NULL)
