@@ -2286,17 +2286,12 @@ static INT ConfigureCommand (INT argc, char **argv)
   if (BVP_SetBVPDesc(theBVP,&theBVPDesc))
     return (CMDERRORCODE);
 
-  if (BVPD_CONFIG(theBVPDesc)==NULL)
-  {
-    PrintErrorMessage('E',"reinit","the problem has no reinit\n");
-    return(CMDERRORCODE);
-  }
-
-  if ((*BVPD_CONFIG (theBVPDesc))(argc,argv))
-  {
-    PrintErrorMessage('E',"configure"," (could not configure BVP)");
-    return(CMDERRORCODE);
-  }
+  if (BVPD_CONFIG(theBVPDesc)!=NULL)
+    if ((*BVPD_CONFIG (theBVPDesc))(argc,argv))
+    {
+      PrintErrorMessage('E',"configure"," (could not configure BVP)");
+      return(CMDERRORCODE);
+    }
 
   return(OKCODE);
 }
@@ -4642,7 +4637,7 @@ static INT RefineCommand (INT argc, char **argv)
 
   /* get velocity */
         #ifdef __THREEDIM__
-  SetAlignementPtr (theMG, theElemEvalDirection);
+  SetAlignmentPtr (theMG, theElemEvalDirection);
         #endif
 
   rv = RefineMultiGrid(theMG,mode);
@@ -6822,7 +6817,6 @@ static INT MakeGridCommand  (INT argc, char **argv)
         #endif
 
         #ifdef __THREEDIM__
-        #ifdef _NETGEN
     if (ReadArgvINT("s",&smooth,argc,argv))
       smooth = 0;
     if (ReadArgvDOUBLE("h",&h,argc,argv))
@@ -6834,7 +6828,6 @@ static INT MakeGridCommand  (INT argc, char **argv)
       Release(MGHEAP(theMG),FROM_TOP);
       return (CMDERRORCODE);
     }
-             #endif
              #endif
   }
 
@@ -6859,7 +6852,6 @@ static INT MakeGridCommand  (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-#ifdef __GRAPE_TRUE__
 static INT CallGrapeCommand (INT argc, char **argv)
 {
   MULTIGRID *theCurrMG;
@@ -6877,7 +6869,6 @@ static INT CallGrapeCommand (INT argc, char **argv)
 
   return (OKCODE);
 }
-#endif
 
 /****************************************************************************/
 /*
@@ -7005,7 +6996,6 @@ static INT OpenWindowCommand (INT argc, char **argv)
 
   /* check options */
   theOutDev  = GetDefaultOutputDevice();
-
   winname[0] = '\0';
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -8145,26 +8135,30 @@ static INT DisplayViewCommand (INT argc, char **argv)
   }
 
   /* check options */
-  for (i=1; i<argc; i++)
-    switch (argv[i][0])
+  switch (argc)
+  {
+  case 0 :
+    if (DisplayViewOfViewedObject(thePic))
     {
-    case 's' :
-      PrintViewSettings(thePic);
-      return (OKCODE);
-
-    default :
+      PrintErrorMessage('E',"vdisplay","error during DisplayView");
+      return (CMDERRORCODE);
+    }
+    break;
+  case 1 :
+    if (argv[1][0]!='s')
+    {
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("vdisplay",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
-
-  if (DisplayViewOfViewedObject(thePic))
-  {
-    PrintErrorMessage('E',"vdisplay","error during DisplayView");
+    PrintViewSettings(thePic);
+    break;
+  default :
+    PrintErrorMessage('E',"vdisplay","too many options");
     return (CMDERRORCODE);
   }
 
-  return (OKCODE);
+  return(OKCODE);
 }
 
 /****************************************************************************/
@@ -9539,12 +9533,8 @@ static INT ReInitCommand (INT argc, char **argv)
   }
   if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (CMDERRORCODE);
 
-  if (BVPD_CONFIG(theBVPDesc)==NULL)
-  {
-    PrintErrorMessage('E',"reinit","the problem has no reinit\n");
-    return(CMDERRORCODE);
-  }
-  (*BVPD_CONFIG (theBVPDesc))(argc,argv);
+  if (BVPD_CONFIG(theBVPDesc)!=NULL)
+    (*BVPD_CONFIG (theBVPDesc))(argc,argv);
 
   return(OKCODE);
 }
@@ -10316,6 +10306,8 @@ static INT CreateFormatCommand (INT argc, char **argv)
         For a format previously enroled by use of the 'newformat' command the 'setpf'
         command specifies the symbols that are displayed when 'vmlist' is called with
         '$d' (list vector data) or '$d $m' (list vector and matrix data).
+        '0' clears the list of symbols, '+' adds further symbols, and '-'
+        removes symbols from that list.
 
         EXAMPLE:
    .vb
@@ -10324,11 +10316,11 @@ static INT CreateFormatCommand (INT argc, char **argv)
         open grid $f ns $h 1000000;
 
  # print sol, rhs vector data and MAT, LU matrix data of vector with index 10
-        setpf ns $V 0 $M 0 $V + sol rhs $M + MAT LU;
+        setpf ns $V0 $M0 $V+ sol rhs $M+ MAT LU;
         vmlist $i 10 $m $d;
 
  # print sol vector data and MAT matrix data of vector with index 12
-        setpf ns $V - rhs $M - LU;
+        setpf ns $V- rhs $M- LU;
         vmlist $i 12 $m $d;
    .ve
 
@@ -12185,9 +12177,7 @@ INT InitCommands ()
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
 
   /* commands for grape */
-        #ifdef __GRAPE_TRUE__
   if (CreateCommand("grape",                      CallGrapeCommand                                )==NULL) return (__LINE__);
-        #endif
 
   /* commands for window and picture management */
   if (CreateCommand("screensize",         ScreenSizeCommand                               )==NULL) return (__LINE__);
