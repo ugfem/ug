@@ -59,9 +59,13 @@
 
 enum Priorities
 {
-  PrioNone   = 0,
-  PrioGhost  = 5,
-  PrioMaster = 7
+  PrioNone     = 0,
+  PrioGhost    = 5,
+  PrioMaster   = 7,
+  PrioElement  = 10,
+  PrioNode     = 11,
+  PrioVertex   = 12,
+  PrioVector   = 13
 };
 
 

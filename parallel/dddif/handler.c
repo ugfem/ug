@@ -93,7 +93,7 @@ static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
 	while (level > TOPLEVEL(mg))
 	{
 		CreateNewLevel(mg);
-UserWriteF("CreateNewLevel %d", TOPLEVEL(mg));
+		UserWriteF("CreateNewLevel %d", TOPLEVEL(mg));
 		/* TODO error handling, CreateNewLevel() may return NULL */
 	}
 
@@ -192,14 +192,13 @@ void VectorUpdate (DDD_OBJ obj)
 
 void VectorXferCopy (DDD_OBJ obj, int proc, int prio)
 {
-	int 	nmat;
+	int 	nmat=0;
 	MATRIX	*mat;
 	VECTOR  *vec = (VECTOR *)obj;
 	size_t  sizeArray[30]; /* TODO: define this static global TODO: take size as maximum of possible connections */
 
 	PRINTDEBUG(dddif,2,("%2d:  VectorXferCopy(): v=%x AddData nmat=%d\n",me,vec,nmat))
 
-	nmat=0;
 	for(mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
 	{
 		if (XFERMATX(mat) == COPY) 
@@ -235,7 +234,7 @@ void VectorGatherConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 	int nconn=0;
 	int Size;
 
-	PRINTDEBUG(dddif,3,("%2d:  VectorGatherConnX(): v=%x cnt=%d type=%d veobj=%d\n",me,vec,cnt,type_id,OBJT(vec)))
+	PRINTDEBUG(dddif,3,("%2d:  VectorGatherConnX(): v=%x ID=%d cnt=%d type=%d veobj=%d\n",me,vec,ID(VOBJECT(vec)),cnt,type_id,OBJT(vec)))
 	if (cnt<=0) return;
 
 	for (conn=VSTART((VECTOR *) vec); conn!=NULL; conn=MNEXT(conn))
@@ -250,9 +249,8 @@ void VectorGatherConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 			}
 			ENDDEBUG
 
-			PRINTDEBUG(dddif,3,("%2d:  VectorGatherConnX(): v=%x conn=%x Size=%d \n",me,vec,conn,Size))
-
 			Size = (MDIAG(conn)?MSIZE(conn):2*MSIZE(conn));
+			PRINTDEBUG(dddif,3,("%2d:  VectorGatherConnX(): v=%x conn=%x Size=%d nodetoID=%d\n",me,vec,conn,Size,ID(VOBJECT(MDEST(conn)))))
 			memcpy(Data[nconn],MMYCON(conn),Size);
 
 			/* save pointer to destination vector */
@@ -276,7 +274,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 	Diag = 1; /* TODO: Is diagonal element?? */
 	ds;   /* TODO: How big is ds?        */
 
-	PRINTDEBUG(dddif,3,("%2d:  VectorScatterConnX(): v=%x cnt=%d type=%d veobj=%d\n",me,vec,cnt,type_id,OBJT(vec)))
+	PRINTDEBUG(dddif,3,("%2d:  VectorScatterConnX(): v=%x ID=%d cnt=%d type=%d veobj=%d\n",me,vec,ID(VOBJECT(vec)),cnt,type_id,OBJT(vec)))
 	if (cnt<=0) return;
 
 	Diag  = MDIAG((MATRIX *)Data[nconn]);
@@ -291,11 +289,11 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 	conn = (CONNECTION *)GetMem(dddctrl.currMG->theHeap,Size,FROM_BOTTOM);
 	if (conn==NULL)
 	{
-		UserWrite("%2d:  VectorScatterConnX(): can't get mem for conn=%x\n",conn);
+		UserWriteF("%2d:  VectorScatterConnX(): can't get mem for conn=%x\n",conn);
 		return;
 	}
 
-	PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d\n",me,vec,conn,Size))
+	PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d nodetoID=%d\n",me,vec,conn,Size,ID(VOBJECT(MDEST(conn)))))
 	memcpy(conn,Data[nconn++],Size);
 
 	/* look which matrix belongs to that vector 				*/
@@ -332,13 +330,13 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 			UserWrite("%2d:  VectorScatterConnX(): ERROR can't get mem for conn=%x\n",conn);
 		}
 
-		PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d\n",me,vec,conn,Size))
+		PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d nodetoID=%d\n",me,vec,conn,Size,ID(VOBJECT(MDEST(conn)))))
 		memcpy(conn,Data[nconn++],Size);
 
 		/* look which matrix belongs to that vector 				*/
 		/* TODO: change this to faster macro sequence if stable 	*/
 		if (!MDIAG(conn))
-			{
+		{
 			if (XFERMATX(CMATRIX0(conn))==COPY)			conn = CMATRIX0(conn);
 			else if (XFERMATX(CMATRIX1(conn))==COPY)
 			{
@@ -378,8 +376,9 @@ void VectorObjMkCons(DDD_OBJ obj)
 			}
 			continue;
 		}
-		MNEXT(MADJ(conn)) = VSTART(vectorto);
-		VSTART(vectorto) = MADJ(conn);
+		/* reconstruct pointers of adj matrix */
+		MNEXT(MADJ(conn)) = MNEXT(VSTART(vectorto));
+		MNEXT(VSTART(vectorto)) = MADJ(conn);
 		MDEST(MADJ(conn)) = vector;
 	}
 
@@ -408,6 +407,8 @@ void VertexUpdate (DDD_OBJ obj)
 	VERTEX  *after;
 	GRID  *theGrid;
 
+	PRINTDEBUG(dddif,1,("%2d: VertexUpdate(): v=%x I/BVOBJ=%d\n",me,pv,OBJT(pv)))
+
 	theGrid = GRID_ON_LEVEL(dddctrl.currMG,0);
 	after = LASTVERTEX(theGrid);
 
@@ -435,6 +436,12 @@ void VertexUpdate (DDD_OBJ obj)
 		/* update ID of vertex */
 		/* TODO: change to global id */
 		ID(pv) = (theGrid->mg->vertIdCounter)++;
+
+	/* update corner information for corner vertices on level 0 grid */
+	PRINTDEBUG(dddif,3,("%2d: VertexUpdate(): ID(%x)=%d\n",me,pv,ID(pv)))
+	if (theGrid->level==0 && ID(pv)<dddctrl.currMG->numOfCorners) {
+		dddctrl.currMG->corners[ID(pv)] = pv;
+	}
 }
 
 void BVertexXferCopy (DDD_OBJ obj, int proc, int prio)
@@ -550,6 +557,7 @@ void NodeObjMkCons(DDD_OBJ obj)
 
 	for (link=START(node); link!=NULL; link=NEXT(link))
 	{
+		PRINTDEBUG(dddif,3,("%2d: NodeObjMkCons(): XFERLINK(link)=%d\n",me,XFERLINK(link)))
 		/* TODO: Durch schnelle Version ersetzen */
 		if (XFERLINK(link)==COPY) nodeto = NBNODE(link);
 		else
@@ -703,7 +711,7 @@ void NodeXferCopy (DDD_OBJ obj, int proc, int prio)
 	/* copy vertex */
 	PRINTDEBUG(dddif,2,("%2d: NodeXferCopy(): n=%x Xfer v=%x\n",me,node,MYVERTEX(node)))
 
-	DDD_XferCopyObj(PARHDRV(MYVERTEX(node)), proc, prio);
+	DDD_XferCopyObj(PARHDRV(MYVERTEX(node)), proc, PrioVertex);
 
 	/* copy vector if defined */
 	if (dddctrl.nodeData)
@@ -820,7 +828,7 @@ void NodeScatterEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 
 /****************************************************************************/
 /*																			*/
-/* Function:  ElementUpdate  										*/
+/* Function:  ElementUpdate  												*/
 /*																			*/
 /* Purpose:   update information related to an element.						*/
 /*			  current implementation only for level 0 grids					*/
@@ -906,18 +914,8 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 
 	PRINTDEBUG(dddif,1,("%d: ElementXferCopy(): pe=%x proc=%d prio=%d EOBJT=%d\n", me, obj, proc, prio, OBJT(pe)))
 
-	/* send father element. this is a temporary solution, which will
-	   be removed lateron when thinking about real load balancing. */
-	{
-		ELEMENT *f = EFATHER(pe);
-		if (f!=0)
-			DDD_XferCopyObjX(PARHDRE(f), proc, prio,
-				(OBJT(f)==BEOBJ) ? BND_SIZE(TAG(f)) : INNER_SIZE(TAG(f))
-        	);
-	}
-	
-	/* add element sides; must be done before any XferCopyObj-call! */
-/*
+	/* add element sides; must be done before any XferCopyObj-call! herein */
+	/* or directly after XferCopyObj-call */
 	nelemside = 0;
 	if (OBJT(pe)==BEOBJ)
 	{
@@ -928,36 +926,40 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 
 		if (nelemside>0) DDD_XferAddData(nelemside,TypeElementSide);
 	}
-*/
 
+	/* send father element. this is a temporary solution, which will
+	   be removed lateron when thinking about real load balancing. */
+	{
+		ELEMENT *f = EFATHER(pe);
+		if (f!=0)
+			DDD_XferCopyObjX(PARHDRE(f), proc, prio,
+				(OBJT(f)==BEOBJ) ? BND_SIZE(TAG(f)) : INNER_SIZE(TAG(f))
+        	);
+	}
+	
 	/* copy corner nodes */
-/*
 	for(i=0; i<CORNERS_OF_ELEM(pe); i++)
 	{
 		node = CORNER(pe,i);
 		if (XFERNODE(node) == 0)
 		{
 			PRINTDEBUG(dddif,2,("%2d:ElementXferCopy():  e=%x Xfer n=%x i=%d\n",me,pe,node,i))
-			DDD_XferCopyObj(PARHDR(node), proc, prio);
+			DDD_XferCopyObj(PARHDR(node), proc, PrioNode);
 			SETXFERNODE(node,1);
 		}
 	}
-*/
 
 	/* copy element vector */
-/*
 	if (dddctrl.elemData)
 	  {
 		vec = EVECTOR(pe);
 		
 		PRINTDEBUG(dddif,2,("%2d:ElementXferCopy(): e=%x ELEMVEC=%x size=%d\n",me,pe,vec,dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)]))
 
-		  DDD_XferCopyObjX(PARHDR(vec), proc, prio, dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)]);
+		  DDD_XferCopyObjX(PARHDR(vec), proc, PrioVector, dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)]);
 	  }
-*/
 
 	/* copy sidevectors */
-/*
 	if (dddctrl.sideData)
 	  {
 		for (i=0; i<SIDES_OF_ELEM(pe); i++)
@@ -972,7 +974,6 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 			  }
 		  }
 	  }
-*/
 }
 
 
@@ -986,7 +987,7 @@ void ElemGatherElemSide (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
 
 	data = (char *)Data;
 
-	PRINTDEBUG(dddif,3,("%2d:  ElemGatherElemSide(): e=%x nelemside=%d type=%d bvobj=%d\n",me,pe,cnt,type_id,OBJT(pe)))
+	PRINTDEBUG(dddif,3,("%2d:  ElemGatherElemSide(): pe=%x nelemside=%d type=%d bvobj=%d\n",me,pe,cnt,type_id,OBJT(pe)))
 
 	for (i=0; i<SIDES_OF_ELEM(pe); i++)
 	{
@@ -1014,7 +1015,7 @@ void ElemScatterElemSide (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
 	theGrid = GRID_ON_LEVEL(dddctrl.currMG,0);
 	data = (char *)Data;
 
-	PRINTDEBUG(dddif,3,("%2d: ElemScatterElemSide(): pe=%x nelemside=%x\n",me,pe,cnt))
+	PRINTDEBUG(dddif,3,("%2d: ElemScatterElemSide(): pe=%x nelemside=%d type=%d obj=%d\n",me,pe,cnt,type_id,OBJT(pe)))
 
 	for (i=0; i<SIDES_OF_ELEM(pe); i++)
 	{
@@ -1114,10 +1115,8 @@ void ddd_HandlerInit (void)
 	DDD_HandlerRegister(TypeTrBElem,
 		HANDLER_LDATACONSTRUCTOR, ElementLDataConstructor,
 		HANDLER_XFERCOPY,		ElementXferCopy,
-/*
 		HANDLER_XFERGATHER,		ElemGatherElemSide,
 		HANDLER_XFERSCATTER,	ElemScatterElemSide,
-*/
 		HANDLER_END
 	);
 
@@ -1130,10 +1129,8 @@ void ddd_HandlerInit (void)
 	DDD_HandlerRegister(TypeQuBElem,
 		HANDLER_LDATACONSTRUCTOR, ElementLDataConstructor,
 		HANDLER_XFERCOPY,		ElementXferCopy,
-/*
 		HANDLER_XFERGATHER,		ElemGatherElemSide,
 		HANDLER_XFERSCATTER,	ElemScatterElemSide,
-*/
 		HANDLER_END
 	);
 	#endif
@@ -1148,10 +1145,8 @@ void ddd_HandlerInit (void)
 	DDD_HandlerRegister(TypeTeBElem,
 		HANDLER_LDATACONSTRUCTOR, ElementLDataConstructor,
 		HANDLER_XFERCOPY,		ElementXferCopy,
-/*
 		HANDLER_XFERGATHER,		ElemGatherElemSide,
 		HANDLER_XFERSCATTER,	ElemScatterElemSide,
-*/
 		HANDLER_END
 	);
 	#endif

@@ -147,8 +147,13 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
 
   DDD_TypeDefine(dddType, ge,
                  EL_OBJPTR, r+n_offset[tag],       ps*desc->corners_of_elem, TypeNode,
-                 EL_OBJPTR, r+father_offset[tag],  ps*1,                     dddType,
+                #ifdef __TWODIM__
                  EL_OBJPTR, r+sons_offset[tag],    ps*desc->max_sons_of_elem,dddType,
+                #endif
+                #ifdef __THREEDIM__
+                 EL_OBJPTR, r+father_offset[tag],  ps*1,                     dddType,
+                #endif
+                 EL_OBJPTR, r+sons_offset[tag],    ps,dddType,
                  EL_OBJPTR, r+nb_offset[tag],      ps*desc->sides_of_elem,   dddType,
                  EL_CONTINUE);
 
@@ -177,7 +182,7 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
   else
   {
     DDD_TypeDefine(dddType, ge,
-                   EL_LDATA, r+side_offset[tag],  ps*desc->sides_of_elem,
+                   EL_GDATA, r+side_offset[tag],  ps*desc->sides_of_elem,
                    EL_END, desc->bnd_size);
 
     /* init type mapping arrays */
@@ -325,7 +330,8 @@ static void ddd_DefineTypes (void)
                  /* object must be LDATA, because reftype may be a non-DDD-object */
                  /* (e.g., edge). therefore, 'object' must be updated by MKCONS-  */
                  /* handler of associated object. 960404 KB */
-                 EL_LDATA, ELDEF(v.object),
+                 /* TODO: decide whether LDATA or OBJPTR for different VectorTypes*/
+                 EL_OBJPTR, ELDEF(v.object), TypeNode,
                  EL_LDATA,  ELDEF(v.pred),
                  EL_LDATA,  ELDEF(v.succ),
                  EL_GDATA,  ELDEF(v.index),
@@ -442,7 +448,8 @@ static void ddd_DefineTypes (void)
                  EL_GDATA,  ELDEF(m.control),
                  EL_LDATA,  ELDEF(m.next),
                  EL_OBJPTR, ELDEF(m.vect),   TypeVector,
-                 EL_LDATA,  ELDEF(m.value),
+                 /* TODO: not needed
+                    EL_LDATA,  ELDEF(m.value), */
                  EL_END,    &m+1
                  );
 
@@ -454,12 +461,10 @@ static void ddd_DefineTypes (void)
                  EL_LDATA,  ELDEF(vs.thePatch),
                  EL_GDATA,  ELDEF(vs.lambda),
                  EL_LDATA,  ELDEF(vs.next),
-                 EL_END,    &vs+1
 
-                 /* TODO: alte version. loeschen?
-                                 EL_GDATA,  ELDEF(vs+1),	   add a dummy containing segment id
-                                 EL_END,    ((char *)&vs)+(sizeof(VSEGMENT)+sizeof(INT))
-                  */
+                 /* TODO: alte version. has id to be send? */
+                 EL_GDATA,  &vs+1, sizeof(INT), /* add a dummy containing segment id */
+                 EL_END,    ((char *)&vs)+(sizeof(VSEGMENT)+sizeof(INT))
                  );
 
 
@@ -491,12 +496,10 @@ static void ddd_DefineTypes (void)
                  EL_GDATA,  ELDEF(es.lambda),
                  EL_LDATA,  ELDEF(es.pred),
                  EL_LDATA,  ELDEF(es.succ),
-                 EL_END,    &es+1
 
-                 /* TODO: alte version. loeschen?
-                                 EL_GDATA,  &es+1,	 add a dummy containing segment id
-                                 EL_END,    ((char *)&es)+(sizeof(ELEMENTSIDE)+sizeof(INT))
-                  */
+                 /* TODO: alte version. has id to be send? */
+                 EL_GDATA,  &es+1, sizeof(INT), /* add a dummy containing segment id */
+                 EL_END,    ((char *)&es)+(sizeof(ELEMENTSIDE)+sizeof(INT))
                  );
 }
 
