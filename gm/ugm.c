@@ -733,10 +733,10 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after)
     }
     else
     {
-      if (side==0) { XI(theVertex)= 2*z-1; ETA(theVertex)= -1.0; }
-      if (side==1) { XI(theVertex)= 1.0;       ETA(theVertex)= 2*z-1; }
-      if (side==2) { XI(theVertex)= 1-2*z; ETA(theVertex)= 1.0; }
-      if (side==3) { XI(theVertex)= -1.0;  ETA(theVertex)= 1-2*z; }
+      if (side==0) { XI(theVertex)= z;   ETA(theVertex)= 0.0; }
+      if (side==1) { XI(theVertex)= 1.0; ETA(theVertex)= z; }
+      if (side==2) { XI(theVertex)= z;   ETA(theVertex)= 1.0; }
+      if (side==3) { XI(theVertex)= 0.0; ETA(theVertex)= z; }
     }
     VFATHER(theVertex) = theElement;
     SETMOVE(theVertex,1);
@@ -748,19 +748,11 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after)
     if (theVertex==NULL) return(NULL);
     XC(theVertex) = x;
     YC(theVertex) = y;
-    if (n==3)
-    {
-      if (side==0) { XI(theVertex)= 0.5; ETA(theVertex)= 0.0; }
-      if (side==1) { XI(theVertex)= 0.5; ETA(theVertex)= 0.5; }
-      if (side==2) { XI(theVertex)= 0.0; ETA(theVertex)= 0.5; }
-    }
-    else
-    {
-      if (side==0) { XI(theVertex)= 0.0; ETA(theVertex)=-1.0; }
-      if (side==1) { XI(theVertex)= 1.0; ETA(theVertex)= 0.0; }
-      if (side==2) { XI(theVertex)= 0.0; ETA(theVertex)= 1.0; }
-      if (side==3) { XI(theVertex)=-1.0; ETA(theVertex)= 0.0; }
-    }
+    V2_LINCOMB(0.5,LOCAL_COORD_OF_ELEM(theElement,
+                                       CORNER_OF_SIDE(theElement,side,0)),
+               0.5,LOCAL_COORD_OF_ELEM(theElement,
+                                       CORNER_OF_SIDE(theElement,side,1)),
+               LCVECT(theVertex))
     VFATHER(theVertex) = theElement;
     SETMOVE(theVertex,2);
   }
