@@ -12035,6 +12035,93 @@ static INT RepErrCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   ShowConfig - show the main configuration settings of this ug-programm
+
+   DESCRIPTION:
+   This command shows the main configuration options having been active
+   when this ug was compiled.
+   D*/
+/****************************************************************************/
+
+static INT ShowConfigCommand (INT argc, char **argv)
+{
+  NO_OPTION_CHECK(argc,argv);
+
+  UserWrite("Configuration of this programm:\n");
+
+#ifdef _2
+  UserWrite("    Dimension:    2\n");
+#elif defined _3
+  UserWrite("    Dimension:    3\n");
+#else
+  UserWrite("    Dimension:    unknown\n");
+#endif
+
+#ifdef ModelP
+  UserWrite("    Model:        parallel\n");
+#else
+  UserWrite("    Model:        sequential\n");
+#endif
+
+#ifdef __AIX__
+  UserWrite("    Architecture: AIX\n");
+#elif defined __C90__
+  UserWrite("    Architecture: Cray_C90\n");
+#elif defined __CC__
+  UserWrite("    Architecture: Parsytec_CC\n");
+#elif defined __DEC__
+  UserWrite("    Architecture: DEC\n");
+#elif defined __HP__
+  UserWrite("    Architecture: HP\n");
+#elif defined __NECSX4__
+  UserWrite("    Architecture: NECSX4\n");
+#elif defined __PARAGON__
+  UserWrite("    Architecture: PARAGON\n");
+#elif defined __PC__
+  UserWrite("    Architecture: Linux_PC\n");
+#elif defined __POWERGC__
+  UserWrite("    Architecture: Parsytec_PowerGC\n");
+#elif defined __SGI__
+  UserWrite("    Architecture: SGI\n");
+#elif defined __SUN__
+  UserWrite("    Architecture: SUN_Solaris\n");
+#elif defined __SUN4GCC__
+  UserWrite("    Architecture: SUN_OS\n");
+#elif defined __T3D__
+  UserWrite("    Architecture: Cray_T3D\n");
+#elif defined __T3E__
+  UserWrite("    Architecture: Cray_T3E\n");
+#elif defined __MPW32__
+  UserWrite("    Architecture: Mac_MPW\n");
+#elif defined __MWCW__
+  UserWrite("    Architecture: Mac_Power\n");
+#elif defined __PARIX__
+  UserWrite("    Architecture: PARIX\n");
+#else
+  UserWrite("    Architecture: unknown\n");
+#endif
+
+
+#ifdef Debug
+  UserWrite("    Debugging:    ON\n");
+#elif defined NDEBUG
+  UserWrite("    Debugging:    OFF\n");
+#else
+  UserWrite("    Debugging:    unknown\n");
+#endif
+
+#ifdef RIF_SOCKETS
+  UserWrite("    remote:       ON\n");
+#else
+  UserWrite("    remote:       OFF\n");
+#endif
+
+  return (OKCODE);
+}
+
+
+/****************************************************************************/
+/*D
    array - family of ug-commands to handle n-dimensional arrays of doubles
 
    DESCRIPTION:
@@ -13125,6 +13212,7 @@ INT InitCommands ()
   if (CreateCommand("debug",                      DebugCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("reperr",             RepErrCommand                               )==NULL) return (__LINE__);
         #endif
+  if (CreateCommand("showconfig",         ShowConfigCommand                           )==NULL) return (__LINE__);
 
 #ifdef ModelP
   /* commands for parallel version */
