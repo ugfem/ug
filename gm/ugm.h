@@ -86,10 +86,10 @@ INT          MGMemory               (MULTIGRID *theMG, INT *used, INT *free);
 #ifdef ModelP
 void            *GetMemoryLocal                 (MULTIGRID *theMG, INT size, INT type);
 INT              PutFreeObjectLocal             (MULTIGRID *theMG, void *object, INT size, INT type);
-#endif
 
 /* create basic objects */
 EDGE        *CreateEdge             (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
+#endif
 ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,
                                      NODE **nodes);
 INT         CreateSonElementSide    (GRID *theGrid, ELEMENT *theElement,

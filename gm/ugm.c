@@ -1107,7 +1107,7 @@ EDGE *GetEdge (NODE *from, NODE *to)
    CreateEdge - Return pointer to a new edge structure
 
    SYNOPSIS:
-   EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to);
+   EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -1125,6 +1125,9 @@ EDGE *GetEdge (NODE *from, NODE *to)
    D*/
 /****************************************************************************/
 
+#ifndef ModelP
+static
+#endif
 EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
 {
   EDGE *pe;
