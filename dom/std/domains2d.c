@@ -3991,6 +3991,501 @@ static INT InitBeam (void)
 }
 /* end of T_Beam-domain-definition */
 
+
+
+/****************************************************************************/
+/*                                                                          */
+/*  Definition des Brenner/Scott Titelgebietes, Name : Channel
+ */
+/*                                                                          */
+/****************************************************************************/
+
+/* Zur vollstaendigen Beschreibung eines Randsteueckes benoetigen wir
+ * lediglich die Koordinaten der Endpunkte, weil alle Randstuecke Teile
+   von
+ * Geraden sind. Die Endpunkte werden von (0,0) linksherum fortlaufend
+ * durchnumeriert. Es gibt 26 solcher Endpunkte mit den folgenden
+ * Koordinaten:
+ */
+
+#define NAME(n) Segment ## n
+#define QUOTE(t) STR(t)
+#define NO_OF_SEG 26
+
+static DOUBLE SegCorner[NO_OF_SEG][2] = { {.00, .00},  {.19, .00},
+                                          {.19, .18},  {.13, .29},
+                                          {.13, .48},  {.19, .59},
+                                          {.19, .82},  {.25, .82},
+                                          {.25, .00},  {.69, .00},
+                                          {.69, .53},  {.88, .59},
+                                          {.88, .00},  {1.0, .00},
+                                          {1.0, 1.0},  {.81, .65},
+                                          {.75, .88},  {.56, .88},
+                                          {.56, .12},  {.31, .12},
+                                          {.31, .30},  {.50, .47},
+                                          {.50, .71},  {.33, .82},
+                                          {.33, 1.0},  {.00, 1.0} };
+
+
+
+#define LINE_FROM_POINT_TO_POINT(number, startpt, endpt) \
+  static INT Segment ## number  (void *data, DOUBLE *param, DOUBLE *result)\
+  {\
+    DOUBLE lambda;\
+    ASSERT(startpt < NO_OF_SEG && endpt < NO_OF_SEG);\
+    lambda = param[0];\
+    if ((lambda<0.0)||(lambda>1.0)) return (1);\
+    result[0] = (1.0 - lambda) * SegCorner[startpt][0] \
+                +lambda * SegCorner[endpt]  [0];\
+    result[1] = (1.0 - lambda) * SegCorner[startpt][1] \
+                +lambda * SegCorner[endpt][1];\
+    return (0); }
+
+LINE_FROM_POINT_TO_POINT(0,0,1)
+LINE_FROM_POINT_TO_POINT(1,1,2)
+LINE_FROM_POINT_TO_POINT(2,2,3)
+LINE_FROM_POINT_TO_POINT(3,3,4)
+LINE_FROM_POINT_TO_POINT(4,4,5)
+LINE_FROM_POINT_TO_POINT(5,5,6)
+LINE_FROM_POINT_TO_POINT(6,6,7)
+LINE_FROM_POINT_TO_POINT(7,7,8)
+LINE_FROM_POINT_TO_POINT(8,8,9)
+LINE_FROM_POINT_TO_POINT(9,9,10)
+LINE_FROM_POINT_TO_POINT(10,10,11)
+LINE_FROM_POINT_TO_POINT(11,11,12)
+LINE_FROM_POINT_TO_POINT(12,12,13)
+LINE_FROM_POINT_TO_POINT(13,13,14)
+LINE_FROM_POINT_TO_POINT(14,14,15)
+LINE_FROM_POINT_TO_POINT(15,15,16)
+LINE_FROM_POINT_TO_POINT(16,16,17)
+LINE_FROM_POINT_TO_POINT(17,17,18)
+LINE_FROM_POINT_TO_POINT(18,18,19)
+LINE_FROM_POINT_TO_POINT(19,19,20)
+LINE_FROM_POINT_TO_POINT(20,20,21)
+LINE_FROM_POINT_TO_POINT(21,21,22)
+LINE_FROM_POINT_TO_POINT(22,22,23)
+LINE_FROM_POINT_TO_POINT(23,23,24)
+LINE_FROM_POINT_TO_POINT(24,24,25)
+LINE_FROM_POINT_TO_POINT(25,25,0 )
+
+/*
+ *  so, die naechsten Punkte (das sind 26-33) und die dazugehhoerigen
+ *  Segmente (26-33) definieren den Part zwei, das Gebiet zwischen den
+   beiden
+ *  linken Saeulen
+ *
+ */
+
+LINE_FROM_POINT_TO_POINT(26,1,8)
+
+/*
+ *  so, die naechsten Punkte (das sind 34-37 und die dazugehhoerigen
+ *  Segmente (26-33) definieren den Part drei, das Gebiet zwischen den
+   beiden
+ *  rechten Saeulen
+ *
+ */
+
+LINE_FROM_POINT_TO_POINT(34,9,12)
+
+
+/*
+ *  so, die naechsten Punkte (das sind 38-48 und die dazugehhoerigen
+ *  Segmente (26-33) definieren den Part vier, das Gebiet rechts oben
+ *
+ */
+
+LINE_FROM_POINT_TO_POINT(38,14,24)
+/*
+    Numerierung: 0 - 25: Schlauch
+                26 - 33: links unten
+                34 - 37: rechts unten
+                38 - 48: rechts oben
+
+    Der Schlauch wurde von links unten (Koordinate (0,0)) bis in die
+   rechte obere
+    Ecke (1,1), Nummer 14, fortlaufend durchnumeriert, dann weiter
+   linksherum bis
+    Nummer 25 oben links (0,1)
+    Weiter sind folgende Punkte am selben Ort
+
+    1-26, 8-27,7,28,6-29,etc. bis 33-2
+    9-34,12-35,11-36,10-37
+    14-38,24-39,23-40,22-41, etc. bis 15-48
+ */
+
+static const INT channelp1cr_sd2p[5] = {0,3,0,0,0};
+static const INT channelp1cr_sg2p[49] = {3,2,2,2,2,2,2,2,3,2, /* 10
+                                                                 Zahlen pro Zeile */
+                                         2,2,3,3,2,2,2,2,2,2,
+                                         2,2,2,2,3,3,         /* das war
+                                                                 der Schlauch */
+                                         0,1,1,1,1,1,1,1,     /* links
+                                                                 unten */
+                                         0,1,1,1,             /* rechts
+                                                                 unten */
+                                         0,1,1,1,1,1,1,1,1,1, /* rechts
+                                                                 oben */
+                                         1};                  /* auch
+                                                                 rechts oben */
+static const INT channelp1cr_pt2p[49] = {3,2,2,2,2,2,2,2,2,2, /* 10
+                                                                 Zahlen pro Zeile */
+                                         2,2,2,3,2,2,2,2,2,2,
+                                         2,2,2,2,2,3,         /* das war
+                                                                 der Schlauch */
+                                         1,1,1,1,1,1,1,1,     /* links
+                                                                 unten */
+                                         1,1,1,1,             /* rechts
+                                                                 unten */
+                                         1,1,1,1,1,1,1,1,1,1, /* rechts
+                                                                 oben */
+                                         1};
+static const DOMAIN_PART_INFO channelp1cr_dpi =
+{channelp1cr_sd2p,channelp1cr_sg2p,channelp1cr_pt2p};
+
+
+static INT InitChannel (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = MidPoint[1] = 0.5;
+  radius = 0.55;
+
+  if (CreateDomainWithParts(
+        "Channel",                              /* name of the new
+                                                   domain         */
+        MidPoint,radius,                        /* circle containing the
+                                                   domain   */
+        49,                                     /* number of boundary
+                                                   segments    */
+        49,                                     /* number of corners
+                                                 */
+        NO,                                     /* true if domain is
+                                                   convex       */
+        3,
+        &channelp1cr_dpi)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(
+        QUOTE(NAME(0)),                      /* name of the boundary
+                                                segment         */
+        1,                                   /* number of left subdomain
+                                              */
+        0,                                   /* number of right
+                                                subdomain            */
+        0,                                   /* number of segment,
+                                                starting with 0   */
+        0,                                   /* number of corner where
+                                                segment starts*/
+        1,                                   /* number of corner where
+                                                segment ends  */
+        1,                                   /* resolution, use 1 for
+                                                straight line  */
+        0.0,                                 /* begin of parameter
+                                                interval          */
+        1.0,                                 /* end of parameter
+                                                interval            */
+        NAME(0),                             /* function mapping
+                                                parameter to world  */
+        NULL                                 /* user defined pointer to
+                                                be supplied  */
+        )==NULL) return(1);
+
+  if (CreateBoundarySegment2D(QUOTE(NAME(1)),1,2, 1,1,2,
+                              1,0.0,1.0,NAME(1),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(2)),1,2, 2,2,3,
+                              1,0.0,1.0,NAME(2),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(3)),1,2, 3,3,4,
+                              1,0.0,1.0,NAME(3),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(4)),1,2, 4,4,5,
+                              1,0.0,1.0,NAME(4),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(5)),1,2, 5,5,6,
+                              1,0.0,1.0,NAME(5),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(6)),1,2, 6,6,7,
+                              1,0.0,1.0,NAME(6),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(7)),1,2, 7,7,8,
+                              1,0.0,1.0,NAME(7),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(8)),1,0, 8,8,9,
+                              1,0.0,1.0,NAME(8),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(9)),1,3, 9,9,10,
+                              1,0.0,1.0,NAME(9),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(10)),1,3, 10,10,11,
+                              1,0.0,1.0,NAME(10),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(11)),1,3, 11,11,12,
+                              1,0.0,1.0,NAME(11),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(12)),1,0, 12,12,13,
+                              1,0.0,1.0,NAME(12),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(13)),1,0, 13,13,14,
+                              1,0.0,1.0,NAME(13),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(14)),1,4, 14,14,15,
+                              1,0.0,1.0,NAME(14),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(15)),1,4, 15,15,16,
+                              1,0.0,1.0,NAME(15),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(16)),1,4, 16,16,17,
+                              1,0.0,1.0,NAME(16),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(17)),1,4, 17,17,18,
+                              1,0.0,1.0,NAME(17),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(18)),1,4, 18,18,19,
+                              1,0.0,1.0,NAME(18),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(19)),1,4, 19,19,20,
+                              1,0.0,1.0,NAME(19),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(20)),1,4, 20,20,21,
+                              1,0.0,1.0,NAME(20),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(21)),1,4, 21,21,22,
+                              1,0.0,1.0,NAME(21),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(22)),1,4, 22,22,23,
+                              1,0.0,1.0,NAME(22),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(23)),1,4, 23,23,24,
+                              1,0.0,1.0,NAME(23),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(24)),1,0, 24,24,25,
+                              1,0.0,1.0,NAME(24),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(25)),1,0, 25,25,0,
+                              1,0.0,1.0,NAME(25),NULL)==NULL)
+    return(1);
+
+  /* Subdomain 2 */
+  if (CreateBoundarySegment2D("Segment26", 2,0, 26,26,27,
+                              1,0.0,1.0,NAME(26),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment27",1,2, 27,28,27,
+                              1,0.0,1.0,NAME(7),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment28",1,2, 28,29,28,
+                              1,0.0,1.0,NAME(6),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment29",1,2, 29,30,29,
+                              1,0.0,1.0,NAME(5), NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment30",1,2, 30,31,30,
+                              1,0.0,1.0,NAME(4),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment31",1,2, 31,32,31,
+                              1,0.0,1.0,NAME(3),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment32",1,2, 32,33,32,
+                              1,0.0,1.0,NAME(2),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment33",1,2, 33,26,33,
+                              1,0.0,1.0,NAME(1),NULL)==NULL)
+    return(1);
+
+  /* nun zu SD 3 */
+  if (CreateBoundarySegment2D(QUOTE(NAME(34)),3,0, 34,34,35,
+                              1,0.0,1.0,NAME(34),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment35",1,3, 35,36,35,
+                              1,0.0,1.0,NAME(11),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment36",1,3, 36,37,36,
+                              1,0.0,1.0,NAME(10),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment37",1,3, 37,34,37,
+                              1,0.0,1.0,NAME(9),NULL)==NULL)
+    return(1);
+
+  /* und nun zu SD 4 */
+  if (CreateBoundarySegment2D("Segment38",4,0, 38,38,39,
+                              1,0.0,1.0,NAME(38),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment39",1,4, 39,40,39,
+                              1,0.0,1.0,NAME(23),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment40",1,4, 40,41,40,
+                              1,0.0,1.0,NAME(22),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment41",1,4, 41,42,41,
+                              1,0.0,1.0,NAME(21),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment42",1,4, 42,43,42,
+                              1,0.0,1.0,NAME(20),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(43)),1,4, 43,44,43,
+                              1,0.0,1.0,NAME(19),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment44",1,4, 44,45,44,
+                              1,0.0,1.0,NAME(18),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment45",1,4, 45,46,45,
+                              1,0.0,1.0,NAME(17),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment46",1,4, 46,47,46,
+                              1,0.0,1.0,NAME(16),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment47",1,4, 47,48,47,
+                              1,0.0,1.0,NAME(15),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("Segment48",1,4, 48,38,48,
+                              1,0.0,1.0,NAME(14),NULL)==NULL)
+    return(1);
+  /* allocate the boundary segments, segment allocation must */
+  /* immediately follow the domain definition. */
+  /* return ok */
+
+  return(0);
+}
+
+/****************************************************************************/
+/*                                                                          */
+/*  Definition des Brenner/Scott Titelgebietes, Name : Channel
+ */
+/*                                                                          */
+/****************************************************************************/
+
+/* Zur vollstaendigen Beschreibung eines Randsteueckes benoetigen wir
+ * lediglich die Koordinaten der Endpunkte, weil alle Randstuecke Teile
+   von
+ * Geraden sind. Die Endpunkte werden von (0,0) linksherum fortlaufend
+ * durchnumeriert. Es gibt 26 solcher Endpunkte mit den folgenden
+ * Koordinaten:
+ */
+
+
+static INT InitChannelNoParts (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = MidPoint[1] = 0.5;
+  radius = 1.05;
+
+  if (CreateDomain(
+        "ChannelNoParts",                       /* name of the new domain                               */
+        MidPoint,radius,                /* circle containing the domain			*/
+        NO_OF_SEG+3,                                    /* number of boundary segments                  */
+        NO_OF_SEG,                                      /* number of corners					*/
+        NO                                                              /* true if domain is convex				*/
+        )==NULL) return(1);
+  if (CreateBoundarySegment2D(
+        QUOTE(NAME(0)),                                 /* name of the boundary segment                 */
+        1,                                                              /* number of left subdomain				*/
+        0,                                                              /* number of right subdomain			*/
+        0,                                                              /* number of segment, starting with 0	*/
+        0,                                                              /* number of corner where segment starts*/
+        1,                                                              /* number of corner where segment ends  */
+        1,                                                      /* resolution, use 1 for straight line  */
+        0.0,                                                    /* begin of parameter interval			*/
+        1.0,                                                    /* end of parameter interval			*/
+        NAME(0),                                        /* function mapping parameter to world  */
+        NULL                                                    /* user defined pointer to be supplied  */
+        )==NULL) return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(1)),1,2, 1,1,2,
+                              1,0.0,1.0,NAME(1),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(2)),1,2, 2,2,3,
+                              1,0.0,1.0,NAME(2),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(3)),1,2, 3,3,4,
+                              1,0.0,1.0,NAME(3),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(4)),1,2, 4,4,5,
+                              1,0.0,1.0,NAME(4),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(5)),1,2, 5,5,6,
+                              1,0.0,1.0,NAME(5),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(6)),1,2, 6,6,7,
+                              1,0.0,1.0,NAME(6),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(7)),1,2, 7,7,8,
+                              1,0.0,1.0,NAME(7),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(8)),1,0, 8,8,9,
+                              1,0.0,1.0,NAME(8),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(9)),1,3, 9,9,10,
+                              1,0.0,1.0,NAME(9),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(10)),1,3, 10,10,11,
+                              1,0.0,1.0,NAME(10),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(11)),1,3, 11,11,12,
+                              1,0.0,1.0,NAME(11),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(12)),1,0, 12,12,13,
+                              1,0.0,1.0,NAME(12),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(13)),1,0, 13,13,14,
+                              1,0.0,1.0,NAME(13),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(14)),1,4, 14,14,15,
+                              1,0.0,1.0,NAME(14),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(15)),1,4, 15,15,16,
+                              1,0.0,1.0,NAME(15),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(16)),1,4, 16,16,17,
+                              1,0.0,1.0,NAME(16),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(17)),1,4, 17,17,18,
+                              1,0.0,1.0,NAME(17),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(18)),1,4, 18,18,19,
+                              1,0.0,1.0,NAME(18),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(19)),1,4, 19,19,20,
+                              1,0.0,1.0,NAME(19),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(20)),1,4, 20,20,21,
+                              1,0.0,1.0,NAME(20),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(21)),1,4, 21,21,22,
+                              1,0.0,1.0,NAME(21),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(22)),1,4, 22,22,23,
+                              1,0.0,1.0,NAME(22),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(23)),1,4, 23,23,24,
+                              1,0.0,1.0,NAME(23),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(24)),1,0, 24,24,25,
+                              1,0.0,1.0,NAME(24),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(25)),1,0, 25,25,0,
+                              1,0.0,1.0,NAME(25),NULL)==NULL)
+    return(1);
+
+  /* die drei abschliessenden Kanten */
+  if (CreateBoundarySegment2D(QUOTE(NAME(26)),2,0, 26,1,8,
+                              1,0.0,1.0,NAME(26),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(34)),3,0, 27,9,12,
+                              1,0.0,1.0,NAME(34),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(38)),4,0, 28,14,24,
+                              1,0.0,1.0,NAME(38),NULL)==NULL)
+    return(1);
+
+  /* allocate the boundary segments, segment allocation must                            */
+  /* immediately follow the domain definition.							*/
+  /* return ok */
+
+  return(0);
+}
+
 /* configuring a domain */
 
 INT STD_BVP_Configure (INT argc, char **argv)
@@ -4446,6 +4941,16 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Beam") == 0)
     {
       if (InitBeam())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Channel") == 0)
+    {
+      if (InitChannel())
+        return(1);
+    }
+    else if (strcmp(DomainName,"ChannelNoParts") == 0)
+    {
+      if (InitChannelNoParts())
         return(1);
     }
     else
