@@ -1170,6 +1170,7 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
   NP_T_SOLVER *np;
   DOUBLE initialtime,dtime;
   INT result,level;
+  DOUBLE newdt;
 
   /* get numprocs ... */
   np = (NP_T_SOLVER *) theNP;
@@ -1204,6 +1205,14 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
         return (1);
       }
     }
+
+  /* set timestep */
+  if (ReadArgvDOUBLE("dt",&newdt,argc,argv)==0)
+  {
+    bdf->dt = newdt;
+    bdf->dtmin=newdt;             /* -> break if not converged */
+    UserWrite("Setting dt\n");
+  }
 
   /* execute bdf1, nonnested */
   if (ReadArgvOption("bdf1",argc,argv)) {
