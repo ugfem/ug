@@ -71,6 +71,7 @@ typedef struct {                                        /* parameters for solver
   int solver;                                                   /* type of solver to be used			*/
   int preconditioner;                                   /* type of preconditioner				*/
   int maxit;                                                    /* max number of iterations				*/
+  int ex_maxit;                     /* 1 to execute exactly maxit iterations*/
   double red_factor;                                    /* reqired reduction in residual norm	*/
   double dnorm_min;                                     /* convergence limit					*/
 

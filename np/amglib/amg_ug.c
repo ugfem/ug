@@ -109,7 +109,7 @@ typedef struct
 
 /****************************************************************************/
 /*																			*/
-/* definition of exported global variables									*/
+/* definition of ported global variables									*/
 /*																			*/
 /****************************************************************************/
 
@@ -339,7 +339,8 @@ static INT AMGSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
   /* call algebraic multigrid solver */
   if (AMG_Build(&theAMGC->sc,&theAMGC->cc,theAMGC->A)!=AMG_OK) goto exit;
   CSTOP(ti,ii);
-  UserWriteF("AMG : L=%2d BUILD=%10.4lg\n",level,ti);
+  if (theAMGC->sc.verbose>0)
+    UserWriteF("AMG : L=%2d BUILD=%10.4lg\n",level,ti);
 
   return(0);       /* ok, matrix is set up */
 
@@ -526,13 +527,16 @@ static INT AMGSolver (NP_LINEAR_SOLVER *theNP, INT level,
     return (1);
   }
   CSTOP(ti,ii);
-  if (lresult->number_of_linear_iterations != 0)
-    UserWriteF("AMG : L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
-               lresult->number_of_linear_iterations,ti,
-               ti/lresult->number_of_linear_iterations);
-  else
-    UserWriteF("AMG : L=%2d N=%2d TSOLVE=%10.4lg\n",level,
-               lresult->number_of_linear_iterations,ti);
+  if (theAMGC->sc.verbose>0)
+  {
+    if (lresult->number_of_linear_iterations != 0)
+      UserWriteF("AMG : L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
+                 lresult->number_of_linear_iterations,ti,
+                 ti/lresult->number_of_linear_iterations);
+    else
+      UserWriteF("AMG : L=%2d N=%2d TSOLVE=%10.4lg\n",level,
+                 lresult->number_of_linear_iterations,ti);
+  }
 
   return (0);
 
@@ -751,6 +755,12 @@ static INT AMGSolverInit (NP_BASE *theNP, INT argc , char **argv)
     theAMGC->sc.maxit=i;
   else
     theAMGC->sc.maxit=80;
+  theAMGC->sc.ex_maxit=0;
+  if (theAMGC->sc.maxit<0)
+  {
+    theAMGC->sc.maxit=-theAMGC->sc.maxit;
+    theAMGC->sc.ex_maxit=1;
+  }
   theAMGC->sc.red_factor=theAMGC->ls.reduction[0];
   theAMGC->sc.dnorm_min=theAMGC->ls.abslimit[0];
   if (!ReadArgvChar("csm",buf,argc,argv))

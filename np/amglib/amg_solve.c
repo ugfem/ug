@@ -479,10 +479,11 @@ static int ls_solve (AMG_VECTOR *x_in, AMG_VECTOR *b_in)
       AMG_Print(buf);
     }
     dnormlast=dnorm;
+    if (sc->ex_maxit) continue;
     if (dnorm<dnorm0*sc->red_factor) break;
     if (dnorm<sc->dnorm_min) break;
   }
-  if (i==sc->maxit)
+  if (i==sc->maxit && !sc->ex_maxit)
   {
     AMG_Print("solver not converged\n");
     return(-1);
@@ -642,10 +643,11 @@ static int cg_solve (AMG_VECTOR *x, AMG_VECTOR *b)
       AMG_Print(buf);
     }
     dnormlast=dnorm;
+    if (sc->ex_maxit) continue;
     if (dnorm<dnorm0*sc->red_factor) break;
     if (dnorm<sc->dnorm_min) break;
   }
-  if (i==sc->maxit)
+  if (i==sc->maxit && !sc->ex_maxit)
   {
     AMG_Print("solver not converged\n");
     return(-1);
@@ -811,7 +813,7 @@ static int bcgs_solve (AMG_VECTOR *x, AMG_VECTOR *b)
     AMG_daxpy(r[0],-alpha,w);
     AMG_daxpy(x,alpha,z[0]);
     dnorm=sqrt(AMG_ddot(r[0],r[0]));
-    if ( dnorm<dnorm0*sc->red_factor || dnorm<sc->dnorm_min )
+    if ( (dnorm<dnorm0*sc->red_factor || dnorm<sc->dnorm_min) && !sc->ex_maxit )
     {
       if (sc->verbose>0)
       {
@@ -837,10 +839,11 @@ static int bcgs_solve (AMG_VECTOR *x, AMG_VECTOR *b)
       AMG_Print(buf);
     }
     dnormlast=dnorm;
+    if (sc->ex_maxit) continue;
     if (dnorm<dnorm0*sc->red_factor) break;
     if (dnorm<sc->dnorm_min) break;
   }
-  if (i==sc->maxit)
+  if (i==sc->maxit && !sc->ex_maxit)
   {
     AMG_Print("solver not converged\n");
     return(-1);
