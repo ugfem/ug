@@ -240,7 +240,7 @@ int FAMGSolveSystem(FAMG_Interface *interface)
     RETURN(status);
 }
 
-int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def )
+int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def, VECDATA_DESC *smooth_globsol )
 // fine_level in the famg grid stack
 {
 	INT i;
@@ -254,11 +254,12 @@ int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, V
 	//assert(VD_SCALCMP(from)==VD_SCALCMP(to)); has not to be fulfilled
 	// now it is sure we can use for np->smooth_def, from and to the same component
 	
+	FAMGugVector fgglobsol(*(const FAMGugGridVector*)&fg.GetGridVector(),smooth_globsol);
 	FAMGugVector fgsol(*(const FAMGugGridVector*)&fg.GetGridVector(),smooth_sol);
 	FAMGugVector fgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),from);
 	FAMGugVector cgdef(*(const FAMGugGridVector*)&cg.GetGridVector(),to);
 		
-	fg.Restriction(fgsol, fgdef, cgdef);
+	fg.Restriction(fgsol, fgdef, cgdef, fgglobsol);
 	
 	return 0;
 }

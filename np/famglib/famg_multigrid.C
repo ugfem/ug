@@ -295,7 +295,7 @@ int FAMGMultiGrid::Step(int level)
     
     FAMGGrid *g, *cg;
     int i,n1,n2,gamma;
-	
+
     n1 = FAMGGetParameter()->Getn1();
     n2 = FAMGGetParameter()->Getn2();
     gamma = FAMGGetParameter()->Getgamma();
@@ -338,7 +338,7 @@ int FAMGMultiGrid::Step(int level)
         }        
 
         // g->DevideFGDefect(); included in the new restriction
-        g->Restriction(*(g->GetVector(FAMGUNKNOWN)), *(g->GetVector(FAMGDEFECT)), *(cg->GetVector(FAMGDEFECT)));
+        g->Restriction(*(g->GetVector(FAMGUNKNOWN)), *(g->GetVector(FAMGDEFECT)), *(cg->GetVector(FAMGDEFECT)), *(g->GetVector(FAMGUNKNOWN))/*only as dummy!*/ );
         *(cg->GetVector(FAMGUNKNOWN)) = 0.0;
         *(cg->GetVector(FAMGRHS)) = *(cg->GetVector(FAMGDEFECT));
 		for(i = 0; i < gamma; i++) 

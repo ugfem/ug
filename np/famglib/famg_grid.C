@@ -92,35 +92,29 @@ static int* CopyPEBuffer = NULL;
 #endif
 
 INT l_force_consistence (GRID *g, const VECDATA_DESC *x);
-INT l_vector_collectAll (GRID *g, const VECDATA_DESC *x);
+INT l_vector_collectFromGhosts (GRID *g, const VECDATA_DESC *x);
 
 
 // Class FAMGGrid
 
 
 #ifdef FAMG_SPARSE_BLOCK
-void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect) const
+void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect, FAMGVector &fgglobsolution) const
 // including smoothing of fine nodes
 {
 	FAMGVectorEntry fvec;
 	const FAMGTransfer &transfer = *GetTransfer();
 	FAMGTransferEntry *transfg;
 	
-#ifdef ModelP
-	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
-		assert(0);
-#endif
-	
-	
+	// fgsolution = 0.0; implicitly done by JacobiSmoothFG
+
 	// jacobi smoothing for the fine nodes
     fgsolution.JacobiSmoothFG( *GetMatrix(), fgdefect );
     
-
 #ifdef ModelP
 	if (l_vector_consistent(mygrid,((FAMGugVector&)fgsolution).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
 #endif
-	
 	
 	// correct defect
 	Defect(fgdefect, fgdefect, fgsolution);
@@ -128,7 +122,11 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
 #endif
-	
+
+#ifdef USE_UG_DS
+	// correct global solution
+	fgglobsolution += fgsolution;
+#endif
 	
 	const FAMGSparseVector *svfg  = fgdefect.GetSparseVectorPtr();
 	const FAMGSparseVector *svcg  = cgdefect.GetSparseVectorPtr();
@@ -153,7 +151,7 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
         }
 		
 #ifdef ModelP
-	if (l_vector_collectAll(DOWNGRID(mygrid),((FAMGugVector&)cgdefect).GetUgVecDesc())!=NUM_OK) 
+	if (l_vector_collectFromGhosts(DOWNGRID(mygrid),((FAMGugVector&)cgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
 #endif
 	
@@ -170,7 +168,6 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 	const FAMGTransfer &transfer = *GetTransfer();
 	FAMGTransferEntry *transfg;
 	
-	
 #ifdef ModelP
 	// distribute master values to V(H)Ghosts
 	// Note: ghosts exist only on the baselevel and then only in case of coarsegrid agglomeration,
@@ -179,7 +176,6 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 	if (l_ghostvector_consistent(DOWNGRID(mygrid),((FAMGugVector&)cgsol).GetUgVecDesc())!= NUM_OK)
 		assert(0);
 #endif        
-	
 	
 	const FAMGSparseVector *svfg  = fgsol.GetSparseVectorPtr();
 	const FAMGSparseVector *svcg  = cgsol.GetSparseVectorPtr();
@@ -190,7 +186,10 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 	{
 #ifdef ModelP
 		if(!IS_FAMG_MASTER(((FAMGugVectorEntryRef*)(fvec.GetPointer()))->myvector()))
+		{
+        	SparseBlockVSet(svfg,fgsol.GetValuePtr(fvec),0.0); // initialize border components
 			continue;
+		}
 #endif		
 		// fgsol[fvec] = 0.0;
         SparseBlockVSet(svfg,fgsol.GetValuePtr(fvec),0.0);
@@ -208,14 +207,8 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 		assert(0);
 #endif
 
-	
 	// prepare defect for jacobi smoothing
 	Defect(fgdefect, fgdefect, fgsol);
-#ifdef ModelP
-	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
-		assert(0);
-#endif
-	
 
 	if(c == NULL)
     {
@@ -235,7 +228,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
     {
         // famg as transfer
         (*c) += fgsol;
-        fgsol = 0.0;
+        // fgsol = 0.0; implicitly done by JacobiSmoothFG
 
 		// jacobi smoothing for the fine nodes
         fgsol.JacobiSmoothFG( *GetMatrix(), fgdefect );
@@ -244,7 +237,6 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 			assert(0);
 #endif
 
-
 		// defect is computed in ug (Lmgc)
     }
 
@@ -252,7 +244,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 }
 #else
 
-void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect) const
+void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect, FAMGVector &fgglobsolution) const
 // including smoothing of fine nodes
 {
 	FAMGVectorEntry fvec;
@@ -278,7 +270,9 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
     	cout<<"FAMGGrid::Restriction: defect*sol before JacobiSmoothFG "<<d3<<endl;
 	}
 #endif
-	
+
+	// fgsolution = 0.0; implicitly done by JacobiSmoothFG
+
 	// jacobi smoothing for the fine nodes
     fgsolution.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
 #ifdef ModelP
@@ -304,6 +298,12 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
 #endif
+
+#ifdef USE_UG_DS	
+	// correct global solution
+	fgglobsolution += fgsolution;
+#endif
+
 #ifdef PROTOCOLNUMERIC
     d1 = fgdefect*fgdefect;
     d2 = fgsolution*fgsolution;
@@ -327,7 +327,7 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 				cgdefect[transfg->GetCol()] += transfg->GetRestriction() * fgdefect[fvec];
 		
 #ifdef ModelP
-	if (l_vector_collectAll(DOWNGRID(mygrid),((FAMGugVector&)cgdefect).GetUgVecDesc())!=NUM_OK) 
+	if (l_vector_collectFromGhosts(DOWNGRID(mygrid),((FAMGugVector&)cgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
 #endif
 	
@@ -373,7 +373,10 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 		{
 #ifdef ModelP
 			if(!IS_FAMG_MASTER(((FAMGugVectorEntryRef*)(fvec.GetPointer()))->myvector()))
+			{
+				fgsol[fvec] = 0.0;	// initialize border components
 				continue;
+			}
 #endif		
 			sum = 0.0;
 		    for(transfg = transfer.GetFirstEntry(fvec); transfg != NULL; transfg = transfg->GetNext())
@@ -429,10 +432,6 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 	
 	// prepare defect for jacobi smoothing
 	Defect(fgdefect, fgdefect, fgsol);
-#ifdef ModelP
-	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
-		assert(0);
-#endif
 	
 #ifdef PROTOCOLNUMERIC
 	d1 = fgdefect*fgdefect;
@@ -464,7 +463,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
     {
         // famg as transfer
         (*c) += fgsol;
-        fgsol = 0.0;
+        //fgsol = 0.0; implicitly done by fgsol.JacobiSmoothFG
 
 #ifdef PROTOCOLNUMERIC
 		d1 = (*c)*(*c);
@@ -2781,7 +2780,7 @@ INT l_force_consistence (GRID *g, const VECDATA_DESC *x)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// l_vector_collectAll
+// l_vector_collectFromGhosts
 ///////////////////////////////////////////////////////////////////////////////
 
 static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
@@ -2809,7 +2808,7 @@ static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
 	return (NUM_OK);
 }
 
-INT l_vector_collectAll (GRID *g, const VECDATA_DESC *x)
+INT l_vector_collectFromGhosts (GRID *g, const VECDATA_DESC *x)
 {
     INT tp,m; 
 
@@ -2819,9 +2818,6 @@ INT l_vector_collectAll (GRID *g, const VECDATA_DESC *x)
 	for (tp=0; tp<NVECTYPES; tp++)
 	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-	// TODO: both communications within 1 call
-	DDD_IFAOneway(BorderVectorIF, GRID_ATTR(g), IF_FORWARD, m * sizeof(DOUBLE),
-				  Gather_VectorCompCollect, Scatter_VectorComp);
 	DDD_IFAOneway(VectorIF, GRID_ATTR(g), IF_BACKWARD, m * sizeof(DOUBLE),
 				  Gather_VectorCompCollect, Scatter_VectorComp);
 

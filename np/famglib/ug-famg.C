@@ -1803,13 +1803,12 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
 
 /* actions for FAMG defect restriction:
-UG	t := 0				new [ug/np/procs/iter.c/Lmgc()]
+	t := 0				[FAMGGrid::Restriction]
 	t += M^{-1} * b		fine grid Jacobi smoothing [FAMGGrid::Restriction]
 						t carries the solution update back to ug
 	d -= K * t			update defect [FAMGGrid::Restriction]
-						anticipates the following c += t in ug
+	c += t				update global solution [FAMGGrid::Restriction]	
 	d_{l+1} = R * d_l	restrict defect [FAMGGrid::Restriction]
-UG	c += t				new [ug/np/procs/iter.c/Lmgc()]
 */
 INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 						   VECDATA_DESC *to, VECDATA_DESC *from, 
@@ -1824,19 +1823,14 @@ INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 		famglevel = -level;
 	else
 		famglevel = -1-level;
-#ifdef ModelP
-	// TODO: sollte eigentlich ueberfluessig sein: defect sollte auf border vectoren eh schon 0 sein!
-	if (l_vector_collect(GRID_ON_LEVEL(np->amg_trans.transfer.base.mg,level),from)!=NUM_OK) 
-		NP_RETURN(1,result[0]);
-#endif
 	
-	result[0] = FAMG_RestrictDefect(famglevel, to, from, np->smooth_sol, np->smooth_def);
+	result[0] = FAMG_RestrictDefect(famglevel, to, from, np->smooth_sol, np->smooth_def, np->smooth_globsol);
 	return result[0];
 }
 
 
 /* actions for FAMG correction interpolation
-UG	t := 0				new [ug/np/procs/iter.c/Lmgc()]
+	t_l := 0			[FAMGGrid::Restriction]	
 	t_l += P * c_{l+1}	prolong correction [FAMGGrid::Restriction]
 	d -= K * t			update defect [FAMGGrid::Restriction]
 	c += t				new, only for transfer [FAMGGrid::Restriction]

@@ -151,7 +151,7 @@ int FAMGConstructSimple(FAMGMatrixAlg *matrix, FAMGVector *tvA, FAMGVector *tvB)
 int FAMGSolve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown);
 void FAMGDeconstruct();
 void FAMGDeconstructSimple();
-int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def );
+int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def, VECDATA_DESC *smooth_globsol );
 int FAMG_ProlongCorrection( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def );
 
 int FAMGSolveSystem(struct FAMG_Interface*);

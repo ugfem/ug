@@ -331,6 +331,13 @@ void JacobiSmoothFG( VT &sol, const MT &A, const VT &def )
             if(LR_Decomp(nr,decomp,pivotmap)) assert(0);
             if(LR_Solve(nr,decomp,pivotmap,solptr,defptr)) assert(0);
         }
+#ifdef USE_UG_DS
+		else
+		{
+			// set coarse components to 0
+			SparseBlockVSet(svsol,sol.GetValuePtr(ve),0.0);
+		}
+#endif
     }
 
     delete decomp;
@@ -523,10 +530,18 @@ void JacobiSmoothFG( VT &sol, const MT &M, const VT &def )
 	typename VT::Iterator viter(sol); 
 	typename VT::VectorEntry ve; 
 
+#ifdef USE_UG_DS
+	while(viter(ve))
+		if( sol.IsFG(ve) )
+			sol[ve] = def[ve] / M.DiagValue(ve);
+		else
+			sol[ve] = 0;	// init other components
+#else
 	while(viter(ve))
 		if( sol.IsFG(ve) )
 			sol[ve] += def[ve] / M.DiagValue(ve);
-	
+#endif
+
 	return;
 }
 

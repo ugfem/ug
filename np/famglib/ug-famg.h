@@ -67,8 +67,9 @@ typedef struct
   INT coarsegridsolver;
   INT coarsegridagglo;
 
-  VECDATA_DESC *smooth_sol;                     /* for the fine grid smoother */
-  VECDATA_DESC *smooth_def;                     /* for the fine grid smoother */
+  VECDATA_DESC *smooth_globsol;         /* for the fine node smoother */
+  VECDATA_DESC *smooth_sol;                     /* for the fine node smoother */
+  VECDATA_DESC *smooth_def;                     /* for the fine node smoother */
   VECDATA_DESC *tv;                             /* test vector */
   VECDATA_DESC *tvT;                            /* test vector */
   MATDATA_DESC *ConsMat;                        /* (partly) consistent matrix */

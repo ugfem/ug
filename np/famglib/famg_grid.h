@@ -82,7 +82,7 @@ public:
   void ILUTSmooth();
   void JacobiSmoothFG();
   void Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVector &fgsol, FAMGVector &fgdefect, FAMGVector *c);
-  void Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect) const;
+  void Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect, FAMGVector &fgglobsolution) const;
   int ConstructTransfer();
   int AnalyseParents(int i);
   int InitLevel0(const class FAMGSystem &);
