@@ -198,6 +198,37 @@ static INT AVS_GlobalSumINT (INT i)
 /*																			*/
 /****************************************************************************/
 
+/****************************************************************************/
+/*D
+   avs - file output in AVS format
+
+   DESCRIPTION:
+   The avs command stores grid and multiple vector or scalar grid functions
+   in AVS readable format to file.
+
+   'avs <filename> [$scale <factor>] [$zcoord <nep> $s <vd>]
+                                   [$ns <nep> $s <vd>]* [$nv <nep> $s <vd>]*
+                                   [$es <eep> $s <vd>]* [$ev <eep> $s <vd>]*'
+
+   .  $scale~<factor>	- ?
+   .  $zcoord...		- plot function to be drawn on z-coordinate (2D grids only)
+   .  $ns...			- plot function for scalar nodal values
+   .  $nv...			- plot function for vector nodal values
+   .  $es...			- plot function for scalar element values
+   .  $ev...			- plot function for vector element values
+
+   .  <vd>				- vecdata desc
+   .  <nep>			- eval proc (nodal values)
+   .  <eep>			- eval proc (element values)
+
+   KEYWORDS:
+   graphics, plot, file, output, AVS
+
+   EXAMPLE:
+   'avs NavierStokesSolution.avs $ns nvalue $s psol $nv nvector $s velsol'
+   D*/
+/****************************************************************************/
+
 static INT AVSCommand (INT argc, char **argv)
 {
   INT i,j,k,v;                                  /* counters etc.							*/

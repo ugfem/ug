@@ -274,7 +274,7 @@ static int Str1inStr2 (const char *name1, const char *name2)
    RETURN VALUE:
    COMMAND *
    .n      pointer to 'COMMAND' if found and unique
-   .n      NULL if not found or ambigous
+   .n      NULL if not found or ambiguos
    D*/
 /********************************************************************************/
 COMMAND *SearchUgCmd (const char *cmdName)
@@ -297,10 +297,15 @@ COMMAND *SearchUgCmd (const char *cmdName)
   while (theItem!=NULL)
   {
     if (theItem->v.type == theCommandVarID)
-      if (Str1inStr2(cmdName,theItem->v.name))
+      if (Str1inStr2(cmdName,ENVITEM_NAME(theItem)))
         if (Cmd!=NULL)
         {
-          UserWriteF(" ambiguos: %s\n",cmdName);
+          UserWriteF(" '%s' ambiguos:\n",cmdName);
+          UserWriteF("      %s\n",ENVITEM_NAME(Cmd));
+          UserWriteF("      %s\n",ENVITEM_NAME(theItem));
+          while ((theItem = theItem->v.next)!=NULL)
+            if (Str1inStr2(cmdName,ENVITEM_NAME(theItem)))
+              UserWriteF("      %s\n",ENVITEM_NAME(theItem));
           return (NULL);
         }
         else

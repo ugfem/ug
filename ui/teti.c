@@ -155,6 +155,17 @@ static INT HierElement (FILE *stream, ELEMENT *el)
   return(0);
 }
 
+/****************************************************************************/
+/*D
+   teti - grape hierarchical file format for tets
+
+   DESCRIPTION:
+   ...
+
+   KEYWORDS:
+   graphics, plot, file, output, GRAPE
+   D*/
+/****************************************************************************/
 
 static INT TetiCommand (INT argc, char **argv)
 {

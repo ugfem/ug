@@ -88,6 +88,17 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+/****************************************************************************/
+/*D
+   tecplot - file output in tecplot format
+
+   DESCRIPTION:
+   ...
+
+   KEYWORDS:
+   graphics, plot, file, output, tecplot
+   D*/
+/****************************************************************************/
 
 static INT TecplotCommand (INT argc, char **argv)
 {
