@@ -8736,7 +8736,7 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
   if (np->pp_failed)
   {
     if (dset(NP_MG(theNP),level,level,ALL_VECTORS,x,0.0)!= NUM_OK) NP_RETURN(1,result[0]);
-    return(0);
+    return(1);
   }
 
   /* init */
