@@ -204,6 +204,7 @@
 #define MAX_SIDES_OF_EDGE               2                       /* two sides have one edge in common*/
 #define MAX_SONS                        30          /* max number of sons of an element */
 #define MAX_SIDE_NODES                  9                       /* max number of nodes on elem side */
+#define MAX_SON_EDGES                   2           /* max number of son edges of edge  */
 
 #define MAX_SIDES_TOUCHING              10                      /* max #fine sides touching a coarse*/
 
@@ -2741,7 +2742,7 @@ void            ListVectorRange                 (MULTIGRID *theMG, INT fl, INT t
 /* query */
 LINK            *GetLink                                (NODE *from, NODE *to);
 EDGE            *GetSonEdge                             (EDGE *theEdge);
-INT                     GetSonEdges                             (EDGE *theEdge, EDGE *SonEdges[2]);
+INT                     GetSonEdges                             (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES]);
 EDGE            *GetFatherEdge                  (EDGE *theEdge);
 #ifdef __THREEDIM__
 EDGE            *FatherEdge                             (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge);

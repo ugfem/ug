@@ -1482,7 +1482,7 @@ EDGE *GetSonEdge (EDGE *theEdge)
    GetSonEdges - Return pointer to son edges if it exists
 
    SYNOPSIS:
-   INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[2]);
+   INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES]);
 
    PARAMETERS:
    .  theEdge - edge for which son is searched
@@ -1497,7 +1497,7 @@ EDGE *GetSonEdge (EDGE *theEdge)
    D*/
 /****************************************************************************/
 
-INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[2])
+INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
 {
   INT nedges;
   NODE *Node0,*Node1,*SonNode0,*SonNode1,*MidNode;
