@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 294										*/
 /*			  6900 Heidelberg												*/
-/*			  email: ug@ica3.uni-stuttgart.de                                               */
+/*			  internet: ug@ica3.uni-stuttgart.de                            */
 /*																			*/
 /*			  blockvector data structure:									*/
 /*			  Christian Wrobel                                                                              */
@@ -19,7 +19,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
+/*			  email: ug@ica3.uni-stuttgart.de						*/
 /*																			*/
 /* History:    1.12.93 begin, ug 3d                                                                             */
 /*			  26.10.94 begin combination 2D/3D version						*/
@@ -493,7 +493,6 @@ static VECTOR *GetFreeVector (MULTIGRID *theMG, INT VectorType)
   theMG->freeVectors[VectorType] = ptr[0];
   return((VECTOR *)ptr);
 }
-
 /****************************************************************************/
 /*D
    GetFreeConnection - Get an object from free list if possible
@@ -536,41 +535,6 @@ static CONNECTION *GetFreeConnection (MULTIGRID *theMG, INT Diag, INT RootType, 
 
 /****************************************************************************/
 /*D
-   GetFreeIMatrix - Get an object from free list if possible
-
-   SYNOPSIS:
-   static MATRIX *GetFreeIMatrix (MULTIGRID *theMG, INT RootType, INT DestType);
-
-   PARAMETERS:
-   .  theMG - multigrid structure to extend
-   .  RootType - type of source vector
-   .  DestType - type of destination vector
-
-   DESCRIPTION:
-   This function gets an object from free list of free connections if possible.
-   RETURN VALUE:
-   CONNECTION *
-   .n          pointer to object
-   .n          NULL if no object available.
-
-   D*/
-/****************************************************************************/
-
-#ifdef __INTERPOLATION_MATRIX__
-static MATRIX *GetFreeIMatrix (MULTIGRID *theMG, INT RootType, INT DestType)
-{
-  void **ptr;
-
-  if (theMG->freeIMatrices[RootType][DestType]==NULL)
-    return(NULL);
-  ptr = (void **) theMG->freeIMatrices[RootType][DestType];
-  theMG->freeIMatrices[RootType][DestType] = ptr[0];
-  return((MATRIX *)ptr);
-}
-#endif
-
-/****************************************************************************/
-/*D
    PutFreeVector - Put an object in the free list
 
    SYNOPSIS:
@@ -607,7 +571,6 @@ static INT PutFreeVector (MULTIGRID *theMG, VECTOR *object)
   theMG->freeVectors[VectorType] = (void *)object;
   return(0);
 }
-
 /****************************************************************************/
 /*D
    PutFreeConnection -  Put an object in the free list
@@ -629,7 +592,6 @@ static INT PutFreeVector (MULTIGRID *theMG, VECTOR *object)
    .n     INT>0 if no valid object number.
    D*/
 /****************************************************************************/
-
 static INT PutFreeConnection (MULTIGRID *theMG, CONNECTION *object)
 {
   void **ptr;
@@ -649,40 +611,6 @@ static INT PutFreeConnection (MULTIGRID *theMG, CONNECTION *object)
   theMG->freeConnections[ConType] = (void *)object;
   return(0);
 }
-
-/****************************************************************************/
-/*D
-   PutFreeIMatrix -  Put an object in the free list
-
-   SYNOPSIS:
-   static INT PutFreeIMatrix (MULTIGRID *theMG, MATRIX *object);
-
-   PARAMETERS:
-   .  theMG - mg structure to extend
-   .  object - Pointer to 'MATRIX' to be freed.
-
-   DESCRIPTION:
-   This function puts an object in the free list.
-
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     INT>0 if no valid object number.
-   D*/
-/****************************************************************************/
-
-#ifdef __INTERPOLATION_MATRIX__
-static INT PutFreeIMatrix (MULTIGRID *theMG, MATRIX *object)
-{
-  void **ptr;
-
-  ptr = (void **) object;
-  ptr[0] = theMG->freeIMatrices[MROOTTYPE(object)][MDESTTYPE(object)];
-  theMG->freeIMatrices[MROOTTYPE(object)][MDESTTYPE(object)]
-    = (void *)object;
-  return(0);
-}
-#endif
 
 /****************************************************************************/
 /*D
@@ -751,10 +679,6 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
   pv->index  = (long)theGrid->nVector;
   pv->skip   = 0;
   pv->start  = NULL;
-
-#ifdef __INTERPOLATION_MATRIX__
-  VISTART(pv) = NULL;
-#endif
 
   /* insert in vector list */
   if (After==NULL)
@@ -834,79 +758,140 @@ INT CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
   return GM_OK;
 }
 
-/****************************************************************************/
-/*D
-   CreateIMatrix -  Return pointer to a new interpolation matrix structure
-
-   SYNOPSIS:
-   MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
-
-   PARAMETERS:
-   .  TheGrid - grid where matrix should be inserted
-   .  fvec - fine grid vector
-   .  cvec - coarse grid vector
-
-   DESCRIPTION:
-   This function allocates a new 'MATRIX' structures in the
-   'imatrix' list of 'fvec'.
-
-   RETURN VALUE:
-   MATRIX *
-   .n    pointer to the new matrix
-   .n    NULL if error occured.
-   D*/
-/****************************************************************************/
-
-#ifdef __INTERPOLATION_MATRIX__
-MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
+INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECTOR *theBV, INT after, INT makeVC)
 {
-  MULTIGRID *theMG;
-  HEAP *theHeap;
-  MATRIX *pm,*m;
-  INT RootType, DestType, MType, ds, Diag, Size;
-
-  pm = GetIMatrix(fvec,cvec);
-  if (pm != NULL)
-    return(pm);
-
-  RootType = VTYPE(fvec);
-  DestType = VTYPE(cvec);
-  MType = MatrixType[RootType][DestType];
-
-  /* check expected size */
-  theMG = MYMG(theGrid);
-  theHeap = theMG->theHeap;
-  ds = theMG->theFormat->IMatrixSizes[MType];
-  if (ds == 0)
-    return (NULL);
-  Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
-  assert (Size % ALIGNMENT == 0);
-
-  pm = GetFreeIMatrix (theMG,RootType,DestType);
-  if (pm==NULL)
+  if (GFIRSTBV(theGrid)==NULL)
   {
-    if (MSIZEMAX<Size) return (NULL);
-    pm = (MATRIX*)GetMem(theHeap,Size,FROM_BOTTOM);
-    if (pm==NULL)
-      return (NULL);
+    GFIRSTBV(theGrid)=GLASTBV(theGrid)=insertBV;
+    BVPRED(insertBV)=BVSUCC(insertBV)=NULL;
+
+    if (makeVC==YES)
+    {
+      PREDVC(BVFIRSTVECTOR(insertBV)) = NULL;
+      SUCCVC(BVENDVECTOR(insertBV)) = NULL;
+      BVENDVECTOR(insertBV) = NULL;
+    }
   }
-  memset(pm,0,Size);
+  else if (after)
+  {
+    if (theBV==NULL)
+    {
+      BVSUCC(insertBV) = GFIRSTBV(theGrid);
+      GFIRSTBV(theGrid) = insertBV;
+      BVPRED(insertBV) = NULL;
 
-  CTRL(pm) = 0;
-  SETMTYPE(pm,MType);
-  SETMROOTTYPE(pm,RootType);
-  SETMDESTTYPE(pm,DestType);
-  SETMSIZE(pm,Size);
-  MDEST(pm) = cvec;
-  MNEXT(pm) = VISTART(fvec);
-  VISTART(fvec) = pm;
+      if (makeVC==YES)
+      {
+        PREDVC(BVFIRSTVECTOR(insertBV)) = NULL;
+        SUCCVC(BVENDVECTOR(insertBV)) = BVFIRSTVECTOR(BVSUCC(insertBV));
+        PREDVC(BVFIRSTVECTOR(BVSUCC(insertBV))) = BVENDVECTOR(insertBV);
+        BVENDVECTOR(insertBV) = BVFIRSTVECTOR(BVSUCC(insertBV));
+      }
+    }
+    else
+    {
+      BVPRED(insertBV) = theBV;
+      BVSUCC(insertBV) = BVSUCC(theBV);
+      if (theBV==GLASTBV(theGrid)) GLASTBV(theGrid)=insertBV;
+      else BVPRED(BVSUCC(theBV))=insertBV;
+      BVSUCC(theBV) = insertBV;
 
-  /* counters */
-  theGrid->nIMat++;
+      if (makeVC==YES)
+      {
+        if (BVENDVECTOR(theBV)!=NULL)
+        {
+          SUCCVC(PREDVC(BVENDVECTOR(theBV))) = BVFIRSTVECTOR(insertBV);
+          PREDVC(BVFIRSTVECTOR(insertBV)) = PREDVC(BVENDVECTOR(theBV));
+          SUCCVC(BVENDVECTOR(insertBV)) = BVENDVECTOR(theBV);
+          PREDVC(BVENDVECTOR(theBV)) = BVENDVECTOR(insertBV);
+        }
+        else
+        {
+          for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL; BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV))) ;
+          SUCCVC(BVENDVECTOR(theBV)) = BVFIRSTVECTOR(insertBV);
+          PREDVC(BVFIRSTVECTOR(insertBV)) = BVENDVECTOR(theBV);
+          SUCCVC(BVENDVECTOR(insertBV)) = NULL;
+          LASTVECTOR(theGrid) = BVENDVECTOR(insertBV);
+        }
 
-  return(pm);
+        if (BVSUCC(insertBV)!=NULL) BVENDVECTOR(insertBV) = BVFIRSTVECTOR(BVSUCC(insertBV));
+        else BVENDVECTOR(insertBV) = NULL;
+        BVENDVECTOR(theBV) = BVFIRSTVECTOR(insertBV);
+      }
+    }
+  }
+  else
+  {
+    if (theBV==NULL)
+      return (InsertBlockvector_l0(theGrid,insertBV,GLASTBV(theGrid),1,makeVC));
+    else
+      return (InsertBlockvector_l0(theGrid,insertBV,BVPRED(theBV),1,makeVC));
+  }
+
+  return (GM_OK);
 }
-#endif
+
+INT CreatBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after)
+{
+  BLOCKVECTOR *theBV;
+
+  if (CreateBlockvector (theGrid, &theBV)!=GM_OK) return (GM_OUT_OF_MEM);
+  if (InsertBlockvector_l0(theGrid,theBV,insertBV,after,NO)) return (GM_OUT_OF_MEM);
+
+  *BVHandle = theBV;
+  return (GM_OK);
+}
+
+INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
+{
+  if (theBV==0) return (GM_ERROR);
+
+  switch ((theBV==GFIRSTBV(theGrid)) | ((theBV==GLASTBV(theGrid))<<1))
+  {
+  case 0 :
+    BVSUCC(BVPRED(theBV)) = BVSUCC(theBV);
+    BVPRED(BVSUCC(theBV)) = BVPRED(theBV);
+
+    if (makeVC==YES)
+    {
+      BVENDVECTOR(theBV) = PREDVC(BVENDVECTOR(theBV));
+      SUCCVC(PREDVC(BVENDVECTOR(BVPRED(theBV)))) = BVFIRSTVECTOR(BVSUCC(theBV));
+      PREDVC(BVFIRSTVECTOR(BVSUCC(theBV))) = PREDVC(BVENDVECTOR(BVPRED(theBV)));
+      BVENDVECTOR(BVPRED(theBV)) = BVFIRSTVECTOR(BVSUCC(theBV));
+    }
+    break;
+  case 1 :
+    BVPRED(BVSUCC(theBV)) = NULL;
+    GFIRSTBV(theGrid) = BVSUCC(theBV);
+
+    if (makeVC==YES)
+    {
+      BVENDVECTOR(theBV) = PREDVC(BVENDVECTOR(theBV));
+      PREDVC(BVFIRSTVECTOR(BVSUCC(theBV))) = NULL;
+    }
+    break;
+  case 2 :
+    BVSUCC(BVPRED(theBV)) = NULL;
+    GLASTBV(theGrid) = BVPRED(theBV);
+
+    if (makeVC==YES)
+    {
+      for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL; BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV))) ;
+      SUCCVC(PREDVC(BVENDVECTOR(BVPRED(theBV)))) = NULL;
+      BVENDVECTOR(BVPRED(theBV)) = NULL;
+    }
+    break;
+  case 3 :
+    GFIRSTBV(theGrid) = GLASTBV(theGrid) = NULL;
+
+    if (makeVC==YES)
+      for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL; BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV))) ;
+    break;
+  }
+
+  return (GM_OK);
+}
+
 
 /****************************************************************************/
 /*D
@@ -927,9 +912,9 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
    is not important.
 
    RETURN VALUE:
-   CONNECTION *
-   .n    pointer to the new connection
+   INT
    .n    NULL if error occured.
+   .n    else a pointer to the new 'CONNECTION' is returned.
    D*/
 /****************************************************************************/
 
@@ -1093,48 +1078,6 @@ CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to
 
 /****************************************************************************/
 /*D
-   DisposeIMatrices - Remove interpolation matrix from the data structure
-
-   SYNOPSIS:
-   INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
-
-   PARAMETERS:
-   .  theGrid - the grid to remove from
-   .  theMatrix - start of matrix list to dispose
-
-   DESCRIPTION:
-   This function removes an interpolation  matrix list from the data
-   structure.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
-/****************************************************************************/
-
-#ifdef __INTERPOLATION_MATRIX__
-INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
-{
-  VECTOR *from, *to;
-  MATRIX *Matrix, *NextMatrix;
-
-  for (Matrix=theMatrix; Matrix!=NULL; )
-  {
-    NextMatrix = NEXT(Matrix);
-    /* free connection object */
-    if (PutFreeIMatrix(theGrid->mg,Matrix))
-      return(1);
-    theGrid->nIMat--;
-    Matrix = NextMatrix;
-  }
-
-  return(0);
-}
-#endif
-
-/****************************************************************************/
-/*D
    DisposeVector - Remove vector from the data structure
 
    SYNOPSIS:
@@ -1159,19 +1102,10 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 {
   MATRIX *theMatrix;
 
-  if (theVector == NULL)
-    return(0);
-
   /* remove all connections concerning the vector */
-  for (theMatrix=VSTART(theVector); theMatrix!=NULL;
-       theMatrix=MNEXT(theMatrix))
+  for (theMatrix=VSTART(theVector); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
     if (DisposeConnection(theGrid,MMYCON(theMatrix)))
       return (1);
-
-#ifdef __INTERPOLATION_MATRIX__
-  if (DisposeIMatrices(theGrid,VISTART(theVector)))
-    return (1);
-#endif
 
   /* now remove vector from vector list */
   if (PREDVC(theVector)!=NULL)
@@ -1296,6 +1230,7 @@ void FreeBVList( GRID *grid, BLOCKVECTOR *bv )
     bv = bv_h;
   }
 }
+
 
 /****************************************************************************/
 /*D
@@ -1566,6 +1501,7 @@ INT DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
   return(DisposeConnectionFromElementInNeighborhood(theGrid,theElement,Depth));
 }
 
+
 /****************************************************************************/
 /*D
    GetMatrix - Return pointer to matrix if it exists
@@ -1600,42 +1536,6 @@ MATRIX *GetMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
   /* return not found */
   return (NULL);
 }
-
-/****************************************************************************/
-/*D
-   GetIMatrix - Return pointer to interpolation matrix if it exists
-
-   SYNOPSIS:
-   MATRIX *GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector);
-
-   PARAMETERS:
-   .  FineVector - fine grid vector
-   .  CoarseVector - coarse grid vector
-
-   DESCRIPTION:
-   This function returns pointer to interpolation matrix.
-   If it does not exist already, it retruns NULL.
-
-   RETURN VALUE:
-   MATRIX *
-   .n       pointer to Matrix,
-   .n       NULL if no Matrix exists.
-   D*/
-/****************************************************************************/
-
-#ifdef __INTERPOLATION_MATRIX__
-MATRIX *GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector)
-{
-  MATRIX *theMatrix;
-
-  for (theMatrix=VISTART(FineVector); theMatrix!=NULL;
-       theMatrix = MNEXT(theMatrix))
-    if (MDEST(theMatrix)==CoarseVector)
-      return (theMatrix);
-
-  return (NULL);
-}
-#endif
 
 /****************************************************************************/
 /*D
@@ -1700,11 +1600,8 @@ INT GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
   *cnt = 0;
 
         #ifdef __ELEMDATA__
-  if (EVECTOR(theElement) != NULL)
-  {
-    vList[0] = EVECTOR(theElement);
-    *cnt = 1;
-  }
+  vList[0] = EVECTOR(theElement);
+  *cnt = 1;
         #endif
 
   return(GM_OK);
@@ -1743,8 +1640,7 @@ INT GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 
         #ifdef __SIDEDATA__
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-    if (SVECTOR(theElement,i) != NULL)
-      vList[(*cnt)++] = SVECTOR(theElement,i);
+    vList[(*cnt)++] = SVECTOR(theElement,i);
         #endif
 
   return(GM_OK);
@@ -1788,8 +1684,7 @@ INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
       {
         theEdge = GetEdge(CORNER(theElement,i),CORNER(theElement,j));
         if (theEdge==NULL) continue;
-        if (EDVECTOR(theEdge) != NULL)
-          vList[(*cnt)++] = EDVECTOR(theEdge);
+        vList[(*cnt)++] = EDVECTOR(theEdge);
       }
     return(GM_OK);
   }
@@ -1800,8 +1695,7 @@ INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
     {
       theEdge = GetEdge(CORNER(theElement,i),CORNER(theElement,(i+1)%n));
       if (theEdge==NULL) continue;
-      if (EDVECTOR(theEdge) != NULL)
-        vList[(*cnt)++] = EDVECTOR(theEdge);
+      vList[(*cnt)++] = EDVECTOR(theEdge);
     }
     return(GM_OK);
   }
@@ -1841,8 +1735,7 @@ INT GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
   *cnt = 0;
         #ifdef __NODEDATA__
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-    if (NVECTOR(CORNER(theElement,i)) != NULL)
-      vList[(*cnt)++] = NVECTOR(CORNER(theElement,i));
+    vList[(*cnt)++] = NVECTOR(CORNER(theElement,i));
         #endif
   return (GM_OK);
 }
@@ -1933,14 +1826,14 @@ INT DisposeExtraConnections (GRID *theGrid)
 
    SYNOPSIS:
    static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0,
-   ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT* MatSize);
+   ELEMENT *Elem1, INT ActDepth, INT *ConDepth);
 
    PARAMETERS:
    .  theGrid - pointer to grid
    .  Elem0,Elem1 - elements to be connected
    .  ActDepth - distance of the two elements in the element neighborship graph
    .  ConDepth - Array containing the connection depth desired. This is constructed
-   .  MatSize - Array containing the connection size. This is constructed from the information in the FORMAT.
+   from the information in the FORMAT.
 
    DESCRIPTION:
    This function creates connections between all the 'VECTOR's associated
@@ -1953,7 +1846,7 @@ INT DisposeExtraConnections (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT *MatSize)
+static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth)
 {
   INT i,j;
   INT elemCnt0, sideCnt0, edgeCnt0, nodeCnt0;
@@ -1973,127 +1866,101 @@ static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMEN
 
   /* create node node connection */
   if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][NODEVECTOR]])
-    if (0 < MatSize[MatrixType[NODEVECTOR][NODEVECTOR]])
-      for (i=0; i<nodeCnt0; i++)
-        for (j=0; j<nodeCnt1; j++)
-          if (CreateConnection(theGrid,nodeVec0[i],nodeVec1[j])==NULL)
-            return(GM_ERROR);
+    for (i=0; i<nodeCnt0; i++)
+      for (j=0; j<nodeCnt1; j++)
+        if (CreateConnection(theGrid,nodeVec0[i],nodeVec1[j])==NULL) return(GM_ERROR);
 
   /* create node edge connection */
   if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][EDGEVECTOR]])
-    if (0 < MatSize[MatrixType[NODEVECTOR][EDGEVECTOR]])
-    {
-      /* edges in 0 with nodes in 1 */
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<nodeCnt1; j++)
-          if (CreateConnection(theGrid,edgeVec0[i],nodeVec1[j])==NULL)
-            return(GM_ERROR);
-      /* edges 1 with nodes in 0 */
-      for (i=0; i<edgeCnt1; i++)
-        for (j=0; j<nodeCnt0; j++)
-          if (CreateConnection(theGrid,edgeVec1[i],nodeVec0[j])==NULL)
-            return(GM_ERROR);
-    }
+  {
+    /* edges in 0 with nodes in 1 */
+    for (i=0; i<edgeCnt0; i++)
+      for (j=0; j<nodeCnt1; j++)
+        if (CreateConnection(theGrid,edgeVec0[i],nodeVec1[j])==NULL) return(GM_ERROR);
+    /* edges 1 with nodes in 0 */
+    for (i=0; i<edgeCnt1; i++)
+      for (j=0; j<nodeCnt0; j++)
+        if (CreateConnection(theGrid,edgeVec1[i],nodeVec0[j])==NULL) return(GM_ERROR);
+  }
 
   /* create node side connection */
   if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[NODEVECTOR][SIDEVECTOR]]))
-    if (0 < MatSize[MatrixType[NODEVECTOR][SIDEVECTOR]])
-    {
-      for (i=0; i<nodeCnt0; i++)
-        for (j=0; j<sideCnt1; j++)
-          if (CreateConnection(theGrid,nodeVec0[i],sideVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<nodeCnt1; i++)
-        for (j=0; j<sideCnt0; j++)
-          if (CreateConnection(theGrid,nodeVec1[i],sideVec0[j])==NULL)
-            return (GM_ERROR);
-    }
+  {
+    for (i=0; i<nodeCnt0; i++)
+      for (j=0; j<sideCnt1; j++)
+        if (CreateConnection(theGrid,nodeVec0[i],sideVec1[j])==NULL) return (GM_ERROR);
+    for (i=0; i<nodeCnt1; i++)
+      for (j=0; j<sideCnt0; j++)
+        if (CreateConnection(theGrid,nodeVec1[i],sideVec0[j])==NULL) return (GM_ERROR);
+  }
 
   /* create node elem connection */
   if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][ELEMVECTOR]])
-    if (0 < MatSize[MatrixType[NODEVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<nodeCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
-          if (CreateConnection(theGrid,nodeVec0[i],elemVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<nodeCnt1; i++)
-        for (j=0; j<elemCnt0; j++)
-          if (CreateConnection(theGrid,nodeVec1[i],elemVec0[j])==NULL)
-            return (GM_ERROR);
-    }
+  {
+    for (i=0; i<nodeCnt0; i++)
+      for (j=0; j<elemCnt1; j++)
+        if (CreateConnection(theGrid,nodeVec0[i],elemVec1[j])==NULL) return (GM_ERROR);
+    for (i=0; i<nodeCnt1; i++)
+      for (j=0; j<elemCnt0; j++)
+        if (CreateConnection(theGrid,nodeVec1[i],elemVec0[j])==NULL) return (GM_ERROR);
+  }
 
   /* create edge edge connection */
   if (ActDepth <= ConDepth[MatrixType[EDGEVECTOR][EDGEVECTOR]])
-    if (0 < MatSize[MatrixType[EDGEVECTOR][EDGEVECTOR]])
-    {
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<edgeCnt1; j++)
-          if (CreateConnection(theGrid,edgeVec0[i],edgeVec1[j])==NULL)
-            return (GM_ERROR);
-    }
+  {
+    for (i=0; i<edgeCnt0; i++)
+      for (j=0; j<edgeCnt1; j++)
+        if (CreateConnection(theGrid,edgeVec0[i],edgeVec1[j])==NULL) return (GM_ERROR);
+  }
 
   /* create edge side connection */
   if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[EDGEVECTOR][SIDEVECTOR]]))
-    if (0 < MatSize[MatrixType[EDGEVECTOR][SIDEVECTOR]])
-    {
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<sideCnt1; j++)
-          if (CreateConnection(theGrid,edgeVec0[i],sideVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<edgeCnt1; i++)
-        for (j=0; j<sideCnt0; j++)
-          if (CreateConnection(theGrid,edgeVec1[i],sideVec0[j])==NULL)
-            return (GM_ERROR);
-    }
+  {
+    for (i=0; i<edgeCnt0; i++)
+      for (j=0; j<sideCnt1; j++)
+        if (CreateConnection(theGrid,edgeVec0[i],sideVec1[j])==NULL) return (GM_ERROR);
+    for (i=0; i<edgeCnt1; i++)
+      for (j=0; j<sideCnt0; j++)
+        if (CreateConnection(theGrid,edgeVec1[i],sideVec0[j])==NULL) return (GM_ERROR);
+  }
 
   /* create edge elem connection */
   if (ActDepth <= ConDepth[MatrixType[EDGEVECTOR][ELEMVECTOR]])
-    if (0 < MatSize[MatrixType[EDGEVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
-          if (CreateConnection(theGrid,edgeVec0[i],elemVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<edgeCnt1; i++)
-        for (j=0; j<elemCnt0; j++)
-          if (CreateConnection(theGrid,edgeVec1[i],elemVec0[j])==NULL)
-            return (GM_ERROR);
-    }
+  {
+    for (i=0; i<edgeCnt0; i++)
+      for (j=0; j<elemCnt1; j++)
+        if (CreateConnection(theGrid,edgeVec0[i],elemVec1[j])==NULL) return (GM_ERROR);
+    for (i=0; i<edgeCnt1; i++)
+      for (j=0; j<elemCnt0; j++)
+        if (CreateConnection(theGrid,edgeVec1[i],elemVec0[j])==NULL) return (GM_ERROR);
+  }
 
   /* create side side connection */
   if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[SIDEVECTOR][SIDEVECTOR]]))
-    if (0 < MatSize[MatrixType[SIDEVECTOR][SIDEVECTOR]])
-    {
-      for (i=0; i<sideCnt0; i++)
-        for (j=0; j<sideCnt1; j++)
-          if (CreateConnection(theGrid,sideVec0[i],sideVec1[j])==NULL)
-            return (GM_ERROR);
-    }
+  {
+    for (i=0; i<sideCnt0; i++)
+      for (j=0; j<sideCnt1; j++)
+        if (CreateConnection(theGrid,sideVec0[i],sideVec1[j])==NULL) return (GM_ERROR);
+  }
 
   /* create side elem connection */
   if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[SIDEVECTOR][ELEMVECTOR]]))
-    if (0 < MatSize[MatrixType[SIDEVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<sideCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
-          if (CreateConnection(theGrid,sideVec0[i],elemVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<sideCnt1; i++)
-        for (j=0; j<elemCnt0; j++)
-          if (CreateConnection(theGrid,sideVec1[i],elemVec0[j])==NULL)
-            return (GM_ERROR);
-    }
+  {
+    for (i=0; i<sideCnt0; i++)
+      for (j=0; j<elemCnt1; j++)
+        if (CreateConnection(theGrid,sideVec0[i],elemVec1[j])==NULL) return (GM_ERROR);
+    for (i=0; i<sideCnt1; i++)
+      for (j=0; j<elemCnt0; j++)
+        if (CreateConnection(theGrid,sideVec1[i],elemVec0[j])==NULL) return (GM_ERROR);
+  }
 
   /* create elem elem connection */
   if (ActDepth <= ConDepth[MatrixType[ELEMVECTOR][ELEMVECTOR]])
-    if (0 < MatSize[MatrixType[ELEMVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<elemCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
-          if (CreateConnection(theGrid,elemVec0[i],elemVec1[j])==NULL)
-            return (GM_ERROR);
-    }
+  {
+    for (i=0; i<elemCnt0; i++)
+      for (j=0; j<elemCnt1; j++)
+        if (CreateConnection(theGrid,elemVec0[i],elemVec1[j])==NULL) return (GM_ERROR);
+  }
 
   return (0);
 }
@@ -2198,7 +2065,7 @@ static INT ResetUsedFlagInNeighborhood (ELEMENT *theElement, INT ActDepth, INT M
   return (0);
 }
 
-static INT ConnectWithNeighborhood (ELEMENT *theElement, GRID *theGrid, ELEMENT *centerElement, INT *ConDepth, INT *MatSize, INT ActDepth, INT MaxDepth)
+static INT ConnectWithNeighborhood (ELEMENT *theElement, GRID *theGrid, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth)
 {
   int i;
 
@@ -2207,20 +2074,16 @@ static INT ConnectWithNeighborhood (ELEMENT *theElement, GRID *theGrid, ELEMENT 
 
   /* action */
   if (ActDepth>=0)
-    if (ElementElementCreateConnection(theGrid,centerElement,theElement,
-                                       ActDepth,ConDepth,MatSize))
+    if (ElementElementCreateConnection(theGrid,centerElement,theElement,ActDepth,ConDepth))
       return (1);
 
   /* call all neighbors recursively */
   if (ActDepth<MaxDepth)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      if (ConnectWithNeighborhood(NBELEM(theElement,i),theGrid,
-                                  centerElement,ConDepth,MatSize,
-                                  ActDepth+1,MaxDepth)) return (1);
+      if (ConnectWithNeighborhood(NBELEM(theElement,i),theGrid,centerElement,ConDepth,ActDepth+1,MaxDepth)) return (1);
 
   return (0);
 }
-
 /****************************************************************************/
 /*D
    CreateConnectionsInNeighborhood - Create connection of an element
@@ -2242,29 +2105,25 @@ static INT ConnectWithNeighborhood (ELEMENT *theElement, GRID *theGrid, ELEMENT 
    .n    1 if error occured.
    D*/
 /****************************************************************************/
-
 INT CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
 {
   MULTIGRID *theMG;
   FORMAT *theFormat;
   INT MaxDepth;
   INT *ConDepth;
-  INT *MatSize;
 
   /* set pointers */
   theMG = theGrid->mg;
   theFormat = theMG->theFormat;
   MaxDepth = theFormat->MaxConnectionDepth;
   ConDepth = theFormat->ConnectionDepth;
-  MatSize = theFormat->MatrixSizes;
 
   /* reset used flags in neighborhood */
   if (ResetUsedFlagInNeighborhood(theElement,0,MaxDepth))
     return (1);
 
   /* create connection in neighborhood */
-  if (ConnectWithNeighborhood(theElement,theGrid,theElement,ConDepth,
-                              MatSize,0,MaxDepth))
+  if (ConnectWithNeighborhood(theElement,theGrid,theElement,ConDepth,0,MaxDepth))
     return (1);
 
   return (0);
@@ -2272,7 +2131,7 @@ INT CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
 
 /****************************************************************************/
 /*
-   ConnectInsertedWithNeighborhood - Create connection of an inserted element
+   CreateconnectionOfInsertedElement -  Create connection of an inserted element
 
    SYNOPSIS:
    static INT ConnectInsertedWithNeighborhood (ELEMENT *theElement, GRID *theGrid,
@@ -2337,7 +2196,6 @@ static INT ConnectInsertedWithNeighborhood (ELEMENT *theElement, GRID *theGrid, 
    .n   1 if error occured.
    D*/
 /****************************************************************************/
-
 INT InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement)
 {
   MULTIGRID *theMG;
@@ -2353,8 +2211,7 @@ INT InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement)
   if (ResetUsedFlagInNeighborhood(theElement,0,MaxDepth))
     return (1);
 
-  /* call 'CreateConnectionsInNeighborhood'
-     in a neighborhood of theElement */
+  /* call 'CreateConnectionsInNeighborhood' in a neighborhood of theElement */
   if (ConnectInsertedWithNeighborhood (theElement,theGrid,0,MaxDepth))
     return (1);
 
@@ -2516,25 +2373,24 @@ INT PrepareAlgebraModification (MULTIGRID *theMG)
 
    SYNOPSIS:
    static INT ElementElementCheck (ELEMENT *Elem0, ELEMENT *Elem1,
-   INT ActDepth, INT *ConDepth, INT *MatSize);
+   INT ActDepth, INT *ConDepth);
 
    PARAMETERS:
    .  Elem0,Elem1 - elements to be checked.
    .  ActDepth - recursion depth
    .  ConDepth - connection depth as provided by format
-   .  MatSize - Matrix sizes as provided by format
 
    DESCRIPTION:
    This function recursively checks connection of two elements.
 
    RETURN VALUE:
    INT
-   .n     GM_OK if ok
-   .n     GM_ERROR if error occured.
+   .n     0 if ok
+   .n     1 if error occured.
    D*/
 /****************************************************************************/
 
-static INT ElementElementCheck (ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT *MatSize)
+static INT ElementElementCheck (ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth)
 {
   INT i,j;
   INT elemCnt0, sideCnt0, edgeCnt0, nodeCnt0;
@@ -2562,280 +2418,271 @@ static INT ElementElementCheck (ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, IN
 
   /* check node node connection */
   if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][NODEVECTOR]])
-    if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][NODEVECTOR]])
-      for (i=0; i<nodeCnt0; i++)
-        for (j=0; j<nodeCnt1; j++)
+    for (i=0; i<nodeCnt0; i++)
+      for (j=0; j<nodeCnt1; j++)
+      {
+        theCon = GetConnection(nodeVec0[i],nodeVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(nodeVec0[i],nodeVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"nodeVec0[%d] to nodeVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else
-          {
-            SETCUSED(theCon,1);
-          }
+          UserWrite(msg);
+          sprintf(buffer,"nodeVec0[%d] to nodeVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
+        else
+        {
+          SETCUSED(theCon,1);
+        }
+      }
 
 
   /* check node edge connection */
   if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][EDGEVECTOR]])
-    if (0 < MatSize[MatrixType[NODEVECTOR][EDGEVECTOR]])
-    {
-      /* edges in 0 with nodes in 1 */
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<nodeCnt1; j++)
+  {
+    /* edges in 0 with nodes in 1 */
+    for (i=0; i<edgeCnt0; i++)
+      for (j=0; j<nodeCnt1; j++)
+      {
+        theCon = GetConnection(edgeVec0[i],nodeVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(edgeVec0[i],nodeVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"edgeVec0[%d] to nodeVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"edgeVec0[%d] to nodeVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-      /* edges 1 with nodes in 0 */
-      for (i=0; i<edgeCnt1; i++)
-        for (j=0; j<nodeCnt0; j++)
+        else SETCUSED(theCon,1);
+      }
+    /* edges 1 with nodes in 0 */
+    for (i=0; i<edgeCnt1; i++)
+      for (j=0; j<nodeCnt0; j++)
+      {
+        theCon = GetConnection(edgeVec1[i],nodeVec0[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(edgeVec1[i],nodeVec0[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"edgeVec1[%d] to nodeVec0[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"edgeVec1[%d] to nodeVec0[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-    }
+        else SETCUSED(theCon,1);
+      }
+  }
 
   /* check node side connection */
   if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[NODEVECTOR][SIDEVECTOR]]))
-    if (0 < MatSize[MatrixType[NODEVECTOR][SIDEVECTOR]])
-    {
-      for (i=0; i<nodeCnt0; i++)
-        for (j=0; j<sideCnt1; j++)
+  {
+    for (i=0; i<nodeCnt0; i++)
+      for (j=0; j<sideCnt1; j++)
+      {
+        theCon = GetConnection(nodeVec0[i],sideVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(nodeVec0[i],sideVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"nodeVec0[%d] to sideVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"nodeVec0[%d] to sideVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-      for (i=0; i<nodeCnt1; i++)
-        for (j=0; j<sideCnt0; j++)
+        else SETCUSED(theCon,1);
+      }
+    for (i=0; i<nodeCnt1; i++)
+      for (j=0; j<sideCnt0; j++)
+      {
+        theCon = GetConnection(nodeVec1[i],sideVec0[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(nodeVec1[i],sideVec0[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"nodeVec1[%d] to sideVec0[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"nodeVec1[%d] to sideVec0[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-    }
+        else SETCUSED(theCon,1);
+      }
+  }
 
   /* check node elem connection */
   if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][ELEMVECTOR]])
-    if (0 < MatSize[MatrixType[NODEVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<nodeCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
+  {
+    for (i=0; i<nodeCnt0; i++)
+      for (j=0; j<elemCnt1; j++)
+      {
+        theCon = GetConnection(nodeVec0[i],elemVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(nodeVec0[i],elemVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"nodeVec0[%d] to elemVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"nodeVec0[%d] to elemVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-      for (i=0; i<nodeCnt1; i++)
-        for (j=0; j<elemCnt0; j++)
+        else SETCUSED(theCon,1);
+      }
+    for (i=0; i<nodeCnt1; i++)
+      for (j=0; j<elemCnt0; j++)
+      {
+        theCon = GetConnection(nodeVec1[i],elemVec0[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(nodeVec1[i],elemVec0[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"nodeVec1[%d] to elemVec0[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"nodeVec1[%d] to elemVec0[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-    }
+        else SETCUSED(theCon,1);
+      }
+  }
 
   /* check edge edge connection */
   if (ActDepth <= ConDepth[MatrixType[EDGEVECTOR][EDGEVECTOR]])
-    if (0 < MatSize[MatrixType[EDGEVECTOR][EDGEVECTOR]])
-    {
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<edgeCnt1; j++)
+  {
+    for (i=0; i<edgeCnt0; i++)
+      for (j=0; j<edgeCnt1; j++)
+      {
+        theCon = GetConnection(edgeVec0[i],edgeVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(edgeVec0[i],edgeVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"edgeVec0[%d] to edgeVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"edgeVec0[%d] to edgeVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-    }
+        else SETCUSED(theCon,1);
+      }
+  }
 
   /* check edge side connection */
   if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[EDGEVECTOR][SIDEVECTOR]]))
-    if (0 < MatSize[MatrixType[EDGEVECTOR][SIDEVECTOR]])
-    {
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<sideCnt1; j++)
+  {
+    for (i=0; i<edgeCnt0; i++)
+      for (j=0; j<sideCnt1; j++)
+      {
+        theCon = GetConnection(edgeVec0[i],sideVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(edgeVec0[i],sideVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"edgeVec0[%d] to sideVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"edgeVec0[%d] to sideVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-      for (i=0; i<edgeCnt1; i++)
-        for (j=0; j<sideCnt0; j++)
+        else SETCUSED(theCon,1);
+      }
+    for (i=0; i<edgeCnt1; i++)
+      for (j=0; j<sideCnt0; j++)
+      {
+        theCon = GetConnection(edgeVec1[i],sideVec0[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(edgeVec1[i],sideVec0[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"edgeVec1[%d] to sideVec0[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"edgeVec1[%d] to sideVec0[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-    }
+        else SETCUSED(theCon,1);
+      }
+  }
 
   /* check edge elem connection */
   if (ActDepth <= ConDepth[MatrixType[EDGEVECTOR][ELEMVECTOR]])
-    if (0 < MatSize[MatrixType[EDGEVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
+  {
+    for (i=0; i<edgeCnt0; i++)
+      for (j=0; j<elemCnt1; j++)
+      {
+        theCon = GetConnection(edgeVec0[i],elemVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(edgeVec0[i],elemVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"edgeVec0[%d] to elemVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"edgeVec0[%d] to elemVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-      for (i=0; i<edgeCnt1; i++)
-        for (j=0; j<elemCnt0; j++)
+        else SETCUSED(theCon,1);
+      }
+    for (i=0; i<edgeCnt1; i++)
+      for (j=0; j<elemCnt0; j++)
+      {
+        theCon = GetConnection(edgeVec1[i],elemVec0[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(edgeVec1[i],elemVec0[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"edgeVec1[%d] to elemVec0[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"edgeVec1[%d] to elemVec0[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-    }
+        else SETCUSED(theCon,1);
+      }
+  }
 
   /* check side side connection */
   if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[SIDEVECTOR][SIDEVECTOR]]))
-    if (0 < MatSize[MatrixType[SIDEVECTOR][SIDEVECTOR]])
-    {
-      for (i=0; i<sideCnt0; i++)
-        for (j=0; j<sideCnt1; j++)
+  {
+    for (i=0; i<sideCnt0; i++)
+      for (j=0; j<sideCnt1; j++)
+      {
+        theCon = GetConnection(sideVec0[i],sideVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(sideVec0[i],sideVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"sideVec0[%d] to sideVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"sideVec0[%d] to sideVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-    }
+        else SETCUSED(theCon,1);
+      }
+  }
 
   /* check side elem connection */
   if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[SIDEVECTOR][ELEMVECTOR]]))
-    if (0 < MatSize[MatrixType[SIDEVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<sideCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
+  {
+    for (i=0; i<sideCnt0; i++)
+      for (j=0; j<elemCnt1; j++)
+      {
+        theCon = GetConnection(sideVec0[i],elemVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(sideVec0[i],elemVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"sideVec0[%d] to elemVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"sideVec0[%d] to elemVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-      for (i=0; i<sideCnt1; i++)
-        for (j=0; j<elemCnt0; j++)
+        else SETCUSED(theCon,1);
+      }
+    for (i=0; i<sideCnt1; i++)
+      for (j=0; j<elemCnt0; j++)
+      {
+        theCon = GetConnection(sideVec1[i],elemVec0[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(sideVec1[i],elemVec0[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"sideVec1[%d] to elemVec0[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"sideVec1[%d] to elemVec0[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-    }
+        else SETCUSED(theCon,1);
+      }
+  }
 
   /* check elem elem connection */
   if (ActDepth <= ConDepth[MatrixType[ELEMVECTOR][ELEMVECTOR]])
-    if (0 < MatSize[MatrixType[ELEMVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<elemCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
+  {
+    for (i=0; i<elemCnt0; i++)
+      for (j=0; j<elemCnt1; j++)
+      {
+        theCon = GetConnection(elemVec0[i],elemVec1[j]);
+        if (theCon==NULL)
         {
-          theCon = GetConnection(elemVec0[i],elemVec1[j]);
-          if (theCon==NULL)
-          {
-            UserWrite(msg);
-            sprintf(buffer,"elemVec0[%d] to elemVec1[%d]\n",i,j);
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
-          }
-          else SETCUSED(theCon,1);
+          UserWrite(msg);
+          sprintf(buffer,"elemVec0[%d] to elemVec1[%d]\n",i,j);
+          UserWrite(buffer);
+          ReturnCode = GM_ERROR;
         }
-    }
+        else SETCUSED(theCon,1);
+      }
+  }
 
   return(ReturnCode);
 }
 
-static ELEMENT *CheckNeighborhood (ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT *MatSize, INT ActDepth, INT MaxDepth)
+
+static ELEMENT *CheckNeighborhood (ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth)
 {
   int i;
 
@@ -2844,19 +2691,16 @@ static ELEMENT *CheckNeighborhood (ELEMENT *theElement, ELEMENT *centerElement, 
 
   /* action */
   if (ActDepth>=0)
-    if (ElementElementCheck(centerElement,theElement,ActDepth,
-                            ConDepth,MatSize))
+    if (ElementElementCheck(centerElement,theElement,ActDepth,ConDepth))
       return (centerElement);
 
   /* call all neighbors recursively */
   if (ActDepth<MaxDepth)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      return(CheckNeighborhood(NBELEM(theElement,i),centerElement,
-                               ConDepth,MatSize,ActDepth+1,MaxDepth));
+      return(CheckNeighborhood(NBELEM(theElement,i),centerElement,ConDepth,ActDepth+1,MaxDepth));
 
   return (NULL);
 }
-
 /****************************************************************************/
 /*D
    ElementCheckConnection - Check connection of the element
@@ -2878,25 +2722,21 @@ static ELEMENT *CheckNeighborhood (ELEMENT *theElement, ELEMENT *centerElement, 
    .n   != NULL if error occured in that connection.
    D*/
 /****************************************************************************/
-
 ELEMENT *ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
 {
   FORMAT *theFormat;
   MULTIGRID *theMG;
   INT MaxDepth;
   INT *ConDepth;
-  INT *MatSize;
 
   /* set pointers */
   theMG = theGrid->mg;
   theFormat = theMG->theFormat;
   MaxDepth = theFormat->MaxConnectionDepth;
   ConDepth = theFormat->ConnectionDepth;
-  MatSize = theFormat->MatrixSizes;
 
   /* call elements recursivly */
-  return(CheckNeighborhood (theElement,theElement,
-                            ConDepth,MatSize,0,MaxDepth));
+  return(CheckNeighborhood (theElement,theElement,ConDepth,0,MaxDepth));
 }
 
 /****************************************************************************/
@@ -3891,21 +3731,126 @@ INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
  */
 /****************************************************************************/
 
+INT CheckConsistence (GRID *theGrid, char *location)
+{
+  VECTOR *theVector;
+  MATRIX *theMatrix;
+  INT up, down, nfound;
+
+  /* check USED, N_INFLOW and N_OUTFLOW */
+  nfound = 0;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    if (VCUSED(theVector)) continue;
+
+    /* count upward and downward matrices */
+    up = down = 0;
+    for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+    {
+      if (VCUSED(MDEST(theMatrix))) continue;
+      if (MUP(theMatrix)) up++;
+      if (MDOWN(theMatrix)) down++;
+    }
+    if (VUP(theVector)!=up || VDOWN(theVector)!=down)
+    {
+      nfound++;
+      if (nfound==1 && location!=NULL)
+        UserWriteF("Failed in %s\n",location);
+      UserWriteF("vector = %d: up: %d %d   down: %d %d\n",(int)VINDEX(theVector),(int)VUP(theVector),(int)up,
+                 (int)VDOWN(theVector),(int)down);
+    }
+  }
+  return (nfound);
+}
+
+INT CheckVectorList (GRID *theGrid)
+{
+  INT i;
+  VECTOR *theVector;
+
+  /* check # members of succ list */
+  i=0;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector)) i++;
+  if (NVEC(theGrid) != i)
+    return (1);
+
+  /* check # members of pred list */
+  i=0;
+  for (theVector=LASTVECTOR(theGrid); theVector!= NULL; theVector=PREDVC(theVector)) i++;
+  if (NVEC(theGrid) != i)
+    return (1);
+
+  return (0);
+}
+
+INT CheckBVList (GRID *theGrid)
+{
+  INT i;
+  BLOCKVECTOR *theBV;
+
+  /* check # members of succ list */
+  for (theBV=GFIRSTBV(theGrid); BVSUCC(theBV)!= NULL; theBV=BVSUCC(theBV))
+    if (BVENDVECTOR(theBV)!=BVFIRSTVECTOR(BVSUCC(theBV)))
+      return (1);
+
+  return (0);
+}
+
+void GetBVNumberInGrid(GRID *theGrid, INT *nb)
+{
+  VECTOR *theVector;
+
+  nb[0]=0;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector)) nb[0]++;
+  nb[1]=0;
+  for (theVector=LASTVECTOR(theGrid); theVector!= NULL; theVector=PREDVC(theVector)) nb[1]++;
+  return;
+}
+
+void GetBVNumber(BLOCKVECTOR *theBV, INT *nb, INT cutted)
+{
+  VECTOR *theVector;
+
+  nb[0]=nb[1]=0;
+  if (cutted)
+  {
+    for (theVector=BVFIRSTVECTOR(theBV); theVector!= SUCCVC(BVENDVECTOR(theBV)); theVector=SUCCVC(theVector)) nb[0]++;
+    for (theVector=BVENDVECTOR(theBV); theVector!= PREDVC(BVFIRSTVECTOR(theBV)); theVector=PREDVC(theVector)) nb[1]++;
+  }
+  else
+  {
+    for (theVector=BVFIRSTVECTOR(theBV); theVector!= BVENDVECTOR(theBV); theVector=SUCCVC(theVector)) nb[0]++;
+    if (BVENDVECTOR(theBV)!=NULL)
+      for (theVector=PREDVC(BVENDVECTOR(theBV)); theVector!= PREDVC(BVFIRSTVECTOR(theBV)); theVector=PREDVC(theVector)) nb[1]++;
+    else
+      nb[1] = -1;
+  }
+  return;
+}
+
 static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT skipPat)
 {
+  BLOCKVECTOR *theFirstBV, *theLastBV, *theCutBV, *theBV, *takeOut, **FBVList, **LBVList, **CBVList;
   VECTOR FIRST_handle,CUT_handle,LAST_handle;
   VECTOR *FIRST_next_out,*FIRST_last_in;
   VECTOR *LAST_next_out,*LAST_last_in;
   VECTOR *CUT_next_out,*CUT_last_in,*CUT_begin;
-  VECTOR *theVector,*theNbVector,*succVector,*predVector;
+  VECTOR *theVector,*theNbVector,*succVector,*predVector, *theFirstVector;
   MATRIX *theMatrix;
-  INT i,k,cycle;
+  DOUBLE a;
+  INT i,k,cycle,nCutTot;
   INT nFIRST,nCUT,nLAST;
   INT up, down;
+  HEAP *theHeap;
+  INT nb[2];
+  char buffer[128];
 
   /****************************************************************************/
   /*	init																	*/
   /****************************************************************************/
+
+  /* cancel all BLOCKVECTORS */
+  FreeAllBV(theGrid);
 
   /* init USED, N_INFLOW and N_OUTFLOW */
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -3915,34 +3860,34 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
 
     /* count upward and downward matrices */
     up = down = 0;
-    if (VCLASS(theVector)==ACTIVE_CLASS)
-      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
-      {
-        if (MUP(theMatrix)) up++;
-        if (MDOWN(theMatrix)) down++;
-      }
+    for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+    {
+      if (MUP(theMatrix)) up++;
+      if (MDOWN(theMatrix)) down++;
+    }
     SETVUP(theVector,up);
     SETVDOWN(theVector,down);
   }
 
   /* in the sequel we use (and therefore destroy) the PREDVC-list for book keeping */
 
-  cycle = 0;
+  cycle = nCutTot = 0;
 
   /* init pointers and set the first FIRST and LAST set */
   FIRST_next_out = FIRST_last_in = &FIRST_handle;
-  nFIRST = 0;
+  PREDVC(FIRST_last_in) = NULL; nFIRST = 0;
   LAST_next_out  = LAST_last_in  = &LAST_handle;
-  nLAST  = 0;
+  PREDVC(LAST_last_in) = NULL; nLAST  = 0;
   CUT_next_out   = CUT_last_in   = &CUT_handle;
   nCUT   = 0;
+  theFirstBV = theLastBV = theCutBV = NULL;
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
   {
     if (((putSkipFirst) && (VECSKIP(theVector) & skipPat == skipPat)) ||
         (VUP(theVector)==0))
     {
-      nFIRST++;
       /* append to FIRST list */
+      nFIRST++;
       PREDVC(FIRST_last_in) = theVector;
       FIRST_last_in = theVector;
       SETVCUSED(theVector,1);
@@ -3950,8 +3895,8 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     }
     else if (VDOWN(theVector)==0)
     {
-      nLAST++;
       /* append to last list */
+      nLAST++;
       PREDVC(LAST_last_in) = theVector;
       LAST_last_in = theVector;
       SETVCUSED(theVector,1);
@@ -3960,8 +3905,22 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   }
   PREDVC(FIRST_last_in) = PREDVC(LAST_last_in) = NULL;
 
-  UserWriteF("init: #first%d=%10d\n",(int)cycle,(int)nFIRST);
-  UserWriteF("init: #last%d =%10d\n",(int)cycle,(int)nLAST);
+  /* store in BLOCKVECTOR */
+  if (nFIRST>0)
+  {
+    if (CreatBlockvector_l0(theGrid,&theBV,NULL,1)!=GM_OK) return (1);
+    theFirstBV = theBV;
+    BVNUMBER(theFirstBV)    = 3*cycle+0;
+    BVFIRSTVECTOR(theFirstBV)       = BVPRED(&FIRST_handle);
+  }
+
+  if (nLAST>0)
+  {
+    if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) return (1);
+    theLastBV = theBV;
+    BVNUMBER(theLastBV)             = 3*cycle+1;
+    BVFIRSTVECTOR(theLastBV)        = BVPRED(&LAST_handle);
+  }
 
   do
   {
@@ -3973,19 +3932,12 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
 
     nFIRST = nLAST = 0;
 
+    theFirstVector  = FIRST_last_in;
     for (FIRST_next_out=PREDVC(FIRST_next_out); FIRST_next_out!=NULL; FIRST_next_out=PREDVC(FIRST_next_out))
-    {
-                        #ifdef __TWODIM__
-      OrderMatrices(FIRST_next_out,MATHPOS);
-                        #endif
-
       for (theMatrix=MNEXT(VSTART(FIRST_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
       {
         theNbVector = MDEST(theMatrix);
-
-        if (VCUSED(theNbVector)) continue;
-
-        if (MDOWN(theMatrix))
+        if (MDOWN(theMatrix) && !VCUSED(theNbVector))
         {
           k = VUP(theNbVector);
           assert(k>0);                                                  /* if 0 is supposed to be VCUSED already */
@@ -4003,46 +3955,45 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
             VINDEX(theNbVector) = 3*cycle;
           }
         }
-        /* we also have to push LAST vectors
-           this is for the cases
-                        (1) vectors have been pushed because of putSkipFirst
-                        (2) vectors have been pushed because VCLASS(theVector)!=ACTIVE_CLASS
-                        (3) vectors have been pushed because (nCUT>0) && (mode==GM_FCFCLL)
-           (the standard case remains unaffected) */
-        if (MUP(theMatrix))
-        {
-          k = VDOWN(theNbVector);
-          assert(k>0);                                                  /* if 0 is supposed to be VCUSED already */
-          SETVDOWN(theNbVector,--k);
-          if (k==0)
+        if ((nCUT>0) && !VCUSED(theNbVector))
+          /* we also have to push LAST vectors */
+          if (MUP(theMatrix))
           {
-            /* this vector has only matrices going up */
+            k = VDOWN(theNbVector);
+            /*assert(k>0);*/			/* if 0 is supposed to be VCUSED already */
+            if (k<=0)
+              return (1);
+            SETVDOWN(theNbVector,--k);
+            if (k==0)
+            {
+              /* this vector has only matrices going up */
 
-            nLAST++;
-            /* append to last list */
-            PREDVC(LAST_last_in) = theNbVector;
-            LAST_last_in = theNbVector;
-            PREDVC(LAST_last_in) = NULL;
-            SETVCUSED(theNbVector,1);
-            VINDEX(theNbVector) = 3*cycle+1;
+              nLAST++;
+              /* append to last list */
+              PREDVC(LAST_last_in) = theNbVector;
+              LAST_last_in = theNbVector;
+              PREDVC(LAST_last_in) = NULL;
+              SETVCUSED(theNbVector,1);
+              VINDEX(theNbVector) = 3*cycle+1;
+            }
           }
-        }
       }
-    }
     FIRST_next_out = FIRST_last_in;
 
-    UserWriteF("#first%d=%10d\n",(int)cycle,(int)nFIRST);
+    /* create first BLOCKVECTOR */
+    if (nFIRST>0)
+    {
+      if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) return (1);
+      theFirstBV = theBV;
+      BVNUMBER(theFirstBV)            = 3*cycle+0;
+      BVFIRSTVECTOR(theFirstBV)       = PREDVC(theFirstVector);
+    }
 
     /********************************************************************/
     /*	find next LAST-set in vectors not used			                        */
     /********************************************************************/
 
     for (LAST_next_out=PREDVC(LAST_next_out); LAST_next_out!=NULL; LAST_next_out=PREDVC(LAST_next_out))
-    {
-                        #ifdef __TWODIM__
-      OrderMatrices(LAST_next_out,MATHNEG);
-                        #endif
-
       for (theMatrix=MNEXT(VSTART(LAST_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
       {
         theNbVector = MDEST(theMatrix);
@@ -4065,96 +4016,47 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
           }
         }
       }
-    }
     LAST_next_out = LAST_last_in;
 
-    UserWriteF("#last%d =%10d\n",(int)cycle,(int)nLAST);
+    /* create Last BLOCKVECTOR */
+    if (nLAST>0)
+    {
+      if (CreatBlockvector_l0(theGrid,&theBV,theLastBV,0)!=GM_OK) return (1);
+      theLastBV = theBV;
+      BVNUMBER(theLastBV)             = 3*cycle+1;
+      BVFIRSTVECTOR(theLastBV)        = LAST_last_in;
+    }
 
     /****************************************************************************/
     /*	get CUT (or Feedback Vertex)-set and do what needs to be done			*/
     /****************************************************************************/
 
-    if (mode==GM_FCFCLL)
+    CUT_begin = FIRST_last_in;
+    FIRST_last_in = (*FindCutSet)(theGrid,FIRST_last_in,&nCUT);
+    if (FIRST_last_in==NULL) nCUT = 0;
+    else PREDVC(FIRST_last_in) = NULL;
+
+    /* create cut BLOCKVECTOR */
+    if (nCUT>0)
     {
-      CUT_begin = FIRST_last_in;
-
-      FIRST_last_in = (*FindCutSet)(theGrid,FIRST_last_in,&nCUT);
-      if (FIRST_last_in==NULL)
-        nCUT = 0;
-      else
-        PREDVC(FIRST_last_in) = NULL;
-
-      /* set index */
-      for (theVector=PREDVC(CUT_begin); theVector!=NULL; theVector=PREDVC(theVector))
-        VINDEX(theVector) = 3*cycle+2;
-
-      UserWriteF("#cut%d  =%10d\n",(int)cycle,(int)nCUT);
+      if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) return (1);
+      theCutBV = theBV;
+      theFirstBV = theBV;
+      BVNUMBER(theCutBV)                      = 3*(cycle+1)+2;
+      BVFIRSTVECTOR(theCutBV)         = PREDVC(CUT_begin);
     }
-    else
-    {
-      CUT_begin = CUT_last_in;
 
-      CUT_last_in = (*FindCutSet)(theGrid,CUT_last_in,&nCUT);
-      if (FIRST_last_in==NULL)
-        nCUT = 0;
-      else
-        PREDVC(CUT_last_in) = NULL;
+    /* set index */
+    for (theVector=PREDVC(CUT_begin); theVector!=NULL; theVector=PREDVC(theVector))
+      VINDEX(theVector) = 3*(cycle+1)+2;
 
-      /* set index */
-      for (theVector=PREDVC(CUT_begin); theVector!=NULL; theVector=PREDVC(theVector))
-        VINDEX(theVector) = 3*cycle+2;
-
-      UserWriteF("#cut$d  =%10d\n",(int)cycle,(int)nCUT);
-
-      if (nCUT==0) continue;
-
-      /* find FIRST and LAST-vectors */
-      if (CUT_next_out==&CUT_handle) CUT_next_out = PREDVC(CUT_next_out);
-      for (; CUT_next_out!=NULL; CUT_next_out=PREDVC(CUT_next_out))
-        for (theMatrix=MNEXT(VSTART(CUT_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
-        {
-          theNbVector = MDEST(theMatrix);
-          if (!VCUSED(theNbVector))
-          {
-            if (MDOWN(theMatrix))
-            {
-              k = VUP(theNbVector);
-              assert(k>0);                                                              /* if 0 is supposed to be in VectorList already */
-              SETVUP(theNbVector,--k);
-              if (k==0)
-              {
-                /* this vector has only matrices going down */
-
-                nFIRST++;
-                /* append to FIRST list */
-                PREDVC(FIRST_last_in) = theNbVector;
-                FIRST_last_in = theNbVector;
-                SETVCUSED(theNbVector,1);
-              }
-            }
-            else if (MUP(theMatrix))
-            {
-              k = VDOWN(theNbVector);
-              assert(k>0);                                                              /* if 0 is supposed to be in VectorList already */
-              SETVDOWN(theNbVector,--k);
-              if (k==0)
-              {
-                /* this vector has only matrices going up */
-
-                nLAST++;
-                /* append to last list */
-                PREDVC(LAST_last_in) = theNbVector;
-                LAST_last_in = theNbVector;
-                SETVCUSED(theNbVector,1);
-              }
-            }
-          }
-        }
-      CUT_next_out = CUT_last_in;
-      PREDVC(FIRST_last_in) = PREDVC(LAST_last_in) = NULL;
-    }
+    nCutTot += nCUT;
 
   } while (nCUT>0);
+
+  UserWriteF("# %d cycles: %d cutted from %d\n",(int)cycle,(int)nCutTot,(int)NVEC(theGrid));
+  a = POW((DOUBLE)NVEC(theGrid),(DOUBLE)(DIM-1)/(DOUBLE)DIM);     a = (DOUBLE)nCutTot/a;
+  UserWriteF("# corr. to %6.2f hyp. planes\n",(float)a);
 
   /* insert FIRST list one-by-one to LASTVECTOR list of grid */
   LASTVECTOR(theGrid) = NULL;
@@ -4163,17 +4065,6 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     predVector                      = PREDVC(theVector);
     PREDVC(theVector)   = LASTVECTOR(theGrid);
     LASTVECTOR(theGrid) = theVector;
-  }
-
-  if (mode==GM_FFCCLL)
-  {
-    /* insert CUT list one-by-one to LASTVECTOR list of grid */
-    for (theVector=PREDVC(&CUT_handle); theVector!=NULL; theVector=predVector)
-    {
-      predVector                      = PREDVC(theVector);
-      PREDVC(theVector)   = LASTVECTOR(theGrid);
-      LASTVECTOR(theGrid) = theVector;
-    }
   }
 
   /* insert LAST list as a whole to LASTVECTOR list of grid */
@@ -4189,6 +4080,91 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   }
   FIRSTVECTOR(theGrid) = succVector;
   PREDVC(succVector)   = NULL;
+
+  /* set pointers in BLOCKVECTORs */
+  BVENDVECTOR(GLASTBV(theGrid)) = NULL;
+  for (theBV=GLASTBV(theGrid); theBV!=NULL; theBV=BVPRED(theBV))
+  {
+    if (BVSUCC(theBV)!=NULL && BVENDVECTOR(theBV)==NULL)
+      BVENDVECTOR(theBV)=BVFIRSTVECTOR(BVSUCC(theBV));
+    if (BVFIRSTVECTOR(theBV)==NULL)
+      BVFIRSTVECTOR(theBV)=BVENDVECTOR(theBV);
+  }
+
+  if (mode==GM_FFLLCC)
+  {
+    for (theBV=GLASTBV(theGrid); BVPRED(theBV)!=NULL; theBV=BVPRED(theBV))
+    {
+      takeOut = BVPRED(theBV);
+
+      if (CheckBVList(theGrid))
+        i=i;
+      GetBVNumber(takeOut,nb,0);
+      GetBVNumberInGrid(theGrid,nb);
+
+      if (BVNUMBER(takeOut)%3==2)
+      {
+        if (CutBlockvector_l0(theGrid,takeOut,YES)) return (1);
+
+        if (CheckBVList(theGrid))
+          i=i;
+        GetBVNumber(takeOut,nb,1);
+        GetBVNumberInGrid(theGrid,nb);
+
+        if (InsertBlockvector_l0(theGrid,takeOut,NULL,0,YES)) return (1);
+
+        if (CheckBVList(theGrid))
+          i=i;
+        GetBVNumber(takeOut,nb,0);
+        GetBVNumberInGrid(theGrid,nb);
+
+        theBV = BVSUCC(theBV);
+      }
+      if (CheckVectorList (theGrid))
+        i = i;
+    }
+  }
+  else if (mode==GM_FFLCLC)
+  {
+    theHeap = MYMG(theGrid)->theHeap;
+    Mark(theHeap,FROM_TOP);
+    if ((FBVList=(BLOCKVECTOR **)GetMem(theHeap,3*(cycle+1)*sizeof(BLOCKVECTOR*),FROM_TOP))==NULL) return (1);
+    for (i=0; i<3*cycle+3; i++) FBVList[i]=NULL;
+    LBVList = FBVList + cycle + 1;
+    CBVList = LBVList + cycle + 1;
+
+    for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
+      if (BVNUMBER(theBV)%3==0)
+        FBVList[BVNUMBER(theBV)/3] = theBV;
+      else if (BVNUMBER(theBV)%3==1)
+        LBVList[BVNUMBER(theBV)/3] = theBV;
+      else
+        CBVList[BVNUMBER(theBV)/3] = theBV;
+
+    for (i=cycle; i>0; i--)
+    {
+      if (CBVList[i]==NULL) continue;
+      if (CutBlockvector_l0(theGrid,CBVList[i],YES)) return (1);
+      k=i-1; while (LBVList[k]==NULL && k>0) k--;
+      if (InsertBlockvector_l0(theGrid,CBVList[i],LBVList[k],0,YES)) return (1);
+    }
+
+    Release(theHeap,FROM_TOP);
+  }
+
+
+  /* set VCCUT */
+  for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
+    if (BV_GEN(theBV)==BV_GEN_C)
+      for (theVector=BVFIRSTVECTOR(theBV); theVector!=BVENDVECTOR(theBV); theVector=SUCCVC(theVector))
+      {
+        SETVCCUT(theVector,1);
+      }
+    else
+      for (theVector=BVFIRSTVECTOR(theBV); theVector!=BVENDVECTOR(theBV); theVector=SUCCVC(theVector))
+      {
+        SETVCCUT(theVector,0);
+      }
 
   /* check # members of succ list */
   i=0;
@@ -4207,6 +4183,12 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     UserWrite("vectorstructure corrupted\n");
     return (1);
   }
+
+  /* set index w.r.t. new order, beginning with 1 */
+  i = 1;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
+    VINDEX(theVector) = i++;
+
 
   return (0);
 }
@@ -4248,7 +4230,7 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
   DependencyProcPtr DependencyProc;
 
   /* check mode */
-  if ((mode!=GM_FCFCLL)&&(mode!=GM_FFCCLL)) return(GM_ERROR);
+  if ((mode!=GM_FCFCLL)&&(mode!=GM_FFLLCC)&&(mode!=GM_FFLCLC)) return(GM_ERROR);
 
   /* current level */
   currlevel = theMG->currentLevel;
