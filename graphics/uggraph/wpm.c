@@ -2640,7 +2640,16 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
 
 /****************************************************************************/
 /*D
-   Grid2D - plot object for multigrid
+   Grid - plot object
+
+   please lookup 'Grid2D' or 'Grid3D' depending on the space dimension you are
+   working with (the options are not quite the same)
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   Grid2D - plot object for multigrid (omit 2D when using it)
 
    DESCRIPTION:
    The Grid plot object shows the multigrid with its elements.
@@ -2942,7 +2951,16 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
 
 /****************************************************************************/
 /*D
-   VecMat2D - plot object for vector and matrix data (stencils)
+   VecMat - plot object
+
+   please lookup 'VecMat2D' or 'VecMat3D' depending on the space dimension you are
+   working with (the options are not quite the same)
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   VecMat2D - plot object for vector and matrix data (stencils) (omit 2D when using it)
 
    DESCRIPTION:
    The VecMat plot object shows vector and matrix data using stencils.
@@ -3283,7 +3301,16 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
 
 /****************************************************************************/
 /*D
-   EScalar2D - plot object for scalar grid functions
+   EScalar - plot object
+
+   please lookup 'EScalar2D' or 'EScalar3D' depending on the space dimension you are
+   working with (the options are not quite the same)
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   EScalar2D - plot object for scalar grid functions (omit 2D when using it)
 
    DESCRIPTION:
    The EScalar plot object shows a contour or color plot of a scalar grid function.
@@ -3538,7 +3565,16 @@ static INT DisplayScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj)
 
 /****************************************************************************/
 /*D
-   EVector2D - plot object for (two-)vector grid functions
+   EVector - plot object
+
+   please lookup 'EVector2D' or 'EVector3D' depending on the space dimension you are
+   working with (the options are not quite the same)
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   EVector2D - plot object for (two-)vector grid functions (omit 2D when using it)
 
    DESCRIPTION:
    The EVector plot object shows a vector plot of a grid function. The vectors
@@ -4106,7 +4142,7 @@ static INT DisplayDomainPlotObject_3D (PLOTOBJ *thePlotObj)
 
 /****************************************************************************/
 /*D
-   VecMat3D - plot object for vector and matrix data (stencils)
+   VecMat3D - plot object for vector and matrix data (stencils) (omit 3D when using it)
 
    DESCRIPTION:
    The VecMat plot object shows vector and matrix data using stencils.
@@ -4301,7 +4337,7 @@ static INT DisplayVecMat_3D (PLOTOBJ *thePlotObj)
 
 /****************************************************************************/
 /*D
-   Grid3D - plot object for multigrid
+   Grid3D - plot object for multigrid (omit 3D when using it)
 
    DESCRIPTION:
    The Grid plot object shows the multigrid with its elements.
@@ -4540,7 +4576,7 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
 
 /****************************************************************************/
 /*D
-   EScalar3D - plot object for scalar grid functions
+   EScalar3D - plot object for scalar grid functions (omit 3D when using it)
 
    DESCRIPTION:
    The EScalar plot object shows a contour or color plot of a scalar grid function.
@@ -4759,7 +4795,7 @@ static INT DisplayScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj)
 
 /****************************************************************************/
 /*D
-   EVector3D - plot object for (three-)vector grid functions
+   EVector3D - plot object for (three-)vector grid functions (omit 3D when using it)
 
    DESCRIPTION:
    The EVector plot object shows a vector plot of a grid function. The vectors
