@@ -326,7 +326,7 @@ static INT InitHexahedron (void)
 /*                                                                          */
 /****************************************************************************/
 
-# define RADIUS 1.0
+#define RADIUS 1.0
 
 static void ProjectOnBall (DOUBLE x, DOUBLE y, DOUBLE z,
                            DOUBLE radius, DOUBLE *result)
@@ -2578,6 +2578,7 @@ static INT InitCylinder (void)
   /* return ok */
   return(0);
 }
+
 /****************************************************************************/
 /*                                                                          */
 /*  define the benchmark domain                                             */
@@ -3929,6 +3930,275 @@ static INT InitBenchmark (void)
 }
 
 /****************************************************************************/
+/*                                                                          */
+/*  define the hole domain                                                  */
+/*                                                                          */
+/****************************************************************************/
+
+#define RADIUS1 0.2
+
+static INT south_Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = lambda1;
+  result[1] = lambda2;
+  result[2] = 0.0;
+
+  /* return ok */
+  return(0);
+}
+
+static INT east_Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 1.0;
+  result[1] = lambda1;
+  result[2] = lambda2;
+
+  /* return ok */
+  return(0);
+}
+
+static INT north_Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = lambda1;
+  result[1] = lambda2;
+  result[2] = 1.0;
+
+  /* return ok */
+  return(0);
+}
+
+static INT west_Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.0;
+  result[1] = lambda1;
+  result[2] = lambda2;
+
+  /* return ok */
+  return(0);
+}
+
+static INT front_Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = lambda1;
+  result[1] = 0.0;
+  result[2] = lambda2;
+
+  /* return ok */
+  return(0);
+}
+
+static INT back_Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = lambda1;
+  result[1] = 1.0;
+  result[2] = lambda2;
+
+  /* return ok */
+  return(0);
+}
+
+
+static INT south_Boundary1 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  ProjectOnBall (lambda1,lambda2,0.0,RADIUS1,result);
+
+  /* return ok */
+  return(0);
+}
+
+static INT east_Boundary1 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  ProjectOnBall (1.0,lambda1,lambda2,RADIUS1,result);
+
+  /* return ok */
+  return(0);
+}
+
+static INT north_Boundary1 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  ProjectOnBall (lambda1,lambda2,1.0,RADIUS1,result);
+
+  /* return ok */
+  return(0);
+}
+
+static INT west_Boundary1 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  ProjectOnBall (0.0,lambda1,lambda2,RADIUS1,result);
+
+  /* return ok */
+  return(0);
+}
+
+static INT front_Boundary1 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  ProjectOnBall (lambda1,0.0,lambda2,RADIUS1,result);
+
+  /* return ok */
+  return(0);
+}
+
+static INT back_Boundary1 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  ProjectOnBall (lambda1,1.0,lambda2,RADIUS1,result);
+
+  /* return ok */
+  return(0);
+}
+
+static INT InitHole (void)
+{
+  INT point[CORNERS_OF_BND_SEG];
+  DOUBLE radius,MidPoint[3], alpha[DIM_OF_BND], beta[DIM_OF_BND];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 0.5;
+  MidPoint[1] = 0.5;
+  MidPoint[2] = 0.5;
+  radius = 1.0;
+  if (CreateDomain("Hole",MidPoint,radius,12,16,NO)==NULL) return(1);
+
+  /* allocate the boundary segments */
+  alpha[0]=0.0; alpha[1]=0.0;
+  beta[0] =1.0; beta[1] =1.0;
+  point[0]=0; point[1]=1; point[2]=2; point[3]=3;
+  if (CreateBoundarySegment("loch0",1,0,0,NON_PERIODIC,1,point,alpha,beta,south_Boundary,NULL)==NULL) return(1);
+  point[0]=0; point[1]=3; point[2]=7; point[3]=4;
+  if (CreateBoundarySegment("loch1", 1,0,1,NON_PERIODIC,1,point,alpha,beta,west_Boundary, NULL)==NULL) return(1);
+  point[0]=0; point[1]=1; point[2]=5; point[3]=4;
+  if (CreateBoundarySegment("loch2",0,1,2,NON_PERIODIC,1,point,alpha,beta,front_Boundary,NULL)==NULL) return(1);
+  point[0]=4; point[1]=5; point[2]=6; point[3]=7;
+  if (CreateBoundarySegment("loch3",0,1,3,NON_PERIODIC,1,point,alpha,beta,north_Boundary,NULL)==NULL) return(1);
+  point[0]=1; point[1]=2; point[2]=6; point[3]=5;
+  if (CreateBoundarySegment("loch4", 0,1,4,NON_PERIODIC,1,point,alpha,beta,east_Boundary, NULL)==NULL) return(1);
+  point[0]=3; point[1]=2; point[2]=6; point[3]=7;
+  if (CreateBoundarySegment("loch5", 1,0,5,NON_PERIODIC,1,point,alpha,beta,back_Boundary, NULL)==NULL) return(1);
+
+  point[0]=8; point[1]=9; point[2]=10; point[3]=11;
+  if (CreateBoundarySegment("loch6",0,1,6,NON_PERIODIC,1,point,alpha,beta,south_Boundary1,NULL)==NULL) return(1);
+  point[0]=8; point[1]=11; point[2]=15; point[3]=12;
+  if (CreateBoundarySegment("loch7", 0,1,7,NON_PERIODIC,1,point,alpha,beta,west_Boundary1, NULL)==NULL) return(1);
+  point[0]=8; point[1]=9; point[2]=13; point[3]=12;
+  if (CreateBoundarySegment("loch8",0,1,8,NON_PERIODIC,1,point,alpha,beta,front_Boundary1,NULL)==NULL) return(1);
+  point[0]=12; point[1]=13; point[2]=14; point[3]=15;
+  if (CreateBoundarySegment("loch9",0,1,9,NON_PERIODIC,1,point,alpha,beta,north_Boundary1,NULL)==NULL) return(1);
+  point[0]=9; point[1]=10; point[2]=14; point[3]=13;
+  if (CreateBoundarySegment("loch10", 0,1,10,NON_PERIODIC,1,point,alpha,beta,east_Boundary1, NULL)==NULL) return(1);
+  point[0]=11; point[1]=10; point[2]=14; point[3]=15;
+  if (CreateBoundarySegment("loch11", 0,1,11,NON_PERIODIC,1,point,alpha,beta,back_Boundary1, NULL)==NULL) return(1);
+  /* return ok */
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitFEMDomains - Calls all inits of format definitions
 
@@ -4042,6 +4312,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Benchmark") == 0)
     {
       if (InitBenchmark())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Hole") == 0)
+    {
+      if (InitHole())
         return(1);
     }
     else
