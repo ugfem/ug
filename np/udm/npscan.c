@@ -183,6 +183,8 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
   char value[VALUELEN],vdname[NAMESIZE],tname[NAMESIZE];
   INT res;
 
+  ASSERT(theMG!=NULL);
+
   if (ReadArgvChar(name,value,argc,argv))
     return(NULL);
 
@@ -410,6 +412,8 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
   char value[VALUELEN],mdname[NAMESIZE],tname[NAMESIZE];
   INT res;
 
+  ASSERT(theMG!=NULL);
+
   if (ReadArgvChar(name,value,argc,argv))
     return (NULL);
 
@@ -463,6 +467,8 @@ NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *class,
                           INT argc, char **argv)
 {
   char value[VALUELEN];
+
+  ASSERT(theMG!=NULL);
 
   if (ReadArgvChar(name,value,argc,argv))
     return (NULL);
@@ -802,6 +808,8 @@ INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, IN
   FORMAT *fmt;
   char *s,*tok,*typetok[MAXVECTORS];
   INT type;
+
+  ASSERT(theMG!=NULL);
 
   for (type=0; type<MAXVECTORS; type++) {nNUMPROC[type] = 0; typetok[type] = NULL;}
 
