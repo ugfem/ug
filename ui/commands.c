@@ -2114,7 +2114,6 @@ static INT LogOffCommand (INT argc, char **argv)
 static INT CnomCommand (INT argc, char **argv)
 {
   char docName[32],plotprocName[NAMESIZE],tagName[NAMESIZE];
-  INT error;
   int i,flag;
 
   if (currMG==NULL)
@@ -4033,9 +4032,10 @@ static INT DeleteNodeCommand (INT argc, char **argv)
 static INT MoveNodeCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
+  VERTEX *myVertex;
   NODE *theNode;
   COORD xc[DIM];
-  INT type,i,j,level;
+  INT type,i,j,level,relative;
 
   /* following variables: keep type for sscanf */
   float x[DIM_MAX];
@@ -4066,6 +4066,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
   }
 
   /* check options */
+  relative = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -4119,6 +4120,10 @@ static INT MoveNodeCommand (INT argc, char **argv)
         xc[j] = x[j];
       break;
 
+    case 'r' :
+      relative = TRUE;
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("move",HELPITEM,buffer);
@@ -4132,8 +4137,15 @@ static INT MoveNodeCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
+  myVertex = MYVERTEX(theNode);
   if (type==IVOBJ)
   {
+    if (relative)
+    {
+      /* move relative to old position */
+      for (j=0; j<DIM; j++)
+        xc[j] += CVECT(myVertex)[j];
+    }
     if (MoveNode(theMG,theNode,xc)!=GM_OK)
     {
       PrintErrorMessage('E',"move","failed moving the node");
@@ -4227,15 +4239,15 @@ static INT InsertElementCommand (INT argc, char **argv)
     {
     case 's' :
       if (SELECTIONMODE(theMG)==nodeSelection)
-        for (i=0; i<SELECTIONSIZE(theMG); i++)
+        for (nNodes=0; nNodes<SELECTIONSIZE(theMG); nNodes++)
         {
-          theNode = (NODE *)SELECTIONOBJECT(theMG,i);
+          theNode = (NODE *)SELECTIONOBJECT(theMG,nNodes);
           if (nNodes>=MAX_CORNERS_OF_ELEM)
           {
             PrintErrorMessage('E',"ie","too many nodes are in the selection");
             return (CMDERRORCODE);
           }
-          theNodes[nNodes++] = theNode;
+          theNodes[nNodes] = theNode;
         }
       break;
 
@@ -4593,7 +4605,7 @@ static INT MarkCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   int id,idfrom,idto;
   INT Side;
-  float x,y,z;
+  float x[DIM];
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
@@ -4626,18 +4638,18 @@ static INT MarkCommand (INT argc, char **argv)
     if (argv[i][0]=='p')
     {
 #ifdef __TWODIM__
-      if (sscanf(argv[i],"pos %f %f",&x,&y) != 2)
+      if (sscanf(argv[i],"pos %f %f",x,x+1) != 2)
         return (CMDERRORCODE);
-      global[0] = x;
-      global[1] = y;
+      global[0] = x[0];
+      global[1] = x[1];
 #endif
 
 #ifdef __THREEDIM__
-      if (sscanf(argv[i],"pos %f %f %f",&x,&y,&z) != 3)
+      if (sscanf(argv[i],"pos %f %f %f",x,x+1,x+2) != 3)
         return (CMDERRORCODE);
-      global[0] = x;
-      global[1] = y;
-      global[2] = z;
+      global[0] = x[0];
+      global[1] = x[1];
+      global[2] = x[2];
 #endif
 
       theElement = FindElementOnSurface(theMG,global);
@@ -5490,9 +5502,164 @@ static INT OrderVectorsCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
+  if (dep_opt==NULL)
+  {
+    PrintErrorMessage('E',"orderv","the o option is mandatory");
+    return (PARAMERRORCODE);
+  }
+
   if (OrderVectors(theMG,levels,mode,PutSkipFirst,SkipPat,dep,dep_opt,cut)!=GM_OK)
   {
     PrintErrorMessage('E',"orderv","order vectors failed");
+    return (CMDERRORCODE);
+  }
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   revvecorder - revert the vector order
+
+
+   DESCRIPTION:
+   This command reverts the order of the vector list.
+
+   'revvecorder [$a]'
+
+   .  $a                     - order all levels of the current multigrid
+   D*/
+/****************************************************************************/
+
+static INT RevertVecOrderCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  INT i,from,to,l;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"revvecorder","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  from = to = CURRENTLEVEL(theMG);
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      from = 0;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("revvecorder",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  for (l=from; l<=to; l++)
+  {
+    RevertVecOrder(GRID_ON_LEVEL(theMG,l));
+    UserWriteF(" [%d:rev]",l);
+  }
+  UserWrite("\n");
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   lineorderv - order the vectors in lines according to the user provided dependencies
+
+
+   DESCRIPTION:
+   This command orders the vectors in lines according to the user provided dependencies.
+   It orders the vectors of the current multigrid, calling the function
+   'LineOrderVectors'.
+
+   'lineorderv $d <dep-proc> $o <dep-proc options> $c <find-cut-proc> [$a]'
+
+   .  $d <dep-proc>          - the ordering algorithm uses this dependency procedure...
+   .  $o <dep-proc options>  - ...and passes these options to it
+   .  $a                     - order all levels of the current multigrid
+   D*/
+/****************************************************************************/
+
+static INT LineOrderVectorsCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  char *dep,*dep_opt,*cut;
+  INT i,levels,verboselevel;
+  int iValue;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"lineorderv","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  levels           = GM_CURRENT_LEVEL;
+  dep              = dep_opt = cut = NULL;
+  verboselevel = 0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'd' :
+      /* skip leading blanks */
+      dep = argv[i]+1;
+      while ((*dep!='\0') && (strchr(WHITESPACE,*dep)!=NULL))
+        dep++;
+      break;
+
+    case 'o' :
+      /* skip leading blanks */
+      dep_opt = argv[i]+1;
+      while ((*dep_opt!='\0') && (strchr(WHITESPACE,*dep_opt)!=NULL))
+        dep_opt++;
+      break;
+
+    case 'c' :
+      /* skip leading blanks */
+      cut = argv[i]+1;
+      while ((*cut!='\0') && (strchr(WHITESPACE,*cut)!=NULL))
+        cut++;
+      break;
+
+    case 'a' :
+      levels = GM_ALL_LEVELS;
+      break;
+
+    case 'v' :
+      if (sscanf(argv[i],"v %d",&iValue)!=1)
+      {
+        PrintErrorMessage('E',"lineorderv","specify integer with v option");
+        return (CMDERRORCODE);
+      }
+      verboselevel = iValue;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("lineorderv",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  if (dep==NULL)
+  {
+    PrintErrorMessage('E',"lineorderv","the d option is mandatory");
+    return (PARAMERRORCODE);
+  }
+
+  if (dep_opt==NULL)
+  {
+    PrintErrorMessage('E',"lineorderv","the o option is mandatory");
+    return (PARAMERRORCODE);
+  }
+
+  if (LineOrderVectors(theMG,levels,dep,dep_opt,cut,verboselevel)!=GM_OK)
+  {
+    PrintErrorMessage('E',"lineorderv","order vectors failed");
     return (CMDERRORCODE);
   }
 
@@ -5518,7 +5685,7 @@ static INT SetIndexCommand (INT argc, char **argv)
   theMG = currMG;
   if (theMG==NULL)
   {
-    PrintErrorMessage('E',"orderv","no open multigrid");
+    PrintErrorMessage('E',"setindex","no open multigrid");
     return (CMDERRORCODE);
   }
   theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
@@ -5908,7 +6075,7 @@ static INT SelectCommand (INT argc, char **argv)
    extracon - display or delete extra connections
 
    DESCRIPTION:
-   This command displays or deleteâ extra connections.
+   This command displays or delete’ extra connections.
 
    'extracon [$d]'
 
@@ -6294,85 +6461,6 @@ static INT QualityCommand (INT argc, char **argv)
   UserWrite(buffer);
 
   return(OKCODE);
-}
-
-/****************************************************************************/
-/*D
-   gridscript - write commands creating level 0 of the current grid when executed
-
-   DESCRIPTION:
-
-   'gridscript'
-
-   EXAMPLE:
-   .vb
-   logon grid.scr;
-   gridscript;
-   logoff;
-   .ve
-   D*/
-/****************************************************************************/
-
-static INT GridScriptCommand (INT argc, char **argv)
-{
-  MULTIGRID *theMG;
-  GRID *theGrid;
-  ELEMENT *elem;
-  VERTEX *vert;
-  NODE *node;
-  INT i,coe,id;
-
-  NO_OPTION_CHECK(argc,argv);
-
-  theMG = GetCurrentMultigrid();
-  if (theMG==NULL)
-  {
-    PrintErrorMessage('E',"gridscript","no current multigrid");
-    return(CMDERRORCODE);
-  }
-  theGrid = GRID_ON_LEVEL(theMG,0);
-
-  UserWriteF("new mygrid $b %s $f %s $h %d;\n",ENVITEM_NAME(MG_BVP(theMG)),
-             ENVITEM_NAME(MGFORMAT(theMG)),
-             MGHEAP(theMG)->size);
-
-  UserWrite("\n# boundary nodes\n");
-  for (vert=FIRSTVERTEX(theGrid); vert!=NULL; vert=SUCCV(vert))
-    if (OBJT(vert)==BVOBJ)
-    {
-      if (MOVE(vert)==0) continue;                      /* corners are generated automatically */
-      UserWriteF("bn %d %10.4e;\n",
-                 (int)Patch_GetPatchID(FIRSTPATCH(vert)),
-                 (float)FIRSTLAMBDA(vert));
-    }
-
-  UserWrite("\n# inner nodes\n");
-  for (vert=FIRSTVERTEX(theGrid); vert!=NULL; vert=SUCCV(vert))
-    if (OBJT(vert)==IVOBJ)
-      UserWriteF("in %10.4e %10.4e;\n",(float)XC(vert),(float)YC(vert));
-
-  /* first renumber the nodes: CAUTION corners are first, then follow bnodes */
-  id = 0;
-  for (i=0; i<MGNOOFCORNERS(theMG); i++)
-    ID(TOPNODE(MGVERTEX(theMG,i))) = id++;
-  for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
-    if ((OBJT(MYVERTEX(node))==BVOBJ) && (MOVE(MYVERTEX(node))!=0))
-      ID(node) = id++;
-  for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
-    if (OBJT(MYVERTEX(node))==IVOBJ)
-      ID(node) = id++;
-
-  UserWrite("\n# elements\n");
-  for (elem=FIRSTELEMENT(theGrid); elem!=NULL; elem=SUCCE(elem))
-  {
-    coe = CORNERS_OF_ELEM(elem);
-    UserWrite("ie");
-    for (i=0; i<coe; i++)
-      UserWriteF(" %2d",(int)ID(CORNER(elem,i)));
-    UserWrite(";\n");
-  }
-
-  return (OKCODE);
 }
 
 /****************************************************************************/
@@ -7134,7 +7222,7 @@ static INT DrawTextCommand (INT argc, char **argv)
   UGWINDOW *theWin;
   char winname[NAMESIZE],text[NAMESIZE];
   COORD_POINT pos;
-  INT i,invopt,centeropt,size;
+  INT i,mode,centeropt,size;
 
         #ifdef ModelP
   if (me!=master) return (OKCODE);
@@ -7154,7 +7242,8 @@ static INT DrawTextCommand (INT argc, char **argv)
   }
 
   /* check options */
-  invopt = centeropt = FALSE;
+  centeropt = FALSE;
+  mode = TEXT_REGULAR;
   size   = 0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -7181,8 +7270,13 @@ static INT DrawTextCommand (INT argc, char **argv)
       }
       break;
 
-    case 'i' :
-      invopt = TRUE;
+    case 'm' :
+      if (strstr(argv[i],"reg")!=NULL)
+        mode = TEXT_REGULAR;
+      else if (strstr(argv[i],"inv")!=NULL)
+        mode = TEXT_INVERSE;
+      else if (strstr(argv[i],"ind")!=NULL)
+        mode = TEXT_INDEXED;
       break;
 
     case 'c' :
@@ -7195,7 +7289,7 @@ static INT DrawTextCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  DrawWindowText(theWin,pos,text,size,centeropt,invopt);
+  DrawWindowText(theWin,pos,text,size,centeropt,mode);
 
   return (OKCODE);
 }
@@ -7592,6 +7686,40 @@ static INT SetCurrentPictureCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   picwin - move the current picture to a new window
+
+   DESCRIPTION:
+   This command moves the current picture to a new window.
+
+   'picwin'
+   D*/
+/****************************************************************************/
+
+static INT PictureWindowCommand (INT argc, char **argv)
+{
+  PICTURE *thePic;
+
+  thePic = GetCurrentPicture();
+  if (thePic==NULL)
+  {
+    PrintErrorMessage('W',"picwin","there's no picture to move");
+    return (OKCODE);
+  }
+  if (ErasePicture(thePic)) return (CMDERRORCODE);
+  if (MovePictureToNewWindow(thePic))
+  {
+    PrintErrorMessage('E',"picwin","failed to create a new window for the picture");
+    return (CMDERRORCODE);
+  }
+
+  SetCurrentUgWindow(PIC_UGW(thePic));
+  SetCurrentPicture(thePic);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    clearpicture - clear current picture
 
    DESCRIPTION:
@@ -7747,7 +7875,7 @@ static INT SetViewCommand (INT argc, char **argv)
   COORD vP[3],tP[3],xA[3];
   INT *perspective;
   INT per;
-  INT i,veclen;
+  INT i,j,veclen;
 
   /* following variables: keep type for sscanf */
   float x[3];
@@ -7785,8 +7913,8 @@ static INT SetViewCommand (INT argc, char **argv)
         PrintErrorMessage('E',"setview",buffer);
         return (PARAMERRORCODE);
       }
-      for (i=0; i<veclen; i++)
-        vP[i] = x[i];
+      for (j=0; j<veclen; j++)
+        vP[j] = x[j];
       viewPoint = vP;
       break;
 
@@ -7797,8 +7925,8 @@ static INT SetViewCommand (INT argc, char **argv)
         PrintErrorMessage('E',"setview",buffer);
         return (PARAMERRORCODE);
       }
-      for (i=0; i<veclen; i++)
-        tP[i] = x[i];
+      for (j=0; j<veclen; j++)
+        tP[j] = x[j];
       targetPoint = tP;
       break;
 
@@ -7809,8 +7937,8 @@ static INT SetViewCommand (INT argc, char **argv)
         PrintErrorMessage('E',"setview",buffer);
         return (PARAMERRORCODE);
       }
-      for (i=0; i<veclen; i++)
-        xA[i] = x[i];
+      for (j=0; j<veclen; j++)
+        xA[j] = x[j];
       xAxis = xA;
       break;
 
@@ -7895,12 +8023,11 @@ static INT SetViewCommand (INT argc, char **argv)
 static INT DisplayViewCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
+  INT i;
 
         #ifdef ModelP
   if (me!=master) return (OKCODE);
         #endif
-
-  NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
   thePic = GetCurrentPicture();
@@ -7909,6 +8036,20 @@ static INT DisplayViewCommand (INT argc, char **argv)
     PrintErrorMessage('E',"vdisplay","there's no current picture");
     return (CMDERRORCODE);
   }
+
+  /* check options */
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 's' :
+      PrintViewSettings(thePic);
+      return (OKCODE);
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("vdisplay",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
 
   if (DisplayViewOfViewedObject(thePic))
   {
@@ -8418,7 +8559,7 @@ static INT TextFacCommand (INT argc, char **argv)
    .    $e~{0|1}      - plot ElemIDs: no/yes
    .    $n~{0|1}      - plot NodeIDs: no/yes
    .    $r~{0|1}      - plot ref marks: no/yes
-   .    $i~{0|1}      - plot marksof indicator: no/yes
+   .    $i~{0|1}      - plot marks of indicator: no/yes
    .    $w~{c/i/r/a}  - which elements to plot:
    .n                                        c  copies and up
    .n                                        i  irregular and up
@@ -8830,6 +8971,10 @@ static INT FindRangeCommand (INT argc, char **argv)
 
   sprintf(buffer," FR_min = %10.3g\n FR_max = %10.3g\n",(float)min,(float)max);
   UserWrite(buffer);
+
+  if (put)
+    if (InvalidatePicture(thePic))
+      return (CMDERRORCODE);
 
   if (    (SetStringValue(":findrange:min",min)!=0)
           ||      (SetStringValue(":findrange:max",max)!=0))
@@ -10614,7 +10759,6 @@ static INT PStatCommand (INT argc, char **argv)
 #ifdef Debug
 static INT DebugCommand (INT argc, char **argv)
 {
-  char buffer[128];
   char *module;
   int l;
 
@@ -10735,6 +10879,8 @@ INT InitCommands ()
   if (CreateCommand("ordernodes",         OrderNodesCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("lexorderv",          LexOrderVectorsCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("orderv",             OrderVectorsCommand                     )==NULL) return (__LINE__);
+  if (CreateCommand("lineorderv",         LineOrderVectorsCommand                 )==NULL) return (__LINE__);
+  if (CreateCommand("revvecorder",        RevertVecOrderCommand                   )==NULL) return (__LINE__);
   if (CreateCommand("shellorderv",        ShellOrderVectorsCommand                )==NULL) return (__LINE__);
   if (CreateCommand("setindex",           SetIndexCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("extracon",           ExtraConnectionCommand                  )==NULL) return (__LINE__);
@@ -10758,7 +10904,6 @@ INT InitCommands ()
   if (CreateCommand("rlist",                      RuleListCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
-  if (CreateCommand("gridscript",         GridScriptCommand                               )==NULL) return(__LINE__);
         #if (! (defined(__THREEDIM__) && defined(NETGENF)))
   if (CreateCommand("bnodes",                 BnodesCommand                                       )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
@@ -10780,6 +10925,7 @@ INT InitCommands ()
   if (CreateCommand("clearpicture",       ClearPictureCommand                     )==NULL) return (__LINE__);
   if (CreateCommand("picframe",           PicFrameCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("setcurrpicture", SetCurrentPictureCommand            )==NULL) return (__LINE__);
+  if (CreateCommand("picwin",                     PictureWindowCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("setview",            SetViewCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("vdisplay",           DisplayViewCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("walk",                       WalkCommand                                     )==NULL) return (__LINE__);
