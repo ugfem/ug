@@ -1993,6 +1993,7 @@ INT CreateBVDomainHalfening                     ( GRID *grid, INT side, INT leaf
 
 /* general functions for BLOCKVECTOR */
 INT CreateBlockvector                           ( GRID *theGrid, BLOCKVECTOR **BVHandle );
+INT CreateBlockvector_l0                        ( GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after);
 INT DisposeBlockvector                          ( GRID *theGrid, BLOCKVECTOR *bv );
 void FreeAllBV                                          ( GRID *grid );
 
