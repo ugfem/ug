@@ -167,6 +167,11 @@ INT InitNumerics ()
     return (err);
   }
 
+  if ((err=InitEWN())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
   /* init finite volumes */
   if ((err=InitFiniteVolumeGeom())!=0) {
     SetHiWrd(err,__LINE__);
