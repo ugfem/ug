@@ -7161,6 +7161,7 @@ static INT SelectCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   NODE *theNode;
   ELEMENT *theElement;
+  VECTOR *theVector;
   INT i,level;
   char c;
 
@@ -7282,6 +7283,57 @@ static INT SelectCommand (INT argc, char **argv)
         if (RemoveElementFromSelection(theMG,theElement)!=GM_OK)
         {
           PrintErrorMessage('E',"select","removing the element failed");
+          return (CMDERRORCODE);
+        }
+      }
+      else
+      {
+        PrintErrorMessage('E',"select","specify + or - with n option");
+        return (PARAMERRORCODE);
+      }
+      break;
+
+    case 'v' :
+      if (sscanf(argv[i],"v %c %d",&c,&id)!=2)
+      {
+        PrintErrorMessage('E',"select","could not get +/- or ID");
+        return (PARAMERRORCODE);
+      }
+      if (c=='+')
+      {
+        /* search vector */
+        theVector = NULL;
+        for (level=0; level<=TOPLEVEL(theMG); level++)
+          if ((theVector=FindVectorFromIndex(GRID_ON_LEVEL(theMG,level),id))!=NULL)
+            break;
+        if (theVector==NULL)
+        {
+          PrintErrorMessageF('E',"select","vector with ID %ld not found",(long)id);
+          return (CMDERRORCODE);
+        }
+        if (AddVectorToSelection(theMG,theVector)!=GM_OK)
+        {
+          PrintErrorMessage('E',"select","selecting the vector failed");
+          return (CMDERRORCODE);
+        }
+      }
+      else if (c=='-')
+      {
+        if (SELECTIONMODE(theMG)==vectorSelection)
+          for (i=0; i<SELECTIONSIZE(theMG); i++)
+          {
+            theVector = (VECTOR *)SELECTIONOBJECT(theMG,i);
+            if (ID(theVector)==id)
+              break;
+          }
+        if (theVector==NULL)
+        {
+          PrintErrorMessageF('E',"select","vector with ID %ld is not in selection",(long)id);
+          return (CMDERRORCODE);
+        }
+        if (RemoveVectorFromSelection(theMG,theVector)!=GM_OK)
+        {
+          PrintErrorMessage('E',"select","removing the vector failed");
           return (CMDERRORCODE);
         }
       }
