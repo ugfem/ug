@@ -1979,6 +1979,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 #endif
     }
     if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    /* saved */
+    MG_SAVED(theMG) = 1;
+    strcpy(MG_FILENAME(theMG),filename);
 
     return (theMG);
   }
@@ -2038,6 +2041,11 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
 #endif
     }
+
+    /* saved */
+    MG_SAVED(theMG) = 1;
+    strcpy(MG_FILENAME(theMG),filename);
+
     return(theMG);
   }
 #endif
