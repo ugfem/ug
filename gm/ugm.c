@@ -928,6 +928,10 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   SETLOFFSET(link0,0);
   SETLOFFSET(link1,1);
   SETLEVEL(pe,theGrid->level);
+        #if (defined ModelP) && (defined __THREEDIM__)
+  DDD_AttrSet(PARHDR(pe),theGrid->level);
+  DDD_PrioritySet(PARHDR(pe),PrioMaster);
+        #endif
   NBNODE(link0) = to;
   NBNODE(link1) = from;
   SET_NO_OF_ELEM(pe,1);
