@@ -35,6 +35,7 @@
 /* low module */
 #include "debug.h"
 #include "fileopen.h"
+#include "general.h"
 
 /* dev module */
 #include "devices.h"
@@ -782,9 +783,8 @@ static REFRULE HexahedronRules[3] =
 };
 #endif
 
-/* data for CVS */
-static char rcsid[] = "$Header$ Dim=$DIM ";
-
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/
