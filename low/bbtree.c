@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <math.h>
 
+#include "general.h"
 #include "compiler.h"
 #include "bbtree.h"
 
