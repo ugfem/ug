@@ -697,9 +697,6 @@ INT InitDevices (int *argcp, char **argv)
         #ifdef ModelP
   /* send number of command line arguments after InitScreen() */
   Broadcast(argcp, sizeof(int));
-
-  for (l=0; l<degree; l++)
-    Spread(l,(void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
 }
 else {
   int l, i, new_argc;
@@ -720,11 +717,9 @@ else {
 
   defaultOuputDevice = malloc(sizeof(OUTPUTDEVICE));
   /* TODO:  set function pointers to NULL */
-
-  GetSpread((void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
-  for (l=0; l<degree; l++)
-    Spread(l,(void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
 }
+Broadcast((void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
+
         #endif
 
   /* init metafile device */
