@@ -22,7 +22,7 @@ ugmake ug -i ifdef
 ugmake ug
 cd $UGROOT/../cd/appl
 make 2d
-make 2d ifdef
+make ifdef
 make 3d
 # build 2FTFF lib
 cp $UGROOT/configs/2FTFF.conf $UGROOT/ug.conf
