@@ -369,6 +369,16 @@ int ShellOpen (ShellWindow *sh)
                                 WhitePixel(display,screen_num));
         #endif /* USE_XAW */
 
+  /* use backing store for shell window */
+  {
+    XSetWindowAttributes attr;
+    unsigned long mask;
+
+    attr.backing_store = Always;
+    mask = CWBackingStore;
+    XChangeWindowAttributes(display, sh->win, mask, &attr);
+  }
+
   /* generate icon, needed for properties */
   sh->icon_pixmap = XCreateBitmapFromData(display,sh->win,shell_icon_bits,shell_icon_width,
                                           shell_icon_height);

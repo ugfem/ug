@@ -1124,6 +1124,16 @@ int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int 
                                 x,y,width,height,border_width,ctab[X11OutputDevice->black].pixel,
                                 ctab[X11OutputDevice->white].pixel);
 
+  /* use backing store for window */
+  {
+    XSetWindowAttributes attr;
+    unsigned long mask;
+
+    attr.backing_store = Always;
+    mask = CWBackingStore;
+    XChangeWindowAttributes(display, gw->win, mask, &attr);
+  }
+
   /* create a pixmap with white background	*/
   gw->pixmap_depth=DefaultDepth(display,screen_num);
   gw->pixmap_width=gw->window_width;
