@@ -920,7 +920,7 @@ INT PreInitElementTypes (void)
   if (err!=GM_OK) return(err);
 #endif
 
-  return (NULL);
+  return (0);
 }
 
 /****************************************************************************/
