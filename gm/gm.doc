@@ -96,6 +96,7 @@ are combined to form an 'EDGE' object.
 
 . GEOM_OBJECT - This is an union of 'ELEMENT', 'NODE' and 'EDGE', the basic
 geometric objects.
+
 . VECTOR - This structure is part of UGs sparse matrix data structure. Degrees
 of freedom (and additional values) associated with `one geometric object` 
 ('ELEMENT', 'NODE', 'EDGE' and also sides in 3D for which there is no extra data type)  
@@ -108,6 +109,13 @@ in two 'VECTOR' objects. 'MATRIX' objects always come in pairs connecting two
 'VECTOR' objects in both directions. The graph induced by the 'MATRIX'-'VECTOR'
 structure is completely independend from the mesh graph represented by the
 'LINK'-'NODE' structure.
+
+. BLOCKVECTOR - Gives you the facility to structure a 'VECTOR'-list. The
+'VECTOR'-list itself remains unchanged but additional data is inserted
+in the grid. The substructuring can be hierarchical. Each 'VECTOR' sublist
+described by a 'BLOCKVECTOR' can be processed by itself. Via the
+'BLOCKVECTOR' structure there is also a blockmatrix structure induced to
+the 'MATRIX' structure but without any additional memory need.
 
 . CONNECTION - The two 'MATRIX' objects connecting two 'VECTOR' objects 
 are combined to a 'CONNECTION' object. This is similar to the combination of two
@@ -846,7 +854,7 @@ struct ivertex {               // inner vertex structure
     COORD xi[DIM];             // local coordinates in father element    
     
     // pointers 
-    union vertex *pred,*succ;  // doubly linked list of vertices        
+    union vertex *pred,*succ;  // double linked list of vertices        
     void *data;                // associated user data structure        
     union element *father;     // father element                        
     struct node *topnode;      // highest node where defect is valid    
@@ -861,7 +869,7 @@ struct bvertex {               // boundary vertex structure
     COORD xi[DIM];             // local coordinates in father element    
     
     // pointers 
-    union vertex *pred,*succ;  // doubly linked list of vertices        
+    union vertex *pred,*succ;  // double linked list of vertices        
     void *data;                // associated user data structure        
     union element *father;     // father element                        
     struct node *topnode;      // highest node where defect is valid    
@@ -1273,7 +1281,7 @@ struct node {                   // level dependent part of a vertex
     INT index;                  // discrete coordinates for ordering    
 
     // pointers 
-    struct node *pred,*succ;    // doubly linked list of nodes per level
+    struct node *pred,*succ;    // double linked list of nodes per level
     struct link *start;         // list of links                        
     struct node *father;        // node on coarser level (NULL if none) 
     struct node *son;           // node on finer level (NULL if none)   
@@ -1639,7 +1647,7 @@ struct generic_element {            // no difference between inner and bndel
     unsigned INT  property;         // we need more bits ...                
     
     // pointers 
-    union element *pred, *succ;     // double linked list of elements       
+	union element *pred, *succ;     // double linked list of elements
     void *refs[1];                  // variable length array managed by ug  
 } ;
 
@@ -1652,7 +1660,7 @@ struct triangle {
     unsigned INT  property;         // we need more bits ...                
     
     // pointers 
-    union element *pred, *succ;     // doubly linked list of elements       
+    union element *pred, *succ;     // double linked list of elements       
     struct node *n[3];              // corners of that element              
     union element *father;          // father element on coarser grid       
     union element *sons[4];         // element tree                         
@@ -1675,7 +1683,7 @@ struct quadrilateral {
     unsigned INT  property;         // we need more bits ...                
     
     // pointers 
-    union element *pred, *succ;     // doubly linked list of elements       
+    union element *pred, *succ;     // double linked list of elements       
     struct node *n[4];              // corners of that element              
     union element *father;          // father element on coarser grid       
     union element *sons[4];         // element tree                         
@@ -1698,7 +1706,7 @@ struct tetrahedron {
     unsigned INT  property;         // we need more bits ...                
     
     // pointers 
-    union element *pred, *succ;     // doubly linked list of elements       
+    union element *pred, *succ;     // double linked list of elements       
     struct node *n[4];              // corners of that element              
     union element *father;          // father element on coarser grid       
     union element *sons[1];         // element tree                         
@@ -2041,7 +2049,7 @@ struct elementside {
     COORD lambda[MAX_CORNERS_OF_SIDE]   // parameter of side corners            
                         [DIM_OF_BND];
     // pointers 
-    struct elementside *pred,*succ;     // double linked list                   
+	struct elementside *pred,*succ;     // double linked list
 } ;
 
 typedef struct elementside ELEMENTSIDE;
@@ -2116,12 +2124,14 @@ struct vector {
     unsigned INT control;       // object identification, various flags 
     union geom_object *object;  // associated object                    
     
-    struct vector *pred,*succ;  // doubly linked list of vectors        
+    struct vector *pred,*succ;  // double linked list of vectors        
     
     unsigned INT index;         // ordering of unknowns                 
     unsigned INT skip;          // used bitwise to skip unknowns        
     struct matrix *start;       // implements matrix                    
     
+	BV_DESC block_descr;		// membership to the blockvector levels
+	
     // user data 
     DOUBLE value[1];            // array of doubles                     
 };
@@ -2155,7 +2165,7 @@ all degrees of freedom stored in the vector.
 
 . object - Pointer to the geometric object associated with the vector.
 
-. pred,succ - Realizes double linked list. 
+. pred,succ - Realizes double linked list.
 
 . index - Reflects position of the 'VECTOR' in the double linked list.
 
@@ -2166,6 +2176,9 @@ conditions. These components have to be treated differently in some parts of the
 list represents the rows of the matrix belonging to degrees of freedom in
 the given 'VECTOR'.
 
+. block_descr - Describes the position of this vector in the hierarchy of
+'BLOCKVECTOR's. Only used for 'BLOCKVECTOR' mechanism.
+	
 . value - Array of double values. This array is allocated dynamically with the
 size specified in the 'FORMAT' structure.
 
@@ -2188,15 +2201,20 @@ Access to next and previous 'VECTOR' in the double linked list.
 INT VINDEX (VECTOR *v);
 .ve
 
-Position of the 'VECTOR' in the double linked list. This is useful for
+Position of the 'VECTOR' in the doubl linked list. This is useful for
 the implementation of some iterative schemes.
 
 .vb
+INT VSKIPME (VECTOR *v,INT n);
+INT VVECSKIP (VECTOR *v,INT n);
+INT VFULLSKIP (VECTOR *v,INT n);
+void SETVSKIPME (VECTOR *v,INT n);
 INT VECSKIP (VECTOR *v);
 INT VECSKIPBIT (VECTOR *v,INT n);
 void SETVECSKIPBIT (VECTOR *v,INT n);
 .ve
 
+????
 Macros to modify the skip flags. 'VECSKIP' returns value of the skip word. Since it is
 a macro it can also be used for assigning a value to the skip word, e.g.
 'VECSKIP(v)=0' will reset all bits in the skip word. 'VECSKIPBIT' returns true
@@ -2232,6 +2250,39 @@ ELEMENT *VMYELEMENT (VECTOR *v);
 
 These macros return pointers the objects the vector belongs to with
 appropriate type casts.
+
+.vb
+INT VUP(VECTOR *p);
+void SETVUP(VECTOR *p,INT n);
+INT VDOWN(VECTOR *p);
+void SETVDOWN(VECTOR *p,INT n);
+.ve
+
+????
+
+.vb
+BV_DESC VBVD (VECTOR *v);
+.ve
+
+Returns the whole information about the position of this 'VECTOR' in the
+hierarchy of 'BLOCKVECTOR's. This macro should only be applied if the
+'BLOCKVECTOR' mechanism is in use.
+
+.vb
+INT VMATCH (VECTOR *v, BV_DESC *bvd, BV_DESC_FORMAT *bvdf);
+.ve
+
+Returns true if the 'VECTOR' belongs to the 'BLOCKVECTOR' given in the
+blockvector description ('BV_DESC').
+
+.vb
+CAST_NVECTOR (VECTOR *p);
+CAST_EDVECTOR (VECTOR *p);
+CAST_SVECTOR (VECTOR *p,INT i);
+CAST_EVECTOR (VECTOR *p);
+.ve
+
+????
 
 CONTROL WORDS:
 
@@ -2292,7 +2343,7 @@ SETVCNEW (VECTOR *v, INT n);                  connection in refinement
 
 SEE ALSO:
 
-'MATRIX', 'NODE', 'EDGE', 'ELEMENT'.
+'MATRIX', 'NODE', 'EDGE', 'ELEMENT', 'BLOCKVECTOR'.
 
 D*/
 
@@ -2497,6 +2548,568 @@ SEE ALSO:
 
 D*/
 
+
+/*D
+BLOCKVECTOR - Data type for substructuring a 'VECTOR' list
+
+STRUCTURES:
+.vb
+struct blockvector
+{
+    unsigned INT control;           // object identification, various flags
+
+    BLOCKNUMBER number;	            // logical blockvectornumber
+    struct blockvector *pred,*succ; // double linked list of blockvectors
+    VECTOR *first_vec;              // start vector of this blockvector
+    VECTOR *end_vec;                // succ. of the last vector of this blockvector
+
+    struct blockvector *first_son;  // start of blockvector list on next level
+    struct blockvector *last_son;   // end of blockvector list on next level
+};
+
+typedef struct blockvector BLOCKVECTOR;
+.ve
+
+DESCRIPTION:
+
+The 'BLOCKVECTOR' data structure realizes a mechanism to substructure a
+'VECTOR' list as it is part of the sparse matrix vector data structure.
+A 'BLOCKVECTOR' gives access to a sublist of the 'VECTOR' list, i.e. all
+members of a 'BLOCKVECTOR' must be placed consecutively in the 'VECTOR' list.
+A further consequence of this fact is that in most cases the 'VECTOR' list
+must be reordered such that all 'VECTOR's forming a block are consecutive
+before the 'BLOCKVECTOR' structure can be built. But apart from reordering
+the 'VECTOR' list is not influenced by the 'BLOCKVECTOR' structure thus all
+existing functions can be used furthermore without any changes.
+
+To represent a sequence of sublists the 'BLOCKVECTOR's form a double
+linked list that is anchored in a 'GRID' structure. It is not necessary
+(but recommended) that all 'VECTOR's of a grid belong to a 'BLOCKVECTOR'.
+
+The 'VECTOR' list represented by a 'BLOCKVECTOR' can be substructured further.
+The corresponding 'BLOCKVECTOR' list is anchored in the parent 'BLOCKVECTOR'.
+In this way a `tree-like hierarchical data structure` is realized representing
+a natural parent-child relationship. All technical terms concerning tree-like
+data structures can easily be translated. 
+
+Furthermore a blockmatrix structure is induced by the 'BLOCKVECTOR' structure
+without any additional amount of memory: 2 'BLOCKVECTOR's, considered as
+row- and column-blockvector, determine a blockmatrix in the natural way.
+Such a blockmatrix describes consequently how the column-blockvector
+influences the row-blockvector. Notice: some macros for the
+data structure 'MATRIX' are not useful or have a different semantic for a 
+blockmatrix; this are the macros 'MNEXT' (provides not the next matrix element
+of the blockmatrix but of the whole matrix), 'MADJ' (the returned matrix
+element belongs not necessary to the blockmatrix; it holds only if the
+blockmatrix lies on the diagonal).
+
+. control - Used bitwise (see below).
+
+. number - Number describing the position in a 'BLOCKVECTOR' list. Should be
+unique within each list.
+
+. pred,succ - Realizes double linked list.
+
+. first_vec - Pointer in the 'VECTOR' list to the first 'VECTOR' belonging the this 'BLOCKVECTOR'.
+
+. end_vec - Pointer to the first 'VECTOR' `after` the 'VECTOR' sublist
+represented by this 'BLOCKVECTOR'. Is 'NULL' if the 'BLOCKVECTOR' represents
+the tail of the 'VECTOR' list.
+
+. first_son,last_son - Start and end of blockvector list on next level
+
+CONSTANTS:
+
+.vb
+BVDOWNTYPEVECTOR = 0
+BVDOWNTYPEBV = 1
+.ve
+
+Symbolic values for BVDOWNTYPE. See MACROS.
+
+
+MACROS:
+
+.vb
+INT BVDOWNTYPE ( BLOCKVECTOR *bv );
+void SETBVDOWNTYPE ( BLOCKVECTOR *bv, INT n );
+.ve
+
+Reads resp. sets the 'BLOCKVECTOR' type: is BVDOWNTYPEBV if there is a further
+level of 'BLOCKVECTOR's else is BVDOWNTYPEVECTOR, i.e. the 'BLOCKVECTOR' is
+the last one in the hierarchy and the next "level" is the 'VECTOR' sublist itself.
+
+.vb
+BLOCKNUMBER BVNUMBER ( BLOCKVECTOR *bv );
+.ve
+
+Number of the 'BLOCKVECTOR'.
+
+.vb
+BLOCKVECTOR *BVPRED ( BLOCKVECTOR *bv );
+BLOCKVECTOR *BVSUCC ( BLOCKVECTOR *bv );
+.ve
+
+Access to next and previous 'BLOCKVECTOR' in the double linked list.
+
+.vb
+VECTOR *BVFIRSTVECTOR ( BLOCKVECTOR *bv );
+VECTOR *BVENDVECTOR ( BLOCKVECTOR *bv );
+.ve
+
+Access to the first and the successor of the last 'VECTOR' in the sublist
+represented by this 'BLOCKVECTOR'.
+
+.vb
+VECTOR *BVDOWNVECTOR ( BLOCKVECTOR *bv );
+.ve
+
+Use only if BV_IS_LEAF_BV(bv)==TRUE! Equivalent to BVFIRSTVECTOR(bv).
+
+.vb
+BLOCKVECTOR *BVDOWNBV ( BLOCKVECTOR *bv );
+BLOCKVECTOR *BVDOWNBVEND ( BLOCKVECTOR *bv );
+.ve
+
+Use only if BV_IS_LEAF_BV(bv)==FALSE! Returns the first resp. last member
+of the 'BLOCKVECTOR' list on the next level (down the tree).
+
+.vb
+INT BV_IS_LEAF_BV ( BLOCKVECTOR *bv );
+.ve
+
+Returns true if the 'BLOCKVECTOR' is a leaf in the tree-like 'BLOCKVECTOR'
+hierarchy, i.e. if BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR.
+
+
+CONTROL WORDS:
+
+`General macros in 'control' word`
+
+.vb
+Macro name                            Pos Len Purpose
+-----------------------------------------------------------------------------
+INT OBJT (BLOCKVECTOR *p);            27  5   Object type BLOCKVOBJ
+void SETOBJT (BLOCKVECTOR *p, INT n);
+
+INT USED (BLOCKVECTOR *p);            23  1   not used
+void SETUSED (BLOCKVECTOR *p, INT n);
+
+INT TAG (BLOCKVECTOR *p);             24  3   not used
+void SETTAG (BLOCKVECTOR *p, INT n);
+
+INT THEFLAG (BLOCKVECTOR *p);         16  1   not used
+void SETTHEFLAG (BLOCKVECTOR *p, INT n);
+-----------------------------------------------------------------------------
+.ve
+
+`Macros for the 'BLOCKVECTOR' structure in 'control'`
+
+.vb
+Macro name                            Pos Len Purpose
+-----------------------------------------------------------------------------
+BVDOWNTYPE ( BLOCKVECTOR *bv );       0   1   Type of BLOCKVECTOR:
+SETBVDOWNTYPE ( BLOCKVECTOR *bv, INT n );     BVDOWNTYPEVECTOR if object is 
+                                              a leaf in the tree-like 
+                                              'BLOCKVECTOR' hierarchy,
+                                              BVDOWNTYPEBV else.
+-----------------------------------------------------------------------------
+.ve
+
+RELATED~FUNCTIONS:
+
+. CreateBlockvector - Allocates a new 'BLOCKVECTOR' (from the multigrids memory).
+
+. DisposeBlockvector - Returns an unused 'BLOCKVECTOR' to the multigrids memory.
+
+. FreeAllBV - Disposes all 'BLOCKVECTOR's related to one grid.
+
+. FreeBVList - Disposes blockvector-list and all its sons.
+
+. FindBV - Find the described blockvector in the grid.
+
+. CreateBVStripe - Creates a stripewise domain decomposition.
+
+. CreateBVDomainHalfening - Creates a recursive domain halfening decomposition.
+
+. blas~routines~for~'BLOCKVECTOR' - ~
+
+EXAMPLES:
+
+Let a stripewise decomposition be given and the 'BLOCKVECTOR's ordered
+ascendend resp. their numbers. Then the following code fragments
+set the 'IND' component of the 'VECTOR's of all 'BLOCKVECTOR's the the
+number of their 'BLOCKVECTOR'. The result is a 'VECTOR' list containing
+in the IND component the sequence "0,0,...0,1,1,...1,2,2,...,2,3,3,..., ...".
+
+First using the direct access to the 'BLOCKVECTOR' list of the grid:~
+.vb
+    BLOCKVECTOR *bv;
+
+    for ( bv = GFIRSTBV( grid ); bv != NULL; bv = BVSUCC( bv ) )
+        dsetBS( bv, IND, (DOUBLE)BVNUMBER( bv ) );
+.ve
+
+The second variant uses a 'BV_DESC' instead of the pointer:~
+.vb
+    BV_DESC my_bvd;
+    INT i, found;
+
+    BVD_INIT( &my_bvd );
+
+    for ( i = 0, found = GM_OK; found == GM_OK; i++ )
+    {
+        (void)BVD_PUSH_ENTRY( &my_bvd, i, &one_level_bvdf );
+        found = dsetGS( grid, &my_bvd, &one_level_bvdf, IND, (DOUBLE)i );
+        BVD_DISCARD_LAST_ENTRY( &my_bvd );
+    }
+.ve
+
+SEE ALSO:
+
+'VECTOR', 'MATRIX', 'BV_DESC', 'BV_DESC_FORMAT', 'BLOCKNUMBER', 'BLOCKLEVEL',
+'CreateBlockvector', 'DisposeBlockvector', 'FreeAllBV', 'FreeBVList', 'FindBV',
+'CreateBVStripe', 'CreateBVDomainHalfening ', 'blas_routines'.
+
+D*/
+
+
+/*D
+BLOCKLEVEL - Data type for a level number in a 'BLOCKVECTOR' hierarchy
+
+STRUCTURES:
+
+.vb
+typedef unsigned char BLOCKLEVEL;	
+.ve
+
+DESCRIPTION:
+
+To handle a levelnumber in a 'BLOCKVECTOR' hierarchy use this data type.
+To save memory this type is designed to be as small as possible: more
+than a few dozens of levels will never occure.
+
+Valid levels are in the range 0..MAX_BV_LEVEL.
+
+CONSTANTS:
+
+.vb
+MAX_BV_LEVEL = UCHAR_MAX
+.ve
+
+Largest admissible 'BLOCKVECTOR' level number.
+
+SEE ALSO:
+
+'BLOCKVECTOR', 'BV_DESC', 'BV_DESC_FORMAT', 'BLOCKNUMBER'.
+
+D*/
+
+
+/*D
+BLOCKNUMBER - Data type for the position of 'BLOCKVECTOR' in a 'BLOCKVECTOR' list
+
+STRUCTURES:
+
+.vb
+typedef unsigned SHORT BLOCKNUMBER;
+.ve
+
+DESCRIPTION:
+
+To handle a number of a 'BLOCKVECTOR' in a 'BLOCKVECTOR' list use this
+data type. To save memory this type is designed to be small, since more
+than MAX_BV_NUMBER will never occure.
+
+Valid numbers are in the range 0..MAX_BV_NUMBER.
+
+CONSTANTS:
+
+.vb
+NO_BLOCKVECTOR = ((BLOCKNUMBER)~0)
+.ve
+
+Number to indicate "there is no blockvector";
+largest number of type 'BLOCKNUMBER'.
+
+.vb
+MAX_BV_NUMBER = (NO_BLOCKVECTOR - 1)
+.ve
+
+Largest admissible 'BLOCKVECTOR' number.
+
+SEE ALSO:
+
+'BLOCKVECTOR', 'BV_DESC', 'BV_DESC_FORMAT', 'BLOCKLEVEL'.
+
+D*/
+
+
+/*D
+BVD_ENTRY_TYPE - Data type for storing a sequence of blockvector numbers bitwise
+
+STRUCTURES:
+
+.vb
+typedef unsigned INT BVD_ENTRY_TYPE 
+.ve
+
+DESCRIPTION:
+
+A component of this type in the 'BV_DESC' struct-type stores a sequence
+of blockvector numbers bitwise. For details refer to 'BV_DESC'.
+
+If you need more memory than 'BVD_ENTRY_TYPE' offers enlarge the type to
+'unsigned long'. But remember: Every 'VECTOR' contains such a
+'BVD_ENTRY_TYPE'. So choose this type as small as possible.
+ 
+SEE ALSO:
+
+'BLOCKVECTOR', 'BV_DESC', 'BV_DESC_FORMAT', 'BLOCKNUMBER'.
+
+D*/
+
+
+/*D
+BV_DESC - Data type for handling a sequence of blockvector numbers
+
+STRUCTURES:
+.vb
+struct blockvector_description
+{
+    BVD_ENTRY_TYPE entry;    // sequence of block levels according to
+                             // a certain blockvector_description_format
+    BLOCKLEVEL current;      // levels 0..'current'-1 currently valid
+    BLOCKLEVEL read;         // level 'read' is next to be read
+};
+
+typedef struct blockvector_description BV_DESC;
+.ve
+
+DESCRIPTION:
+
+To specify a 'BLOCKVECTOR' you can describe the "path" through the hierarchy
+of 'BLOCKVECTOR's from the root to the certain 'BLOCKVECTOR'. Since each
+'BLOCKVECTOR' has a unique number within the list in which it is stored
+you can describe the path in terms of the blockvector number beeing traversed
+during the walk. And such a sequence of blocknumbers is managed by 'BV_DESC'.
+
+Since each 'VECTOR' contains a 'BV_DESC' this data structure should be as
+small as possible. To achieve this goal, the blockvector numbers are not
+stored as an array of BLOCKNUMBER (which would be the simpliest way to do
+the task) but they are stored bitwise: the bits of the storage 'entry' are
+broken up into packets each containing one blockvector number. The size
+of all packets must be equal and is given in a 'BV_DESC_FORMAT' structure
+(see there for more information). The aim is to have packets as small as
+possible but large enough to hold the largest occuring number; this gives you
+the maximum possible number of packets and thus of blockvector levels you can
+process.
+
+The "packets" are stored beginning from the lowest bits. The next "packet"
+in which a number can be stored is given by 'current'. The masks necessary
+to access the different "packets" are provided by a 'BV_DESC_FORMAT'
+structure. Thus each function working on a 'BV_DESC' needs also a
+'BV_DESC_FORMAT'. Be sure to use always the same format for a certain
+'BV_DESC' after the first use.
+
+. entry - Contains the pure information about the sequence of blockvector numbers.
+
+. current - Number of levels currently stored in 'entry'. The levels
+are counted 0..'current'-1.
+
+. read - Number of level next to be read. Used for a sequential reading of
+the level numbers.
+
+CONSTANTS:
+
+.vb
+BVD_MAX_ENTRIES = (sizeof(BVD_ENTRY_TYPE)*CHAR_BIT)
+.ve
+
+Maximum number of entries in a BVD; NOTE: the actual available
+number of entries depends on the range of each entry given in a
+'BV_DESC_FORMAT'.
+
+
+MACROS:
+
+.vb
+BLOCKLEVEL BVD_NR_ENTRIES ( BV_DESC *bvd );
+.ve
+
+The number of stored 'BLOCKVECTOR' numbers. 0 means no entry stored.
+
+.vb
+void BVD_INIT ( BV_DESC *bvd );
+.ve
+
+Initializes a 'BV_DESC'. Be sure to call this macro before the first use.
+
+.vb
+INT BVD_PUSH_ENTRY ( BV_DESC *bvd, BLOCKNUMBER bnr, BV_DESC_FORMAT *bvdf );
+void BVD_DISCARD_LAST_ENTRY ( BV_DESC *bvd );
+.ve
+
+Use the macro 'BVD_PUSH_ENTRY' to add a further number to the already stored sequence
+of blockvector numbers. The return value of this macro is the value of the
+corresponding call to the internal function 'PushEntry'.
+
+The macro 'BVD_DISCARD_LAST_ENTRY' removes the latest blockvector number from
+the stored sequence.
+
+With this 2 macros a "stack" mechanism is realized, where the
+number of the root-blockvector is at the bottom of the stack and the number
+for the next level is pushed at the top of stack. Note: the traditionally
+"pop" corresponds to 'BVD_DISCARD_LAST_ENTRY' but the value is thrown away
+because you usually do not need the previous "pushed" value.
+
+.vb
+void BVD_INIT_SEQ_READ ( BV_DESC *bvd );
+BLOCKNUMBER BVD_READ_NEXT_ENTRY ( BV_DESC *bvd, BV_DESC_FORMAT *bvdf );
+.ve
+
+This 2 macros allow a sequential reading of the stored 'BLOCKNUMBER's.
+'BVD_INIT_SEQ_READ' must be called before the first reading access. After
+this each call to 'BVD_READ_NEXT_ENTRY' returns the next 'BLOCKNUMBER'
+starting with the first stored number. You can call this macro as often
+as you want; after the last stored number everytime 'NO_BLOCKVECTOR'
+is returned.
+
+.vb
+void BVD_SET_ENTRY ( BV_DESC *bvd, BLOCKLEVEL level, BLOCKNUMBER bnr, 
+                     BV_DESC_FORMAT *bvdf );
+void BVD_GET_ENTRY ( BV_DESC *bvd, BLOCKLEVEL level, BV_DESC_FORMAT *bvdf );
+.ve
+
+This 2 macros give you random access to the single "packets"
+(i.e. blocknumbers). The 'level' must be within the range described in 'bvdf'.
+
+.vb
+INT BVD_IS_SUB_BLOCK ( BV_DESC *bvd_a, BV_DESC *bvd_b, BV_DESC_FORMAT *bvdf );
+.ve
+
+Returns true if 'bvd_a' is a subblock of 'bvd_b', i.e. all the entries in
+'bvd_b' must be same as in 'bvd_a'.
+
+EXAMPLES:
+
+Let always a pointer 'my_bvdf' to a 'BV_DESC_FORMAT' be given.
+
+To store a sequence of numbers use:~
+.vb
+    BV_DESC my_bvd;
+    INT error = GM_OK;
+
+    BVD_INIT( &my_bvd );
+    error = BVD_PUSH_ENTRY( &my_bvd, number0, my_bvdf );
+    error |= BVD_PUSH_ENTRY( &my_bvd, number1, my_bvdf );
+    error |= BVD_PUSH_ENTRY( &my_bvd, number2, my_bvdf );
+    if ( error != GM_OK )
+        // there was not enough capacity to store 3 numbers in the given format
+.ve
+
+To read this sequence again use:~
+.vb
+    BVD_INIT_SEQ_READ( &my_bvd );
+    number0 = BVD_READ_NEXT_ENTRY( &my_bvd, my_bvdf );
+    number1 = BVD_READ_NEXT_ENTRY( &my_bvd, my_bvdf );
+    number2 = BVD_READ_NEXT_ENTRY( &my_bvd, my_bvdf );
+    if ( number2 == NO_BLOCKVECTOR )
+        // there were stored less than 3 numbers
+.ve
+
+SEE ALSO:
+
+'BLOCKVECTOR', 'BV_DESC_FORMAT', 'BLOCKNUMBER', 'BLOCKLEVEL', 'BVD_ENTRY_TYPE'.
+
+D*/
+
+
+/*D
+BV_DESC_FORMAT - Data type for defining the storage pattern used in 'BV_DESC'
+
+STRUCTURES:
+.vb
+struct blockvector_description_format
+{
+    INT bits;                                       // bits per blocknumberentry
+    BLOCKLEVEL max_level;                           // max. number of entries
+    BVD_ENTRY_TYPE level_mask[BVD_MAX_ENTRIES];     // see below
+    BVD_ENTRY_TYPE neg_digit_mask[BVD_MAX_ENTRIES]; // see below
+};
+
+typedef struct blockvector_description_format BV_DESC_FORMAT;
+.ve
+
+DESCRIPTION:
+
+As in the description of 'BV_DESC' explained a sequence of 'BLOCKNUMBER's
+is stored bitwise in 'BV_DESC'. For each number a certain number of bits
+is reserved forming one "packet". This "packets" are stored consecutively
+in the memory.
+
+Every function working with a 'BV_DESC' needs the corresponding
+'BV_DESC_FORMAT' to interpret the memory correctly. Be sure to use for
+a certain 'BV_DESC' always the same format; otherwise the consistency
+of the data will be corrupted. Sure, it would be more safe to store
+the format with the 'BV_DESC' together, but the memory demand would be too
+big.
+
+The following variables are used to manage the handling of the "packets".
+They are used internally by 'BV_DESC', a user has not to care about them.
+
+. bits - The number of bits to be used for each blocknumber entry.
+
+. max_level - The maximum number of entries that can be stored. This quantity
+depends on the constant 'BVD_MAX_ENTRIES' defined with 'BV_DESC'.
+
+. level_mask - This array contains the masks to isolate the entry for
+a certain level; count 0..'max_level'-1.
+
+. neg_digit_mask - This array contains the masks to clear the entry for
+a certain level; count 0..'max_level'-1. This masks are the precomputed
+complements of 'level_mask'.
+
+PREDEFINED VARIABLES:
+
+Often used formats are predefined. You can give their adresses directly to
+the called function working with a 'BV_DESC' without any initialization.
+
+.  DH_bvdf  - Useful for domain halfening methods (up to 4 blocks per level).
+
+.  one_level_bvdf - Maximum number of blocks in a level but only 1 level.
+
+EXAMPLES:
+
+If your desires are fulfilled by one of the predefined variables, simple use
+it. For example if you want to have only one blockvector level (e.g. for
+stripewise domain decomposition) use 'one_level_bvdf' for setting up a
+'BV_DESC':~
+.vb
+    BV_DESC my_bvd;
+
+    BVD_INIT( &my_bvd );
+    if ( BVD_PUSH_ENTRY( &my_bvd, blocknumber, &one_level_bvdf ) != GM_OK )
+        // unexpected error; one number can always be stored.
+    // work on with my_bvd
+.ve
+
+To create a customized format use 'InitBVDF'. For example to create
+a format for managing a octree-like structure (that is subdividing a
+3D cube into 8 subcubes) you can use the following command:~
+.vb
+   BV_DESC_FORMAT my_bvdf;
+
+   InitBVDF( &my_bvdf, 8 );
+.ve
+
+SEE ALSO:
+
+'BLOCKVECTOR', 'BV_DESC', 'BVD_ENTRY_TYPE', 'InitBVDF'.
+
+D*/
+
+
 /*D
 GRID - Data type giving access to all objects on a grid level
 
@@ -2527,11 +3140,10 @@ struct grid {
     struct node *lastNode;          // pointer to last node                 
     VECTOR *firstVector;            // pointer to first vector              
     VECTOR *lastVector;             // pointer to last vector               
+	BLOCKVECTOR *firstblockvector;	// pointer to the first blockvector
+	BLOCKVECTOR *lastblockvector;	// pointer to the last blockvector
     struct grid *coarser, *finer;   // coarser and finer grids              
     struct multigrid *mg;           // corresponding multigrid structure    
-    
-    // user data 
-    HEAP *userData;                 //  associated user data structure      
 } ;
 
 typedef struct grid GRID;
@@ -2575,13 +3187,16 @@ problem class, e.g. to store whether the grid level is assmbled or not.
 . firstVector,lastVector - Pointers to first and last 'VECTOR'
 on that grid level.
 
+. firstblockvector,lastblockvector - Pointer to the first and last
+'BLOCKVECTOR' on the first level. Valid only if the 'BLOCKVECTOR'
+mechanism is used, otherwise they are 'NULL'.
+
 . coarser,finer - Pointers to finer and coarser grid levels within
 the 'MULTIGRID' structure. A 'NULL' pointer indicates that
 a grid level does not exist.
 
 . mg - Pointer to corresponding 'MULTIGRID' structure.
 
-. userData - 
 MACROS:
 
 .vb
@@ -2637,6 +3252,13 @@ VECTOR *LASTVECTOR (GRID *p);
 .ve
 
 Return pointer to first and last 'VECTOR' of that grid level.
+
+.vb
+BLOCKVECTOR *GFIRSTBV(GRID *p);
+BLOCKVECTOR *GLASTBV(GRID *p);
+.ve
+
+Return pointer to first and last 'BLOCKVECTOR' of that grid level.
 
 .vb
 GRID *UPGRID (GRID *p);
