@@ -580,11 +580,12 @@ FIFOSTART:
     ENDDEBUG
 
                 #ifdef __THREEDIM__
-    if (TAG(theElement)==TETRAHEDRON && MARKCLASS(theElement) == RED_CLASS)
+    if (TAG(theElement)==TETRAHEDRON && MARKCLASS(theElement) == RED_CLASS) {
       Mark = (*theFullRefRule)(theElement);
-    assert( Mark == FULL_REFRULE_0_5 ||
-            Mark == FULL_REFRULE_1_3 ||
-            Mark == FULL_REFRULE_2_4);
+      assert( Mark==FULL_REFRULE_0_5 ||
+              Mark==FULL_REFRULE_1_3 ||
+              Mark==FULL_REFRULE_2_4);
+    }
                 #endif
 
     NewPattern = MARK2PAT(theElement,Mark);
