@@ -6724,6 +6724,10 @@ static INT MakeGridCommand  (INT argc, char **argv)
       case 'W' :
         args.doAngle = YES;
         break;
+      case 'C' :
+        args.doConstDel = YES;
+        args.doedge = NO;
+        break;
       case 'm' :
         if (sscanf(argv[i],"m %ld",&m)!=1)
         {
