@@ -2760,6 +2760,7 @@ INT                     CheckGrid                               (GRID *theGrid, 
 INT                     CheckGrid                               (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists, INT checkif);
 #endif
 INT                     CheckLists                              (GRID *theGrid);
+INT             CheckSubdomains                 (MULTIGRID *theMG);
 
 /* selection */
 void            ClearSelection                  (MULTIGRID *theMG);
