@@ -111,8 +111,8 @@ INT ce_CUTMODE;
 
 /* Macros for Node order */
 #define NODE_ORDER(p) 		   ((TAG(theElement) == TETRAHEDRON) ? \
-								NORDER(theElement) : (p)->ge.property)
-#define SET_NODE_ORDER(p,n)    ((p)->ge.property = n)
+								NORDER(theElement) : (NODEORD(p)) )
+#define SET_NODE_ORDER(p,n)    SETNODEORD(p,n)
 #define GETBITS(x,p)           (((x)>>((p)+1-(3)))&~(~0<<(3)))
 #define SETBITS(x,p,y)         (((y)<<((p)+1-(3)))|(x))
 #define CORNER_OF_SIDE0(t,s,c) (element_descriptors[t]->corner_of_side[(s)][(c)])
@@ -7266,9 +7266,9 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		{
 			DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
 			DO_2c(theDO) = coe; DO_inc(theDO) ;
-			if (PROP(theElement)<1 || PROP(theElement)>EE2D_NProperty) return (1);
+			if (SUBDOMAIN(theElement)<1 || SUBDOMAIN(theElement)>EE2D_NProperty) return (1);
 			#ifndef ModelP
-			DO_2l(theDO) = EE2D_PropertyColor[(int)PROP(theElement)];
+			DO_2l(theDO) = EE2D_PropertyColor[(int)SUBDOMAIN(theElement)];
 			#else
 			DO_2l(theDO) = EE2D_PropertyColor[me+1];
 			#endif
@@ -7360,8 +7360,8 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		{
 			DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
 			DO_2c(theDO) = coe; DO_inc(theDO) ;
-			if (PROP(theElement)<1 || PROP(theElement)>EE2D_NProperty) return (1);
-			DO_2l(theDO) = EE2D_PropertyColor[(int)PROP(theElement)]; 
+			if (SUBDOMAIN(theElement)<1 || SUBDOMAIN(theElement)>EE2D_NProperty) return (1);
+			DO_2l(theDO) = EE2D_PropertyColor[(int)SUBDOMAIN(theElement)]; 
 			DO_inc(theDO);
 			DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
 			for (j=0; j<coe; j++)
