@@ -38,19 +38,22 @@ ugmkln "../";
 
 for i in `ls -1 ../`
 do
-    if test -d "../${i}"
-    then
-		echo "change to ../$i";
-	    ugmkln ../${i}/;
-		for k in `ls -1 ../${i}`
-		do
-		    if test -d "../${i}/${k}"
-		    then
-				echo "change to $k";
-			    ugmkln ../${i}/${k}/;
-		    fi
-		done
-    fi
+	if test "${i}" != "include" -a "${i}" != "doc"
+	then
+    	if test -d "../${i}"
+    	then
+			echo "change to ../$i";
+	    	ugmkln ../${i}/;
+			for k in `ls -1 ../${i}`
+			do
+		    	if test -d "../${i}/${k}"
+		    	then
+					echo "change to $k";
+			    	ugmkln ../${i}/${k}/;
+		    	fi
+			done
+    	fi
+	fi
 done
 
 exit 0;
