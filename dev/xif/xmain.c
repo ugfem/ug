@@ -62,6 +62,7 @@
 #include "compiler.h"
 #include "devices.h"
 #include "initdev.h"
+#include "debug.h"
 
 /* Xif includes */
 #include "xshell.h"
@@ -203,9 +204,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
   {
   case EVERY_EVENT :
     if (!XCheckIfEvent(display,&report,callback,s)) return(0);
-                        #ifdef Debug
-    printf("XCheckIfEvent(): matching event found\n");
-                        #endif
+    PRINTDEBUG(dev,1,("XCheckIfEvent(): matching event found\n"));
     onlyCmdKey = 0;
     break;
   case TERM_STRING :
@@ -254,13 +253,9 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
     {
                                 #ifdef USE_XAW
       if (XtDispatchEvent(&report)== FALSE)
-      {
-                                        #ifdef Debug
-        printf("XtDispatchEvent(): NO handler for this event found\n");
-                                        #endif
-      }
-                                #ifdef Debug
-      printf("XtDispatchEvent(): handler for this event found\n");
+        PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"))
+        else
+          PRINTDEBUG(dev,1,("XtDispatchEvent(): handler for this event found\n"))
                                 #endif
                                 #else /* USE_XAW */
       ShellHandleResizeEvent(&shell,&report);
@@ -419,35 +414,27 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
         #ifdef USE_XAW
   /* Send all events to shell widget */
   if (XtDispatchEvent(&report)== FALSE)
-  {
-                #ifdef Debug
-    printf("XtDispatchEvent(): NO handler for this event found\n");
-                #endif
-  }
-  else
-  {
-                #ifdef Debug
-    printf("XtDispatchEvent(): Handler for this event found\n");
-                #endif
-  }
+    PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"))
+    else
+      PRINTDEBUG(dev,1,("XtDispatchEvent(): Handler for this event found\n"))
 
-  switch (report.type)
-  {
-  case ButtonRelease :
-    if (report.xbutton.window == shell.win)
-    {
-      if (report.xbutton.button == Button1)
-        CutBeginPos = XawTextGetInsertionPoint(shell.wid);
-
-      if (report.xbutton.button == Button1 ||
-          report.xbutton.button == Button3 )
+      switch (report.type)
       {
-        XawTextSetInsertionPoint(shell.wid,CursorPos);
-        XawTextDisplayCaret(shell.wid,TRUE);
+      case ButtonRelease :
+        if (report.xbutton.window == shell.win)
+        {
+          if (report.xbutton.button == Button1)
+            CutBeginPos = XawTextGetInsertionPoint(shell.wid);
+
+          if (report.xbutton.button == Button1 ||
+              report.xbutton.button == Button3 )
+          {
+            XawTextSetInsertionPoint(shell.wid,CursorPos);
+            XawTextDisplayCaret(shell.wid,TRUE);
+          }
+        }
+        break;
       }
-    }
-    break;
-  }
         #endif
 
   return(0);

@@ -23,6 +23,7 @@
 #define __COMPILE_CW__
 
 #include "devices.h"
+#include "debug.h"
 
 #include "switch.h"
 #include "gm.h"
@@ -266,16 +267,16 @@ INT InitPredefinedControlEntries (void)
         int j;
         CONTROL_ENTRY *test_ce;
         predefined_control_entry *test_pce;
-
-        PrintDebug("control_entry[%d] has overlapping bits with previous control_entries:\n",i);
+        PRINTDEBUG(gm,1,("control_entry[%d] has overlapping bits with previous control_entries:\n",i));
         for (j=0; j<i; j++)
         {
           test_pce = predefines+j;
           test_ce = control_entries+test_pce->control_entry_id;
           if (test_ce->mask & ce->mask)
-            PrintDebug(" %d",j);
+            PRINTDEBUG(gm,1,(" %d",j));
+
         }
-        PrintDebug("\n");
+        PRINTDEBUG(gm,1,("\n"));
       }
                         #endif
       cw->used_mask |= ce->mask;
