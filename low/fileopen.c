@@ -32,6 +32,9 @@
 #include <stdio.h>
 #include <string.h>
 
+/* first compiler header for __MWCW__ definition iff */
+#include "compiler.h"
+
 /* includes for filesize(), filetype(), also on Macintosh?? (TODO) */
 #if (defined __MWCW__) || (defined __MPW32__)
 #include <stat.h>
@@ -43,7 +46,6 @@
 
 
 /* low module */
-#include "compiler.h"
 #include "defaults.h"
 #include "general.h"
 #include "ugenv.h"
@@ -427,10 +429,12 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
 
 int DirCreateUsingSearchPaths (const char *fname, const char *paths)
 {
+  /* HRR_TODO: get this straight */
+        #ifndef __MWCW__
   PATHS *thePaths;
+
   char fullname[MAXPATHLENGTH];
   INT i,fnamelen,mode,error;
-
   fnamelen = strlen(fname);
   mode = S_IRUSR | S_IWUSR | S_IXUSR |
          S_IRGRP | S_IXGRP;
@@ -453,7 +457,7 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
     if ((error=mkdir(fullname,mode))!=0)
       return (1);
   }
-
+        #endif
   return (0);
 }
 

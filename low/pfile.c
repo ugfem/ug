@@ -33,22 +33,9 @@
 #include <math.h>
 #include <time.h>
 
-#include "devices.h"
-#include "enrol.h"
 #include "compiler.h"
-#include "misc.h"
 #include "general.h"
 #include "fileopen.h"
-
-#include "gm.h"
-#include "ugenv.h"
-#include "ugm.h"
-#include "algebra.h"
-#include "cmdint.h"
-#include "commands.h"
-#include "helpmsg.h"
-#include "shapes.h"
-#include "cmdline.h"
 
 #include "pfile.h"
 

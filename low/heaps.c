@@ -808,7 +808,7 @@ INT InitVirtualHeapManagement (VIRT_HEAP_MGMT *theVHM, MEM TotalSize)
   /* first clear everything */
   memset(theVHM,0,sizeof(VIRT_HEAP_MGMT));
 
-  /* now init what is neccessary */
+  /* now init what is necessary */
   if (TotalSize==SIZE_UNKNOWN)
     theVHM->locked    = FALSE;
   else
