@@ -6943,13 +6943,14 @@ static INT QualityCommand (INT argc, char **argv)
 static INT MakeGridCommand  (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  INT i;
+  INT i,Single_Mode;
   GG_ARG args;
   GG_PARAM params;
   MESH *mesh;
   CoeffProcPtr coeff;
   long ElemID,m;
   float tmp;
+  int iValue;
     #ifdef __THREEDIM__
   INT smooth;
   DOUBLE h;
@@ -6972,6 +6973,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
                       "only a multigrid with exactly one level can be edited");
     RETURN(GM_ERROR);
   }
+  Single_Mode = 0;
 
   /* check options */
   args.doanimate =
@@ -7090,6 +7092,10 @@ static INT MakeGridCommand  (INT argc, char **argv)
         if ((tmp > 0) && (tmp < 1.0))
           params.searchconst = tmp;
         break;
+      case 'd' :
+        if (sscanf(argv[i],"d %d",&iValue)!=1) break;
+        Single_Mode = iValue;
+        break;
       default :
         sprintf(buffer," (unknown option '%s')",argv[i]);
         PrintHelp("makegrid",HELPITEM,buffer);
@@ -7097,7 +7103,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
       }
     params.epsi = params.h_global * 0.125;
 
-    if (GenerateGrid(theMG, &args, &params, mesh, coeff) != 0)
+    if (GenerateGrid(theMG, &args, &params, mesh, coeff, Single_Mode) != 0)
     {
       PrintErrorMessage('E',"makegrid","execution failed");
       Release(MGHEAP(theMG),FROM_TOP);
