@@ -682,7 +682,7 @@ void *memmgr_AllocTMEM (unsigned long size, int kind)
 
 
   if (kind==TMEM_XFER || kind==TMEM_CPL ||
-      kind==TMEM_LOWCOMM || kind==TMEM_CONS)
+      kind==TMEM_LOWCOMM || kind==TMEM_CONS || kind==TMEM_IDENT)
   {
     size_t real_size = size+sizeof(size_t);
 
@@ -757,7 +757,7 @@ void memmgr_FreeTMEM (void *buffer, int kind)
 
 
   if (kind==TMEM_XFER || kind==TMEM_CPL ||
-      kind==TMEM_LOWCOMM || kind==TMEM_CONS)
+      kind==TMEM_LOWCOMM || kind==TMEM_CONS || kind==TMEM_IDENT)
   {
     size_t real_size;
 
