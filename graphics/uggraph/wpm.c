@@ -1479,6 +1479,7 @@ static INT DisplayCutPlane (const CUT *theCut)
    D*/
 /****************************************************************************/
 
+
 static INT SetDefaultVP3D (PLOTOBJ *thePO, DOUBLE *DefaultVP)
 {
   GRID *theGrid;
@@ -3456,6 +3457,7 @@ static INT InitHGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->ElemColored             = 1;
     theGpo->WhichElem                       = PO_ALL;
     theGpo->PlotElemID                      = NO;
+    theGpo->EdgeColor                       = 0;
     theGpo->ZMax                            = BVPD_RADIUS(theBVPDesc);
   }
 
@@ -3471,6 +3473,7 @@ static INT InitHGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     }
   ReadArgvDOUBLE("s",&theGpo->ShrinkFactor,       argc,argv);
   ReadArgvINT   ("c",&theGpo->ElemColored,        argc,argv);
+  ReadArgvINT   ("x",&theGpo->EdgeColor,          argc,argv);
   ReadArgvINT   ("e",&theGpo->PlotElemID,         argc,argv);
   ReadArgvINT   ("S",&theGpo->PlotSubdomain,      argc,argv);
   ReadArgvDOUBLE("z",&theGpo->ZMax,                       argc,argv);
@@ -3544,6 +3547,7 @@ static INT DisplayHGridPlotObject_2D (PLOTOBJ *thePlotObj)
   }
 
   UserWriteF(DISPLAY_PO_FORMAT_SI,"COLORED",(int)theGpo->ElemColored);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"EDGECOLOR",(int)theGpo->EdgeColor);
 
   return (0);
 }
