@@ -124,7 +124,8 @@ static MGIO_RR_RULE *rr_rules;
 static unsigned short *ProcList, *ActProcListPos;
 static int foid,non;
 static NODE **nid_n;                                            /* mapping: orphan-node-id  -->  orphan node */
-static NODE **vid_nmin;                                         /* mapping: orphan-vertex-id  -->  lowest orphan node */
+static NODE **vid_n;                                            /* mapping: orphan-vertex-id  -->  lowest orphan node */
+static INT nov;                                                         /* number of orphan vertices */
 static ELEMENT **eid_e;
 static int nparfiles;                                     /* nb of parallel files		*/
 
@@ -682,8 +683,43 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
   /* not movable at the moment */
   refinement->nmoved = 0;
 
-  /* test */
-  if (MGIO_PARFILE) refinement->orphanid_ex = 1;
+  /* write orphan-sonsonson-node info */
+  if (MGIO_PARFILE)
+  {
+    refinement->orphanid_ex = n = 0;
+    for (i=0; i<CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement)+SIDES_OF_ELEM(theElement); i++)
+    {
+      if (NodeContext[i]!=NULL && ((nex>>i)&0x1))
+      {
+        if (ID(MYVERTEX(NodeContext[i]))<nov
+            && LEVEL(NodeContext[i])<LEVEL(vid_n[ID(MYVERTEX(NodeContext[i]))]))
+        {
+          assert(i>=CORNERS_OF_ELEM(theElement));
+          refinement->orphanid[n] = ID(vid_n[ID(MYVERTEX(NodeContext[i]))]);
+          refinement->orphanid_ex = 1;
+        }
+        else
+        {
+          refinement->orphanid[n] = -1;
+        }
+        n++;
+      }
+    }
+    i = CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement);
+    if (NodeContext[i]!=NULL)
+    {
+      if (LEVEL(NodeContext[i])<LEVEL(vid_n[ID(MYVERTEX(NodeContext[i]))])
+          && ID(MYVERTEX(NodeContext[i]))<nov)
+      {
+        refinement->orphanid[n++] = ID(vid_n[ID(MYVERTEX(NodeContext[i]))]);
+        refinement->orphanid_ex = 1;
+      }
+      else
+      {
+        refinement->orphanid[n++] = -1;
+      }
+    }
+  }
 
   /* set refinement class */
   if (nmax>0)
@@ -791,7 +827,7 @@ static INT nHierElements (ELEMENT *theElement, INT *n)
   return (0);
 }
 
-static INT WriteCG_Vertices (MULTIGRID *theMG, INT nov)
+static INT WriteCG_Vertices (MULTIGRID *theMG)
 {
   INT i,j,n;
   MGIO_CG_POINT *cg_point,*cgp;
@@ -951,7 +987,6 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   char filename[NAMESIZE];
   char buf[64],itype[10];
   int lastnumber;
-  NODE **vid_n;
 #ifdef ModelP
   int ftype;
   int error;
@@ -1125,6 +1160,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   {
     if (RenumberMultiGrid (theMG,&nbe,&nie,&nbv,&niv,NULL,&foid,&non)) {UserWriteF("ERROR: cannot renumber multigrid\n"); REP_ERR_RETURN(1);}
   }
+  nov = nbv+niv;
 
   /* write general information about coarse grid */
   theGrid = GRID_ON_LEVEL(theMG,0);
@@ -1151,7 +1187,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 #endif
 
   /* write coarse grid points */
-  if (WriteCG_Vertices(theMG,nbv+niv)) REP_ERR_RETURN(1);
+  if (WriteCG_Vertices(theMG)) REP_ERR_RETURN(1);
 
   /* write mapping: node-id --> vertex-id for orphan-nodes, if(MGIO_PARFILE) */
   if (MGIO_PARFILE)
@@ -1346,7 +1382,7 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
 #else
   svec = 0;
 #endif
-  /* this funxtion does not support side vectors                        */
+  /* this function does not support side vectors                        */
   /* proclist and identificator need to be stored for each  side vector */
   if (svec) assert(0);
 
@@ -1438,10 +1474,6 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
       PRINTDEBUG(gm,1,("Evaluate-pinfo():vid=%d prio=%d\n",ID(theVertex),prio);fflush(stdout));
       for (i=0; i<pinfo->ncopies_vertex[j]; i++)
       {
-        if (0x62400 == pinfo->v_ident[j])
-          UserWriteF("e="EID_FMTX "n=" ID_FMTX "v=" VID_FMTX "ident=%08x\n",
-                     EID_PRTX(theElement),ID_PRTX(CORNER(theElement,j)),VID_PRTX(MYVERTEX(CORNER(theElement,j))),
-                     pinfo->v_ident[j]);
         DDD_IdentifyNumber(PARHDRV(theVertex),pinfo->proclist[s],pinfo->v_ident[j]);
         s++;
       }
@@ -1575,7 +1607,7 @@ static INT IO_GridCons(MULTIGRID *theMG)
   ELEMENT *theElement;
   VECTOR  *theVector;
 
-  for (i=0; i<=TOPLEVEL(theMG); i++)
+  for (i=TOPLEVEL(theMG); i>=0; i--)         /* propagate information top-down */
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
@@ -1586,6 +1618,8 @@ static INT IO_GridCons(MULTIGRID *theMG)
         if (EMASTERPRIO(proclist[1])) PARTITION(theElement) = proclist[0];
         proclist += 2;
       }
+      ASSERT((PARTITION(theElement)==me && EMASTER(theElement))
+             || (PARTITION(theElement)!=me && !EMASTER(theElement)));
     }
     for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
       if (!MASTER(theVector))
@@ -1613,6 +1647,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   INT i,j,k,r_index,nedge,type,sonRefined,n0,n1,Sons_of_Side,SonSides[MAX_SONS],offset;
   ELEMENT *theSonElem[MAX_SONS];
   ELEMENT *theSonList[MAX_SONS];
+  VERTEX *theVertex;
   NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
   NODE *SonNodeList[MAX_CORNERS_OF_ELEM];
   GRID *upGrid;
@@ -1670,9 +1705,9 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
         ID(NodeList[i]) = ref->newcornerid[r_index];
       }
     }
-    else if (ID(NodeList[i]) != ref->newcornerid[r_index])
+    else
     {
-      ASSERT(0);
+      ASSERT(ID(NodeList[i]) == ref->newcornerid[r_index]);
     }
     SETNTYPE(NodeList[i],CORNER_NODE);
     r_index++;
@@ -1682,10 +1717,22 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   nedge = EDGES_OF_ELEM(theElement);
   for (; i<nedge+offset; i++)
   {
-    if (MGIO_PARFILE && !((nex>>i)&1))
+    theVertex = NULL;
+    if (MGIO_PARFILE)
     {
-      NodeList[i] = NULL;
-      continue;
+      if (!((nex>>i)&1))
+      {
+        NodeList[i] = NULL;
+        continue;
+      }
+      else if (ref->orphanid_ex==1)
+      {
+        if (ref->orphanid[r_index]>=0)
+        {
+          assert(ref->orphanid[r_index]>=foid && ref->orphanid[r_index]<non+foid);
+          theVertex = MYVERTEX(nid_n[ref->orphanid[r_index]-foid]);
+        }
+      }
     }
     if (theRule->pattern[i-offset]!=1)
     {
@@ -1709,15 +1756,15 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       }
       else
       {
-        NodeList[i] = CreateMidNode(upGrid,theElement,i-offset);
+        NodeList[i] = CreateMidNode(upGrid,theElement,theVertex,i-offset);
         if (NodeList[i]==NULL) REP_ERR_RETURN(1);
         ID(NodeList[i]) = ref->newcornerid[r_index];
         HEAPFAULT(NodeList[i]);
       }
     }
-    else if (ID(NodeList[i]) != ref->newcornerid[r_index])
+    else
     {
-      ASSERT(0);
+      ASSERT(ID(NodeList[i]) == ref->newcornerid[r_index]);
     }
     SETNTYPE(NodeList[i],MID_NODE);
     HEAPFAULT(NodeList[i]);

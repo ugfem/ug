@@ -2436,7 +2436,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 /*			MidNodes[i] = GetMidNode(theElement,i); */
 			if (MidNodes[i] == NULL)
 			{
-				MidNodes[i] = CreateMidNode(theGrid,theElement,i);
+				MidNodes[i] = CreateMidNode(theGrid,theElement,NULL,i);
 				if (MidNodes[i]==NULL) RETURN(GM_FATAL);
 				IFDEBUG(gm,2)
 				UserWriteF(" created ID(MidNode)=%d for edge=%d",ID(MidNodes[i]),i);

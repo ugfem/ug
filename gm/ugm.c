@@ -565,11 +565,12 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
    CreateMidNode - Return pointer to a new node structure on an edge
 
    SYNOPSIS:
-   NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge);
+   NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT edge);
 
    PARAMETERS:
    .  theGrid - grid where node should be inserted
    .  theElement - pointer to an element
+   .  theVertex - pointer to vertex if already existing
    .  edge - id of an element edge
 
    DESCRIPTION:
@@ -583,11 +584,11 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
    D*/
 /****************************************************************************/
 
-NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
+NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT edge)
 {
   NODE *theNode;
   EDGE *theEdge;
-  VERTEX *theVertex,*v0,*v1;
+  VERTEX *v0,*v1;
   BNDP *bndp;
   DOUBLE *local,*x[MAX_CORNERS_OF_ELEM];
   DOUBLE_VECTOR bnd_global,global;
@@ -599,55 +600,55 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
   v0 = MYVERTEX(CORNER(theElement,co0));
   v1 = MYVERTEX(CORNER(theElement,co1));
   V_DIM_LINCOMB(0.5, CVECT(v0), 0.5, CVECT(v1), global);
-  theVertex = NULL;
 
   /* allocate vertex */
-  if ((OBJT(v0) == BVOBJ) && (OBJT(v1) == BVOBJ))
-          #ifdef __TWODIM__
-    if (OBJT(theElement) == BEOBJ)
-      if (SIDE_ON_BND(theElement,edge))
-      #endif
+  if (theVertex==NULL)
   {
-    bndp = BNDP_CreateBndP(MGHEAP(MYMG(theGrid)),
-                           V_BNDP(v0),V_BNDP(v1),0.5);
-    if (bndp != NULL)
+    if ((OBJT(v0) == BVOBJ) && (OBJT(v1) == BVOBJ))
+#ifdef __TWODIM__
+      if (OBJT(theElement) == BEOBJ)
+        if (SIDE_ON_BND(theElement,edge))
+#endif
     {
-      theVertex = CreateBoundaryVertex(theGrid);
-      if (theVertex == NULL)
-        return(NULL);
-      if (BNDP_Global(bndp,bnd_global))
-        return(NULL);
-      if (BNDP_BndPDesc(bndp,&move,&part))
-        return(NULL);
-      SETMOVE(theVertex,move);
-      V_BNDP(theVertex) = bndp;
-      V_DIM_COPY(bnd_global,CVECT(theVertex));
-      local = LCVECT(theVertex);
-      V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
-      if (diff > MAX_PAR_DIST)
+      bndp = BNDP_CreateBndP(MGHEAP(MYMG(theGrid)),V_BNDP(v0),V_BNDP(v1),0.5);
+      if (bndp != NULL)
       {
-        SETMOVED(theVertex,1);
-        CORNER_COORDINATES(theElement,n,x);
-        UG_GlobalToLocal(n,(const DOUBLE **)x,bnd_global,local);
+        theVertex = CreateBoundaryVertex(theGrid);
+        if (theVertex == NULL)
+          return(NULL);
+        if (BNDP_Global(bndp,bnd_global))
+          return(NULL);
+        if (BNDP_BndPDesc(bndp,&move,&part))
+          return(NULL);
+        SETMOVE(theVertex,move);
+        V_BNDP(theVertex) = bndp;
+        V_DIM_COPY(bnd_global,CVECT(theVertex));
+        local = LCVECT(theVertex);
+        V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
+        if (diff > MAX_PAR_DIST)
+        {
+          SETMOVED(theVertex,1);
+          CORNER_COORDINATES(theElement,n,x);
+          UG_GlobalToLocal(n,(const DOUBLE **)x,bnd_global,local);
+        }
+        else
+          V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
+                        0.5, LOCAL_COORD_OF_ELEM(theElement,co1),local);
       }
-      else
-        V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
-                      0.5, LOCAL_COORD_OF_ELEM(theElement,co1),local);
     }
+    if (theVertex == NULL)
+    {
+      /* we need an inner vertex */
+      theVertex = CreateInnerVertex(theGrid);
+      if (theVertex==NULL) return(NULL);
+      V_DIM_COPY(global,CVECT(theVertex));
+      V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
+                    0.5, LOCAL_COORD_OF_ELEM(theElement,co1),
+                    LCVECT(theVertex));
+    }
+    VFATHER(theVertex) = theElement;
+    SETONEDGE(theVertex,edge);
   }
-
-  if (theVertex == NULL)
-  {
-    /* we need an inner vertex */
-    theVertex = CreateInnerVertex(theGrid);
-    if (theVertex==NULL) return(NULL);
-    V_DIM_COPY(global,CVECT(theVertex));
-    V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
-                  0.5, LOCAL_COORD_OF_ELEM(theElement,co1),
-                  LCVECT(theVertex));
-  }
-  VFATHER(theVertex) = theElement;
-  SETONEDGE(theVertex,edge);
 
   /* set MIDNODE pointer */
   theEdge = GetEdge(CORNER(theElement,co0),CORNER(theElement,co1));
@@ -663,7 +664,8 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
 
   MIDNODE(theEdge) = theNode;
         #ifdef TOPNODE
-  TOPNODE(theVertex) = theNode;
+  if (TOPNODE(theVertex)==NULL || LEVEL(TOPNODE(theVertex))<LEVEL(theNode))
+    TOPNODE(theVertex) = theNode;
         #endif
 
   if (OBJT(theVertex) == BVOBJ)
@@ -3463,10 +3465,19 @@ INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *n
   if (vid_n!=NULL)
   {
     *vid_n = (NODE**)GetTmpMem(MGHEAP(theMG),(n_iov+n_bov)*sizeof(NODE*));
+    for (i=0; i<n_iov+n_bov; i++) (*vid_n)[i] = NULL;
     for (i=0; i<=TOPLEVEL(theMG); i++)
       for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-        if (ID(MYVERTEX(theNode))<n_iov+n_bov && (*vid_n)[ID(MYVERTEX(theNode))]==NULL)
+        if (USED(theNode))
+        {
+          assert(ID(MYVERTEX(theNode))<n_iov+n_bov);
+          if ((*vid_n)[ID(MYVERTEX(theNode))]!=NULL) continue;
           (*vid_n)[ID(MYVERTEX(theNode))] = theNode;
+        }
+    IFDEBUG(gm,4)
+    for (i=0; i<n_iov+n_bov; i++)
+      assert((*vid_n)[i] != NULL);
+    ENDDEBUG
   }
   for (i=0; i<=TOPLEVEL(theMG); i++)                                            /* not neccessary for i/o */
     for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))

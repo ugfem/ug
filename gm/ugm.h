@@ -111,7 +111,7 @@ INT             CheckOrientation                (INT n, VERTEX **vertices);
 INT             CheckOrientationInGrid  (GRID *theGrid);
 
 NODE        *CreateSonNode          (GRID *theGrid, NODE *FatherNode);
-NODE            *CreateMidNode                  (GRID *theGrid, ELEMENT *theElement, INT edge);
+NODE            *CreateMidNode                  (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT edge);
 NODE            *GetCenterNode                  (ELEMENT *theElement);
 NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement);
 
