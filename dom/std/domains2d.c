@@ -80,8 +80,7 @@ typedef COORD COORD_VECTOR[DIM];
 /*                                                                          */
 /****************************************************************************/
 
-static COORD_VECTOR quad[4];
-
+static COORD_VECTOR x_quad[4];
 
 static DOUBLE Rand[54][2] = {
   {189,22.5},
@@ -162,8 +161,8 @@ static INT southBoundary (void *data, COORD *param, COORD *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (1.0-lambda)*quad[0][0] + lambda*quad[1][0];
-  result[1] = (1.0-lambda)*quad[0][1] + lambda*quad[1][1];
+  result[0] = (1.0-lambda)*x_quad[0][0] + lambda*x_quad[1][0];
+  result[1] = (1.0-lambda)*x_quad[0][1] + lambda*x_quad[1][1];
 
   return(0);
 }
@@ -174,8 +173,8 @@ static INT eastBoundary (void *data, COORD *param, COORD *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (1.0-lambda)*quad[1][0] + lambda*quad[2][0];
-  result[1] = (1.0-lambda)*quad[1][1] + lambda*quad[2][1];
+  result[0] = (1.0-lambda)*x_quad[1][0] + lambda*x_quad[2][0];
+  result[1] = (1.0-lambda)*x_quad[1][1] + lambda*x_quad[2][1];
 
   return(0);
 }
@@ -186,8 +185,8 @@ static INT northBoundary (void *data, COORD *param, COORD *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (1.0-lambda)*quad[2][0] + lambda*quad[3][0];
-  result[1] = (1.0-lambda)*quad[2][1] + lambda*quad[3][1];
+  result[0] = (1.0-lambda)*x_quad[2][0] + lambda*x_quad[3][0];
+  result[1] = (1.0-lambda)*x_quad[2][1] + lambda*x_quad[3][1];
 
   return(0);
 }
@@ -198,8 +197,8 @@ static INT westBoundary (void *data, COORD *param, COORD *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (1.0-lambda)*quad[0][0] + lambda*quad[3][0];
-  result[1] = (1.0-lambda)*quad[0][1] + lambda*quad[3][1];
+  result[0] = (1.0-lambda)*x_quad[0][0] + lambda*x_quad[3][0];
+  result[1] = (1.0-lambda)*x_quad[0][1] + lambda*x_quad[3][1];
 
   return(0);
 }
@@ -208,16 +207,16 @@ static INT InitQuadrilateral (void)
 {
   COORD radius,MidPoint[2];
 
-  MidPoint[0] = 0.25*(quad[0][0]+quad[1][0]+quad[2][0]+quad[3][0]);
-  MidPoint[1] = 0.25*(quad[0][1]+quad[1][1]+quad[2][1]+quad[3][1]);
-  radius =            ABS(quad[0][0]-MidPoint[0]);
-  radius = MAX(radius,ABS(quad[1][0]-MidPoint[0]));
-  radius = MAX(radius,ABS(quad[2][0]-MidPoint[0]));
-  radius = MAX(radius,ABS(quad[3][0]-MidPoint[0]));
-  radius = MAX(radius,ABS(quad[0][1]-MidPoint[1]));
-  radius = MAX(radius,ABS(quad[1][1]-MidPoint[1]));
-  radius = MAX(radius,ABS(quad[2][1]-MidPoint[1]));
-  radius = MAX(radius,ABS(quad[3][1]-MidPoint[1]));
+  MidPoint[0] = 0.25*(x_quad[0][0]+x_quad[1][0]+x_quad[2][0]+x_quad[3][0]);
+  MidPoint[1] = 0.25*(x_quad[0][1]+x_quad[1][1]+x_quad[2][1]+x_quad[3][1]);
+  radius =            ABS(x_quad[0][0]-MidPoint[0]);
+  radius = MAX(radius,ABS(x_quad[1][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[2][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[3][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[0][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[1][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[2][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[3][1]-MidPoint[1]));
   if (CreateDomain("Quadrilateral",MidPoint,radius,4,4,YES)==NULL) return(1);
   if (CreateBoundarySegment2D("south",1,0,0,0,1,1,0.0,1.0,
                               southBoundary,NULL)==NULL) return(1);
@@ -898,25 +897,25 @@ INT STD_BVP_Configure (INT argc, char **argv)
 
   if (strcmp(DomainName,"Quadrilateral") == 0)
   {
-    if (ReadArgvPosition("x0",argc,argv,quad[0]))
+    if (ReadArgvPosition("x0",argc,argv,x_quad[0]))
     {
-      quad[0][0] = 0.0;
-      quad[0][1] = 0.0;
+      x_quad[0][0] = 0.0;
+      x_quad[0][1] = 0.0;
     }
-    if (ReadArgvPosition("x1",argc,argv,quad[1]))
+    if (ReadArgvPosition("x1",argc,argv,x_quad[1]))
     {
-      quad[1][0] = 1.0;
-      quad[1][1] = 0.0;
+      x_quad[1][0] = 1.0;
+      x_quad[1][1] = 0.0;
     }
-    if (ReadArgvPosition("x2",argc,argv,quad[2]))
+    if (ReadArgvPosition("x2",argc,argv,x_quad[2]))
     {
-      quad[2][0] = 1.0;
-      quad[2][1] = 1.0;
+      x_quad[2][0] = 1.0;
+      x_quad[2][1] = 1.0;
     }
-    if (ReadArgvPosition("x3",argc,argv,quad[3]))
+    if (ReadArgvPosition("x3",argc,argv,x_quad[3]))
     {
-      quad[3][0] = 0.0;
-      quad[3][1] = 1.0;
+      x_quad[3][0] = 0.0;
+      x_quad[3][1] = 1.0;
     }
   }
 
