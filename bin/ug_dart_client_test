@@ -3,7 +3,7 @@
 
 # cd into the BuildDirectory which is necessary because the "DartConfiguration.tcl" 
 # file resides in this directory
-cd $DART_HOME/Source/Client/UG
+cd $DART_HOME/Source/Client/UG/$3;
 
 # DashboardManager.tcl controls the test cyle via DartConfiguration.tcl and parameters
 # 	testmode: 
@@ -16,7 +16,7 @@ cd $DART_HOME/Source/Client/UG
 set TEST_TYPE = "Nightly";
 
 # set up test type that is given on the command line
-if ( $#argv == 1 ) then
+if ($1 == "Nightly" || $1 == "Experimental" || $1 == "Continuous") then
 	set TEST_TYPE = $1;
 endif
 
@@ -38,7 +38,9 @@ tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_
 tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Test
 
 # the Coverage script collects the coverage information which may be created with gcc
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Coverage
+if ( $2 == "COV" ) then  
+	tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Coverage;
+endif
 
 # the Submit script sends the test information to the server
 tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Submit

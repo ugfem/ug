@@ -12,6 +12,6 @@ if ( $#argv == 1 ) then
         set TEST_TYPE = $1;
 endif
 	
-cd $DART_HOME/Source/Server/UG
+cd $DART_HOME/Source/Server/UG/$2;
 tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE DashboardEnd
 ug_dart_copy_html
