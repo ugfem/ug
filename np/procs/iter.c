@@ -345,6 +345,8 @@ typedef struct
 
   VECDATA_DESC *t;
 
+  VEC_SCALAR damp;
+
 } NP_LMGC;
 
 typedef struct
@@ -1600,7 +1602,7 @@ static INT TSDisplay (NP_BASE *theNP)
   if (np->u_iter != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"UI",ENVITEM_NAME(np->u_iter));
   if (np->v_iter != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"UI",ENVITEM_NAME(np->v_iter));
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"VI",ENVITEM_NAME(np->v_iter));
   if (np->p_iter != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"PI",ENVITEM_NAME(np->p_iter));
   if (np->u != NULL)
@@ -1832,6 +1834,10 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
   if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
     NP_RETURN(1,result[0]);
   if (VDsubDescFromVT(x,np->vt,np->p_sub,&np->px))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->u_sub,&np->ub))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->p_sub,&np->pb))
     NP_RETURN(1,result[0]);
   if (AllocVDFromVD(theMG,level,level,np->ux,&np->u))
     NP_RETURN(1,result[0]);
@@ -4452,6 +4458,10 @@ static INT LmgcInit (NP_BASE *theNP, INT argc , char **argv)
   if (np->PostSmooth == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
   if (np->BaseSolver == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
 
+  if (sc_read(np->damp,NP_FMT(np),NULL,"damp",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++)
+      np->damp[i] = 1.0;
+
   return (NPIterInit(&np->iter,argc,argv));
 }
 
@@ -4607,7 +4617,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
     if (Lmgc(theNP,level-1,c,b,A,result))
       REP_ERR_RETURN(1);
   if ((*np->Transfer->InterpolateCorrection)
-        (np->Transfer,level,np->t,c,A,Factor_One,result))
+        (np->Transfer,level,np->t,c,A,np->damp,result))
     REP_ERR_RETURN(1);
   IFDEBUG(np,4)
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
