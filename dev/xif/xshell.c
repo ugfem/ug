@@ -589,6 +589,7 @@ void ShellInsertChar (ShellWindow *sh, char c)
 /************************************************************************/
 
 
+#ifdef USE_XAW
 void ShellUpdateTextBuffer (ShellWindow *sh,int i)
 {
   XawTextPosition appendPos;
@@ -612,7 +613,7 @@ void ShellUpdateTextBuffer (ShellWindow *sh,int i)
     XawTextSetInsertionPoint(sh->wid,appendPos);
   }
 }
-
+#endif
 
 /****************************************************************************/
 /*																			*/
