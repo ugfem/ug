@@ -94,6 +94,27 @@
         #define MGIO_CG_POINT_PS(p,n)                           (MGIO_PARFILE ? ((p)+(n)) : ((MGIO_CG_POINT*)(((struct mgio_cg_point_seq*)(p))+(n))))
         #define MGIO_CG_ELEMENT_PS(e,n)                         (MGIO_PARFILE ? ((e)+(n)) : ((MGIO_CG_ELEMENT*)(((struct mgio_cg_element_seq*)(e))+(n))))
 
+        #if (MGIO_DIM==2)
+        #define MGIO_CHECKEXTMACROS                                     {assert(MGIO_MAXLEVEL==32); \
+                                                                         assert(MGIO_TAGS==8); \
+                                                                         assert(MGIO_MAX_SONS_OF_ELEM==30); \
+                                                                         assert(MGIO_MAX_EDGES_OF_ELEM==12); \
+                                                                         assert(MGIO_MAX_CORNERS_OF_ELEM==8); \
+                                                                         assert(MGIO_MAX_SIDES_OF_ELEM==6); \
+                                                                         assert(MGIO_MAX_NEW_CORNERS==5); \
+                                                                         assert(MGIO_MAX_CORNERS_OF_SIDE==4);}
+        #endif
+        #if (MGIO_DIM==3)
+        #define MGIO_CHECKEXTMACROS                                     {assert(MGIO_MAXLEVEL==32); \
+                                                                         assert(MGIO_TAGS==8); \
+                                                                         assert(MGIO_MAX_SONS_OF_ELEM==30); \
+                                                                         assert(MGIO_MAX_EDGES_OF_ELEM==12); \
+                                                                         assert(MGIO_MAX_CORNERS_OF_ELEM==8); \
+                                                                         assert(MGIO_MAX_SIDES_OF_ELEM==6); \
+                                                                         assert(MGIO_MAX_NEW_CORNERS==19); \
+                                                                         assert(MGIO_MAX_CORNERS_OF_SIDE==4);}
+        #endif
+
 #else
 
     #define MGIO_DEBUG                          0          /* DO NOT TOUCH !!!!! */

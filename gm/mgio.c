@@ -1661,6 +1661,9 @@ int MGIO_Init ()
 
 #ifdef __MGIO_USE_IN_UG__
 
+  /* check consistency with output macros */
+  MGIO_CHECKEXTMACROS;
+
   /* path to grid-dirs */
   mgpathes_set = 0;
   if (ReadSearchingPaths(DEFAULTSFILENAME,"mgpaths")==0)
