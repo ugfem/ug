@@ -24,7 +24,6 @@ Grid [$c {0|1}] [$e {0|1}] [$n {0|1}] [$w {0|1}]
                                         i  irregular and up
                                         r  regular and up
                                         a  all
-
 										
 -escalar > setplotobject setview plot
 EScalar           # name of PlotObjType for plot of a scalar value: 2D
@@ -35,7 +34,6 @@ EScalar $e <ElemEvalProc> [$m {COLOR | CONTOURS_EQ}] [$f <fromValue>] [$t <toVal
     $f <fromValue> $t <toValue>     # range [fromValue,toValue]
     $n <nContours>                  # number of contours
 	$g {0|1}                        # plot grid (before CONTOUR after COLOR)
-
 	
 -evector > setplotobject setview plot
 EVector           # name of PlotObjType for plot of a vector value: 2D
@@ -47,19 +45,22 @@ EVector $e <ElemEvalProc> [$c {0|1}] [$t <toValue>] [$r <rastersize>] [$l <cutle
                                     # vectors are plotted
     $l <cutlength>                  # cutlength in units of rastersize
 
--vecmat > setplotobject setview plot
+-vecmat > setplotobject setview plot vector matrix
 VecMat            # name of PlotObjType for plot of the Vector-Matrix graph
 VecMat [$t [nd][ed][el]] [$o 0|1] [$m 0|1] [$i 0|1] [$d 0|1] [{[$c 0|1] [$e 0|1]} | $connect] [$b 0|1]
           [$M [<mat sym>]] [$V [<sol sym>]]
 
     $t [nd][ed][el]                 # display only specified vector types and their connections
-    $o 0|1                          # show order (see also below)
+    $o 0|1|2|3                      # show VECTOR/BLOCKVECTOR order (see also below)
     $m 0|1                          # plot markers for vectors with the following meaning
-                                    # if order is specified:
+                                    # if order = 1 or 2
                                     #   circle:    FIRST-set
                                     #   rhombus:   LAST-set
                                     #   square:    CUT-set
                                     #   the color indicates the cycle in which the vector was found
+                                    # if order = 3
+                                    #   the color indicates the BLOCKVECTOR a VECTOR belongs to
+                                    #   (filled circle markers used)
                                     # else
                                     #   circle:    node-vector
                                     #   rhombus:   edge-vector
@@ -86,6 +87,7 @@ VecMat [$t [nd][ed][el]] [$o 0|1] [$m 0|1] [$i 0|1] [$d 0|1] [{[$c 0|1] [$e 0|1]
                                     # data will be plotted
     $V [<sol sym>]                  # plot user data of <sol sym> for the selected vectors.
                                     # If <sol sym> is omitted no vector data will be plotted
+
 -bnodes > grid generator
 bnodes         # generates boundary nodes
 

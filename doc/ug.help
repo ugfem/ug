@@ -180,6 +180,9 @@ mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c]
     $s                     # refine all elements from the current selection
     $h                     # show available rules
 
+-gridscript > grid
+gridscript      # print script commands creating the level zero of the current multigrid to shell
+
 -extracon > connections extra grid delete
 extracon         # display number of extra connections (and delete them)
                  # stringvar :extraconratio is set to (# extra/# connections)
@@ -494,6 +497,10 @@ rotate           # rotate the projection plane of the current picture around the
 rotate <angle>
     <angle>                # <angle> runs in the view plane math pos from the x-axis
 
+-textfac > text size window graphics
+textfac          # set a zoom factor for textsizes in graphical windows
+textfac <factor>
+
 -setplotobject > window picture plot graphics
 setplotobject    # specify the object which will be plotted in the current picture and associate
                  # the current multigrid with it (if not done yet)
@@ -562,6 +569,14 @@ clear <symbol name> [$a] [$s] [$v <value>]
     $a                     # from level 0 through current level (default: current level only)
     $s                     # consider the skip fields
     $v <value>             # assign this value (instead of 0.0)
+
+-copy > solution symbol
+copy            # copy symbol to symbol on current level
+copy $f <from-symbol> $t <to-symbol>
+
+-interpolate > solution symbol
+interpolate     # interpolate to current level from level below
+interpolate <symbol>
 
 -reinit > problem multigrid
 reinit           # reinitialize a problem
@@ -647,6 +662,20 @@ setpf <format_name> [$V{0 | {+|-} {<vecsym_name>}+}]+ [$M{0 | {+|-} {<matsym_nam
 
 -showpf > symbols format vmlist
 showpf           # show current printing format settings
+
+-
+##############################  PlotObjectTypes  #########################################
+
+-matrix > setplotobject setview plot matrix
+Matrix         # name of PlotObjType for plot Matrix where entries are indicated by colors
+Matrix [$e <matrix eval proc> | $M <scalar matrix symbol>] [$f <fromValue>] [$t <toValue>] [$l 0|1]
+    $f <fromValue> $t <toValue>     # range [fromValue,toValue]
+    $e <matrix eval proc>           # plot entries of a symbol
+    $M <scalar matrix symbol>       # plot entries of a evalproc
+    $C 0|1                          # plot regular connections
+    $E 0|1                          # plot extra connections
+    $l 0|1                          # choose logarithmic coloring (ln |A_ij|)
+    $T <threshold>                  # supress entries with |A_ij| < threshold
 
 -
 ############################### numerical procedures #####################################
