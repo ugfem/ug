@@ -4818,7 +4818,7 @@ static int RefineGrid (GRID *theGrid)
 			{
 				if (LEVEL(theElement)>0 && EFATHER(theElement)==NULL)
 				{
-					DisposeElement(theGrid,theElement,TRUE);
+					DisposeElement(UpGrid,theElement,TRUE);
 					continue;
 				}
 			}
@@ -4860,7 +4860,7 @@ static int RefineGrid (GRID *theGrid)
 			{
 				if (LEVEL(theElement)>0 && EFATHER(theElement)==NULL)
 				{
-					DisposeElement(theGrid,theElement,TRUE);
+					DisposeElement(UpGrid,theElement,TRUE);
 					continue;
 				}
 			}
@@ -4886,8 +4886,8 @@ static int RefineGrid (GRID *theGrid)
 		SETGLOBALGSTATUS(UpGrid);
 		RESETMGSTATUS(MYMG(UpGrid));
 	}
-
-	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("END RefineGrid(%d):\n",GLEVEL(theGrid)),"");
+	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),
+		("END RefineGrid(%d):\n",GLEVEL(theGrid)),"");
 
 	return(GM_OK);
 }
@@ -4901,6 +4901,12 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 	ELEMENT *theNeighbor,*theSon;
 	ELEMENT *SonList[MAX_SONS];
 
+	/* yellow_class specific code:                                */
+	/* update need to be done for all elements with THEFLAG set,  */
+	/* execpt for yellow copies, since their neighbor need not be */
+	if (!THEFLAG(theElement) && REFINECLASS(theElement)!=YELLOW_CLASS) return(GM_OK);
+	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+	{
 		theNeighbor = NBELEM(theElement,i);
 		if (theNeighbor == NULL) continue;
 
@@ -4909,6 +4915,14 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 
 		/* yellow_class specific code:                                     */
 		/* this is the special situation an update of the element overlap  */
+		/* is needed, since the yellow element has now gotten a new yellow */
+		/* neighbor (s.l. 971029)                                          */
+			((REFINECLASS(theNeighbor)!=YELLOW_CLASS) || 
+			(REFINECLASS(theNeighbor)==YELLOW_CLASS && !THEFLAG(theNeighbor)))) continue;
+
+			ID(theElement),i,ID(theNeighbor), EPROCPRIO(theNeighbor,PrioMaster)))
+
+		Get_Sons_of_ElementSide(theElement,i,&SonsOfSide,
 			SonList,SonSides,1,0);
 		PRINTDEBUG(gm,1,("%d: SonsOfSide=%d\n",me,SonsOfSide))
 
@@ -4940,7 +4954,10 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		if (IS_REFINED(theElement) && THEFLAG(theElement))
 */
 		if (IS_REFINED(theElement))
+			UpdateElementOverlap(theElement);
 	}
+
+	return(GM_OK);
 }
 
 
@@ -5039,9 +5056,14 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		/* check whether is a valid ghost, which as in minimum one */
 		/* master element as neighbor                              */
 		/* TODO: move this functionality to ComputeCopies          */
+		/* then disposing of theSon can be done in RefineGrid      */
 		/* and the extra Xfer env around ConnectGridOverlap()      */
 		/* can be deleted (s.l. 971029)                            */
-		IFDEBUG(gm,0)
+		{
+			ELEMENT *SonList[MAX_SONS];
+
+			GetAllSons(theElement,SonList);
+			for (i=0; SonList[i]!=NULL; i++)
 			{
 				INT ok = 0;
 				theSon = SonList[i];
@@ -5055,10 +5077,26 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 					if (ECLASS(theSon) == YELLOW_CLASS)
 					{
 						UserWriteF(PFMT "ConnectGridOverlap(): disposing useless yellow ghost  e=" EID_FMTX 
-					UserWriteF(PFMT "ConnectGridOverlap(): ERROR e=" EID_FMTX 
-						"this ghost is useless!\n",me,EID_PRTX(theSon));
+							"f=" EID_FMTX "this ghost is useless!\n",
+							me,EID_PRTX(theSon),EID_PRTX(theElement));
+						DisposeElement(UPGRID(theGrid),theSon,TRUE);
+					}
+					else
+					{
+						UserWriteF(PFMT "ConnectGridOverlap(): ERROR e=" EID_FMTX 
+							"f=" EID_FMTX "this ghost is useless!\n",
+							me,EID_PRTX(theSon),EID_PRTX(theElement));
+
+						/* TODO: better do this
+						assert(0); */
+					}
+				}
+			}
+		}
+	}
+
 	return(GM_OK);
-		ENDDEBUG
+}
 
 
 
@@ -5350,7 +5388,9 @@ if (1)
 
 			DDD_XferBegin();
 			if (ConnectGridOverlap(theGrid))			RETURN(GM_FATAL);
+	DEBUG_TIME(0);
 
+			/* this is needed due to special cases while coarsening */
 			/* sample scene: a ghost element is needed as overlap  	*/
 			/* element must eventually be downgraded from master    */
 			/* to ghost prio (s.l. 971020)                          */
