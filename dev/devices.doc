@@ -6,14 +6,18 @@
     PURPOSE:
     The devices module defines an interface for graphics ouput on windows and for
     the event handling. Interfaces with window and event handling are defined for
-    XWindows and Macintosh computers up to now but should be easily extendable to
+    XWindows ('xif') and Macintosh ('mif') computers up to now but should be easily extendable to
     other platforms like Microsoft Windows or others.
     
+    The possibility of a very simple text interface is also offered ('sif'). With this
+    interface ug should run on hardly any machine and also in batch mode.
+    
     Additionally there exists the possibility to write graphical ouput in form of 
-    a special graphics commands format to file which later can be view using the
+    a special ug-defined graphics commands format called 'metafile' to file which
+    later can be viewed using the
     program 'xugv' or converting it to PostScript using the 'm2ps' tool.
     
-    The machine interface is splitted into two parts':'
+    The machine interface is split into two parts':'
 
 .n      a) output to the shell
 .n      b) event handling (including input from shell), window management and graphics
@@ -231,7 +235,7 @@ D*/
     PURPOSE:
     The event handling of ug defines several possible event types the interface
     function 'GetNextUGEvent' can return to 'ProcessEvent'. Depending on the
-    event type data are transferred by the correspnding component in the union.
+    event type data are transferred by the corresponding component in the union.
     The events are distinguished by the 'Type' component in the 'EVENT'
     
     DEFINITION:
