@@ -557,11 +557,11 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
     VD_OFFSET(vd,tp) = offset[tp];
 
   for (tp=0; tp<NVECTYPES; tp++) {
-    PRINTDEBUG(np,1,("offset %d comp ",offset[tp]));
+    PRINTDEBUG(np,2,("offset %d comp ",offset[tp]));
     for (i=0; i<VD_NCMPS_IN_TYPE(vd,tp); i++)
-      PRINTDEBUG(np,1,(" %d",VD_CMP_OF_TYPE(vd,tp,i)));
+      PRINTDEBUG(np,2,(" %d",VD_CMP_OF_TYPE(vd,tp,i)));
   }
-  PRINTDEBUG(np,1,("\n"));
+  PRINTDEBUG(np,2,("\n"));
 
   VD_NID(vd) = nId;
   VD_IDENT_PTR(vd) = Ident;
@@ -1025,7 +1025,7 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
 
   if (vd==NULL) return (NUM_OK);
   if (VM_LOCKED(vd)) return (NUM_OK);
-  PRINTDEBUG(np,1,(" FreeVD %s from %d to %d\n",
+  PRINTDEBUG(np,2,(" FreeVD %s from %d to %d\n",
                    ENVITEM_NAME(vd),fl,tl));
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
@@ -1068,7 +1068,7 @@ INT InterpolateVDAllocation (MULTIGRID *theMG, VECDATA_DESC *vd)
   tl = TOPLEVEL(theMG);
   if (tl < 1) return (NUM_OK);
 
-  PRINTDEBUG(np,1,(" InterpolateVDAllocation %s\n",ENVITEM_NAME(vd)));
+  PRINTDEBUG(np,2,(" InterpolateVDAllocation %s\n",ENVITEM_NAME(vd)));
 
   theGrid = GRID_ON_LEVEL(theMG,tl);
   for (tp=0; tp<NVECTYPES; tp++)
