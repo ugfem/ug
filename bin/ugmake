@@ -97,6 +97,9 @@ then
 	tools)
 		cd $UGROOT/tools;
 		;;
+	df)
+		cd $UGROOT/../df/gen;
+		;;
 	*)
 		echo "target $1 not found";
 		exit 1;

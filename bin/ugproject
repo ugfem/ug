@@ -55,6 +55,14 @@ appl2 ()
 	then
 		ugmake sc2d
 	fi
+    if test -d $UGROOT/../df
+	then
+	    ugmake dom GSF
+		ugconf GSF_DOMAIN
+		ugmake df
+	    ugmake dom STD
+		ugconf STD_DOMAIN
+	fi
 }
 
 appl3 () 
@@ -70,6 +78,14 @@ appl3 ()
     if test -d $UGROOT/../ns
 	then
 		ugmake ns3d
+	fi
+    if test -d $UGROOT/../df
+	then
+	    ugmake dom GSF
+		ugconf GSF_DOMAIN
+		ugmake df
+	    ugmake dom STD
+		ugconf STD_DOMAIN
 	fi
 }
 
@@ -129,6 +145,10 @@ fi
 if test -d $UGROOT/../ns
 then
 	ugmake ns -i clean
+fi
+if test -d $UGROOT/../df
+then
+	ugmake df clean
 fi
 
 ( ug3 );
