@@ -643,7 +643,7 @@ INT InitDevices (int *argcp, char **argv)
 {
   ENVDIR *DevDir;
   ENVITEM *dev;
-  INT error=0,i;
+  INT error=0,i,screen;
   char sv[32];
 #       ifdef ModelP
   INT with_defaultOuputDevice;
@@ -742,6 +742,7 @@ else
     SetHiWrd(error,__LINE__);
     return (error);
   }
+  screen=0;
   for (i=0, dev=ENVDIR_DOWN(DevDir); dev!=NULL; i++, dev=NEXT_ENVITEM(dev))
   {
     sprintf(sv,":Devices:device%d",(int)i);
@@ -750,8 +751,14 @@ else
       SetHiWrd(error,__LINE__);
       return (error);
     }
+    if (strcmp(ENVITEM_NAME(dev),"screen")==0) screen=1;
   }
   if (SetStringValue(":Devices:nDevices",i)!=0)
+  {
+    SetHiWrd(error,__LINE__);
+    return (error);
+  }
+  if (SetStringValue(":Devices:Screen",screen)!=0)
   {
     SetHiWrd(error,__LINE__);
     return (error);
