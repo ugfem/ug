@@ -254,10 +254,10 @@ edit_ugconf()
 		sed 's/^REMOTE_IF.*$/REMOTE_IF = OFF/' $1 > $1.tmp
 		;;
 	GUI)
-		sed 's/^GUI.*$/GUI = ON/' $1 > $1.tmp
+		sed 's/^GUI[ ].*$/GUI = ON/' $1 > $1.tmp
 		;;
 	NOGUI)
-		sed 's/^GUI.*$/GUI = OFF/' $1 > $1.tmp
+		sed 's/^GUI[ ].*$/GUI = OFF/' $1 > $1.tmp
 		;;
 	HP)
 		sed 's/^ARCH.*$/ARCH = HP/' $1 > $1.tmp
