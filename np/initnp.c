@@ -53,6 +53,7 @@
 
 #include "initnp.h"
 #include "numproc.h"
+#include "amg_ug.h"
 
 /****************************************************************************/
 /*																			*/
@@ -172,6 +173,12 @@ INT InitNumerics ()
 
   /* init data base */
   if ((err=InitDb())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init amg solver */
+  if ((err=InitAMGSolver())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
