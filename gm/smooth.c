@@ -43,6 +43,7 @@
 #include "refine.h"
 #include "devices.h"
 #include "udm.h"
+#include "pargm.h"
 
 #define SMALL_LOCAL    1.E-4
 
@@ -1864,12 +1865,6 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
   DOUBLE *corn[MAX_CORNERS_OF_ELEM],*y,*cvect;
   DOUBLE x[DIM],old_x[DIM];
 
-    #ifdef ModelP
-  if (me > 0)
-    if (FIRSTVECTOR(theGrid) != NULL)
-      assert(0);
-    #endif
-
   if (bdryFlag) {
     PrintErrorMessage('E',"SmoothMultiGrid",
                       "Smoothing boundary nodes not implemented");
@@ -1885,6 +1880,12 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
     for (l=0; l<=theMG->topLevel; l++)
     {
       theGrid=GRID_ON_LEVEL(theMG,l);
+
+            #ifdef ModelP
+      if (me > 0)
+        if (FIRSTELEMENT(theGrid) != NULL)
+          assert(0);
+            #endif
 
       /* update global coordinates of new nodes */
       if (l!=0)
