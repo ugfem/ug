@@ -29,12 +29,21 @@
 #include "debug.h"
 #include "general.h"
 
-#include "gm.h"
+//#include "gm.h"
 #include "misc.h"
 #include "algebra.h"
-#include "ugm.h"
+//#include "ugm.h"
 #include "refine.h"
 #include "cw.h"
+
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -97,9 +106,9 @@ typedef struct {
 } CE_USAGE;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 CONTROL_WORD control_words[MAX_CONTROL_WORDS];
@@ -255,7 +264,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-void ListCWofObject (const void *obj, INT offset)
+void NS_PREFIX ListCWofObject (const void *obj, INT offset)
 {
   INT i,n,ce,last_ce,sub,min,cw_objt,oiw;
 
@@ -504,7 +513,7 @@ static void ListAllCWsOfObjectType (INT objt, PrintfProcPtr myprintf)
    D*/
 /****************************************************************************/
 
-void ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf)
+void NS_PREFIX ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf)
 {
   ListAllCWsOfObjectType(IVOBJ,myprintf);
   ListAllCWsOfObjectType(IEOBJ,myprintf);

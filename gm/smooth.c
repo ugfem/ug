@@ -15,7 +15,7 @@
 /*                                                                          */
 /* History:   17.07.96 begin, ug version 3.3                                */
 /*                                                                          */
-/* Remarks:                                                                                                     */
+/* Remarks:                                                                 */
 /*                                                                          */
 /****************************************************************************/
 /****************************************************************************/
@@ -47,6 +47,14 @@
 #include "debug.h"
 #include "mgheapmgr.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 #define SMALL_LOCAL    1.E-4
 
 #define LOCAL_EQUAL(A,V)     (ABS((A)-(V))< (SMALL_LOCAL))
@@ -66,6 +74,18 @@ REP_ERR_FILE;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
+extern INT sons_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT evector_offset[TAGS];
+extern INT svector_offset[TAGS];
+extern INT side_offset[TAGS];
+extern INT data_offset[TAGS];
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*

@@ -72,7 +72,19 @@
 #include "ugdevices.h"
 
 #include "fileopen.h"
+#include "domain.h"
 
+#if defined __HP__ || __SGI__ || __T3E__ || __PARAGON__ || __DEC__ || __SUN__ || __PC__ || __LINUXPPC__
+#include <dirent.h>
+#endif
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -318,7 +330,7 @@ static const char* ConvertMachine_2_UNIXPath (const char* fname)
 
 #endif
 
-const char *BasedConvertedFilename (const char *fname)
+const char * NS_PREFIX BasedConvertedFilename (const char *fname)
 /* NOTE: once a filename has passed through BasedConvertedFilename() it is forbidden to
                  call BasedConvertedFilename() a second time for this filename due to
                  static result string.
@@ -399,7 +411,7 @@ static int rename_if_necessary( const char *fname, int do_rename)
    D*/
 /****************************************************************************/
 
-int mkdir_r (const char *fname, mode_t mode, int do_rename)
+int NS_PREFIX mkdir_r (const char *fname, mode_t mode, int do_rename)
 {
   const char *converted_name = BasedConvertedFilename(fname);
 
@@ -461,7 +473,7 @@ int mkdir_r (const char *fname, mode_t mode, int do_rename)
    D*/
 /****************************************************************************/
 
-FILE *fopen_r (const char *fname, const char *mode, int do_rename)
+FILE * NS_PREFIX fopen_r (const char *fname, const char *mode, int do_rename)
 {
   if (rename_if_necessary( fname, do_rename)!=0)
     return (NULL);
@@ -527,7 +539,7 @@ size_t filesize (const char *fname)
    D*/
 /****************************************************************************/
 
-int filetype (const char *fname)
+int NS_PREFIX filetype (const char *fname)
 {
   struct stat fstat;
   int r;
@@ -593,7 +605,7 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
 
   /* encapsulate implementation dependent stuff for DirWalk */
 #if defined __HP__ || __SGI__ || __T3E__ || __PARAGON__ || __DEC__ || __SUN__ || __PC__ || __LINUXPPC__
-        #include <dirent.h>
+  //#include <dirent.h>
   typedef struct dirent DIRENT;
         #define D_NAME(d)               ((d)->d_name)
 
@@ -1176,7 +1188,7 @@ int FileTypeUsingSearchPaths (const char *fname, const char *paths)
   return (FT_UNKNOWN);
 }
 
-int AppendTrailingSlash (char *path)
+int NS_PREFIX AppendTrailingSlash (char *path)
 {
   if (path[0]!='\0' && path[strlen(path)-1]!='/')
   {
@@ -1186,7 +1198,7 @@ int AppendTrailingSlash (char *path)
   return NO;
 }
 
-char *SimplifyPath (char *path)
+char * NS_PREFIX SimplifyPath (char *path)
 {
   const char *pf;
   char       *pt;

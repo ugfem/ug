@@ -39,6 +39,15 @@
 #include "general.h"
 #include "ugdevices.h"
 
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -493,7 +502,7 @@ INT M2_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
    D*/
 /****************************************************************************/
 
-INT M3_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
+INT NS_PREFIX M3_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
 {
   DOUBLE determinant,invdet;
   INT i,i1,i2, j,j1,j2;
@@ -866,7 +875,7 @@ DOUBLE cqarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBL
    D*/
 /****************************************************************************/
 
-INT V3_Normalize (DOUBLE *a)
+INT NS_PREFIX V3_Normalize (DOUBLE *a)
 {
   DOUBLE norm;
 
@@ -1208,8 +1217,8 @@ INT QuadraticFittedMin (DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx)
 }
 
 /* volume computations, orientation is same as in general element definition ! */
-DOUBLE V_te (const DOUBLE *x0, const DOUBLE *x1,
-             const DOUBLE *x2, const DOUBLE *x3)
+DOUBLE NS_PREFIX V_te (const DOUBLE *x0, const DOUBLE *x1,
+                       const DOUBLE *x2, const DOUBLE *x3)
 {
   DOUBLE_VECTOR a, b, h, n;
 
@@ -1221,8 +1230,8 @@ DOUBLE V_te (const DOUBLE *x0, const DOUBLE *x1,
   return(OneSixth*V3_SCAL_PROD(n,h));
 }
 
-DOUBLE V_py (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
-             const DOUBLE *x3, const DOUBLE *x4)
+DOUBLE NS_PREFIX V_py (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
+                       const DOUBLE *x3, const DOUBLE *x4)
 {
   DOUBLE_VECTOR a,b,h,n;
 
@@ -1234,8 +1243,8 @@ DOUBLE V_py (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
   return(OneSixth*V3_SCAL_PROD(n,h));
 }
 
-DOUBLE V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
-             const DOUBLE *x3, const DOUBLE *x4, const DOUBLE *x5)
+DOUBLE NS_PREFIX V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
+                       const DOUBLE *x3, const DOUBLE *x4, const DOUBLE *x5)
 {
   DOUBLE_VECTOR a,b,c,d,e,m,n;
 
@@ -1257,13 +1266,13 @@ DOUBLE V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
   return(OneSixth*V3_SCAL_PROD(n,e));
 }
 
-DOUBLE V_he (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3,
-             const DOUBLE *x4, const DOUBLE *x5, const DOUBLE *x6, const DOUBLE *x7)
+DOUBLE NS_PREFIX V_he (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3,
+                       const DOUBLE *x4, const DOUBLE *x5, const DOUBLE *x6, const DOUBLE *x7)
 {
   return(V_pr(x0,x1,x2,x4,x5,x6)+V_pr(x0,x2,x3,x4,x6,x7));
 }
 
-DOUBLE GeneralElementVolume (INT tag, DOUBLE *x_co[])
+DOUBLE NS_PREFIX GeneralElementVolume (INT tag, DOUBLE *x_co[])
 {
   switch (tag)
   {

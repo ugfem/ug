@@ -2,10 +2,10 @@
 // NOTE: It contained invalid syntax that could not be processed by uncrustify.
 
 /****************************************************************************/
-/*																			*/
-/* File:	  refine.c														*/
-/*																			*/
-/* Purpose:   unstructured grid adaption using a general element concept	*/
+/*                                                                          */
+/* File:      refine.c                                                      */
+/*                                                                          */
+/* Purpose:   unstructured grid adaption using a general element concept    */
 /*			  (dimension independent for 2/3D)								*/
 /*																			*/
 /* Author:	  Stefan Lang                         							*/
@@ -101,6 +101,14 @@
 #include "udm.h"
 /*  INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x); */
 
+#endif
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
 #endif
 
 /****************************************************************************/
@@ -251,7 +259,7 @@
 			}                                                                \
 		}
 
-/* TODO: delete special debug */
+/** \todo delete special debug */
 static ELEMENT *debugelem=NULL;
 /*
 #define PRINTELEMID(id)                                                      \
@@ -326,19 +334,29 @@ typedef NODE *ELEMENTCONTEXT[MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /* information used by the estimator and refine*/ 
-REFINEINFO refine_info;
+REFINEINFO NS_PREFIX refine_info;
 
 #ifdef ModelP
 /* control words for identiftication of new nodes and edges */
 INT ce_NEW_NIDENT;
 INT ce_NEW_EDIDENT;
 #endif
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+        control_entries[MAX_CONTROL_ENTRIES];
+
+extern INT father_offset[TAGS];
+extern INT n_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT sons_offset[TAGS];
+extern INT side_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/
@@ -421,7 +439,7 @@ void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel,
 */
 /****************************************************************************/
 
-INT SetRefineInfo (MULTIGRID *theMG)
+INT NS_PREFIX SetRefineInfo (MULTIGRID *theMG)
 {
 	if (MultiGridStatus(theMG,1,0,0,0) != GM_OK)	return(GM_ERROR);	
 
@@ -449,7 +467,7 @@ INT SetRefineInfo (MULTIGRID *theMG)
 */
 /****************************************************************************/
 
-INT TestRefineInfo (MULTIGRID *theMG)
+INT NS_PREFIX TestRefineInfo (MULTIGRID *theMG)
 {
 	if (PREDNEW0(REFINEINFO(theMG)) > PREDMAX(REFINEINFO(theMG)))
 		return(GM_ERROR);
@@ -2486,7 +2504,7 @@ INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 */
 /****************************************************************************/
 
-INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
+INT NS_PREFIX GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
 	int SonID;
 	ELEMENT *son;
@@ -3593,7 +3611,7 @@ typedef struct compare_record COMPARE_RECORD;
 */
 /****************************************************************************/
 
-INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, 
+INT NS_PREFIX GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, 
 					 NODE *SideNodes[MAX_SIDE_NODES], INT ioflag)
 {
 	INT i,ncorners,nedges;
@@ -3744,7 +3762,7 @@ static int compare_node (const void *e0, const void *e1)
 */
 /****************************************************************************/
 
-INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
+INT NS_PREFIX Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 							 ELEMENT *SonList[MAX_SONS], INT *SonSides, 
 							 INT NeedSons, INT ioflag)
 {
@@ -4187,7 +4205,7 @@ static int compare_nodes (const void *ce0, const void *ce1)
 */
 /****************************************************************************/
 
-INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag)
+INT NS_PREFIX Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag)
 {
 	COMPARE_RECORD ElemSonTable[MAX_SONS];
 	COMPARE_RECORD NbSonTable[MAX_SONS];

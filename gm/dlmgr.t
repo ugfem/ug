@@ -33,6 +33,17 @@
 /*                                                                          */
 /****************************************************************************/
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+    namespace UG3d {
+#endif
+#endif
+
 #ifdef ModelP
 
 UNLINK(OTYPE)
@@ -714,3 +725,7 @@ CHECK(OTYPE)
 #undef OTYPE
 #undef PRED
 #undef SUCC
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif

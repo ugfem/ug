@@ -67,10 +67,18 @@
 #include "parallel.h"
 #endif
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* defines in the following order											*/
-/*																			*/
+/*                                                                          */
 /*		  compile time constants defining static data size (i.e. arrays)	*/
 /*		  other constants													*/
 /*		  macros															*/
@@ -111,9 +119,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 REP_ERR_FILE;
 
 /****************************************************************************/
-/*																			*/
-/* forward declarations of functions used before they are defined			*/
-/*																			*/
+/*                                                                          */
+/* forward declarations of functions used before they are defined           */
+/*                                                                          */
 /****************************************************************************/
 
 static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)

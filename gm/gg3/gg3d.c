@@ -45,6 +45,15 @@
 #include "ugstruct.h"
 #include "gg3d.h"
 
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -81,7 +90,7 @@ static INT right;
 static MULTIGRID *currMG;
 static double h_global;
 static INT subdomain;
-static INT *transfer, *newId, *oldId, point, element;
+static INT *transfer, *newId, *oldId, point, element_;
 static MESH *currmesh;
 
 static INT *nInnP;
@@ -218,7 +227,7 @@ int AllMemElements(int nelements)
     fclose(stream);
   }
 
-  element = 0;
+  element_ = 0;
   currmesh->nElements[subdomain] = nelements;
   currmesh->Element_corners[subdomain] = (INT *) GetTmpMem(MGHEAP(currMG),(nelements+1)*sizeof(INT), GG3_MarkKey);
   if(currmesh->Element_corners[subdomain]==NULL)
@@ -288,23 +297,23 @@ int AddElement (int nnodes, int node0, int node1, int node2, int node3, int node
     Id[5] = node4;
   }
   /* write element in the mesh structure */
-  currmesh->Element_corner_ids[subdomain][element] = (INT *) GetTmpMem(MGHEAP(currMG),nnodes*sizeof(INT), GG3_MarkKey);
-  if(currmesh->Element_corner_ids[subdomain][element]==NULL)
+  currmesh->Element_corner_ids[subdomain][element_] = (INT *) GetTmpMem(MGHEAP(currMG),nnodes*sizeof(INT), GG3_MarkKey);
+  if(currmesh->Element_corner_ids[subdomain][element_]==NULL)
   {
     printf("%s\n", "Not enough memory");
     assert(0);
   }
 
-  currmesh->Element_corners[subdomain][element] = nnodes;
+  currmesh->Element_corners[subdomain][element_] = nnodes;
   for(i=0; i<nnodes; i++)
     if(Id[i]<nb_boundary_points_subdom)
-      currmesh->Element_corner_ids[subdomain][element][i] = oldId[Id[i]];
+      currmesh->Element_corner_ids[subdomain][element_][i] = oldId[Id[i]];
     else
-      currmesh->Element_corner_ids[subdomain][element][i] = nb_boundary_points
-                                                            + nb_inner_points
-                                                            + Id[i]
-                                                            - nb_boundary_points_subdom;
-  element++;
+      currmesh->Element_corner_ids[subdomain][element_][i] = nb_boundary_points
+                                                             + nb_inner_points
+                                                             + Id[i]
+                                                             - nb_boundary_points_subdom;
+  element_++;
 
   return(0);
 }

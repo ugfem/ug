@@ -40,6 +40,13 @@
 #include "initdev.h"
 #include "general.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -69,7 +76,7 @@
 
 #define COLORS          256
 #define GRAY                    0.5
-#define GRAY_CC                 (~(short)0)
+#define GRAY_CC                 (~(short) 0)
 
 #define TRFMX(pt) (((float)(pt.x))*mxx + ((float)(pt.y))*mxy + tx)
 #define TRFMY(pt) (((float)(pt.x))*myx + ((float)(pt.y))*myy + ty)

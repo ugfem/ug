@@ -39,8 +39,16 @@
 #include "ugdevices.h"
 #include "shapes.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* defines in the following order											*/
 /*																			*/
 /*		  compile time constants defining static data size (i.e. arrays)	*/
@@ -129,7 +137,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-EVALUES *CreateElementValueEvalProc (const char *name, PreprocessingProcPtr PreProc, ElementEvalProcPtr EvalProc)
+EVALUES * NS_PREFIX CreateElementValueEvalProc (const char *name, PreprocessingProcPtr PreProc, ElementEvalProcPtr EvalProc)
 {
   EVALUES *newElementValues;
 
@@ -261,7 +269,7 @@ EVALUES *GetNextElementValueEvalProc (EVALUES *EvalProc)
  */
 /****************************************************************************/
 
-EVECTOR *CreateElementVectorEvalProc (const char *name, PreprocessingProcPtr PreProc, ElementVectorProcPtr EvalProc, INT d)
+EVECTOR * NS_PREFIX CreateElementVectorEvalProc (const char *name, PreprocessingProcPtr PreProc, ElementVectorProcPtr EvalProc, INT d)
 {
   EVECTOR *newElemVector;
 

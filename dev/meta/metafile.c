@@ -38,6 +38,14 @@
 #include "initdev.h"
 #include "general.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -75,7 +83,7 @@
 /* Adjust a little endian variable from the native data length to
    the standard legth */
 
-#define ADJLEN(VALP,STD_SIZE) ((void*) (((char *) (VALP)) + (sizeof(*(VALP)) - (STD_SIZE))))
+#define ADJLEN(VALP,STD_SIZE) ((void*)(((char *)(VALP)) + (sizeof(*(VALP)) - (STD_SIZE))))
 
 #define NAT2STDS(VAL) ((myshort = swap_short(VAL)),(ADJLEN(&(myshort),STD_SHORT)))
 

@@ -296,7 +296,7 @@ HEAP *NewHeap (INT type, MEM size, void *buffer)
 extern INT usefreelistmemory;
 #include "gm.h"
 #include "commands.h"
-MULTIGRID *GetCurrentMultigrid (void);
+NS_PREFIX MULTIGRID *GetCurrentMultigrid (void);
 #endif
 
 void *GetMem (HEAP *theHeap, MEM n, INT mode)
@@ -638,7 +638,7 @@ void DisposeMem (HEAP *theHeap, void *buffer)
 extern INT usefreelistmemory;
 #include "gm.h"
 #include "commands.h"
-MULTIGRID *GetCurrentMultigrid (void);
+NS_PREFIX MULTIGRID *GetCurrentMultigrid (void);
 #endif
 
 void *GetFreelistMemory (HEAP *theHeap, INT size)

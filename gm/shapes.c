@@ -40,6 +40,15 @@
 #include "shapes.h"
 #include "general.h"
 
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -1707,7 +1716,7 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT TetraSideNormals (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM])
+INT NS_PREFIX TetraSideNormals (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM])
 {
    	ELEMENT e;
 	DOUBLE_VECTOR a, b;

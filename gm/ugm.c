@@ -76,6 +76,15 @@
 #include "identify.h"
 #endif
 
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -142,9 +151,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 REP_ERR_FILE;
 
 /****************************************************************************/
-/*																			*/
-/* forward declarations of functions used before they are defined			*/
-/*																			*/
+/*                                                                          */
+/* forward declarations of functions used before they are defined           */
+/*                                                                          */
 /****************************************************************************/
 
 static NODE *CreateNode (GRID *theGrid, VERTEX *vertex, GEOM_OBJECT *Father, INT NodeType, INT with_vector);
@@ -315,7 +324,7 @@ void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type)
   return obj;
 }
 #else
-void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
+void * NS_PREFIX GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
 {
   void                    *obj;
 
@@ -405,7 +414,7 @@ INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type)
   return (PutFreelistMemory(theHeap, object, size));
 }
 #else
-INT PutFreeObjectNew (HEAP *theHeap, void *object, INT size, INT type)
+INT NS_PREFIX PutFreeObjectNew (HEAP *theHeap, void *object, INT size, INT type)
 {
   INT err;
 
@@ -815,7 +824,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT 
 }
 
 
-NODE *GetMidNode (ELEMENT *theElement, INT edge)
+NODE * NS_PREFIX GetMidNode (ELEMENT *theElement, INT edge)
 {
   EDGE *theEdge;
   NODE *theNode;
@@ -1171,7 +1180,7 @@ static NODE *GetSideNodeX (ELEMENT *theElement, INT side, INT n,
   return(NULL);
 }
 
-NODE *GetSideNode (ELEMENT *theElement, INT side)
+NODE * NS_PREFIX GetSideNode (ELEMENT *theElement, INT side)
 {
   ELEMENT *theFather;
   NODE *theNode;
@@ -1268,7 +1277,7 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
  */
 /****************************************************************************/
 
-INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
+INT NS_PREFIX GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
 {
   ELEMENT *theFather;
   NODE *nd[MAX_EDGES_OF_ELEM];
@@ -1352,7 +1361,7 @@ INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
    </ul> */
 /****************************************************************************/
 
-NODE *GetCenterNode (ELEMENT *theElement)
+NODE * NS_PREFIX GetCenterNode (ELEMENT *theElement)
 {
   INT i,j;
   NODE    *theNode;
@@ -1972,7 +1981,7 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
    </ul> */
 /****************************************************************************/
 
-EDGE *GetEdge (NODE *from, NODE *to)
+EDGE * NS_PREFIX GetEdge (NODE *from, NODE *to)
 {
   LINK *pl;
 
@@ -2313,8 +2322,8 @@ LINK *GetLink (NODE *from, NODE *to)
    </ul> */
 /****************************************************************************/
 
-ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
-                        ELEMENT *Father, INT with_vector)
+ELEMENT * NS_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
+                                   ELEMENT *Father, INT with_vector)
 {
   ELEMENT *pe;
   INT i,s_id;
@@ -2566,7 +2575,7 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
    </ul> */
 /****************************************************************************/
 
-GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
+GRID * NS_PREFIX CreateNewLevel (MULTIGRID *theMG, INT algebraic)
 {
   GRID *theGrid;
   INT l;
@@ -2716,7 +2725,7 @@ GRID *CreateNewLevelAMG (MULTIGRID *theMG)
    </ul> */
 /****************************************************************************/
 
-MULTIGRID *MakeMGItem (const char *name)
+MULTIGRID * NS_PREFIX MakeMGItem (const char *name)
 {
   MULTIGRID *theMG;
 
@@ -3237,7 +3246,7 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
    </ul> */
 /****************************************************************************/
 
-INT DisposeNode (GRID *theGrid, NODE *theNode)
+INT NS_PREFIX DisposeNode (GRID *theGrid, NODE *theNode)
 {
   VERTEX *theVertex;
   GEOM_OBJECT *father;
@@ -3407,7 +3416,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
    </ul> */
 /****************************************************************************/
 
-INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
+INT NS_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 {
   INT i,j,tag;
   NODE    *theNode;
@@ -3934,7 +3943,7 @@ INT Collapse (MULTIGRID *theMG)
    </ul> */
 /****************************************************************************/
 
-INT DisposeTopLevel (MULTIGRID *theMG)
+INT NS_PREFIX DisposeTopLevel (MULTIGRID *theMG)
 {
   int l;
   GRID *theGrid;
@@ -3991,7 +4000,7 @@ INT DisposeTopLevel (MULTIGRID *theMG)
    </ul> */
 /****************************************************************************/
 
-INT DisposeGrid (GRID *theGrid)
+INT NS_PREFIX DisposeGrid (GRID *theGrid)
 {
   MULTIGRID *theMG;
 
@@ -4561,7 +4570,7 @@ INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeigh
  */
 /****************************************************************************/
 
-NODE *InsertInnerNode (GRID *theGrid, DOUBLE *pos)
+NODE * NS_PREFIX InsertInnerNode (GRID *theGrid, DOUBLE *pos)
 {
   VERTEX *theVertex;
   NODE *theNode;
@@ -4610,7 +4619,7 @@ NODE *InsertInnerNode (GRID *theGrid, DOUBLE *pos)
    </ul> */
 /****************************************************************************/
 
-NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
+NODE * NS_PREFIX InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
 {
   NODE *theNode;
   VERTEX *theVertex;
@@ -4682,7 +4691,7 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
    </ul> */
 /****************************************************************************/
 
-INT DeleteNode (GRID *theGrid, NODE *theNode)
+INT NS_PREFIX DeleteNode (GRID *theGrid, NODE *theNode)
 {
   VERTEX *theVertex;
   ELEMENT *theElement;
@@ -4775,7 +4784,7 @@ INT DeleteNodeWithID (GRID *theGrid, INT id)
    </ul> */
 /****************************************************************************/
 
-ELEMENT *FindFather (VERTEX *theVertex)
+ELEMENT * NS_PREFIX FindFather (VERTEX *theVertex)
 {
   ELEMENT *theElement;
   INT i;
@@ -4911,7 +4920,7 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
    </ul> */
 /****************************************************************************/
 
-INT MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex)
+INT NS_PREFIX MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex)
 {
   ELEMENT *theElement;
   NODE *Node0,*Node1,*sonNode, *theNode;
@@ -5679,7 +5688,7 @@ INT CheckOrientation (INT n, VERTEX **vertices)
  */
 /****************************************************************************/
 
-INT CheckOrientation (INT n, VERTEX **vertices)
+INT NS_PREFIX CheckOrientation (INT n, VERTEX **vertices)
 {
   DOUBLE_VECTOR diff[3],rot;
   DOUBLE det;
@@ -6262,7 +6271,7 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
  */
 /****************************************************************************/
 
-ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList, INT *bnds_flag)
+ELEMENT * NS_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList, INT *bnds_flag)
 {
   MULTIGRID *theMG;
   INT i,j,k,m,rv,found,tag,ElementType;
@@ -6674,7 +6683,7 @@ ELEMENT *InsertElementFromIDs (GRID *theGrid, INT n, INT *idList, INT *bnds_flag
    </ul> */
 /****************************************************************************/
 
-INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSION */
+INT NS_PREFIX DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSION */
 {
   GRID *theGrid;
   ELEMENT *theNeighbor;
@@ -7121,7 +7130,7 @@ INT PointInElement (const DOUBLE *x, const ELEMENT *theElement) /* 2D version */
 #endif
 
 #ifdef __THREEDIM__
-INT PointInElement (const DOUBLE *global, const ELEMENT *theElement)
+INT NS_PREFIX PointInElement (const DOUBLE *global, const ELEMENT *theElement)
 {
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
   DOUBLE_VECTOR a,b,rot;
@@ -7317,7 +7326,7 @@ DOUBLE DistanceFromSide(const DOUBLE *global, const ELEMENT *theElement, INT sid
    </ul> */
 /****************************************************************************/
 
-ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
+ELEMENT * NS_PREFIX FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
 {
   ELEMENT *theElement,*theFather,*Sons[MAX_SONS];
   INT i;
@@ -7370,7 +7379,7 @@ ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
    </ul> */
 /****************************************************************************/
 
-ELEMENT *FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
+ELEMENT * NS_PREFIX FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
 {
   ELEMENT *t;
   INT k;
@@ -7453,7 +7462,7 @@ ELEMENT *FindElementOnSurfaceCached (MULTIGRID *theMG, DOUBLE *global)
  */
 /****************************************************************************/
 
-INT InnerBoundary (ELEMENT *t, INT side)
+INT NS_PREFIX InnerBoundary (ELEMENT *t, INT side)
 {
   INT left,right,part;
 
@@ -7542,7 +7551,7 @@ ELEMENT *NeighbourElement (ELEMENT *t, INT side)
  */
 /****************************************************************************/
 
-void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
+void NS_PREFIX CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
 {
   DOUBLE *corner;
   INT i, nr_corners;
@@ -7628,7 +7637,7 @@ void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR gl
  */
 /****************************************************************************/
 
-INT KeyForObject( KEY_OBJECT *obj )
+INT NS_PREFIX KeyForObject( KEY_OBJECT *obj )
 {
   int dummy,i;          /* dummy variable */
   DOUBLE_VECTOR coord;
@@ -8555,7 +8564,7 @@ void ListGrids (const MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt, INT vopt)
+void NS_PREFIX ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
   VERTEX *theVertex;
   LINK *theLink;
@@ -8815,7 +8824,7 @@ void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, 
  */
 /****************************************************************************/
 
-void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt)
+void NS_PREFIX ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
   char etype[10];
   char ekind[8];
@@ -9078,7 +9087,7 @@ void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataop
  */
 /****************************************************************************/
 
-void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt, INT modifiers)
+void NS_PREFIX ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt, INT modifiers)
 {
   FORMAT *theFormat;
   NODE *theNode;
@@ -10054,7 +10063,7 @@ static INT MaxNodeClass (ELEMENT *theElement)
    </ul> */
 /****************************************************************************/
 
-INT MaxNextNodeClass (ELEMENT *theElement)
+INT NS_PREFIX MaxNextNodeClass (ELEMENT *theElement)
 {
   INT m = 0;
   INT i;
@@ -11263,7 +11272,7 @@ static INT FinishGrid (MULTIGRID *mg)
    </ul> */
 /****************************************************************************/
 
-INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
+INT NS_PREFIX SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 {
   HEAP *theHeap;
   GRID *theGrid;
