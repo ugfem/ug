@@ -3246,7 +3246,7 @@ INT BNDP_SaveBndP (BNDP *BndP)
   BND_PS *bp;
   INT i,j;
   int iList[2];
-  double dList[Dim-1];
+  double dList[DIM-1];
 
   iList[0] = BND_PATCH_ID(BndP);
   iList[1] = BND_N(BndP);
@@ -3291,16 +3291,16 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   int i,j,pid,n;
   double local;
   int iList[2];
-  double dList[DIM-1]
+  double dList[DIM-1];
 
-  if (Bio_Read_mint(2,iList)) return (1);
+  if (Bio_Read_mint(2,iList)) return (NULL);
   pid = iList[0]; n = iList[1];
   bp = (BND_PS *)GetFreelistMemory(Heap,(n-1)*sizeof(COORD_BND_VECTOR) + sizeof(BND_PS));
   bp->n = n;
   bp->patch_id = pid;
   for (i=0; i<n; i++)
   {
-    if (Bio_Read_mdouble(DiIM-1,dList)) return (1);
+    if (Bio_Read_mdouble(DIM-1,dList)) return (NULL);
     for (j=0; j<DIM-1; j++)
       bp->local[i][j] = dList[j];
   }
