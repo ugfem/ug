@@ -1,0 +1,37 @@
+#!/bin/sh
+if test $# -eq 0 -o $# -ge 5 -o "$1" = "-help"
+then
+	echo "usage: $0 <applicationname> <dim_x> [<dim_y>] [<dim_z>]";
+	echo "purpose: start ug application on parallel machine";
+	exit 1;
+fi
+
+
+if test $# -eq 1
+then
+
+	if test "x$UGROOT" = "x"
+	then 
+		echo "$0: to use $0 set shell environment variable UGROOT!";
+		exit 1;
+	fi
+	cd $UGROOT/film
+fi
+
+if test $# -ge 2
+then
+	cd $2
+fi
+
+ARCH=`grep '^ARCH[ \t]' $UGROOT/ug.conf | awk '{ print $3 }' -` 
+
+case $ARCH in
+	SGI)
+  		mpeg_play -dither color $1.mpg
+		;;
+	*)
+		echo not supported
+		;;
+esac;
+
+
