@@ -13293,25 +13293,6 @@ static INT LB4Command (INT argc, char **argv)
 #endif /* CHACOT */
 
 #ifdef USE_FAMG
-static INT pamgCommand (INT argc, char **argv)
-{
-  MULTIGRID *theMG;
-  int level;
-
-  theMG = currMG;
-  level = 0;
-  if (argv[1][0]=='l')
-  {
-    if (sscanf(argv[1],"l %d",&level)!=1)
-      return (CMDERRORCODE);
-  }
-
-  if (pamgDo( theMG, level ) > 0)
-    return(CMDERRORCODE);
-
-  return (OKCODE);
-}
-
 static INT pamgCheckCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -14640,7 +14621,6 @@ INT InitCommands ()
         #endif
 
 #ifdef USE_FAMG
-  if (CreateCommand("pamg",           pamgCommand                     )==NULL) return(__LINE__);
   if (CreateCommand("pamgcheck",      pamgCheckCommand                )==NULL) return(__LINE__);
 #endif
 
