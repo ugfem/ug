@@ -1106,7 +1106,7 @@ int Read_PBndDesc (BVP *theBVP, HEAP *theHeap, int n, BNDP **BndPList)
   if (theHeap==NULL) return (1);
   for (i=0; i<n; i++)
   {
-    BndPList[i] = BNDP_LoadBndP (theBVP,theHeap,stream);
+    BndPList[i] = BNDP_LoadBndP (theBVP,theHeap);
     if (BndPList[i]==NULL) return (1);
   }
   return (0);
@@ -1144,7 +1144,7 @@ int Write_PBndDesc (int n, BNDP **BndPList)
   int i;
 
   for (i=0; i<n; i++)
-    if (BNDP_SaveBndP (BndPList[i],stream)) return (1);
+    if (BNDP_SaveBndP (BndPList[i])) return (1);
   return (0);
 }
 
