@@ -5,6 +5,7 @@
 * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 #include        <stdio.h>
+#include        <assert.h>
 #include        "../main/structs.h"
 #include        "../main/defs.h"
 
@@ -74,6 +75,8 @@ short *sets;                    /* set each vertex gets assigned to */
     if (val > maxval) maxval = val;
     if (val < minval) minval = val;
   }
+
+  assert(minval<=maxval);
 
   /* remember extrem values */
   max = maxval;
@@ -181,7 +184,7 @@ short *sets;                    /* set each vertex gets assigned to */
     else myactive = 0;
 
     /* Check for alternate termination criteria. */
-    if (!done && (maxval == minval))
+    if (!done && (maxval <= minval))
     {
       done = TRUE;
       if (DEBUG_ASSIGN > 0)
