@@ -186,16 +186,6 @@ INT pamgDo( MULTIGRID *theMG, INT level )
   int offset=sizeof(MATRIX)-sizeof(DOUBLE);
 
   DDD_XferBegin();
-  for( v=PFIRSTVECTOR(grid); v!=NULL; v = SUCCVC(v))
-  {
-    if( VSTART(v)==NULL )
-      DDD_XferDeleteObj(PARHDR(v));
-  }
-  /* elements with old ghostprios cause errors in check; but that's ok */
-  DDD_XferEnd();
-  assert(!DDD_ConsCheck());
-
-  DDD_XferBegin();
   for( v=PFIRSTVECTOR(grid); PRIO(v) != PrioBorder && PRIO(v) != PrioMaster; v = SUCCVC(v))
   {
     DDD_XferPrioChange( PARHDR((NODE*)VOBJECT(v)), PrioBorder );                     /* TODO: cancel this line; its only for beauty in checks */
@@ -267,13 +257,19 @@ static INT isAlocalGID( DDD_GID search_gid, DDD_GID loc_gids[NBARRAYSIZE*NBARRAY
     return(0);
    }*/
 
-static int Scatter_pamgCheck (DDD_OBJ obj, void *data)
+
+/* TODO: remove unused variants */
+static int Scatter_pamgCheckQQQQQQQQQQQQQQQQQQQQQQQQ (DDD_OBJ obj, void *data)
 {
   VECTOR  *v = (VECTOR *)obj;
   MATRIX *m, *m2;
   DDD_GID *buf = (DDD_GID *)data;
   DDD_GID gid,loc_gids[NBARRAYSIZE*NBARRAYSIZE];
   INT i, nr_local_gids, sender_gid, sender_pe;
+
+  /* the assertions must be valid only for masters */
+  if( PRIO(v)!=PrioMaster )
+    return 0;
 
   nr_local_gids=0;
   m=VSTART(v);
@@ -292,6 +288,44 @@ static int Scatter_pamgCheck (DDD_OBJ obj, void *data)
       pamgerrors++;
       UserWriteF("\nERROR GID %d on PE %d had NB with GID %d", sender_gid, sender_pe, buf[i]);
     }
+
+  return 0;
+}
+
+static int Scatter_pamgCheck (DDD_OBJ obj, void *data)
+{
+  VECTOR  *v = (VECTOR *)obj;
+  MATRIX *m, *m2;
+  DDD_GID *buf = (DDD_GID *)data;
+  DDD_GID gid,loc_gids[NBARRAYSIZE*NBARRAYSIZE];
+  INT i, nr_local_gids, sender_gid, sender_pe, in_overlap2;
+
+  nr_local_gids=0;
+  m=VSTART(v);
+  in_overlap2 = (PRIO(v)==PrioMaster);
+  if(m!=NULL)
+    for( m=MNEXT(VSTART(v)); m!=NULL; m = MNEXT(m) )
+      for( m2=VSTART(MDEST(m)); m2!=NULL; m2 = MNEXT(m2) )
+      {
+        loc_gids[nr_local_gids++] = DDD_InfoGlobalId(PARHDR(MDEST(m2)));
+        in_overlap2 |= (PRIO(MDEST(m2))==PrioMaster);
+      }
+
+  if(!in_overlap2)
+    return 0;                   /* only vectors within overlap 2 must have the complete neighbourhood */
+
+  /*qsort( loc_gid, nr_local_gids, sizeof(DDD_GID), sort_Gids); makes only sense for bisection search */
+
+  sender_gid = (INT)buf[1];
+  sender_pe = (INT)buf[2];
+  for( i=3; i<(INT)buf[0]; i++ )
+    if( !isAlocalGID(buf[i],loc_gids,nr_local_gids) )
+    {
+      pamgerrors++;
+      UserWriteF("\nERROR GID %d on PE %d had NB with GID %d", sender_gid, sender_pe, buf[i]);
+    }
+
+  return 0;
 }
 
 INT pamgCheckDo( MULTIGRID *theMG, INT level )
@@ -310,6 +344,7 @@ INT pamgCheckDo( MULTIGRID *theMG, INT level )
     sizePerVector = (MaximumMatrices+3) * sizeof(DDD_GID);              /* 3 for additional infos */
 
     pamgerrors = 0;
+    /* Border -> Master */
     DDD_IFAOneway(BorderVectorIF, GRID_ATTR(grid),IF_FORWARD, sizePerVector,
                   Gather_pamgCheck, Scatter_pamgCheck);
     pamgerrors= UG_GlobalSumINT(pamgerrors);

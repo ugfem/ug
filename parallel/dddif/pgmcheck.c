@@ -53,6 +53,24 @@
 /*																			*/
 /****************************************************************************/
 
+#ifdef USE_FAMG
+#define CHECK_OBJECT_PRIO(o,prio,master,ghost,id,s,_nerr_)                   \
+  if (USED(o)==1 && ! master (o))                                          \
+  {                                                                        \
+    UserWriteF("MASTER %s=" id ## _FMTX " has WRONG prio=%d\n",      \
+               s, id ## _PRTX(o),prio(o));                                  \
+    _nerr_++;                                                        \
+  }                                                                        \
+  if (USED( o )==0 && ! ghost ( o ))                                       \
+  {                                                                        \
+    if( prio(o)!=PrioBorder )                   /* for FAMG PrioBorder may be correct here */ \
+    {                                                                                                                                        \
+      UserWriteF("GHOST %s=" id ## _FMTX " has WRONG prio=%d\n",       \
+                 s, id ## _PRTX( o ),prio(o));                                \
+      _nerr_++;                                                        \
+    }                                                                                                                                        \
+  }
+#else
 #define CHECK_OBJECT_PRIO(o,prio,master,ghost,id,s,_nerr_)                   \
   if (USED(o)==1 && ! master (o))                                          \
   {                                                                        \
@@ -66,7 +84,7 @@
                s, id ## _PRTX( o ),prio(o));                                \
     _nerr_++;                                                        \
   }
-
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -668,17 +686,18 @@ INT CheckInterfaces (GRID *theGrid)
   EDGE    *theEdge;
   VECTOR  *theVector;
   int nerrors = 0;
+#ifdef USE_FAMG
+  VECTOR  *firstMasterVector;
+  NODE    *firstMasterNode;
+  VERTEX  *theVertex, *firstMasterVertex;
+  ELEMENT *firstMasterElement;
+#endif
 
   /* reset USED flag of all grid objects  */
   /* set USED flag of master grid objects */
   for (j=0; j<2; j++)
   {
-#ifdef __OVERLAP2__QQQQ
-    j=1;
-    for (theElement = PFIRSTELEMENT(theGrid);
-#else
     for (theElement =(j==0 ? PFIRSTELEMENT(theGrid) : FIRSTELEMENT(theGrid));
-#endif
          theElement!=NULL;
          theElement=SUCCE(theElement))
     {
@@ -730,6 +749,85 @@ INT CheckInterfaces (GRID *theGrid)
   DDD_SetOption(OPT_QUIET_CONSCHECK, OPT_ON);
   nerrors += DDD_ConsCheck();
   DDD_SetOption(OPT_QUIET_CONSCHECK, OPT_OFF);
+
+#ifdef USE_FAMG
+  /* a further check whether the lists contain objects with the right prio */
+
+  /* check that in the first part of the vector list only vectors with ghost prios are */
+  firstMasterVector = FIRSTVECTOR(theGrid);
+  for( theVector=PFIRSTVECTOR(theGrid); theVector!=firstMasterVector; theVector=SUCCVC(theVector))
+    if( !GHOST(theVector) )
+    {
+      UserWriteF(PFMT "VECTOR=" VINDEX_FMTX " #ERROR#: has not ghost prio but is the first list part\n",
+                 me,VINDEX_PRTX(theVector));
+      nerrors++;
+    }
+  /* check that in the second part of the vector list only vectors with master/border prios are */
+  for( ; theVector!=NULL; theVector=SUCCVC(theVector))
+    if( !MASTER(theVector) )
+    {
+      UserWriteF(PFMT "VECTOR=" VINDEX_FMTX " #ERROR#: has not master prio but is the second list part\n",
+                 me,VINDEX_PRTX(theVector));
+      nerrors++;
+    }
+
+
+  /* check that in the first part of the node list only nodes with ghost prios are */
+  firstMasterNode = FIRSTNODE(theGrid);
+  for( theNode=PFIRSTNODE(theGrid); theNode!=firstMasterNode; theNode=SUCCN(theNode))
+    if( !GHOST(theNode) )
+    {
+      UserWriteF(PFMT "NODE=" ID_FMTX " #ERROR#: has not ghost prio but is the first list part\n",
+                 me,ID_PRTX(theNode));
+      nerrors++;
+    }
+  /* check that in the second part of the node list only nodes with master/border prios are */
+  for( ; theNode!=NULL; theNode=SUCCN(theNode))
+    if( !MASTER(theNode) )
+    {
+      UserWriteF(PFMT "NODE=" ID_FMTX " #ERROR#: has not master prio but is the second list part\n",
+                 me,ID_PRTX(theNode));
+      nerrors++;
+    }
+
+
+  /* check that in the first part of the vertex list only vertices with ghost prios are */
+  firstMasterVertex = FIRSTVERTEX(theGrid);
+  for( theVertex=PFIRSTVERTEX(theGrid); theVertex!=firstMasterVertex; theVertex=SUCCV(theVertex))
+    if( !VXGHOST(theVertex) )
+    {
+      UserWriteF(PFMT "VERTEX=" VID_FMTX " #ERROR#: has not ghost prio but is the first list part\n",
+                 me,VID_PRTX(theVertex));
+      nerrors++;
+    }
+  /* check that in the second part of the vertex list only vertices with master/border prios are */
+  for( ; theVertex!=NULL; theVertex=SUCCV(theVertex))
+    if( !VXMASTER(theVertex) )
+    {
+      UserWriteF(PFMT "VERTEX=" VID_FMTX " #ERROR#: has not master prio but is the first list part\n",
+                 me,VID_PRTX(theVertex));
+      nerrors++;
+    }
+
+
+  /* check that in the first part of the element list only elements with ghost prios are */
+  firstMasterElement = FIRSTELEMENT(theGrid);
+  for( theElement=PFIRSTELEMENT(theGrid); theElement!=firstMasterElement; theElement=SUCCE(theElement))
+    if( !EGHOST(theElement) )
+    {
+      UserWriteF(PFMT "ELEMENT=" EID_FMTX " #ERROR#: has not ghost prio but is the first list part\n",
+                 me,EID_PRTX(theElement));
+      nerrors++;
+    }
+  /* check that in the second part of the element list only elements with ghost prios are */
+  for( ; theElement!=NULL; theElement=SUCCE(theElement))
+    if( !EMASTER(theElement) )
+    {
+      UserWriteF(PFMT "ELEMENT=" EID_FMTX " #ERROR#: has not master prio but is the first list part\n",
+                 me,EID_PRTX(theElement));
+      nerrors++;
+    }
+#endif
 
   return(nerrors);
 }
