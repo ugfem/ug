@@ -7261,7 +7261,7 @@ INT IsNodeSelected (MULTIGRID *theMG, NODE *theNode)
    D*/
 /****************************************************************************/
 
-void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT dataopt, INT bopt, INT nbopt, INT vopt)
+void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT gidopt, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
   int level;
   NODE *theNode;
@@ -7269,8 +7269,18 @@ void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT dataopt, INT bopt, I
   for (level=0; level<=TOPLEVEL(theMG); level++)
     for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,level)); theNode!=NULL; theNode=SUCCN(theNode))
     {
-      if ( (ID(theNode)>=from)&&(ID(theNode)<=to) )
-        ListNode(theMG,theNode,dataopt,bopt,nbopt,vopt);
+      if (gidopt == 0)
+      {
+        if ( (ID(theNode)>=from)&&(ID(theNode)<=to) )
+          ListNode(theMG,theNode,dataopt,bopt,nbopt,vopt);
+      }
+#ifdef ModelP
+      else
+      {
+        if (GID(theNode) == from)
+          ListNode(theMG,theNode,dataopt,bopt,nbopt,vopt);
+      }
+#endif
     }
 }
 
@@ -7498,23 +7508,34 @@ INT IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
    D*/
 /****************************************************************************/
 
-void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt)
+void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT gidopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt)
 {
-  int level;
+  int level,fromlevel,tolevel;
   ELEMENT *theElement;
 
   if (lopt==FALSE)
-    for (level=0; level<=TOPLEVEL(theMG); level++)
-      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    fromlevel = 0;
+    tolevel = TOPLEVEL(theMG);
+  }
+  else
+    fromlevel = tolevel = CURRENTLEVEL(theMG);
+
+  for (level=fromlevel; level<=tolevel; level++)
+    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
+    {
+      if (gidopt == 0)
       {
         if ( (ID(theElement)>=from)&&(ID(theElement)<=to) )
           ListElement(theMG,theElement,dataopt,bopt,nbopt,vopt);
       }
-  else
-    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG))); theElement!=NULL; theElement=SUCCE(theElement))
-    {
-      if ( (ID(theElement)>=from)&&(ID(theElement)<=to) )
-        ListElement(theMG,theElement,dataopt,bopt,nbopt,vopt);
+#ifdef ModelP
+      else
+      {
+        if (EGID(theElement) == from)
+          ListElement(theMG,theElement,dataopt,bopt,nbopt,vopt);
+      }
+#endif
     }
 }
 
@@ -7779,7 +7800,7 @@ INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
    D*/
 /****************************************************************************/
 
-void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT matrixopt, INT dataopt)
+void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT gidopt, INT matrixopt, INT dataopt)
 {
   int level;
   VECTOR *theVector;
@@ -7787,8 +7808,18 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT ma
   for (level=fl; level<=tl; level++)
     for (theVector=PFIRSTVECTOR(GRID_ON_LEVEL(theMG,level)); theVector!=NULL; theVector=SUCCVC(theVector))
     {
-      if (VINDEX(theVector)>=from && VINDEX(theVector)<=to)
-        ListVector(theMG,theVector,matrixopt,dataopt);
+      if (gidopt == 0)
+      {
+        if (VINDEX(theVector)>=from && VINDEX(theVector)<=to)
+          ListVector(theMG,theVector,matrixopt,dataopt);
+      }
+#ifdef ModelP
+      else
+      {
+        if (GID(theVector) == from)
+          ListVector(theMG,theVector,matrixopt,dataopt);
+      }
+#endif
     }
 }
 

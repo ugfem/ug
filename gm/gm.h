@@ -2674,14 +2674,14 @@ INT         MultiGridStatus         (MULTIGRID *theMG, INT gridflag, INT greenfl
 void            ListGrids                               (const MULTIGRID *theMG);
 void            ListNode                                (MULTIGRID *theMG, NODE *theNode,               INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListNodeSelection               (MULTIGRID *theMG,                                              INT dataopt, INT bopt, INT nbopt, INT vopt);
-void            ListNodeRange                   (MULTIGRID *theMG, INT from, INT to,    INT dataopt, INT bopt, INT nbopt, INT vopt);
+void            ListNodeRange                   (MULTIGRID *theMG, INT from, INT to,    INT gidopt, INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListElement                     (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListElementSelection    (MULTIGRID *theMG,                                              INT dataopt, INT bopt, INT nbopt, INT vopt);
-void            ListElementRange                (MULTIGRID *theMG, INT from, INT to,    INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt);
+void            ListElementRange                (MULTIGRID *theMG, INT from, INT to,    INT gidopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt);
 void            ListVector                              (MULTIGRID *theMG, VECTOR *theVector,   INT matrixopt, INT dataopt);
 void            ListVectorSelection     (MULTIGRID *theMG,                                              INT matrixopt, INT dataopt);
 void            ListVectorOfElementSelection(MULTIGRID *theMG,                                  INT matrixopt, INT dataopt);
-void            ListVectorRange                 (MULTIGRID *theMG,                      INT fl, INT tl, INT fromV, INT toV, INT matrixopt, INT dataopt);
+void            ListVectorRange                 (MULTIGRID *theMG,                      INT fl, INT tl, INT fromV, INT toV, INT gidopt, INT matrixopt, INT dataopt);
 
 /* query */
 LINK            *GetLink                                (NODE *from, NODE *to);
