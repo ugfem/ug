@@ -668,8 +668,6 @@ static int Cons2CheckGlobalCpl (void)
   for(; sendMsgs!=NULL; sendMsgs=cm)
   {
     cm = sendMsgs->next;
-    /* this is the wrong free (s.l. 981006)
-                    FreeTmp(sendMsgs,0); */
     FreeTmpReq(sendMsgs, sizeof(CONSMSG), TMEM_CONS);
   }
 
