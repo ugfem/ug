@@ -22,8 +22,4 @@ default:
 
 # clean up
 clean:
-	rm -f meshing/*.o;
-	rm -f general/*.o;
-	rm -f linalg/*.o;
-	rm -f geom/*.o;
-	rm -f opti/*.o;
+	find . -name '*.o' -exec rm {} \; -print
