@@ -290,16 +290,21 @@ INT ExitUg (void)
 
   /* exit parallelization module */
         #ifdef ModelP
-  /* doesn't work with MPI yet. KB 970318
-      PRINTDEBUG(init,1,("%d:     ExitParallel()...\n",me))
-      if ((err=ExitParallel())!=0)
-      {
-          printf("ERROR in ExitUg while ExitParallel (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
-          printf ("aborting ug\n");
 
-          return (1);
-      }
-   */
+  /* the following code (ExitParallel) once seemed to crash
+     with MPI-PPIF. today it seems to run without problems.
+     therefore, we switch it on again, if there are any problems with MPI
+     and exiting the program, it may come from here. KB 970527 */
+
+  PRINTDEBUG(init,1,("%d:     ExitParallel()...\n",me))
+  if ((err=ExitParallel())!=0)
+  {
+    printf("ERROR in ExitUg while ExitParallel (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
+
     #endif
 
 
