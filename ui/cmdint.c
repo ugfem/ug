@@ -1820,6 +1820,7 @@ static INT InterpretString (void)
   int RepeatStatusPos[MAXREPEAT];
   char *RepeatPtr[MAXREPEAT];
   char buffer[MAXTOKENLENGTH];
+  char filename[MAXTOKENLENGTH];
   char valueStr[32];
   char *sptr;
 
@@ -2217,6 +2218,17 @@ static INT InterpretString (void)
         filePtr = FileOpenUsingSearchPaths(buffer,"r","scriptpaths");
       else
         filePtr = fileopen(buffer,"r");
+
+      if (filePtr==NULL)
+      {
+        strcpy(filename,buffer);
+        strcat(filename,".scr");
+        if (scriptpaths_set)
+          filePtr = FileOpenUsingSearchPaths(filename,
+                                             "r","scriptpaths");
+        else
+          filePtr = fileopen(filename,"r");
+      }
 
       if (filePtr==NULL)
       {
