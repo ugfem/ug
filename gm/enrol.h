@@ -73,6 +73,8 @@
 /*																			*/
 /****************************************************************************/
 
-INT InitEnrol ();
+INT ChangeToFormatDir   (const char *name);
+
+INT InitEnrol                   ();
 
 #endif
