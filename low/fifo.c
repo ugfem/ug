@@ -65,13 +65,12 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 INT fifo_init (FIFO *myfifo, void *buffer, INT size)
 {
-  myfifo->size = size/4;
+  myfifo->size = size / sizeof(void *);
   if (myfifo->size<=0) return(0);
   myfifo->elements = (void **) buffer;
   myfifo->start = myfifo->end = myfifo->used = 0;
   return(myfifo->size);
 }
-
 
 /****************************************************************************/
 /*D
@@ -95,7 +94,6 @@ void fifo_clear (FIFO *myfifo)
 {
   myfifo->start = myfifo->end = myfifo->used = 0;
 }
-
 
 /****************************************************************************/
 /*D
@@ -125,7 +123,6 @@ INT fifo_empty (const FIFO *myfifo)
     return(0);
 }
 
-
 /****************************************************************************/
 /*D
    fifo_full - Test if fifo is full
@@ -153,7 +150,6 @@ INT fifo_full (const FIFO *myfifo)
   else
     return(0);
 }
-
 
 /****************************************************************************/
 /*D
