@@ -569,7 +569,7 @@ int ConvertFile (FILE *stream)
   ms = 6;
 
   /* allocate input buffer */
-  buffer = malloc(blockSize);
+  buffer = (char*)malloc(blockSize);
   if (buffer==NULL) return(1);
 
   /* loop through the blocks */
