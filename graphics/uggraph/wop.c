@@ -20623,7 +20623,11 @@ static INT EW_Isosurface3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 	
 	for (i = 0; i < CORNERS_OF_ELEM(theElement); i++) {
-		cell.order[i] = VGID(MYVERTEX(CORNER(theElement,i)));
+#ifndef ModelP
+		cell.order[i] = ID(MYVERTEX(CORNER(theElement,i)));
+#else
+		cell.order[i] = DDD_InfoGlobalId(PARHDRV(MYVERTEX(CORNER(theElement,i))));
+#endif
 		memcpy(cell.x[i], x[i], 3*sizeof(DOUBLE));
 		LocalCornerCoordinates(DIM, TAG(theElement), i, lc);
 		cell.v[i] = (*Isosurface3D_EvalFct)(theElement, (const DOUBLE**)x, lc);
