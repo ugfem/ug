@@ -341,7 +341,7 @@ typedef struct np_t_assemble NP_T_ASSEMBLE;
 typedef INT (*TAssemblePreProcessProcPtr)                                     \
   (NP_T_ASSEMBLE *, INT, INT, DOUBLE, DOUBLE, DOUBLE, VECDATA_DESC *, VECDATA_DESC *, VECDATA_DESC *, INT *);
 typedef INT (*TAssembleInitialProcPtr)                                       \
-  (NP_T_ASSEMBLE *, INT, INT, VECDATA_DESC *, INT *);
+  (NP_T_ASSEMBLE *, INT, INT, DOUBLE, VECDATA_DESC *, INT *);
 typedef INT (*TAssembleSolutionProcPtr)                                      \
   (NP_T_ASSEMBLE *, INT, INT, DOUBLE, VECDATA_DESC *, INT *);
 typedef INT (*TAssembleDefectProcPtr)                                        \
