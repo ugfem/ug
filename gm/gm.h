@@ -2458,7 +2458,7 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define MG_NPROPERTY(p)                 ((p)->nProperty)
 #define GRID_ON_LEVEL(p,i)              ((p)->grids[i])
 /* macros for the NodeElementsBlockArray . . .  */
-#define ELEMS_OF_NODE_MAX               75
+#define ELEMS_OF_NODE_MAX               150
 #define NDELEM_BLKS_MAX                 100
 #define NO_NODES_OF_BLK                 1000
 #define MGNDELEMPTRARRAY(p)             ((p)->ndelemptrarray)
