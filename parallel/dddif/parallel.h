@@ -145,6 +145,8 @@ enum HandlerSets
 #define VXHGHOST(e)                                             (VXPRIO(e)==PrioHGhost || VXPRIO(e)==PrioVHGhost)
 #define VXGID(e)                                                DDD_InfoGlobalId(PARHDRV(e))
 #define VXPROCLIST(e)                                   DDD_InfoProcList(PARHDRV(e))
+#define VXPROCPRIO(e,p)                                 DDD_InfoProcPrio(PARHDRV(e),p)
+#define VXNCOPIES(e)                                    DDD_InfoNCopies(PARHDRV(e))
 #define VXATTR(e)                                               DDD_InfoAttr(PARHDRV(e))
 #define XFERVXDELETE(e)                                 DDD_XferDeleteObj(PARHDRV(e))
 #define XFERVXCOPY(e,dest,prio)                 DDD_XferCopyObj(PARHDRV(e),dest,prio,size)
