@@ -161,13 +161,10 @@ static void PSDrawTo (SHORT_POINT point)
 
 static void PSCircle (SHORT_POINT point, short r)
 {
-  SHORT_POINT aux;
   short xr,yr;
 
-  aux.x = 0;
-  aux.y = r;
-  xr = TRFMX(aux);
-  yr = TRFMY(aux);
+  xr = mxy*r;
+  yr = myy*r;
   r  = sqrt(xr*xr+yr*yr);
   fprintf(currPSF,"N\n");
   fprintf(currPSF,"%g %g M\n",TRFMX(point)+r,TRFMY(point));
@@ -180,13 +177,10 @@ static void PSCircle (SHORT_POINT point, short r)
 
 static void PSFilledCircle (SHORT_POINT point, short r)
 {
-  SHORT_POINT aux;
   short xr,yr;
 
-  aux.x = 0;
-  aux.y = r;
-  xr = TRFMX(aux);
-  yr = TRFMY(aux);
+  xr = mxy*r;
+  yr = myy*r;
   r  = sqrt(xr*xr+yr*yr);
   fprintf(currPSF,"N\n");
   fprintf(currPSF,"%g %g M\n",TRFMX(point)+r,TRFMY(point));
