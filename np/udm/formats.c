@@ -795,14 +795,21 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, CO
   SHORT SubComp[MAX_VEC_COMP];
   const SHORT *offset,*Comp;
   INT i,k,l,type,nc,nn,cmp;
-  char SubName[MAX_VEC_COMP];
+  char SubName[MAX_VEC_COMP],buffer[NAMESIZE];
 
   if (!VDmatchesVT(vd,vt))
     REP_ERR_RETURN(1);
+  subv = VT_SUB(vt,sub);
+  strcpy(buffer,SUBV_NAME(subv));
+  strcat(buffer,ENVITEM_NAME(vd));
+  *subvd = GetVecDataDescByName(MD_MG(vd),buffer);
+  if (*subvd != NULL) {
+    if (VM_LOCKED(vd)) VM_LOCKED((VECDATA_DESC *)*subvd) = 1;
+    return(0);
+  }
 
   fmt = MGFORMAT(VD_MG(vd));
 
-  subv = VT_SUB(vt,sub);
   offset = VD_OFFSETPTR(vd);
   Comp = VM_COMPPTR(vd);
 
@@ -823,7 +830,7 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, CO
       k++;
     }
   }
-  *subvd = CreateSubVecDesc(VD_MG(vd),NULL,SUBV_NCOMPS(subv),SubComp,SubName);
+  *subvd = CreateSubVecDesc(VD_MG(vd),buffer,SUBV_NCOMPS(subv),SubComp,SubName);
   if (*subvd == NULL)
     REP_ERR_RETURN (1);
 
@@ -938,14 +945,20 @@ INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CO
   SHORT SubComp[MAX_MAT_COMP];
   const SHORT *offset,*Comp;
   INT i,k,l,type,nc,nn,cmp;
-  char SubName[2*MAX_MAT_COMP];
+  char SubName[2*MAX_MAT_COMP],buffer[NAMESIZE];
 
   if (!MDmatchesMT(md,mt))
     REP_ERR_RETURN(1);
-
+  subm = MT_SUB(mt,sub);
+  strcpy(buffer,SUBM_NAME(subm));
+  strcat(buffer,ENVITEM_NAME(md));
+  *submd = GetMatDataDescByName(MD_MG(md),buffer);
+  if (*submd != NULL) {
+    if (VM_LOCKED(md)) VM_LOCKED((MATDATA_DESC *)*submd) = 1;
+    return(0);
+  }
   fmt = MGFORMAT(MD_MG(md));
 
-  subm = MT_SUB(mt,sub);
   offset = MD_OFFSETPTR(md);
   Comp = VM_COMPPTR(md);
 
@@ -967,7 +980,8 @@ INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CO
       k++;
     }
   }
-  *submd = CreateSubMatDesc(MD_MG(md),NULL,SUBM_RCOMPS(subm),SUBM_CCOMPS(subm),SubComp,SubName);
+  *submd = CreateSubMatDesc(MD_MG(md),buffer,SUBM_RCOMPS(subm),
+                            SUBM_CCOMPS(subm),SubComp,SubName);
   if (*submd == NULL)
     REP_ERR_RETURN (1);
 
