@@ -4,18 +4,18 @@
 /*                                                                          */
 /* File:      formats.h                                                     */
 /*                                                                          */
-/* Purpose:   header file for format definition				                */
+/* Purpose:   header file for format definition                                         */
 /*                                                                          */
-/* Author:	  Henrik Rentz-Reichert                                                                                 */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: henrik@ica3.uni-stuttgart.de							*/
-/*			  fon: 0049-(0)711-685-7007										*/
-/*			  fax: 0049-(0)711-685-7000										*/
-/*																			*/
-/* History:   27.03.95 begin, ug version 3.0								*/
+/* Author:        Henrik Rentz-Reichert                                                                                 */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: henrik@ica3.uni-stuttgart.de                                                   */
+/*                        fon: 0049-(0)711-685-7007                                                                             */
+/*                        fax: 0049-(0)711-685-7000                                                                             */
+/*                                                                                                                                                      */
+/* History:   27.03.95 begin, ug version 3.0                                                            */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -37,6 +37,17 @@
 
 #include "gm.h"
 #include "udm.h"
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -106,56 +117,56 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* sub vector of vector template (components form a subset of the template)	*/
+/* sub vector of vector template (components form a subset of the template)     */
 typedef struct {
 
-  char Name[NAMESIZE];                                          /* prefix for sub vector name	*/
-  SHORT Comp[NVECTYPES];                                        /* number of comps per type		*/
-  SHORT Comps[NVECTYPES][MAX_VEC_COMP];         /* subsequent comps rel to tplt	*/
+  char Name[NAMESIZE];                                          /* prefix for sub vector name   */
+  SHORT Comp[NVECTYPES];                                        /* number of comps per type             */
+  SHORT Comps[NVECTYPES][MAX_VEC_COMP];         /* subsequent comps rel to tplt */
 
 } SUBVEC;
 
 /* vector template specifying number of comps per type and comp names */
 typedef struct {
 
-  ENVITEM v;                                                                    /* environment item				*/
+  ENVITEM v;                                                                    /* environment item                             */
 
-  SHORT Comp[NVECTYPES];                                        /* number of comps per type		*/
-  char CompNames[V_COMP_NAMES];                         /* comp names (one char each)	*/
+  SHORT Comp[NVECTYPES];                                        /* number of comps per type             */
+  char CompNames[V_COMP_NAMES];                         /* comp names (one char each)   */
 
-  SHORT nId;                                                            /* number of comps after ident	*/
-  SHORT Ident[V_COMP_NAMES];                            /* identification table			*/
+  SHORT nId;                                                            /* number of comps after ident  */
+  SHORT Ident[V_COMP_NAMES];                            /* identification table                 */
 
-  SHORT nsub;                                                           /* number of sub vectors		*/
-  SUBVEC  *SubVec[MAX_SUB];                                     /* pointers to sub vectors		*/
+  SHORT nsub;                                                           /* number of sub vectors                */
+  SUBVEC  *SubVec[MAX_SUB];                                     /* pointers to sub vectors              */
 
 } VEC_TEMPLATE;
 
-/* sub matrix of matrix template (components form a subset of the template)	*/
+/* sub matrix of matrix template (components form a subset of the template)     */
 typedef struct {
 
-  char Name[NAMESIZE];                                          /* prefix for sub matrix name	*/
-  SHORT RComp[NMATTYPES];                                       /* number of row comps per type	*/
-  SHORT CComp[NMATTYPES];                                       /* number of col comps per type	*/
+  char Name[NAMESIZE];                                          /* prefix for sub matrix name   */
+  SHORT RComp[NMATTYPES];                                       /* number of row comps per type */
+  SHORT CComp[NMATTYPES];                                       /* number of col comps per type */
   SHORT *CmpsInType[NMATTYPES];                 /* pointers to SHORT vectors    */
-  SHORT Comps[MAX_MAT_COMP_TOTAL];                  /* subsequent comps rel to tplt	*/
+  SHORT Comps[MAX_MAT_COMP_TOTAL];                  /* subsequent comps rel to tplt     */
 
 } SUBMAT;
 
 /* matrix template specifying number of row/col comps per type and comp names */
 typedef struct {
 
-  ENVITEM v;                                                                    /* environment item				*/
+  ENVITEM v;                                                                    /* environment item                             */
 
-  SHORT RComp[NMATTYPES];                                       /* number of comps per type		*/
-  SHORT CComp[NMATTYPES];                                       /* number of col comps per type	*/
+  SHORT RComp[NMATTYPES];                                       /* number of comps per type             */
+  SHORT CComp[NMATTYPES];                                       /* number of col comps per type */
   SHORT   *CmpsInType[NMATTYPES];               /* pointers to SHORT vectors    */
                                                 /* the components               */
 
-  char CompNames[M_COMP_NAMES];                         /* comp names (two chars each)	*/
+  char CompNames[M_COMP_NAMES];                         /* comp names (two chars each)  */
 
-  SHORT nsub;                                                           /* number of sub matrices		*/
-  SUBMAT  *SubMat[MAX_SUB];                                     /* pointers to sub matrices		*/
+  SHORT nsub;                                                           /* number of sub matrices               */
+  SUBMAT  *SubMat[MAX_SUB];                                     /* pointers to sub matrices             */
   SHORT Comps[MAX_MAT_COMP_TOTAL];              /* comps starting from 0        */
 
 } MAT_TEMPLATE;
@@ -205,5 +216,9 @@ INT CreateMatDescCmd                                (MULTIGRID *theMG, INT argc,
 INT FreeMatDescCmd                                      (MULTIGRID *theMG, INT argc, char **argv);
 
 INT InitFormats                                                 (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  numproc.h                                                                                                     */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          numproc.h                                                                                                     */
+/*                                                                                                                                                      */
 /* Purpose:   definition of the basic num proc type                                 */
-/*																			*/
-/* Author:	  Peter Bastian                                                                                 */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
+/*                                                                                                                                                      */
+/* Author:        Peter Bastian                                                                                 */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
 /* History:   November 29, 1996                                                                         */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __NUMPROC__
@@ -36,14 +36,25 @@
 #include "ugenv.h"
 #include "gm.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* status for num procs  */
@@ -63,16 +74,16 @@
 #define NP_EXECUTE(p)                   (((NP_BASE*)(p))->Execute)
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_base {
 
   /* data */
-  ENVVAR v;                                                     /* is an environment variable		*/
-  MULTIGRID *mg;                                                /* associated multigrid				*/
+  ENVVAR v;                                                     /* is an environment variable           */
+  MULTIGRID *mg;                                                /* associated multigrid                         */
   INT status;                                                   /* has a status, NO type and size...*/
 
   /* functions */
@@ -90,15 +101,15 @@ typedef INT (*ConstructorProcPtr)(NP_BASE *);
 
 typedef struct
 {
-  ENVVAR v;                                                     /* class name							*/
+  ENVVAR v;                                                     /* class name                                                   */
   INT size;                             /* size of the object                   */
   ConstructorProcPtr Construct;         /* construct one object of this class   */
 } NP_CONSTRUCTOR;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT                             CreateClass                     (const char *classname, INT size, ConstructorProcPtr Construct);
@@ -112,5 +123,9 @@ INT                             MGListAllNPs            (const MULTIGRID *theMG)
 INT                             ListNumProc                     (NP_BASE *np);
 
 INT                             InitNumProcManager      (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

@@ -1,24 +1,24 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  np.h															*/
-/*																			*/
-/* Purpose:   numerics subsystem header file								*/
-/*																			*/
-/* Author:	  Klaus Johannsen/Henrik Rentz-Reichert							*/
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de								*/
-/*																			*/
-/* History:   25.03.95 begin, ug version 3.0								*/
-/*			  09.12.95 transition to new descriptor formats (HRR)			*/
-/*			  December 2, 1996 redesign of numerics                                                 */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          np.h                                                                                                                  */
+/*                                                                                                                                                      */
+/* Purpose:   numerics subsystem header file                                                            */
+/*                                                                                                                                                      */
+/* Author:        Klaus Johannsen/Henrik Rentz-Reichert                                                 */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                               */
+/*                                                                                                                                                      */
+/* History:   25.03.95 begin, ug version 3.0                                                            */
+/*                        09.12.95 transition to new descriptor formats (HRR)                   */
+/*                        December 2, 1996 redesign of numerics                                                 */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -27,9 +27,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __NP__
@@ -43,36 +43,47 @@
 #include "numproc.h"
 #include "npscan.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* if FF_PARALLEL_SIMULATION is defined, special functions from fe/ff are linked */
 /*#define FF_PARALLEL_SIMULATION*/
-/*#define FF_ModelP*/		/* um temp. Verweise von np nach fe/ff fuer die Allgemeinheit auszublenden */
+/*#define FF_ModelP*/           /* um temp. Verweise von np nach fe/ff fuer die Allgemeinheit auszublenden */
 
-/* return codes of the numerics routines									*/
-#define NUM_OK                                  0       /* everything ok						*/
+/* return codes of the numerics routines                                                                        */
+#define NUM_OK                                  0       /* everything ok                                                */
 #define NUM_OUT_OF_MEM                  1       /* could not allocate mem (for connect.)*/
-/*#define NUM_DECOMP_FAILED	   -n	   any neg value: diag block singular	*/
-#define NUM_DESC_MISMATCH               3       /* descriptors passed are inconsistent	*/
+/*#define NUM_DECOMP_FAILED        -n      any neg value: diag block singular   */
+#define NUM_DESC_MISMATCH               3       /* descriptors passed are inconsistent  */
 #define NUM_BLOCK_TOO_LARGE             4       /* block too large
-                                                                                        (increase MAX_SINGLE_VEC_COMP)	*/
-#define NUM_FORMAT_MISMATCH             5       /* user data size exceeded				*/
-#define NUM_SMALL_DIAG                  6       /* diag entry too small to invert		*/
-#define NUM_NO_COARSER_GRID             7       /* restrict called on grid level 0		*/
-#define NUM_TYPE_MISSING                8       /* indicates one float for VEC_SCALAR	*/
-#define NUM_ERROR                               9       /* other error							*/
+                                                                                        (increase MAX_SINGLE_VEC_COMP)  */
+#define NUM_FORMAT_MISMATCH             5       /* user data size exceeded                              */
+#define NUM_SMALL_DIAG                  6       /* diag entry too small to invert               */
+#define NUM_NO_COARSER_GRID             7       /* restrict called on grid level 0              */
+#define NUM_TYPE_MISSING                8       /* indicates one float for VEC_SCALAR   */
+#define NUM_ERROR                               9       /* other error                                                  */
 
 /* modes for l_iluspdecomp */
-#define SP_LOCAL                                0       /* modify locally						*/
-#define SP_GLOBAL                               1       /* modify globally						*/
+#define SP_LOCAL                                0       /* modify locally                                               */
+#define SP_GLOBAL                               1       /* modify globally                                              */
 
 #define OPTIONLEN                       32
 #define OPTIONLENSTR            "31"
@@ -90,9 +101,9 @@
 #define NP_RETURN(err,intvar)           {intvar = __LINE__; REP_ERR_RETURN(err);}
 
 /****************************************************************************/
-/*																			*/
-/* macros concerned with solving											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros concerned with solving                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* formats for display routines */
@@ -129,9 +140,9 @@
       VECSKIP(theVector) = 0;}
 
 /****************************************************************************/
-/*																			*/
-/* structures concerned with symbolic user data management					*/
-/*																			*/
+/*                                                                          */
+/* structures concerned with symbolic user data management                  */
+/*                                                                          */
 /****************************************************************************/
 
 typedef INT (*SetFuncProcPtr)(const DOUBLE_VECTOR, INT, DOUBLE *);
@@ -139,15 +150,15 @@ typedef INT (*TransGridProcPtr)(GRID *, const VECDATA_DESC *, const VECDATA_DESC
 typedef INT (*InterpolateNewVectorsProcPtr)(GRID *, const VECDATA_DESC *);
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* blas routines and iterative methods										*/
-/*																			*/
+/*                                                                                                                                                      */
+/* blas routines and iterative methods                                                                          */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -311,49 +322,49 @@ INT dematset       (MULTIGRID *mg, INT fl, INT tl, INT mode, EMATDATA_DESC *M, D
 
 /* old style **********************
 
-   INT l_dset			(GRID *g,						const VECDATA_DESC *x, INT xclass, DOUBLE a);
-   INT a_dset			(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a);
-   INT s_dset			(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   DOUBLE a);
+   INT l_dset                      (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE a);
+   INT a_dset                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a);
+   INT s_dset                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     DOUBLE a);
 
-   INT l_dscale		(GRID *g,						const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
+   INT l_dscale            (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
    INT a_dscale        (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
    INT s_dscale        (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE *a);
 
-   INT l_ddot			(const GRID *g,						  const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
-   INT a_ddot			(const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
-   INT s_ddot			(const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			 const VECDATA_DESC *y, DOUBLE *sp);
+   INT l_ddot                      (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
+   INT a_ddot                      (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
+   INT s_ddot                      (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *sp);
 
-   INT l_dcopy          (GRID *g,						const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
-   INT a_dcopy          (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
-   INT s_dcopy          (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const VECDATA_DESC *y);
+   INT l_dcopy             (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
+   INT a_dcopy             (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
+   INT s_dcopy             (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y);
 
-   INT l_daxpy          (GRID *g,						const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-   INT a_daxpy          (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-   INT s_daxpy          (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const DOUBLE *a, const VECDATA_DESC *y);
+   INT l_daxpy             (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
+   INT a_daxpy             (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
+   INT s_daxpy             (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const DOUBLE *a, const VECDATA_DESC *y);
 
-   INT l_eunorm                 (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
-   INT a_eunorm                 (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
-   INT s_eunorm                 (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                      DOUBLE *eu);
+   INT l_eunorm            (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
+   INT a_eunorm            (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
+   INT s_eunorm            (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                      DOUBLE *eu);
 
-   INT l_ddot_sv                (const GRID *g,						  const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
-   INT s_ddot_sv                (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
+   INT l_ddot_sv           (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
+   INT s_ddot_sv           (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
 
-   INT l_dmatset		(GRID *g,						const MATDATA_DESC *M, DOUBLE a);
-   INT s_dmatset		(MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a);
+   INT l_dmatset           (GRID *g,                                               const MATDATA_DESC *M, DOUBLE a);
+   INT s_dmatset           (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a);
 
-   INT l_dmatcopy		(GRID *g,						const MATDATA_DESC *M1, const MATDATA_DESC *M2);
-   INT s_dmatcopy		(MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
+   INT l_dmatcopy          (GRID *g,                                               const MATDATA_DESC *M1, const MATDATA_DESC *M2);
+   INT s_dmatcopy          (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
 
-   INT l_dmatadd		(GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
+   INT l_dmatadd           (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
 
-   INT l_dmatmul		(GRID *g,						const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-   INT s_dmatmul		(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+   INT l_dmatmul           (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+   INT s_dmatmul           (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 
-   INT l_dmatmul_set	(GRID *g,						const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-   INT s_dmatmul_set	(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+   INT l_dmatmul_set       (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+   INT s_dmatmul_set       (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 
-   INT l_dmatmul_minus	(GRID *g,						const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-   INT s_dmatmul_minus	(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+   INT l_dmatmul_minus     (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+   INT s_dmatmul_minus     (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 
  **************************** old style */
 
@@ -484,9 +495,9 @@ INT DiagonalScaleSystem                    (GRID *FineGrid, const MATDATA_DESC *
 INT l_matflset (GRID *g, INT f);
 
 /****************************************************************************/
-/*																			*/
-/* symbols and numprocs														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* symbols and numprocs                                                                                                         */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* create */
@@ -533,5 +544,9 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric);
 
 INT ScaleIVector (GRID *g, VECDATA_DESC *theVD);
 INT ClearIVector (GRID *g);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

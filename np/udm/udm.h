@@ -1,24 +1,24 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  udm.h															*/
-/*																			*/
-/* Purpose:   user data manager (header file)								*/
-/*																			*/
-/* Author:	  Peter Bastian													*/
-/*																			*/
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
-/*																			*/
-/* History:   02.12.96 begin, ug version 3.4								*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          udm.h                                                                                                                 */
+/*                                                                                                                                                      */
+/* Purpose:   user data manager (header file)                                                           */
+/*                                                                                                                                                      */
+/* Author:        Peter Bastian                                                                                                 */
+/*                                                                                                                                                      */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
+/*                                                                                                                                                      */
+/* History:   02.12.96 begin, ug version 3.4                                                            */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -27,9 +27,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __UDM__
@@ -39,10 +39,21 @@
 #include "gm.h"
 #include "sm.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* macros concerned with data descriptors                                                       */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define NVECTYPES                       MAXVECTORS
@@ -55,23 +66,23 @@
 #define MTYPE_CT(mtp)           ((mtp)%NVECTYPES)
 
 #define MAX_SINGLE_VEC_COMP             40      /* max nb of vec comps in one TYPE      */
-#define MAX_SINGLE_MAT_COMP       1600  /* max nb of mat comps in one TYPE		*/
-#define MAX_VEC_COMP                40  /* max nb of comps in one VECDATA_DESC	*/
+#define MAX_SINGLE_MAT_COMP       1600  /* max nb of mat comps in one TYPE              */
+#define MAX_VEC_COMP                40  /* max nb of comps in one VECDATA_DESC  */
 #define MAX_MAT_COMP              7000  /* max nb of comps in one MATDATA_DESC  */
 #define MAX_MAT_COMP_TOTAL        7000  /* max#(comp) in one MATDATA_DESC       */
 
 #define NVECOFFSETS                             (NVECTYPES+1)
-/* for offset component in VECDATA_DESC	*/
+/* for offset component in VECDATA_DESC */
 #define NMATOFFSETS                             (NMATTYPES+1)
 
 #define DEFAULT_NAMES "uvwzpabcdefghijklmnoPQRSTUVWXYZ123456789" /* of size MAX_VEC_COMP */
 
-#define NO_IDENT                        -1              /* no identification of components		*/
-#define FULL_TPLT                       -1              /* full template rather than sub		*/
+#define NO_IDENT                        -1              /* no identification of components              */
+#define FULL_TPLT                       -1              /* full template rather than sub                */
 
 #define GENERATED_NAMES_SEPERATOR               "_"
 
-/* defines for getting object type specific information from XXXDATA_DESCs	*/
+/* defines for getting object type specific information from XXXDATA_DESCs      */
 enum VECTOR_DATA_IN_OBJ
 {
   STRICT,
@@ -188,9 +199,9 @@ enum DISP_DATA_DESC_MODIF
 #define CLEAR_VEC_COLLECT__FLAG(p,vt,i) CLEAR_FLAG((p)->data_status.VecCollectStatus[vt][(i)/32],1<<((i)%32))
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* data structures                                                                                                                      */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 typedef struct {
@@ -199,7 +210,7 @@ typedef struct {
   ENVVAR v;
 
   SHORT locked;                        /* locked for dynamic allocation         */
-  MULTIGRID *mg;                                   /* associated multigrid					*/
+  MULTIGRID *mg;                                   /* associated multigrid                                      */
   char compNames[MAX_VEC_COMP];    /* names for symbol components           */
   SHORT NCmpInType[NVECTYPES];     /* number of components of a vector      */
                                    /* per type                              */
@@ -214,15 +225,15 @@ typedef struct {
   SHORT ScalTypeMask;              /* mask for used vectypes                */
   SHORT offset[NVECOFFSETS];       /* offsets for VEC_SCALARs               */
 
-  SHORT datatypes;                                 /* compact form of vtypes (bitwise)		*/
-  SHORT objused;                                   /* compact form of otypes (bitwise)		*/
+  SHORT datatypes;                                 /* compact form of vtypes (bitwise)          */
+  SHORT objused;                                   /* compact form of otypes (bitwise)          */
   SHORT mintype;                                   /* minimal used type                         */
   SHORT maxtype;                                   /* maximal used type                         */
 
-  SHORT nId;                                               /* number of comps after ident			*/
-  SHORT *Ident;                                    /* identification table					*/
+  SHORT nId;                                               /* number of comps after ident                       */
+  SHORT *Ident;                                    /* identification table                                      */
 
-  SHORT Components[1];                 /* memory for component mapping	        */
+  SHORT Components[1];                 /* memory for component mapping          */
 
 } VECDATA_DESC;
 
@@ -231,7 +242,7 @@ typedef struct {
   ENVVAR v;
 
   SHORT locked;                         /* locked for dynamic allocation        */
-  MULTIGRID *mg;                                    /* associated multigrid					*/
+  MULTIGRID *mg;                                    /* associated multigrid                                     */
 
   char compNames[2*MAX_MAT_COMP];   /* names for symbol components          */
   SHORT RowsInType[NMATTYPES];          /* number of rows of a matrix per type  */
@@ -252,12 +263,12 @@ typedef struct {
   SHORT ScalColTypeMask;                /* mask for used vectypes in cols       */
   SHORT offset[NMATOFFSETS];            /* offsets for what ever you need it    */
 
-  SHORT rowdatatypes;                               /* compact form of row vtypes (bitwise)	*/
-  SHORT coldatatypes;                               /* compact form of col vtypes (bitwise)	*/
-  SHORT rowobjused;                                     /* compact form of row otypes (bitwise)	*/
-  SHORT colobjused;                                     /* compact form of col otypes (bitwise)	*/
+  SHORT rowdatatypes;                               /* compact form of row vtypes (bitwise)     */
+  SHORT coldatatypes;                               /* compact form of col vtypes (bitwise)     */
+  SHORT rowobjused;                                     /* compact form of row otypes (bitwise) */
+  SHORT colobjused;                                     /* compact form of col otypes (bitwise) */
 
-  SHORT Components[1];                  /* memory for component mapping	        */
+  SHORT Components[1];                  /* memory for component mapping         */
 
 } MATDATA_DESC;
 
@@ -266,13 +277,13 @@ typedef DOUBLE VEC_SCALAR[MAX_VEC_COMP];
 
 typedef struct {
 
-  INT nvd;                                                      /* number of vec data descriptors		*/
-  VECDATA_DESC *vd[SPID_NVD_MAX];       /* vec data descriptors					*/
-  VECDATA_DESC *vdi[SPID_NVD_MAX];      /* vec data interface descriptors		*/
+  INT nvd;                                                      /* number of vec data descriptors               */
+  VECDATA_DESC *vd[SPID_NVD_MAX];       /* vec data descriptors                                 */
+  VECDATA_DESC *vdi[SPID_NVD_MAX];      /* vec data interface descriptors               */
 
-  INT nmd;                                                      /* number of mat data descriptors		*/
-  MATDATA_DESC *md[SPID_NMD_MAX];       /* mat data descriptors					*/
-  MATDATA_DESC *mdi[SPID_NMD_MAX];      /* mat data interface descriptors		*/
+  INT nmd;                                                      /* number of mat data descriptors               */
+  MATDATA_DESC *md[SPID_NMD_MAX];       /* mat data descriptors                                 */
+  MATDATA_DESC *mdi[SPID_NMD_MAX];      /* mat data interface descriptors               */
 
 } SPID_DESC;
 
@@ -317,15 +328,15 @@ typedef DOUBLE EVEC_SCALAR[MAX_VEC_COMP+EXTENSION_MAX];
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 VECDATA_DESC *GetFirstVector (MULTIGRID *theMG);
@@ -424,7 +435,7 @@ INT SwapPartInterfaceData       (INT fl, INT tl, SPID_DESC *spid, INT direction)
 INT SwapPartSkipflags           (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DESC *vdi, INT direction);
 
 /****************************************************************************/
-/*	getting object type specific information from XXXDATA_DESCs
+/*      getting object type specific information from XXXDATA_DESCs
  */
 
 /* vtypes and object types */
@@ -463,5 +474,9 @@ INT             MDusesVOTypeOnly                                                
 
 /* init user data manager */
 INT InitUserDataManager (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

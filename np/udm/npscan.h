@@ -1,23 +1,23 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  npscan.h                                                                                                      */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          npscan.h                                                                                                      */
+/*                                                                                                                                                      */
 /* Purpose:   header file for scanning routines for npinit calls            */
-/*																			*/
-/* Author:	  Christian Wieners                                                                     */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de								*/
-/*																			*/
+/*                                                                                                                                                      */
+/* Author:        Christian Wieners                                                                     */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                               */
+/*                                                                                                                                                      */
 /* History:   December 8, 1996                                                                  */
-/*			  np part of former np/udm/scan.h, 15.5.97						*/
-/*																			*/
+/*                        np part of former np/udm/scan.h, 15.5.97                                              */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -26,9 +26,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __NPSCAN__
@@ -39,44 +39,55 @@
 #include "numproc.h"
 #include "formats.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* general numerics defines													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* general numerics defines                                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* macros concerned with data descriptors and symbols						*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros concerned with data descriptors and symbols                                           */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* macros concerned with solving											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros concerned with solving                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* structures concerned with symbolic user data management					*/
-/*																			*/
+/*                                                                                                                                                      */
+/* structures concerned with symbolic user data management                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT ReadArgvPosition                                    (const char *name, INT argc, char **argv, DOUBLE *pos);
@@ -119,5 +130,9 @@ INT esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, cons
 
 /* scanning argument lists                                                  */
 INT ReadArgvDisplay (INT argc, char **argv);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif
