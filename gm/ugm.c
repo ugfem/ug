@@ -1183,9 +1183,9 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   SET_EFATHER(pe,Father);
         #ifndef ModelP
   if (Father != NULL)
-    SETPROP(pe,PROP(Father));
+    SETSUBDOMAIN(pe,SUBDOMAIN(Father));
         #else
-  SETPROP(pe,me+1);
+  SETSUBDOMAIN(pe,me+1);
         #endif
 
   /* return ok */
