@@ -402,14 +402,17 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
   else
   {
-    UserWrite("ERROR: fimename must end with .lgm or .ans\n");
+    UserWrite("ERROR: filename must end with .lgm or .ans\n");
     return (NULL);
   }
 
   /* read general information */
   if (LGM_VERBOSE) UserWriteF("Reading domain '%s'.",filename);
   if ((*ReadDomain)(theHeap,filename,&theDomInfo,MarkKey))
+  {
+    UserWrite("ERROR in LGM_LoadDomain: ReadDomain failed\n");
     return (NULL);
+  }
   if (LGM_VERBOSE) UserWrite("\n");
 
   /* allocate and initialize the LGM_DOMAIN */
