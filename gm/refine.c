@@ -413,7 +413,6 @@ void MakeRefMarkandMarkClassConsistent (int level)
 }
 #endif
 
-
 /****************************************************************************/
 /*																			*/
 /* Function:  SetRefineInfo													*/
@@ -427,7 +426,7 @@ void MakeRefMarkandMarkClassConsistent (int level)
 /*																			*/
 /****************************************************************************/
 
-INT SetRefineInfo(MULTIGRID *theMG)
+INT SetRefineInfo (MULTIGRID *theMG)
 {
 	if (MultiGridStatus(theMG,1,0,0,0) != GM_OK)	return(GM_ERROR);	
 
@@ -447,7 +446,7 @@ INT SetRefineInfo(MULTIGRID *theMG)
 /*																			*/
 /****************************************************************************/
 
-INT TestRefineInfo(MULTIGRID *theMG)
+INT TestRefineInfo (MULTIGRID *theMG)
 {
 	if (PREDNEW0(REFINEINFO(theMG)) > PREDMAX(REFINEINFO(theMG)))
 		return(GM_ERROR);
@@ -4905,6 +4904,26 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /* parameters for CheckGrid() */
 #define GHOSTS	1
 			
+#define LIST	1
+#define IF 		1
+
+
+/****************************************************************************/
+/*
+   CheckConsistency - 
+void CheckConsistency(MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, INT *check)
+		printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,(*check)++,level);
+		Debuggm = GHOSTS;
+		CheckGrid(theGrid,GEOM,ALG,LIST,IF);
+		Debuggm=gmlevel;
+		if (DDD_ConsCheck() > 0) buggy(theMG);
+	ENDDEBUG
+}
+#endif
+
+
+/****************************************************************************/
+   CheckMultiGrid - 
    SYNOPSIS:
 /*																			*/
 /* Function:  RefineMultiGrid												*/
@@ -5104,68 +5123,38 @@ if (level == 0)
 	Debugdddif = 0;
 }
 
-IFDEBUG(gm,debugstart)
-#define GHOSTS	1
-#define GEOM	1
-#define ALG		0
-#define LIST	1
-#define IF 		1
-
-printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
-Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
-if (DDD_ConsCheck() > 0) buggy(theMG);
-ENDDEBUG
+CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 
 if (0)
 }
 
 	DEBUG_TIME(0);
-IFDEBUG(gm,debugstart)
-printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
-Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
-if (DDD_ConsCheck() > 0) buggy(theMG);
-if (0 && level == 1)
-	Debugdddif = dddiflevel;
-ENDDEBUG
+CheckConsistency(theMG,level,debugstart,gmlevel,&check);
+
 
 		if (Identify_SonNodesAndSonEdges(theGrid))	RETURN(GM_FATAL);
 
 		DDD_IdentifyEnd();
 
-IFDEBUG(gm,debugstart)
-printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
-Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
-if (DDD_ConsCheck() > 0) buggy(theMG);
-ENDDEBUG
+CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 
 
 		if (level<toplevel || newlevel)
-IFDEBUG(gm,debugstart)
-printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
-Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
-if (DDD_ConsCheck() > 0) buggy(theMG);
-ENDDEBUG
+CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 
 		DDD_XferBegin();
 			if (UpdateGridOverlap(theGrid))				RETURN(GM_FATAL);
 			DDD_XferEnd();
-			if (SetBorderPriorities(UPGRID(theGrid))) 	RETURN(GM_FATAL);
+	DEBUG_TIME(0);
 
 
 		DDD_XferEnd();
 		if (level<toplevel || newlevel)
 			if (ConnectGridOverlap(theGrid))			RETURN(GM_FATAL);
 }
-IFDEBUG(gm,debugstart)
-printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
-Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
-if (DDD_ConsCheck() > 0) buggy(theMG);
-ENDDEBUG
-
+#endif
 		{
 			/* now rebuild connections in neighborhood of elements which have EBUILDCON set */
-				
-		/* TODO: delete special debug */ PRINTELEMID(-1)
 			/* This flag has been set either by GridDisposeConnection or by CreateElement	*/
 			if (GridCreateConnection(FinerGrid)) RETURN(GM_FATAL);
 			
@@ -5189,48 +5178,9 @@ ENDDEBUG
 	if (TOPLEVEL(theMG) > 0) DisposeTopLevel(theMG);
 	CURRENTLEVEL(theMG) = TOPLEVEL(theMG);
 
-if (0)
-{
-	#ifdef ModelP
-	/* reconstruct interfaces for communication */
-	DDD_IFRefreshAll();
-
-	if (!refine_seq)
-	{
-		INT FromLevel = MAX(TOPLEVEL(theMG)-1,0);
-		INT ToLevel = MAX(TOPLEVEL(theMG),0);
-
-		/* identify multiply created objects */
-		if (IdentifyGridLevels(theMG,FromLevel,ToLevel))				return(GM_FATAL);
-
-		/* create one-element-overlapping for multigrid */
-		if (UpdateMultiGridOverlap(theMG,FromLevel))					return(GM_FATAL);
-		if (ConnectMultiGridOverlap(theMG,FromLevel))					return(GM_FATAL);
-		DDD_XferBegin();
-		if (SetBorderPriorities(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)))) RETURN(GM_FATAL);
-		DDD_XferEnd();
-	}
-	#endif
-}
-
 	if (CreateAlgebra(theMG) != GM_OK)
         REP_ERR_RETURN (GM_ERROR);
 
-
-	#ifdef ModelP
-	/* create grids on each proc up global toplevel maximum */
-	if (0)
-	{
-		INT Max_TopLevel = UG_GlobalMaxINT(TOPLEVEL(theMG)); 
-
-		for (level=TOPLEVEL(theMG); level<Max_TopLevel; level++)
-		{
-			PRINTDEBUG(gm,1,("CreateNewLevel toplevel=%d\n", TOPLEVEL(theMG)));
-
-			if (CreateNewLevel(theMG,0)==NULL) RETURN(GM_FATAL);
-		}
-	}
-	#endif
 	REFINE_MULTIGRID_LIST(1,theMG,"END RefineMultiGrid():\n","","");
 
 /*
