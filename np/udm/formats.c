@@ -94,7 +94,6 @@
 #define VF_COMP(vf,tp)          ((vf)->Comp[tp])
 #define VF_COMPNAMES(vf)        ((vf)->CompNames)
 #define VF_COMPNAME(vf,i)       ((vf)->CompNames[i])
-#define VF_FIRSTCOMP(vf,tp)     ((vf)->FirstComp[tp])
 #define VF_SUB(vf,i)            ((vf)->SubVec+(i))
 #define VF_NSUB(vf)                     ((vf)->nsub)
 
@@ -105,7 +104,6 @@
 #define MF_CCOMP(mf,tp)         ((mf)->CComp[tp])
 #define MF_COMPNAMES(mf)        ((mf)->CompNames)
 #define MF_COMPNAME(mf,i)       ((mf)->CompNames[i])
-#define MF_FIRSTCOMP(mf,tp)     ((mf)->FirstComp[tp])
 #define MF_SUB(mf,i)            ((mf)->SubMat+(i))
 #define MF_NSUB(mf)                     ((mf)->nsub)
 
@@ -448,11 +446,11 @@ INT CreateMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   return (0);
 }
 
-static VEC_FORMAT *CreateVecTemplate (char *name, SHORT *comp, INT n)
+static VEC_FORMAT *CreateVecTemplate (char *name, INT n)
 {
   VEC_FORMAT *vf;
-  char buffer[NAMESIZE];
-  INT type;
+  char buffer[NAMESIZE],*token;
+  INT j,type;
 
   if (ChangeEnvDir("/newformat")==NULL)
     return(NULL);
@@ -461,19 +459,19 @@ static VEC_FORMAT *CreateVecTemplate (char *name, SHORT *comp, INT n)
   else strcpy(buffer,name);
   vf = (VEC_FORMAT *) MakeEnvItem (buffer,theVecVarID,sizeof(VEC_FORMAT));
   if (vf==NULL) return (NULL);
-  for (type=0; type<NVECTYPES; type++)
-    VF_COMP(vf,type) = comp[type];
   VF_NSUB(vf) = 0;
+  token = DEFAULT_NAMES;
+  for (j=0; j<MAX(MAX_VEC_COMP,strlen(DEFAULT_NAMES)); j++)
+    VF_COMPNAME(vf,j) = token[j];
 
   return (vf);
 }
 
-static MAT_FORMAT *CreateMatTemplate (char *name,
-                                      SHORT *rcomp, SHORT *ccomp,INT n)
+static MAT_FORMAT *CreateMatTemplate (char *name, INT n)
 {
   MAT_FORMAT *mf;
   char buffer[NAMESIZE];
-  INT type;
+  INT j,type;
 
   if (ChangeEnvDir("/newformat")==NULL)
     return(NULL);
@@ -481,11 +479,9 @@ static MAT_FORMAT *CreateMatTemplate (char *name,
   else strcpy(buffer,name);
   mf = (MAT_FORMAT *) MakeEnvItem (buffer,theMatVarID,sizeof(MAT_FORMAT));
   if (mf==NULL) return (NULL);
-  for (type=0; type<NMATTYPES; type++) {
-    MF_RCOMP(mf,type) = rcomp[type];
-    MF_CCOMP(mf,type) = ccomp[type];
-  }
   MF_NSUB(mf) = 0;
+  for (j=0; j<2*MAX_MAT_COMP; j++)
+    MF_COMPNAME(mf,j) = ' ';
 
   return (mf);
 }
@@ -532,15 +528,14 @@ INT CreateFormatCmd (INT argc, char **argv)
   VectorDescriptor vd[MAXVECTORS];
   MatrixDescriptor md[MAXMATRICES];
   ENVDIR *dir;
-  VEC_FORMAT *vf;
-  MAT_FORMAT *mf;
-  SUBVEC *subv;
-  SUBMAT *subm;
+  VEC_FORMAT *vf,*vv;
+  MAT_FORMAT *mf,*mm;
+  SUBVEC *subv,*subvv;
+  SUBMAT *subm,*submm;
   INT i,j,size,type,currtype,rtype,ctype,nvec,nmat,nsc[NMATTYPES],nvd,nmd;
   INT edata,ndata,nodeelementlist;
   SHORT offset[NMATOFFSETS],ConnDepth[NMATTYPES],ImatTypes[NVECTYPES];
   SHORT FirstVecComp[NVECTYPES],FirstMatComp[NMATTYPES];
-  SHORT VComp[NVECTYPES],RComps[NMATTYPES],CComps[NMATTYPES];
   char formatname[NAMESIZE],*names,*token,tp,rt,ct,*p;
   char buffer[NAMESIZE];
   int n,nr,nc,depth;
@@ -578,6 +573,12 @@ INT CreateFormatCmd (INT argc, char **argv)
     {
     case 'V' :
       /* create a vector template */
+      vf = CreateVecTemplate(NULL,nvec++);
+      if (vf == NULL) {
+        PrintErrorMessage('E',"newformat",
+                          "could not allocate environment storage");
+        return (2);
+      }
 
       /* find name seperator */
       if ((names=strchr(argv[i],NAMESEP))==NULL)
@@ -589,7 +590,7 @@ INT CreateFormatCmd (INT argc, char **argv)
 
       /* read types and sizes */
       token = strtok(argv[i]+1,BLANKS);
-      for (type=0; type<NVECTYPES; type++) VComp[type] = 0;
+      for (type=0; type<NVECTYPES; type++) VF_COMP(vf,type) = 0;
       while (token!=NULL) {
         if (sscanf(token,"%c%d",&tp,&n)!=2) {
           PrintErrorMessage('E',"newformat",
@@ -605,24 +606,82 @@ INT CreateFormatCmd (INT argc, char **argv)
           PrintErrorMessage('E',"newformat","specify n,k,e,s for the type (or change config to include type)");
           return (1);
         }
-        if (VComp[type] !=0 ) {
+        if (VF_COMP(vf,type) !=0 ) {
           PrintErrorMessage('E',"newformat",
                             "double vector type specification");
           return (1);
         }
-        VComp[type] = n;
+        VF_COMP(vf,type) = n;
         token = strtok(NULL,BLANKS);
       }
-      /* read names of templates */
-      if (sscanf(names,"%d",&n) == 1) {
-        vf = CreateVecTemplate(NULL,VComp,nvec++);
-        if (vf == NULL) {
-          PrintErrorMessage('E',"newformat",
-                            "could not allocate environment storage");
-          return (2);
+
+      /* check next arg for compnames */
+      if (i+1 < argc)
+        if (strncmp(argv[i+1],"comp",4)==0) {
+          i++;
+          if (sscanf(argv[i],"comp %s",VF_COMPNAMES(vf))!=1) {
+            PrintErrorMessage('E',"newformat",
+                              "no vector comp names specified with comp option");
+            return (1);
+          }
+          ConstructVecOffsets(VF_COMPS(vf),offset);
+          if (strlen(VF_COMPNAMES(vf))!=offset[NVECTYPES]) {
+            PrintErrorMessage('E',"newformat",
+                              "number of vector comp names != number of comps");
+            return (1);
+          }
+          /* check next args for subv */
+          while ((i+1<argc) && (strncmp(argv[i+1],"sub",3)==0)) {
+            i++;
+            if (VF_NSUB(vf)>=MAX_SUB) {
+              PrintErrorMessage('E',"newformat",
+                                "max number of vector subs exceeded");
+              return (1);
+            }
+            subv = VF_SUB(vf,VF_NSUB(vf));
+            VF_NSUB(vf)++;
+
+            /* subv name */
+            token = strtok(argv[i]+3,BLANKS);
+            if (token==NULL) {
+              PrintErrorMessage('E',"newformat",
+                                "specify name of subv");
+              return (1);
+            }
+            strcpy(SUBV_NAME(subv),token);
+
+            /* subv comps */
+            for (type=0; type<NVECTYPES; type++) nsc[type] = 0;
+            while ((token=strtok(NULL,BLANKS))!=NULL) {
+              if (strlen(token)!=1) {
+                PrintErrorMessage('E',"newformat",
+                                  "specify one char per subv comp");
+                return (1);
+              }
+              if (strchr(VF_COMPNAMES(vf),*token)==NULL) {
+                PrintErrorMessage('E',"newformat",
+                                  "wrong subv comp");
+                return (1);
+              }
+              n = strchr(VF_COMPNAMES(vf),*token)
+                  - VF_COMPNAMES(vf);
+              for (type=0; type<NVECTYPES; type++)
+                if (n<offset[type+1]) break;
+              if (nsc[type]>=MAX_VEC_COMP) {
+                PrintErrorMessage('E',"newformat",
+                                  "max number of subv comps exceeded");
+                return (1);
+              }
+              nsc[type]++;
+              SUBV_COMP(subv,type) = n-offset[type];
+            }
+            for (type=0; type<NVECTYPES; type++)
+              SUBV_NCOMP(subv,type) = nsc[type];
+          }
         }
-      }
-      else {
+
+      /* read names of templates */
+      if (sscanf(names,"%d",&n) != 1) {
         n = 0;
         token = strtok(names,BLANKS);
         while (token!=NULL) {
@@ -632,98 +691,45 @@ INT CreateFormatCmd (INT argc, char **argv)
                               "max number of main matrix symbols exceeded");
             return (1);
           }
-          vf = CreateVecTemplate(buffer,VComp,nvec++);
-          if (vf == NULL) {
+          vv = CreateVecTemplate(buffer,nvec++);
+          if (vv == NULL) {
             PrintErrorMessage('E',"newformat",
                               "could not allocate environment storage");
             return (2);
+          }
+          for (type=0; type<NVECTYPES; type++)
+            VF_COMP(vv,type) = VF_COMP(vf,type);
+          for (j=0; j<MAX_VEC_COMP; j++)
+            VF_COMPNAME(vv,j) = VF_COMPNAME(vf,j);
+          VF_NSUB(vv) = VF_NSUB(vf);
+          for (j=0; j<VF_NSUB(vf); j++) {
+            subv = VF_SUB(vf,j);
+            subvv = VF_SUB(vv,j);
+            strcpy(SUBV_NAME(subvv),SUBV_NAME(subv));
+            for (type=0; type<NVECTYPES; type++) {
+              SUBV_COMP(subvv,type) = SUBV_COMP(subv,type);
+              SUBV_NCOMP(subvv,type) = SUBV_NCOMP(subv,type);
+            }
           }
           token = strtok(NULL,BLANKS);
         }
       }
       for (type=0; type<NVECTYPES; type++)
         FirstVecComp[type] += n * VF_COMP(vf,type);
-
-      break;
-      /* check next arg for compnames */
-      if (i+1<argc)
-        if (strncmp(argv[i+1],"comp",4)!=0)
-        {
-          for (j=0; j<MAX_VEC_COMP; j++) VF_COMPNAME(vf,j) = ' ';
-          break;
-        }
-      i++;
-      if (sscanf(argv[i],"comp %s",VF_COMPNAMES(vf))!=1)
-      {
-        PrintErrorMessage('E',"newformat","no vector comp names specified with comp option");
-        return (1);
-      }
-      ConstructVecOffsets(VF_COMPS(vf),offset);
-      if (strlen(VF_COMPNAMES(vf))!=offset[NVECTYPES])
-      {
-        PrintErrorMessage('E',"newformat","number of vector comp names != number of comps");
-        return (1);
-      }
-
-      /* check next args for subv */
-      while ((i+1<argc) && (strncmp(argv[i+1],"sub",3)==0))
-      {
-        i++;
-
-        if (VF_NSUB(vf)>=MAX_SUB)
-        {
-          PrintErrorMessage('E',"newformat","max number of vector subs exceeded");
-          return (1);
-        }
-        subv = VF_SUB(vf,VF_NSUB(vf));
-        VF_NSUB(vf)++;
-
-        /* subv name */
-        token = strtok(argv[i]+3,BLANKS);
-        if (token==NULL)
-        {
-          PrintErrorMessage('E',"newformat","specify name of subv");
-          return (1);
-        }
-        strcpy(SUBV_NAME(subv),token);
-
-        /* subv comps */
-        for (type=0; type<NVECTYPES; type++) nsc[type] = 0;
-        while ((token=strtok(NULL,BLANKS))!=NULL)
-        {
-          if (strlen(token)!=1)
-          {
-            PrintErrorMessage('E',"newformat","specify one char per subv comp");
-            return (1);
-          }
-          if (strchr(VF_COMPNAMES(vf),*token)==NULL)
-          {
-            PrintErrorMessage('E',"newformat","wrong subv comp");
-            return (1);
-          }
-          n = strchr(VF_COMPNAMES(vf),*token) - VF_COMPNAMES(vf);
-          for (type=0; type<NVECTYPES; type++)
-            if (n<offset[type+1]) break;
-
-          if (nsc[type]>=MAX_VEC_COMP)
-          {
-            PrintErrorMessage('E',"newformat","max number of subv comps exceeded");
-            return (1);
-          }
-          nsc[type]++;
-          SUBV_COMP(subv,type) = n-offset[type];
-        }
-        for (type=0; type<NVECTYPES; type++) SUBV_NCOMP(subv,type) = nsc[type];
-      }
       break;
 
     case 'M' :
-      /* create a matrix */
-
+      /* create a matrix template */
+      mf = CreateMatTemplate(NULL,nmat++);
+      if (mf == NULL) {
+        PrintErrorMessage('E',"newformat",
+                          "could not allocate environment storage");
+        return (2);
+      }
       /* find name seperator */
-      if ((names=strchr(argv[i],NAMESEP))==NULL)
-      {
-        PrintErrorMessage('E',"newformat","seperate names by a colon ':' from the description");
+      if ((names=strchr(argv[i],NAMESEP))==NULL) {
+        PrintErrorMessage('E',"newformat",
+                          "seperate names by a colon ':' from the description");
         return (1);
       }
       *(names++) = '\0';
@@ -731,12 +737,11 @@ INT CreateFormatCmd (INT argc, char **argv)
       /* read types and sizes */
       token = strtok(argv[i]+1,BLANKS);
       for (type=0; type<NMATTYPES; type++)
-        RComps[type] = CComps[type] = 0;
-      while (token!=NULL)
-      {
-        if (sscanf(token,"%c%dx%c%d",&rt,&nr,&ct,&nc)!=4)
-        {
-          PrintErrorMessage('E',"newformat","could not scan type and size");
+        MF_RCOMP(mf,type) = MF_CCOMP(mf,type) = 0;
+      while (token!=NULL) {
+        if (sscanf(token,"%c%dx%c%d",&rt,&nr,&ct,&nc)!=4) {
+          PrintErrorMessage('E',"newformat",
+                            "could not scan type and size");
           return (1);
         }
         switch (rt)
@@ -760,26 +765,102 @@ INT CreateFormatCmd (INT argc, char **argv)
           return (1);
         }
         type = MTP(rtype,ctype);
-        if (RComps[type] !=0 ) {
+        if (MF_RCOMP(mf,type) !=0 ) {
           PrintErrorMessage('E',"newformat",
                             "double matrix type specification");
           return (1);
         }
-        RComps[type] = nr;
-        CComps[type] = nc;
+        MF_RCOMP(mf,type) = nr;
+        MF_CCOMP(mf,type) = nc;
         token = strtok(NULL,BLANKS);
       }
+      /* check next arg for compnames */
+      if (i+1 < argc)
+        if (strncmp(argv[i+1],"comp",4) == 0) {
+          i++;
+          if (sscanf(argv[i],"comp %s",MF_COMPNAMES(mf))!=1) {
+            PrintErrorMessage('E',"newformat",
+                              "no matrix comp names specified with comp option");
+            return (1);
+          }
+          ConstructMatOffsets(MF_RCOMPS(mf),
+                              MF_CCOMPS(mf),offset);
+          if (strlen(MF_COMPNAMES(mf))!=2*offset[NMATTYPES]) {
+            PrintErrorMessage('E',"newformat",
+                              "number of matrix comp names != number of comps");
+            return (1);
+          }
+          /* check next args for subm */
+          while ((i+1<argc) && (strncmp(argv[i+1],"sub",3)==0)) {
+            i++;
+            if (MF_NSUB(mf)>=MAX_SUB) {
+              PrintErrorMessage('E',"newformat",
+                                "max number of matrix subs exceeded");
+              return (1);
+            }
+            subm = MF_SUB(mf,MF_NSUB(mf));
+            MF_NSUB(mf)++;
+
+            /* subm name */
+            token = strtok(argv[i]+3,BLANKS);
+            if (token==NULL) {
+              PrintErrorMessage('E',"newformat",
+                                "specify name of subm");
+              return (1);
+            }
+            strcpy(SUBM_NAME(subm),token);
+
+            /* subm comps */
+            for (type=0; type<NMATTYPES; type++) nsc[type] = 0;
+            while ((token=strtok(NULL,BLANKS))!=NULL) {
+              /* scan size */
+              if (sscanf(token,"%dx%d",&nr,&nc)!=2) {
+                PrintErrorMessage('E',"newformat",
+                                  "specify size of subm");
+                return (1);
+              }
+              while ((token=strtok(NULL,BLANKS))!=NULL) {
+                if (strlen(token)!=2) {
+                  PrintErrorMessage('E',"newformat",
+                                    "specify two chars per subm comp");
+                  return (1);
+                }
+                for (p=MF_COMPNAMES(mf); *p!='\0'; p+=2)
+                  if ((p[0]==token[0])&&(p[1]==token[1]))
+                    break;
+                if (*p=='\0') {
+                  PrintErrorMessage('E',"newformat",
+                                    "wrong subm comp");
+                  return (1);
+                }
+                n = (p - MF_COMPNAMES(mf))/2;
+                for (type=0; type<NMATTYPES; type++)
+                  if (n<offset[type+1]) break;
+
+                if (nsc[type]>=MAX_MAT_COMP) {
+                  PrintErrorMessage('E',"newformat",
+                                    "max number of subm comps exceeded");
+                  return (1);
+                }
+                if (nsc[type]==0)
+                  currtype = type;
+                else if (type!=currtype) {
+                  PrintErrorMessage('E',"newformat",
+                                    "wrong comp type for subm");
+                  return (1);
+                }
+                nsc[type]++;
+                SUBM_COMP(subm,type) = n-offset[type];
+                if (nsc[type]==nr*nc) break;
+              }
+              SUBM_RCOMP(subm,type) = nr;
+              SUBM_CCOMP(subm,type) = nc;
+            }
+          }
+        }
 
       /* read names of templates */
-      if (sscanf(names,"%d",&n) == 1) {
-        mf = CreateMatTemplate(NULL,RComps,CComps,nmat++);
-        if (mf == NULL) {
-          PrintErrorMessage('E',"newformat",
-                            "could not allocate environment storage");
-          return (2);
-        }
-      }
-      else {
+      if (sscanf(names,"%d",&n) != 1) {
         n = 0;
         token = strtok(names,BLANKS);
         while (token!=NULL) {
@@ -789,112 +870,34 @@ INT CreateFormatCmd (INT argc, char **argv)
                               "max number of main matrix symbols exceeded");
             return (1);
           }
-          mf = CreateMatTemplate(buffer,RComps,CComps,nmat++);
-          if (mf == NULL) {
+          mm = CreateMatTemplate(buffer,nmat++);
+          if (mm == NULL) {
             PrintErrorMessage('E',"newformat",
                               "could not allocate environment storage");
             return (2);
+          }
+          for (type=0; type<NMATTYPES; type++) {
+            MF_RCOMP(mm,type) = MF_RCOMP(mf,type);
+            MF_CCOMP(mm,type) = MF_CCOMP(mf,type);
+          }
+          for (j=0; j<2*MAX_MAT_COMP; j++)
+            MF_COMPNAME(mm,j) = MF_COMPNAME(mf,j);
+          MF_NSUB(mm) = MF_NSUB(mf);
+          for (j=0; j<MF_NSUB(mf); j++) {
+            subm = MF_SUB(mf,j);
+            submm = MF_SUB(mm,j);
+            strcpy(SUBM_NAME(submm),SUBM_NAME(subm));
+            for (type=0; type<NMATTYPES; type++) {
+              SUBM_COMP(submm,type) = SUBM_COMP(subm,type);
+              SUBM_RCOMP(submm,type) = SUBM_RCOMP(subm,type);
+              SUBM_CCOMP(submm,type) = SUBM_CCOMP(subm,type);
+            }
           }
           token = strtok(NULL,BLANKS);
         }
       }
       for (type=0; type<NMATTYPES; type++)
         FirstMatComp[type] += n*MF_RCOMP(mf,type)*MF_CCOMP(mf,type);
-
-      break;
-      /* check next arg for compnames */
-      if (i+1<argc)
-        if (strncmp(argv[i+1],"comp",4)!=0) {
-          for (j=0; j<2*MAX_MAT_COMP; j++)
-            MF_COMPNAME(mf,j) = ' ';
-          break;
-        }
-      i++;
-      if (sscanf(argv[i],"comp %s",MF_COMPNAMES(mf))!=1) {
-        PrintErrorMessage('E',"newformat",
-                          "no matrix comp names specified with comp option");
-        return (1);
-      }
-      ConstructMatOffsets(MF_RCOMPS(mf),MF_CCOMPS(mf),offset);
-      if (strlen(MF_COMPNAMES(mf))!=2*offset[NMATTYPES])
-      {
-        PrintErrorMessage('E',"newformat","number of matrix comp names != number of comps");
-        return (1);
-      }
-
-      /* check next args for subm */
-      while ((i+1<argc) && (strncmp(argv[i+1],"sub",3)==0))
-      {
-        i++;
-
-        if (MF_NSUB(mf)>=MAX_SUB)
-        {
-          PrintErrorMessage('E',"newformat","max number of matrix subs exceeded");
-          return (1);
-        }
-        subm = MF_SUB(mf,MF_NSUB(mf));
-        MF_NSUB(mf)++;
-
-        /* subm name */
-        token = strtok(argv[i]+3,BLANKS);
-        if (token==NULL)
-        {
-          PrintErrorMessage('E',"newformat","specify name of subm");
-          return (1);
-        }
-        strcpy(SUBM_NAME(subm),token);
-
-        /* subm comps */
-        for (type=0; type<NMATTYPES; type++) nsc[type] = 0;
-        while ((token=strtok(NULL,BLANKS))!=NULL)
-        {
-          /* scan size */
-          if (sscanf(token,"%dx%d",&nr,&nc)!=2)
-          {
-            PrintErrorMessage('E',"newformat","specify size of subm");
-            return (1);
-          }
-
-          while ((token=strtok(NULL,BLANKS))!=NULL)
-          {
-            if (strlen(token)!=2)
-            {
-              PrintErrorMessage('E',"newformat","specify two chars per subm comp");
-              return (1);
-            }
-            for (p=MF_COMPNAMES(mf); *p!='\0'; p+=2)
-              if ((p[0]==token[0]) && (p[1]==token[1]))
-                break;
-            if (*p=='\0')
-            {
-              PrintErrorMessage('E',"newformat","wrong subm comp");
-              return (1);
-            }
-            n = (p - MF_COMPNAMES(mf))/2;
-            for (type=0; type<NMATTYPES; type++)
-              if (n<offset[type+1]) break;
-
-            if (nsc[type]>=MAX_MAT_COMP)
-            {
-              PrintErrorMessage('E',"newformat","max number of subm comps exceeded");
-              return (1);
-            }
-            if (nsc[type]==0)
-              currtype = type;
-            else if (type!=currtype)
-            {
-              PrintErrorMessage('E',"newformat","wrong comp type for subm");
-              return (1);
-            }
-            nsc[type]++;
-            SUBM_COMP(subm,type) = n-offset[type];
-
-            if (nsc[type]==nr*nc) break;
-          }
-          SUBM_RCOMP(subm,type) = nr;
-          SUBM_CCOMP(subm,type) = nc;
-        }
-      }
       break;
 
     case 'd' :

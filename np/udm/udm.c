@@ -29,6 +29,7 @@
 /****************************************************************************/
 
 #include "general.h"
+#include "debug.h"
 #include "gm.h"
 #include "ugenv.h"
 #include "devices.h"
@@ -194,7 +195,7 @@ static INT GetNewVectorName (MULTIGRID *theMG, char *name)
     sprintf(buffer,"vec%02d",i);
     for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
       if (strcmp(ENVITEM_NAME(vd),buffer) == 0) break;
-    if (vd != NULL) continue;
+    if (vd == NULL) break;
   }
   if (i == MAX_NAMES) return(1);
   strcpy(name,buffer);
@@ -207,6 +208,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
 {
   VECDATA_DESC *vd;
   SHORT offset[NVECOFFSETS],*Comp;
+  char buffer[NAMESIZE];
   INT i,j,tp,ncmp,size;
 
   if (theMG == NULL)
@@ -218,13 +220,14 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
     MakeEnvItem("Vectors",VectorDirID,sizeof(ENVDIR));
     if (ChangeEnvDir("Vectors") == NULL) return (NULL);
   }
-  if (name == "")
-    if (GetNewVectorName(theMG,name)) return (NULL);
+  if (name != NULL)
+    strcpy(buffer,name);
+  else if (GetNewVectorName(theMG,buffer)) return (NULL);
   ConstructVecOffsets(NCmpInType,offset);
   ncmp = offset[NVECTYPES];
   if (ncmp <= 0) return (NULL);
   size = sizeof(VECDATA_DESC)+(ncmp-1)*sizeof(SHORT);
-  vd = (VECDATA_DESC *) MakeEnvItem (name,VectorVarID,size);
+  vd = (VECDATA_DESC *) MakeEnvItem (buffer,VectorVarID,size);
   if (vd == NULL) return (NULL);
   if (compNames==NULL)
     memcpy(VM_COMP_NAMEPTR(vd),NoVecNames,MAX(ncmp,MAX_VEC_COMP));
@@ -238,7 +241,8 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
     Comp = VD_CMPPTR_OF_TYPE(vd,tp) = VM_COMPPTR(vd) + offset[tp];
     for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
       if (i >= ncmp) break;
-      if (j >= theMG->theFormat->VectorSizes[tp]) return(NULL);
+      if (j*sizeof(DOUBLE) >= theMG->theFormat->VectorSizes[tp])
+        return(NULL);
       if (READ_DR_VEC_FLAG(theMG,tp,j)) continue;
       Comp[i++] = j;
       SET_DR_VEC_FLAG(theMG,tp,j);
@@ -400,7 +404,7 @@ static INT GetNewMatrixName (MULTIGRID *theMG, char *name)
     sprintf(buffer,"mat%02d",i);
     for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
       if (strcmp(ENVITEM_NAME(md),buffer) == 0) break;
-    if (md != NULL) continue;
+    if (md == NULL) break;
   }
   if (i == MAX_NAMES) return(1);
   strcpy(name,buffer);
@@ -413,6 +417,7 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
 {
   MATDATA_DESC *md;
   SHORT offset[NVECOFFSETS],*Comp;
+  char buffer[NAMESIZE];
   INT i,j,tp,ncmp,size;
 
   if (theMG == NULL)
@@ -424,13 +429,14 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
     MakeEnvItem("Matrices",MatrixDirID,sizeof(ENVDIR));
     if (ChangeEnvDir("Matrices") == NULL) return (NULL);
   }
-  if (name == "")
-    if (GetNewMatrixName(theMG,name)) return (NULL);
   ConstructMatOffsets(RowsInType,ColsInType,offset);
   ncmp = offset[NMATTYPES];
   if (ncmp <= 0) return (NULL);
   size = sizeof(MATDATA_DESC)+(ncmp-1)*sizeof(SHORT);
-  md = (MATDATA_DESC *) MakeEnvItem (name,MatrixVarID,size);
+  if (name != NULL)
+    strcpy(buffer,name);
+  else if (GetNewMatrixName(theMG,buffer)) return (NULL);
+  md = (MATDATA_DESC *) MakeEnvItem (buffer,MatrixVarID,size);
   if (md == NULL) return (NULL);
   if (compNames==NULL)
     memcpy(VM_COMP_NAMEPTR(md),NoMatNames,MAX(ncmp,MAX_VEC_COMP));
@@ -445,7 +451,8 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
     Comp = MD_MCMPPTR_OF_MTYPE(md,tp) = VM_COMPPTR(md) + offset[tp];
     for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
       if (i >= ncmp) break;
-      if (j >= theMG->theFormat->MatrixSizes[tp]) return(NULL);
+      if (j*sizeof(DOUBLE) >= theMG->theFormat->MatrixSizes[tp])
+        return(NULL);
       if (READ_DR_MAT_FLAG(theMG,tp,j)) continue;
       Comp[i++] = j;
       SET_DR_MAT_FLAG(theMG,tp,j);
@@ -617,7 +624,7 @@ static INT AllocVecDesc (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NVECTYPES; tp++)
       for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
-        SET_DR_MAT_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j));
+        SET_DR_VEC_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j));
   }
 
   return(0);
@@ -637,10 +644,12 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
         return(0);
       }
     }
-    *new_desc = CreateVecDesc(theMG,"",template_desc->compNames,
+    *new_desc = CreateVecDesc(theMG,NULL,template_desc->compNames,
                               template_desc->NCmpInType);
     if (*new_desc == NULL) return(1);
   }
+  PRINTDEBUG(numerics,1,(" AllocVD %s from %d to %d\n",
+                         ENVITEM_NAME(*new_desc),fl,tl));
 
   return (AllocVecDesc(theMG,fl,tl,*new_desc));
 }
@@ -674,6 +683,8 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
   INT i,j,tp;
 
   if (VM_LOCKED(vd)) return(0);
+  PRINTDEBUG(numerics,1,(" FreeVD %s from %d to %d\n",
+                         ENVITEM_NAME(vd),fl,tl));
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NVECTYPES; tp++)
@@ -775,7 +786,7 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
         return(0);
       }
     }
-    *new_desc = CreateMatDesc(theMG,"",NULL,RowsInType,ColsInType);
+    *new_desc = CreateMatDesc(theMG,NULL,NULL,RowsInType,ColsInType);
     if (*new_desc == NULL) return(1);
   }
 
@@ -822,7 +833,7 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
         return(0);
       }
     }
-    *new_desc = CreateMatDesc(theMG,"",template_desc->compNames,
+    *new_desc = CreateMatDesc(theMG,NULL,template_desc->compNames,
                               template_desc->RowsInType,
                               template_desc->ColsInType);
     if (*new_desc == NULL) return(1);

@@ -391,7 +391,7 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
   VECDATA_DESC *vd;
   char value[VALUELEN];
 
-  if (ReadArgvChar(name,&value[0],argc,argv))
+  if (ReadArgvChar(name,value,argc,argv))
     return (NULL);
 
   vd = GetVecDataDescByName(theMG,value);

@@ -9,7 +9,7 @@
 # include configuration and all makefile macro definitions
 include $(UGROOT)/ug.conf
 
-OBJECTS = pcr.o disctools.o scan.o udm.o formats.o numproc.o
+OBJECTS = pcr.o disctools.o scan.o udm.o formats.o numproc.o dio.o data_io.o
 
 all : $(OBJECTS) Makefile.udm
 	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
