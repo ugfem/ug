@@ -47,10 +47,17 @@
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef __TWODIM__
+#define MAX_NODAL_VECTORS       8
+#define MAX_NODAL_VALUES        20
+#define MAX_BND_VECTORS         4
+#endif
+
+#ifdef __THREEDIM__
 #define MAX_NODAL_VECTORS       20
 #define MAX_NODAL_VALUES        68
-#define MAX_BND_VECTORS         3
-#define MAX_NODAL_VALUES        68
+#define MAX_BND_VECTORS         8
+#endif
 
 #define MAXVD                           10
 #define MAXMD                           5
