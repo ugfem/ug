@@ -91,7 +91,6 @@ INT              PutFreeObjectLocal             (MULTIGRID *theMG, void *object,
 EDGE        *CreateEdge             (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
 ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,
                                      NODE **nodes);
-ELEMENTSIDE *CreateElementSide      (GRID *theGrid);
 INT         CreateSonElementSide    (GRID *theGrid, ELEMENT *theElement,
                                      INT side, ELEMENT *theSon, INT son_side);
 

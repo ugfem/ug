@@ -130,6 +130,7 @@ static NODE *CreateNode (GRID *theGrid);
 static VERTEX *CreateBoundaryVertex     (GRID *theGrid);
 static VERTEX *CreateInnerVertex (GRID *theGrid);
 static VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex);
+static ELEMENTSIDE *CreateElementSide (GRID *theGrid);
 
 static INT DisposeNode (GRID *theGrid, NODE *theNode);
 static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
@@ -1253,7 +1254,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
    CreateElementSide - Return pointer to a new element side structure
 
    SYNOPSIS:
-   ELEMENTSIDE *CreateElementSide (GRID *theGrid);
+   static ELEMENTSIDE *CreateElementSide (GRID *theGrid);
 
    PARAMETERS:
    .  theGrid - grid for which to create
@@ -1269,7 +1270,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
    D*/
 /****************************************************************************/
 
-ELEMENTSIDE *CreateElementSide (GRID *theGrid)
+static ELEMENTSIDE *CreateElementSide (GRID *theGrid)
 {
   ELEMENTSIDE *ps;
 
