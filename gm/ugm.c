@@ -5119,7 +5119,7 @@ static INT CheckElementold (ELEMENT *theElement, INT *SideError, INT *EdgeError,
   return (0);
 }
 
-INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
+static INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
 {
   NODE *theNode;
   ELEMENT *theElement;
