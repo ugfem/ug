@@ -57,8 +57,8 @@
 #define MGIO_ASCII                                      0
 #define MGIO_BIN                                        1
 
-#define MGIO_INTSIZE                            100
-#define MGIO_DOUBLESIZE                         100
+#define MGIO_INTSIZE                            200
+#define MGIO_DOUBLESIZE                         200
 #define MGIO_BUFFERSIZE                         1024
 
 #define MGIO_CHECK_INTSIZE(n)           if ((n)>MGIO_INTSIZE) return (1)
@@ -842,7 +842,7 @@ int Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
 {
   int i,j,s,nmax,read,copy_until,still_to_read;
 
-  s=copy_until=0; still_to_read=n;
+  copy_until=0; still_to_read=n;
   nmax = MGIO_DOUBLESIZE-MGIO_DOUBLESIZE%MGIO_DIM; nmax /= MGIO_DIM;
   for(i=0; i<n; i++)
   {
@@ -853,6 +853,7 @@ int Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
       if ((*Read_mdouble)(MGIO_DIM*read,doubleList)) return (1);
       still_to_read -= read;
       copy_until += read;
+      s=0;
     }
     for(j=0; j<MGIO_DIM; j++)
       cg_point[i].position[j] = doubleList[s++];

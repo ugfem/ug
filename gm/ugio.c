@@ -185,6 +185,36 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
+static INT RenumberNE (MULTIGRID *theMG)
+{
+  INT i,nid,eid;
+  GRID *theGrid;
+  NODE *theNode;
+  ELEMENT *theElement;
+
+  nid=eid=0;
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      ID(theElement) = eid++;
+    if (i==0)
+    {
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        if (OBJT(MYVERTEX(theNode))==BVOBJ)
+          ID(theNode) = nid++;
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        if (OBJT(MYVERTEX(theNode))==IVOBJ)
+          ID(theNode) = nid++;
+    }
+    else
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        ID(theNode) = nid++;
+  }
+
+  return (0);
+}
+
 INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
 {
   FILE *stream;
@@ -294,7 +324,7 @@ INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
 INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
 {
   GRID *theGrid;
-  VERTEX *theVertex;
+  NODE *theNode;
   ELEMENT *theElement;
   HEAP *theHeap;
   MGIO_MG_GENERAL mg_general;
@@ -307,7 +337,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   MGIO_CG_POINT *cg_point;
   MGIO_CG_ELEMENT *cg_element;
   MGIO_BD_GENERAL bd_general;
-  INT i,j,k,niv,nbv,nie,nbe,n,nbndp,bvi,ivi;
+  INT i,j,k,niv,nbv,nie,nbe,n,bvi,ivi;
   char *p;
   BNDP **BndPList;
 
@@ -372,12 +402,9 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   theGrid = GRID_ON_LEVEL(theMG,0);
   cg_general.nPoint = NV(theGrid);
   niv=nbv=0;
-  for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
-  {
-    if (OBJT(theVertex)==IVOBJ) niv++;
-    else if (OBJT(theVertex)==BVOBJ) nbv++;
-    else return (1);
-  }
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    if (OBJT(MYVERTEX(theNode))==IVOBJ) niv++;
+    else nbv++;
   cg_general.nBndPoint = nbv;
   cg_general.nInnerPoint = niv;
   cg_general.nElement = NT(theGrid);
@@ -392,29 +419,17 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   cg_general.nInnerElement = nie;
   if (Write_CG_General(&cg_general)) return (1);
 
-  /* write coarse grid points: inner points first */
+  /* write coarse grid points */
+  if (RenumberNE (theMG)) return (1);
   theGrid = GRID_ON_LEVEL(theMG,0);
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap);
   n = NV(theGrid)*sizeof(MGIO_CG_POINT);
   cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,n);
-  for (theVertex=FIRSTVERTEX(theGrid),i=ivi=0,bvi=niv; theVertex!=NULL; theVertex=SUCCV(theVertex),i++)
-  {
-    ID(theVertex) = i;
-    if (OBJT(theVertex)==IVOBJ)
-    {
-      for (j=0; j<MGIO_DIM; j++)
-        cg_point[ivi].position[j] = CVECT(theVertex)[j];
-      ivi++;
-    }
-    else
-    {
-      for (j=0; j<MGIO_DIM; j++)
-        cg_point[bvi].position[j] = CVECT(theVertex)[j];
-      bvi++;
-    }
-  }
-  if (ivi!=niv || bvi!=i) return (1);
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    for (j=0; j<MGIO_DIM; j++)
+      cg_point[ID(theNode)].position[j] = CVECT(MYVERTEX(theNode))[j];
+
   if (Write_CG_Points((int)NV(theGrid),cg_point)) return (1);
   ReleaseTmpMem(theHeap);
 
@@ -424,14 +439,13 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   MarkTmpMem(theHeap);
   n = NT(theGrid);
   cg_element = (MGIO_CG_ELEMENT*)GetTmpMem(theHeap,n*sizeof(MGIO_CG_ELEMENT));
-
-  for (theElement = FIRSTELEMENT(theGrid),i=0; theElement!=NULL; theElement=SUCCE(theElement),i++)
-    ID(theElement) = i;
-  for (theElement = FIRSTELEMENT(theGrid),i=0; theElement!=NULL; theElement=SUCCE(theElement),i++)
+  for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
+    i = ID(theElement);
+
     cg_element[i].ge = TAG(theElement);
     for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-      cg_element[i].cornerid[j] = ID(MYVERTEX(CORNER(theElement,j)));
+      cg_element[i].cornerid[j] = ID(CORNER(theElement,j));
     for (j=0; j<SIDES_OF_ELEM(theElement); j++)
       if (NBELEM(theElement,j)!=NULL)
         cg_element[i].nbid[j] = ID(NBELEM(theElement,j));
@@ -440,29 +454,23 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
     cg_element[i].refrule = -1;
     cg_element[i].nmoved = 0;
   }
-  if (i!=n) return (1);
   if (Write_CG_Elements((int)n,cg_element)) return (1);
   ReleaseTmpMem(theHeap);
 
   /* write general bnd information */
-  nbndp = 0;
-  for (theGrid=GRID_ON_LEVEL(theMG,0); theGrid!=NULL; theGrid=UPGRID(theGrid))
-  {
-    for (theVertex=FIRSTVERTEX(theGrid),i=0; theVertex!=NULL; theVertex=SUCCV(theVertex),i++)
-      if (OBJT(theVertex)==BVOBJ)
-        nbndp++;
-  }
-  bd_general.nBndP = nbndp;
+  bd_general.nBndP = nbv;
   if (Write_BD_General (&bd_general)) return (1);
 
   /* write bnd information */
   MarkTmpMem(theHeap);
-  BndPList = (BNDP**)GetTmpMem(theHeap,nbndp*sizeof(BNDP*));
-  for (theGrid=GRID_ON_LEVEL(theMG,0); theGrid!=NULL; theGrid=UPGRID(theGrid))
-    for (theVertex=FIRSTVERTEX(theGrid),i=0; theVertex!=NULL; theVertex=SUCCV(theVertex))
-      if (OBJT(theVertex)==BVOBJ)
-        BndPList[i++] = V_BNDP(theVertex);
-  if (Write_PBndDesc (i,BndPList)) return (1);
+  BndPList = (BNDP**)GetTmpMem(theHeap,nbv*sizeof(BNDP*));
+  for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0)); theNode!=NULL; theNode=SUCCN(theNode))
+    if (OBJT(MYVERTEX(theNode))==BVOBJ)
+    {
+      if (ID(theNode) < 0 || ID(theNode) >= nbv) return (1);
+      BndPList[ID(theNode)] = V_BNDP(MYVERTEX(theNode));
+    }
+  if (Write_PBndDesc (nbv,BndPList)) return (1);
   ReleaseTmpMem(theHeap);
 
   /* close file */
@@ -574,7 +582,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* read coarse grid points and elements */
   cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,cg_general.nPoint*sizeof(MGIO_CG_POINT));
-  cg_element = (MGIO_CG_ELEMENT *)GetTmpMem(theHeap,cg_general.nPoint*sizeof(MGIO_CG_POINT));
+  cg_element = (MGIO_CG_ELEMENT *)GetTmpMem(theHeap,cg_general.nElement*sizeof(MGIO_CG_ELEMENT));
   if (Read_CG_Points(cg_general.nPoint,cg_point))                                         {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (Read_CG_Elements(cg_general.nElement,cg_element))                           {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
 
@@ -593,10 +601,10 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   theMesh.Position = (COORD**)GetTmpMem(theHeap,cg_general.nInnerPoint*sizeof(COORD*));
   Positions = (COORD*)GetTmpMem(theHeap,MGIO_DIM*cg_general.nInnerPoint*sizeof(COORD));
   for (i=0; i<cg_general.nInnerPoint; i++)
-    theMesh.Position[i] = Positions+2*MGIO_DIM;
+    theMesh.Position[i] = Positions+MGIO_DIM*i;
   for (i=0; i<cg_general.nInnerPoint; i++)
     for (j=0; j<MGIO_DIM; j++)
-      theMesh.Position[i][j] = cg_point[i].position[j];
+      theMesh.Position[i][j] = cg_point[cg_general.nBndPoint+i].position[j];
   theMesh.nSubDomains = theBVPDesc.nSubDomains;
   theMesh.nElements = (INT*)GetTmpMem(theHeap,(theMesh.nSubDomains+1)*sizeof(INT));
   if (theMesh.nElements==NULL)                                                                            {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}

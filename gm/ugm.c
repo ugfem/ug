@@ -2036,6 +2036,9 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
   if (MGHEAP(theMG)!=NULL)
     free(MGHEAP(theMG));
 
+  /* dispose BVP */
+  if (BVP_Dispose(MG_BVP(theMG))) return (GM_ERROR);
+
   /* first unlock the mg */
   ((ENVITEM*) theMG)->v.locked = FALSE;
 
@@ -3280,12 +3283,12 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
         }
       }
     }
-  else
-    for (i=0; i<SIDES_OF_REF(n); i++)
-    {
-      Neighbor[i] = ElemList[i];
-      NeighborSide[i] = NbgSdList[i];
-    }
+  else {
+    for (i=0; i<SIDES_OF_REF(n); i++) Neighbor[i] = ElemList[i];
+    if (NbgSdList != NULL)
+      for (i=0; i<SIDES_OF_REF(n); i++)
+        NeighborSide[i] = NbgSdList[i];
+  }
 
   /* create element */
   theElement = CreateElement(theGrid,tag,ElementType,Node,NULL);
@@ -3329,15 +3332,50 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
     SET_NBELEM(theElement,i,Neighbor[i]);
     if (Neighbor[i]!=NULL)
     {
-      SET_NBELEM(Neighbor[i],NeighborSide[i],theElement);
-            #ifdef __THREEDIM__
-      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-        if (DisposeDoubledSideVector(theGrid,Neighbor[i],
-                                     NeighborSide[i],theElement,i))
-          return(NULL);
-            #endif
+      if (NbgSdList != NULL) {
+        SET_NBELEM(Neighbor[i],NeighborSide[i],theElement);
+                #ifdef __THREEDIM__
+        if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+          if (DisposeDoubledSideVector(theGrid,Neighbor[i],
+                                       NeighborSide[i],theElement,i))
+            return(NULL);
+                 #endif
+      }
+      else {
+        for(j=0; j<CORNERS_OF_SIDE_REF(n,i); j++ )
+          sideNode[j] = Node[CORNER_OF_SIDE_REF(n,i,j)];
+        for (j=0; j<SIDES_OF_ELEM(Neighbor[i]); j++) {
+
+          num = 0;
+          /* for all corners of the side of the neighbour */
+          for (m=0; m<CORNERS_OF_SIDE(Neighbor[i],j); m++) {
+            NeighborNode = CORNER(Neighbor[i],
+                                  CORNER_OF_SIDE(Neighbor[i],j,m));
+            /* for all corners of the side of the
+               element to be created */
+            for (k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
+              if(NeighborNode==sideNode[k]) {
+                num++;
+                break;
+              }
+          }
+          if(num==CORNERS_OF_SIDE_REF(n,i)) {
+            if (NBELEM(Neighbor[i],j)!=NULL) {
+              PrintErrorMessage('E',"InsertElement",
+                                "neighbor relation inconsistent");
+              return(NULL);
+            }
+            SET_NBELEM(Neighbor[i],j,theElement);
+
+
+
+            break;
+          }
+        }
+      }
     }
   }
+
   SETNSONS(theElement,0);
   SET_SON(theElement,0,NULL);
   SET_EFATHER(theElement,NULL);
@@ -3547,39 +3585,35 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
     return(GM_OK);
         #endif
 
-  if (theMesh == NULL)
-    return(GM_OK);
-
-  for (i=0; i<theMesh->nBndP; i++)
-    if (InsertBoundaryNode(theMG,theMesh->theBndPs[i]) == NULL)
-      return(GM_ERROR);
-
-  for (i=0; i<theMesh->nInnP; i++)
-    if (InsertInnerNode(theMG,theMesh->Position[i]) == NULL)
-      return(GM_ERROR);
-
+  if (theMesh == NULL) return(GM_OK);
   if (theMesh->nElements == NULL)
+  {
+    for (i=0; i<theMesh->nBndP; i++)
+      if (InsertBoundaryNode(theMG,theMesh->theBndPs[i]) == NULL)
+        return(GM_ERROR);
+
+    for (i=0; i<theMesh->nInnP; i++)
+      if (InsertInnerNode(theMG,theMesh->Position[i]) == NULL)
+        return(GM_ERROR);
     return(GM_OK);
+  }
 
   theGrid = GRID_ON_LEVEL(theMG,0);
   nnd = theMesh->nBndP + theMesh->nInnP;
   NList = (NODE **) GetTmpMem(MGHEAP(theMG),nnd*sizeof(NODE *));
+  if (NList == NULL) return(GM_ERROR);
 
-  if (NList == NULL)
+  for (i=0; i<theMesh->nBndP; i++)
   {
-    for (sid=0; sid<theMesh->nSubDomains; sid++)
-      for (i=0; i<theMesh->nElements[sid]; i++)
-        if (InsertElementFromIDs (theMG,theMesh->Element_corners[sid][i],
-                                  theMesh->Element_corner_ids[sid][i])
-            == NULL)
-          return(GM_ERROR);
+    theNode = InsertBoundaryNode(theMG,theMesh->theBndPs[i]);
+    if (theNode == NULL) return(GM_ERROR);
+    NList[i] = theNode;
   }
-  else
+  for (i=0; i<theMesh->nInnP; i++)
   {
-    nnd = 0;
-    for (theNode= FIRSTNODE(theGrid); theNode != NULL;
-         theNode = SUCCN(theNode))
-      NList[nnd++] = theNode;
+    theNode = InsertInnerNode(theMG,theMesh->Position[i]);
+    if (theNode == NULL) return(GM_ERROR);
+    NList[i+theMesh->nBndP] = theNode;
   }
 
   EList = NULL;
@@ -3587,15 +3621,15 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
   {
     theGrid = GRID_ON_LEVEL(theMG,0);
     nel = 0;
-    for (sid=0; sid<theMesh->nSubDomains; sid++)
+    for (sid=1; sid<=theMesh->nSubDomains; sid++)
       nel += theMesh->nElements[sid];
     EList = (ELEMENT **) GetTmpMem(MGHEAP(theMG),nel*sizeof(ELEMENT *));
     if (EList != NULL)
-      for (i=0; i<nel; i++)
-        EList[i] = NULL;
+      for (i=0; i<nel; i++) EList[i] = NULL;
   }
 
-  for (sid=0; sid<theMesh->nSubDomains; sid++)
+  nel = 0;
+  for (sid=1; sid<=theMesh->nSubDomains; sid++)
     for (i=0; i<theMesh->nElements[sid]; i++)
     {
       n = theMesh->Element_corners[sid][i];
@@ -3603,7 +3637,11 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
         Nodes[k] = NList[theMesh->Element_corner_ids[sid][i][k]];
       if (EList != NULL)
         for (k=0; k<SIDES_OF_REF(n); k++)
-          nbList[k] = EList[theMesh->nbElements[sid][i][k]];
+          if (theMesh->nbElements[sid][i][k]>=0)
+            nbList[k] = EList[theMesh->nbElements[sid][i][k]];
+          else
+            nbList[k] = NULL;
+
       theElement = InsertElement (theMG,n,Nodes,nbList,NULL);
       if (theElement == NULL)
         return(GM_ERROR);
