@@ -420,11 +420,6 @@ void BVertexScatterBndP (BNDP **Bndp, int cnt, char *data)
                                                LGM_BNDP_OBJECT_GOBJECT(((LGM_BNDP_POBJECT *)data)[0])),
                         LGM_BNDP_OBJECT_LOCAL(((LGM_BNDP_POBJECT *)data)[0])));
 
-      PRINTDEBUG(dom,3,(PFMT "BVertexScatterBndP(): LGM_BNDP_OBJECT(*bndp,i)=%x"
-                        " LGM_BNDP_OBJECT(*Bndp,i)=%x ((*bndp)->Surf[(i)].theSurf)=%x\n",
-                        me,&(LGM_BNDP_OBJECT(*bndp,i)),&(LGM_BNDP_OBJECT((LGM_BNDP *)*Bndp,i)),
-                        &((*bndp)->Surf[(i)].theSurf)));
-
       PRINTDEBUG(dom,3,(PFMT "BVertexScatterBndP(): bndp=%x"
                         " *bndp=%x i=%d\n",
                         me,bndp,*bndp));
