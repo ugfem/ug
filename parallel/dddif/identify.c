@@ -1149,8 +1149,10 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
                 #endif
 
     /* check control word flags for ident on upper level */
+                #ifdef Debug
     if (debug != 1)
-      ResetIdentFlags(GRID_ON_LEVEL(theMG,l+1));
+                #endif
+    ResetIdentFlags(GRID_ON_LEVEL(theMG,l+1));
 
     for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
          theElement=SUCCE(theElement))
@@ -1230,10 +1232,12 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
   /* print formated info for all identified objects */
   IFDEBUG(dddif,1)
 
+        #ifdef Debug
   debug = 1;
 
   /* set Ident_FctPtr to print mode */
   Ident_FctPtr = Print_Identified_ObjectList;
+        #endif
 
   PrintDebug("AFTER Identify\n");
   IdentifyDistributedObjects(theMG,FromLevel,ToLevel);
