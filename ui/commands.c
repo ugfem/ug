@@ -3898,7 +3898,10 @@ static INT VMListCommand (INT argc, char **argv)
     }
     theMD = GetMatDataDescByName(theMG,value);
     if (theMD != NULL) {
-      PrintMatrix(theGrid,theMD,vclass,vnclass);
+      if (ReadArgvOption("T",argc,argv))
+        PrintTMatrix(theGrid,theMD,vclass,vnclass);
+      else
+        PrintMatrix(theGrid,theMD,vclass,vnclass);
       return(OKCODE);
     }
   }
@@ -11161,7 +11164,7 @@ static INT SymListCommand (INT argc, char **argv)
       /* print all vectors */
       for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
       {
-        DisplayVecDataDesc(vd,buffer);
+
         UserWrite(buffer);
       }
       return (OKCODE);
@@ -11169,7 +11172,6 @@ static INT SymListCommand (INT argc, char **argv)
     for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
       if (strcmp(ENVITEM_NAME(vd),name)==0)
       {
-        DisplayVecDataDesc(vd,buffer);
         UserWrite(buffer);
         return (OKCODE);
       }
@@ -11182,7 +11184,7 @@ static INT SymListCommand (INT argc, char **argv)
       /* print all matrices */
       for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
       {
-        DisplayMatDataDesc(md,buffer);
+
         UserWrite(buffer);
       }
       return (OKCODE);
@@ -11190,7 +11192,7 @@ static INT SymListCommand (INT argc, char **argv)
     for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
       if (strcmp(ENVITEM_NAME(md),name)==0)
       {
-        DisplayMatDataDesc(md,buffer);
+
         UserWrite(buffer);
         return (OKCODE);
       }
