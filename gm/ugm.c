@@ -2264,7 +2264,11 @@ EDGE * NS_DIM_PREFIX GetEdge (NODE *from, NODE *to)
 #ifndef ModelP
 static
 #endif
-EDGE * NS_DIM_PREFIX CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
+EDGE *
+#ifdef ModelP
+NS_DIM_PREFIX
+#endif
+CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
 {
   ELEMENT *theFather;
   EDGE *pe,*father_edge;
