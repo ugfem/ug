@@ -256,6 +256,8 @@ static INT DropMarks (MULTIGRID *theMG)
 	GRID *theGrid;
 	ELEMENT *theElement, *FatherElement;
 
+	return(GM_OK);
+
 	for (k=TOPLEVEL(theMG); k>0; k--)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,k);
