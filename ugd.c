@@ -129,7 +129,13 @@ static void ExecInitScreen (int sockfd)
 
   InitUgDaemon(argc,argv);
 
-  theOutputDevice = GetDefaultOutputDevice();
+  theOutputDevice = CreateOutputDevice("screen");
+  if ( theOutputDevice==NULL )    {
+    printf("Couldn't create screen device\n");
+    exit(-1);
+  }
+
+  return;
 }
 
 
@@ -151,7 +157,7 @@ static void ExecOpenOutput (int sockfd)
   buf[len] = 0;
 
 
-  winID = (*theOutputDevice->OpenOutput)(buf, x, y, width, height,
+  winID = (*theOutputDevice->OpenOutput)(buf, 0, x, y, width, height,
                                          Global_LL, Global_UR, Local_LL, Local_UR, &error);
 
   SocketWriteINTN(sockfd, Global_LL, 2);
