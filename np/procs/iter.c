@@ -5904,7 +5904,7 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
   if (np->PreSmooth != np->PostSmooth)
     if (np->PostSmooth->PostProcess != NULL)
       for (i = level; i >= np->baselevel+1; i--)
-        if ((*np->PreSmooth->PostProcess)
+        if ((*np->PostSmooth->PostProcess)
               (np->PostSmooth,i,x,b,A,result))
           REP_ERR_RETURN(1);
 
