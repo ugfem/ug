@@ -96,21 +96,25 @@
 /* macros for the Block Gauss-Seidel smoother */
 #define MAX_BLOCKS                        3
 #define MAX_ORDER                         6
-#define NP_BGS_NBLOCKS(p)             ((p)->nBlocks)
-#define NP_BGS_BLOCKS(p)              ((p)->Block)
-#define NP_BGS_BLOCKSTART(p,i)        ((p)->Block[i])
-#define NP_BGS_BLOCKEND(p,i)          ((p)->Block[(i)+1])
-#define NP_BGS_BLOCKITERS(p)          ((p)->BlockIter)
-#define NP_BGS_BLOCKITER(p,i)         ((p)->BlockIter[i])
-#define NP_BGS_BLOCKITNAME(p,i)       ENVITEM_NAME(NP_BGS_BLOCKITER(p,i))
-#define NP_BGS_NBLOCKITER(p)          ((p)->nBlockIter)
-#define NP_BGS_BLOCKORDER(p)          ((p)->BlockOrder)
-#define NP_BGS_BLOCKORD(p,i)          ((p)->BlockOrder[i])
-#define NP_BGS_MD_Ab(p,cb)            (&((p)->MD_Ab[cb]))
-#define NP_BGS_VD_rb(p,b)             (&((p)->VD_rb[b]))
-#define NP_BGS_VD_tb(p,b)             (&((p)->VD_tb[b]))
-#define NP_BGS_COMPS_A(p)                     ((p)->COMP_A)
-#define NP_BGS_COMPS_r(p)                     ((p)->COMP_r)
+#define SBGS_NBLOCKS(p)               ((p)->nBlocks)
+#define SBGS_BLOCKS(p)                ((p)->Block)
+#define SBGS_BLOCKDESC(p,i)                   ((p)->BlockDesc[i])
+#define SBGS_BLOCKITERS(p)            ((p)->BlockIter)
+#define SBGS_BLOCKITER(p,i)           ((p)->BlockIter[i])
+#define SBGS_BLOCKITNAME(p,i)         ENVITEM_NAME(SBGS_BLOCKITER(p,i))
+#define SBGS_NBLOCKITER(p)            ((p)->nBlockIter)
+#define SBGS_BLOCKORDER(p)            ((p)->BlockOrder)
+#define SBGS_BLOCKORD(p,i)            ((p)->BlockOrder[i])
+#define SBGS_MD_Ad(p,cb)              (&((p)->MD_Ad[cb]))
+#define SBGS_MD_Ao(p,cb)              (&((p)->MD_Ao[cb]))
+#define SBGS_VD_cd(p)                 (&((p)->VD_cd))
+#define SBGS_VD_rd(p,b)               (&((p)->VD_rd[b]))
+#define SBGS_VD_ro(p,b)               (&((p)->VD_ro[b]))
+#define SBGS_COMPS_Ad(p)                      ((p)->COMP_Ad)
+#define SBGS_COMPS_Ao(p)                      ((p)->COMP_Ao)
+#define SBGS_COMPS_cd(p)                      ((p)->COMP_cd)
+#define SBGS_COMPS_rd(p)                      ((p)->COMP_rd)
+#define SBGS_COMPS_ro(p)                      ((p)->COMP_ro)
 
 /****************************************************************************/
 /*																			*/
@@ -147,22 +151,36 @@ typedef struct
 
 typedef struct
 {
-  NP_SMOOTHER smoother;
+  INT tp;                                                       /* block type							*/
+  INT fc;                                                       /* first block comp in type				*/
+  INT tc;                                                       /* last block comp +1 in type			*/
+
+} SBLOCK_DESC;
+
+typedef struct
+{
+  NP_ITER iter;
 
   INT nBlocks;                      /* number of blocks                     */
   INT Block[MAX_BLOCKS+1];          /* block subdivision                    */
   NP_SMOOTHER *BlockIter[MAX_BLOCKS];  /* block iteration scheme            */
   INT nBlockIter;                   /* number of block iterations           */
   INT BlockOrder[MAX_ORDER];        /* iteration order for the blocks       */
-  MATDATA_DESC MD_Ab[MAX_BLOCKS];   /* blocked lower stiffness matrix       */
-  VECDATA_DESC VD_rb[MAX_BLOCKS];   /* blocked right hand side              */
-  VECDATA_DESC VD_tb[MAX_BLOCKS];   /* blocked temporary                    */
+  SBLOCK_DESC BlockDesc[MAX_BLOCKS];  /* block descriptors					*/
+  MATDATA_DESC MD_Ad[MAX_BLOCKS];   /* diagonal blocks of stiffness matrix  */
+  MATDATA_DESC MD_Ao[MAX_BLOCKS];   /* off-diag blocks of stiffness matrix  */
+  VECDATA_DESC VD_cd;                       /* diagonal blocks of right hand side   */
+  VECDATA_DESC VD_rd[MAX_BLOCKS];   /* diagonal blocks of right hand side   */
+  VECDATA_DESC VD_ro[MAX_BLOCKS];   /* off-diag blocks of right hand side   */
 
   /* storage for components */
-  SHORT COMP_A[MAX_BLOCKS*MAX_MAT_COMP];
-  SHORT COMP_r[MAX_BLOCKS*MAX_VEC_COMP];
+  SHORT COMP_Ad[MAX_BLOCKS*MAX_MAT_COMP];
+  SHORT COMP_Ao[MAX_BLOCKS*MAX_MAT_COMP];
+  SHORT COMP_cd[MAX_VEC_COMP];
+  SHORT COMP_rd[MAX_BLOCKS*MAX_VEC_COMP];
+  SHORT COMP_ro[MAX_BLOCKS*MAX_VEC_COMP];
 
-} NP_BGS;
+} NP_SBGS;
 
 typedef struct
 {
@@ -426,7 +444,7 @@ static INT Smoother (NP_ITER *theNP, INT level,
   NPIT_b(theNP) = b;
 
   np = (NP_SMOOTHER *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if ((*np->Step)(np,level,x,b,A,np->L,result))
     return (1);
     #ifdef ModelP
@@ -492,7 +510,7 @@ static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
 
   np = (NP_SMOOTHER *) theNP;
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK) NP_RETURN(1,result[0]);
         #endif
@@ -508,9 +526,9 @@ static INT JacobiStep (NP_SMOOTHER *theNP, INT level,
                        INT *result)
 {
     #ifdef ModelP
-  if (l_jac(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_jac(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
     #else
-  if (l_jac(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,A,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_jac(NP_GRID(theNP,level),x,A,b) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
 
   return (0);
@@ -573,7 +591,7 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
 
   np = (NP_SMOOTHER *) theNP;
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK) NP_RETURN(1,result[0]);
         #endif
@@ -589,11 +607,11 @@ static INT GSStep (NP_SMOOTHER *theNP, INT level,
                    INT *result)
 {
     #ifdef ModelP
-  if (l_vector_collect(GRID_ON_LEVEL(theNP->iter.base.mg,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
+  if (l_vector_collect(NP_GRID(theNP,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
 
-  if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_lgs(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
     #else
-  if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,A,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_lgs(NP_GRID(theNP,level),x,A,b) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
 
   return (0);
@@ -657,7 +675,7 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
   np = (NP_SGS *) theNP;
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L))
     NP_RETURN(1,result[0]);
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS) != NUM_OK)
     NP_RETURN(1,result[0]);
@@ -693,7 +711,7 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
   NPIT_b(theNP) = b;
 
   np = (NP_SGS *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
 
   /* iterate forward */
     #ifdef ModelP
@@ -809,7 +827,7 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
 
   np = (NP_SMOOTHER *) theNP;
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) NP_RETURN(1,result[0]);
         #endif
@@ -825,9 +843,9 @@ static INT SORStep (NP_SMOOTHER *theNP, INT level,
                     INT *result)
 {
     #ifdef ModelP
-  if (l_lsor(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b,theNP->damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_lsor(NP_GRID(theNP,level),x,L,b,theNP->damp) != NUM_OK) NP_RETURN(1,result[0]);
     #else
-  if (l_lsor(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,A,b,theNP->damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_lsor(NP_GRID(theNP,level),x,A,b,theNP->damp) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
 
   return (0);
@@ -846,7 +864,7 @@ static INT SORSmoother (NP_ITER *theNP, INT level,
   NPIT_b(theNP) = b;
 
   np = (NP_SMOOTHER *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if ((*np->Step)(np,level,x,b,A,np->L,result))
     return (1);
     #ifdef ModelP
@@ -877,7 +895,7 @@ static INT SORConstruct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
-   ebgs - numproc for equation block Gauss Seidel smoother
+   sbgs - numproc for equation block Gauss Seidel smoother
 
    DESCRIPTION:
    This numproc executes an equation block Gauss Seidel smoother.
@@ -889,13 +907,6 @@ static INT SORConstruct (NP_BASE *theNP)
    $Blocking <sc int list> $BlockOrder <ord list> $BlockIter <sc numproc list>
    .ve
 
-   .  $n~<n-iter> - number of iterations
-   .  $A~<mat~sym> - symbol for the stiffness matrix
-   .  $r~<rhs~sym> - symbol for the right hand side vector
-   .  $x~<sol~sym> - symbol for the solution vector
-   .  $t~<temp~sym> - symbol for a tempory vector
-   .  $D - no, reduced or full display
-   .  $damp~<sc~double~list> - damping factors for each component
    .  $Blocking~<sc~int~list> - describes the block structure (in ascending order starting always with 0)
    .  $BlockOrder~<ord~list> - describes the order of the blocks
    .  $BlockIter~<numproc~list> - smoother per block
@@ -918,28 +929,28 @@ static INT SORConstruct (NP_BASE *theNP)
    .vb
  # creation of smoother numproc realizations
 
- # inner (inexact) solvers for the ebgs: pbilu
-   npcreate u_ilu $t pbilu $f ns;
-   npcreate v_ilu $t pbilu $f ns;
-   npcreate p_ilu $t pbilu $f ns;
+ # inner (inexact) solvers for the sbgs: pbilu
+   npcreate u_ilu $c pbilu;
+   npcreate v_ilu $c pbilu;
+   npcreate p_ilu $c pbilu;
 
  # equation block Gauss-Seidel
-   npcreate ebgs  $t ebgs  $f ns;
+   npcreate sbgs  $c sbgs;
 
 
  # initialization of the smoother num procs
 
- # inner (inexact) solvers for the ebgs: pbilu
+ # inner (inexact) solvers for the sbgs: pbilu
    scnp u_ilu;
-   npinit $A MATu $L LUu $t utmp $r urhs $x ucor $n 1 $damp nd 1.0 $beta nd 1.0 $D no;
+   npinit $damp nd 1.0 $beta nd 1.0;
    scnp v_ilu;
-   npinit $A MATv $L LUv $t vtmp $r vrhs $x vcor $n 1 $damp nd 1.0 $beta nd 1.0 $D no;
+   npinit $damp nd 1.0 $beta nd 1.0;
    scnp p_ilu;
-   npinit $A MATp $L LUp $t ptmp $r prhs $x pcor $n 1 $damp nd 0.5 $beta nd 5.0 $D no;
+   npinit $damp nd 0.5 $beta nd 5.0;
 
  # equation block Gauss-Seidel with inner solvers u_ilu v_ilu p_ilu
-   scnp pre_ebgs;
-   npinit $A MAT $t tmp $r rhs $x cor $n 1 $Blocking nd 0 1 2 3 $BlockOrder nd2 nd0 nd1 $BlockIter nd u_ilu v_ilu p_ilu $D no;
+   scnp pre_sbgs;
+   npinit $Blocking nd 0 1 2 3 $BlockOrder nd2 nd0 nd1 $BlockIter nd u_ilu v_ilu p_ilu;
    .ve
 
    The 'Blocking nd 0 1 2 3' means that block 0 is defined in the node and consists
@@ -961,17 +972,17 @@ static INT SORConstruct (NP_BASE *theNP)
 
    D*/
 /****************************************************************************/
-#ifdef __BGS__
-static INT BGS_Init (NP_BASE *theNP, INT argc , char **argv)
+
+static INT SBGS_Init (NP_BASE *theNP, INT argc , char **argv)
 {
-  NP_BGS *theBGS;
+  NP_SBGS *theSBGS;
   char option[OPTIONLEN],value[VALUELEN];
   NP_BASE *BlockIter[MAX_BLOCKS][NVECTYPES];
-  INT i,bopt,boopt,biopt,nBlocks,nIter,LastBlockEnd,LastTypeBlock,type,nTypeBlocksPred;
+  INT i,bopt,boopt,biopt,nBlocks,nIter,type,nTypeBlocksPred;
   INT nTypeBlocks[NVECTYPES],TypeBlocks[MAX_BLOCKS+1][NVECTYPES];
   INT nBlockIter[NVECTYPES];
 
-  theBGS = (NP_BGS*) theNP;
+  theSBGS = (NP_SBGS*) theNP;
 
   /* set configuration parameters */
   bopt = boopt = biopt = FALSE;
@@ -986,7 +997,7 @@ static INT BGS_Init (NP_BASE *theNP, INT argc , char **argv)
 
       /* BlockOrder */
       if (strstr(option,"BlockOrder")!=NULL)
-        if (ReadVecTypeOrder(value,MAX_ORDER,MAX_BLOCKS,&NP_BGS_NBLOCKITER(theBGS),NP_BGS_BLOCKORDER(theBGS))!=0)
+        if (ReadVecTypeOrder(value,MAX_ORDER,MAX_BLOCKS,&SBGS_NBLOCKITER(theSBGS),SBGS_BLOCKORDER(theSBGS))!=0)
           return (NP_NOT_ACTIVE);
         else {boopt = TRUE; continue;}
 
@@ -999,322 +1010,397 @@ static INT BGS_Init (NP_BASE *theNP, INT argc , char **argv)
 
   if (!(bopt && boopt && biopt))
   {
-    PrintErrorMessage('E',"NP_BGS_Init","one or several options missing");
+    PrintErrorMessage('E',"SBGS_Init","one or several options missing");
     return (NP_NOT_ACTIVE);
   }
 
-  /* combine TypeBlocks to 'global' blocks */
+  /* fill SBLOCK_DESC data structure */
   nBlocks = 0;
-  LastBlockEnd = NP_BGS_BLOCKSTART(theBGS,nBlocks++) = 0;
   for (type=0; type<NVECTYPES; type++)
-    for (LastTypeBlock=0, i=(TypeBlocks[0][type]==0) ? 1 : 0; i<nTypeBlocks[type]; i++)
+    for (i=0; i<nTypeBlocks[type]-1; i++)
     {
-      LastBlockEnd  = NP_BGS_BLOCKSTART(theBGS,nBlocks++) = LastBlockEnd + (TypeBlocks[i][type]-LastTypeBlock);
-      LastTypeBlock = TypeBlocks[i][type];
+      SBGS_BLOCKDESC(theSBGS,nBlocks).tp = type;
+      SBGS_BLOCKDESC(theSBGS,nBlocks).fc = TypeBlocks[i][type];
+      SBGS_BLOCKDESC(theSBGS,nBlocks).tc = TypeBlocks[i+1][type];
+      nBlocks++;
     }
-  NP_BGS_NBLOCKS(theBGS) = --nBlocks;    /* don't count first 0 */
+  SBGS_NBLOCKS(theSBGS) = nBlocks;
 
   /* condense BlockOrder to 'global' BlockOrder */
   for (type=0; type<NVECTYPES; type++)
     if ((nTypeBlocks[type]>0) && (TypeBlocks[0][type]==0))
       nTypeBlocks[type]--;
-  for (i=0; i<NP_BGS_NBLOCKITER(theBGS); i++)
+  for (i=0; i<SBGS_NBLOCKITER(theSBGS); i++)
   {
-    type = NP_BGS_BLOCKORD(theBGS,i) / MAX_BLOCKS;
+    type = SBGS_BLOCKORD(theSBGS,i) / MAX_BLOCKS;
     nTypeBlocksPred = (type>0) ? nTypeBlocks[type-1] : 0;
-    NP_BGS_BLOCKORD(theBGS,i) = nTypeBlocksPred + NP_BGS_BLOCKORD(theBGS,i) % MAX_BLOCKS;
+    SBGS_BLOCKORD(theSBGS,i) = nTypeBlocksPred + SBGS_BLOCKORD(theSBGS,i) % MAX_BLOCKS;
   }
+
+  /* check blocks of iteration order */
+  for (i=0; i<SBGS_NBLOCKITER(theSBGS); i++)
+    if (SBGS_BLOCKORD(theSBGS,i)>=nBlocks)
+    {
+      PrintErrorMessage('E',"SBGS_Init","block id in BlockOrder too large");
+      return (NP_NOT_ACTIVE);
+    }
 
   /* combine BlockIter to 'global' BlockIter */
   nIter = 0;
   for (type=0; type<NVECTYPES; type++)
     for (i=0; i<nBlockIter[type]; i++)
-      NP_BGS_BLOCKITER(theBGS,nIter++) = (NP_SMOOTHER *)BlockIter[i][type];
-
-  /* check blocks of iteration order */
-  for (i=0; i<NP_BGS_NBLOCKITER(theBGS); i++)
-    if (NP_BGS_BLOCKORD(theBGS,i)>=nBlocks)
-    {
-      PrintErrorMessage('E',"NP_BGS_Init","block id in BlockOrder too large");
-      return (NP_NOT_ACTIVE);
-    }
+      SBGS_BLOCKITER(theSBGS,nIter++) = (NP_SMOOTHER *)BlockIter[i][type];
 
   /* check number of block iteration schemes */
   if (nIter!=nBlocks)
   {
-    PrintErrorMessage('E',"NP_BGS_Init","number of specified block iteration schemes does not match number of blocks");
+    PrintErrorMessage('E',"SBGS_Init","number of specified block iteration schemes does not match number of blocks");
     return (NP_NOT_ACTIVE);
   }
 
-  return (SmootherInit(theNP,argc,argv));
+  return (NPIterInit(&theSBGS->iter,argc,argv));
 }
 
-static INT BGS_Display (NP_BASE *theNP)
+static INT SBGS_Display (NP_BASE *theNP)
 {
-  NP_BGS *theBGS;
+  NP_SBGS *theSBGS;
   char name[16];
   INT i;
 
-  theBGS = (NP_BGS*) theNP;
+  theSBGS = (NP_SBGS*) theNP;
 
-  SmootherDisplay(theNP);
+  NPIterDisplay(&theSBGS->iter);
 
-  /* now display additional stuff for BGS */
+  /* now display additional stuff for SBGS */
   UserWrite("Blocking:\n");
-  for (i=0; i<NP_BGS_NBLOCKS(theBGS); i++)
+  for (i=0; i<SBGS_NBLOCKS(theSBGS); i++)
   {
-    sprintf(name," block%d",i);
-    UserWriteF(DISPLAY_NP_FORMAT_SII,name,NP_BGS_BLOCKSTART(theBGS,i),NP_BGS_BLOCKEND(theBGS,i));
+    sprintf(name," block%d(%s)",i,VecTypeName[SBGS_BLOCKDESC(theSBGS,i).tp]);
+    UserWriteF(DISPLAY_NP_FORMAT_SII,name,SBGS_BLOCKDESC(theSBGS,i).fc,SBGS_BLOCKDESC(theSBGS,i).tc);
   }
 
   UserWrite("BlockOrder:\n");
-  for (i=0; i<NP_BGS_NBLOCKITER(theBGS); i++)
+  for (i=0; i<SBGS_NBLOCKITER(theSBGS); i++)
   {
     sprintf(name," blockord%d",i);
-    UserWriteF(DISPLAY_NP_FORMAT_SI,name,NP_BGS_BLOCKORD(theBGS,i));
+    UserWriteF(DISPLAY_NP_FORMAT_SI,name,SBGS_BLOCKORD(theSBGS,i));
   }
 
   UserWrite("BlockIterations:\n");
-  for (i=0; i<NP_BGS_NBLOCKS(theBGS); i++)
+  for (i=0; i<SBGS_NBLOCKS(theSBGS); i++)
   {
     sprintf(name," blockiter%d",i);
-    UserWriteF(DISPLAY_NP_FORMAT_SS,name,NP_BGS_BLOCKITNAME(theBGS,i));
+    UserWriteF(DISPLAY_NP_FORMAT_SS,name,SBGS_BLOCKITNAME(theSBGS,i));
   }
 
   return (0);
 }
 
-static INT BGSPreProcess (NP_ITER *theNP, INT level,
-                          VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                          INT *baselevel, INT *result)
+static INT SetCorComps (NP_SBGS *theSBGS, const VECDATA_DESC *c, INT bl)
+{
+  INT i,type,kcd;
+
+  type = SBGS_BLOCKDESC(theSBGS,bl).tp;
+
+  for (i=0; i<NVECTYPES; i++)
+    VD_NCMPS_IN_TYPE(SBGS_VD_cd(theSBGS),i) = 0;
+
+  VD_NCMPS_IN_TYPE(SBGS_VD_cd(theSBGS),type) = SBGS_BLOCKDESC(theSBGS,bl).tc
+                                               - SBGS_BLOCKDESC(theSBGS,bl).fc;
+  VD_CMPPTR_OF_TYPE(SBGS_VD_cd(theSBGS),type) = SBGS_COMPS_cd(theSBGS);
+  kcd = 0;
+  for (i=0; i<VD_NCMPS_IN_TYPE(c,type); i++)
+    if ((i>=SBGS_BLOCKDESC(theSBGS,bl).fc) && (i<SBGS_BLOCKDESC(theSBGS,bl).tc))
+      VD_CMP_OF_TYPE(SBGS_VD_cd(theSBGS),type,kcd++) = VD_CMP_OF_TYPE(c,type,i);
+
+  FillRedundantComponentsOfVD(SBGS_VD_cd(theSBGS));
+
+  return (0);
+}
+
+static INT SBGSPreProcess (NP_ITER *theNP, INT level,
+                           VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                           INT *baselevel, INT *result)
 {
   GRID *theGrid;
-  NP_BGS *theBGS;
-  VECDATA_DESC *vd;
-  MATDATA_DESC *md;
-  SHORT *cmpptr_r,*cmpptr_A;
-  INT offset[MAX_BLOCKS],rowoffset,coloffset,ncols_a,compR,rowcA;
-  INT i,j,bl,rbl,cbl,rtype,ctype,currComp,currType,NextBlockStart,blComp,nrc,ncc,cmp;
-  INT bopt,boopt,biopt,nBlocks,nIter,LastBlockEnd,LastTypeBlock,type,nTypeBlocksPred;
+  NP_SBGS *theSBGS;
+  SHORT *cmpptr_rd,*cmpptr_ro,*cmpptr_Ad,*cmpptr_Ao;
+  INT i,j,bl,rtype,ctype;
+  INT n,nd,no,krd,kro,kad,kao;
+  INT nBlocks;
 
-  theBGS = (NP_BGS*) theNP;
-  theGrid = GRID_ON_LEVEL(NP_MG(theNP),level);
+  theSBGS = (NP_SBGS*) theNP;
+  theGrid = NP_GRID(theNP,level);
+  nBlocks = SBGS_NBLOCKS(theSBGS);
 
-  /* construct VEC_DESCs and VECDATA_DESCs of tmp block vectors */
-  currComp = currType = 0;
+  /* construct auxiliary block XXXDATA_DESCs */
+  cmpptr_rd = SBGS_COMPS_rd(theSBGS);
+  cmpptr_ro = SBGS_COMPS_ro(theSBGS);
+  cmpptr_Ad = SBGS_COMPS_Ad(theSBGS);
+  cmpptr_Ao = SBGS_COMPS_Ao(theSBGS);
   for (bl=0; bl<nBlocks; bl++)
   {
-    /* init DESCriptor */
+    ctype = SBGS_BLOCKDESC(theSBGS,bl).tp;
+
+    n  = VD_NCMPS_IN_TYPE(b,ctype);
+    nd = SBGS_BLOCKDESC(theSBGS,bl).tc - SBGS_BLOCKDESC(theSBGS,bl).fc;
+    no = n - nd;
+
     for (i=0; i<NVECTYPES; i++)
-      VD_NCMPS_IN_TYPE(NP_BGS_VD_tb(theBGS,bl),i)=0;
+      VD_NCMPS_IN_TYPE(SBGS_VD_rd(theSBGS,bl),i) =
+        VD_NCMPS_IN_TYPE(SBGS_VD_ro(theSBGS,bl),i) = 0;
+    for (i=0; i<NMATTYPES; i++)
+      MD_ROWS_IN_MTYPE(SBGS_MD_Ad(theSBGS,bl),i) =
+        MD_COLS_IN_MTYPE(SBGS_MD_Ad(theSBGS,bl),i) =
+          MD_ROWS_IN_MTYPE(SBGS_MD_Ao(theSBGS,bl),i) =
+            MD_COLS_IN_MTYPE(SBGS_MD_Ao(theSBGS,bl),i) = 0;
 
-    /* set currType to next used type */
-    while ((VD_NCMPS_IN_TYPE(x,currType)==0)
-           && currType<NVECTYPES)
-      currType++;
-    if (currType>=NVECTYPES)
+    VD_NCMPS_IN_TYPE(SBGS_VD_rd(theSBGS,bl),ctype) = nd;
+    VD_CMPPTR_OF_TYPE(SBGS_VD_rd(theSBGS,bl),ctype) = cmpptr_rd;
+    VD_NCMPS_IN_TYPE(SBGS_VD_ro(theSBGS,bl),ctype) = no;
+    VD_CMPPTR_OF_TYPE(SBGS_VD_ro(theSBGS,bl),ctype) = cmpptr_ro;
+
+    kro = krd = kao = kad = 0;
+    for (rtype=0; rtype<NVECTYPES; rtype++)
     {
-      PrintErrorMessage('E',"NP_BGS_Init","too many blocks specified");
-      return (NP_NOT_ACTIVE);
-    }
-    if ((VD_NCMPS_IN_TYPE(NPIT_b(theBGS),currType)==0)
-        ||(VD_NCMPS_IN_TYPE(x,currType)!=
-           VD_NCMPS_IN_TYPE(NPIT_b(theBGS),currType)))
-    {
-      PrintErrorMessage('E',"NP_BGS_Init",
-                        "rhs and tmp descriptors do not match");
-      return (NP_NOT_ACTIVE);
-    }
+      MD_MCMPPTR_OF_RT_CT(SBGS_MD_Ad(theSBGS,bl),rtype,ctype) = cmpptr_Ad;
+      MD_MCMPPTR_OF_RT_CT(SBGS_MD_Ao(theSBGS,bl),rtype,ctype) = cmpptr_Ao;
 
-    NextBlockStart = NP_BGS_BLOCKSTART(theBGS,bl+1);
-    if (NextBlockStart > VD_NCMPS_IN_TYPE(x,currType))
-    {
-      PrintErrorMessage('E',"NP_BGS_Init","block exceeds type-block");
-      return (NP_NOT_ACTIVE);
-    }
-
-    offset[bl] = currComp;
-    blComp = NextBlockStart-currComp;
-    VD_CMPPTR_OF_TYPE(NP_BGS_VD_tb(theBGS,bl),currType) =
-      VD_CMPPTR_OF_TYPE(x,currType) + currComp;
-    VD_NCMPS_IN_TYPE(NP_BGS_VD_tb(theBGS,bl),currType) = blComp;
-    currComp += blComp;
-
-    if (NextBlockStart==VD_NCMPS_IN_TYPE(x,currType))
-    {
-      currType++;
-      currComp = 0;
-    }
-  }
-  /* check consistency of the decomposition into blocks */
-  if (NextBlockStart!=VD_NCMPS_IN_TYPE(x,currType-1))
-  {
-    PrintErrorMessage('E',"NP_BGS_Init","descriptor is not exhausted by blocks");
-    return (NP_NOT_ACTIVE);
-  }
-  while ((VD_NCMPS_IN_TYPE(x,currType)==0)
-         && currType<NVECTYPES)
-    currType++;
-  if (currType<NVECTYPES)
-  {
-    PrintErrorMessage('E',"NP_BGS_Init","type descriptor is not exhausted by blocks");
-    return (NP_NOT_ACTIVE);
-  }
-
-  /* construct block-rhs VEC_DESC and MAT_DESCs and MATDATA_DESCs needed */
-  cmpptr_r = NP_BGS_COMPS_r(theBGS);
-  cmpptr_A = NP_BGS_COMPS_A(theBGS);
-  for (cbl=0; cbl<nBlocks; cbl++)
-  {
-    /* find column type of this block */
-    for (ctype=0; ctype<NVECTYPES; ctype++)
-      if (VD_NCMPS_IN_TYPE(NP_BGS_VD_tb(theBGS,cbl),ctype)>0)
-        break;
-
-    /* init DESCriptors */
-    for (i=0; i<NVECTYPES; i++)
-      VD_NCMPS_IN_TYPE(NP_BGS_VD_rb(theBGS,cbl),i) = 0;
-    for (i=0; i<NVECTYPES; i++)
-      for (j=0; j<NVECTYPES; j++)
+      if (rtype==ctype)
       {
-        MD_ROWS_IN_RT_CT(NP_BGS_MD_Ab(theBGS,cbl),i,j) = 0;
-        MD_COLS_IN_RT_CT(NP_BGS_MD_Ab(theBGS,cbl),i,j) = 0;
+        /* here the diagonal block is contained */
+        MD_ROWS_IN_RT_CT(SBGS_MD_Ad(theSBGS,bl),rtype,ctype) = nd;
+        MD_COLS_IN_RT_CT(SBGS_MD_Ad(theSBGS,bl),rtype,ctype) = nd;
+        MD_ROWS_IN_RT_CT(SBGS_MD_Ao(theSBGS,bl),rtype,ctype) = no;
+        MD_COLS_IN_RT_CT(SBGS_MD_Ao(theSBGS,bl),rtype,ctype) = nd;
+
+        for (j=0; j<n; j++)
+          if ((j<SBGS_BLOCKDESC(theSBGS,bl).fc) || (j>=SBGS_BLOCKDESC(theSBGS,bl).tc))
+            VD_CMP_OF_TYPE(SBGS_VD_ro(theSBGS,bl),ctype,kro++) = VD_CMP_OF_TYPE(b,ctype,j);
+          else
+          {
+            VD_CMP_OF_TYPE(SBGS_VD_rd(theSBGS,bl),ctype,krd++) = VD_CMP_OF_TYPE(b,ctype,j);
+            for (i=0; i<n; i++)
+              if ((i<SBGS_BLOCKDESC(theSBGS,bl).fc) || (i>=SBGS_BLOCKDESC(theSBGS,bl).tc))
+                MD_MCMP_OF_RT_CT(SBGS_MD_Ao(theSBGS,bl),rtype,ctype,kao++) = MD_IJ_CMP_OF_RT_CT(A,rtype,ctype,i,j);
+              else
+                MD_MCMP_OF_RT_CT(SBGS_MD_Ad(theSBGS,bl),rtype,ctype,kad++) = MD_IJ_CMP_OF_RT_CT(A,rtype,ctype,i,j);
+          }
+        ASSERT(krd==nd);
+        ASSERT(kro==no);
+        ASSERT(kad==nd*nd);
+        ASSERT(kao==nd*no);
       }
-
-    ncc = VD_NCMPS_IN_TYPE(NP_BGS_VD_tb(theBGS,cbl),ctype);
-
-    currType = NVECTYPES;
-
-    for (rbl=0; rbl<nBlocks; rbl++)
-    {
-      if (rbl==cbl) continue;
-
-      /* find row-type of this block */
-      for (rtype=0; rtype<NVECTYPES; rtype++)
-        if (VD_NCMPS_IN_TYPE(NP_BGS_VD_tb(theBGS,rbl),rtype)>0)
-          break;
-
-      if (MD_ROWS_IN_RT_CT(NPIT_A(theBGS),rtype,ctype)==0) continue;
-
-      if (rtype!=currType)
+      else
       {
-        /* the type has changed */
+        /* this is in any case off diag */
+        MD_ROWS_IN_RT_CT(SBGS_MD_Ao(theSBGS,bl),rtype,ctype) = MD_ROWS_IN_RT_CT(A,rtype,ctype);
+        MD_COLS_IN_RT_CT(SBGS_MD_Ao(theSBGS,bl),rtype,ctype) = MD_COLS_IN_RT_CT(A,rtype,ctype);
 
-        if (currType!=NVECTYPES)
+        for (j=0; j<n; j++)
         {
-          /* set number of comps for last type handled */
-          VD_NCMPS_IN_TYPE(NP_BGS_VD_rb(theBGS,cbl),ctype) = compR;
-          MD_ROWS_IN_RT_CT(NP_BGS_MD_Ab(theBGS,cbl),rtype,ctype) = rowcA;
-          MD_COLS_IN_RT_CT(NP_BGS_MD_Ab(theBGS,cbl),rtype,ctype) = ncc;
+          VD_CMP_OF_TYPE(SBGS_VD_ro(theSBGS,bl),ctype,kro++) = VD_CMP_OF_TYPE(b,ctype,j);
+          if ((j>=SBGS_BLOCKDESC(theSBGS,bl).fc) && (j<SBGS_BLOCKDESC(theSBGS,bl).tc))
+            for (i=0; i<MD_ROWS_IN_RT_CT(A,rtype,ctype); i++)
+              MD_MCMP_OF_RT_CT(SBGS_MD_Ao(theSBGS,bl),rtype,ctype,kao++) = MD_IJ_CMP_OF_RT_CT(A,rtype,ctype,i,j);
         }
-
-        /* init comp ptrs for new type */
-        VD_CMPPTR_OF_TYPE(NP_BGS_VD_rb(theBGS,cbl),rtype) = cmpptr_r;
-        MD_MCMPPTR_OF_RT_CT(NP_BGS_MD_Ab(theBGS,cbl),rtype,ctype) = cmpptr_A;
-
-        /* init counters for new type */
-        currType = rtype;
-        rowcA = compR = 0;
-      }
-
-      ncols_a = MD_COLS_IN_RT_CT(NPIT_A(theBGS),rtype,ctype);
-
-      coloffset = offset[cbl];
-      rowoffset = offset[rbl];
-      nrc = VD_NCMPS_IN_TYPE(NP_BGS_VD_tb(theBGS,rbl),rtype);
-
-      for (i=0; i<nrc; i++)
-      {
-        /* VD_COMP(rb,compR++) = VD_COMP(theVD_r,rowoffset+i);*/
-        VD_CMP_OF_TYPE(NP_BGS_VD_rb(theBGS,cbl),ctype,compR++) = VD_CMP_OF_TYPE(NPIT_b(theBGS),rtype,rowoffset+i);
-        for (j=0; j<ncc; j++)
-        {
-          cmp = (rowoffset+i) * ncols_a + (coloffset+j);
-          MD_MCMP_OF_RT_CT(NP_BGS_MD_Ab(theBGS,cbl),
-                           rtype,ctype,rowcA*ncc+j)
-            = MD_MCMP_OF_RT_CT(NPIT_A(theBGS),rtype,ctype,cmp);
-        }
-        rowcA++;
       }
     }
-    VD_NCMPS_IN_TYPE(NP_BGS_VD_rb(theBGS,cbl),ctype) = compR;
-    MD_ROWS_IN_RT_CT(NP_BGS_MD_Ab(theBGS,cbl),rtype,ctype) = rowcA;
-    MD_COLS_IN_RT_CT(NP_BGS_MD_Ab(theBGS,cbl),rtype,ctype) = ncc;
-
-    cmpptr_r += compR;
-    cmpptr_A += rowcA*ncc;
+    cmpptr_rd += krd;
+    cmpptr_ro += kro;
+    cmpptr_Ad += kad;
+    cmpptr_Ao += kao;
   }
 
   /* fill redundant information in DESCriptors */
-  for (rbl=0; rbl<nBlocks; rbl++)
+  for (bl=0; bl<nBlocks; bl++)
   {
-    FillRedundantComponentsOfVD(NP_BGS_VD_tb(theBGS,rbl));
-    FillRedundantComponentsOfVD(NP_BGS_VD_rb(theBGS,rbl));
-    FillRedundantComponentsOfMD(NP_BGS_MD_Ab(theBGS,rbl));
+    FillRedundantComponentsOfVD(SBGS_VD_rd(theSBGS,bl));
+    FillRedundantComponentsOfVD(SBGS_VD_ro(theSBGS,bl));
+    FillRedundantComponentsOfMD(SBGS_MD_Ad(theSBGS,bl));
+    FillRedundantComponentsOfMD(SBGS_MD_Ao(theSBGS,bl));
   }
 
   /* call prepares of block iteration schemes */
-  for (bl=0; bl<NP_BGS_NBLOCKS(theBGS); bl++)
-    if ((*NP_BGS_BLOCKITER(theBGS,bl)->iter.PreProcess)((NP_ITER*)NP_BGS_BLOCKITER(theBGS,bl),theGrid)!=0)
+  for (bl=0; bl<SBGS_NBLOCKS(theSBGS); bl++)
+  {
+    SetCorComps(theSBGS,x,bl);
+
+    if ((*SBGS_BLOCKITER(theSBGS,bl)->iter.PreProcess)
+          ((NP_ITER*)SBGS_BLOCKITER(theSBGS,bl),
+          level,
+          SBGS_VD_cd(theSBGS),
+          SBGS_VD_rd(theSBGS,bl),
+          SBGS_MD_Ad(theSBGS,bl),
+          baselevel,
+          result
+          )!=0)
       return (bl+1);
+  }
 
   return (0);
 }
 
-static INT BGSSmoother (NP_ITER *theNP, INT level,
-                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                        INT *result)
+static INT SBGSSmoother (NP_ITER *theNP, INT level,
+                         VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                         INT *result)
 {
-  NP_BGS *theBGS;
+  NP_SBGS *theSBGS;
   GRID *theGrid;
-  INT i,blo,bl,BlockItShellUsed;
+  INT blo,bl;
 
   /* store passed XXXDATA_DESCs */
   NPIT_A(theNP) = A;
   NPIT_c(theNP) = x;
   NPIT_b(theNP) = b;
 
-  theBGS = (NP_BGS*) theNP;
-  theGrid = GRID_ON_LEVEL(NP_MG(theNP),level);
+  theSBGS = (NP_SBGS*) theNP;
+  theGrid = NP_GRID(theNP,level);
 
-  BlockItShellUsed = FALSE;
-  for (blo=0; blo<NP_BGS_NBLOCKITER(theBGS); blo++)
+  for (blo=0; blo<SBGS_NBLOCKITER(theSBGS); blo++)
   {
-    bl = NP_BGS_BLOCKORD(theBGS,blo);
+    bl = SBGS_BLOCKORD(theSBGS,blo);
+
+    SetCorComps(theSBGS,x,bl);
 
     /* iterate */
-    if ((*NP_BGS_BLOCKITER(theBGS,bl)->iter.Iter)((NP_ITER*)NP_BGS_BLOCKITER(theBGS,bl),theGrid,&BlockItShellUsed)!=0)
-      return (bl+1);
+    if ((*SBGS_BLOCKITER(theSBGS,bl)->iter.Iter)
+          ((NP_ITER*)SBGS_BLOCKITER(theSBGS,bl),
+          level,
+          SBGS_VD_cd(theSBGS),
+          SBGS_VD_rd(theSBGS,bl),
+          SBGS_MD_Ad(theSBGS,bl),
+          result
+          )!=0)
+      NP_RETURN (bl+1,result[0]);
 
     /* now temp contains the corresponding update of the corr-field
        the corr-field is updated already
        we have to update the remaining defects */
 
-    if (l_dmatmul_minus(theGrid,NP_BGS_VD_rb(theBGS,bl),NEWDEF_CLASS,
-                        NP_BGS_MD_Ab(theBGS,bl),
-                        NP_BGS_VD_tb(theBGS,bl),ACTIVE_CLASS)) return (1);
+    if (l_dmatmul_minus(theGrid,SBGS_VD_ro(theSBGS,bl),NEWDEF_CLASS,
+                        SBGS_MD_Ao(theSBGS,bl),
+                        SBGS_VD_cd(theSBGS),ACTIVE_CLASS)) NP_RETURN (1,result[0]);
   }
 
   return (0);
 }
 
-static INT BGSConstruct (NP_BASE *theNP)
+static INT SBGSPostProcess (NP_ITER *theNP, INT level,
+                            VECDATA_DESC *x, VECDATA_DESC *b,
+                            MATDATA_DESC *A, INT *result)
+{
+  NP_SBGS *theSBGS;
+  INT bl;
+
+  theSBGS = (NP_SBGS*) theNP;
+
+  for (bl=0; bl<SBGS_NBLOCKS(theSBGS); bl++)
+    if ((*SBGS_BLOCKITER(theSBGS,bl)->iter.PostProcess!=NULL))
+      if ((*SBGS_BLOCKITER(theSBGS,bl)->iter.PostProcess)
+            (&SBGS_BLOCKITER(theSBGS,bl)->iter,level,x,b,A,result))
+        NP_RETURN (1,result[0]);
+
+  return(0);
+}
+
+static INT SBGSConstruct (NP_BASE *theNP)
 {
   NP_SMOOTHER *np;
 
-  theNP->Init = BGS_Init;
-  theNP->Display = BGS_Display;
+  theNP->Init = SBGS_Init;
+  theNP->Display = SBGS_Display;
   theNP->Execute = NPIterExecute;
 
   np = (NP_SMOOTHER *) theNP;
-  np->iter.PreProcess = BGSPreProcess;
-  np->iter.Iter = BGSSmoother;
-  np->iter.PostProcess = SmootherPostProcess;
+  np->iter.PreProcess = SBGSPreProcess;
+  np->iter.Iter = SBGSSmoother;
+  np->iter.PostProcess = SBGSPostProcess;
   np->Step = SGSStep;
 
   return(0);
 }
-#endif
+
+/****************************************************************************/
+/*D
+   gbggs - numproc for grid (or geometric) block Gauss-Seidel smoother
+
+   DESCRIPTION:
+   This numproc executes an grid (or geometric) block Gauss-Seidel smoother,
+   using the blas routine
+   'l_lrdecompB' and 'l_lgsB'. It can be used in 'lmgc'.
+
+   .vb
+   npinit $x <sol sym> $b <rhs sym> $t <temp sym> $A <mat sym> $n <it>
+   $D{no|red|full} $damp <sc double list> $L <mat sym>
+   .ve
+
+   .  $damp~<sc~double~list> - damping factors for each component
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT GBGSPreProcess (NP_ITER *theNP, INT level,
+                           VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                           INT *baselevel, INT *result)
+{
+  NP_SMOOTHER *np;
+  GRID *theGrid;
+
+  np = (NP_SMOOTHER*) theNP;
+  theGrid = NP_GRID(theNP,level);
+  if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
+  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
+        #ifdef ModelP
+  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
+        #endif
+  if (l_lrdecompB(theGrid,np->L)!=NUM_OK) {
+    PrintErrorMessage('E',"GBGSPreProcess","decomposition failed");
+    NP_RETURN(1,result[0]);
+  }
+  *baselevel = level;
+
+  return (0);
+}
+
+static INT GBGSStep (NP_SMOOTHER *theNP, INT level,
+                     VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                     MATDATA_DESC *L,
+                     INT *result)
+{
+    #ifdef ModelP
+  if (l_vector_collect(NP_GRID(theNP,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
+    #endif
+  if (l_lgsB(NP_GRID(theNP,level),x,L,b)) NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT GBGSConstruct (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  theNP->Init = SmootherInit;
+  theNP->Display = SmootherDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = GBGSPreProcess;
+  np->iter.Iter = Smoother;
+  np->iter.PostProcess = SmootherPostProcess;
+  np->Step = GBGSStep;
+
+  return(0);
+}
+
 /****************************************************************************/
 /*D
    ilu - numproc for point block beta-modified ilu smoother
@@ -1378,7 +1464,7 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_ILU *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
@@ -1401,9 +1487,9 @@ static INT ILUStep (NP_SMOOTHER *theNP, INT level,
                     INT *result)
 {
     #ifdef ModelP
-  if (l_vector_collect(GRID_ON_LEVEL(theNP->iter.base.mg,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
+  if (l_vector_collect(NP_GRID(theNP,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
     #endif
-  if (l_luiter(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_luiter(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -1464,7 +1550,7 @@ static INT FILUPreProcess (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_ILU *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
@@ -1487,9 +1573,9 @@ static INT FILUStep (NP_SMOOTHER *theNP, INT level,
                      INT *result)
 {
     #ifdef ModelP
-  if (l_vector_collect(GRID_ON_LEVEL(theNP->iter.base.mg,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
+  if (l_vector_collect(NP_GRID(theNP,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
     #endif
-  if (l_luiter_fine(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_luiter_fine(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -1576,7 +1662,7 @@ static INT THILUPreProcess (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_THILU *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
@@ -1690,21 +1776,25 @@ static INT SPILUPreProcess (NP_ITER *theNP, INT level,
 {
   NP_SPILU *np;
   GRID *theGrid;
+  VECDATA_DESC *tmp=NULL;
 
   np = (NP_SPILU *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&tmp)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
         #endif
-  if (l_iluspdecomp(theGrid,np->smoother.L,np->beta,NULL,np->mode,NULL)
+  if (l_iluspdecomp(theGrid,np->smoother.L,np->beta,tmp,np->mode,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"SPILUPreProcess","decomposition failed");
     NP_RETURN(1,result[0]);
   }
   *baselevel = level;
+
+  FreeVD(theNP->base.mg,level,level,tmp);
 
   return (0);
 }
@@ -1764,7 +1854,7 @@ static INT ICPreProcess (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_ILU *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
@@ -1787,9 +1877,9 @@ static INT ICStep (NP_SMOOTHER *theNP, INT level,
                    INT *result)
 {
     #ifdef ModelP
-  if (l_vector_collect(GRID_ON_LEVEL(theNP->iter.base.mg,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
+  if (l_vector_collect(NP_GRID(theNP,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
     #endif
-  if (l_lltiter(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_lltiter(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -1853,7 +1943,7 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
 
   np = (NP_SMOOTHER *) theNP;
 
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
@@ -1992,11 +2082,11 @@ static INT LUConstruct (NP_BASE *theNP)
 
 static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
 {
+#ifdef __BLOCK_VECTOR_DESC__
+
   NP_FF *np;
   char buffer[128];
   MULTIGRID *theMG;
-
-#ifdef __BLOCK_VECTOR_DESC__
 
   np = (NP_FF *) theNP;
   theMG = np->smoother.iter.base.mg;
@@ -2215,15 +2305,15 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
                          VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                          INT *baselevel, INT *result)
 {
+#ifdef __BLOCK_VECTOR_DESC__
   NP_FF *np;
   GRID *theGrid;
   DOUBLE wavenr, wavenr3D, meshwidth;
   INT n;
-#ifdef __BLOCK_VECTOR_DESC__
   BV_DESC bvd;
 
   np = (NP_FF *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
 
   BVD_INIT( &bvd );
   BVD_PUSH_ENTRY( &bvd, 0, NPFF_BVDF(np) );
@@ -2580,7 +2670,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
   BVD_INIT( &bvd );
   BVD_PUSH_ENTRY( &bvd, 0, NPFF_BVDF(np) );
 
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  theGrid = NP_GRID(theNP,level);
 
   /* make a copy for displaying */
   np->smoother.iter.c = x;
@@ -3008,10 +3098,10 @@ INT InitIter ()
     return (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sor",sizeof(NP_SMOOTHER),SORConstruct))
     return (__LINE__);
-#ifdef __BGS__
-  if (CreateClass(ITER_CLASS_NAME ".bgs",sizeof(NP_BGS),BGSConstruct))
+  if (CreateClass(ITER_CLASS_NAME ".sbgs",sizeof(NP_SBGS),SBGSConstruct))
     return (__LINE__);
-#endif
+  if (CreateClass(ITER_CLASS_NAME ".gbgs",sizeof(NP_SBGS),GBGSConstruct))
+    return (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ilu",sizeof(NP_ILU),ILUConstruct))
     return (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".filu",sizeof(NP_ILU),FILUConstruct))
