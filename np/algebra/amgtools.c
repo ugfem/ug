@@ -871,7 +871,7 @@ static INT VecOnBnd (VECTOR *theV)
 static INT VecOnPBnd (VECTOR *theV)
 {
   if (VECSKIP(theV) != 0) return(0);
-  if (DDD_InfoPrioCopies(PARHDR(theV)) == 0) continue;
+  if (DDD_InfoPrioCopies(PARHDR(theV)) == 0) return(0);
 
   return(1);
 }
