@@ -238,7 +238,7 @@ int Save_local_Situation(       ARRAY<Point3d> & lpoints,
 
 
 
-static Local_Out(ARRAY<Point3d> & lpoints,ARRAY<Element> & lfaces, ARRAY<int> & prism_flags)
+static int Local_Out(ARRAY<Point3d> & lpoints,ARRAY<Element> & lfaces, ARRAY<int> & prism_flags)
 {
   int i,j;
 
