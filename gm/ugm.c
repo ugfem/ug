@@ -6159,7 +6159,7 @@ ELEMENT * NS_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **
 
         for (i=0; i<NDELEM_BLKS_MAX; i++)
         {
-          printf("i=%d blk=%08x\n",i,MGNDELEMBLK(theMG,i));
+          printf("i=%d blk=%p\n",i,MGNDELEMBLK(theMG,i));
           fflush(stdout);
         }
       }
