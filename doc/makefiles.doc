@@ -20,14 +20,9 @@
    libug2, with the number 2 indicating the dimension.
 
 .  includes -
-   Three basic files are included by any local makefile in `ug`,
-   $UGROOT/ug.conf, $UGROOT/ug.arch and $UGROOT/machines/mk.<m>.
-   While the purpose of ug.conf was already discussed above, ug.arch bears
-   the name of the architecture `ug` will be compiled for, e.g. ARCHDIR = HP
-   for HP workstations. 
-   $UGROOT/machines/mk.<m>, takes care of all architecture dependent makefile 
-   entries like library pathnames for XLIB, compile an link flags etc.
-   Here <m> specifies the machine used (e.g. mk.HP).
+   The basic file included by any local makefile in `ug` is $UGROOT/ug.conf.
+   $UGROOT/machines/XXX/mk.arch, takes care of all architecture dependent 
+   makefile entries like library pathnames for XLIB, compile an link flags etc.
 
 .  global~makefile -
    The global makefile /ug/Makefile executes all local `ug` makefiles 
@@ -35,8 +30,8 @@
    `ug` library $UGROOT/lib/libug$(LIBSUFFIX).a. 
  
 .  executables -
-   In order to receive the executable demonstration 
-   programs execute the 'ugproject' shell script.
+   In order to receive the executable demonstration programs execute the 
+	'ugproject' shell script and 'ugtest' for an example session.
 
 D*/																			
 /****************************************************************************/

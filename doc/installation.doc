@@ -115,28 +115,24 @@ FULLFILL THE LICENSE REGULATIONS:
 
    WITHOUT THAT HEADER FILE YOU WILL NOT BE ABLE TO COMPILE THE SOFTWARE !
 
-
 CONFIGURING UG:
    In order to configure UG for different machines you have to edit the
-   file 'ug.arch' in the UG root directory 'ug3##/'. The machine definition
-   in the 'ug.arch' file selects one of the 'mk.*' files in the 'ug3##/ug/machines'
-   directory which is included into every UG makefile. 
-
-   If your machine is already supported just select the corresponding entry
-   in the 'ug.arch' file. In addition it may be necessary to edit the
-   corresponding file in the 'ug3##/ug/machines' to set the correct paths
+   file 'ug.conf' in the UG root directory. 
+   If your machine is already supported it select the corresponding 
+   file 'mk.arch' in $(UGROOT)/arch/XXX. Maybe you have to change some of 
+   the defines in this file to set the correct paths
    to the libraries and include files, especially when you compiling for
    X windows.
 
    If your machine is not supported, you have to write an appropriate file
-   'mk.<your machine>' in the 'ug3##/ug/machines' directory. In addition you
+   'mk.arch' and create a directory in $(UGROOT)/arch. In addition you
    have to specify a switch in the line defining the compiler flags:~
 
 .vb
    CFLAGS = -D__<your machine>__ -c <additional options>
 .ve
 
-   Every ug source file includes the file 'ug3##/ug/low/compiler.h' which
+   Every ug source file includes the file '$(UGROOT)/arch/compiler.h' which
    in turn can be used to make some compiler dependent definitions. Just
    look at this file, copy one of the entries and edit them to fit your
    machine. See the manual page 'compiler' (type 'ugman compiler') for
@@ -149,7 +145,7 @@ COMPILING UG:
    compile. To that end just type
 
 .vb
-       > ugproject
+   > ugproject
 .ve
 
    which will compile all examples and libraries.
@@ -166,8 +162,10 @@ COMPILING UG:
    calculations can be done. You can not change the dimension at any
    other place in the software.
 
-   The NODEDATA,EDGEDATA, SIDEDATA, ELEMDATA switches have been removed
-   to allow more flexibility.
+.  NETGEN - The use of netgen requieres an addition licence from the
+   University of Linz (Austria) and a C++ compiler.
+
+.  GRAPE - The grape library can be obtain at the University of Freiburg.  
 
 DEPENDENCIES:
 .  gm.h - This is the `key file` for the ug3 software. Without haveing it 
@@ -179,12 +177,6 @@ DEPENDENCIES:
 RELATED FILES:
    A copy of this text is contained in the root directory of the ug3 software. 
 
-BUGS:
-.  ug.conf - This file may be overwritten in some circumstances (e. g. by
-   'ugproject'). Thus keep always a backup copy in the directory '$UGROOT/configs/'.
-.  ugman/xugman - The man pages of the applications and problem classes are available
-   only by 'xugman' and not by 'ugman'.
-         
 SEE ALSO:
    ug, LicenseAgreement, compiler, makefiles, modules, gzip(1), tar(1)
    
