@@ -230,6 +230,7 @@ struct ElemScalarPlotObj2D {
   EVALUES *EvalFct;                                                     /* evaluation proceedure						*/
   DOUBLE min, max;                                                      /* range										*/
   INT mode;                                                                     /* COLOR or CONTOURS							*/
+  INT PlotGrid;                                                         /* plot grid together with scalar field			*/
   INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
   INT numOfContours;                                                    /* nb of contourlines if used					*/
   DOUBLE contValues[PO_MAXCONTOURS];                    /* contour values if used						*/
@@ -257,6 +258,7 @@ struct GridPlotObj2D {
   INT PlotNodeID;                                                       /* YES or NO									*/
   INT PlotNodes;                                                        /* YES or NO									*/
   INT PlotBoundary;                                                     /* YES or NO									*/
+  INT PlotSegmentIDs;                                                   /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
   INT ElemColored;                                                      /* YES or NO									*/
 };

@@ -235,10 +235,10 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
   /* set the other stuff */
   ENVITEM_LOCKED(theWindow)       = NO;
   UGW_NPIC(theWindow)             = 0;
-  UGW_IFWINDOW(theWindow)         = winID;
   UGW_OUTPUTDEV(theWindow)        = theOutputDevice;
   UGW_CURRTOOL(theWindow)         = arrowTool;
   UGW_VALID(theWindow)            = NO;
+  UGW_IFWINDOW(theWindow)         = winID;
 
   return (theWindow);
 }
@@ -278,18 +278,22 @@ INT UpdateUgWindow (UGWINDOW *theUgWindow, const PICTURE *EvalPicture)
 
   /* update ugwindow */
   s[0] = '\0';
-  if (EvalPicture!=NULL)
-    if (PIC_UGW(EvalPicture)==theUgWindow)
+  if (EvalPicture==NULL)
+  {
+    strcpy(s,"---");
+  }
+  else
+  if (PIC_UGW(EvalPicture)==theUgWindow)
+  {
+    if (VO_STATUS(PIC_VO(EvalPicture))==NOT_INIT)
+      strcpy(s,"---");
+    else
     {
-      if (VO_STATUS(PIC_VO(EvalPicture))==NOT_INIT)
-        strcpy(s,"---");
-      else
-      {
-        theMG = PIC_MG(EvalPicture);
-        size = (HeapSize(MGHEAP(theMG))-HeapUsed(MGHEAP(theMG)))/1024;
-        sprintf(s,"%d, %d k",(int)CURRENTLEVEL(theMG),(int)size);
-      }
+      theMG = PIC_MG(EvalPicture);
+      size = (HeapSize(MGHEAP(theMG))-HeapUsed(MGHEAP(theMG)))/1024;
+      sprintf(s,"%d, %d k",(int)CURRENTLEVEL(theMG),(int)size);
     }
+  }
 
   if ((*UGW_OUTPUTDEV(theUgWindow)->UpdateOutput)(UGW_IFWINDOW(theUgWindow),s,UGW_CURRTOOL(theUgWindow)))
     return (1);
@@ -1203,13 +1207,14 @@ INT SetView (PICTURE *thePicture, const COORD *viewPoint, const COORD *targetPoi
       {
         V2_COPY(xAxis,DefaultPXD)
         V2_COPY(DefaultPXD,DefaultPYD)
-        V2_Rotate(DefaultPYD,PI/4.0);
+        V2_Rotate(DefaultPYD,PI/2.0);
         V2_SCALE(CanvasRatio,DefaultPYD)
       }
 
     /* save values */
     V2_COPY(DefaultVT,VO_VT(theViewedObj))                                                                                              /* save values 2D					*/
-    V2_COPY(DefaultPMP,VO_PMP(theViewedObj))
+    V2_COPY(DefaultVT,VO_PMP(theViewedObj))
+    /*V2_COPY(DefaultPMP,VO_PMP(theViewedObj))*/
     V2_COPY(DefaultPXD,VO_PXD(theViewedObj))
     V2_COPY(DefaultPYD,VO_PYD(theViewedObj))
 
@@ -2331,8 +2336,10 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->ElemColored     = NO;
     theGpo->WhichElem               = PO_ALL;
     theGpo->PlotBoundary    = YES;
+    theGpo->PlotSegmentIDs  = NO;
     theGpo->PlotElemID              = NO;
     theGpo->PlotNodeID              = NO;
+    theGpo->PlotNodes               = NO;
   }
 
   /* color mode */
@@ -2376,6 +2383,19 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
     }
 
+  /* set segID option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='s')
+    {
+      if (sscanf(argv[i],"s %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theGpo->PlotSegmentIDs = YES;
+      else if (iValue==0)
+        theGpo->PlotSegmentIDs = NO;
+      break;
+    }
+
   /* set elem id option */
   for (i=1; i<argc; i++)
     if (argv[i][0]=='e')
@@ -2399,6 +2419,19 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
         theGpo->PlotNodeID = YES;
       else if (iValue==0)
         theGpo->PlotNodeID = NO;
+      break;
+    }
+
+  /* plot node marker option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='m')
+    {
+      if (sscanf(argv[i],"m %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theGpo->PlotNodes = YES;
+      else if (iValue==0)
+        theGpo->PlotNodes = NO;
       break;
     }
 
@@ -2437,6 +2470,18 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","YES");
   else
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","NO");
+  UserWrite(buffer);
+
+  if (theGpo->PlotSegmentIDs == YES)
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"SegID","YES");
+  else
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"SegID","NO");
+  UserWrite(buffer);
+
+  if (theGpo->PlotNodes == YES)
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Node markers","YES");
+  else
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Node markers","NO");
   UserWrite(buffer);
 
   if (theGpo->PlotElemID == YES)
@@ -2522,9 +2567,23 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEspo->min                    = 0.0;
     theEspo->max                    = 1.0;
     theEspo->mode                   = PO_COLOR;
+    theEspo->PlotGrid               = NO;
     theEspo->depth                  = 0;
     theEspo->numOfContours  = 10;
   }
+
+  /* set plot grid option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='g')
+    {
+      if (sscanf(argv[i],"g %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theEspo->PlotGrid = YES;
+      else if (iValue==0)
+        theEspo->PlotGrid = NO;
+      break;
+    }
 
   /* set mode option */
   for (i=1; i<argc; i++)
@@ -2595,6 +2654,13 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
     ret = NOT_ACTIVE;
   }
 
+  if (theEspo->numOfContours >= PO_MAXCONTOURS)
+  {
+    sprintf(buffer,"number of contours is greater than the limit (%d)",PO_MAXCONTOURS);
+    PrintErrorMessage('E',"InitScalarFieldPlotObject_2D",buffer);
+    ret = NOT_ACTIVE;
+  }
+
   /* get plot procedure */
   for (i=1; i<argc; i++)
     if (argv[i][0]=='e')
@@ -2653,6 +2719,13 @@ static INT DisplayScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj)
   else
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotProc","---");
   UserWrite(buffer);
+
+  if (theEspo->PlotGrid == YES)
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Grid","YES");
+  else
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Grid","NO");
+  UserWrite(buffer);
+
   sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",(float)theEspo->min,(float)theEspo->max);
   UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SI,"Depth",(int)theEspo->depth);
