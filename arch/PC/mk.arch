@@ -24,4 +24,4 @@ ARCH_LFLAGS   =
 ARCH_ARFLAGS  = rus
 
 ARCH_XINCLUDES =
-ARCH_XLIBS     = -lXaw -lXt -lX11
+ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lX11
