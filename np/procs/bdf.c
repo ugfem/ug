@@ -99,7 +99,7 @@ typedef struct
   INT rep;                               /* for repeat solver after grid changed */
   INT Break;                                                     /* break after error estimator         */
   INT Continue;                                              /* continue after error estimator  */
-  INT copyall;                                               /* refine copy all                 */
+  INT refarg;                                                /* refine copy all                 */
   DOUBLE tstart;                                                 /* start time                          */
   DOUBLE dtstart;                                                /* time step to begin with			*/
   DOUBLE dtmin;                                                  /* smallest time step allowed		*/
@@ -108,8 +108,6 @@ typedef struct
   DOUBLE rhogood;                                                /* threshold for step doubling		*/
   NP_TRANSFER *trans;                                            /* uses transgrid for nested iter  */
   NP_ERROR *error;                       /* error indicator                 */
-  INT err_toplevel;                                              /* toplevel for error estimation	*/
-  INT err_baselevel;                                             /* baselevel for error estimation	*/
   INT ctn;                                                               /* change to nested iteration		*/
   INT hist;
   INT list_i;
@@ -515,23 +513,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 Continue:
           if (eresult.refine + eresult.coarse > 0)
           {
-            if (bdf->err_toplevel>=0)
-              for (i=bdf->err_toplevel; i<=TOPLEVEL(mg); i++)
-                if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),1)!=GM_OK)
-                  return(__LINE__);
-            if (bdf->err_baselevel>=0)
-              for (i=0; i<=bdf->err_baselevel; i++)
-                if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),-1)!=GM_OK)
-                  return(__LINE__);
-
-            if (bdf->copyall) {
-              if (RefineMultiGrid(mg,GM_COPY_ALL,
-                                  GM_REFINE_PARALLEL,
-                                  GM_REFINE_NOHEAPTEST) != GM_OK)
-                NP_RETURN(1,res[0]);
-            }
-            else
-            if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,
+            if (RefineMultiGrid(mg,bdf->refarg,
                                 GM_REFINE_PARALLEL,
                                 GM_REFINE_NOHEAPTEST) != GM_OK)
               NP_RETURN(1,res[0]);
@@ -942,18 +924,10 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   }
   if ((bdf->rhogood<0.0) || (bdf->rhogood>1)) return(NP_NOT_ACTIVE);
 
-  if (bdf->error==NULL || ReadArgvINT("etl",&(bdf->err_toplevel),argc,argv))
-  {
-    bdf->err_toplevel = -1;
-  }
-
-  if (bdf->error==NULL || ReadArgvINT("ebl",&(bdf->err_baselevel),argc,argv))
-  {
-    bdf->err_baselevel = -1;
-  }
-  if (bdf->err_toplevel>=0 && bdf->err_baselevel>=0 && bdf->err_baselevel>bdf->err_toplevel) return(NP_NOT_ACTIVE);
-
-  bdf->copyall = ReadArgvOption("copyall",argc,argv);
+  if (ReadArgvOption("copyall",argc,argv))
+    bdf->refarg = GM_COPY_ALL;
+  else
+    bdf->refarg = GM_REFINE_TRULY_LOCAL;
 
   /* set display option */
   bdf->displayMode = ReadArgvDisplay(argc,argv);
@@ -995,12 +969,7 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   if (bdf->error != NULL)
   {
     UserWriteF(DISPLAY_NP_FORMAT_SS,"E",ENVITEM_NAME(bdf->error));
-    UserWriteF(DISPLAY_NP_FORMAT_SI,"err_toplevel",
-               (int)bdf->err_toplevel);
-    UserWriteF(DISPLAY_NP_FORMAT_SI,"err_baselevel",
-               (int)bdf->err_baselevel);
-    UserWriteF(DISPLAY_NP_FORMAT_SI,"copyall",
-               (int)bdf->copyall);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"copyall",(int)bdf->refarg);
   }
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"E","---");

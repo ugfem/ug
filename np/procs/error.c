@@ -440,29 +440,18 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
       if (EstimateHere(t) && ECLASS(t) != YELLOW_CLASS)
       {
         est = List[nel++];
-        if ((ECLASS(t)==RED_CLASS) && (est > rf) && (k < to))
+        if (est > rf)
         {
-          MarkForRefinement(t,RED,0);
-          mfr++;
+          if (MarkForRefinementX(t,from,to,RED,0) == GM_OK)
+            mfr++;
         }
-        if ((ECLASS(t)==GREEN_CLASS) && (est > rf) && (k < to+1))
+        if (est < cr)
         {
-          MarkForRefinement(t,RED,0);
-          mfr++;
-        }
-        if ((ECLASS(t)==YELLOW_CLASS) && (est > rf) && (k < to+1))
-        {
-          MarkForRefinement(t,RED,0);
-          mfr++;
-        }
-        if ((ECLASS(t)==RED_CLASS) && (est < cr) && (k > from))
-        {
-          MarkForRefinement(t,COARSE,0);
-          mfc++;
+          if (MarkForRefinementX(t,from,to,COARSE,0) == GM_OK)
+            mfc++;
         }
       }
   Release(MGHEAP(theMG),FROM_TOP);
-
 
         #ifdef ModelP
   mfr = UG_GlobalSumDOUBLE((DOUBLE)mfr);
