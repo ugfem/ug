@@ -88,6 +88,8 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
+extern INT n_offset[TAGS];
+
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 

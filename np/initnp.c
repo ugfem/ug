@@ -265,11 +265,15 @@ INT InitNumerics ()
     return (err);
   }
 
+
+  /* Unfortunately, SLU does not compile as c++ */
+#ifndef __cplusplus
   /* init slu */
   if ((err=InitSLU())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
+#endif
 
   /* init els */
   if ((err=InitELinearSolver())!=0) {

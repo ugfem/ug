@@ -83,6 +83,11 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
+extern INT n_offset[TAGS];
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*																			*/

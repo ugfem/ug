@@ -193,6 +193,12 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
+
+extern INT n_offset[TAGS];
+
 struct MarkRule
 {
   char *RuleName;                                       /* what you type in the mark cmdline	*/

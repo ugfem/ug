@@ -104,6 +104,13 @@ using namespace UG3d;
 /*                                                                          */
 /****************************************************************************/
 
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
+
+extern INT n_offset[TAGS];
+extern INT evector_offset[TAGS];
+
 typedef struct {
   FILE *file;
 #ifndef ASCII
