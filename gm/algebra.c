@@ -3139,10 +3139,10 @@ INT SetSurfaceClasses (MULTIGRID *theMG)
         if (NCLASS(theNode) > VCLASS(v))
           UserWriteF(PFMT " node=" ID_FMTX " c %d ncl %d vector="
                      VINDEX_FMTX
-                     " c %d vc %d \n",
+                     " c %d vc %d level %d\n",
                      me,
                      ID_PRTX(theNode),NCOPIES(theNode),NCLASS(theNode),
-                     VINDEX_PRTX(v),NCOPIES(v),VCLASS(v));
+                     VINDEX_PRTX(v),NCOPIES(v),VCLASS(v),level);
 
         assert(NCLASS(theNode) <= VCLASS(v));
 
@@ -3150,10 +3150,10 @@ INT SetSurfaceClasses (MULTIGRID *theMG)
         if (NNCLASS(theNode) > VNCLASS(v))
           UserWriteF(PFMT " node=" ID_FMTX " c %d ncl %d vector="
                      VINDEX_FMTX
-                     " c %d vc %d \n",
+                     " c %d vc %d level %d\n",
                      me,
                      ID_PRTX(theNode),NCOPIES(theNode),NNCLASS(theNode),
-                     VINDEX_PRTX(v),NCOPIES(v),VNCLASS(v));
+                     VINDEX_PRTX(v),NCOPIES(v),VNCLASS(v),level);
 
         assert(NNCLASS(theNode) <= VNCLASS(v));
       }
@@ -3265,6 +3265,9 @@ INT CreateAlgebra (MULTIGRID *theMG)
         #endif
         #endif
 
+        #ifdef __PERIODIC_BOUNDARY__
+  if (0) MG_GeometricToPeriodic(theMG,0,TOPLEVEL(theMG));
+        #endif
   SetSurfaceClasses(theMG);
 
   return(GM_OK);
@@ -4338,6 +4341,42 @@ static INT PropagateVectorClass (GRID *theGrid, INT vclass)
 
   return(0);
 }
+#ifdef __PERIODIC_BOUNDARY__
+static INT PropagatePeriodicVectorClass (GRID *theGrid, INT vclass)
+{
+  VECTOR *theVector;
+  MATRIX *theMatrix;
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+    if ((VCLASS(theVector)==vclass)&&(VSTART(theVector)!=NULL))
+      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
+           theMatrix=MNEXT(theMatrix))
+        if ((VCLASS(MDEST(theMatrix))<vclass)
+            &&(CEXTRA(MMYCON(theMatrix))!=1)) {
+          SETVCLASS(MDEST(theMatrix),vclass);
+          PRINTDEBUG(gm,1,("VCLASS(%d)=%d\n",VINDEX(MDEST(theMatrix)),vclass));
+        }
+
+
+
+  /* set vector classes in the algebraic neighborhood to vclass-1 */
+  /* use matrices to determine next vectors!!!!!                   */
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+    if ((VCLASS(theVector)==vclass)&&(VSTART(theVector)!=NULL))
+      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
+           theMatrix=MNEXT(theMatrix))
+        if ((VCLASS(MDEST(theMatrix))<vclass)
+            &&(CEXTRA(MMYCON(theMatrix))!=1))
+          SETVCLASS(MDEST(theMatrix),vclass);
+
+  /* only for this value valid */
+  ASSERT(vclass==1);
+
+  return(0);
+}
+#endif
 
 INT PropagateVectorClasses (GRID *theGrid)
 {
@@ -4365,6 +4404,12 @@ INT PropagateVectorClasses (GRID *theGrid)
 
   /* set vector classes in the algebraic neighborhood to 1 */
   if (PropagateVectorClass(theGrid,2)) REP_ERR_RETURN(1);
+
+#ifdef __PERIODIC_BOUNDARY__
+  /* set vector classes in the periodic neighbourhood to 1 */
+  if (1)
+    if (PropagatePeriodicVectorClass(theGrid,1)) REP_ERR_RETURN(1);
+#endif
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 3. communication\n",
@@ -4548,6 +4593,29 @@ static INT PropagateNextVectorClass (GRID *theGrid, INT vnclass)
   return(0);
 }
 
+#ifdef __PERIODIC_BOUNDARY__
+static INT PropagatePeriodicNextVectorClass (GRID *theGrid)
+{
+  VECTOR *theVector;
+  MATRIX *theMatrix;
+
+  /* set vector classes in the periodic neighborhood to 1 */
+  /* use matrices to determine next vectors!!!!!                   */
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+    if ((VNCLASS(theVector)==1)&&(VSTART(theVector)!=NULL))
+      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
+           theMatrix=MNEXT(theMatrix))
+        if ((VNCLASS(MDEST(theMatrix))<1)
+            &&(CEXTRA(MMYCON(theMatrix))!=1)) {
+          SETVNCLASS(MDEST(theMatrix),1);
+          PRINTDEBUG(gm,1,("VNCLASS(%d)=1\n",VINDEX(MDEST(theMatrix))));
+        }
+
+  return(0);
+}
+#endif
+
 INT PropagateNextVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
@@ -4570,6 +4638,11 @@ INT PropagateNextVectorClasses (GRID *theGrid)
     #endif
 
   if (PropagateNextVectorClass(theGrid,2)) REP_ERR_RETURN(1);
+
+#ifdef __PERIODIC_BOUNDARY__
+  if (1)
+    if (PropagatePeriodicNextVectorClass(theGrid)) REP_ERR_RETURN(1);
+#endif
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 3. communication\n",me))

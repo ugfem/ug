@@ -10106,12 +10106,36 @@ static INT PropagateNodeClass (GRID *theGrid, INT nclass)
         if (NCLASS(theNode) < nclass)
           SETNCLASS(theNode,nclass-1);
       }
+
   /* only for this values valid */
   ASSERT(nclass==3 || nclass==2);
 
   return(0);
 }
 
+#ifdef __PERIODIC_BOUNDARY__
+static INT PropagatePeriodicNodeClass (GRID *theGrid, INT nclass)
+{
+  ELEMENT *theElement;
+  INT i;
+
+  for (theElement=FIRSTELEMENT(theGrid);
+       theElement!= NULL; theElement = SUCCE(theElement))
+    if (MaxNodeClass(theElement) == nclass)
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+      {
+        NODE *theNode = CORNER(theElement,i);
+
+        if (NCLASS(theNode) < nclass)
+          SETNCLASS(theNode,nclass);
+      }
+
+  /* only for this values valid */
+  ASSERT(nclass==1);
+
+  return(0);
+}
+#endif
 INT PropagateNodeClasses (GRID *theGrid)
 {
   NODE *theNode;
@@ -10138,6 +10162,11 @@ INT PropagateNodeClasses (GRID *theGrid)
 
   /* set Node classes in the algebraic neighborhood to 1 */
   if (PropagateNodeClass(theGrid,2)) REP_ERR_RETURN(1);
+
+#ifdef __PERIODIC_BOUNDARY__
+  /* set Node classes in periodic neighbourhood to 1 */
+  if (PropagatePeriodicNodeClass(theGrid,1)) REP_ERR_RETURN(1);
+#endif
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNodeClasses(): 3. communication\n",
@@ -10272,6 +10301,17 @@ static INT PropagateNextNodeClass (GRID *theGrid, INT nnclass)
   ELEMENT *theElement;
   INT i;
 
+  for (theElement=FIRSTELEMENT(theGrid);
+       theElement!= NULL; theElement = SUCCE(theElement))
+    if (MaxNextNodeClass(theElement) == nnclass)
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+      {
+        NODE *theNode = CORNER(theElement,i);
+
+        if (NNCLASS(theNode) < nnclass)
+          SETNNCLASS(theNode,nnclass-1);
+      }
+
         #ifdef __PERIODIC_BOUNDARY__
   {
     VECTOR *vec;
@@ -10291,22 +10331,12 @@ static INT PropagateNextNodeClass (GRID *theGrid, INT nnclass)
 
   }
         #endif
-  for (theElement=FIRSTELEMENT(theGrid);
-       theElement!= NULL; theElement = SUCCE(theElement))
-    if (MaxNextNodeClass(theElement) == nnclass)
-      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-      {
-        NODE *theNode = CORNER(theElement,i);
 
-        if (NNCLASS(theNode) < nnclass)
-          SETNNCLASS(theNode,nnclass-1);
-      }
   /* only for this values valid */
   ASSERT(nnclass==3 || nnclass==2);
 
   return(0);
 }
-
 
 INT PropagateNextNodeClasses (GRID *theGrid)
 {
@@ -11085,8 +11115,8 @@ static INT DisposeAndModVector(GRID *grid, PERIODIC_ENTRIES *list, INT i, INT j)
       MDEST(MADJ(m)) = NVECTOR(list[i].node);
   }
 
-  PRINTDEBUG(gm,1,("DisposeAndModVector perid=%d vtx=%d node=%d vec=%d\n",
-                   list[j].periodic_id,ID(MYVERTEX(list[j].node)),ID(list[j].node),VINDEX(vec)));
+  PRINTDEBUG(gm,1,("DisposeAndModVector perid=%d vtx=%d node=%d vec=%d pos %lf %lf %lf level %d\n",
+                   list[j].periodic_id,ID(MYVERTEX(list[j].node)),ID(list[j].node),VINDEX(vec),XC(MYVERTEX(list[j].node)),YC(MYVERTEX(list[j].node)),ZC(MYVERTEX(list[j].node)),GLEVEL(grid)));
 
   if (DisposeVector(grid,vec))
     return(1);
@@ -11180,6 +11210,7 @@ static INT Grid_GeometricToPeriodic (GRID *g)
                          ID(vtx),
                          own_coord[0],own_coord[1],own_coord[2],
                          periodic_coords[i][0],periodic_coords[i][1],periodic_coords[i][2]))
+        PRINTDEBUG(gm,1,("                    coord %lf %lf %lf\n",coordlist[nn].coord[0],coordlist[nn].coord[1],coordlist[nn].coord[2]));
 
         coordlist[nn].node = node;
         coordlist[nn].periodic_id = periodic_ids[i];
@@ -11215,7 +11246,10 @@ static INT Grid_GeometricToPeriodic (GRID *g)
     DOUBLE diff;
 
     V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,coordlist[i+1].coord,diff);
-    if (diff > SMALL_DOUBLE) assert(0);
+    if (diff > SMALL_DOUBLE) {
+      PRINTDEBUG(gm,0,("%d: diff = %g",i,diff));
+      assert(0);
+    }
 
     V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,CVECT(MYVERTEX(coordlist[i].node)),diff);
     if (diff < SMALL_DOUBLE)

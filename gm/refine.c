@@ -2769,6 +2769,54 @@ static INT RestrictMarks (GRID *theGrid)
 	return(GM_OK);
 }
 
+#ifdef __PERIODIC_BOUNDARY__
+static int ComputePeriodicCopies(GRID *grid)
+{
+  ELEMENT *elem;
+  PeriodicBoundaryInfoProcPtr IsPeriodicBnd;
+  int npercopies;
+	
+  GetPeriodicBoundaryInfoProcPtr(&IsPeriodicBnd);
+  if (IsPeriodicBnd==NULL)
+	return (0);
+
+  npercopies=0;
+  for (elem=PFIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
+	if (MARK(elem)==NO_REFINEMENT) {
+	  INT co,side;
+
+	  for (side=0; side<SIDES_OF_ELEM(elem); side++) {
+		INT marked = 0;
+		
+		for (co=0; co<CORNERS_OF_SIDE(elem,side); co++) {
+		  VERTEX *vtx;
+		  INT n,per_ids[MAX_PERIODIC_OBJ];
+		  DOUBLE_VECTOR coord, pcoords[MAX_PERIODIC_OBJ];
+
+		  vtx = MYVERTEX(CORNER(elem,CORNER_OF_SIDE(elem,side,co)));
+
+		  if (OBJT(vtx)==BVOBJ)
+			if ((*IsPeriodicBnd)(vtx,&n,per_ids,coord,pcoords)) {
+			  if (VNCLASS(NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,side,co))))==1)
+				marked++;
+			}
+		}
+
+		if (marked==CORNERS_OF_SIDE(elem,side)) {
+		  SETMARK(elem,COPY);
+		  SETMARKCLASS(elem,YELLOW_CLASS);
+		  npercopies++;
+		  PRINTDEBUG(gm,1,(PFMT "ComputePeriodicCopies(): level=%d e=" EID_FMTX " yellow marked\n",
+							   me,LEVEL(elem),EID_PRTX(elem))); 
+		  break;
+		}
+	  }
+	}
+  }
+  
+  return (npercopies);
+}
+#endif
 
 /****************************************************************************/
 /*
@@ -2794,6 +2842,9 @@ static int ComputeCopies (GRID *theGrid)
 	ELEMENT *theElement;
 	int flag;
 	int cnt = 0;
+#ifdef __PERIODIC_BOUNDARY__
+	int npercopies;
+#endif
 	
 	/* set class of all dofs on next level to 0 */
     #ifdef DYNAMIC_MEMORY_ALLOCMODEL
@@ -2859,7 +2910,7 @@ static int ComputeCopies (GRID *theGrid)
             #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 			((maxclass=MaxNextNodeClass(theElement))>=MINVNCLASS))
             #else
-			((maxclass=MaxNextVectorClass(theGrid,theElement))>=MINVNCLASS))
+		  ((maxclass=MaxNextVectorClass(theGrid,theElement))>=MINVNCLASS))
             #endif
 		{
 			PRINTDEBUG(gm,1,(PFMT "ComputeCopies(): level=%d e=" EID_FMTX "yellow marked\n",
@@ -2875,6 +2926,9 @@ static int ComputeCopies (GRID *theGrid)
 				me,LEVEL(theElement),EID_PRTX(theElement),MARK(theElement),maxclass)); 
 		}
 	}
+	#ifdef __PERIODIC_BOUNDARY__
+	cnt += ComputePeriodicCopies(theGrid);
+	#endif
 
 	return(cnt);
 }
@@ -6191,7 +6245,7 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 			SETTHEFLAG(vec,TRUE);
 			if (mark==RED) {
 			  SETUSED(vec,TRUE);
-			  PRINTDEBUG(gm,1,("periodic vec %8d: used at %d bndries\n",VINDEX(vec),n));
+			  PRINTDEBUG(gm,0,("periodic vec %8d on level %d: used at %d bndries\n",VINDEX(vec),level,n));
 			}
 		  }
 		}
@@ -6203,24 +6257,22 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 	  if (EstimateHere(elem)) {
 		INT edge, side, marked;
 
-		for (edge=0; edge<EDGES_OF_ELEM(elem); edge++) {
+		for (side=0; side<SIDES_OF_ELEM(elem); side++) {
 		  VECTOR *vec;
 		  INT co;
 		  
 		  marked = 0;
 
-		  co=CORNER_OF_EDGE(elem,edge,0);
-		  vec=NVECTOR(CORNER(elem,co));
-		  if (USED(vec)) marked++;
+		  for (co=0; co<CORNERS_OF_SIDE(elem,side); co++) {
+			vec=NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,side,co)));
+			if (USED(vec)) marked++;
+		  }
 
-		  co=CORNER_OF_EDGE(elem,edge,1);
-		  vec=NVECTOR(CORNER(elem,co));
-		  if (USED(vec)) marked++;
-		  
-		  if (marked>1) break;
+		  if (marked==CORNERS_OF_SIDE(elem,side)) break;
+		  else marked = 0;
 		}
 		
-		if (marked>1) {
+		if (marked>0) {
 		  INT co;
 		  
 		  /* flag all vectors of newly marked element */
@@ -6233,7 +6285,7 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 		  
 			if (THEFLAG(vec)) {	/* periodic vector */
 			  SETUSED(vec,TRUE);
-			  PRINTDEBUG(gm,1,("Elem %8d: periodic vec %8d\n",ID(elem),VINDEX(vec)));
+			  PRINTDEBUG(gm,0,("Elem %8d on level %d: periodic vec %8d\n",ID(elem),level,VINDEX(vec)));
 			}
 		  }
 		}
@@ -6245,29 +6297,27 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 	  if (EstimateHere(elem)) {
 		INT edge, side, marked;
 
-		for (edge=0; edge<EDGES_OF_ELEM(elem); edge++) {
+		for (side=0; side<SIDES_OF_ELEM(elem); side++) {
 		  VECTOR *vec;
 		  INT co;
 		  
 		  marked = 0;
 
-		  co=CORNER_OF_EDGE(elem,edge,0);
-		  vec=NVECTOR(CORNER(elem,co));
-		  if (USED(vec)) marked++;
+		  for (co=0; co<CORNERS_OF_SIDE(elem,side); co++) {
+			vec=NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,side,co)));
+			if (USED(vec)) marked++;
+		  }
 
-		  co=CORNER_OF_EDGE(elem,edge,1);
-		  vec=NVECTOR(CORNER(elem,co));
-		  if (USED(vec)) marked++;
-		  
-		  if (marked>1) break;
+		  if (marked==CORNERS_OF_SIDE(elem,side)) break;
+		  else marked=0;
 		}
 		
-		if (marked>1) {
+		if (marked>0) {
 		  INT co;
 		  
 		  MarkForRefinement(elem,RED,0);
 
-		  PRINTDEBUG(gm,1,("Elem %8d marked red\n",ID(elem)));
+		  PRINTDEBUG(gm,0,("Elem %8d marked red\n",ID(elem)));
 		}
 	  }
 	}
