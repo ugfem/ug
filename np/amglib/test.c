@@ -41,8 +41,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "general.h"
-
 #include "amg_header.h"
 #include "amg_low.h"
 #include "amg_sp.h"
@@ -70,7 +68,9 @@
 /*																			*/
 /****************************************************************************/
 
-static char RCS_ID("$Header$",UG_RCS_STRING);
+/* RCS_ID
+   $Header$
+ */
 
 
 /****************************************************************************/
