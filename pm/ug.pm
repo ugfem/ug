@@ -6,7 +6,7 @@ use Exporter;
 $VERSION = 1.0;
 @ISA = qw(Exporter);
 
-@EXPORT = qw(ug float);
+@EXPORT = qw(ug float tmpfile);
 @EXPORT_OK = qw();
 %EXPORT_TAGS = qw();
 
@@ -16,9 +16,12 @@ $VERSION = 1.0;
 
 use IPC::Open2;
 use IO::Handle;
+use IO::File;
+use POSIX qw(tmpnam);
 BEGIN
 {
 	my $debug=0;
+	my $end='';
 	sub debug
 	{
 		$debug=$_[0];
@@ -35,8 +38,16 @@ BEGIN
 			print DEBUG "$1;\n"; 
 		}
 	}
+	sub tmpfile
+	{
+        my $name;
+        do { $name=tmpnam(); } until IO::File->new($name,O_RDWR|O_CREAT|O_EXCL);
+        $end.="unlink('$name');";
+        return $name;
+	}
 	END
 	{
+		eval $end;
 		close(DEBUG);
 	}
 	sub out
