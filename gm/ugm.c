@@ -4634,6 +4634,28 @@ INT CheckOrientation (INT n, VERTEX **vertices)
 }
 #endif
 
+INT CheckOrientationInGrid (GRID *theGrid)
+{
+  ELEMENT *theElement;
+  NODE *theNode;
+  VERTEX *vertices[MAX_CORNERS_OF_ELEM];
+  INT i;
+
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+    {
+      theNode = CORNER(theElement,i);
+      if (theNode==NULL) return (1);
+      vertices[i] = MYVERTEX(theNode);
+      if (vertices[i]==NULL) return (1);
+    }
+    if (!CheckOrientation (CORNERS_OF_ELEM(theElement),vertices)) return (1);
+  }
+
+  return (0);
+}
+
 static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, ELEMENT **Nbr)
 {
   INT i,j,k,l,m,index,fnd,num,IndexOfDivPart,IndexOfModPart;
