@@ -1914,6 +1914,15 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 }
 #endif /* ModelP */
 
+/****************************************************************************/
+/*																			*/
+/*		blas level 0 routines												*/
+/*																			*/
+/****************************************************************************/
+
+#ifdef __MWCW__
+#pragma mark blas_level_0
+#endif
 
 /****************************************************************************/
 /*D
@@ -1978,7 +1987,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      dcopy
-#define T_ARGS          ,VECDATA_DESC *y
+#define T_ARGS          ,const VECDATA_DESC *y
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) = VVALUE(v,yc);
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) = VVALUE(v,cy0);
@@ -2018,7 +2027,7 @@ D*/
 
 #define T_FUNCNAME      dscal
 #define T_ARGS          ,DOUBLE a
-#define T_CONFIG        DOUBLE *value;
+#define T_CONFIG        
 #define T_MOD_SCAL      VVALUE(v,xc) *= a;
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) *= a;
 #define T_MOD_VECTOR_2  VVALUE(v,cx1) *= a;
@@ -2034,7 +2043,7 @@ D*/
 
    SYNOPSIS:
    INT dscalx (MULTIGRID *mg, INT fl, INT tl, INT mode, 
-   VECDATA_DESC *x, DOUBLE *a);
+   VECDATA_DESC *x, VEC_SCALAR *a);
 
    PARAMETERS:
 .  mg - pointer to multigrid 
@@ -2056,9 +2065,9 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      dscalx
-#define T_ARGS          ,DOUBLE *a
+#define T_ARGS          ,const VEC_SCALAR a
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x);	              \
-                        DEFINE_VS_CMPS(a); DOUBLE *value;
+                        DEFINE_VS_CMPS(a); const DOUBLE *value;
 #define T_PREP_1        SET_VS_CMP_1(a,a,aoff,vtype);
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) *= a0;
 #define T_PREP_2        SET_VS_CMP_2(a,a,aoff,vtype);
@@ -2099,7 +2108,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      dadd
-#define T_ARGS          ,VECDATA_DESC *y
+#define T_ARGS          ,const VECDATA_DESC *y
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) += VVALUE(v,yc);
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) += VVALUE(v,cy0);
@@ -2139,7 +2148,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      dsub
-#define T_ARGS          ,VECDATA_DESC *y
+#define T_ARGS          ,const VECDATA_DESC *y
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) -= VVALUE(v,yc);
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) -= VVALUE(v,cy0);
@@ -2157,7 +2166,7 @@ D*/
 
    SYNOPSIS:
    INT daxpyx (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
-   DOUBLE *a, VECDATA_DESC *y);
+   const VEC_SCALAR a, VECDATA_DESC *y);
 
 
    PARAMETERS:
@@ -2180,10 +2189,9 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      daxpyx
-#define T_ARGS          ,DOUBLE *a,VECDATA_DESC *y
+#define T_ARGS          ,const VEC_SCALAR a,const VECDATA_DESC *y
 #define T_USE_Y
-#define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value; \
-                        DEFINE_VS_CMPS(a);
+#define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); const DOUBLE *value;
 #define T_MOD_SCAL      VVALUE(v,xc) += a[aoff[VTYPE(v)]] * VVALUE(v,yc);
 #define T_PREP_SWITCH   value = a+aoff[vtype];
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) += value[0] * VVALUE(v,cy0);
@@ -2224,7 +2232,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      daxpy
-#define T_ARGS          ,DOUBLE a,VECDATA_DESC *y
+#define T_ARGS          ,DOUBLE a,const VECDATA_DESC *y
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) += a * VVALUE(v,yc);
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) += a * VVALUE(v,cy0);
@@ -2242,7 +2250,7 @@ D*/
 
    SYNOPSIS:
    INT ddotx (MULTIGRID *mg, INT fl, INT tl, INT mode, 
-   VECDATA_DESC *x, VECDATA_DESC *y, DOUBLE *a);
+   VECDATA_DESC *x, VECDATA_DESC *y, VEC_SCALAR a);
 
 
    PARAMETERS:
@@ -2266,11 +2274,10 @@ D*/
 
 static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 {
-	DOUBLE a1[NVECTYPES+1];
-	INT i;
-
 	#ifdef ModelP
 	#ifdef Debug
+	INT i;
+	DOUBLE a1[NVECTYPES+1];
 	for (i=0; i<ncomp; i++)
 	    a1[i] = a[i];
 	a1[ncomp] = (DOUBLE) rep_err_count;
@@ -2287,10 +2294,9 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 }
 
 #define T_FUNCNAME      ddotx
-#define T_ARGS          ,VECDATA_DESC *y,DOUBLE *a
+#define T_ARGS          ,const VECDATA_DESC *y,VEC_SCALAR a
 #define T_USE_Y
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
-                        DEFINE_VS_CMPS(a);                                    \
 						for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
 #define T_MOD_SCAL      a[aoff[VTYPE(v)]] += VVALUE(v,xc) * VVALUE(v,yc);
 #define T_PREP_SWITCH   value = a+aoff[vtype];
@@ -2307,11 +2313,60 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 /****************************************************************************/
 /*D
+   ddotw - weighted scalar product of two vectors
+
+   SYNOPSIS:
+   INT ddotw (MULTIGRID *mg, INT fl, INT tl, INT mode, 
+   VECDATA_DESC *x, VECDATA_DESC *y, const VEC_SCALAR w, DOUBLE *s);
+
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - vector data descriptor
+.  y - vector data descriptor
+.  w - weight factors
+.  a - DOUBLE value for every component of 'x'
+
+   DESCRIPTION:
+   This function computes the weighted scalar product of two vectors.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+#define T_FUNCNAME      ddotw
+#define T_ARGS          ,const VECDATA_DESC *y,const VEC_SCALAR w,DOUBLE *s
+#define T_USE_Y
+#define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
+						VEC_SCALAR a;										  \
+						for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
+#define T_MOD_SCAL      a[aoff[VTYPE(v)]] += VVALUE(v,xc) * VVALUE(v,yc);
+#define T_PREP_SWITCH   value = a+aoff[vtype];
+#define T_MOD_VECTOR_1  value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
+							value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) * \
+								VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+#define T_POST_PAR      if (UG_GlobalSumNDOUBLE_X(VD_NCOMP(x),a))             \
+                            REP_ERR_RETURN(NUM_ERROR);
+#define T_POST          *s = 0.0; for (i=0; i<VD_NCOMP(x); i++) *s += w[i]*a[i];
+
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
    ddot - scalar product of two vectors
 
    SYNOPSIS:
-   INT ddotx (MULTIGRID *mg, INT fl, INT tl, INT mode, 
-   VECDATA_DESC *x, VECDATA_DESC *y, DOUBLE *a);
+   INT ddot (MULTIGRID *mg, INT fl, INT tl, INT mode, 
+   const VECDATA_DESC *x, const VECDATA_DESC *y, DOUBLE *a);
 
 
    PARAMETERS:
@@ -2334,7 +2389,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      ddot
-#define T_ARGS          ,VECDATA_DESC *y,DOUBLE *a
+#define T_ARGS          ,const VECDATA_DESC *y,DOUBLE *a
 #define T_USE_Y
 #define T_CONFIG        *a = 0.0;
 #define T_MOD_SCAL      *a += VVALUE(v,xc) * VVALUE(v,yc);
@@ -2351,11 +2406,11 @@ D*/
 
 /****************************************************************************/
 /*D
-   dnrm2x - euclidian norm of a vectors
+   dnrm2x - euclidian norm of a vector
 
    SYNOPSIS:
-   INT dnrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
-   DOUBLE *a);
+   INT dnrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x, 
+   VEC_SCALAR a);
 
 
    PARAMETERS:
@@ -2367,7 +2422,8 @@ D*/
 .  a - DOUBLE value for every component of 'x'
 
    DESCRIPTION:
-   This function computes the euclidian product of a vectors.
+   This function computes the euclidian norm of a vector and stores it to a
+   VEC_SCALAR.
 
    RETURN VALUE:
    INT
@@ -2377,9 +2433,9 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      dnrm2x
-#define T_ARGS          ,DOUBLE *a
+#define T_ARGS          ,VEC_SCALAR a
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
-                        DEFINE_VS_CMPS(a); DOUBLE s;                          \
+						DOUBLE s;											  \
 						for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
 #define T_MOD_SCAL      s = VVALUE(v,xc); a[aoff[VTYPE(v)]] += s*s;
 #define T_PREP_SWITCH   value = a+aoff[vtype];
@@ -2397,10 +2453,10 @@ D*/
 
 /****************************************************************************/
 /*D
-   dnrm2 - euclidian norm of a vectors
+   dnrm2 - euclidian norm of a vector
 
    SYNOPSIS:
-   INT dnrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
+   INT dnrm2 (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x, 
    DOUBLE *a);
 
 
@@ -2413,7 +2469,8 @@ D*/
 .  a - DOUBLE value
 
    DESCRIPTION:
-   This function computes the euclidian product of a vectors.
+   This function computes the euclidian norm of a vector and stores it to
+   a DOUBLE.
 
    RETURN VALUE:
    INT
@@ -2439,12 +2496,22 @@ D*/
 #include "vecfunc.ct"
 
 /****************************************************************************/
+/*																			*/
+/*		blas level 1 routines												*/
+/*																			*/
+/****************************************************************************/
+
+#ifdef __MWCW__
+#pragma mark blas_level_1
+#endif
+
+/****************************************************************************/
 /*D
    dmatset - initialize a matrix
 
    SYNOPSIS:
-   INT dmatset (MULTIGRID *mg, INT fl, INT tl, INT mode, MATDATA_DESC *M, 
-   DOUBLE *a);
+   INT dmatset (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M, 
+   DOUBLE a);
 
 
    PARAMETERS:
@@ -2466,7 +2533,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME     dmatset
-#define T_ARGS         ,MATDATA_DESC *M,DOUBLE a
+#define T_ARGS         ,const MATDATA_DESC *M,DOUBLE a
 #define T_MOD_SCAL     MVALUE(mat,mc)=a;
 #define T_PREP_SWITCH  INT mcomp;
 #define T_MOD_11       MVALUE(mat,m00)=a; 
@@ -2498,8 +2565,8 @@ D*/
    dmatcopy - copy a matrix
 
    SYNOPSIS:
-   INT dmatcopy (MULTIGRID *mg, INT fl, INT tl, INT mode, MATDATA_DESC *M, 
-   MATDATA_DESC *N);
+   INT dmatcopy (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M, 
+   const MATDATA_DESC *N);
 
    PARAMETERS:
 .  mg - pointer to multigrid 
@@ -2520,7 +2587,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME     dmatcopy
-#define T_ARGS         ,MATDATA_DESC *M,MATDATA_DESC *N
+#define T_ARGS         ,const MATDATA_DESC *M,const MATDATA_DESC *N
 #define T_PREP_SCAL    register SHORT nc = MD_SCALCMP(N);
 #define T_MOD_SCAL     MVALUE(mat,mc)=MVALUE(mat,nc);
 #define T_PREP_SWITCH  INT mcomp;DEFINE_MD_CMPS(n);
@@ -2581,8 +2648,8 @@ D*/
    dmatadd - add a matrix
 
    SYNOPSIS:
-   INT dmatadd (MULTIGRID *mg, INT fl, INT tl, INT mode, MATDATA_DESC *M, 
-   MATDATA_DESC *N);
+   INT dmatadd (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M, 
+   const MATDATA_DESC *N);
 
    PARAMETERS:
 .  mg - pointer to multigrid 
@@ -2603,7 +2670,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME     dmatadd
-#define T_ARGS         ,MATDATA_DESC *M,MATDATA_DESC *N
+#define T_ARGS         ,const MATDATA_DESC *M,const MATDATA_DESC *N
 #define T_PREP_SCAL    register SHORT nc = MD_SCALCMP(N);
 #define T_MOD_SCAL     MVALUE(mat,mc)=MVALUE(mat,nc);
 #define T_PREP_SWITCH  INT mcomp;DEFINE_MD_CMPS(n);
@@ -2664,12 +2731,8 @@ D*/
    dmatmul - matrix vector product
 
    SYNOPSIS:
-   INT dmatmul (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
-   MATDATA_DESC *M, VECDATA_DESC *y); 
-
-   INT dmatset (MULTIGRID *mg, INT fl, INT tl, INT mode, MATDATA_DESC *M, 
-   DOUBLE *a);
-
+   INT dmatmul (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x, 
+   const MATDATA_DESC *M, const VECDATA_DESC *y); 
 
    PARAMETERS:
 .  mg - pointer to multigrid 
@@ -2692,7 +2755,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME     dmatmul
-#define T_ARGS         ,VECDATA_DESC *x,MATDATA_DESC *M,VECDATA_DESC *y
+#define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
 #define T_USE_X
 #define T_USE_Y
 #define T_CONFIG  	   DOUBLE s[MAX_SINGLE_VEC_COMP],sum;DEFINE_VS_CMPS(s);
@@ -2742,8 +2805,8 @@ D*/
    dmatmul_add - add matrix vector product
 
    SYNOPSIS:
-   INT dmatmul_add (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
-   MATDATA_DESC *M, VECDATA_DESC *y); 
+   INT dmatmul_add (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x, 
+   const MATDATA_DESC *M, const VECDATA_DESC *y); 
 
    PARAMETERS:
 .  mg - pointer to multigrid 
@@ -2765,7 +2828,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME     dmatmul_add
-#define T_ARGS         ,VECDATA_DESC *x,MATDATA_DESC *M,VECDATA_DESC *y
+#define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
 #define T_USE_X
 #define T_USE_Y
 #define T_CONFIG  	   DOUBLE s[MAX_SINGLE_VEC_COMP],sum;DEFINE_VS_CMPS(s);
@@ -2816,7 +2879,7 @@ D*/
 
    SYNOPSIS:
    INT dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, INT mode, 
-   VECDATA_DESC *x, MATDATA_DESC *M, VECDATA_DESC *y);
+   const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y);
 
    PARAMETERS:
 .  mg - pointer to multigrid 
@@ -2838,7 +2901,7 @@ D*/
 /****************************************************************************/
 
 #define T_FUNCNAME     dmatmul_minus
-#define T_ARGS         ,VECDATA_DESC *x,MATDATA_DESC *M,VECDATA_DESC *y
+#define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
 #define T_USE_X
 #define T_USE_Y
 #define T_CONFIG  	   DOUBLE s[MAX_SINGLE_VEC_COMP],sum;DEFINE_VS_CMPS(s);
