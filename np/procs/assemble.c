@@ -94,7 +94,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
    This routine returns 'EXECUTABLE' if the initizialization is complete
    and  'ACTIVE' else.
-   The data they can be displayed and the num proc can be executed by
+   The data can be displayed and the num proc can be executed by
 
    'INT NPAssembleDisplay (NP_ASSEMBLE *theNP);'
    'INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv);'
@@ -219,7 +219,7 @@ INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 
    This routine returns 'EXECUTABLE' if the initizialization is complete
    and  'ACTIVE' else.
-   The data they can be displayed and the num proc can be executed by
+   The data can be displayed and the num proc can be executed by
 
    'INT NPNLAssembleDisplay (NP_ASSEMBLE *theNP);'
    'INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv);'
@@ -372,7 +372,7 @@ INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 
    This routine returns 'EXECUTABLE' if the initizialization is complete
    and  'ACTIVE' else.
-   The data they can be displayed and the num proc can be executed by
+   The data can be displayed and the num proc can be executed by
 
    'INT NPLocalAssembleDisplay (NP_ASSEMBLE *theNP);'
    'INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv);'
@@ -478,7 +478,7 @@ static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
       for (i=0; i<m; i++) def[i] = 0.0;
       for (i=0; i<m*m; i++) mat[i] = 0.0;
       if ((*np->AssembleLocal)(theElement,result)) {
-        UserWriteF("AssembleLocal failed for element, error code %d\n",
+        UserWriteF("AssembleLocal failed for element %d, error code %d\n",
                    ID(theElement),result[0]);
         return (1);
       }
