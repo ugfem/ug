@@ -589,4 +589,6 @@ LGM_PROBLEM     *CreateProblem                  (char *name, InitProcPtr config,
 INT                     SetBoundaryCondition    (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond);
 INT                     SetDomainSize                   (LGM_DOMAIN *theDomain);
 
+INT                             GetMaximumSurfaceID     (LGM_DOMAIN *theDomain);
+
 #endif

@@ -1310,3 +1310,25 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
 
   return (0);
 }
+
+
+/* auxiliary function for getting the maximum line-ID */
+INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
+{
+  INT nSubDom, i, l, maxLineId=0;
+
+  nSubDom = LGM_DOMAIN_NSUBDOM(theDomain);
+  for(i=1; i<=nSubDom; i++)
+  {
+    LGM_SUBDOMAIN *subdom = LGM_DOMAIN_SUBDOM(theDomain,i);
+
+    for(l=0; l<LGM_SUBDOMAIN_NLINE(subdom); l++)
+    {
+      INT id = LGM_LINE_ID(LGM_SUBDOMAIN_LINE(subdom,l));
+      if (maxLineId < id)
+        maxLineId = id;
+    }
+  }
+
+  return(maxLineId);
+}

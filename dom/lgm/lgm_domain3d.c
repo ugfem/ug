@@ -1,6 +1,6 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-
+/****************************************************************************/
 /*																			*/
 /* File:	  lgm_domain3d.c												*/
 /*																			*/
@@ -3908,4 +3908,27 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 
   return((BNDP *)theBndP);
 
+}
+
+
+
+/* auxiliary function for getting the maximum surface-ID */
+INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
+{
+  INT nSubDom, i, l, maxLineId=0;
+
+  nSubDom = LGM_DOMAIN_NSUBDOM(theDomain);
+  for(i=1; i<=nSubDom; i++)
+  {
+    LGM_SUBDOMAIN *subdom = LGM_DOMAIN_SUBDOM(theDomain,i);
+
+    for(l=0; l<LGM_SUBDOMAIN_NSURFACE(subdom); l++)
+    {
+      INT id = LGM_SURFACE_ID(LGM_SUBDOMAIN_SURFACE(subdom,l));
+      if (maxLineId < id)
+        maxLineId = id;
+    }
+  }
+
+  return(maxLineId);
 }

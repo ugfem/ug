@@ -210,15 +210,11 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
         LGM_SUBDOMAIN *subdom = LGM_DOMAIN_SUBDOM(theDomain,i);
 
         argv[i] = LGM_SUBDOMAIN_UNIT(subdom);
-
-        /* find maximum LineId */
-        for(l=0; l<LGM_SUBDOMAIN_NLINE(subdom); l++)
-        {
-          INT id = LGM_LINE_ID(LGM_SUBDOMAIN_LINE(subdom,l));
-          if (maxLineId < id)
-            maxLineId = id;
-        }
       }
+
+      /* get maximum Line/Surface-Id */
+      maxLineId = GetMaximumSurfaceID(theDomain);
+
       if ((*(theProblem->InitProblem))(nSubDom, argv, maxLineId+1, LGM_DOMAIN_PROBLEMNAME(theDomain)))
       {
         UserWrite("ERROR in BVP_Init: cannot initialize problem\n");
