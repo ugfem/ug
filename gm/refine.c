@@ -2299,11 +2299,12 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
                  NbSortTable[i]->elem);
       SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,
                  ElemSortTable[i]->elem);
-      if (DisposeDoubledSideVector(theGrid,ElemSortTable[i]->elem,
-                                   ElemSortTable[i]->side,
-                                   NbSortTable[i]->elem,
-                                   NbSortTable[i]->side))
-        RETURN(GM_FATAL);
+      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+        if (DisposeDoubledSideVector(theGrid,ElemSortTable[i]->elem,
+                                     ElemSortTable[i]->side,
+                                     NbSortTable[i]->elem,
+                                     NbSortTable[i]->side))
+          RETURN(GM_FATAL);
     }
 
   return(GM_OK);
