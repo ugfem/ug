@@ -1092,8 +1092,11 @@ void FAMGGraph::ConstructSparseBlocks(FAMGGrid *gridptr)
     const FAMGSparseVector *tvAsv = tvA.GetSparseVectorPtr();
     const FAMGSparseVector *tvBsv = tvB.GetSparseVectorPtr();
 
-    sb1.Product(Dsb,Asb);
-    sb1T.Product(Dsb,AsbT);
+    // sb1.Product(Dsb,Asb);
+    // sb1T.Product(Dsb,AsbT);
+    sb1 = (*Asb);
+    sb1T = (*AsbT);
+
     sb1.FixDiag();
     sb1T.FixDiag();
     sb2.Product(&sb1,&sb1);  
@@ -1163,6 +1166,7 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
         case 3: if (gridptr->AnalyseNode3(nodei->GetVec(),palist)) return 1; break;
         case 4: if (gridptr->AnalyseNode4(nodei->GetVec(),palist)) return 1; break;
         case 5: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
+        //        case 17: if (gridptr->AnalyseNode17(nodei->GetVec(),palist)) return 1; break;
 #endif
         case 6: if (gridptr->AnalyseNode6(nodei->GetVec(),palist)) return 1; break;
        }
@@ -1256,6 +1260,8 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
 
     int type = FAMGGetParameter()->Gettype();
     
+    for(i = 0; i < n; i++) graph->GetNode(i)->SetNSons(0);
+        
     for(i = 0; i < n; i++)
     {
         nodei = graph->GetNode(i);
@@ -1270,11 +1276,12 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
         case 3: if (gridptr->AnalyseNode3(nodei->GetVec(),palist)) return 1; break;
         case 4: if (gridptr->AnalyseNode4(nodei->GetVec(),palist)) return 1; break;
         case 5: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
+        //        case 17: if (gridptr->AnalyseNode17(nodei->GetVec(),palist)) return 1; break;
 #endif
         case 6: if (gridptr->AnalyseNode6(nodei->GetVec(),palist)) return 1; break;
+
         }
         nodei->SetPaList(palist);
-        nodei->SetNSons(0);
                                  
     }
 
@@ -1282,21 +1289,8 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
     for(i = 0; i < n; i++)
     {
         nodei = graph->GetNode(i);
-        if(nodei->IsFGNode() || nodei->IsCGNode())
-			continue; 
-        Remove(nodei);  
-        // if(nodei->GetPaList() == NULL)
-        // {
-        //     MarkCGNode(nodei);
-        //     gridptr->UpdateNeighborsCG(i);
-        // }
-        // else
-        {
-            nodei->CountNewLinks(gridptr, this);
-            nodei->CountNewCG(this);
-            nodei->ComputeTotalWeight();
-            if(Insert(nodei)) return 1;
-        }
+        if(nodei->IsFGNode() || nodei->IsCGNode()) continue; 
+		if(InsertNode(gridptr, nodei));
     }
 
     return 0;

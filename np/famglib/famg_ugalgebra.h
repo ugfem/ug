@@ -584,7 +584,10 @@ typedef class FAMGMatrixIter FAMGugMatrixIter;
 #endif  // ONLY_ONE_ALGEBRA_DS
 
 
+#ifdef FAMG_SPARSE_BLOCK
 void SetValueSkip(const FAMGugVector &v, double val );
-
-
+void SetValueSkip(const FAMGugVector &v, double *val );
+#else
+void SetValueSkip(FAMGugVector &v, double val );
+#endif
 #endif

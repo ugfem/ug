@@ -76,11 +76,11 @@ extern "C"
 #endif
 
 /* RCS_ID
-$Header$
+$Header$ 
 */
 
 #ifdef ModelP
-// forward declaration for ug functions
+// forward declaration for ug functions 
 extern "C"{
 void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio);
 void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data);
@@ -113,7 +113,8 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	
 	
 	// jacobi smoothing for the fine nodes
-    fgsolution.JacobiSmoothFG( *GetDiagMatrix(), fgdefect );
+    fgsolution.JacobiSmoothFG( *GetMatrix(), fgdefect );
+    
 
 #ifdef ModelP
 	if (l_vector_consistent(mygrid,((FAMGugVector&)fgsolution).GetUgVecDesc())!=NUM_OK) 
@@ -234,7 +235,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
         fgsol = 0.0;
 
 		// jacobi smoothing for the fine nodes
-        fgsol.JacobiSmoothFG( *GetDiagMatrix(), fgdefect );
+        fgsol.JacobiSmoothFG( *GetMatrix(), fgdefect );
 #ifdef ModelP
 		if (l_vector_consistent(mygrid,((FAMGugVector&)fgsol).GetUgVecDesc())!=NUM_OK) 
 			assert(0);
@@ -290,8 +291,9 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
     cout<<"FAMGGrid::Restriction: sol after defect "<<fgsolution*fgsolution<<endl;
     cout<<"FAMGGrid::Restriction: defect*sol after defect "<<fgdefect*fgsolution<<endl;
 #endif
-	
-	
+		
+    cgdefect = 0.0;
+
 	FAMGVectorIter fiter(GetGridVector());
 	while( fiter(fvec) )
 #ifdef ModelP
@@ -652,18 +654,119 @@ int FAMGGrid::BiCGStab()
 }
 #endif
 
+#ifdef FAMG_SPARSE_BLOCK
 void FAMGGrid::SmoothTV()
 {
 
-#ifdef FAMG_SPARSE_BLOCK
-    return; // not yet implemented
-#else
-
-    double sum, normA, mii, scaling;
+    FAMGGridVector gv = GetGridVector();
     FAMGVector &tvA = *vector[FAMGTVA];
     FAMGVector &tvB = *vector[FAMGTVB];
+    FAMGVector &help = *vector[FAMGUNKNOWN];
+	FAMGMatrixAlg &M = *matrix;
+    FAMGVectorIter viter(gv);
+	FAMGMatrixEntry col;
+	FAMGVectorEntry row;
+	double *tvAptr, *tvBptr, *helpptr, *mptr;
+    int k;
+
+	const FAMGSparseVector *svtvA  = tvA.GetSparseVectorPtr();
+	const FAMGSparseVector *svtvB  = tvB.GetSparseVectorPtr();
+	const FAMGSparseVector *svh  = help.GetSparseVectorPtr();
+	const FAMGSparseBlock *sb  = M.GetSparseBlockPtr();
+    const FAMGSparseBlock *sbd  = M.GetDiagSparseBlockPtr();
+
+    const int stv = FAMGGetParameter()->Getstv();
+
+    short nr = sbd->Get_nr();
+    FAMGSparseVector svsum(nr);
+    double *sum = new double[svsum.Get_maxcomp()+1];
+    double *update = new double[svsum.Get_maxcomp()+1];
+    double *decomp = new double[nr*nr]; 
+    short *pivotmap = new short[nr]; 
+
+    for(k = 0; k < stv; k++)
+    {
+
+        while(viter(row))
+        {
+		
+            helpptr = help.GetValuePtr(row);
+            tvAptr = tvA.GetValuePtr(row);
+        
+            // diagonal 
+            FAMGMatrixIter miter(M,row);
+            miter(col);
+            mptr = M.GetValuePtr(col);
+            SparseBlockVSet(&svsum,sum,0.0);
+            SparseBlockMVAddProduct(&svsum,sbd,svtvA,sum,mptr,tvAptr,1.0);
+            SparseBlockMCopyDense(decomp,sbd,mptr);
+            while(miter(col))
+            {
+                tvAptr = tvA.GetValuePtr(col.dest());
+                mptr = M.GetValuePtr(col);
+                SparseBlockMVAddProduct(&svsum,sb,svtvA,sum,mptr,tvAptr,1.0);
+            }
+            if(LR_Decomp(nr,decomp,pivotmap)) assert(0);
+            if(LR_Solve(nr,decomp,pivotmap,update,sum)) assert(0);
+            SparseBlockVAdd(svh,&svsum,&svsum,helpptr,update,update,0.0);
+        }
+        viter.reset();
+        while(viter(row))
+        {
+            helpptr = help.GetValuePtr(row);
+            tvAptr = tvA.GetValuePtr(row);
+            SparseBlockVAdd(svtvA,svtvA,svh,tvAptr,tvAptr,helpptr,-1.0);
+        }
+        viter.reset();
+           
+	}
+
+    // make sure absolute value is large enough for every tv component
+    short n = svtvA->Get_n();
+    while(viter(row))
+    {
+        tvAptr = tvA.GetValuePtr(row);
+        tvBptr = tvB.GetValuePtr(row);
+        for(short i = 0; i < n; i++)
+        {
+            if(Abs(tvAptr[svtvA->Get_comp(i)]) < 1e-10)
+            {
+                tvAptr[svtvA->Get_comp(i)] = 1e-10;
+            }
+            if(Abs(tvBptr[svtvB->Get_comp(i)]) < 1e-10)
+            {
+                tvBptr[svtvB->Get_comp(i)] = 1e-10;
+            }
+        }
+    }
+    viter.reset();
+
+
+
+    if(stv > 0)
+    {
+        while(viter(row))
+        {
+            tvAptr = tvA.GetValuePtr(row);
+            tvBptr = tvB.GetValuePtr(row);
+            SparseBlockVAdd(svtvB,svtvA,svtvA,tvBptr,tvAptr,tvAptr,0.0);
+            // test
+            // SparseBlockVAdd(&svsum,svtvA,svtvA,tvAptr,tvAptr,tvAptr,0.0);
+        }
+    }
+
+	return;
+
+}
+#else
+void FAMGGrid::SmoothTV()
+{
+    double sum, normA, mii, scalingA, normB, scalingB;
+    FAMGVector &tvA = *vector[FAMGTVA];
+    FAMGVector &tvB = *vector[FAMGTVB];
+    FAMGVector &help = *vector[FAMGUNKNOWN];
 	FAMGMatrixAlg &mat = *Consmatrix;
-	FAMGMatrixEntry me;
+	FAMGMatrixEntry me, de;
 	FAMGVectorEntry ve;
     int k;
 
@@ -671,7 +774,7 @@ void FAMGGrid::SmoothTV()
 
     for(k = 0; k < stv; k++)
     {
-		assert(0); // TODO: noch ueberlegen ob matrix Consmatrix richtig ist
+		// TODO: noch ueberlegen ob matrix Consmatrix richtig ist
 		FAMGVectorIter tviter(tvA);
 		while( tviter(ve) )
 		{
@@ -681,12 +784,22 @@ void FAMGGrid::SmoothTV()
 			miter(me);	// diagonal element
 			mii = mat[me];
 			while( miter(me) )
-				sum -= mat[me]*tvA[me.dest()];
-			tvA[ve] = sum/mii;
+            {
+                FAMGMatrixIter diag(*matrix,me.dest());
+                diag(de);
+				// sum += mat[me]*tvA[me.dest()]/mat[de];
+                sum += mat[me]*tvA[me.dest()];
+            }
+			//help[ve] = 0.15*tvA[ve] - 0.85*sum;
+			help[ve] = 0.15*tvA[ve] - 0.85*sum/mii;
 		}	
-		
-		FAMGVectorRevIter tvReviter(tvA);
-		while( tvReviter(ve) )
+        tviter.reset();
+		while( tviter(ve) ) tvA[ve] = help[ve];
+
+
+
+		FAMGVectorIter tvTiter(tvB);
+		while( tvTiter(ve) )
 		{
 			FAMGMatrixIter miter(*matrix,ve);
             sum = 0.0;
@@ -694,28 +807,43 @@ void FAMGGrid::SmoothTV()
 			miter(me);	// diagonal element
 			mii = mat[me];
 			while( miter(me) )
-				sum -= mat[me]*tvA[me.dest()];
-			tvA[ve] = sum/mii;
+            {
+                FAMGMatrixIter diag(*matrix,me.dest());
+                diag(de);
+				 sum += mat[me]*tvB[me.dest()];
+				//sum += mat[me]*tvB[me.dest()]/mat[de];
+            }
+			 help[ve] = 0.15*tvB[ve] - 0.85*sum/mii;
+			// help[ve] = 0.15*tvB[ve] - 0.85*sum;
 		}	
+        tvTiter.reset();
+		while( tvTiter(ve) ) tvB[ve] = help[ve];
+
     }
      
     normA = tvA.norm();
+    normB = tvB.norm();
 	k = mat.GetN();
 #ifdef ModelP
 	k = UG_GlobalSumINT( k );
 #endif
-    scaling = sqrt((double)k) / normA;
+    scalingA = sqrt((double)k) / normA;
+    scalingB = sqrt((double)k) / normB;
 	
 	FAMGVectorIter tviter(tvA);
 	while( tviter(ve) )
 	{
-		tvB[ve] = tvA[ve] *= scaling;
+		tvA[ve] *= scalingA;
+	}
+	FAMGVectorIter tvTiter(tvB);
+	while( tvTiter(ve) )
+	{
+		tvB[ve] *= scalingB;
 	}
 
 	return;
-#endif
 }
-    
+#endif    
 
 #ifdef FAMG_ILU
 int FAMGGrid::ILUTDecomp(int cgilut)
@@ -1183,8 +1311,7 @@ int FAMGGrid::ConstructTransfer()
 
     // test
     // FGSSmoothTV();
-
-    GetTmpMatrix()->MarkStrongLinks(*this);
+    GetMatrix()->MarkStrongLinks(*this);
 
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
@@ -1292,11 +1419,18 @@ int FAMGGrid::ConstructTransfer()
     
     for(i = 0; i < conloops; i++)
     {
-        FAMGMarkHeap(FAMG_FROM_BOTTOM);
+        // FAMGMarkHeap(FAMG_FROM_BOTTOM);
 #ifdef USE_UG_DS
-        assert(0);	// i don't want to have a second matrix
+#ifndef FAMG_SPARSE_BLOCK
+        // assert(0);	// i don't want to have a second matrix. [Maybe we do not need one ? :-) chris] 
+
+        if (graph->Construct2(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+        if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);} // can not remember why
+        if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+
+#endif
 #else
-		assert(0);	// todo: change
+		
         tmpmatrix = (FAMGMatrixAlg *) FAMGGetMem(sizeof(FAMGMatrixAlg),FAMG_FROM_BOTTOM);
         if(tmpmatrix == NULL)
 			RETURN(1);
@@ -1305,10 +1439,13 @@ int FAMGGrid::ConstructTransfer()
         if(tmpmatrix->TmpMatrix(matrix,transfer,graph))
 			RETURN(1);
 #endif
+#ifdef FAMG_SPARSE_BLOCK
  
         if (graph->Construct2(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+        if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);} // can not remember why
         if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-        FAMGReleaseHeap(FAMG_FROM_BOTTOM);
+#endif
+        // FAMGReleaseHeap(FAMG_FROM_BOTTOM);
     }
 
     if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}

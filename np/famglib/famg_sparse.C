@@ -18,7 +18,7 @@
 /* Remarks:					    											*/
 /*																			*/
 /****************************************************************************/
-
+ 
 #include <string.h>
 #include <strstream.h>
 #include "famg_sparse.h"
@@ -172,6 +172,7 @@ void FAMGSparseVector::Product(const FAMGSparseBlock *sb, const FAMGSparseVector
     n = sb->Get_nr();
 
     // construct comp
+    if(comp != NULL) delete comp;
     comp = new short[n];
 
     // map offsets to standard range
@@ -696,9 +697,8 @@ int FAMGSparseBlock::Product(const FAMGSparseBlock *sb1, const FAMGSparseBlock *
     // construct offsets
     offset = new short[ne];
     // map offsets to standard range
-    FAMGMarkHeap(FAMG_FROM_TOP);
-    short *ho1 = (short *) FAMGGetMem(sb1->ne*sizeof(short),FAMG_FROM_TOP);
-    short *ho2 = (short *) FAMGGetMem(sb2->ne*sizeof(short),FAMG_FROM_TOP);
+    short *ho1 = new short[sb1->ne];
+    short *ho2 = new short[sb2->ne];
 
     for(i = 0; i < sb1->ne; i++) ho1[i] = -1;
     for(i = 0; i < sb2->ne; i++) ho2[i] = -1;
@@ -725,7 +725,7 @@ int FAMGSparseBlock::Product(const FAMGSparseBlock *sb1, const FAMGSparseBlock *
         h2++;
     }
         
-    short *helpmat = (short *) FAMGGetMem(ne*h1*h2*sizeof(short),FAMG_FROM_TOP);
+    short *helpmat = new short[ne*h1*h2];
     memset((void*)helpmat, 0, ne*h1*h2*sizeof(short));
 
     short equal, ojk, oij, *hm;
@@ -784,7 +784,10 @@ int FAMGSparseBlock::Product(const FAMGSparseBlock *sb1, const FAMGSparseBlock *
     
     maxoffset = off-1;
 
-    FAMGReleaseHeap(FAMG_FROM_TOP);
+    delete help;
+    delete ho1;
+    delete ho2;
+    delete helpmat;
 
     return 0;
 
@@ -1830,6 +1833,47 @@ int SparseBlockMVAddProduct(const FAMGSparseVector *dest, const FAMGSparseBlock 
         vd[dcomp[i]] = vd[dcomp[i]] + factor * sum;
     }
 
+    delete computed;
+
+    return 0;    
+}
+
+int SparseBlockMVProduct(const FAMGSparseVector *dest, const FAMGSparseBlock *sb, const FAMGSparseVector *source, double *vd, const double *a, const double *vs)
+{
+    short i, jj, nr, *start, *offset, *scomp, *dcomp, *index;
+    double sum;
+
+    nr = sb->Get_nr();
+    if((nr != dest->Get_n()) || (sb->Get_nc() != source->Get_n()))
+    {
+        ostrstream ostr; 
+        ostr << "wrong  dimensions";
+        FAMGWrite(ostr);
+        return 1;
+    }
+    start = sb->Get_start();
+    offset = sb->Get_offset();
+    index = sb->Get_index();
+    scomp = source->Get_comp();
+    dcomp = dest->Get_comp();
+    
+    short *computed = new short[dest->Get_maxcomp()+1];
+    memset((void*)computed,0,sizeof(short)*(dest->Get_maxcomp()+1)); 
+
+    for(i = 0; i < nr; i++)
+    {
+        if(computed[dcomp[i]]) continue;
+        computed[dcomp[i]] = 1;
+        sum = 0.0;
+        for(jj = start[i]; jj < start[i+1]; jj++)
+        {
+            sum += a[offset[jj]]*vs[scomp[index[jj]]];
+        }
+        vd[dcomp[i]] = sum;
+    }
+
+    delete computed;
+
     return 0;    
 }
 
@@ -1853,6 +1897,31 @@ int SparseBlockMVAddProduct(const FAMGSparseVector *dest, const FAMGSparseVector
     for(i = 0; i < n; i++)
     {
         vd[dcomp[i]] += factor*d[comp[i]]*vs[scomp[i]];
+    }
+
+    return 0;    
+}
+
+int SparseBlockMVProduct(const FAMGSparseVector *dest, const FAMGSparseVector *sv, const FAMGSparseVector *source, double *vd, const double *d, const double *vs)
+{
+    // matrix is diagonal and therefore saved as vector
+    short i, n, *comp, *scomp, *dcomp;
+
+    n = sv->Get_n();
+    if((n != dest->Get_n()) || (n != source->Get_n()))
+    {
+        ostrstream ostr; 
+        ostr << "wrong  dimensions";
+        FAMGWrite(ostr);
+        assert(0);
+    }
+    comp = sv->Get_comp();
+    scomp = source->Get_comp();
+    dcomp = dest->Get_comp();
+    
+    for(i = 0; i < n; i++)
+    {
+        vd[dcomp[i]] = d[comp[i]]*vs[scomp[i]];
     }
 
     return 0;    
@@ -1890,6 +1959,7 @@ void SparseBlockRowAddScalProd(const FAMGSparseVector *sp, const FAMGSparseBlock
         }
     }
 
+    delete computed;
     return;
 }
 
@@ -1926,28 +1996,349 @@ void SparseBlockRowAddScalProd(const FAMGSparseVector *sp, const FAMGSparseBlock
         }
     }
 
+    delete computed;
     return;
 }
 
 
-int FAMGGrid::ConstructDiagonal()
+
+
+void SparseBlockMCopyDense(double *decomp, const FAMGSparseBlock *sb, double *matptr)
+{
+    short i, jj, off_i;
+
+    short nr = sb->Get_nr();
+    if(nr != sb->Get_nc()) assert(0);
+    
+    short *start = sb->Get_start();
+    short *index = sb->Get_index();
+    short *offset = sb->Get_offset();
+
+    memset((void*)decomp,0,nr*nr*sizeof(double));
+
+    for(i = 0; i < nr; i++)
+    {
+        off_i = i*nr;
+        for(jj = start[i]; jj < start[i+1]; jj++)
+        {
+            decomp[off_i + index[jj]] = matptr[offset[jj]];
+        }
+    }
+
+    return;
+}
+    
+void SparseBlockDiagApprox(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double factor, const double *tv)
+{
+    double aii;
+    short i, j, jj;
+    short nr = sb->Get_nr();
+    FAMGSparseVector svh(nr);
+    double *help1 = new double[nr];
+
+    LR_Solve(nr,miidecomp+sbd->Get_offset(0),help1,tv+svt->Get_comp(0)); 
+    
+    for(i = 0; i < sb->Get_ne(); i++) mij[sb->Get_offset(i)] = 0.0;
+    for(i = 0; i < nr; i++)
+    {
+        for(jj = sb->Get_start(i); jj < sb->Get_start(i+1); jj++)
+        {
+            j = sb->Get_index(jj);
+            if(i == j)
+            {
+                aii = factor*help1[i]/tv[svt->Get_comp(i)];
+                if(Abs(aii) > Abs(mij[sb->Get_offset(jj)]))
+                {                 
+                    mij[sb->Get_offset(jj)] = aii;
+                }
+                break;
+            }
+        }
+    }
+
+    delete help1;
+
+    return;
+}
+
+
+void SparseBlockDiagApprox(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseBlock *sbo, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double *matij, const double *tv)
+{
+    double aii;
+    short i, j, jj;
+    short nr = sb->Get_nr();
+    FAMGSparseVector svh(nr);
+    double *help = new double[nr];
+
+    SparseBlockMVProduct(&svh,sbo,svt,help,matij,tv);
+    LR_Solve(nr,miidecomp+sbd->Get_offset(0),help,help); 
+    // help as in and out vector only possible without pivot search !
+    
+    for(i = 0; i < sb->Get_ne(); i++) mij[sb->Get_offset(i)] = 0.0;
+    for(i = 0; i < nr; i++)
+    {
+        for(jj = sb->Get_start(i); jj < sb->Get_start(i+1); jj++)
+        {
+            j = sb->Get_index(jj);
+            if(i == j)
+            {
+                aii = help[i]/tv[svt->Get_comp(i)];
+                if(Abs(aii) > Abs(mij[sb->Get_offset(jj)]))
+                {                 
+                    mij[sb->Get_offset(jj)] = aii;
+                }
+                break;
+            }
+        }
+    }
+
+    delete help;
+
+    return;
+}
+    
+void SparseBlockDiagApprox(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseBlock *sbo, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double *matij, const double *mjjdecomp, const double *tv)
+{
+    double aii;
+    short i, j, jj;
+    short nr = sb->Get_nr();
+    FAMGSparseVector svh(nr);
+    double *help1 = new double[nr];
+    double *help2 = new double[nr];
+
+    LR_Solve(nr,mjjdecomp+sbd->Get_offset(0),help1,tv+svt->Get_comp(0)); 
+    SparseBlockMVProduct(&svh,sbo,&svh,help2,matij,help1);
+    LR_Solve(nr,miidecomp+sbd->Get_offset(0),help1,help2); 
+    
+    for(i = 0; i < sb->Get_ne(); i++) mij[sb->Get_offset(i)] = 0.0;
+    for(i = 0; i < nr; i++)
+    {
+        for(jj = sb->Get_start(i); jj < sb->Get_start(i+1); jj++)
+        {
+            j = sb->Get_index(jj);
+            if(i == j)
+            {
+                aii = help1[i]/tv[svt->Get_comp(i)];
+                if(Abs(aii) > Abs(mij[sb->Get_offset(jj)]))
+                {                 
+                    mij[sb->Get_offset(jj)] = aii;
+                }
+                break;
+            }
+        }
+    }
+
+    delete help1;
+    delete help2;
+
+    return;
+}
+
+void SparseBlockDiagApproxT(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double factor, const double *tv)
+{
+    double aii;
+    short i, j, jj;
+    short nr = sb->Get_nr();
+    FAMGSparseVector svh(nr);
+    double *help1 = new double[nr];
+
+    LR_SolveT(nr,miidecomp+sbd->Get_offset(0),help1,tv+svt->Get_comp(0)); 
+    
+    for(i = 0; i < sb->Get_ne(); i++) mij[sb->Get_offset(i)] = 0.0;
+    for(i = 0; i < nr; i++)
+    {
+        for(jj = sb->Get_start(i); jj < sb->Get_start(i+1); jj++)
+        {
+            j = sb->Get_index(jj);
+            if(i == j)
+            {
+                aii = factor*help1[i]/tv[svt->Get_comp(i)];
+                if(Abs(aii) > Abs(mij[sb->Get_offset(jj)]))
+                {                 
+                    mij[sb->Get_offset(jj)] = aii;
+                }
+                break;
+            }
+        }
+    }
+
+    delete help1;
+
+    return;
+}
+
+
+void SparseBlockDiagApproxT(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseBlock *sbo, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double *matij, const double *tv)
+{
+    double aii;
+    short i, j, jj;
+    short nr = sb->Get_nr();
+    FAMGSparseVector svh(nr);
+    double *help = new double[nr];
+
+    SparseBlockMVProduct(&svh,sbo,svt,help,matij,tv);
+    LR_SolveT(nr,miidecomp+sbd->Get_offset(0),help,help); 
+    // help as in and out vector only possible without pivot search !
+    
+    for(i = 0; i < sb->Get_ne(); i++) mij[sb->Get_offset(i)] = 0.0;
+    for(i = 0; i < nr; i++)
+    {
+        for(jj = sb->Get_start(i); jj < sb->Get_start(i+1); jj++)
+        {
+            j = sb->Get_index(jj);
+            if(i == j)
+            {
+                aii = help[i]/tv[svt->Get_comp(i)];
+                if(Abs(aii) > Abs(mij[sb->Get_offset(jj)]))
+                {                 
+                    mij[sb->Get_offset(jj)] = aii;
+                }
+                break;
+            }
+        }
+    }
+
+    delete help;
+
+    return;
+}
+    
+void SparseBlockDiagApproxT(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseBlock *sbo, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double *matij, const double *mjjdecomp, const double *tv)
+{
+    double aii;
+    short i, j, jj;
+    short nr = sb->Get_nr();
+    FAMGSparseVector svh(nr);
+    double *help1 = new double[nr];
+    double *help2 = new double[nr];
+
+    LR_SolveT(nr,mjjdecomp+sbd->Get_offset(0),help1,tv+svt->Get_comp(0)); 
+    SparseBlockMVProduct(&svh,sbo,&svh,help2,matij,help1);
+    LR_SolveT(nr,miidecomp+sbd->Get_offset(0),help1,help2); 
+    
+    for(i = 0; i < sb->Get_ne(); i++) mij[sb->Get_offset(i)] = 0.0;
+    for(i = 0; i < nr; i++)
+    {
+        for(jj = sb->Get_start(i); jj < sb->Get_start(i+1); jj++)
+        {
+            j = sb->Get_index(jj);
+            if(i == j)
+            {
+                aii = help1[i]/tv[svt->Get_comp(i)];
+                if(Abs(aii) > Abs(mij[sb->Get_offset(jj)]))
+                {                 
+                    mij[sb->Get_offset(jj)] = aii;
+                }
+                break;
+            }
+        }
+    }
+
+    delete help1;
+    delete help2;
+
+    return;
+}
+    
+void SparseBlockGalDiagApprox(const FAMGSparseBlock *sb, const FAMGSparseVector *sbr, const FAMGSparseBlock *sbd, const FAMGSparseVector *sbp, const FAMGSparseVector *svt, double *mij, const double *ris, const double *mss, const double *psj, const double *tv)
+{
+    double aii;
+    short i, j, jj;
+    short nr = sb->Get_nr();
+    FAMGSparseVector svh(nr);
+    double *help1 = new double[nr];
+    double *help2 = new double[nr];
+
+
+    SparseBlockMVProduct(&svh,sbp,svt,help1,psj,tv);
+    SparseBlockMVProduct(&svh,sbd,&svh,help2,mss,help1);
+    SparseBlockMVProduct(&svh,sbr,&svh,help1,ris,help2);
+    
+
+    for(i = 0; i < sb->Get_ne(); i++) mij[sb->Get_offset(i)] = 0.0;
+    for(i = 0; i < nr; i++)
+    {
+        for(jj = sb->Get_start(i); jj < sb->Get_start(i+1); jj++)
+        {
+            j = sb->Get_index(jj);
+            if(i == j)
+            {
+                aii = help1[i]/tv[svt->Get_comp(i)];
+                if(Abs(aii) > Abs(mij[sb->Get_offset(jj)]))
+                {                 
+                    mij[sb->Get_offset(jj)] = aii;
+                }
+                break;
+            }
+        }
+    }
+    
+    delete help1;
+    delete help2;
+
+    return;
+}
+
+void SparseBlockGalDiagApproxT(const FAMGSparseBlock *sb, const FAMGSparseVector *sbr, const FAMGSparseBlock *sbd, const FAMGSparseVector *sbp, const FAMGSparseVector *svt, double *mij, const double *ris, const double *mss, const double *psj, const double *tv)
+{
+    double aii;
+    short i, j, jj;
+    short nr = sb->Get_nr();
+    FAMGSparseVector svh(nr);
+    FAMGSparseBlock sbdT;
+    double *help1 = new double[nr];
+    double *help2 = new double[nr];
+
+    sbdT.Transposed(sbd);
+
+    SparseBlockMVProduct(&svh,sbr,svt,help1,ris,tv);
+    SparseBlockMVProduct(&svh,&sbdT,&svh,help2,mss,help1);
+    SparseBlockMVProduct(&svh,sbp,&svh,help1,psj,help2);
+   
+
+    for(i = 0; i < sb->Get_ne(); i++) mij[sb->Get_offset(i)] = 0.0;
+    for(i = 0; i < nr; i++)
+    {
+        for(jj = sb->Get_start(i); jj < sb->Get_start(i+1); jj++)
+        {
+            j = sb->Get_index(jj);
+            if(i == j)
+            {
+                aii = help1[i]/tv[svt->Get_comp(i)];
+                if(Abs(aii) > Abs(mij[sb->Get_offset(jj)]))
+                {                 
+                    mij[sb->Get_offset(jj)] = aii;
+                }
+                break;
+            }
+        }
+    }
+    
+    delete help1;
+    delete help2;
+
+    return;
+}
+
+
+
+// lump the diagonal block
+int FAMGGrid::ConstructDiagonalLump()
 {
     FAMGGridVector gv = GetGridVector();
     FAMGMatrixAlg &A = *GetMatrix();
     FAMGMatrixAlg &D = *GetDiagMatrix();
     FAMGVectorEntry vi;
     FAMGVectorIter viter(gv);
-    double *Dii, *Aii;
-    short i, j, jj;
+    double *Dii, *Aii, sum;
+    short i, jj;
 
     const FAMGSparseBlock *Dsb = D.GetDiagSparseBlockPtr();
     const FAMGSparseBlock *Asb = A.GetDiagSparseBlockPtr();
 
-    FAMGMarkHeap(FAMG_FROM_TOP);
 
-    short *D_diag_offset = (short *) FAMGGetMem(sizeof(short)*Dsb->Get_nr(),FAMG_FROM_TOP);
-    short *A_diag_offset = (short *) FAMGGetMem(sizeof(short)*Asb->Get_nr(),FAMG_FROM_TOP);
-
+    short *D_diag_offset = new short[Dsb->Get_nr()]; 
+ 
     if(Dsb->Get_nr() != Asb->Get_nr())
     {
         ostrstream ostr; 
@@ -1974,57 +2365,9 @@ int FAMGGrid::ConstructDiagonal()
            }
        }
     }
-    for(i = 0; i < Asb->Get_nr(); i++) A_diag_offset[i] = -1;
-    for(i = 0; i < Asb->Get_nr(); i++)
-    {
-       for(jj = Asb->Get_start(i); jj < Asb->Get_start(i+1); jj++)
-       {
-           if(Asb->Get_index(jj) == i)
-           {
-               A_diag_offset[i] = Asb->Get_offset(jj);
-               break;
-           }
-       }
-    }
 
 
-    for(i = 0; i < Dsb->Get_nr(); i++) 
-    {
-        if(D_diag_offset[i] < 0) 
-        {
-            if(A_diag_offset[i] >= 0)
-            {
-                ostrstream ostr; 
-                ostr << "wrong block structure of the diagmatrix";
-                FAMGWrite(ostr);
-                return(1);
-            }
-            else
-            {
-                continue;
-            }
-        }
-        for(j = i+1; j < Dsb->Get_nr(); j++)
-        {
-            if(D_diag_offset[i] == D_diag_offset[j])
-            {
-                if(A_diag_offset[i] != A_diag_offset[j])
-                {
-                    ostrstream ostr; 
-                    ostr << "wrong block structure of the diagmatrix";
-                    FAMGWrite(ostr);
-                    return(1);
-                }
-                else
-                {
-                    D_diag_offset[j] = -1;
-                    A_diag_offset[j] = -1;
-                }
-            }
-        }
-    }
 
-    // sum up all off-diagonal entries
     while(viter(vi))
     {
         Dii = D.GetDiagValuePtr(vi);
@@ -2032,20 +2375,25 @@ int FAMGGrid::ConstructDiagonal()
         for(i = 0; i < Dsb->Get_ne(); i++) Dii[Dsb->Get_offset(i)] = 0.0;
         for(i = 0; i < Dsb->Get_nr(); i++)
         {
+            sum = 0.0;
+            for(jj = Asb->Get_start(i); jj < Asb->Get_start(i+1); jj++)
+            {
+                sum += Aii[Asb->Get_offset(jj)];
+            }
             if(D_diag_offset[i] < 0) continue;
-            Dii[D_diag_offset[i]] = 1.0/Aii[A_diag_offset[i]];
-        }   
+            Dii[D_diag_offset[i]] = 1.0/sum;
+        } 
     }
 
  
-    FAMGReleaseHeap(FAMG_FROM_TOP);
+    delete D_diag_offset;
 
     return 0;
 
 }
 
-#ifdef TEST_TEST_TODO
-int FAMGGrid::ConstructDiagonal()
+// sum of the offdiagonals
+int FAMGGrid::ConstructDiagonalSum()
 {
     FAMGGridVector gv = GetGridVector();
     FAMGMatrixAlg &A = *GetMatrix();
@@ -2059,10 +2407,8 @@ int FAMGGrid::ConstructDiagonal()
     const FAMGSparseBlock *Dsb = D.GetDiagSparseBlockPtr();
     const FAMGSparseBlock *Asb = A.GetSparseBlockPtr();
 
-    FAMGMarkHeap(FAMG_FROM_TOP);
-
-    short *D_diag_offset = (short *) FAMGGetMem(sizeof(short)*Dsb->Get_nr(),FAMG_FROM_TOP);
-    short *A_diag_offset = (short *) FAMGGetMem(sizeof(short)*Asb->Get_nr(),FAMG_FROM_TOP);
+    short *D_diag_offset = new short[Dsb->Get_nr()]; 
+    short *A_diag_offset = new short[Asb->Get_nr()];
 
     if(Dsb->Get_nr() != Asb->Get_nr())
     {
@@ -2177,40 +2523,310 @@ int FAMGGrid::ConstructDiagonal()
         }
     }
 
-    FAMGReleaseHeap(FAMG_FROM_TOP);
+
+
+    delete D_diag_offset;
+    delete A_diag_offset;
 
     return 0;
 
 }
 
-#endif        
-
-void FAMGTestSparseBlock()
+// lump the diagonal block
+int FAMGGrid::ConstructDiagonalInvLump()
 {
-    FAMGSparseBlock sb, sbt, sbp;
-    FAMGSparseVector st;
-   
-    sb.ne = 5;
-    sb.maxoffset = 3;    
-    sb.nc = 3;
-    sb.nr = 3;
+    FAMGGridVector gv = GetGridVector();
+    FAMGMatrixAlg &A = *GetMatrix();
+    FAMGMatrixAlg &D = *GetDiagMatrix();
+    FAMGVectorEntry vi;
+    FAMGVectorIter viter(gv);
+    double *Dii, *Aii;
+    short i, jj;
 
-    sb.start = new short[sb.nr+1];
-    sb.index = new short[sb.ne];
-    sb.offset = new short[sb.ne];
+    const FAMGSparseBlock *Dsb = D.GetDiagSparseBlockPtr();
+    const FAMGSparseBlock *Asb = A.GetDiagSparseBlockPtr();
 
-    sb.start[0] = 0; sb.start[1] = 2; sb.start[2] = 4; sb.start[3] = 5;
-    sb.index[0] = 0; sb.index[1] = 2; sb.index[2] = 0; sb.index[3] = 1;
-    sb.index[4] = 2;
-    sb.offset[0] = 0; sb.offset[1] = 1; sb.offset[2] = 1; sb.offset[3] = 0;
-    sb.offset[4] = 2;
 
-    // sbt.Transposed(sb);
-    // sbp.Product(sb);
-    // st.Construct(sb);
-    // sb.CheckCGIdent(st,st);
+    short *D_diag_offset = new short[Dsb->Get_nr()]; 
+ 
+    if(Dsb->Get_nr() != Asb->Get_nr())
+    {
+        ostrstream ostr; 
+        ostr << "wrong block structure of the diagmatrix";
+        FAMGWrite(ostr);
+        return(1);
+    }
+    for(i = 0; i < Dsb->Get_nr(); i++) D_diag_offset[i] = -1;
+    for(i = 0; i < Dsb->Get_nr(); i++)
+    {
+       for(jj = Dsb->Get_start(i); jj < Dsb->Get_start(i+1); jj++)
+       {
+           if(Dsb->Get_index(jj) == i)
+           {
+               D_diag_offset[i] = Dsb->Get_offset(jj);
+               break;
+           }
+           else
+           {
+               ostrstream ostr; 
+               ostr << "wrong block structure of the diagmatrix";
+               FAMGWrite(ostr);
+               return(1);
+           }
+       }
+    }
 
-    return ;
+
+
+    if(Asb->Get_ne() != 4) assert(0);
+    double *help = new double[4];
+    double *helpinv = new double[4];
+    double det;
+
+    while(viter(vi))
+    {
+        Dii = D.GetDiagValuePtr(vi);
+        Aii = A.GetDiagValuePtr(vi);
+        for(i = 0; i < Dsb->Get_ne(); i++) Dii[Dsb->Get_offset(i)] = 0.0;
+        for(i = 0; i < 4; i++)
+        {
+            help[i] = Aii[Asb->Get_offset(i)];
+        }
+        
+        det = help[0]*help[3] - help[1]*help[2];
+        helpinv[0] = help[3]/det;
+        helpinv[1] = -help[1]/det;
+        helpinv[2] = -help[2]/det;
+        helpinv[3] = help[0]/det;
+
+        Dii[D_diag_offset[0]] = helpinv[0];
+        Dii[D_diag_offset[1]] = helpinv[3];
+    }
+
+ 
+    delete help;
+    delete helpinv;
+
+    delete D_diag_offset;
+
+    return 0;
+
 }
 
+
+// use test vector for constructing the diagonal approximation
+int FAMGGrid::ConstructDiagonalTV()
+{
+    FAMGGridVector gv = GetGridVector();
+    FAMGMatrixAlg &A = *GetMatrix();
+    FAMGMatrixAlg &D = *GetDiagMatrix();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+    FAMGVectorEntry vi;
+    FAMGVectorIter viter(gv);
+    double *Dii, *Aii, sum, *tA;
+    short i, j, jj;
+
+    const FAMGSparseBlock *Dsb = D.GetDiagSparseBlockPtr();
+    const FAMGSparseBlock *Asb = A.GetDiagSparseBlockPtr();
+    const FAMGSparseVector *tvAsv = tvA.GetSparseVectorPtr();
+    const FAMGSparseVector *tvBsv = tvB.GetSparseVectorPtr();
+
+
+    short *D_diag_offset = new short[Dsb->Get_nr()]; 
+ 
+    if(Dsb->Get_nr() != Asb->Get_nr())
+    {
+        ostrstream ostr; 
+        ostr << "wrong block structure of the diagmatrix";
+        FAMGWrite(ostr);
+        return(1);
+    }
+    for(i = 0; i < Dsb->Get_nr(); i++) D_diag_offset[i] = -1;
+    for(i = 0; i < Dsb->Get_nr(); i++)
+    {
+       for(jj = Dsb->Get_start(i); jj < Dsb->Get_start(i+1); jj++)
+       {
+           if(Dsb->Get_index(jj) == i)
+           {
+               D_diag_offset[i] = Dsb->Get_offset(jj);
+               break;
+           }
+           else
+           {
+               ostrstream ostr; 
+               ostr << "wrong block structure of the diagmatrix";
+               FAMGWrite(ostr);
+               return(1);
+           }
+       }
+    }
+
+
+
+    while(viter(vi))
+    {
+        Dii = D.GetDiagValuePtr(vi);
+        Aii = A.GetDiagValuePtr(vi);
+        tA = tvA.GetValuePtr(vi);
+        for(i = 0; i < Dsb->Get_ne(); i++) Dii[Dsb->Get_offset(i)] = 0.0;
+        for(i = 0; i < Dsb->Get_nr(); i++)
+        {
+            sum = 0.0;
+            for(jj = Asb->Get_start(i); jj < Asb->Get_start(i+1); jj++)
+            {
+                j = Asb->Get_index(jj);
+                sum += Aii[Asb->Get_offset(jj)]*tA[tvAsv->Get_comp(j)];
+;
+            }
+            if(D_diag_offset[i] < 0) continue;
+            if(Abs(sum) > 1e-10*tA[tvAsv->Get_comp(i)]) 
+            {
+                Dii[D_diag_offset[i]] = tA[tvAsv->Get_comp(i)]/sum;
+            }
+            else
+            {
+                Dii[D_diag_offset[i]] = 1e+10;
+            }
+        } 
+
+    }
+
+ 
+    delete D_diag_offset;
+
+    return 0;
+
+}
+
+// use test vector for constructing the diagonal approximation
+int FAMGGrid::ConstructDiagonalInvTV()
+{
+    FAMGGridVector gv = GetGridVector();
+    FAMGMatrixAlg &A = *GetMatrix();
+    FAMGMatrixAlg &D = *GetDiagMatrix();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+    FAMGVectorEntry vi;
+    FAMGVectorIter viter(gv);
+    double *Dii, *Aii, *tA;
+    short i, jj;
+
+    const FAMGSparseBlock *Dsb = D.GetDiagSparseBlockPtr();
+    const FAMGSparseBlock *Asb = A.GetDiagSparseBlockPtr();
+    const FAMGSparseVector *tvAsv = tvA.GetSparseVectorPtr();
+    const FAMGSparseVector *tvBsv = tvB.GetSparseVectorPtr();
+
+
+    short *D_diag_offset = new short[Dsb->Get_nr()]; 
+ 
+    if(Dsb->Get_nr() != Asb->Get_nr())
+    {
+        ostrstream ostr; 
+        ostr << "wrong block structure of the diagmatrix";
+        FAMGWrite(ostr);
+        return(1);
+    }
+    for(i = 0; i < Dsb->Get_nr(); i++) D_diag_offset[i] = -1;
+    for(i = 0; i < Dsb->Get_nr(); i++)
+    {
+       for(jj = Dsb->Get_start(i); jj < Dsb->Get_start(i+1); jj++)
+       {
+           if(Dsb->Get_index(jj) == i)
+           {
+               D_diag_offset[i] = Dsb->Get_offset(jj);
+               break;
+           }
+           else
+           {
+               ostrstream ostr; 
+               ostr << "wrong block structure of the diagmatrix";
+               FAMGWrite(ostr);
+               return(1);
+           }
+       }
+    }
+
+    short nr = Asb->Get_nr();
+    double *help = new double[nr];
+    double *decomp = new double[nr*nr]; 
+    short *pivotmap = new short[nr]; 
+
+    while(viter(vi))
+    {
+        tA = tvA.GetValuePtr(vi)+tvAsv->Get_comp(0);
+        Aii = A.GetDiagValuePtr(vi);
+        Dii = D.GetDiagValuePtr(vi);
+        SparseBlockMCopyDense(decomp,Asb,Aii);
+        if(LR_Decomp(nr,decomp,pivotmap)) assert(0);
+        if(LR_Solve(nr,decomp,pivotmap,help,tA)) assert(0);
+
+        for(i = 0; i < Dsb->Get_ne(); i++) Dii[Dsb->Get_offset(i)] = 0.0;
+        for(i = 0; i < Dsb->Get_nr(); i++)
+        {
+            if(tA[i] > 1e-10*Abs(help[i])) 
+            {
+                Dii[D_diag_offset[i]] = help[i]/tA[i];
+            }
+            else
+            {
+                for(jj = Asb->Get_start(i); jj < Asb->Get_start(i+1); jj++)
+                {
+                    if (Asb->Get_index(jj) == i)
+                    {
+                        Dii[D_diag_offset[i]] = 1.0/Aii[Asb->Get_offset(jj)];
+                        break;
+                    }
+                }
+            }
+        } 
+
+    }
+
+ 
+    delete D_diag_offset;
+    delete help;
+    delete pivotmap;
+    delete decomp;
+
+    return 0;
+
+}
+
+// use test vector for constructing the diagonal approximation
+int FAMGGrid::ConstructDiagonalInverse()
+{
+    FAMGGridVector gv = GetGridVector();
+    FAMGMatrixAlg &A = *GetMatrix();
+    FAMGMatrixAlg &D = *GetDiagMatrix();
+    FAMGVectorEntry vi;
+    FAMGVectorIter viter(gv);
+    double *Dii, *Aii;
+
+    const FAMGSparseBlock *Dsb = D.GetDiagSparseBlockPtr();
+    const FAMGSparseBlock *Asb = A.GetDiagSparseBlockPtr();
+
+    short nr = Dsb->Get_nr();
+    if(Asb->Get_nr() != nr) assert(0);
+    if(Dsb->Get_ne() != nr*nr) assert(0);
+
+    if(Dsb->Get_offset(0) + Dsb->Get_ne() != Dsb->Get_maxoffset()+1) assert(0);
+
+    while(viter(vi))
+    {
+        Aii = A.GetDiagValuePtr(vi);
+        Dii = D.GetDiagValuePtr(vi)+Dsb->Get_offset(0);
+        SparseBlockMCopyDense(Dii,Asb,Aii);
+        if(LR_Decomp(nr,Dii)) assert(0);
+
+    }
+
+ 
+    return 0;
+
+}
+
+
+
 #endif 
+

@@ -92,6 +92,185 @@ double FAMGNorm(const int n, const double *v)
 }
 
 
+
+int LR_Decomp (const short n, double *decomp, short *pivotmap)
+{
+	register double dinv, piv, val, factor;
+	register short i, j, k, offset_i, offset_j;
+	
+	for (i = 0; i < n; i++) pivotmap[i] = i;
+
+	/* LR decomposition */
+	for (i = 0; i < n; i++)
+	{
+		/* pivot search */
+		k = i;
+		piv = fabs(decomp[pivotmap[i]*n+i]);
+		for (j = i+1; j < n; j++)
+		{
+			val = fabs(decomp[pivotmap[j]*n+i]);
+			if (val > piv)
+			{
+				k = j;
+				piv = val;
+			}
+		}
+	   
+		/* reorder  */
+		if (k != i)
+		{
+			j = pivotmap[k];
+			pivotmap[k] = pivotmap[i];
+			pivotmap[i] = j;
+		}
+		
+		offset_i = pivotmap[i]*n;
+		dinv = decomp[offset_i+i];
+		if (fabs(dinv) < 1e-15) 
+        {
+            cout << "Warning! LR_Decomp: pivot too small," << endl << flush;
+            return(1);
+        }
+            
+
+		dinv = decomp[offset_i+i] = 1.0/dinv; // store inverse of the diagonal
+		for (j = i+1; j < n; j++)
+		{
+			offset_j = pivotmap[j]*n;
+			factor = decomp[offset_j+i] * dinv; 
+            for (k = i+1; k < n; k++) decomp[offset_j+k] -= decomp[offset_i+k] * factor;
+            decomp[offset_j+i] = factor;
+
+		}
+	}
+	
+	return(0);
+}
+
+int LR_Decomp (const short n, double *decomp)
+{
+    // without pivot search
+	register double dinv, factor;
+	register short i, j, k, offset_i, offset_j;
+	
+
+	/* LR decomposition */
+	for (i = 0; i < n; i++)
+	{
+		offset_i = i*n;
+		dinv = decomp[offset_i+i];
+		if (fabs(dinv) < 1e-15) 
+        {
+            cout << "Warning! LR_Decomp: pivot too small." << endl << flush;
+            dinv = 1e-15;
+        }
+
+		dinv = decomp[offset_i+i] = 1.0/dinv; // store inverse of the diagonal
+		for (j = i+1; j < n; j++)
+		{
+			offset_j = j*n;
+			factor = decomp[offset_j+i] * dinv; 
+            for (k = i+1; k < n; k++) decomp[offset_j+k] -= decomp[offset_i+k] * factor;
+            decomp[offset_j+i] = factor;
+
+		}
+
+	}
+        	
+	return(0);
+}
+
+
+int LR_Solve (const short n, const double *decomp, const short *pivotmap, double *x, const double *b)
+{
+	register short i, j, offset_i;
+	register double sum;
+
+    // foreward subsitution 
+	for (i = 0; i < n; i++)
+	{
+		sum = b[pivotmap[i]];
+        offset_i = pivotmap[i]*n;
+		for (j = 0; j < i; j++)
+		{
+			sum -= decomp[offset_i+j] * x[j];
+		}
+		x[i] = sum;
+	}
+
+    // backward subsitution 
+	for (i=n-1; i>=0; i--)
+	{
+		offset_i = pivotmap[i]*n;
+		sum = x[i];
+		for (j = i+1; j < n; j++) sum -= decomp[offset_i+j] * x[j];
+		x[i] = sum * decomp[offset_i+i];	// the inverse of the diagonal is stored
+	}
+
+	return (0);
+}
+
+int LR_Solve (const short n, const double *decomp, double *x, const double *b)
+{
+    // without pivot search
+	register short i, j, offset_i ;
+	register double sum;
+
+    // foreward subsitution 
+	for (i = 0; i < n; i++)
+	{
+		sum = b[i];
+        offset_i = i*n;
+		for (j = 0; j < i; j++)
+		{
+			sum -= decomp[offset_i+j] * x[j];
+		}
+		x[i] = sum;
+	}
+
+    // backward subsitution 
+	for (i = n-1; i >= 0; i--)
+	{
+		offset_i = i*n;
+		sum = x[i];
+		for (j = i+1; j < n; j++) sum -= decomp[offset_i+j] * x[j];
+		x[i] = sum * decomp[offset_i+i];	// the inverse of the diagonal is stored
+	}
+
+	return (0);
+}
+
+int LR_SolveT (const short n, const double *decomp, double *x, const double *b)
+{
+    // without pivot search
+	register short i, j;
+	register double sum;
+
+    // foreward subsitution 
+	for (i = 0; i < n; i++)
+	{
+		sum = b[i];
+		for (j = 0; j < i; j++)
+		{
+			sum -= decomp[j*n+i] * x[j];
+		}
+		x[i] = sum*decomp[i*n+i]; // the inverse of the diagonal is stored
+	}
+
+    // backward subsitution 
+	for (i = n-1; i >= 0; i--)
+	{
+		sum = x[i];
+		for (j = i+1; j < n; j++)
+        {
+            sum -= decomp[j*n+i] * x[j];
+        }
+		x[i] = sum ;	
+	}
+
+	return (0);
+}
+
 void FAMGSetVector(const int n, double *v, const double val)
 {
     int i;

@@ -58,6 +58,47 @@ void SetValueSkip(const FAMGugVector &v, double val )
         }
     }
 }
+
+
+void SetValueSkip(const FAMGugVector &v, double *val )
+{
+	// typename is a new C++ keyword!
+	FAMGugVectorIter viter(v);
+	FAMGugVectorEntry ve; 
+	short ncmp = v.GetSparseVectorPtr()->Get_n();
+	short *comp = v.GetSparseVectorPtr()->Get_comp();
+    double *vptr;
+
+    VECTOR *vector;
+
+    
+	while(viter(ve))
+    {
+        vector = ve.myvector();
+        vptr = v.GetValuePtr(ve);
+        for(short i = 0; i < ncmp; i++) 
+        {
+            if(VSKIPME(vector,i)) vptr[comp[i]] = 0.0;
+            else vptr[comp[i]] = val[i];
+        }
+    }
+}
+#else
+void SetValueSkip(FAMGugVector &v, double val )
+{
+	// typename is a new C++ keyword!
+	FAMGugVectorIter viter(v);
+	FAMGugVectorEntry ve; 
+    VECTOR *vector;
+    
+	while(viter(ve))
+    {
+        vector = ve.myvector();	
+		if(VSKIPME(vector,0)) v[ve] = 0.0;
+        else  v[ve] = val;
+    }
+}
+
 #endif
 
 #ifdef FAMG_SPARSE_BLOCK

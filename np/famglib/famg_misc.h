@@ -56,6 +56,13 @@ inline double Min(double a, double b)
 void FAMGError(ostrstream &OutputString);
 void FAMGWarning(ostrstream &OutputString);
 void FAMGWrite(ostrstream &OutputString);
+
+int LR_Decomp (const short n, double *decomp, short *pivotmap);
+int LR_Solve (const short n, const double *decomp, const short *pivotmap, double *x, const double *b);
+int LR_Decomp (const short n, double *decomp);
+int LR_Solve (const short n, const double *decomp, double *x, const double *b);
+int LR_SolveT (const short n, const double *decomp, double *x, const double *b);
+
 double FAMGNorm(const int n, const double *v);
 void FAMGSetVector(const int n, double *v, const double val);
 void FAMGCopyVector(const int n, double *v1, const double *v2);

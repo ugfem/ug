@@ -38,16 +38,11 @@ $Header$
 // Class FAMGMultigrid
 
 
+
 int FAMGMultiGrid::Init(const FAMGSystem &system)
 {
     FAMGGrid *grid0;
     int i;
-
-
-#ifdef FAMG_SPARSE_BLOCK
-    FAMGTestSparseBlock();
-    cout << "test call in FAMGMultiGrid::Init";
-#endif
 
 
     n = 0;
@@ -74,6 +69,7 @@ int FAMGMultiGrid::Construct()
 	DOUBLE commBuf [2];
 #endif
 
+
     // read parameter
     const int cgnodes = FAMGGetParameter()->Getcgnodes();
     const int cglevels = FAMGGetParameter()->Getcglevels();
@@ -92,10 +88,15 @@ int FAMGMultiGrid::Construct()
 	else cgilu = 0;
 
 	g = grid[0];
+#ifdef FAMG_SPARSE_BLOCK
+    g->SmoothTV(); 
+#else
     g->SmoothTV();
+#endif
     FAMGMarkHeap(FAMG_FROM_TOP); // release in Deconstruct
     for(level = 0; level < FAMGMAXGRIDS-1; level++)
     {
+        // g->SmoothTV();
 #ifdef ModelP
 		nn  = g->GetNrMasterVectors();	// we are interested only in the master vectors
 #else
@@ -131,12 +132,19 @@ int FAMGMultiGrid::Construct()
 #endif
         if (gamma < 1) return 0;	// ModelP: simple return because gamma is known to all processors
 
+
 #ifdef FAMG_SPARSE_BLOCK
-        if (g->ConstructDiagonal()) 
+        if (g->ConstructDiagonalInverse()) 
 			RETURN(1);       
 #endif
         if (g->ConstructTransfer()) 
 			RETURN(1);       
+
+#ifdef FAMG_SPARSE_BLOCK
+        //        if (g->ConstructDiagonalLump()) 
+		// 	RETURN(1);       
+#endif
+
         nnc = (g->GetN())-(g->GetNF());
         cg = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
         if(cg == NULL)
@@ -168,6 +176,7 @@ int FAMGMultiGrid::Construct()
 			cout << " no coarsening" << endl;
 		}
     }
+
 
     if(level == FAMGMAXGRIDS-1)
     {

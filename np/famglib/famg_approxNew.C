@@ -15,7 +15,7 @@
 /* History:   November 97 begin, Stuttgart									*/
 /*			  August 98 integration into ug (Christian Wrobel)				*/
 /*																			*/
-/* Remarks:																*/
+/* Remarks:															     	*/
 /*																			*/
 /****************************************************************************/
 
@@ -475,6 +475,7 @@ int FAMGGrid::GetLocalMinimum1(FAMGPaList *&palist, double *w1, double *w2, doub
     {
         t1i = t1[i]; w1i0 = w1[i]; w1ii = w1[ns*i+i];
         t2i = t2[i]; w2i0 = w2[i]; w2ii = w2[ns*i+i];
+        if( (Abs(t1i) < 1e-25) || (Abs(t2i) < 1e-25)) continue;
         pi = t10/t1i;
         norm1 = w100 + w1ii*pi*pi -2.0*w1i0*pi;
 
@@ -540,17 +541,19 @@ int FAMGGrid::GetLocalMinimum2(FAMGPaList *&palist, double *w1, double *w2, doub
     t20 = t2[0]; w200 = w2[0];
     for(i = 1; i < ns; i++)
     {
+        if( (graph->GetNode(lmap[i]))->IsFGNode()) continue;
         t1i = t1[i]; w1i0 = w1[i]; w1ii = w1[ns*i+i];
         t2i = t2[i]; w2i0 = w2[i]; w2ii = w2[ns*i+i];
         for(j = i+1; j < ns; j++)
         {
+            if( (graph->GetNode(lmap[j]))->IsFGNode()) continue;
             t1j = t1[j]; w1j0 = w1[j]; w1jj = w1[ns*j+j];
             t2j = t2[j]; w2j0 = w2[j]; w2jj = w2[ns*j+j];
             w1ij = w1[ns*i+j];
             w2ij = w2[ns*i+j];
             
             nenner1 = t1i*t1i*w1jj - 2.0*t1i*t1j*w1ij + t1j*t1j*w1ii;
-            //  if(nenner1 < 1e-15) continue;
+            if(nenner1 < 1e-25) continue;
             
             
             // construct prolongation
@@ -594,7 +597,7 @@ int FAMGGrid::GetLocalMinimum2(FAMGPaList *&palist, double *w1, double *w2, doub
             // same procedure for the restriction
 
             nenner2 = t2i*t2i*w2hjj - 2.0*t2i*t2j*w2hij + t2j*t2j*w2hii;
-            //  if(nenner2 < 1e-15) continue;
+            if(nenner2 < 1e-25) continue;
 
             if( Abs(t2j) > Abs(t2i))
             {

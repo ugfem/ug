@@ -110,8 +110,7 @@ class FAMGVector
 		
 		FAMGVector(const FAMGGridVector& gridvec) : mygridvector(gridvec) {}
 		~FAMGVector();
-		FAMGVector( const FAMGGridVector& gridvec, VECDATA_DESC *vec_desc ) : mygridvector(gridvec), mydesc(vec_desc) , 
-sv(VD_NCMPS_IN_TYPE(vec_desc,0),VD_CMPPTR_OF_TYPE(vec_desc,0)) {allocatedVD=0;  comp =  VD_CMP_OF_TYPE(vec_desc,0,0);}
+		FAMGVector( const FAMGGridVector& gridvec, VECDATA_DESC *vec_desc ) : mygridvector(gridvec), mydesc(vec_desc) , sv(VD_NCMPS_IN_TYPE(vec_desc,0),VD_CMPPTR_OF_TYPE(vec_desc,0)) {allocatedVD=0;  comp =  VD_CMP_OF_TYPE(vec_desc,0,0);}
 		FAMGVector( const FAMGGridVector& gridvec, VECDATA_DESC *vec_desc, short *cmpmap, short ncmp ) : mygridvector(gridvec), mydesc(vec_desc), sv(VD_CMPPTR_OF_TYPE(vec_desc,0),cmpmap,ncmp) {allocatedVD=0;  comp =  VD_CMP_OF_TYPE(vec_desc,0,0);}
 		FAMGVector( const FAMGGridVector& gridvec, const FAMGVector &pattern_vec) : mygridvector(gridvec), comp(pattern_vec.comp), mydesc(pattern_vec.mydesc), sv(pattern_vec.sv) {}
 		FAMGVector* create_new() const;		// create copy of my; incl. memory for data but without copying the data

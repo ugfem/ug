@@ -52,7 +52,12 @@ public:
 #ifdef FAMG_SPARSE_BLOCK
   FAMGMatrixAlg *GetDiagMatrix() const;
   void SetDiagMatrix(FAMGMatrixAlg *mat);
-  int ConstructDiagonal();
+  int ConstructDiagonalSum();
+  int ConstructDiagonalLump();
+  int ConstructDiagonalInvLump();
+  int ConstructDiagonalTV();
+  int ConstructDiagonalInvTV();
+  int ConstructDiagonalInverse();
   int ConstructSparseBlockStructure(FAMGGrid *fg);
 #endif
   FAMGMatrixAlg *GetTmpMatrix() const;
@@ -139,10 +144,16 @@ public:
   int AnalyseNode4(const FAMGVectorEntry &veci, FAMGPaList *&palist);
   int AnalyseNode5(const FAMGVectorEntry &veci, FAMGPaList *&palist);
 
+  int ConstructLocalMatrix(const FAMGVectorEntry &veci, struct FAMGMatrixLocal *localmatrix, double *&tv1, double *&tv2, double &normr, double &norml);
   int AnalyseNode6(const FAMGVectorEntry &veci, FAMGPaList *&palist);
   int GetLocalMinimum1(FAMGPaList *&palist, double *w1, double *w2, double *t1, double *t2, struct FAMGMatrixLocal *localmatrix);
   int GetLocalMinimum2(FAMGPaList *&palist, double *w1, double *w2, double *t1, double *t2, struct FAMGMatrixLocal *localmatrix);
-  int ConstructLocalMatrix(const FAMGVectorEntry &veci, struct FAMGMatrixLocal *localmatrix, double *&tv1, double *&tv2, double &normr, double &norml);
+
+  int ConstructLocalMatrixA(const FAMGVectorEntry &veci, struct FAMGMatrixLocal *localmatrix, double *&tv1, double *&tv2, double &normr, double &norml);
+  int AnalyseNode17(const FAMGVectorEntry &veci, FAMGPaList *&palist);
+  int GetLocalMinimum1A(FAMGPaList *&palist, double *w1, double *w2, double *t1, double *t2, struct FAMGMatrixLocal *localmatrix);
+  int GetLocalMinimum2A(FAMGPaList *&palist, double *w1, double *w2, double *t1, double *t2, struct FAMGMatrixLocal *localmatrix);
+  int GetLocalMinimum2B(FAMGPaList *&palist, double *w1, double *w2, double *t1, double *t2, struct FAMGMatrixLocal *localmatrix);
 
   int SetFlagsAndCount(int i, int f);
   int Connected(int i, int z);
@@ -196,7 +207,7 @@ private:
   int nf;                                                       // number fine grid unknowns
   FAMGMatrixAlg *matrix;                        // stiffness matrix
   FAMGMatrixAlg *Consmatrix;                    // (partly) consistent stiffness matrix
-  FAMGMatrixAlg *tmpmatrix;                     // temp. stiffness matrix for a double-step
+  FAMGMatrixAlg *tmpmatrix;                     // temp. stiffness matrix for a double-step todo: remove
 #ifdef FAMG_SPARSE_BLOCK
   FAMGMatrixAlg *diagmatrix;
 #endif

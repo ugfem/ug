@@ -291,7 +291,56 @@ void VecMinusMatVec( VT &d, const VT &f, const MT &M, const VT &u )
 }
 
 template<class VT,class MT>
-void JacobiSmoothFG( VT &sol, const MT &D, const VT &def )
+void JacobiSmoothFG( VT &sol, const MT &A, const VT &def )
+// changes only the fine unknowns
+// result in sol_vec; def_vec: correct defect before call, after call destroyed
+{
+	typename VT::Iterator viter(sol); 
+	typename VT::VectorEntry ve; 
+	const FAMGSparseVector *svsol  = sol.GetSparseVectorPtr();
+	const FAMGSparseVector *svdef  = def.GetSparseVectorPtr();
+	const FAMGSparseBlock *sb  = A.GetDiagSparseBlockPtr();
+	double *solptr, *defptr, *matptr;
+
+    short nr = sb->Get_nr();
+    if(nr != sb->Get_nc()) assert(0);
+    if(nr != svsol->Get_n()) assert(0);
+    if(nr != svdef->Get_n()) assert(0);
+
+    // todo: implement for more general vectors
+    for(short i = 1; i < nr; i++)
+    {
+        if(svsol->Get_comp(i) - svsol->Get_comp(i-1) != 1) assert(0);
+        if(svdef->Get_comp(i) - svdef->Get_comp(i-1) != 1) assert(0);
+    }
+
+    short sol_off = svsol->Get_comp(0);
+    short def_off = svdef->Get_comp(0);
+
+    double *decomp = new double[nr*nr]; 
+    short *pivotmap = new short[nr]; 
+
+	while(viter(ve))
+    {
+		if( sol.IsFG(ve) )
+        {
+            solptr = sol.GetValuePtr(ve)+sol_off;
+            defptr = def.GetValuePtr(ve)+def_off;
+            matptr = A.GetDiagValuePtr(ve);
+            SparseBlockMCopyDense(decomp,sb,matptr);
+            if(LR_Decomp(nr,decomp,pivotmap)) assert(0);
+            if(LR_Solve(nr,decomp,pivotmap,solptr,defptr)) assert(0);
+        }
+    }
+
+    delete decomp;
+    delete pivotmap;
+	
+	return;
+}
+
+template<class VT,class MT>
+void JacobiSmoothFGSimple( VT &sol, const MT &D, const VT &def )
 // changes only the fine unknowns
 // result in sol_vec; def_vec: correct defect before call, after call destroyed
 {
@@ -666,8 +715,7 @@ void MarkStrongLinks(const MT &A, const FAMGGrid &grid)
 	typename VT::VectorEntry vi;
 	typename VT::Iterator viter(gridvec);
     
-    VECTOR *vector;
-    
+     
 	while (viter(vi))
 	{
         typename MT::Iterator mij_iter(A,vi);
@@ -675,8 +723,9 @@ void MarkStrongLinks(const MT &A, const FAMGGrid &grid)
         matij.set_strong(1);
         while( mij_iter(matij) )
         {
-            vector = matij.dest().myvector();
-            matij.set_strong(1);
+            // if(VSKIPME(matij.dest().myvector(),0)) matij.set_strong(0);
+            // else matij.set_strong(1);
+             matij.set_strong(1);
         }
 
     }
@@ -771,6 +820,8 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 	const typename MT::GridVector& fg_gridvec = (typename MT::GridVector&)fg.GetGridVector();
 	const MT& Mfg = (MT&)*fg.GetMatrix();
 	const MT& Dfg = (MT&)*fg.GetDiagMatrix();
+	const VT &tvA = *fg.GetVector(FAMGTVA);
+	const VT &tvB = *fg.GetVector(FAMGTVB);
 	typename MT::MatrixEntry mij, mis;
 	typename VT::VectorEntry i_fg, i_cg, j_fg, j_cg, s_fg, s_cg, t_cg;
 	FAMGTransferEntry *pjs, *pij, *pst;
@@ -786,14 +837,17 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
     const FAMGSparseBlock *fmatsb_d = Mfg.GetDiagSparseBlockPtr();
     const FAMGSparseVector *sp = transfer.Get_sp();
     const FAMGSparseVector *sr = transfer.Get_sr();
-
+    const FAMGSparseVector *tvAsv = tvA.GetSparseVectorPtr();
+    const FAMGSparseVector *tvBsv = tvB.GetSparseVectorPtr();
+    double *tvAptr, *tvBptr; 
 
     FAMGSparseBlock sb_o_p, sb_r_o, sb_r_o_p, sb_r_d_p, sb_r_dmat_p; // only offdiagonal blocks
 
     sb_o_p.Product(fmatsb_o,sp);
     sb_r_o.Product(sr,fmatsb_o);
     sb_r_o_p.Product(sr,fmatsb_o,sp);
-    sb_r_dmat_p.Product(sr,dmatsb,sp);
+    // sb_r_dmat_p.Product(sr,dmatsb,sp);
+    sb_r_dmat_p = (*fmatsb_o);
     sb_r_d_p.Product(sr,fmatsb_d,sp);
     
 
@@ -888,14 +942,20 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
                                 // pij is equivalent to rji
                                 // Mcg.AddEntry(pij->GetRestriction()*Mfg[mis]*pst->GetProlongation(), j_cg, t_cg);// R*Mff*P
                                 SparseBlockMMProduct(&sb_r_d_p,sr,fmatsb_d,sp,val,pij->GetRestrictionPtr(),Mfg.GetValuePtr(mis),pst->GetProlongationPtr());
-                                Mcg.AddEntry(&sb_r_d_p,val,j_cg, j_cg); // lump to diagonal
-
+                                //Mcg.AddEntry(&sb_r_d_p,val,j_cg, j_cg); // lump to diagonal
+                                Mcg.AddEntry(&sb_r_d_p,val,t_cg, t_cg); // lump to diagonal
+                                
+                                // todo: make sure lumping preserves filter condition
                                 if(j_cg != t_cg)
                                 {
-                                    SparseBlockMInvertDiag(dmatsb, diaginv, Dfg.GetValuePtr(mis));
-                                    SparseBlockMMProduct(&sb_r_dmat_p,sr,dmatsb,sp,val,pij->GetRestrictionPtr(),diaginv,pst->GetProlongationPtr());
+                                    // SparseBlockMInvertDiag(dmatsb, diaginv, Dfg.GetValuePtr(mis));
+                                    // SparseBlockMMProduct(&sb_r_dmat_p,sr,dmatsb,sp,val,pij->GetRestrictionPtr(),diaginv,pst->GetProlongationPtr());
+                                    tvAptr = tvA.GetValuePtr(t_cg); tvBptr = tvB.GetValuePtr(t_cg);
+                                    SparseBlockGalDiagApprox(&sb_r_dmat_p,sr,fmatsb_d,sp,tvAsv,val,pij->GetRestrictionPtr(),Mfg.GetValuePtr(mis),pst->GetProlongationPtr(),tvAptr);
+                                    // SparseBlockGalDiagApproxT(&sb_r_dmat_p,sr,fmatsb_d,sp,tvBsv,val,pij->GetRestrictionPtr(),Mfg.GetValuePtr(mis),pst->GetProlongationPtr(),tvBptr);
                                     Mcg.AddEntry(&sb_r_dmat_p,val,j_cg, t_cg); 
-                                    Mcg.AddEntry(&sb_r_dmat_p,val,j_cg, j_cg,-1.0); 
+                                    // Mcg.AddEntry(&sb_r_dmat_p,val,j_cg, j_cg,-1.0); 
+                                    Mcg.AddEntry(&sb_r_dmat_p,val,t_cg, t_cg,-1.0); 
                                 }
                                 
                             }

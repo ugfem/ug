@@ -241,7 +241,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
     else
     {
         UserWrite("Not a scalar equation. \n");
-        REP_ERR_RETURN(1);
+        REP_ERR_RETURN(1); 
     }
 
 	amggrid = CreateNewLevelAMG(mg);
@@ -663,8 +663,8 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
     
     // sparse vector structure of the test vectors
     // todo: create this automatically from the script
-    // test vectros gets the same structure as the diagonal of D
-    SPARSE_MATRIX *spma = D->sm[DMTP(0)];
+    // test vectros gets the same structure as the off-diagonal of A
+    SPARSE_MATRIX *spma = A->sm[MTP(0,0)];
 
     short ncomp = spma->nrows;
     short *compmap, cmpm, j, jj;
@@ -777,7 +777,7 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 
     if(D != NULL)
     {
-		if( (famg_interface.diagmatrix = new FAMGugMatrix( grid, D, nrVec)) == NULL )
+		if( (famg_interface.diagmatrix = new FAMGugMatrix( grid, D, nrVec, nrLinks)) == NULL )
 		{
 			ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create matrix" << endl;
 			FAMGError(ostr);
@@ -788,8 +788,16 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
         
 	
 	// init testvectors
- 	*famg_interface.vector[FAMG_TVA] = 1.0;
-	*famg_interface.vector[FAMG_TVB] = 1.0;
+    // test
+    double *val = new double[3];
+    double *valT = new double[3];
+    val[0] = 1.0; val[1] = -0.5; val[2] = 1.0;
+    valT[0] = -1.5; valT[1] = 1.0; valT[2] = 1.0;
+ 	SetValueSkip(*famg_interface.vector[FAMG_TVA],val);
+ 	SetValueSkip(*famg_interface.vector[FAMG_TVB],valT);
+    delete val;
+    // 	SetValueSkip(*famg_interface.vector[FAMG_TVA],1.0);
+ 	// SetValueSkip(*famg_interface.vector[FAMG_TVB],1.0);
 
 	FAMGConstructParameter(&famg_parameter);
 
@@ -929,6 +937,9 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 	// init testvectors
 	*famg_interface.vector[FAMG_TVA] = 1.0;
 	*famg_interface.vector[FAMG_TVB] = 1.0;
+
+ 	// SetValueSkip(*famg_interface.vector[FAMG_TVA],1.0);  
+ 	// SetValueSkip(*famg_interface.vector[FAMG_TVB],1.0);
 
 	FAMGConstructParameter(&famg_parameter);
 
@@ -1646,7 +1657,7 @@ INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 	famgtrans->tvT = ReadArgvVecDesc(theNP->mg, "tvT", argc, argv);
 #endif
 
-	famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
+	// famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
 
 	famgtrans->smooth_sol = NULL;	// default to detect errors
 	famgtrans->smooth_def = NULL;	// default to detect errors

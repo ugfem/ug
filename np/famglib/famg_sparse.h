@@ -21,6 +21,7 @@
 /*																			*/
 /****************************************************************************/
 
+
 #ifndef __FAMG_SPARSE__
 #define __FAMG_SPARSE__
 
@@ -157,7 +158,9 @@ int SparseBlockMMProduct(const FAMGSparseBlock *sd, const FAMGSparseBlock *sb, c
 int SparseBlockMMProduct(const FAMGSparseBlock *sd, const FAMGSparseVector *svl, const FAMGSparseBlock *sb, const FAMGSparseVector *svr, double *dest, double *dl, double *a, double *dr);
 int SparseBlockMMAddProduct(const FAMGSparseBlock *sp, const FAMGSparseBlock *sb1, const FAMGSparseBlock *sb2, double *ap, double *a1, double *a2, double factor);
 int SparseBlockMVAddProduct(const FAMGSparseVector *dcomp, const FAMGSparseBlock *sb, const FAMGSparseVector *scomp, double *vd, double *a, double *vs, const double factor);
+int SparseBlockMVProduct(const FAMGSparseVector *dest, const FAMGSparseBlock *sb, const FAMGSparseVector *source, double *vd, const double *a, const double *vs);
 int SparseBlockMVAddProduct(const FAMGSparseVector *dest, const FAMGSparseVector *sv, const FAMGSparseVector *source, double *vd, double *d, double *vs, const double factor);
+int SparseBlockMVProduct(const FAMGSparseVector *dest, const FAMGSparseVector *sv, const FAMGSparseVector *source, double *vd, const double *d, const double *vs);
 void SparseBlockMCopy(const FAMGSparseBlock *sd, const FAMGSparseBlock *ss, double *dest, double *source, double factor);
 void SparseBlockVCopy(const FAMGSparseVector *svd, const FAMGSparseVector *svs, double *dest, double *source, double factor);
 void SparseBlockVAdd(const FAMGSparseVector *svd, const FAMGSparseVector *svs1, const FAMGSparseVector *svs2, double *dest, double *source1, double *source2);
@@ -169,7 +172,15 @@ void AdaptStructure(FAMGSparseBlock *sb1, FAMGSparseBlock *sb2);
 void SparseBlockRowAddScalProd(const FAMGSparseVector *sp, const FAMGSparseBlock *sb, double *scalprod, double *a, double *b);
 void SparseBlockRowAddScalProd(const FAMGSparseVector *sp, const FAMGSparseBlock *sb1, const FAMGSparseBlock *sb2, double *scalprod, double *a, double *b);
 
-void FAMGTestSparseBlock();
+void SparseBlockMCopyDense(double *decomp, const FAMGSparseBlock *sb, double *matptr);
+void SparseBlockDiagApprox(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double factor, const double *tv);
+void SparseBlockDiagApprox(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseBlock *sbo, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double *matij, const double *tv);
+void SparseBlockDiagApprox(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseBlock *sbo, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double *matij, const double *mjjdecomp, const double *tv);
+void SparseBlockDiagApproxT(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double factor, const double *tv);
+void SparseBlockDiagApproxT(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseBlock *sbo, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double *matij, const double *tv);
+void SparseBlockDiagApproxT(const FAMGSparseBlock *sb, const FAMGSparseBlock *sbd, const FAMGSparseBlock *sbo, const FAMGSparseVector *svt, double *mij, const double *miidecomp, const double *matij, const double *mjjdecomp, const double *tv);
+void SparseBlockGalDiagApprox(const FAMGSparseBlock *sb, const FAMGSparseVector *sbr, const FAMGSparseBlock *sbd, const FAMGSparseVector *sbp, const FAMGSparseVector *svt, double *mij, const double *ris, const double *mss, const double *psj, const double *tv);
+void SparseBlockGalDiagApproxT(const FAMGSparseBlock *sb, const FAMGSparseVector *sbr, const FAMGSparseBlock *sbd, const FAMGSparseVector *sbp, const FAMGSparseVector *svt, double *mij, const double *ris, const double *mss, const double *psj, const double *tv);
 
 #endif
 
