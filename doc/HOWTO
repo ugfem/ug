@@ -173,3 +173,40 @@ A: Compile again.  Do a "module switch cc cc.3.3.0.1" before recompilation!
 	The new cray compiler has an unfixed bug.
 
 
+UG/ug/np/cpldisc:
+-----------------
+
+Q: How to assemble a discretization of a system of coupled PDEs basing
+   on discretizations of the separate equations?
+
+A:
+  UG has a library that allows to assemble the system of cell-centered
+  FV-discretizations of coupled PDEs arising in non-linear time-dependent
+  problems (cf. the description in ug/np/cpldisc/globdisc.cc and
+  ug/np/cpldisc/partdisc.hh). The user should implement the discretizations
+  of the separate PDEs on one grid element. These discretization numprocs
+  should be derived from the class 'np_part_discretization' (partdisc.hh).
+  Then, in an UG-script, they are specified as the parameters of the global
+  discretization numproc 'globaldisc' which is derived from 'np_t_assemble'
+  and can be used for ex. in the 'bdf' time stepping scheme.
+
+  To use the UG coupling library
+
+  1. Compile it by running 'make' in ug/np/cpldisc. This library is not
+     compiled by the standard 'ugmake' utility;
+
+  2. Add '-I$(UGROOT)/np/cpldisc' to the compiler flags and
+    '$(UGROOT)/np/cpldisc/libugcpl$(UG_LIBSUFFIX).a' to the library list
+    of your application;
+
+  3. Initialize the library by calling 'Install_Coupled_Discretization ()'
+     in your application.
+
+  This coupling library has been used in the 'crystal' project for coupling
+  the flow of an incompressible fluid with the spacial transport. Use the
+  applications and scripts from UG/crystal/crystal2d and UG/crystal/crystal3d
+  as the examples.
+
+  Note that problems can arise if you use the UG namespaces. Currently
+  the library is tested without the namespaces.
+
