@@ -2873,6 +2873,10 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     if (PrepareAlgebraModification(theMG))          {DisposeMultiGrid(theMG); return (NULL);}
 
         #ifdef ModelP
+           #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+    if (DisposeBottomHeapTmpMemory(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+           #endif
+
     DDD_IdentifyBegin();
     /* no elements to insert */
     DDD_IdentifyEnd();
