@@ -590,7 +590,7 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
     fprintf(stream,EOL_FMT);
     ID(theNode) = id++;
   }
-  if (id != theGrid->nNode)
+  if (id != NN(theGrid))
     RETURN(1);
 
   /* elements */
