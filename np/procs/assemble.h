@@ -40,11 +40,18 @@
 /*																			*/
 /****************************************************************************/
 
-#define ASSEMBLE_CLASS_NAME "assemble"
+#define ASSEMBLE_CLASS_NAME     "assemble"
+#define NL_ASSEMBLE_CLASS_NAME  "nlass"
 
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/
+/*																			*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*																			*/
+/* linear assemble interface												*/
 /*																			*/
 /****************************************************************************/
 
@@ -63,15 +70,8 @@ struct np_assemble {
     (struct np_assemble *,                   /* pointer to (derived) object     */
     INT,                                         /* level                           */
     VECDATA_DESC *,                              /* solution vector                 */
-    VECDATA_DESC *,                              /* defect vector                   */
-    MATDATA_DESC *,                              /* matrix                          */
-    INT *);                                      /* result                          */
-  INT (*Assemble)
-    (struct np_assemble *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
-    VECDATA_DESC *,                              /* solution vector                 */
-    VECDATA_DESC *,                              /* defect vector                   */
-    MATDATA_DESC *,                              /* matrix                          */
+    VECDATA_DESC *,                              /* rhs vector                          */
+    MATDATA_DESC *,                              /* matrix                                                      */
     INT *);                                      /* result                          */
   INT (*AssembleSolution)
     (struct np_assemble *,                   /* pointer to (derived) object     */
@@ -91,6 +91,13 @@ struct np_assemble {
     VECDATA_DESC *,                                          /* current solution	(initial)	*/
     VECDATA_DESC *,                                          /* defect for current solution     */
     VECDATA_DESC *,                                          /* correction to be computed               */
+    MATDATA_DESC *,                              /* matrix                          */
+    INT *);                                      /* result                          */
+  INT (*Assemble)
+    (struct np_assemble *,                   /* pointer to (derived) object     */
+    INT,                                         /* level                           */
+    VECDATA_DESC *,                                          /* current solution	(initial)	*/
+    VECDATA_DESC *,                                          /* right hand side                         */
     MATDATA_DESC *,                              /* matrix                          */
     INT *);                                      /* result                          */
   INT (*PostProcess)
@@ -116,6 +123,12 @@ typedef INT (*AssembleMatrixProcPtr)                                        \
   MATDATA_DESC *, INT *);
 typedef INT (*PostProcessAssembleProcPtr)                                   \
   (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+
+/****************************************************************************/
+/*																			*/
+/* local assemble interface													*/
+/*																			*/
+/****************************************************************************/
 
 struct np_local_assemble {
 
@@ -176,6 +189,76 @@ typedef INT (*PostMatrixLocalAssembleProcPtr)                               \
 typedef INT (*PostProcessLocalAssembleProcPtr)                              \
   (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 
+
+/****************************************************************************/
+/*																			*/
+/* nonlinear assemble interface												*/
+/*																			*/
+/****************************************************************************/
+
+struct np_nl_assemble {
+
+  NP_BASE base;                              /* inherits base class             */
+
+  /* data (optinal, necessary for calling the generic execute routine)    */
+  VECDATA_DESC *x;                       /* solution                        */
+  VECDATA_DESC *c;                       /* correction                      */
+  VECDATA_DESC *b;                       /* defect                          */
+  MATDATA_DESC *A;                       /* matrix                          */
+
+  /* functions */
+  INT (*PreProcess)
+    (struct np_nl_assemble *,                /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    VECDATA_DESC *,                              /* solution vector                 */
+    INT *);                                      /* result                          */
+  INT (*NLAssembleSolution)
+    (struct np_nl_assemble *,                /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    VECDATA_DESC *,                              /* solution vector                 */
+    INT *);                                      /* result                          */
+  INT (*NLAssembleDefect)
+    (struct np_nl_assemble *,                /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    VECDATA_DESC *,                              /* solution vector                 */
+    VECDATA_DESC *,                              /* defect vector                   */
+    MATDATA_DESC *,                              /* matrix                          */
+    INT *);                                      /* result                          */
+  INT (*NLAssembleMatrix)
+    (struct np_nl_assemble *,                /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    VECDATA_DESC *,                                          /* current solution	(initial)	*/
+    VECDATA_DESC *,                                          /* defect for current solution     */
+    VECDATA_DESC *,                                          /* correction to be computed               */
+    MATDATA_DESC *,                              /* matrix                          */
+    INT *);                                      /* result                          */
+  INT (*PostProcess)
+    (struct np_nl_assemble *,                /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    VECDATA_DESC *,                              /* solution vector                 */
+    VECDATA_DESC *,                              /* defect vector                   */
+    MATDATA_DESC *,                              /* matrix                          */
+    INT *);                                      /* result                          */
+};
+typedef struct np_nl_assemble NP_NL_ASSEMBLE;
+
+typedef INT (*PreProcessNLAssembleProcPtr)                                   \
+  (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, INT *);
+typedef INT (*NLAssembleSolutionProcPtr)                                     \
+  (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, INT *);
+typedef INT (*NLAssembleDefectProcPtr)                                       \
+  (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+typedef INT (*NLAssembleMatrixProcPtr)                                       \
+  (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, VECDATA_DESC *,\
+  MATDATA_DESC *, INT *);
+typedef INT (*PostProcessNLAssembleProcPtr)                                  \
+  (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported functions											*/
@@ -183,10 +266,10 @@ typedef INT (*PostProcessLocalAssembleProcPtr)                              \
 /****************************************************************************/
 
 /* generic init function for Assemble num procs */
-INT NPAssembleInit (NP_ASSEMBLE *theNP, INT argc , char **argv);
+INT NPAssembleInit (NP_BASE *theNP, INT argc , char **argv);
 
 /* generic display function for Assemble num procs */
-INT NPAssembleDisplay (NP_ASSEMBLE *theNP);
+INT NPAssembleDisplay (NP_BASE *theNP);
 
 /* generic execute function for Assemble num procs */
 INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv);
@@ -205,7 +288,13 @@ INT NPLocalAssemblePostMatrix (NP_LOCAL_ASSEMBLE *theNP, INT level,
 /* generic construction of NP_ASSEMBLE from NP_LOCAL_ASSEMBLE */
 INT NPLocalAssembleConstruct (NP_ASSEMBLE *theNP);
 
-/* create standard Assemble num proc type
-   INT InitAssemble (void); */
+/* generic init function for NLAssemble num procs */
+INT NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv);
+
+/* generic display function for NLAssemble num procs */
+INT NPNLAssembleDisplay (NP_BASE *theNP);
+
+/* generic execute function for NLAssemble num procs */
+INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv);
 
 #endif

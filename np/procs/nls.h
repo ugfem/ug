@@ -30,6 +30,7 @@
 
 #include "np.h"
 #include "ls.h"
+#include "assemble.h"
 
 /****************************************************************************/
 /*																			*/
@@ -65,7 +66,7 @@ struct np_nl_solver {
 
   /* data (optinal, necessary for calling the generic execute routine)    */
   VECDATA_DESC *x;                       /* solution                        */
-  NP_ASSEMBLE *Assemble;                 /* the assemble numproc			*/
+  NP_NL_ASSEMBLE *Assemble;              /* the assemble numproc			*/
   VEC_SCALAR reduction;                      /* reduction factor                */
   VEC_SCALAR abslimit;                       /* absolute limit for the defect   */
 
@@ -73,13 +74,12 @@ struct np_nl_solver {
   INT (*PreProcess)
     (struct np_nl_solver *,                  /* pointer to (derived) object     */
     INT,                                         /* level                           */
-    INT *,                                       /* baselevel used by nl solver     */
     INT *);                                      /* result                          */
   INT (*Solver)                          /* b := b - Ax                     */
     (struct np_nl_solver *,                  /* pointer to (derived) object     */
     INT,                                         /* level                           */
     VECDATA_DESC *,                              /* solution vector                 */
-    NP_ASSEMBLE *,                                   /* the assemble numproc			*/
+    NP_NL_ASSEMBLE *,                                /* the assemble numproc			*/
     VEC_SCALAR,                                  /* reduction factor                */
     VEC_SCALAR,                                  /* absolute limit for the defect   */
     NLRESULT *);                                 /* result structure                */
@@ -92,9 +92,9 @@ struct np_nl_solver {
 typedef struct np_nl_solver NP_NL_SOLVER;
 
 typedef INT (*PreProcessNLSolverProcPtr)                                    \
-  (NP_NL_SOLVER *, INT, INT *, INT *);
+  (NP_NL_SOLVER *, INT, INT *);
 typedef INT (*Solver)                                                       \
-  (NP_NL_SOLVER *, INT, VECDATA_DESC *, NP_ASSEMBLE *, VEC_SCALAR *,         \
+  (NP_NL_SOLVER *, INT, VECDATA_DESC *, NP_NL_ASSEMBLE *, VEC_SCALAR *,      \
   VEC_SCALAR *, NLRESULT *);
 typedef INT (*PostProcessNLSolverProcPtr)                                   \
   (NP_NL_SOLVER *, INT, VECDATA_DESC *, INT *);

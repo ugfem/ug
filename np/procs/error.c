@@ -41,6 +41,8 @@
 #include "quadrature.h"
 #include "disctools.h"
 #include "general.h"
+#include "devices.h"
+#include "ugstruct.h"
 
 #include "error.h"
 

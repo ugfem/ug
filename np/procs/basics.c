@@ -27,6 +27,10 @@
 /*																			*/
 /****************************************************************************/
 
+#include <string.h>
+
+#include "devices.h"
+
 #include "scan.h"
 #include "numproc.h"
 #include "np.h"

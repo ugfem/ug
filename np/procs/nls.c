@@ -32,6 +32,7 @@
 #include <stdlib.h>
 
 #include "scan.h"
+#include "devices.h"
 #include "numproc.h"
 #include "scan.h"
 #include "np.h"
@@ -61,32 +62,6 @@
 /*																			*/
 /****************************************************************************/
 
-/* derive a final class from NP_NL_SOLVER */
-typedef struct
-{
-  NP_NL_SOLVER nlsolver;                /* derived from abstract class NP_NL_SOLVER	*/
-
-  /* parameters to be set via npinit */
-  INT DisplayMode;                              /* for PCR									*/
-  INT maxit;                                            /* maximum number of newton iterations		*/
-  NP_LINEAR_SOLVER *Solve;              /* uses linear solver						*/
-  NP_TRANSFER *Trans;                       /* uses transgrid	                                        */
-  DOUBLE rho_reass;                             /* reassemble if nonlin conv worth than this*/
-  INT linearRate;                               /* 1 if nonquadratic nonlin rate assumed        */
-  DOUBLE lin_min_red;                           /* minimum reduction for linear solver		*/
-  INT LineSearch;                               /* do line search                                                       */
-  DOUBLE lambda;                                /* nonlinear damp factor in                 */
-  /* $step and $nmg_step                      */
-  INT max_line_search;                  /* maximum number of line search steps		*/
-
-  /* and DATA_DESC (optional) */
-  MATDATA_DESC *J;                              /* the Matrix to be solved					*/
-  VECDATA_DESC *d;                              /* nonlinear defect							*/
-  VECDATA_DESC *v;                              /* correction computed by newton step           */
-  VECDATA_DESC *s;                              /* saved nonlinear solution					*/
-
-} NP_NEWTON;
-
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -98,8 +73,6 @@ typedef struct
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
-
-static VEC_SCALAR Factor_One;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -143,21 +116,28 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 INT NPNLSolverInit (NP_NL_SOLVER *np, INT argc , char **argv)
 {
-  INT i;
+  INT i,r;
 
+  r = NP_EXECUTABLE;       /* highest state */
+
+  /* The solution is required for execution */
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
+  if (np->x == NULL) r = NP_ACTIVE;
+
+  /* abslimit is required for execution */
   if (sc_read(np->abslimit,np->x,"abslimit",argc,argv))
-    for (i=0; i<MAX_VEC_COMP; i++)
-      np->abslimit[i] = 1.0;
+    for (i=0; i<MAX_VEC_COMP; i++) np->abslimit[i] = 1.0E-10;             /* default */
+
+  /* reduction factor is required for execution */
   if (sc_read(np->reduction,NULL,"red",argc,argv))
-    return(NP_ACTIVE);
-  np->Assemble = (NP_ASSEMBLE *)
-                 ReadArgvNumProc(np->base.mg,"A",ASSEMBLE_CLASS_NAME,argc,argv);
+    r = NP_ACTIVE;
 
-  if ((np->x == NULL) || (np->Assemble == NULL))
-    return(NP_ACTIVE);
+  /* assemble numproc is required for execution */
+  np->Assemble = (NP_NL_ASSEMBLE *)
+                 ReadArgvNumProc(np->base.mg,"A",NL_ASSEMBLE_CLASS_NAME,argc,argv);
+  if (np->Assemble == NULL) r = NP_ACTIVE;
 
-  return(NP_EXECUTABLE);
+  return(r);
 }
 
 INT NPNLSolverDisplay (NP_NL_SOLVER *np)
@@ -183,7 +163,7 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_NL_SOLVER *np;
   NLRESULT nlresult;
-  INT result,level,bl;
+  INT result,level;
 
   np = (NP_NL_SOLVER *) theNP;
   level = CURRENTLEVEL(theNP->mg);
@@ -198,15 +178,12 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
   }
 
   if (ReadArgvOption("i",argc,argv)) {
-    if (*np->PreProcess == NULL) {
-      PrintErrorMessage('E',"NPNLSolverExecute","no PreProcess");
-      return (1);
-    }
-    if ((*np->PreProcess)(np,level,&bl,&result)) {
-      UserWriteF("NPNLSolverExecute: PreProcess failed, error code %d\n",
-                 result);
-      return (1);
-    }
+    if (*np->PreProcess != NULL)
+      if ((*np->PreProcess)(np,level,&result)) {
+        UserWriteF("NPNLSolverExecute: PreProcess failed, error code %d\n",
+                   result);
+        return (1);
+      }
   }
 
   if (ReadArgvOption("s",argc,argv)) {
@@ -223,73 +200,17 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
   }
 
   if (ReadArgvOption("p",argc,argv)) {
-    if (np->PostProcess == NULL) {
-      PrintErrorMessage('E',"NPNLSolverExecute","no PostProcess");
-      return (1);
-    }
-    if ((*np->PostProcess)(np,level,np->x,&result)) {
-      UserWriteF("NPNLSolverExecute: PostProcess failed, error code %d\n",
-                 result);
-      return (1);
-    }
+    if (np->PostProcess != NULL)
+      if ((*np->PostProcess)(np,level,np->x,&result)) {
+        UserWriteF("NPNLSolverExecute: PostProcess failed, error code %d\n",
+                   result);
+        return (1);
+      }
   }
 
   return(0);
 }
 
-
-/****************************************************************************/
-/*D
-   newton - numproc for ...
-
-   DESCRIPTION:
-   This numproc executes ...
-
-   .vb
-   npinit [$x <sol>] [$A <assemble numproc>] [$red <sc double list>]
-       [$abslimit <sc double list>] ....
-   .ve
-
-   .  $x~<sol> - the solution vector
-   .  $abslimit~<sc~double~list> - absolute limit for the defect
-   .  $reduction~<sc~double~list> - reduction factor
-
-   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
-   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
-
-   'npexecute <name> [$i] [$s] [$p]'
-
-   .  $i - preprocess
-   .  $s - solve
-   .  $p - postprocess
-
-   EXAMPLE:
-   .vb
-   npcreate nl $t newton;
-   npinit $x sol $A box $red 0.0001 ..............
-
-   npexecute solver $i $d $r $s $p;
-   .ve
-   D*/
-/****************************************************************************/
-
-static INT NewtonConstruct (NP_BASE *theNP)
-{
-  NP_NL_SOLVER *np;
-
-  /*
-     theNP->Init = NewtonInit;
-      theNP->Display = NewtonDisplay;
-   */
-  theNP->Execute = NPNLSolverExecute;
-  np = (NP_NL_SOLVER *) theNP;
-  /*
-      np->PreProcess = NewtonPreProcess;
-      np->Solver = NewtonSolver;
-      np->PostProcess = NewtonPostProcess;
-   */
-  return(0);
-}
 
 /****************************************************************************/
 /*
@@ -313,13 +234,5 @@ static INT NewtonConstruct (NP_BASE *theNP)
 
 INT InitNonlinearSolver ()
 {
-  INT i;
-
-  if (CreateClass (NL_SOLVER_CLASS_NAME ".newton",
-                   sizeof(NP_NEWTON), NewtonConstruct))
-    return (__LINE__);
-
-  for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
-
   return (0);
 }

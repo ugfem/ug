@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "devices.h"
 #include "general.h"
 #include "gm.h"
 #include "scan.h"

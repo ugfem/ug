@@ -38,6 +38,8 @@
 #include "scan.h"
 #include "numproc.h"
 #include "np.h"
+#include "devices.h"
+#include "udm.h"
 
 #include "transfer.h"
 #include "ls.h"
@@ -281,7 +283,6 @@ static INT Smoother (NP_ITER *theNP, INT level,
 {
   NP_SMOOTHER *np;
   GRID *theGrid;
-  INT i;
 
   np = (NP_SMOOTHER *) theNP;
   theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
@@ -868,10 +869,9 @@ static INT LmgcPreProcess  (NP_ITER *theNP, INT level,
   np = (NP_LMGC *) theNP;
 
   if (np->Transfer->PreProcess != NULL)
-    for (i = np->baselevel; i <= level; i++)
-      if ((*np->Transfer->PreProcess)
-            (np->Transfer,i,x,b,A,baselevel,result))
-        return(1);
+    if ((*np->Transfer->PreProcess)
+          (np->Transfer,np->baselevel,level,x,b,A,result))
+      return(1);
 
   if (np->PreSmooth->PreProcess != NULL)
     for (i = np->baselevel+1; i <= level; i++)

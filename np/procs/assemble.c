@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "general.h"
+#include "devices.h"
 #include "gm.h"
 #include "disctools.h"
 #include "np.h"
@@ -111,8 +112,11 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NPAssembleInit (NP_ASSEMBLE *np, INT argc , char **argv)
+INT NPAssembleInit (NP_BASE *theNP, INT argc , char **argv)
 {
+  NP_ASSEMBLE *np;
+
+  np = (NP_ASSEMBLE *) theNP;
   np->A = ReadArgvMatDesc(np->base.mg,"A",argc,argv);
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
   np->c = ReadArgvVecDesc(np->base.mg,"c",argc,argv);
@@ -124,8 +128,11 @@ INT NPAssembleInit (NP_ASSEMBLE *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPAssembleDisplay (NP_ASSEMBLE *np)
+INT NPAssembleDisplay (NP_BASE *theNP)
 {
+  NP_ASSEMBLE *np;
+
+  np = (NP_ASSEMBLE *) theNP;
   if ((np->A == NULL) && (np->b == NULL) && (np->x == NULL))
     return(0);
   UserWrite("symbolic user data:\n");
@@ -238,6 +245,159 @@ INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
+
+/****************************************************************************/
+/*D
+   NP_NLASSEMBLE - type definition for nonlinear assembling
+
+   DESCRIPTION:
+   This numproc type is used for the description of assembling.
+   It can be called by the given interface from a nonlinear solver.
+   Initializing the data is optional; it can be done with
+
+   'INT NPNLAssembleInit (NP_ASSEMBLE *theNP, INT argc , char **argv);'
+
+   This routine returns 'EXECUTABLE' if the initizialization is complete
+   and  'ACTIVE' else.
+   The data they can be displayed and the num proc can be executed by
+
+   'INT NPNLAssembleDisplay (NP_ASSEMBLE *theNP);'
+   'INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv);'
+
+   .vb
+
+
+   ..... fill in data structure here when the realizition is finished
+
+
+   .ve
+
+   SEE ALSO:
+   num_proc
+   D*/
+/****************************************************************************/
+
+INT NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_NL_ASSEMBLE *np;
+
+  np = (NP_NL_ASSEMBLE *) theNP;
+  np->A = ReadArgvMatDesc(np->base.mg,"A",argc,argv);
+  np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
+  np->c = ReadArgvVecDesc(np->base.mg,"c",argc,argv);
+  np->b = ReadArgvVecDesc(np->base.mg,"b",argc,argv);
+
+  if ((np->A == NULL) || (np->b == NULL) || (np->x == NULL))
+    return(NP_ACTIVE);
+
+  return(NP_EXECUTABLE);
+}
+
+INT NPNLAssembleDisplay (NP_BASE *theNP)
+{
+  NP_NL_ASSEMBLE *np;
+
+  np = (NP_NL_ASSEMBLE *) theNP;
+  if ((np->A == NULL) && (np->b == NULL) && (np->x == NULL))
+    return(0);
+  UserWrite("symbolic user data:\n");
+  if (np->A != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"A",ENVITEM_NAME(np->A));
+  if (np->b != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(np->b));
+  if (np->x != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
+  if (np->c != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->x));
+  UserWrite("\n");
+
+  return(0);
+}
+
+INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_NL_ASSEMBLE *np;
+  INT result,level;
+
+  np = (NP_NL_ASSEMBLE *) theNP;
+  level = CURRENTLEVEL(theNP->mg);
+
+  if (np->x == NULL) {
+    PrintErrorMessage('E',"NPNLAssembleExecute","no vector x");
+    return (1);
+  }
+  if (np->b == NULL) {
+    PrintErrorMessage('E',"NPNLAssembleExecute","no vector b");
+    return (1);
+  }
+  if (np->A == NULL) {
+    PrintErrorMessage('E',"NPNLAssembleExecute","no matrix A");
+    return (1);
+  }
+
+  if (ReadArgvOption("i",argc,argv)) {
+    if (np->PreProcess == NULL) {
+      PrintErrorMessage('E',"NPNLAssembleExecute","no PreProcess");
+      return (1);
+    }
+    if ((*np->PreProcess)(np,0,level,np->x,&result)) {
+      UserWriteF("NPNLAssembleExecute: PreProcess failed, error code %d\n",
+                 result);
+      return (1);
+    }
+  }
+
+  if (ReadArgvOption("s",argc,argv)) {
+    if (np->NLAssembleSolution == NULL) {
+      PrintErrorMessage('E',"NPNLAssembleExecute","no NLAssembleSolution");
+      return (1);
+    }
+    if ((*np->NLAssembleSolution)(np,0,level,np->x,&result)) {
+      UserWriteF("NPNLAssembleExecute: NLAssembleSolution failed, error code %d\n",
+                 result);
+      return (1);
+    }
+  }
+
+  if (ReadArgvOption("d",argc,argv)) {
+    if (np->NLAssembleDefect == NULL) {
+      PrintErrorMessage('E',"NPNLAssembleExecute","no NLAssembleDefect");
+      return (1);
+    }
+    if ((*np->NLAssembleDefect)(np,0,level,np->x,np->b,np->A,&result)) {
+      UserWriteF("NPNLAssembleExecute: NLAssembleDefect failed, error code %d\n",
+                 result);
+      return (1);
+    }
+  }
+
+  if (ReadArgvOption("M",argc,argv)) {
+    if (np->NLAssembleMatrix == NULL) {
+      PrintErrorMessage('E',"NPNLAssembleExecute","no NLAssembleMatrix");
+      return (1);
+    }
+    if ((*np->NLAssembleMatrix)(np,0,level,np->x,np->b,np->c,np->A,&result)) {
+      UserWriteF("NPNLAssembleExecute: NLAssembleMatrix failed, error code %d\n",
+                 result);
+      return (1);
+    }
+  }
+
+  if (ReadArgvOption("p",argc,argv)) {
+    if (np->PostProcess == NULL) {
+      PrintErrorMessage('E',"NPNLAssembleExecute","no PostProcess");
+      return (1);
+    }
+    if ((*np->PostProcess)(np,0,level,np->x,np->b,np->A,&result)) {
+      UserWriteF("NPNLAssembleExecute: PostProcess failed, error code %d\n",
+                 result);
+      return (1);
+    }
+  }
+
+  return(0);
+}
+
 /****************************************************************************/
 /*D
    NP_LOCAL_ASSEMBLE - type definition for local assembling
@@ -282,12 +442,12 @@ INT NPLocalAssembleInit (NP_LOCAL_ASSEMBLE *np, INT argc , char **argv)
   if (ReadArgvINT("g",&np->galerkin,argc,argv))
     np->galerkin = 0;
 
-  return(NPAssembleInit(&np->assemble,argc,argv));
+  return(NPAssembleInit(&np->assemble.base,argc,argv));
 }
 
 INT NPLocalAssembleDisplay (NP_LOCAL_ASSEMBLE *np)
 {
-  NPAssembleDisplay(&np->assemble);
+  NPAssembleDisplay(&np->assemble.base);
 
   UserWrite("configuration parameters:\n");
   UserWriteF(DISPLAY_NP_FORMAT_SI,"g",(int)np->galerkin);

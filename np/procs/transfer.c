@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "general.h"
+#include "devices.h"
 #include "gm.h"
 #include "pcr.h"
 #include "np.h"
@@ -56,6 +57,10 @@
 /*																			*/
 /****************************************************************************/
 
+#define STANDARD_MODE           1               /* transfer via shape functions			*/
+#define IMAT_MODE                       2               /* $M option							*/
+#define SCALEDMG_MODE           3               /* $S option							*/
+
 typedef struct
 {
   NP_TRANSFER transfer;
@@ -65,6 +70,8 @@ typedef struct
   InterpolateNewVectorsProcPtr intnew;
 
   VECDATA_DESC *t;
+  INT mode;                                                                /* mode selected in init			*/
+  DOUBLE cut;                                                              /* cut value for scaled mg		*/
   INT display;                                 /* display modus                 */
   INT level;                                   /* level optimization            */
   INT meanvalue;                               /* in parallel for nonconforming */
@@ -91,6 +98,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
+
 
 /****************************************************************************/
 /*D
@@ -190,7 +198,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPTransferExecute","no matrix A");
       return (1);
     }
-    if ((*np->PreProcess)(np,level,np->x,np->b,np->A,&bl,&result)) {
+    if ((*np->PreProcess)(np,0,level,np->x,np->b,np->A,&result)) {
       UserWriteF("NPTransferExecute: PreProcess failed, error code %d\n",
                  result);
       return (1);
@@ -336,11 +344,13 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
 
   np = (NP_STANDARD_TRANSFER *) theNP;
 
+  np->mode = STANDARD_MODE;
   np->res = StandardRestrict;
   np->intcor = StandardInterpolateCorrection;
   np->intnew = StandardInterpolateNewVectors;
 
   if (ReadArgvOption("M",argc,argv)) {
+    np->mode = IMAT_MODE;
     np->res = RestrictByMatrix;
     np->intcor = InterpolateCorrectionByMatrix;
     np->intnew = InterpolateNewVectorsByMatrix;
@@ -348,6 +358,19 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
   np->meanvalue = ReadArgvOption("m",argc,argv);
   np->level = ReadArgvOption("L",argc,argv);
   np->display = ReadArgvDisplay(argc,argv);
+
+  if (ReadArgvOption("S",argc,argv))
+    if (ReadArgvDOUBLE("S",&(np->cut),argc,argv))
+    {
+      UserWrite("$S option not active!\n");
+    }
+    else
+    {
+      np->mode = SCALEDMG_MODE;
+      np->res = ScaledMGRestrict;
+      np->intcor = StandardInterpolateCorrection;
+      np->intnew = StandardInterpolateNewVectors;
+    }
 
   return (NPTransferInit(&np->transfer,argc,argv));
 }
@@ -390,10 +413,30 @@ static INT TransferDisplay (NP_BASE *theNP)
   return (0);
 }
 
-static INT TransferPreProcess (NP_TRANSFER *theNP, INT level,
+static INT TransferPreProcess (NP_TRANSFER *theNP, INT fl, INT tl,
                                VECDATA_DESC *x, VECDATA_DESC *b,
-                               MATDATA_DESC *A, INT *baselevel, INT *result)
+                               MATDATA_DESC *A, INT *result)
 {
+  NP_STANDARD_TRANSFER *np;
+  MULTIGRID *theMG;
+  INT i;
+
+  np = (NP_STANDARD_TRANSFER *) theNP;
+  theMG = theNP->base.mg;
+
+  if (np->mode == SCALEDMG_MODE)
+  {
+    /* create restriction matrices */
+    for (i=tl; i>fl; i--)
+      if (InstallScaledRestrictionMatrix(GRID_ON_LEVEL(theMG,i),A,np->cut)!=NUM_OK)
+        return(1);
+
+    /* scale equations */
+    for (i=tl; i>=fl; i--)
+      if (DiagonalScaleSystem(GRID_ON_LEVEL(theMG,i),A,b)!=NUM_OK)
+        return (1);
+  }
+
   return(0);
 }
 

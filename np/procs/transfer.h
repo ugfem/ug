@@ -62,11 +62,11 @@ struct np_transfer {
   /* functions */
   INT (*PreProcess)
     (struct np_transfer *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
     VECDATA_DESC *,                              /* solution vector                 */
     VECDATA_DESC *,                              /* defect vector                   */
     MATDATA_DESC *,                              /* matrix                          */
-    INT *,                                       /* baselevel                       */
     INT *);                                      /* result                          */
   INT (*PreProcessProject)
     (struct np_transfer *,                   /* pointer to (derived) object     */
