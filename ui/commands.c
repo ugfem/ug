@@ -6688,7 +6688,7 @@ static INT CheckCommand (INT argc, char **argv)
                 #ifndef ModelP
     if (CheckGrid(theGrid,checkgeom,checkalgebra,checklists)!=GM_OK)
                 #else
-    if (CheckGrid(theGrid,checkgeom,checkalgebra,checklists,checkif)!=GM_OK)
+    if (0 /*CheckGrid(theGrid,checkgeom,checkalgebra,checklists,checkif)!=GM_OK*/)
                 #endif
       err++;
 
@@ -10320,6 +10320,39 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+        showpf - command to display current settings of data
+                                        listing functions
+
+        SYNTAX:
+        showpf
+
+        DESCRIPTION:
+        ...
+
+        SEE ALSO:
+        setpf
+   D*/
+/****************************************************************************/
+
+/* see formats.c for the man page */
+
+static INT CreateFormatCommand (INT argc, char **argv)
+{
+  INT err;
+
+  err = CreateFormatCmd(argc,argv);
+
+  switch (err)
+  {
+  case 0 : return (OKCODE);
+  case 1 : PrintHelp("newformat",HELPITEM,NULL);
+    return (PARAMERRORCODE);
+  default : return (CMDERRORCODE);
+  }
+}
+
+/****************************************************************************/
+/*D
         setpf -  command to change current settings of the data
                                         listing functions of a format
 
@@ -10417,23 +10450,6 @@ static INT ShowPrintingFormatCommand (INT argc, char **argv)
   DisplayPrintingFormat();
 
   return (OKCODE);
-}
-
-/* see formats.c for the man page */
-
-static INT CreateFormatCommand (INT argc, char **argv)
-{
-  INT err;
-
-  err = CreateFormatCmd(argc,argv);
-
-  switch (err)
-  {
-  case 0 : return (OKCODE);
-  case 1 : PrintHelp("newformat",HELPITEM,NULL);
-    return (PARAMERRORCODE);
-  default : return (CMDERRORCODE);
-  }
 }
 
 #ifdef __NP__
@@ -11233,7 +11249,12 @@ static INT RefreshOnCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
 
+    #ifdef ModelP
+  UserWrite("refreshon: not implemented in parallel\n");
+    #else
   SetRefreshState(ON);
+    #endif
+
   return(OKCODE);
 }
 
