@@ -1832,7 +1832,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
 /*																			*/
 /* Param:	  ELEMENT *theElement: element to refine						*/
 /*			  int *rule: filled with current refinement rule				*/
-/*			  int *side: filled with side, if rule is oriented				*/
+/*			  int *data: filled with side, if rule is oriented				*/
 /*																			*/
 /* return:	  int 0: side information valid                                                                 */
 /*			  int 1: rule without orientation								*/
@@ -1843,15 +1843,23 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
 {
   INT *side = data;
 
-  if (MARK(theElement)==FULL_REFRULE) {*rule=RED; return(GM_RULE_WITHOUT_ORIENTATION);}
+  /* tetrahedra have their own ruleset */
+  if (DIM==3 && TAG(theElement)==TETRAHEDRON && MARK(theElement)==FULL_REFRULE)
+    *rule=RED;return(GM_RULE_WITHOUT_ORIENTATION);
+
   switch (MARK(theElement))
   {
+  case RED :
+    *rule=RED;
+    break;
   case NO_REFINEMENT :
     *rule=NO_REFINEMENT;
     if (COARSEN(theElement)) *rule = COARSE;
     break;
-  case COPY : *rule=COPY; break;
-  default : *rule=NO_REFINEMENT;  break;
+  case COPY :
+    *rule=COPY; break;
+  default :
+    *rule=NO_REFINEMENT;  break;
   }
   *side=0;
   return(GM_RULE_WITHOUT_ORIENTATION);
