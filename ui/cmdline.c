@@ -464,6 +464,7 @@ INT ExecCommand (char *cmdLine)
   {
     PrintErrorMessageF('E',"ExecCommand","Huh??? %s returns OKCODE but rep err encountered",ENVITEM_NAME(commandItem));
     PrintRepErrStack(printf);
+    fflush(stdout);
     return (FATAL);
   }
   ENDDEBUG
