@@ -1078,7 +1078,6 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *aft
   VSEGMENT *vsnew;
   NODE *theNode;
   PATCH *thePatch;
-  PATCH_DESC thePatchDesc;
 
   n = TAG(theElement);
 
