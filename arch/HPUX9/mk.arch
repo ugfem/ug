@@ -1,0 +1,29 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for HP Workstations (HPUX 9)
+#
+
+ARCH_TYPE     = __HP__
+
+ARCH_CC       = cc
+ARCH_C++      = CC
+ARCH_LINK     = cc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lm -lc
+ARCH_PLIBS    = /usr/lib/libV3.a
+
+ARCH_CFLAGS   = -y -z -Aa +w2 -D_HPUX_SOURCE -g 
+ARCH_C++FLAGS = -y -Aa -g
+ARCH_LFLAGS   = -z /usr/lib/end.o
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDES = -I/rlocal/X11R5/include
+ARCH_XLIBS     = -L/rlocal/X11R5/lib -lX11 -lXt -lXaw -lXmu -lXext
+
+ARCH_ARFLAGS  = ru
+
+
