@@ -94,6 +94,7 @@ typedef struct {
 
 QUADRATURE *GetQuadrature(INT dim, INT n, INT order);
 QUADRATURE *GetQuadratureRule(INT dim, INT n, INT order);
+QUADRATURE *GetSymmetricQuadratureRule(INT dim, INT n, INT order);
 INT GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp);
 
 #endif
