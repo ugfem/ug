@@ -81,6 +81,7 @@ static COUPLING *NewCoupling (void)
   if (memlistCpl==NULL)
   {
     cpl = (COUPLING *) AllocCpl(sizeof(COUPLING));
+    nAllCplItems++;
   }
   else
   {
@@ -89,7 +90,6 @@ static COUPLING *NewCoupling (void)
   }
 
   nCplItems++;
-  nAllCplItems++;
 
   return(cpl);
 }
