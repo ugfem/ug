@@ -2978,6 +2978,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
     DDD_IdentifyBegin();
     /* no elements to insert */
+                #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+    if (MGCreateConnection(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+                #endif
     DDD_IdentifyEnd();
 
     if (MGIO_PARFILE)
@@ -3056,6 +3059,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
     DDD_IdentifyBegin();
     /* no elements to insert */
+                 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+    if (MGCreateConnection(theMG))                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+                 #endif
     DDD_IdentifyEnd();
 
     if (MGIO_PARFILE)
