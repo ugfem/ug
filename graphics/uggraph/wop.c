@@ -12083,11 +12083,23 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						}
 				#endif
 			}
-			else
-				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-					if (NBELEM(theElement,i) != NULL)
-						if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
-							Viewable[i] = 0;
+			else {
+				#ifdef ModelP
+				if (EE3D_PartShrinkFactor == 1.0)
+				#endif
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (NBELEM(theElement,i) != NULL)
+							if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
+								Viewable[i] = 0;
+				#ifdef ModelP
+				else
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (NBELEM(theElement,i) != NULL)
+							if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))]
+								&&  EPRIO(NBELEM(theElement,i)) == PrioMaster)
+								Viewable[i] = 0;
+				#endif
+			}
 		}
 		else
 		{
@@ -12252,11 +12264,23 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						}
 				#endif
 			}
-			else
-				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-					if (NBELEM(theElement,i) != NULL)
-						if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
-							Viewable[i] = 0;
+			else {
+				#ifdef ModelP
+				if (EE3D_PartShrinkFactor == 1.0)
+				#endif
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (NBELEM(theElement,i) != NULL)
+							if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
+								Viewable[i] = 0;
+				#ifdef ModelP
+				else
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (NBELEM(theElement,i) != NULL)
+							if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))]
+								&&  EPRIO(NBELEM(theElement,i)) == PrioMaster)
+								Viewable[i] = 0;
+				#endif
+			}
 		}
 		else
 		{
@@ -12603,11 +12627,23 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						}
 				#endif
 			}
-			else
-				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-					if (NBELEM(theElement,i) != NULL)
-						if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
-							Viewable[i] = 0;
+			else {
+				#ifdef ModelP
+				if (EE3D_PartShrinkFactor == 1.0)
+				#endif
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (NBELEM(theElement,i) != NULL)
+							if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
+								Viewable[i] = 0;
+				#ifdef ModelP
+				else
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (NBELEM(theElement,i) != NULL)
+							if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))]
+								&&  EPRIO(NBELEM(theElement,i)) == PrioMaster)
+								Viewable[i] = 0;
+				#endif
+			}
 		}
 		else
 		{
@@ -12838,11 +12874,23 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						}
 				#endif
 			}
-			else
-				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-					if (NBELEM(theElement,i) != NULL)
-						if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
-							Viewable[i] = 0;
+			else {
+				#ifdef ModelP
+				if (EE3D_PartShrinkFactor == 1.0)
+				#endif
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (NBELEM(theElement,i) != NULL)
+							if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
+								Viewable[i] = 0;
+				#ifdef ModelP
+				else
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (NBELEM(theElement,i) != NULL)
+							if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))]
+								&&  EPRIO(NBELEM(theElement,i)) == PrioMaster)
+								Viewable[i] = 0;
+                #endif
+			}
 		}
 		else
 		{
@@ -13904,7 +13952,7 @@ static void CalcViewableSidesOnGrid (GRID *theGrid)
 static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 {
 	INT i, j, Count, nsons;
-	INT LastShellBegin, NewShellBegin, ActualPosition;
+	INT LastShellBegin, NewShellBegin, ActualPosition, wanted;
 	ELEMENT *NbElement, *SonElement, *SonList[MAX_SONS];
 	
 	/* get son list (not stored in element) */
@@ -13933,35 +13981,22 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 					Count++;
 				}
 		}
-		if (Count)
-			SETCOUNT(SonElement,Count);
-		else
+		if (Count == 0)
 			table[ActualPosition++] = SonElement;
+		SETCOUNT(SonElement,Count);
 	}
-
+	if (ActualPosition == 0) {
+		/* give up, return unordered list */
+		for (i = 0; i < nsons; i++) 
+			table[i] = SonList[i];
+		return 0;  /* optimistic */
+	}
 	NewShellBegin = ActualPosition;
 	
 	/* create list */
 	while (ActualPosition < nsons)
 	{
-		if (LastShellBegin == NewShellBegin) {
-			UserWrite("OrderSons failed for element:\n");
-			UserWriteF("NSONS=%d REFINECLASS=%d REFINE=%d\n",
-				NSONS(theElement),REFINECLASS(theElement),REFINE(theElement));
-			UserWriteF("ELEMPATTERN=");
-			for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-			{
-				EDGE *theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-										CORNER_OF_EDGE_PTR(theElement,i,1));
-				assert(theEdge!=NULL);
-				UserWriteF("%d",(MIDNODE(theEdge)!=NULL));
-			}
-			UserWriteF("\n");
-			for (i=0; i<nsons; i++)
-				table[i] = SonList[i];
-			return(0);
-		}
-		/* create a new shell */
+		/* try fo find a regular shell */
 		for (i=LastShellBegin; i<NewShellBegin; i++)
 		{
 			for (j=0; j<SIDES_OF_ELEM(table[i]); j++)
@@ -13969,16 +14004,43 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 				if (!VIEWABLE(table[i], j)) continue;
 				if ((NbElement=NBELEM(table[i],j))==NULL) continue;
 				if (EFATHER(NbElement)!=theElement) continue;
-				if ((Count = COUNT(NbElement)-1)==0)
+				Count = COUNT(NbElement)-1;
+				if (Count == 0)
 					table[ActualPosition++] = NbElement;
-				else
-					SETCOUNT(NbElement,Count);
+				SETCOUNT(NbElement,Count);
 			}
 		}
-		
-		/* set shell pointers */
-		LastShellBegin = NewShellBegin;
-		NewShellBegin = ActualPosition;
+		if (ActualPosition == NewShellBegin) {
+			/* no regular shell, try to break up cycle */
+			for (wanted = 1; wanted <= 5; wanted++) {
+				for (i = 0; i < NewShellBegin; i++) {
+					for (j=0; j<SIDES_OF_ELEM(table[i]); j++)
+					{
+						if (!VIEWABLE(table[i], j)) continue;
+						if ((NbElement=NBELEM(table[i],j))==NULL) continue;
+						if (EFATHER(NbElement)!=theElement) continue;
+						if (COUNT(NbElement) == wanted) {
+							table[ActualPosition++] = NbElement;
+							SETCOUNT(NbElement,0);
+							goto resolved;
+						}
+					}
+				}
+			}
+			/* give up, return unordered list */
+			for (i = 0; i < nsons; i++) 
+				table[i] = SonList[i];
+			return 0;  /* optimistic */
+			
+		resolved:
+			LastShellBegin = ActualPosition-1;
+			NewShellBegin = ActualPosition;
+		}
+		else {
+			/* set shell pointers */
+			LastShellBegin = NewShellBegin;
+			NewShellBegin = ActualPosition;
+		}
 	}
 	return (0);
 }
@@ -14010,7 +14072,7 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 static INT CompareTriangles (DOUBLE_VECTOR Triangle[2][4], COORD_POINT ScreenPoint[2][4])
 {
 	DOUBLE alpha, beta, z[2];
-	DOUBLE lambda[3], rhs[3], M[9], Inverse[9];
+	DOUBLE a, b, c, d, s1, s2, r1, r2, t1, t2, t3, det;
 	int i, i1, j, j1;
 
 	/* decide if sides of triangle are crossing */
@@ -14037,27 +14099,31 @@ static INT CompareTriangles (DOUBLE_VECTOR Triangle[2][4], COORD_POINT ScreenPoi
 	/* covering side also covers the other one's center of mass.    */
 	for (i=0; i<2; i++) 
 	{
-		/* now invert a 3x3 system */
-		M[0]=(DOUBLE)ScreenPoint[i][0].x, M[3]=(DOUBLE)ScreenPoint[i][1].x, M[6] =(DOUBLE)ScreenPoint[i][2].x;
-		M[1]=(DOUBLE)ScreenPoint[i][0].y, M[4]=(DOUBLE)ScreenPoint[i][1].y, M[7] =(DOUBLE)ScreenPoint[i][2].y;
-		M[2]=1.0,						 M[5]=1.0,						  M[8] =1.0;
-
-		if (M3_Invert(Inverse, M)) continue;
-		j=1-i;
-		rhs[0] =(DOUBLE) ((ScreenPoint[j][0].x + ScreenPoint[j][1].x + ScreenPoint[j][2].x)/3.0);
-		rhs[1] =(DOUBLE) ((ScreenPoint[j][0].y + ScreenPoint[j][1].y + ScreenPoint[j][2].y)/3.0);
-		rhs[2] = 1.0;
-		M3_TIMES_V3(Inverse,rhs,lambda)
-		
-		/* decide if MidPoint of Triangle[j] lies in the interior of Triangle[i] */
-		if (lambda[0]>=0.0 && lambda[1]>=0.0 && lambda[2]>=0.0)
-		{
-			z[i] = lambda[0]*Triangle[i][0][2] + lambda[1]*Triangle[i][1][2] + lambda[2]*Triangle[i][2][2];
-			z[j] = (Triangle[j][0][2] + Triangle[j][1][2] + Triangle[j][2][2])/3.0;
-			if (z[i]>z[j])
-				return ((i>j)?(-1):(1));
+		a = ScreenPoint[i][0].x - ScreenPoint[i][2].x;
+		b = ScreenPoint[i][1].x - ScreenPoint[i][2].x;
+		c = ScreenPoint[i][0].y - ScreenPoint[i][2].y;
+		d = ScreenPoint[i][1].y - ScreenPoint[i][2].y;
+		det = a*d-b*c;
+		if (ABS(det) < SMALL*SMALL) continue;
+		j = 1-i;
+		s1 = (ScreenPoint[j][0].x + ScreenPoint[j][1].x + 
+			  ScreenPoint[j][2].x) / 3.0;
+		s2 = (ScreenPoint[j][0].y + ScreenPoint[j][1].y + 
+			  ScreenPoint[j][2].y) / 3.0;
+		r1 = s1 - ScreenPoint[i][2].x;
+		r2 = s2 - ScreenPoint[i][2].y;
+		t1 = (r1*d - r2*b) / det;
+		t2 = (r2*a - r1*c) / det;
+		t3 = 1.0-t1-t2;
+		if (t1 >= 0.0 && t2 >= 0.0 && t3 >= 0.0) {
+			z[0] = t1*Triangle[i][0][2] + t2*Triangle[i][1][2] +
+				   t3*Triangle[i][2][2];
+			z[1] = (Triangle[j][0][2] + Triangle[j][1][2] + 
+				    Triangle[j][2][2]) / 3.0;
+			if (z[0] > z[1])
+				return (i == 0 ?  1 : -1);
 			else
-				return ((i>j)?(1):(-1));
+				return (i == 0 ? -1 :  1);
 		}
 	}
 	return (0);
@@ -14065,76 +14131,51 @@ static INT CompareTriangles (DOUBLE_VECTOR Triangle[2][4], COORD_POINT ScreenPoi
 
 static INT CompareQuadrilaterals (DOUBLE_VECTOR Triangle[2][4], COORD_POINT ScreenPoint[2][4], INT Corners[2])
 {
-	DOUBLE alpha, beta, z[2], Xmax[2], Xmin[2], Ymax[2], Ymin[2];
-	DOUBLE lambda[3], rhs[3], M[9], Inverse[9];
-	int i, i1, j, j1;
+	INT i, i1, i2, j, j1, j2, n1, n2, cmp;
+	DOUBLE_VECTOR tri[2][4];
+	COORD_POINT scr[2][4];
 
-	/* decide if sides of triangle are crossing */
-	for (i=0; i<Corners[0]; i++)
-	{
-		i1 = (i+1)%Corners[0];
-		for( j=0; j<Corners[1]; j++ )
-		{
-			j1 = (j+1)%Corners[1];
-			if (!CalcCrossingPoint(ScreenPoint[0][i],ScreenPoint[0][i1],ScreenPoint[1][j], ScreenPoint[1][j1],&alpha,&beta)) continue;
-				
-			/* crossing found, now decide which hides the other */
-			z[0] = (1.0-alpha)*Triangle[0][i][2] + alpha*Triangle[0][i1][2];
-			z[1] = (1.0-beta)*Triangle[1][j][2] + beta*Triangle[1][j1][2];
-			if (ABS(z[0]-z[1])<SMALL_C) continue;
-			if (z[0]>z[1])
-				return (1);
-			else
-				return (-1);
+	/* how many triangles per side ? */
+	if (Corners[0] == 3)
+		n1 = 0;                 /* 1 */
+	else 
+		n1 = 2;                 /* 2 */
+	if (Corners[1] == 3)
+		n2 = 0;
+	else 
+		n2 = 2;
+	
+	/* test sides by testing triangles */
+	for (i = 0; i <= n1; i += 2) {
+		i1 = (i+1) % Corners[0];
+		i2 = (i+2) % Corners[0];
+		tri[0][0][2] = Triangle[0][i][2];
+		tri[0][1][2] = Triangle[0][i1][2];
+		tri[0][2][2] = Triangle[0][i2][2];
+		scr[0][0].x  = ScreenPoint[0][i].x;
+		scr[0][0].y  = ScreenPoint[0][i].y;
+		scr[0][1].x  = ScreenPoint[0][i1].x;
+		scr[0][1].y  = ScreenPoint[0][i1].y;
+		scr[0][2].x  = ScreenPoint[0][i2].x;
+		scr[0][2].y  = ScreenPoint[0][i2].y;
+		for (j = 0; j <= n2; j += 2) {
+			j1 = (j+1) % Corners[1];
+			j2 = (j+2) % Corners[1];
+			tri[1][0][2] = Triangle[1][j][2];
+			tri[1][1][2] = Triangle[1][j1][2];
+			tri[1][2][2] = Triangle[1][j2][2];
+			scr[1][0].x  = ScreenPoint[1][j].x;
+			scr[1][0].y  = ScreenPoint[1][j].y;
+			scr[1][1].x  = ScreenPoint[1][j1].x;
+			scr[1][1].y  = ScreenPoint[1][j1].y;
+			scr[1][2].x  = ScreenPoint[1][j2].x;
+			scr[1][2].y  = ScreenPoint[1][j2].y;
+			cmp = CompareTriangles(tri, scr);
+			if (cmp != 0)
+				return cmp;
 		}
 	}
-	
-	/* now check, if one side contains the other. In that case, the */
-	/* covering side also covers the other one's center of mass.    */
-	
-	for (i=0; i<2; i++) 
-	{
-		Xmax[i]=Xmin[i]=(DOUBLE)ScreenPoint[i][0].x;
-		Ymax[i]=Ymin[i]=(DOUBLE)ScreenPoint[i][0].y;
-		for (j=0; j<Corners[i]; ++j)
-		{
-			Xmax[i] = MAX(Xmax[i],(DOUBLE)ScreenPoint[i][j].x);
-			Xmin[i] = MIN(Xmin[i],(DOUBLE)ScreenPoint[i][j].x);
-			Ymax[i] = MAX(Ymax[i],(DOUBLE)ScreenPoint[i][j].y);
-			Ymin[i] = MIN(Ymin[i],(DOUBLE)ScreenPoint[i][j].y);
-		}
-	}	
-	for (i=0; i<2; i++) 
-	{
-		j=1-i;
-		if (((Xmin[i]<=Xmin[j])&&(Xmax[i]>=Xmax[j])) &&
-		    ((Ymin[i]<=Ymin[j])&&(Ymax[i]>=Ymax[j]))) 
-		{
-		/* Now, quadrangle 'i' on the screen contains quadrangle 'j' */
-		/* So, we must find the point in quadrangle 'i' where to     */
-		/* compare Z-components.                                     */
-		/* Do this as in the case of comparing trisngles.            */
-		
-			M[0]=(DOUBLE)ScreenPoint[i][0].x, M[3]=(DOUBLE)ScreenPoint[i][1].x, M[6] =(DOUBLE)ScreenPoint[i][2].x;
-			M[1]=(DOUBLE)ScreenPoint[i][0].y, M[4]=(DOUBLE)ScreenPoint[i][1].y, M[7] =(DOUBLE)ScreenPoint[i][2].y;
-			M[2]=1.0,			 M[5]=1.0,			  M[8] =1.0;
-		
-			if (M3_Invert(Inverse, M)) continue;
-			rhs[0] =(DOUBLE) ScreenPoint[j][0].x;
-			rhs[1] =(DOUBLE) ScreenPoint[j][0].y;
-			rhs[2] = 1.0;
-			M3_TIMES_V3(Inverse,rhs,lambda)
-			
-			z[i] = lambda[0]*Triangle[i][0][2] + lambda[1]*Triangle[i][1][2] + lambda[2]*Triangle[i][2][2];
-			z[j] = Triangle[j][0][2];
-			if (z[i]>z[j])
-				return ((i>j)?(-1):(1));
-			else
-				return ((i>j)?(1):(-1));
-		}
-	
-	}
-	return (0);
+	return 0;
 }
 
 /****************************************************************************/
@@ -14301,7 +14342,6 @@ static INT CompareElements (const void *ElementHandle0,
    RETURN VALUE:
    INT
 .n    0 if ok
-.n    1 if error occured.
 */
 /****************************************************************************/
 
@@ -14987,7 +15027,7 @@ static INT Gid2Index(INT gid)
    RETURN VALUE:
    INT
 .n    0 if ok
-.n    1 if cycle detected
+.n    1 if untractable cycle detected
 .n    2 if insufficient memory
 */
 /****************************************************************************/
@@ -15005,7 +15045,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
     COORD_POINT t;
     DOUBLE *corner[8];
 	DOUBLE_VECTOR temp;
-    INT i, j, k, count, root, pos, lastBegin, newBegin;
+    INT i, j, k, count, root, pos, lastBegin, newBegin, wanted;
 
 	/* count boundary elements */
 	OE_nBndElem = 0;
@@ -15123,11 +15163,16 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 			p = OE_Map[i].elem;
 			table[pos++] = p;
 		}
-	
+	if (pos == 0) { 
+		Release(heap, FROM_TOP);
+		return 1;                 /* give up, if no 1st shell */
+	}
+
 	/* create new shell from last one */
 	lastBegin = 0;
 	newBegin  = pos;
-	while (lastBegin < newBegin) {
+	while (pos < grid->nElem) {
+		/* try to find regular shell */
 		for (i = lastBegin; i<newBegin; i++) {
 			p = table[i];
 			for (j = 0; j < SIDES_OF_ELEM(p); j++) {
@@ -15136,18 +15181,14 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 				if (q != NULL) {
 					if (OBJT(q) == BEOBJ) {
 						k = Id2Index(ID(q));
-						count = BCOUNT(k)-1;
-						if (count == 0)
+						if (--BCOUNT(k) == 0)
 							table[pos++] = q;
-						else
-							BCOUNT(k) = count;
 					}
 					else {
 						count = COUNT(q)-1;
 						if (count == 0)
 							table[pos++] = q;
-						else
-							SETCOUNT(q, count);
+						SETCOUNT(q, count);
 					}
 				}
 			}
@@ -15161,12 +15202,59 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 				}
 			}
 		}
-		lastBegin = newBegin;
-		newBegin  = pos;
+		if (pos == newBegin) {
+			/* no regular shell, try to break up cycle */
+			for (wanted = 1; wanted <= 10; wanted++) {
+				for (i = 0; i < newBegin; i++) {
+					p = table[i];
+					for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+						if (!VIEWABLE(p, j)) continue;
+						q = NBELEM(p, j);
+						if (q != NULL) {
+							if (OBJT(q) == BEOBJ) {
+								k = Id2Index(ID(q));
+								if (BCOUNT(k) == wanted) {
+									table[pos++] = q;
+									BCOUNT(k) = 0;
+									goto resolved;
+								}
+							}
+							else {
+								if (COUNT(q) == wanted) {
+									table[pos++] = q;
+									SETCOUNT(q, 0);
+									goto resolved;
+								}
+							}
+						}
+					}
+					if (OBJT(p) == BEOBJ) {
+						for (h = HIDDEN_BY(Id2Index(ID(p))) ; h != NULL; h = h->next) {
+							k = h->index;
+							if(BCOUNT(k) == wanted) {
+								q = OE_Map[k].elem;
+								table[pos++] = q;
+								BCOUNT(k) = 0;
+								goto resolved;
+							}
+						}
+					}
+				}
+			}
+			Release(heap, FROM_TOP);
+			return 1;                  /* give up, if untractable cycle */
+
+		resolved:
+			lastBegin = pos-1;
+			newBegin  = pos;
+		}
+		else {
+			/* set pointers for next shell */
+			lastBegin = newBegin;
+			newBegin  = pos;
+		}
 	}
 	Release(heap, FROM_TOP);
-	if (pos != grid->nElem) return 1;
-	
 	return 0; 
 }
 
@@ -15195,7 +15283,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
     COORD_POINT t;
     DOUBLE *corner[8];
 	DOUBLE_VECTOR temp;
-    INT i, j, k, l, count, root, pos, lastBegin, newBegin, prevnewBegin;
+    INT i, j, k, l, count, root, pos, lastBegin, newBegin, wanted;
 
 	/* count boundary elements */
 	OE_nBndElem = 0;
@@ -15274,57 +15362,21 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 			table[pos] = i;
 			pos+=2;
 		}
-	
+	if (pos == 0) {
+		Release(heap, FROM_TOP);
+		return 1;                 /* give up, if untractable cycle */
+	}
+
 	/* create new shell from last one */
 	lastBegin = 0;
-	prevnewBegin = 0;
 	newBegin  = pos;
-
-	while (lastBegin<newBegin || pos<2*OE_nGlobalCGelems)  {
-	    for (i=0; i<pos; i+=2)
-		    PRINTDEBUG(graph,1,("pos %d table[%d] %d n %d\n",
-								pos,i,table[i],OE_nGlobalCGelems));
-
-		if (lastBegin==newBegin)
-		{
-			while (newBegin==pos) 
-			{
-				for (i=prevnewBegin; i>=0; i-=2)
-				{
-				    /* TODO: remove this */
-				    while (i>=pos) i-= 2;
-
-					l = table[i];
-					for (j = 0; j < CGG_NAD(l); j++) {
-						k = Gid2Index(CGG_ADJACENT(l)[j]);
-						if (--CGG_CNT(k) == 0) {
-						    ASSERT(k<OE_nGlobalCGelems);
-							table[pos] = k;
-							pos+=2;
-							break;
-						}
-					}
-					if (CGG_BLINK(l) != NULL) 
-						for (h = HIDDEN_BY(l); h != NULL; h = h->next) {
-							j = h->index;
-							if (--CGG_CNT(j) == 0) {
-							    ASSERT(j<OE_nGlobalCGelems);
-								table[pos] = j;
-								pos+=2;
-								break;
-							}
-						}
-				}
-			}
-		}
-		else
-		{
-			for (i = lastBegin; i<newBegin; i+=2) {
+	while (pos < 2*OE_nGlobalCGelems) {
+		/* try to find regular shell */
+		for (i = lastBegin; i<newBegin; i+=2) {
 				l = table[i];
 				for (j = 0; j < CGG_NAD(l); j++) {
 					k = Gid2Index(CGG_ADJACENT(l)[j]);
 					if (--CGG_CNT(k) == 0) {
-						ASSERT(k<OE_nGlobalCGelems);
 						table[pos] = k;
 						pos+=2;
 					}
@@ -15333,19 +15385,51 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 					for (h = HIDDEN_BY(l); h != NULL; h = h->next) {
 						j = h->index;
 						if (--CGG_CNT(j) == 0) {
-						    ASSERT(j<OE_nGlobalCGelems);
 							table[pos] = j;
 							pos+=2;
 						}
 					}
-			}
 		}
-		prevnewBegin = newBegin;
-		lastBegin = newBegin;
-		newBegin  = pos;
+		if (pos == newBegin) {
+			/* no regular shell, try to break up cycle */
+			for (wanted = 1; wanted <= 10; wanted++) {
+				for (i = 0; i < newBegin; i+=2) {
+					l = table[i];
+					for (j = 0; j < CGG_NAD(l); j++) {
+						k = Gid2Index(CGG_ADJACENT(l)[j]);
+						if (CGG_CNT(k) == wanted) {
+							table[pos] = k;
+							pos+=2;
+							CGG_CNT(k) = 0;
+							goto resolved;
+						}
+					}
+					if (CGG_BLINK(l) != NULL) 
+						for (h = HIDDEN_BY(l); h != NULL; h = h->next) {
+							j = h->index;
+							if (CGG_CNT(j) == wanted) {
+								table[pos] = j;
+								pos+=2;
+								CGG_CNT(j) = 0;
+								goto resolved;
+							}
+						}
+				}
+			}
+			Release(heap, FROM_TOP);
+			return 1;                  /* give up, if untractable cycle */
+
+		resolved:
+			lastBegin = pos-2;
+			newBegin  = pos;
+		}
+		else {
+			/* set pointers for next shell */
+			lastBegin = newBegin;
+			newBegin  = pos;
+		}
 	}
 	Release(heap, FROM_TOP);
-	if (pos != 2*OE_nGlobalCGelems) return 1;
 
 	/* compute plot ids */
 	l = 1;
@@ -15696,7 +15780,7 @@ static INT CollectGraphs (GRID *theGrid)
 static INT OrderRemoteSons(ELEMENT *p)
 {
 	ELEMENT *sonList[MAX_SONS], *son, *nbElem, *pel[HT_LEN];
-	INT i, j, k, l, pos, lastBegin, newBegin, na, cnt, pid,
+	INT i, j, k, l, pos, lastBegin, newBegin, na, cnt, pid, wanted,
 		adjacent[HT_LEN][MAX_SIDES_OF_ELEM-1];
 
 	/* add local partial graph */
@@ -15733,21 +15817,59 @@ static INT OrderRemoteSons(ELEMENT *p)
 	for (i = 0; i < HT_LEN; i++)
 		if (HTAB(p)[i] != -1 && CNT(p, i) == 0)
 			TABLE(p)[pos++] = HTAB(p)[i];
-			
-	/* create new shell from last one */
-	newBegin = pos;
-	lastBegin = 0;
-	while (pos < N_GLOBAL_SONS(p)) {
-		for (i = lastBegin; i < newBegin; i++) {
-			k = Lookup(HTAB(p), TABLE(p)[i]);
-			for (j = 0; j < NAD(p, k); j++) {
-				l = Lookup(HTAB(p), ADJACENT(p, k)[j]);
-				if (--CNT(p, l) == 0)
-					TABLE(p)[pos++] = HTAB(p)[l];
+
+	if (pos == 0) {
+		/* no 1st shell, give up & return unordered list */
+		j = 0;
+		for (i = 0; i < HT_LEN; i++)
+			if (HTAB(p)[i] != -1)
+				TABLE(p)[j++] = HTAB(p)[i];
+	}
+	else {
+		/* create next shell from last one */
+		newBegin = pos;
+		lastBegin = 0;
+		while (pos < N_GLOBAL_SONS(p)) {
+			/* try fo find next regular shell */
+			for (i = lastBegin; i < newBegin; i++) {
+				k = Lookup(HTAB(p), TABLE(p)[i]);
+				for (j = 0; j < NAD(p, k); j++) {
+					l = Lookup(HTAB(p), ADJACENT(p, k)[j]);
+					if (--CNT(p, l) == 0)
+						TABLE(p)[pos++] = HTAB(p)[l];
+				}
+			}
+			if (pos == newBegin) {
+				/* no regular shell, try to break up cycle */
+				for (wanted = 1; wanted <= 5; wanted++) {
+					for (i = 0; i < newBegin; i++) {
+						for (j = 0; j < NAD(p, k); j++) {
+							l = Lookup(HTAB(p), ADJACENT(p, k)[j]);
+							if (CNT(p, l) == wanted) {
+								TABLE(p)[pos++] = HTAB(p)[l];
+								CNT(p, l) = 0;
+								goto resolved;
+							}
+						}
+					}
+				}
+				/* give up, return unordered list */
+				j = 0;
+				for (i = 0; i < HT_LEN; i++)
+					if (HTAB(p)[i] != -1)
+						TABLE(p)[j++] = HTAB(p)[i];
+				break;
+
+			resolved:
+				lastBegin = pos-1;
+				newBegin  = pos;
+			}
+			else {
+				/* set shell pointers */
+				lastBegin = newBegin;
+				newBegin = pos;
 			}
 		}
-		lastBegin = newBegin;
-		newBegin = pos;
 	}
 
 	/* number local sons */
@@ -16439,35 +16561,26 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 		{
 		case 0: 
 			err = OrderFathersXSH(mg, table);
-			if (err == 1) {
-				UserWrite("Cycle detected while ordering coarse grid.\n");
-				UserWrite("Falling back on slow method ...\n");
-				err = OrderFathersSEL(mg, table);
-			}
-			else if (err == 2) 
-				UserWrite("Insufficient memory to order coarse grid.\n");
 			break;
 		case 1:
 			err = OrderFathersNNS(mg, table);
-			if (err == 1) {
-				UserWrite("Cycle detected while ordering coarse grid.\n");
-				UserWrite("Falling back on slow method ...\n");
-				err = OrderFathersSEL(mg, table);
-			}
-			else if (err == 2) 
-				UserWrite("Insufficient memory to order coarse grid.\n");
 			break;
 		case 2:
 			err = OrderFathersSEL(mg, table);
 			break;
 		}
-		if (!err) PutAtEndOfList(grid,grid->nElem, table);
+		if (err == 1)
+			UserWrite("OrderCoarseGrid(): untractable cycle\n");
+		else if (err == 2)
+			UserWrite("OrderCoarseGrid(): out of mem4\n");
+		else
+			PutAtEndOfList(grid,grid->nElem, table);
     #else
 		err = OrderFathersXSH(mg, table);
-		if (err == 1) 
-			UserWrite("Cycle detected while ordering coarse grid.\n");
+		if (err == 1)
+			UserWrite("OrderCoarseGrid(): untractable cycle\n");
 		else if (err == 2)
-			UserWrite("Insufficient memory to order coarse grid.\n");
+			UserWrite("OrderCoarseGrid(): out of mem5\n");
 		Release(heap, FROM_TOP);
 	}
 	Broadcast(&err, sizeof(err));
@@ -16578,7 +16691,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 					goto fault;
 				}
 	}
-	fault:
+fault:
 	err = UG_GlobalMaxINT(err);
 	if (err) {
 		UserWrite("Insufficient memory to order elements.\n");
@@ -18268,9 +18381,9 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	for (i=0; i<n; ++i)
 	  if (UG_GlobalToLocal(CORNERS_OF_ELEM(theElement),
 						  (const DOUBLE **)x,Poly[i],PolyLoc[i])) 
-		PrintErrorMessage('W',"EW_EScalar3D",
+		  /* PrintErrorMessage('W',"EW_EScalar3D",
                           "could not compute global coordinates");
-	
+		  */;
 	switch (EScalar3D_mode)
 	{
 		case PO_COLOR:
