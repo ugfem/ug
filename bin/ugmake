@@ -5,9 +5,9 @@ then
 	echo "purpose: compile by calling \"make\" with the right Makefile[.<ugmodule>]";
 	echo "Options are";
 	echo " <ugmodule>: the module which you want to compile";
-	echo "             where <ugmodule> is one of ug, dev, meta, xif";
-	echo "             gm, graph, low, numerics, ui, gg, gg3d, dom, std";
-	echo "             diff2d, diff2da,cd, cda, fem, fema, ns2d, ns2da,netgen";
+	echo "             where <ugmodule> is one of ug, dev, meta, xif, gm";
+	echo "             graph, low, numerics, ui, gg, gg3d, dom, std, netgen";
+	echo "             diff2d, diff2da,cd, cda, fem, fema, ns2d, ns2da, simple";
 	echo " <makeoptions>: the options which you want to pass to \"make\"";
 	exit 1;
 fi
@@ -69,6 +69,18 @@ then
 	fi			
 
 	# check whether first option is problem class or application
+	if test "$1" = "simple" 
+	then
+		if test -d $UGROOT/../simple
+		then
+			cd $UGROOT/../simple;
+		else 
+			echo "no directory for simple found!";
+			exit 1;
+		fi				
+		shift;
+	fi			
+
 	if test "$1" = "diff2d" -o "$1" = "diff2da" 
 	then
 		if test -d $UGROOT/../diff2d

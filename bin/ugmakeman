@@ -127,6 +127,10 @@ then
 	cd $UGROOT/doc
 	doctext -quotefmt -mpath $UGROOT/man/man2 -ext 2 -heading admin *.doc
 
+	#generate man pages for simple
+	cd $UGROOT/../simple
+	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading simple *.doc
+
 	#generate man pages for diff2d
 	cd $UGROOT/../diff2d
 	doctext -quotefmt -mpath $UGROOT/../diff2d/man/mana -ext a -heading diff2d *.doc

@@ -13,6 +13,8 @@ cd $UGROOT/../diff2d/pclib
 make
 cd $UGROOT/../diff2d/appl
 make
+cd $UGROOT/../simple
+make
 # rely on uglib2TFFF
 cd $UGROOT/../ns2d/pclib
 make
