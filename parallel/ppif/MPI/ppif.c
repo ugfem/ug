@@ -179,8 +179,8 @@ static MPI_Comm Comm;
 /*                                                                          */
 /****************************************************************************/
 
-int SendSync (VChannelPtr vc, void *data, int size);
-int RecvSync (VChannelPtr vc, void *data, int size);
+int SendSync (void* v, void *data, int size);
+int RecvSync (void* v, void *data, int size);
 
 /****************************************************************************/
 /*                                                                          */
@@ -542,26 +542,29 @@ VChannelPtr ConnSync (int p, int id)
   return (NewVChan (p, id) );
 }
 
-int DiscSync (VChannelPtr vc)
+int DiscSync (void* v)
 
 {
+  VChannelPtr vc = (VChannelPtr)v;
   DeleteVChan (vc);
 
   return (0);
 }
 
-int SendSync (VChannelPtr vc, void *data, int size)
+int SendSync (void* v, void *data, int size)
 
 {
+  VChannelPtr vc = (VChannelPtr)v;
   if (MPI_SUCCESS == MPI_Ssend (data, size, MPI_BYTE, vc->p, vc->chanid, COMM) )
     return (size);
   else
     return (-1);
 }
 
-int RecvSync (VChannelPtr vc, void *data, int size)
+int RecvSync (void* v, void *data, int size)
 
 {
+  VChannelPtr vc = (VChannelPtr)v;
   int count = -1;
   MPI_Status status;
 
@@ -584,21 +587,23 @@ VChannelPtr ConnASync (int p, int id)
   return (NewVChan (p,id) );
 }
 
-int InfoAConn (VChannelPtr vc)
+int InfoAConn (void* v)
 
 {
+  VChannelPtr vc = (VChannelPtr)v;
   return (vc ? 1 : -1);
 }
 
 
-int DiscASync (VChannelPtr vc)
+int DiscASync (void* v)
 
 {
+  VChannelPtr vc = (VChannelPtr)v;
   DeleteVChan (vc);
   return (PPIF_SUCCESS);
 }
 
-int InfoADisc (VChannelPtr vc)
+int InfoADisc (void* v)
 
 {
   return (TRUE);
@@ -606,9 +611,10 @@ int InfoADisc (VChannelPtr vc)
 
 #define REQUEST_HEAP
 
-msgid SendASync (VChannelPtr vc, void *data, int size, int *error)
+msgid SendASync (void* v, void *data, int size, int *error)
 
 {
+  VChannelPtr vc = (VChannelPtr)v;
 #  ifdef REQUEST_HEAP
   MPI_Request *req;
 
@@ -635,9 +641,10 @@ msgid SendASync (VChannelPtr vc, void *data, int size, int *error)
 }
 
 
-msgid RecvASync (VChannelPtr vc, void *data, int size, int *error)
+msgid RecvASync (void* v, void *data, int size, int *error)
 
 {
+  VChannelPtr vc = (VChannelPtr)v;
 #  ifdef REQUEST_HEAP
   MPI_Request *req;
 
@@ -666,9 +673,10 @@ msgid RecvASync (VChannelPtr vc, void *data, int size, int *error)
 }
 
 
-int InfoASend (VChannelPtr vc, msgid m)
+int InfoASend (void* v, msgid m)
 
 {
+  VChannelPtr vc = (VChannelPtr)v;
   MPI_Status status;
   int complete;
 
@@ -697,8 +705,9 @@ int InfoASend (VChannelPtr vc, msgid m)
 }
 
 
-int InfoARecv (VChannelPtr vc, msgid m)
+int InfoARecv (void* v, msgid m)
 {
+  VChannelPtr vc = (VChannelPtr)v;
   MPI_Status status;
   int complete;
 
