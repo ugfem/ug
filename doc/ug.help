@@ -909,3 +909,7 @@ $a                   # all processors
 $e                   # empty
 <n>                  # toggle processor n
   
+-showconfig > show config configuration ugconf debug
+showconfig           #  show the main configuration settings of this ug-program
+
+
