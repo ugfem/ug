@@ -2348,8 +2348,10 @@ static void PrintSingleVectorX (const VECTOR *v, const VECDATA_DESC *X, INT vcla
   i += sprintf(buffer+i,"n %d t %d o %d\n",VNEW(v),VTYPE(v),VOTYPE(v));
   Printf(buffer);
 
+        #ifdef Debug
   if (Printf!=PrintDebug)
     PRINTDEBUG(np,1,("%d: %s",me,buffer));
+        #endif
 
   return;
 }
