@@ -164,18 +164,29 @@ sub ug
 		# command 'start'
 		if ($command eq "start")
 		{
+			my ($model,$seq);
 			if(@in!=5)
         	{   
         	    die 'ERROR: usage: ug "start", "p"=>"program", "x"=>[0|1];'."\n";
         	} 
 			-e $argv{'p'} or die "ERROR: programm '$argv{'p'}' does not exist\n";
-			$argv{'x'}==0 || $argv{'x'}==1 or die "ERROR: wrong specification of 'x'-option\n";
+			$model=`strings $argv{'p'} | grep 'Model:'`;
+			$seq=1; if ($model=~/parallel/) { $seq=0; }
+			if ($seq)
+			{
+				print "running sequential code\n";
+				$argv{'x'}==0 || $argv{'x'}==1 or die "ERROR: wrong specification of 'x'-option\n";
 			
-			if ($argv{'x'}==1) { $ui="-ui c"; }
-			else { $ui="-ui cn"; }
-        	open2(*OUT,*IN,"$argv{'p'} $ui -perl");
-			IN->autoflush(1); OUT->autoflush(1);
-			return out($print);
+				if ($argv{'x'}==1) { $ui="-ui c"; }
+				else { $ui="-ui cn"; }
+        		open2(*OUT,*IN,"$argv{'p'} $ui -perl");
+				IN->autoflush(1); OUT->autoflush(1);
+				return out($print);
+			}
+			else
+			{
+				die "running parallel code\n";
+			}
 		}
 	
 		# command 'ug' 
