@@ -302,9 +302,9 @@ INT InsertinTree (TREE *theTree, DOUBLE *Position, void *obj)
   for (i=0; i < dim; i++)
   {
     if (theTree->posrange[i] >= Position[i])
-      return(NULL);
+      return(0);
     if (theTree->posrange[i+dim] < Position[i])
-      return(NULL);
+      return(0);
   }
 
   switch(SearchInsertPoint(theTree,Position,&entry))
