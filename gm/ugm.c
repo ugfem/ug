@@ -6224,6 +6224,97 @@ ELEMENT *NeighbourElement (ELEMENT *t, INT side)
   return(nb);
 }
 
+
+/****************************************************************************/
+/*D
+   CalculateCenterOfMass - Calculate the center of mass for an element
+
+   SYNOPSIS:
+   void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
+
+   PARAMETERS:
+   .  theElement - the element
+   .  center_of_mass - center of mass as the result
+
+   DESCRIPTION:
+   This function calculates the center of mass for an arbitrary element.
+   DOUBLE_VECTOR is a array for a 2D resp. 3D coordinate.
+
+   SEE ALSO:
+   DOUBLE_VECTOR, ELEMENT
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
+{
+  DOUBLE *corner;
+  INT i, nr_corners;
+
+  nr_corners = CORNERS_OF_ELEM(theElement);
+  V_DIM_CLEAR(center_of_mass);
+
+  for (i=0; i<nr_corners; i++)
+  {
+    corner = CVECT(MYVERTEX(CORNER(theElement,i)));
+    V_DIM_ADD(center_of_mass,corner,center_of_mass);
+  }
+
+  V_DIM_SCALE(1.0/nr_corners,center_of_mass);
+}
+
+/****************************************************************************/
+/*D
+   KeyForObject - calculate an (hopefully) unique key for the geometric object
+
+   SYNOPSIS:
+   INT KeyForObject( SELECTION_OBJECT *obj );
+
+   PARAMETERS:
+   .  obj - geometric object which from the key is needed (can be one of ELEMENT, NODE or VECTOR)
+
+   DESCRIPTION:
+   This function calculates an (hopefully) unique key for
+   ELEMENT, NODE and VECTOR typed objects.
+
+   The heuristic is: calculate a 2D/3D position for the geometric object and
+   transform this position to a single number by a weighted summation of the
+   leading digits of the 2 resp. 3 coordinates and taking from this again
+   the sigificant digits.
+
+   SEE ALSO:
+   ELEMENT, NODE, VECTOR
+
+   RETURN VALUE:
+   INT - the resulting key
+   D*/
+/****************************************************************************/
+
+INT KeyForObject( SELECTION_OBJECT *obj )
+{
+  int dummy;            /* dummy variable */
+  DOUBLE_VECTOR coord;
+
+  switch( OBJT(obj) )
+  {
+  case BEOBJ :
+  case IEOBJ :                  /* both together cover all element types */
+    CalculateCenterOfMass( (ELEMENT*)obj, coord );
+    return COORDINATE_TO_KEY(coord,&dummy);
+
+  case NDOBJ :     return COORDINATE_TO_KEY(CVECT(MYVERTEX((NODE*)obj)),&dummy);
+
+
+  case VEOBJ :     VectorPosition( (VECTOR*)obj, coord );
+    return COORDINATE_TO_KEY(coord,&dummy);
+
+  default :        PrintErrorMessage('E',"IDForObject","unrecognized object type");
+    assert(0);
+  }
+}
+
 /****************************************************************************/
 /*D
    ListMultiGrid - List general information about multigrid structure
@@ -7119,7 +7210,8 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
         UserWriteF("XI[%d]=%11.4E ",i, (float)(LCVECT(theVertex)[i]) );
       }
     }
-    UserWrite("\n");
+
+    UserWriteF(" key=%d\n", KeyForObject((SELECTION_OBJECT*)theNode) );
   }
 
   /******************************/
@@ -7241,13 +7333,14 @@ INT IsNodeSelected (MULTIGRID *theMG, NODE *theNode)
    ListNodeRange - List information about nodes in given range of ids
 
    SYNOPSIS:
-   void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT dataopt,
+   void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt,
    INT bopt, INT nbopt, INT vopt)
 
    PARAMETERS:
    .  theMG - structure to list
    .  from - first id
    .  to - last id
+   .  idopt - determines the meaning of from/to
    .  dataopt - list user data if true
    .  bopt - list boundary info if true
    .  nbopt - list info about neighbors if true
@@ -7261,7 +7354,7 @@ INT IsNodeSelected (MULTIGRID *theMG, NODE *theNode)
    D*/
 /****************************************************************************/
 
-void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT gidopt, INT dataopt, INT bopt, INT nbopt, INT vopt)
+void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
   int level;
   NODE *theNode;
@@ -7269,18 +7362,26 @@ void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT gidopt, INT dataopt,
   for (level=0; level<=TOPLEVEL(theMG); level++)
     for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,level)); theNode!=NULL; theNode=SUCCN(theNode))
     {
-      if (gidopt == 0)
+      switch( idopt )
       {
+      case 0 :                          /* $i option */
         if ( (ID(theNode)>=from)&&(ID(theNode)<=to) )
           ListNode(theMG,theNode,dataopt,bopt,nbopt,vopt);
-      }
+        break;
 #ifdef ModelP
-      else
-      {
+      case 1 :                          /* $g option */
         if (GID(theNode) == from)
           ListNode(theMG,theNode,dataopt,bopt,nbopt,vopt);
-      }
+        break;
 #endif
+      case 2 :                          /* $k option */
+        if ( KeyForObject((SELECTION_OBJECT *)theNode) == from)
+          ListNode(theMG,theNode,dataopt,bopt,nbopt,vopt);
+        break;
+
+      default : PrintErrorMessage( 'E', "ListNodeRange", "unrecognized idopt" );
+        assert(0);
+      }
     }
 }
 
@@ -7376,7 +7477,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
     /*
        #endif
      */
-    UserWrite("\n");
+    UserWriteF(" key=%d\n", KeyForObject((SELECTION_OBJECT*)theElement) );
   }
   if (nbopt)
   {
@@ -7490,13 +7591,14 @@ INT IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
    ListElementRange - List information about elements in range of ids
 
    SYNOPSIS:
-   void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT dataopt,
+   void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt,
    INT bopt, INT nbopt, INT vopt, INT lopt);
 
    PARAMETERS:
    .  theMG - multigrid structure to list
    .  from - first id
    .  to - last id
+   .  idopt - determines the meaning of from/to
    .  dataopt - list user data if true
    .  vopt - list more information
 
@@ -7508,7 +7610,7 @@ INT IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
    D*/
 /****************************************************************************/
 
-void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT gidopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt)
+void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt)
 {
   int level,fromlevel,tolevel;
   ELEMENT *theElement;
@@ -7524,18 +7626,26 @@ void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT gidopt, INT datao
   for (level=fromlevel; level<=tolevel; level++)
     for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
     {
-      if (gidopt == 0)
+      switch( idopt )
       {
+      case 0 :                          /* $i option */
         if ( (ID(theElement)>=from)&&(ID(theElement)<=to) )
           ListElement(theMG,theElement,dataopt,bopt,nbopt,vopt);
-      }
+        break;
 #ifdef ModelP
-      else
-      {
+      case 1 :                          /* $g option */
         if (EGID(theElement) == from)
           ListElement(theMG,theElement,dataopt,bopt,nbopt,vopt);
-      }
+        break;
 #endif
+      case 2 :                          /* $k option */
+        if ( KeyForObject((SELECTION_OBJECT *)theElement) == from)
+          ListElement(theMG,theElement,dataopt,bopt,nbopt,vopt);
+        break;
+
+      default : PrintErrorMessage( 'E', "ListElementRange", "unrecognized idopt" );
+        assert(0);
+      }
     }
 }
 
@@ -7576,39 +7686,46 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
   UserWriteF("VTYPE=%d(%c) ",VTYPE(theVector),FMT_T2N(theFormat,VTYPE(theVector)));
 
   /* print object type of vector */
-  if (VOTYPE(theVector)==NODEVEC)
+  switch( VOTYPE(theVector) )
   {
+  case NODEVEC :
     theNode = (NODE*)VOBJECT(theVector);
     UserWriteF("NODE-V IND=" VINDEX_FFMTE " nodeID=" ID_FMTX
-               "                VCLASS=%1d VNCLASS=%1d\n",
+               "                VCLASS=%1d VNCLASS=%1d",
                VINDEX_PRTE(theVector),ID_PRTX(theNode),VCLASS(theVector),VNCLASS(theVector));
-  }
-  if (VOTYPE(theVector)==EDGEVEC)
-  {
+    break;
+
+  case EDGEVEC :
     theEdge = (EDGE*)VOBJECT(theVector);
     UserWriteF("EDGE-V IND=" VINDEX_FFMTE " fromID=" ID_FFMT
-               " to__ID=%7ld VCLASS=%1d VNCLASS=%1d\n",
+               " to__ID=%7ld VCLASS=%1d VNCLASS=%1d",
                VINDEX_PRTE(theVector),ID_PRT(NBNODE(LINK0(theEdge))),
                ID(NBNODE(LINK1(theEdge))),VCLASS(theVector),VNCLASS(theVector));
-  }
-        #ifdef __THREEDIM__
-  if (VOTYPE(theVector)==SIDEVEC)
-  {
+    break;
+
+                #ifdef __THREEDIM__
+  case SIDEVEC :
     theElement = (ELEMENT*)VOBJECT(theVector);
     UserWriteF("SIDE-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
-               "                VCLASS=%1d VNCLASS=%1d\n",
+               "                VCLASS=%1d VNCLASS=%1d",
                VINDEX_PRTE(theVector),EID_PRT(theElement),
                VCLASS(theVector),VNCLASS(theVector));
-  }
-        #endif
-  if (VOTYPE(theVector)==ELEMVEC)
-  {
+    break;
+                #endif
+
+  case ELEMVEC :
     theElement = (ELEMENT*)VOBJECT(theVector);
     UserWriteF("ELEM-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
-               "                VCLASS=%1d VNCLASS=%1d\n",
+               "                VCLASS=%1d VNCLASS=%1d",
                VINDEX_PRTE(theVector),EID_PRT(theElement),
                VCLASS(theVector),VNCLASS(theVector));
+    break;
+
+  default : PrintErrorMessage( 'E', "ListVector", "unrecognized VECTOR type" );
+    assert(0);
   }
+
+  UserWriteF(" key=%d\n", KeyForObject((SELECTION_OBJECT *)theVector) );
 
   /* print vector data if */
   if (dataopt && FMT_PR_VEC(theFormat)!=NULL)
@@ -7783,12 +7900,13 @@ INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
 
    SYNOPSIS:
    void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl,
-   INT from, INT to, INT matrixopt, INT dataopt)
+   INT from, INT to, INT idopt, INT matrixopt, INT dataopt)
 
    PARAMETERS:
    .  theMG - structure to list
    .  from - first index
    .  to - last index
+   .  idopt - determines the meaning of from/to
    .  matrixopt - list line of matrix corresponding to theVector
    .  dataopt - list user data if true
 
@@ -7800,7 +7918,7 @@ INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
    D*/
 /****************************************************************************/
 
-void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT gidopt, INT matrixopt, INT dataopt)
+void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt)
 {
   int level;
   VECTOR *theVector;
@@ -7808,18 +7926,26 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT gi
   for (level=fl; level<=tl; level++)
     for (theVector=PFIRSTVECTOR(GRID_ON_LEVEL(theMG,level)); theVector!=NULL; theVector=SUCCVC(theVector))
     {
-      if (gidopt == 0)
+      switch( idopt )
       {
+      case 0 :                          /* $i option */
         if (VINDEX(theVector)>=from && VINDEX(theVector)<=to)
           ListVector(theMG,theVector,matrixopt,dataopt);
-      }
+        break;
 #ifdef ModelP
-      else
-      {
+      case 1 :                          /* $g option */
         if (GID(theVector) == from)
           ListVector(theMG,theVector,matrixopt,dataopt);
-      }
+        break;
 #endif
+      case 2 :                          /* $k option */
+        if ( KeyForObject((SELECTION_OBJECT *)theVector) == from)
+          ListVector(theMG,theVector,matrixopt,dataopt);
+        break;
+
+      default : PrintErrorMessage( 'E', "ListVectorRange", "unrecognized idopt" );
+        assert(0);
+      }
     }
 }
 
