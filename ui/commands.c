@@ -9728,7 +9728,7 @@ static INT SymListCommand (INT argc, char **argv)
       DisplaySymbol(sym);
     else
       UserWriteF("no symbol '%s' in format '%s'%s\n",name,format,(format[0]=='*') ? " of current multigrid" : "");
-    return (OKCODE);
+    break;
 
   case 'V' :
     res = sscanf(argv[1],"V %s",format);
@@ -9765,8 +9765,9 @@ static INT SymListCommand (INT argc, char **argv)
         found = TRUE;
         DisplaySymbol(sym);
       }
-    if (!found) UserWriteF("no vector symbol in format '%s'\n",format,(format[0]=='*') ? " of current multigrid" : "");
-    return (OKCODE);
+    if (!found)
+      UserWriteF("no vector symbol in format '%s'\n",format,(format[0]=='*') ? " of current multigrid" : "");
+    break;
 
   case 'M' :
     res = sscanf(argv[1],"M %s",format);
@@ -9803,8 +9804,9 @@ static INT SymListCommand (INT argc, char **argv)
         found = TRUE;
         DisplaySymbol(sym);
       }
-    if (!found) UserWriteF("no matrix symbol in format '%s'\n",format,(format[0]=='*') ? " of current multigrid" : "");
-    return (OKCODE);
+    if (!found)
+      UserWriteF("no matrix symbol in format '%s'\n",format,(format[0]=='*') ? " of current multigrid" : "");
+    break;
 
   default :
     sprintf(buffer,"(invalid option '%s')",argv[1]);
