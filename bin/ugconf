@@ -8,9 +8,11 @@ then
 	echo " <conf>: 2 (set DIM = 2)";
 	echo "         3 (set DIM = 3)";
 	echo "         NETGEN (set NETGEN = ON)";
-	echo "         GRAPE (set GRAPE = ON)";
 	echo "         NONETGEN (set NETGEN = OFF)";
+	echo "         GRAPE (set GRAPE = ON)";
 	echo "         NOGRAPE (set GRAPE = OFF)";
+	echo "         COVISE (set COVISE = ON)";
+	echo "         NOCOVISE (set COVISE = OFF)";
 	echo "         RIF (set IF=R, REMOTE_IF = ON)";
 	echo "         SIF (set IF=S, REMOTE_IF = OFF)";
 	echo "         XIF (set IF=X, REMOTE_IF = OFF)";
@@ -99,7 +101,7 @@ PACKSUFFIX=Z
 
 grep_valid_entries()
 {
-	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*CHACO|^[ ]*CAD' $1;
+	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*COVISE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*CHACO|^[ ]*CAD' $1;
 }
 
 
@@ -210,14 +212,20 @@ edit_ugconf()
 		mv $1.tmp $1
 		sed 's/^DIM.*$/DIM = 3/' $1 > $1.tmp
 		;;
-	GRAPE)
-		sed 's/^GRAPE.*$/GRAPE = ON/' $1 > $1.tmp
-		;;
 	NONETGEN)
 		sed 's/^NETGEN.*$/NETGEN = OFF/' $1 > $1.tmp
 		;;
+	GRAPE)
+		sed 's/^GRAPE.*$/GRAPE = ON/' $1 > $1.tmp
+		;;
 	NOGRAPE)
 		sed 's/^GRAPE.*$/GRAPE = OFF/' $1 > $1.tmp
+		;;
+	COVISE)
+		sed 's/^COVISE.*$/COVISE = ON/' $1 > $1.tmp
+		;;
+	NOCOVISE)
+		sed 's/^COVISE.*$/COVISE = OFF/' $1 > $1.tmp
 		;;
 	RIF)
 		sed 's/^IF.*$/IF = R/' $1 > $1.tmp
