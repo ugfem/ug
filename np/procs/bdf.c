@@ -911,7 +911,7 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
       if (ReadArgvDOUBLE("t",&initialtime,argc,argv) == 0)
         bdf->tstart = initialtime;
       if (ReadArgvDOUBLE("dt",&dtime,argc,argv) == 0)
-        bdf->dt = dtime;
+        bdf->dtstart = dtime;
       if ((*np->TimeInit)(np,level,&result)) {
         UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",result);
         return (1);
