@@ -233,11 +233,11 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
 
   /* allocate s2p table */
   LGM_DOMAIN_NPART(theDomain) = 1;
-  LGM_DOMAIN_S2P_PTR(theDomain) = (INT*)GetFreelistMemory(Heap,LGM_DOMAIN_NSUBDOM(theDomain)*sizeof(INT));
+  LGM_DOMAIN_S2P_PTR(theDomain) = (INT*)GetFreelistMemory(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT));
   if (LGM_DOMAIN_S2P_PTR(theDomain)==NULL)
     return (NULL);
   /* HRR_TODO: fill number of parts */
-  for (i=0; i<LGM_DOMAIN_NSUBDOM(theDomain); i++)
+  for (i=0; i<=LGM_DOMAIN_NSUBDOM(theDomain); i++)
     LGM_DOMAIN_S2P(theDomain,i) = 0;
   theDomain->theHeap = Heap;
 
