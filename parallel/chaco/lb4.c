@@ -97,7 +97,7 @@
 #endif
 
 #if (!defined(__DLB__) || !defined(INT_MAXCLUSTERS))
-#define MAXCLUSTERS         10000       /* max number of clusters           */
+#define MAXCLUSTERS         100000       /* max number of clusters           */
 #endif
 
 #define MAXSETS             16          /* max number of cluster sets       */
@@ -105,12 +105,12 @@
 #define SMALL_COORD         1.0E-5      /* resolution when comparing COORDs */
 
 
-#define DESCENDENTS(e)          ((e)->ge.lb3)
-#define SET_DESCENDENTS(e,n)    (e)->ge.lb3 = n
-#define MY_CLUSTER(e)           ((CLUSTER *)((e)->ge.lb2))
-#define SET_MY_CLUSTER(e,p)     (e)->ge.lb2 = ((unsigned INT) (p))
-#define HAS_CLUSTER(e)          (((CLUSTER *)(e)->ge.lb2)!=NULL)
-#define MY_CLUSTER_ID(e)        (((CLUSTER *)(e)->ge.lb2)->edges[0])
+#define DESCENDENTS(e)          ((e)->ge.ptmp2)
+#define SET_DESCENDENTS(e,n)    (e)->ge.ptmp2 = n
+#define MY_CLUSTER(e)           ((CLUSTER *)((e)->ge.ptmp1))
+#define SET_MY_CLUSTER(e,p)     (e)->ge.ptmp1 = ((unsigned INT) (p))
+#define HAS_CLUSTER(e)          (((CLUSTER *)(e)->ge.ptmp1)!=NULL)
+#define MY_CLUSTER_ID(e)        (((CLUSTER *)(e)->ge.ptmp1)->edges[0])
 #define SET_PARTITION(e,p)		(PARTITION(e) = p)
 
 /****************************************************************************/
