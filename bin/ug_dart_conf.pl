@@ -248,13 +248,27 @@ sub dartroot
 # creating the "SourceDirectory" dart variable for "DartConfiguration.tcl"
 sub sourcedir
 {
-	return(join('','SourceDirectory: ',$_[0],'/Source/',$_[1],'/UG'));
+	if($_[2] eq "")
+	{
+		return(join('','SourceDirectory: ',$_[0],'/Source/',$_[1],'/UG'));
+	}
+	else
+	{
+		return(join('','SourceDirectory: ',$_[0],'/Source/',$_[1],'/UG/',$_[2]));
+	}
 }
 
 # creating the "BuildDirectory" dart variable for "DartConfiguration.tcl"
 sub builddir
 {
-	return(join('','BuildDirectory: ',$_[0],'/Source/',$_[1],'/UG'));
+	if($_[2] eq "")
+	{
+		return(join('','BuildDirectory: ',$_[0],'/Source/',$_[1],'/UG'));
+	}
+	else
+	{
+		return(join('','BuildDirectory: ',$_[0],'/Source/',$_[1],'/UG/',$_[2]));
+	}
 }
 
 # creating the "Site" dart variable for "DartConfiguration.tcl"
@@ -300,7 +314,14 @@ sub buildname
     		$os_release=substr $_, 0, (index $_, "\n");
 	}
 	system("rm ./temp.txt");
-	return(join('','BuildName: ',$kernel_name,'-',$os_release,'-',$compiler,'-',$_[1],,$_[2]));
+	if($_[3] eq "")
+	{
+		return(join('','BuildName: UGlib-',$kernel_name,'-',$os_release,'-',$compiler,'-',$_[1],,$_[2]));
+	}
+	else
+	{
+		return(join('','BuildName: Test-',$kernel_name,'-',$os_release,'-',$compiler,'-',$_[1],,$_[2]));
+	}		
 }
 
 # creating the "ConfigureCommand" dart variable for "DartConfiguration.tcl"
@@ -317,8 +338,26 @@ sub confcomm
 # setting the "dartroot" variable
 my $dartroot = $ENV {"DART_HOME"};
 
+# setting the build directory suffix
+my $build_dir_suffix = ""; # default
+if($#ARGV > 0 && $ARGV[0] eq "-bd")
+{
+	splice(@ARGV,0,1);
+	$build_dir_suffix = splice(@ARGV,0,1);
+}
+
+# setting the make command
+if($build_dir_suffix eq "")
+{
+	$makecomm = "MakeCommand: ugpart";
+}
+else
+{
+	$makecomm = "MakeCommand: make build";
+}
+
 # detect whether this script runs on the server or the client(default: client)
-my $mode = "Client";
+my $mode = "Client"; # default
 if($#ARGV > 0 && ($ARGV[0] eq "Client" || $ARGV[0] eq "Server"))
 {
 	$mode = splice(@ARGV,0,1);
@@ -338,8 +377,15 @@ my $build_params=$config_output[1];
 # open the "DartConfiguration.tcl.proto" file for reading
 open IN, (join('',$dartroot,'/Source/',$mode,'/UG/DartConfiguration.tcl.proto'));
 
-# open the "DartConfiguration.tcl" file for writing
-open OUT, (join('','>',$dartroot,'/Source/',$mode,'/UG/DartConfiguration.tcl'));
+# open the "DartConfiguration.tcl" file for writingi
+if($build_dir_suffix eq "")
+{
+	open OUT, (join('','>',$dartroot,'/Source/',$mode,'/UG/DartConfiguration.tcl'));
+}
+else
+{
+	open OUT, (join('','>',$dartroot,'/Source/',$mode,'/UG/',$build_dir_suffix,'/DartConfiguration.tcl'));
+}	
 
 # copy the content of IN to OUT and write the dart variables into OUT
 while (<IN>)
@@ -350,15 +396,15 @@ while (<IN>)
     }
     elsif ( $_=~ /SourceDirectory: ---/)
     {
-	print OUT sourcedir($dartroot,$mode),"\n";
+	print OUT sourcedir($dartroot,$mode,$build_dir_suffix),"\n";
     }
     elsif ( $_=~ /BuildDirectory: ---/)
     {
-	print OUT builddir($dartroot,$mode),"\n";
+	print OUT builddir($dartroot,$mode,$build_dir_suffix),"\n";
     }
     elsif ( $_=~ /BuildName: ---/)
     {
-	print OUT buildname($ugroot,$arch,$build_params),"\n";
+	print OUT buildname($ugroot,$arch,$build_params,$build_dir_suffix),"\n";
     }
     elsif ( $_=~ /ConfigureCommand: ---/)
     {
@@ -368,6 +414,10 @@ while (<IN>)
     {
         print OUT site(),"\n";
     }
+    elsif ( $_=~ /MakeCommand: ---/)
+    {
+	print OUT $makecomm,"\n";
+    } 
     else
     {
         print OUT $_;
