@@ -45,7 +45,6 @@
 #include "if.h"
 
 
-#define DebugShowAttr
 
 
 /****************************************************************************/
@@ -822,24 +821,26 @@ static void IFDisplay (DDD_IF i)
 
   for(ifh=theIF[i].ifHead; ifh!=NULL; ifh=ifh->next)
   {
-#       ifndef DebugShowAttr
-    sprintf(cBuffer, "|        %3d=%3d,%3d,%3d - %02d\n",
-            ifh->nItems, ifh->nAB, ifh->nBA, ifh->nABA, ifh->proc);
-    DDD_PrintLine(cBuffer);
-
-#       else
-    sprintf(cBuffer, "|        %3d=%3d,%3d,%3d - %02d - #a=%05d\n",
-            ifh->nItems, ifh->nAB, ifh->nBA, ifh->nABA,
-            ifh->proc, ifh->nAttrs);
-    DDD_PrintLine(cBuffer);
-
-    for (ifr=ifh->ifAttr; ifr!=NULL; ifr=ifr->next)
+    if (DDD_GetOption(OPT_INFO_IF_WITH_ATTR)==OPT_OFF)
     {
-      sprintf(cBuffer, "|      a %3d=%3d,%3d,%3d - %04d\n",
-              ifr->nItems, ifr->nAB, ifr->nBA, ifr->nABA, ifr->attr);
+      sprintf(cBuffer, "|        %3d=%3d,%3d,%3d - %02d\n",
+              ifh->nItems, ifh->nAB, ifh->nBA, ifh->nABA, ifh->proc);
       DDD_PrintLine(cBuffer);
     }
-#       endif
+    else
+    {
+      sprintf(cBuffer, "|        %3d=%3d,%3d,%3d - %02d - #a=%05d\n",
+              ifh->nItems, ifh->nAB, ifh->nBA, ifh->nABA,
+              ifh->proc, ifh->nAttrs);
+      DDD_PrintLine(cBuffer);
+
+      for (ifr=ifh->ifAttr; ifr!=NULL; ifr=ifr->next)
+      {
+        sprintf(cBuffer, "|      a %3d=%3d,%3d,%3d - %04d\n",
+                ifr->nItems, ifr->nAB, ifr->nBA, ifr->nABA, ifr->attr);
+        DDD_PrintLine(cBuffer);
+      }
+    }
   }
 }
 

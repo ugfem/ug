@@ -472,7 +472,7 @@ void CplMsgExit (void);
 /* xfer.c, used only by cmds.c */
 XICopyObj **CplClosureEstimate(XICopyObj **, int, int *);
 int  PrepareObjMsgs(XICopyObj **, int, XINewCpl **, int,
-                    XIOldCpl **, int, XFERMSG **);
+                    XIOldCpl **, int, XFERMSG **, size_t *);
 void ExecLocalXIDelCmd(XIDelCmd  **, int);
 void ExecLocalXISetPrio(XISetPrio **,int, XIDelObj  **,int, XICopyObj **,int);
 void ExecLocalXIDelObj(XIDelObj  **, int, XICopyObj **,int);

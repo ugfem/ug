@@ -486,6 +486,7 @@ void DDD_XferEnd (void)
   XFERMSG     *sendMsgs, *sm=0;
   LC_MSGHANDLE *recvMsgs;
   DDD_HDR     *localCplObjs=NULL;
+  size_t sendMem=0, recvMem=0;
 
 
   /* step mode and check whether call to XferEnd is valid */
@@ -522,14 +523,14 @@ void DDD_XferEnd (void)
     arrayXICopyObj, remXICopyObj,
     arrayXINewCpl, nXINewCpl,
     arrayXIOldCpl, nXIOldCpl,
-    &sendMsgs);
+    &sendMsgs, &sendMem);
 
   /* init communication topology */
   nRecvMsgs = LC_Connect(xferGlobals.objmsg_t);
 
+
   /* build obj msgs on sender side and start send */
   XferPackMsgs(sendMsgs);
-
 
   /*
           now messages are in the net, use spare time
@@ -570,9 +571,9 @@ void DDD_XferEnd (void)
   /* get sorted list of local objects with couplings */
   localCplObjs = LocalCoupledObjectsList();
 
-
-  if (obsolete>0) {
-    if (DDD_GetOption(OPT_INFO_XFER)==OPT_ON)
+  if (obsolete>0)
+  {
+    if (DDD_GetOption(OPT_INFO_XFER) & XFER_SHOW_OBSOLETE)
     {
       sprintf(cBuffer, "DDD MESG [%03d]: %4d from %4d xfer-cmds obsolete.\n",
               me, obsolete, nXICopyObj+nXISetPrio+nXIDelObj);
@@ -587,6 +588,28 @@ void DDD_XferEnd (void)
 
   /* wait for communication-completion (send AND receive) */
   recvMsgs = LC_Communicate();
+
+
+  /* display information about message buffer sizes */
+  if (DDD_GetOption(OPT_INFO_XFER) & XFER_SHOW_MEMUSAGE)
+  {
+    int k;
+
+    /* sum up sizes of receive mesg buffers */
+    for(k=0; k<nRecvMsgs; k++)
+    {
+      recvMem += LC_GetBufferSize(recvMsgs[k]);
+    }
+
+    sprintf(cBuffer,
+            "DDD MESG [%03d]: SHOW_MEM "
+            "msgs  send=%010ld recv=%010ld all=%010ld\n",
+            me, (long)sendMem, (long)recvMem, (long)(sendMem+recvMem));
+    DDD_PrintLine(cBuffer);
+  }
+
+
+  /* unpack messages */
   XferUnpack(recvMsgs, nRecvMsgs,
              localCplObjs, nCpls,
              arrayXISetPrio, remXISetPrio,
@@ -783,8 +806,14 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     /* call application handler for xfer of dependent objects */
     if (desc->handlerXFERCOPY)
     {
+                        #if defined(C_FRONTEND) || defined(F_FRONTEND)
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
       desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
+                        #endif
+
+                        #ifdef CPP_FRONTEND
+      CallHandler(hdr, XFERCOPY) (dest, prio);
+                        #endif
     }
 
     /* theXIAddData might be changed during handler execution */
@@ -809,8 +838,14 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     /* call application handler for xfer of dependent objects */
     if (desc->handlerXFERCOPY)
     {
+                        #if defined(C_FRONTEND) || defined(F_FRONTEND)
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
       desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
+                        #endif
+
+                        #ifdef CPP_FRONTEND
+      CallHandler(hdr, XFERCOPY) (dest, prio);
+                        #endif
     }
 
     /* theXIAddData might be changed during handler execution */

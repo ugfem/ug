@@ -114,7 +114,7 @@ void ddd_TopoInit (void)
     return;
   }
 
-  theProcFlags = (int *) AllocFix(procs*sizeof(int));
+  theProcFlags = (int *) AllocFix(2 * procs*sizeof(int));
   if (theProcFlags==NULL)
   {
     DDD_PrintError('E', 1511, "not enough memory in TopoInit");

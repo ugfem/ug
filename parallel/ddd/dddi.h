@@ -445,6 +445,12 @@ extern VChannelPtr *theTopology;
 #define IsHdrInvalid(hdr)      OBJ_INDEX(hdr)==MAX_OBJ
 
 
+/* macro for calling DDD Handler */
+#ifdef CPP_FRONTEND
+#define CallHandler(o,hname)     (o)->Handler ## hname
+#endif
+
+
 
 
 #if defined(CheckPMEM) || defined(CheckIFMEM) || defined(CheckCplMEM) || defined(CheckMsgMEM) || defined(CheckTmpMEM)

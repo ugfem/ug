@@ -1080,7 +1080,9 @@ void DDD_Library::IdentifyEnd (void)
   {
     if (plist->msgin!=NULL)
     {
-      if (InfoARecv(VCHAN_TO(plist->proc), plist->idin)==1)
+      int ret;
+
+      if ((ret=InfoARecv(VCHAN_TO(plist->proc), plist->idin))==1)
       {
         /* process single plist */
         MSGITEM   *msgin  = plist->msgin;
@@ -1121,6 +1123,17 @@ void DDD_Library::IdentifyEnd (void)
         /* mark plist as finished */
         plist->msgin=NULL;
         j++;
+      }
+      else
+      {
+        if (ret==-1)
+        {
+          sprintf(cBuffer, "couldn't receive message from %d"
+                  " in DDD_IdentifyEnd()",
+                  plist->proc);
+          DDD_PrintError('E', 3921, cBuffer);
+          HARD_EXIT;
+        }
       }
     }
 

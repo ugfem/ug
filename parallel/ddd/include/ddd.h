@@ -43,7 +43,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.3"
+#define DDD_VERSION    "1.8.4"
 
 
 /****************************************************************************/
@@ -155,6 +155,7 @@ enum OptionType {
   OPT_QUIET_CONSCHECK=16,          /* do ConsCheck in a quiet manner            */
   OPT_DEBUG_XFERMESGS,             /* print debug info for xfer messages        */
   OPT_INFO_XFER,                   /* display some statistical info during xfer */
+  OPT_INFO_IF_WITH_ATTR,           /* display interfaces detailed (with attrs)  */
 
   OPT_END
 };
@@ -166,7 +167,11 @@ enum SwitchType {
   OPT_ON,
 
   IDMODE_LISTS = 10,        /* ordering of each identify-tupel is relevant      */
-  IDMODE_SETS               /* ordering of each identify-tupel is not sensitive */
+  IDMODE_SETS,              /* ordering of each identify-tupel is not sensitive */
+
+  XFER_SHOW_NONE     = 0x0000,        /* show no statistical infos              */
+  XFER_SHOW_OBSOLETE = 0x0100,        /* show #obsolete xfer-commands           */
+  XFER_SHOW_MEMUSAGE = 0x0200         /* show sizes of message buffers          */
 };
 
 
@@ -247,7 +252,9 @@ typedef struct _DDD_HEADER
   unsigned int myIndex;         /* global object array index */
   unsigned int gid;             /* global id */
 
+        #ifdef C_FRONTEND
   char empty[4];                 /* 4 unused bytes in current impl. */
+        #endif
 } DDD_HEADER;
 
 
@@ -484,7 +491,7 @@ public:
   DDD_Object (DDD_TYPE, DDD_PRIO, DDD_ATTR a=0);
   void Init (DDD_TYPE, DDD_PRIO, DDD_ATTR a=0);
   DDD_Object ();
-  ~DDD_Object ();
+  virtual ~DDD_Object ();
 
 
   // object properties
@@ -496,16 +503,16 @@ public:
   int InfoNCopies (void);
 
   DDD_GID  InfoGlobalId (void) {
-    return _hdr.gid;
+    return (DDD_GID) _hdr.gid;
   }
   DDD_TYPE InfoType (void)     {
-    return _hdr.typ;
+    return (DDD_TYPE)_hdr.typ;
   }
   DDD_PRIO InfoPriority (void) {
-    return _hdr.prio;
+    return (DDD_PRIO)_hdr.prio;
   }
   DDD_ATTR InfoAttr (void)     {
-    return _hdr.attr;
+    return (DDD_ATTR)_hdr.attr;
   }
 
   /* Transfer */
@@ -516,6 +523,24 @@ public:
   void IdentifyNumber (DDD_PROC, int);
   void IdentifyString (DDD_PROC, char *);
   void IdentifyObject (DDD_PROC, DDD_Object*);
+
+  friend void DDD_Library::ddd_TypeMgrInit (void);
+
+
+  // DDD Handlers as virtual functions
+  // TODO: is this general enough?
+  virtual void HandlerLDATACONSTRUCTOR (void);
+  //virtual void HandlerDESTRUCTOR       (void);
+  //virtual void HandlerDELETE           (void);
+  virtual void HandlerUPDATE           (void);
+  //virtual void HandlerOBJMKCONS        (int);
+  //virtual void HandlerSETPRIORITY      (DDD_PRIO);
+  virtual void HandlerXFERCOPY         (DDD_PROC, DDD_PRIO);
+  //virtual void HandlerXFERDELETE       (void);
+  //virtual void HandlerXFERGATHER       (int, DDD_TYPE, void *);
+  //virtual void HandlerXFERSCATTER      (int, DDD_TYPE, void *, int);
+  //virtual void HandlerXFERGATHERX      (int, DDD_TYPE, char **);
+  //virtual void HandlerXFERSCATTERX     (int, DDD_TYPE, char **, int);
 
 private:
   DDD_HEADER _hdr;
@@ -554,7 +579,7 @@ class DDD_IndexObject : public DDD_Object
 {
 public:
   DDD_IndexObject (DDD_TYPE, DDD_INDEX, DDD_PRIO, DDD_ATTR a=0);
-  ~DDD_IndexObject() {}
+  virtual ~DDD_IndexObject() {}
 
   DDD_INDEX Index()    {
     return _index;

@@ -551,8 +551,11 @@ static void AcceptObjFromMsg (
 
 			/* construct LDATA */
 			if (desc->handlerLDATACONSTRUCTOR)
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+#ifdef C_FRONTEND
 	     		desc->handlerLDATACONSTRUCTOR(newcopy);
+#endif
+#ifdef CPP_FRONTEND
+	     		CallHandler(ote->hdr,LDATACONSTRUCTOR) ();
 #endif
 #ifdef F_FRONTEND
 			desc->handlerLDATACONSTRUCTOR(&newcopy);
@@ -1147,11 +1150,19 @@ static void CallUpdateHandler (LC_MSGHANDLE xm)
 		if (theObjTab[i].is_new == TOTALNEW)
 		{
 			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
-			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
 			/* call application handler for object updating */
 			if (desc->handlerUPDATE)
+			{
+				#if defined(C_FRONTEND) || defined(F_FRONTEND)
+				DDD_OBJ  obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 	     		desc->handlerUPDATE(_FADR obj);
+				#endif
+
+				#ifdef CPP_FRONTEND
+				CallHandler(theObjTab[i].hdr,UPDATE) ();
+				#endif
+			}
 		}
 	}
 }

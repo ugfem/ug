@@ -336,7 +336,9 @@ void LC_SetTableSize (LC_MSGHANDLE msg, LC_MSGCOMP id, ULONG entries)
 }
 
 
-void LC_MsgPrepareSend (LC_MSGHANDLE msg)
+/* returns size of message buffer */
+
+size_t LC_MsgPrepareSend (LC_MSGHANDLE msg)
 {
   MSG_DESC   *md = (MSG_DESC *) msg;
   ULONG      *hdr;
@@ -359,7 +361,7 @@ void LC_MsgPrepareSend (LC_MSGHANDLE msg)
   if (md->buffer==NULL)
   {
     DDD_PrintError('E', 6600, "not enough memory in LC_MsgPrepareSend");
-    return;
+    return(0);
   }
 
 
@@ -376,6 +378,8 @@ void LC_MsgPrepareSend (LC_MSGHANDLE msg)
     hdr[j++] = md->chunks[i].size;
     hdr[j++] = md->chunks[i].entries;
   }
+
+  return(md->bufferSize);
 }
 
 
@@ -466,6 +470,14 @@ static void LC_MsgRecv (MSG_DESC *md)
     md->chunks[i].size    = hdr[j++];
     md->chunks[i].entries = hdr[j++];
   }
+}
+
+
+size_t LC_GetBufferSize (LC_MSGHANDLE msg)
+{
+  MSG_DESC *md = (MSG_DESC *) msg;
+
+  return(md->bufferSize);
 }
 
 

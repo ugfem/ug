@@ -1,6 +1,5 @@
-// NOTE: The current revision of this file was left untouched when the DUNE source files were reindented!
-// NOTE: It contained invalid syntax that could not be processed by uncrustify.
-
+// -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+// vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
 /* File:      typemgr.c                                                     */
@@ -44,10 +43,10 @@
 
 
 /*
-#define DebugTypeDefine
-#define DebugCopyMask
-#define DebugNoStructCompress
-*/
+   #define DebugTypeDefine
+   #define DebugCopyMask
+   #define DebugNoStructCompress
+ */
 
 
 /****************************************************************************/
@@ -58,19 +57,21 @@
 
 enum DDD_TypeModes
 {
-	DDD_TYPE_INVALID = 0,      /* DDD_TYPE not declared, not defined      */
-	DDD_TYPE_DECLARED,         /* DDD_TYPE declared, but not defined      */
-	DDD_TYPE_CONTDEF,          /* DDD_TYPE declared and partially defined */
-	DDD_TYPE_DEFINED           /* DDD_TYPE declared and defined           */
+  DDD_TYPE_INVALID = 0,            /* DDD_TYPE not declared, not defined      */
+  DDD_TYPE_DECLARED,               /* DDD_TYPE declared, but not defined      */
+  DDD_TYPE_CONTDEF,                /* DDD_TYPE declared and partially defined */
+  DDD_TYPE_DEFINED                 /* DDD_TYPE declared and defined           */
 };
 
 
+#ifdef CPP_FRONTEND
 enum DDD_TypeStorageModes
 {
-	STORAGE_STRUCT,            /* objects of this type are structs/classes*/
-	STORAGE_ARRAY              /* objects of this type are collections of
-	                              contiguous arrays                       */
+  STORAGE_STRUCT,                  /* objects of this type are structs/classes*/
+  STORAGE_ARRAY                    /* objects of this type are collections of
+                                      contiguous arrays                       */
 };
+#endif
 
 
 
@@ -100,7 +101,7 @@ enum DDD_TypeStorageModes
 /****************************************************************************/
 
 /* global table of DDD_TYPE definitions */
-TYPE_DESC  theTypeDefs[MAX_TYPEDESC];
+TYPE_DESC theTypeDefs[MAX_TYPEDESC];
 
 
 /****************************************************************************/
@@ -117,7 +118,7 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 
 /* overall number of DDD_TYPE definitions */
-static int        nDescr;
+static int nDescr;
 
 
 
@@ -132,7 +133,7 @@ static void InitHandlers (TYPE_DESC *);
 
 int ddd_TypeDefined (TYPE_DESC *desc)
 {
-	return(desc->mode==DDD_TYPE_DEFINED);
+  return(desc->mode==DDD_TYPE_DEFINED);
 }
 
 
@@ -140,165 +141,165 @@ int ddd_TypeDefined (TYPE_DESC *desc)
 
 
 /*
-	sort pointers to ELEM_DESC according to their offset
-*/
+        sort pointers to ELEM_DESC according to their offset
+ */
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 static int sort_el_offset (const void *i1, const void *i2)
 {
-	ELEM_DESC *e1 = (ELEM_DESC *)i1;
-	ELEM_DESC *e2 = (ELEM_DESC *)i2;
+  ELEM_DESC *e1 = (ELEM_DESC *)i1;
+  ELEM_DESC *e2 = (ELEM_DESC *)i2;
 
-	if (e1->offset < e2->offset) return(-1);
-	if (e1->offset > e2->offset) return(1);
-	return(0);
+  if (e1->offset < e2->offset) return(-1);
+  if (e1->offset > e2->offset) return(1);
+  return(0);
 }
 #endif
 
 
 /*
-	print out error message during TypeDefine process
+        print out error message during TypeDefine process
 
-	error occurred during TypeDefine for desc, with argument argno
-*/
+        error occurred during TypeDefine for desc, with argument argno
+ */
 
 static char *RegisterError (TYPE_DESC *desc, int argno, char *txt)
 {
-	if (argno==0)
-	{
-		sprintf(cBuffer, "%s in DDD_TypeDefine(\"%s/%d\")",
-			txt, desc->name, desc->currTypeDefCall);
-	}
-	else
-	{
-		sprintf(cBuffer, "%s, arg %d of DDD_TypeDefine(\"%s/%d\")",
-			txt, argno, desc->name, desc->currTypeDefCall);
-	}
+  if (argno==0)
+  {
+    sprintf(cBuffer, "%s in DDD_TypeDefine(\"%s/%d\")",
+            txt, desc->name, desc->currTypeDefCall);
+  }
+  else
+  {
+    sprintf(cBuffer, "%s, arg %d of DDD_TypeDefine(\"%s/%d\")",
+            txt, argno, desc->name, desc->currTypeDefCall);
+  }
 
-	return cBuffer;
+  return cBuffer;
 }
 
 
 
 /*
-	check ELEM_DESC for plausibility
-*/
+        check ELEM_DESC for plausibility
+ */
 
 static int CheckBounds (TYPE_DESC *desc, ELEM_DESC *el, int argno)
 {
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-	if (CPP_STRUCT(desc) CPP_AND (el->offset<0))
-	{
-		DDD_PrintError('E', 9900,
-			RegisterError(desc,argno, "negative offset"));
-		return(ERROR);
-	}
+  if (CPP_STRUCT(desc) CPP_AND (el->offset<0))
+  {
+    DDD_PrintError('E', 9900,
+                   RegisterError(desc,argno, "negative offset"));
+    return(ERROR);
+  }
 #endif
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
-	if (CPP_ARRAY(desc) CPP_AND (!el->array))
-	{
-	    DDD_PrintError ('E', 9999,
-			    RegisterError(desc,argno, "no array supplied"));
-		return(ERROR);
-	}
+  if (CPP_ARRAY(desc) CPP_AND (!el->array))
+  {
+    DDD_PrintError ('E', 9999,
+                    RegisterError(desc,argno, "no array supplied"));
+    return(ERROR);
+  }
 #endif
 
-	if (el->size<=0)
-	{
-		DDD_PrintError('E', 9901,
-			RegisterError(desc,argno, "illegal element size"));
-	    return (ERROR);
-	}
+  if (el->size<=0)
+  {
+    DDD_PrintError('E', 9901,
+                   RegisterError(desc,argno, "illegal element size"));
+    return (ERROR);
+  }
 
-	return 0;
+  return 0;
 }
 
 
 
 /*
-	check ELEM_DESC list of given TYPE_DESC for bad overlapping
-*/
+        check ELEM_DESC list of given TYPE_DESC for bad overlapping
+ */
 
 static int CheckOverlapEls (TYPE_DESC *desc)
 {
-	char  buf[64];
-	int   i;
-	int   ok = TRUE;
+  char buf[64];
+  int i;
+  int ok = TRUE;
 
-	for(i=0; i<desc->nElements; i++)
-	{
-		ELEM_DESC *e1 = &desc->element[i];
+  for(i=0; i<desc->nElements; i++)
+  {
+    ELEM_DESC *e1 = &desc->element[i];
 
-		if (i<desc->nElements-1)
-		{
-			ELEM_DESC *e2 = &desc->element[i+1];
+    if (i<desc->nElements-1)
+    {
+      ELEM_DESC *e2 = &desc->element[i+1];
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-			if (CPP_STRUCT(desc) CPP_AND (e1->offset+e1->size > e2->offset))
-			{
-				ok = FALSE;
-				sprintf(buf, "element too big (offset=%d)", e1->offset);
-				DDD_PrintError('E', 9902, RegisterError(desc, 0, buf));
-			}
+      if (CPP_STRUCT(desc) CPP_AND (e1->offset+e1->size > e2->offset))
+      {
+        ok = FALSE;
+        sprintf(buf, "element too big (offset=%d)", e1->offset);
+        DDD_PrintError('E', 9902, RegisterError(desc, 0, buf));
+      }
 #endif
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
-			if (CPP_ARRAY(desc) CPP_AND
-				(e1->array+(e1->size*desc->arraySize) > e2->array))
-			{
-				ok = FALSE;
-				sprintf(buf, "element too big (array=%d)", i);
-				DDD_PrintError('E', 9902, RegisterError(desc, 0, buf));
-			}
+      if (CPP_ARRAY(desc) CPP_AND
+            (e1->array+(e1->size*desc->arraySize) > e2->array))
+      {
+        ok = FALSE;
+        sprintf(buf, "element too big (array=%d)", i);
+        DDD_PrintError('E', 9902, RegisterError(desc, 0, buf));
+      }
 #endif
-		}
+    }
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-		else
-		{
-			if (CPP_STRUCT(desc) CPP_AND (e1->offset+e1->size > desc->size))
-			{
-				ok = FALSE;
-				sprintf(buf, "element too big (offset=%d)", e1->offset);
-				DDD_PrintError('E', 9903, RegisterError(desc, 0, buf));
-			}
-		}
+    else
+    {
+      if (CPP_STRUCT(desc) CPP_AND (e1->offset+e1->size > desc->size))
+      {
+        ok = FALSE;
+        sprintf(buf, "element too big (offset=%d)", e1->offset);
+        DDD_PrintError('E', 9903, RegisterError(desc, 0, buf));
+      }
+    }
 #endif
-	}
-	return ok;
+  }
+  return ok;
 }
 
 
 
 /*
-	constructor for ELEM_DESC
-*/
+        constructor for ELEM_DESC
+ */
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 static void ConstructEl (ELEM_DESC *elem, int t, int o, size_t s, DDD_TYPE rt)
 {
-	elem->type    = t;
-	elem->offset  = o;
-	elem->size    = s;
+  elem->type    = t;
+  elem->offset  = o;
+  elem->size    = s;
 
-	/*
-		for OBJPTR elements, store referenced DDD_TYPE here.
-		the default is EL_DDDHDR, i.e., if this feature is
-		not used, the DDD_HDR will be assumed to be at the
-		beginning of each structure (offsetHeader==0).
-	*/
-	elem->reftype = rt;
+  /*
+          for OBJPTR elements, store referenced DDD_TYPE here.
+          the default is EL_DDDHDR, i.e., if this feature is
+          not used, the DDD_HDR will be assumed to be at the
+          beginning of each structure (offsetHeader==0).
+   */
+  elem->reftype = rt;
 
-	/*
-		for GBITS elements, store array of bits. 1=GDATA,
-		0=LDATA.
-	*/
-	if (t==EL_GBITS)
-	{
-		elem->gbits = (unsigned char *) AllocFix(s);
-		if (elem->gbits==NULL)
-		{
-			DDD_PrintError('E', 9932, "out of memory for EL_GBITS array");
-			HARD_EXIT;
-		}
-	}
+  /*
+          for GBITS elements, store array of bits. 1=GDATA,
+          0=LDATA.
+   */
+  if (t==EL_GBITS)
+  {
+    elem->gbits = (unsigned char *) AllocFix(s);
+    if (elem->gbits==NULL)
+    {
+      DDD_PrintError('E', 9932, "out of memory for EL_GBITS array");
+      HARD_EXIT;
+    }
+  }
 }
 #endif
 
@@ -306,38 +307,38 @@ static void ConstructEl (ELEM_DESC *elem, int t, int o, size_t s, DDD_TYPE rt)
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
 static void ConstructEl (ELEM_DESC *elem, int t, char *a, size_t s, DDD_TYPE rt)
 {
-	elem->type    = t;
-	elem->size    = s;
+  elem->type    = t;
+  elem->size    = s;
 
 #ifdef CPP_FRONTEND
-	/* in CPP, the first array entry is referenced by index 0. */
-	elem->array   = a;
+  /* in CPP, the first array entry is referenced by index 0. */
+  elem->array   = a;
 #else
-	/* the size of one array entry (=s) is subtracted here,
-	   because we want to reference the first array entry
-       by index 1. this is due to F77 conventions, where
-	   the first entry always is 1. in C, we would use 0
-	   as first index.
-	*/
-	elem->array   = a - s;
+  /* the size of one array entry (=s) is subtracted here,
+     because we want to reference the first array entry
+     by index 1. this is due to F77 conventions, where
+     the first entry always is 1. in C, we would use 0
+     as first index.
+   */
+  elem->array   = a - s;
 #endif
 
 
-	/*
-		for OBJPTR elements, store referenced DDD_TYPE here.
-		the default is EL_DDDHDR, i.e., if this feature is
-		not used, the DDD_HDR will be assumed to be at the
-		beginning of each structure (offsetHeader==0).
-	*/
-	elem->reftype = rt;
+  /*
+          for OBJPTR elements, store referenced DDD_TYPE here.
+          the default is EL_DDDHDR, i.e., if this feature is
+          not used, the DDD_HDR will be assumed to be at the
+          beginning of each structure (offsetHeader==0).
+   */
+  elem->reftype = rt;
 
-	if (t==EL_GBITS)
-	{
-		/* TODO: GBITS could be supported also for F_FRONTEND and
-			CPP_FRONTEND with STORAGE_ARRAY */
-		DDD_PrintError('E', 9931, "EL_GBITS currently not supported");
-		HARD_EXIT;
-	}
+  if (t==EL_GBITS)
+  {
+    /* TODO: GBITS could be supported also for F_FRONTEND and
+            CPP_FRONTEND with STORAGE_ARRAY */
+    DDD_PrintError('E', 9931, "EL_GBITS currently not supported");
+    HARD_EXIT;
+  }
 }
 #endif
 
@@ -345,128 +346,128 @@ static void ConstructEl (ELEM_DESC *elem, int t, char *a, size_t s, DDD_TYPE rt)
 
 
 /*
-	register previously defined TYPE_DESC during TypeDefine
-*/
+        register previously defined TYPE_DESC during TypeDefine
+ */
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 static int RecursiveRegister (TYPE_DESC *desc,
-	int i, DDD_TYPE typ, int offs, int argno)
+                              int i, DDD_TYPE typ, int offs, int argno)
 {
-	TYPE_DESC *d2 = &(theTypeDefs[typ]);
-	int        j;
-	char       *errtxt;
+  TYPE_DESC *d2 = &(theTypeDefs[typ]);
+  int j;
+  char       *errtxt;
 
-	/* inherit elements of other ddd-type */
-	for(j=0; j<d2->nElements && i<MAX_ELEMDESC; j++, i++)
-	{
-		ConstructEl(&desc->element[i],
-			d2->element[j].type,
-			d2->element[j].offset + offs,
-			d2->element[j].size,
-			d2->element[j].reftype);
-		if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
-			return(ERROR);
-	}
+  /* inherit elements of other ddd-type */
+  for(j=0; j<d2->nElements && i<MAX_ELEMDESC; j++, i++)
+  {
+    ConstructEl(&desc->element[i],
+                d2->element[j].type,
+                d2->element[j].offset + offs,
+                d2->element[j].size,
+                d2->element[j].reftype);
+    if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
+      return(ERROR);
+  }
 
-	/* inherit other properties */
-	desc->nPointers += d2->nPointers;
-	if (d2->hasHeader)
-	{
-		if (!desc->hasHeader)
-		{
-			desc->hasHeader = TRUE;
-			desc->offsetHeader = d2->offsetHeader + offs;
-		}
-		else
-		{
-			if (desc->offsetHeader == d2->offsetHeader+offs)
-			{
-				errtxt=RegisterError(desc,argno, "two DDD_HDRs, same offset");
-				DDD_PrintError('W', 9904, errtxt);
-			}
-			else
-			{
-				errtxt=RegisterError(desc,argno, "only one DDD_HDR allowed");
-				DDD_PrintError('E', 9905, errtxt);
-				return(ERROR);
-			}
-		}
-	}
+  /* inherit other properties */
+  desc->nPointers += d2->nPointers;
+  if (d2->hasHeader)
+  {
+    if (!desc->hasHeader)
+    {
+      desc->hasHeader = TRUE;
+      desc->offsetHeader = d2->offsetHeader + offs;
+    }
+    else
+    {
+      if (desc->offsetHeader == d2->offsetHeader+offs)
+      {
+        errtxt=RegisterError(desc,argno, "two DDD_HDRs, same offset");
+        DDD_PrintError('W', 9904, errtxt);
+      }
+      else
+      {
+        errtxt=RegisterError(desc,argno, "only one DDD_HDR allowed");
+        DDD_PrintError('E', 9905, errtxt);
+        return(ERROR);
+      }
+    }
+  }
 
-	return i;
+  return i;
 }
 #endif
 
 
 #if defined(CPP_FRONTEND)
 static int RecursiveRegister (TYPE_DESC *desc,
-	int i, DDD_TYPE typ, char *adr, int argno)
+                              int i, DDD_TYPE typ, char *adr, int argno)
 {
-	TYPE_DESC *d2 = &(theTypeDefs[typ]);
-	char       *errtxt;
+  TYPE_DESC *d2 = &(theTypeDefs[typ]);
+  char       *errtxt;
 
-	if (CPP_ARRAY(d2))
-	{
-		errtxt=RegisterError(desc,argno,
-			"cannot include array-like type into array-like type");
-		DDD_PrintError('W', 9952, errtxt);
-		return(ERROR);
-	}
+  if (CPP_ARRAY(d2))
+  {
+    errtxt=RegisterError(desc,argno,
+                         "cannot include array-like type into array-like type");
+    DDD_PrintError('W', 9952, errtxt);
+    return(ERROR);
+  }
 
-	ConstructEl(&desc->element[i], typ, adr, d2->size, 0);
-	if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
-		return(ERROR);
+  ConstructEl(&desc->element[i], typ, adr, d2->size, 0);
+  if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
+    return(ERROR);
 
-	desc->size += d2->size;
+  desc->size += d2->size;
 
-	/* inherit other properties */
-	desc->nPointers += d2->nPointers;
-	if (d2->hasHeader)
-	{
-		if (!desc->hasHeader)
-		{
-			desc->hasHeader = TRUE;
-			desc->elemHeader = i;
-			desc->offsetHeader = d2->offsetHeader;
-		}
-		else
-		{
-			errtxt=RegisterError(desc,argno, "only one DDD_HDR allowed");
-			DDD_PrintError('E', 9953, errtxt);
-			return(ERROR);
-		}
-	}
+  /* inherit other properties */
+  desc->nPointers += d2->nPointers;
+  if (d2->hasHeader)
+  {
+    if (!desc->hasHeader)
+    {
+      desc->hasHeader = TRUE;
+      desc->elemHeader = i;
+      desc->offsetHeader = d2->offsetHeader;
+    }
+    else
+    {
+      errtxt=RegisterError(desc,argno, "only one DDD_HDR allowed");
+      DDD_PrintError('E', 9953, errtxt);
+      return(ERROR);
+    }
+  }
 
-	return i+1;
+  return i+1;
 }
 #endif
 
 
 
 /*
-	constructor for TYPE_DESC
-*/
+        constructor for TYPE_DESC
+ */
 
 static void ConstructDesc (TYPE_DESC *desc)
 {
-	InitHandlers(desc);
+  InitHandlers(desc);
 
-	desc->nPointers = 0;
-	desc->nElements = 0;
-	desc->cmask     = NULL;
+  desc->nPointers = 0;
+  desc->nElements = 0;
+  desc->cmask     = NULL;
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
-	desc->size = 0;
+  desc->size = 0;
 #endif
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-	desc->hasHeader = FALSE;
-	desc->offsetHeader = 0;
+  desc->hasHeader = FALSE;
+  desc->offsetHeader = 0;
 #else
-	if (! (desc->hdr = AllocHdr(sizeof(DDD_HEADER) * desc->arraySize) ) )
-	{
-		DDD_PrintError('E', 9999,
-			RegisterError(desc,0, "out of memory"));
-		HARD_EXIT; /*return;*/
-	}
+  if (! (desc->hdr = AllocHdr(sizeof(DDD_HEADER) * desc->arraySize) ) )
+  {
+    DDD_PrintError('E', 9999,
+                   RegisterError(desc,0, "out of memory"));
+    HARD_EXIT;             /*return;*/
+  }
 #endif
 }
 
@@ -475,18 +476,18 @@ static void ConstructDesc (TYPE_DESC *desc)
 #ifndef DebugNoStructCompress
 
 /*
-	remove first element in given ELEM_DESC-list,
-	adjust remaining elements
-*/
+        remove first element in given ELEM_DESC-list,
+        adjust remaining elements
+ */
 
 static void DeleteFirstEl (ELEM_DESC *elarray, int n)
 {
-	int i;
+  int i;
 
-	for(i=1; i<n; i++)
-	{
-		elarray[i-1] = elarray[i];
-	}
+  for(i=1; i<n; i++)
+  {
+    elarray[i-1] = elarray[i];
+  }
 }
 
 #endif
@@ -494,154 +495,154 @@ static void DeleteFirstEl (ELEM_DESC *elarray, int n)
 
 
 /*
-	normalize ELEM_DESC-list of given TYPE_DESC
+        normalize ELEM_DESC-list of given TYPE_DESC
 
-	this consists of two parts:
-		1) sort ELEM_DESC-list by offset (necessary!!)
-		2) compress ELEM_DESC-list according to a set of rules
-*/
+        this consists of two parts:
+                1) sort ELEM_DESC-list by offset (necessary!!)
+                2) compress ELEM_DESC-list according to a set of rules
+ */
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 static int NormalizeDesc (TYPE_DESC *desc)
 {
-	ELEM_DESC  *elems = desc->element;
+  ELEM_DESC  *elems = desc->element;
 
-	/* sort element array by offset */
-	qsort(elems, desc->nElements, sizeof(ELEM_DESC), sort_el_offset);
+  /* sort element array by offset */
+  qsort(elems, desc->nElements, sizeof(ELEM_DESC), sort_el_offset);
 
-	/* check for overlapping elements */
-	if (! CheckOverlapEls(desc))
-		return FALSE;
+  /* check for overlapping elements */
+  if (! CheckOverlapEls(desc))
+    return FALSE;
 
 
-#	ifndef DebugNoStructCompress
-	{
-		/* compile this only if Debug-flag not set */
-		int i;
+#       ifndef DebugNoStructCompress
+  {
+    /* compile this only if Debug-flag not set */
+    int i;
 
-		/* compress element description */
-		for(i=0; i<desc->nElements-1; i++)
-		{
-			size_t realsize;
+    /* compress element description */
+    for(i=0; i<desc->nElements-1; i++)
+    {
+      size_t realsize;
 
-			/* 1) type must be equal */
-			if (elems[i].type != elems[i+1].type)
-				continue;
+      /* 1) type must be equal */
+      if (elems[i].type != elems[i+1].type)
+        continue;
 
-			/* 2) nothing can melt into DDD_HEADER */
-			if (desc->hasHeader && elems[i+1].offset==desc->offsetHeader)
-				continue;
+      /* 2) nothing can melt into DDD_HEADER */
+      if (desc->hasHeader && elems[i+1].offset==desc->offsetHeader)
+        continue;
 
-			/* 3) gap between elements is allowed only for EL_LDATA */
-			if ((elems[i].offset+elems[i].size != elems[i+1].offset) &&
-				(elems[i].type!=EL_LDATA) )
-				continue;
+      /* 3) gap between elements is allowed only for EL_LDATA */
+      if ((elems[i].offset+elems[i].size != elems[i+1].offset) &&
+          (elems[i].type!=EL_LDATA) )
+        continue;
 
-			/* 4) EL_OBJPTRs with different reftypes can't be compressed */
-			if (elems[i].type==EL_OBJPTR && 
-				(elems[i].reftype != elems[i+1].reftype))
-				continue;
+      /* 4) EL_OBJPTRs with different reftypes can't be compressed */
+      if (elems[i].type==EL_OBJPTR &&
+          (elems[i].reftype != elems[i+1].reftype))
+        continue;
 
-			/* 5) EL_GBITS cant be compressed */
-			if (elems[i].type == EL_GBITS)
-				continue;
+      /* 5) EL_GBITS cant be compressed */
+      if (elems[i].type == EL_GBITS)
+        continue;
 
-			/* all conditions fit: compress elements */
-			realsize = elems[i+1].offset - elems[i].offset;
-			elems[i].size = realsize + elems[i+1].size;
+      /* all conditions fit: compress elements */
+      realsize = elems[i+1].offset - elems[i].offset;
+      elems[i].size = realsize + elems[i+1].size;
 
-			desc->nElements--;
-			DeleteFirstEl(&elems[i+1], desc->nElements - i);
+      desc->nElements--;
+      DeleteFirstEl(&elems[i+1], desc->nElements - i);
 
-			i--; /* skip one element back and try again */
-		}
-	}
-#	endif
+      i--;                   /* skip one element back and try again */
+    }
+  }
+#       endif
 
-	return TRUE;
+  return TRUE;
 }
 
 
 /*
-	compute copy-mask (for efficiency) and attach it to TYPE_DESC
-*/
+        compute copy-mask (for efficiency) and attach it to TYPE_DESC
+ */
 
 static void AttachMask (TYPE_DESC *desc)
 {
-	int      i, k;
-	ELEM_DESC *e;
-	unsigned char  *mp;
-	unsigned char  mask;
+  int i, k;
+  ELEM_DESC *e;
+  unsigned char  *mp;
+  unsigned char mask;
 
-	/* get storage for mask */
-	desc->cmask = (unsigned char *)AllocFix(desc->size);
-	if (desc->cmask==0)
-	{
-		DDD_PrintError('E', 9906,
-			RegisterError(desc,0, "out of memory"));
-		HARD_EXIT; /*return;*/
-	}
+  /* get storage for mask */
+  desc->cmask = (unsigned char *)AllocFix(desc->size);
+  if (desc->cmask==0)
+  {
+    DDD_PrintError('E', 9906,
+                   RegisterError(desc,0, "out of memory"));
+    HARD_EXIT;             /*return;*/
+  }
 
-	/* set default: EL_LDATA for unspecified regions (gaps) */
-	for(i=0; i<desc->size; i++)
-	{
-		desc->cmask[i] = 0x00;        /* dont-copy-flag */
-	}
-	
-	/* create mask from element list */
-	for(i=0; i<desc->nElements; i++)
-	{
-		e = &desc->element[i];
-		mp = desc->cmask + e->offset;
+  /* set default: EL_LDATA for unspecified regions (gaps) */
+  for(i=0; i<desc->size; i++)
+  {
+    desc->cmask[i] = 0x00;                    /* dont-copy-flag */
+  }
 
-		switch (e->type)
-		{
-			case EL_LDATA:
-			case EL_OBJPTR:
-				mask = 0x00;    /* dont-copy-flag */
-				break;
+  /* create mask from element list */
+  for(i=0; i<desc->nElements; i++)
+  {
+    e = &desc->element[i];
+    mp = desc->cmask + e->offset;
 
-			case EL_GDATA:
-			case EL_DATAPTR:
-				mask = 0xff;    /* copy-flag */
-				break;
-		}
+    switch (e->type)
+    {
+    case EL_LDATA :
+    case EL_OBJPTR :
+      mask = 0x00;                              /* dont-copy-flag */
+      break;
 
-		for(k=0; k<e->size; k++)
-		{
-			if (e->type==EL_GBITS)
-			{
-				mp[k] = e->gbits[k];   /* copy bitwise */
-			}
-			else
-			{
-				mp[k] = mask;
-			}
-		}
-	}
+    case EL_GDATA :
+    case EL_DATAPTR :
+      mask = 0xff;                              /* copy-flag */
+      break;
+    }
 
-#	ifdef DebugCopyMask
-	if (me==master)
-	{
-		char buf[8];
+    for(k=0; k<e->size; k++)
+    {
+      if (e->type==EL_GBITS)
+      {
+        mp[k] = e->gbits[k];                           /* copy bitwise */
+      }
+      else
+      {
+        mp[k] = mask;
+      }
+    }
+  }
 
-		sprintf(cBuffer, "%4d: AttachMask for %s:", me, desc->name);
-		for(i=0; i<desc->size; i++)
-		{
-			if (i%8==0)
-			{
-				strcat(cBuffer,"\n");
-				DDD_PrintLine(cBuffer);
-				sprintf(cBuffer,"  %4d:  ", i);
-			}
-			sprintf(buf, "%02x ", desc->cmask[i]);
-			strcat(cBuffer, buf);
-		}
-		strcat(cBuffer,"\n");
-		DDD_PrintLine(cBuffer);
-	}
-#	endif
+#       ifdef DebugCopyMask
+  if (me==master)
+  {
+    char buf[8];
+
+    sprintf(cBuffer, "%4d: AttachMask for %s:", me, desc->name);
+    for(i=0; i<desc->size; i++)
+    {
+      if (i%8==0)
+      {
+        strcat(cBuffer,"\n");
+        DDD_PrintLine(cBuffer);
+        sprintf(cBuffer,"  %4d:  ", i);
+      }
+      sprintf(buf, "%02x ", desc->cmask[i]);
+      strcat(cBuffer, buf);
+    }
+    strcat(cBuffer,"\n");
+    DDD_PrintLine(cBuffer);
+  }
+#       endif
 }
 
 #endif
@@ -653,15 +654,15 @@ static void AttachMask (TYPE_DESC *desc)
 void ClearHeaders (TYPE_DESC *desc)
 
 {
-	DDD_HDR hdr;
-	int 		   i;
+  DDD_HDR hdr;
+  int i;
 
-	for (i = 0, hdr = desc->hdr; i < desc->arraySize; i++, hdr++)
-		MarkHdrInvalid (hdr);
+  for (i = 0, hdr = desc->hdr; i < desc->arraySize; i++, hdr++)
+    MarkHdrInvalid (hdr);
 
-	/* skip entry 0, because F77-arrays start with index 1.
-	   index 0 will be used as null-pointer. */
-	desc->nextFree = 1;
+  /* skip entry 0, because F77-arrays start with index 1.
+     index 0 will be used as null-pointer. */
+  desc->nextFree = 1;
 }
 
 #endif
@@ -697,437 +698,437 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 #endif
 
 {
-    TYPE_DESC *desc;
-	size_t    argsize;
-    char      *argp;
-	int       argtyp, argno;
-	DDD_TYPE  argrefs;
-    int       i, nPtr;
-	char      *errtxt;
-	va_list   ap;
+  TYPE_DESC *desc;
+  size_t argsize;
+  char      *argp;
+  int argtyp, argno;
+  DDD_TYPE argrefs;
+  int i, nPtr;
+  char      *errtxt;
+  va_list ap;
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-	char      *adr;
-	char      *gbits;
+  char      *adr;
+  char      *gbits;
 #endif
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
-	int		  size;
-	int       offset;
+  int size;
+  int offset;
 #endif
 #ifdef F_FRONTEND
-	DDD_TYPE  typ = *ftyp;
+  DDD_TYPE typ = *ftyp;
 #endif
 
-	/* TODO: only master should be able to define types, other
-		procs should receive the correct definition from master.
-		(with the current implementation inconsistencies might occur)
-	*/
+  /* TODO: only master should be able to define types, other
+          procs should receive the correct definition from master.
+          (with the current implementation inconsistencies might occur)
+   */
 
-	/* test whether typ is valid */
-	if (typ>=nDescr)
-	{
-		DDD_PrintError('E', 9907,
-			"invalid DDD_TYPE in DDD_TypeDefine");
-		HARD_EXIT; /*return;*/
-	}
+  /* test whether typ is valid */
+  if (typ>=nDescr)
+  {
+    DDD_PrintError('E', 9907,
+                   "invalid DDD_TYPE in DDD_TypeDefine");
+    HARD_EXIT;             /*return;*/
+  }
 
-	/* get object description */
-    desc = &(theTypeDefs[typ]);
-	desc->currTypeDefCall++;
-	
-	if (desc->mode!=DDD_TYPE_DECLARED && desc->mode!=DDD_TYPE_CONTDEF)
-	{
-		if (desc->mode==DDD_TYPE_DEFINED)
-		{
-			DDD_PrintError('E', 9908,
-				RegisterError(desc, 0, "DDD_TYPE already defined"));
-		}
-		else
-		{
-			DDD_PrintError('E', 9908,
-				RegisterError(desc, 0, "undeclared DDD_TYPE"));
-		}
-		HARD_EXIT; /*return;*/
-	}
+  /* get object description */
+  desc = &(theTypeDefs[typ]);
+  desc->currTypeDefCall++;
+
+  if (desc->mode!=DDD_TYPE_DECLARED && desc->mode!=DDD_TYPE_CONTDEF)
+  {
+    if (desc->mode==DDD_TYPE_DEFINED)
+    {
+      DDD_PrintError('E', 9908,
+                     RegisterError(desc, 0, "DDD_TYPE already defined"));
+    }
+    else
+    {
+      DDD_PrintError('E', 9908,
+                     RegisterError(desc, 0, "undeclared DDD_TYPE"));
+    }
+    HARD_EXIT;             /*return;*/
+  }
 
 
-	/* initialize TYPE_DESC struct, only on first call */
-	if (desc->currTypeDefCall==1)
-		ConstructDesc(desc);
+  /* initialize TYPE_DESC struct, only on first call */
+  if (desc->currTypeDefCall==1)
+    ConstructDesc(desc);
 
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-	if (typ==0)  /* i.e. typ==EL_DDDHDR */
-	{
-		/* DDD_HDR also contains a DDD_HDR (sic!) */
-		desc->hasHeader = TRUE;
-	}
+  if (typ==0)        /* i.e. typ==EL_DDDHDR */
+  {
+    /* DDD_HDR also contains a DDD_HDR (sic!) */
+    desc->hasHeader = TRUE;
+  }
 
-#	ifdef DebugTypeDefine
-	sprintf(cBuffer,"   DDD_TypeDefine(%s/%d)\n",
-		desc->name, desc->currTypeDefCall);
-	DDD_PrintDebug(cBuffer);
-#	endif
+#       ifdef DebugTypeDefine
+  sprintf(cBuffer,"   DDD_TypeDefine(%s/%d)\n",
+          desc->name, desc->currTypeDefCall);
+  DDD_PrintDebug(cBuffer);
+#       endif
 
 
-	/* start variable arguments after "typ"-parameter */
-    va_start(ap, typ);
+  /* start variable arguments after "typ"-parameter */
+  va_start(ap, typ);
 #endif
 
 #ifdef C_FRONTEND
-	adr = va_arg(ap, char *);
-	argno = 2;
+  adr = va_arg(ap, char *);
+  argno = 2;
 #endif
 
 #ifdef CPP_FRONTEND
-	if (CPP_STRUCT(desc))
-	{
-		adr = va_arg(ap, char *);
-		argno = 2;
-	}
-	else
-	{
-		// STORAGE_ARRAY mode
-		size   = 0;
-		offset = 0;
-		argno  = 1;
-	}
+  if (CPP_STRUCT(desc))
+  {
+    adr = va_arg(ap, char *);
+    argno = 2;
+  }
+  else
+  {
+    // STORAGE_ARRAY mode
+    size   = 0;
+    offset = 0;
+    argno  = 1;
+  }
 #endif
 
 #ifdef F_FRONTEND
-    va_start(ap, ftyp);
+  va_start(ap, ftyp);
 
-	size   = 0;
-	offset = sizeof(DDD_HEADER);
-	argno  = 1;
+  size   = 0;
+  offset = sizeof(DDD_HEADER);
+  argno  = 1;
 #endif
 
 
-	/* loop over variable argument list */
+  /* loop over variable argument list */
 
-    i = desc->nElements;
-    while ((i<MAX_ELEMDESC) &&
-		((argtyp= FTYPE va_arg(ap, int FTYPE))!=EL_END) && (argtyp!=EL_CONTINUE))
-	{
-		/* get the pointer to the object (no special treatment for fortran	*/
-		/* needed )															*/
-        argp = va_arg(ap, char *);
-		argno+=2;
+  i = desc->nElements;
+  while ((i<MAX_ELEMDESC) &&
+         ((argtyp= FTYPE va_arg(ap, int FTYPE))!=EL_END) && (argtyp!=EL_CONTINUE))
+  {
+    /* get the pointer to the object (no special treatment for fortran	*/
+    /* needed )															*/
+    argp = va_arg(ap, char *);
+    argno+=2;
 
-		/* handle several types of ELEM_DESCs */
-		switch (argtyp)
-		{
-			/* 1) ELEM_DESC is a pointer [array] */
-			case EL_OBJPTR:
-			case EL_DATAPTR:
-				/* get third argument of this definition line */
-        		argsize = FTYPE va_arg(ap, size_t FTYPE); argno++;
+    /* handle several types of ELEM_DESCs */
+    switch (argtyp)
+    {
+    /* 1) ELEM_DESC is a pointer [array] */
+    case EL_OBJPTR :
+    case EL_DATAPTR :
+      /* get third argument of this definition line */
+      argsize = FTYPE va_arg(ap, size_t FTYPE); argno++;
 
-				/* EL_OBJPTR have to be specified with target type */
-				if (argtyp==EL_OBJPTR)
-				{
-					/* get fourth argument: referenced DDD_TYPE */
-        			argrefs = FTYPE va_arg(ap, DDD_TYPE FTYPE); argno++;
+      /* EL_OBJPTR have to be specified with target type */
+      if (argtyp==EL_OBJPTR)
+      {
+        /* get fourth argument: referenced DDD_TYPE */
+        argrefs = FTYPE va_arg(ap, DDD_TYPE FTYPE); argno++;
 
-					/* check whether target type is valid */
-					if (argrefs>=nDescr ||
-						theTypeDefs[argrefs].mode==DDD_TYPE_INVALID)
-					{
-						errtxt=RegisterError(desc,argno,
-							"referencing invalid DDD_TYPE");
-						DDD_PrintError('E', 9909, errtxt);
-						HARD_EXIT; /*return;*/
-					}
-				}
-				else
-				{
-					/* to target type for EL_DATAPTR */
-					argrefs = EL_DDDHDR;
-				}
+        /* check whether target type is valid */
+        if (argrefs>=nDescr ||
+            theTypeDefs[argrefs].mode==DDD_TYPE_INVALID)
+        {
+          errtxt=RegisterError(desc,argno,
+                               "referencing invalid DDD_TYPE");
+          DDD_PrintError('E', 9909, errtxt);
+          HARD_EXIT;                                       /*return;*/
+        }
+      }
+      else
+      {
+        /* to target type for EL_DATAPTR */
+        argrefs = EL_DDDHDR;
+      }
 
-				/* compute #pointers (in array) */
-				nPtr = argsize / sizeof(void *);
+      /* compute #pointers (in array) */
+      nPtr = argsize / sizeof(void *);
 
-				/* check for plausibility */
+      /* check for plausibility */
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-				if (nPtr*sizeof(void *) != argsize)
+      if (nPtr*sizeof(void *) != argsize)
 #endif
 #ifdef F_FRONTEND
-				if (sizeof (DDD_OBJ) != argsize)
+      if (sizeof (DDD_OBJ) != argsize)
 #endif
-				{
-					errtxt=RegisterError(desc,argno, "invalid sizeof");
-					DDD_PrintError('E', 9910, errtxt);
-					HARD_EXIT; /*return;*/
-				}
+      {
+        errtxt=RegisterError(desc,argno, "invalid sizeof");
+        DDD_PrintError('E', 9910, errtxt);
+        HARD_EXIT;                                 /*return;*/
+      }
 
-				/* remember #pointers */
-				desc->nPointers += nPtr;
+      /* remember #pointers */
+      desc->nPointers += nPtr;
 
 
-				/* initialize ELEM_DESC */
+      /* initialize ELEM_DESC */
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-				ConstructEl(&desc->element[i],
-					argtyp, argp-adr, argsize, argrefs);
+      ConstructEl(&desc->element[i],
+                  argtyp, argp-adr, argsize, argrefs);
 #endif
 #ifdef F_FRONTEND
-				size += argsize;
-				ConstructEl(&desc->element[i],
-					argtyp, argp, argsize, argrefs);
+      size += argsize;
+      ConstructEl(&desc->element[i],
+                  argtyp, argp, argsize, argrefs);
 
-				desc->element[i].msgoffset = offset;
-				offset += argsize;
+      desc->element[i].msgoffset = offset;
+      offset += argsize;
 #endif
-				if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
-					return;
-				i++;
+      if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
+        return;
+      i++;
 
-#				ifdef DebugTypeDefine
+#                               ifdef DebugTypeDefine
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-				sprintf(cBuffer,"    PTR, %05d, %06d\n",
-					argp-adr, argsize);
+      sprintf(cBuffer,"    PTR, %05d, %06d\n",
+              argp-adr, argsize);
 #endif
 #ifdef F_FRONTEND
-				sprintf(cBuffer,"    PTR, %05d, %06d\n",
-					argp, argsize);
+      sprintf(cBuffer,"    PTR, %05d, %06d\n",
+              argp, argsize);
 #endif
-				DDD_PrintDebug(cBuffer);
-#				endif
+      DDD_PrintDebug(cBuffer);
+#                               endif
 
-				break;
+      break;
 
 
-			/* 2) ELEM_DESC is global or local data */
-			case EL_GDATA:
-			case EL_LDATA:
+    /* 2) ELEM_DESC is global or local data */
+    case EL_GDATA :
+    case EL_LDATA :
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-				/* get third argument of this definition line */
-        		argsize = va_arg(ap, size_t); argno++;
+      /* get third argument of this definition line */
+      argsize = va_arg(ap, size_t); argno++;
 
-				/* initialize ELEM_DESC */
-				if (CPP_STRUCT(desc) CPP_AND TRUE)
-				{
-					ConstructEl(&desc->element[i],
-						argtyp, argp-adr, argsize, 0);
-				}
+      /* initialize ELEM_DESC */
+      if (CPP_STRUCT(desc) CPP_AND TRUE)
+      {
+        ConstructEl(&desc->element[i],
+                    argtyp, argp-adr, argsize, 0);
+      }
 #endif
 #ifdef F_FRONTEND
-        		argsize = *(long *) va_arg(ap, size_t); argno++;
+      argsize = *(long *) va_arg(ap, size_t); argno++;
 #endif
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
-				if (CPP_ARRAY(desc) CPP_AND TRUE)
-				{
-					size += argsize;
-					ConstructEl(&desc->element[i],
-						argtyp, argp, argsize, 0);
+      if (CPP_ARRAY(desc) CPP_AND TRUE)
+      {
+        size += argsize;
+        ConstructEl(&desc->element[i],
+                    argtyp, argp, argsize, 0);
 
-					if (argtyp == EL_GDATA)
-					{
-						desc->element[i].msgoffset = offset;
-						offset += argsize;
-					}
-				}
+        if (argtyp == EL_GDATA)
+        {
+          desc->element[i].msgoffset = offset;
+          offset += argsize;
+        }
+      }
 #endif
-				if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
-					return;
-				i++;
+      if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
+        return;
+      i++;
 
-#				ifdef DebugTypeDefine
+#                               ifdef DebugTypeDefine
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-				if (CPP_STRUCT(desc) CPP_AND TRUE)
-				{
-					sprintf(cBuffer,"    DAT, %05d, %06d\n",
-						argp-adr, argsize);
-				}
+      if (CPP_STRUCT(desc) CPP_AND TRUE)
+      {
+        sprintf(cBuffer,"    DAT, %05d, %06d\n",
+                argp-adr, argsize);
+      }
 #endif
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
-				if (CPP_ARRAY(desc) CPP_AND TRUE)
-				{
-					sprintf(cBuffer,"    DAT, %08x, %06d\n",
-						argp, argsize);
-				}
+      if (CPP_ARRAY(desc) CPP_AND TRUE)
+      {
+        sprintf(cBuffer,"    DAT, %08x, %06d\n",
+                argp, argsize);
+      }
 #endif
-				DDD_PrintDebug(cBuffer);
-#				endif
+      DDD_PrintDebug(cBuffer);
+#                               endif
 
-				break;
+      break;
 
 
 
-			/* 3) ELEM_DESC is bitwise global or local */
-			case EL_GBITS:
+    /* 3) ELEM_DESC is bitwise global or local */
+    case EL_GBITS :
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-				/* get third argument of this definition line */
-        		argsize = va_arg(ap, size_t); argno++;
+      /* get third argument of this definition line */
+      argsize = va_arg(ap, size_t); argno++;
 
-				/* initialize ELEM_DESC */
-				ConstructEl(&desc->element[i],
-					argtyp, argp-adr, argsize, 0);
+      /* initialize ELEM_DESC */
+      ConstructEl(&desc->element[i],
+                  argtyp, argp-adr, argsize, 0);
 
-				/* read forth arg from cmdline */
-				gbits = va_arg(ap, char *); argno++;
+      /* read forth arg from cmdline */
+      gbits = va_arg(ap, char *); argno++;
 
-				/* fill gbits array, read forth arg from cmdline */
-				memcpy(desc->element[i].gbits, gbits, argsize);
+      /* fill gbits array, read forth arg from cmdline */
+      memcpy(desc->element[i].gbits, gbits, argsize);
 #endif
 #ifdef F_FRONTEND
-				/* TODO */
-				DDD_PrintError('E', 9930, "EL_GBITS not supported in F_FRONTEND");
-				HARD_EXIT; /*return;*/
+      /* TODO */
+      DDD_PrintError('E', 9930, "EL_GBITS not supported in F_FRONTEND");
+      HARD_EXIT;                           /*return;*/
 #endif
-				if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
-					return;
+      if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
+        return;
 
-#				ifdef DebugTypeDefine
+#                               ifdef DebugTypeDefine
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-				sprintf(cBuffer,"   BITS, %05d, %06d, ",
-					argp-adr, argsize);
-				{
-					int ii;
-					char buf[5];
-					for(ii=0; ii<argsize; ii++)
-					{
-						sprintf(buf, "%02x ", (int)desc->element[i].gbits[ii]);
-						strcat(cBuffer, buf);
-					}
-					strcat(cBuffer, "\n");
-				}
-				DDD_PrintDebug(cBuffer);
+      sprintf(cBuffer,"   BITS, %05d, %06d, ",
+              argp-adr, argsize);
+      {
+        int ii;
+        char buf[5];
+        for(ii=0; ii<argsize; ii++)
+        {
+          sprintf(buf, "%02x ", (int)desc->element[i].gbits[ii]);
+          strcat(cBuffer, buf);
+        }
+        strcat(cBuffer, "\n");
+      }
+      DDD_PrintDebug(cBuffer);
 #endif
-#				endif
+#                               endif
 
-				i++;
+      i++;
 
-				break;
+      break;
 
 
-			/* 4) ELEM_DESC is a recursively defined DDD_TYPE */
-			default:
+    /* 4) ELEM_DESC is a recursively defined DDD_TYPE */
+    default :
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-				/* hierarchical registering of known ddd_types */
-				/* no third argument here */
+      /* hierarchical registering of known ddd_types */
+      /* no third argument here */
 
-				/* check for plausibility of given DDD_TYPE */
-				if (argtyp<0 || argtyp>=nDescr || argtyp==typ)
-				{
-					char buf[40];
-					sprintf(buf,"undefined DDD_TYPE=%d", argtyp);
-					errtxt=RegisterError(desc,argno-1,buf);
-					DDD_PrintError('E', 9911, errtxt);
-					HARD_EXIT; /*return;*/
-				}
+      /* check for plausibility of given DDD_TYPE */
+      if (argtyp<0 || argtyp>=nDescr || argtyp==typ)
+      {
+        char buf[40];
+        sprintf(buf,"undefined DDD_TYPE=%d", argtyp);
+        errtxt=RegisterError(desc,argno-1,buf);
+        DDD_PrintError('E', 9911, errtxt);
+        HARD_EXIT;                                 /*return;*/
+      }
 
-				/* check whether given DDD_TYPE has been defined already */
-				if (theTypeDefs[argtyp].mode==DDD_TYPE_DEFINED)
-				{
-					if (CPP_STRUCT(desc) CPP_AND TRUE)
-					{
-						/* do recursive TypeDefine */
-						i = RecursiveRegister(desc, i, argtyp, argp-adr, argno);
-						if (i==ERROR) HARD_EXIT; /* return; */
+      /* check whether given DDD_TYPE has been defined already */
+      if (theTypeDefs[argtyp].mode==DDD_TYPE_DEFINED)
+      {
+        if (CPP_STRUCT(desc) CPP_AND TRUE)
+        {
+          /* do recursive TypeDefine */
+          i = RecursiveRegister(desc, i, argtyp, argp-adr, argno);
+          if (i==ERROR) HARD_EXIT;                                       /* return; */
 
-						#ifdef DebugTypeDefine
-						sprintf(cBuffer,"    %3d, %05d, %06d\n",
-							argtyp, argp-adr, theTypeDefs[argtyp].size);
-						DDD_PrintDebug(cBuffer);
-						#endif
-					}
+                                                #ifdef DebugTypeDefine
+          sprintf(cBuffer,"    %3d, %05d, %06d\n",
+                  argtyp, argp-adr, theTypeDefs[argtyp].size);
+          DDD_PrintDebug(cBuffer);
+                                                #endif
+        }
 #ifdef CPP_FRONTEND
-					else
-					{
-						/* do recursive TypeDefine */
-						i = RecursiveRegister(desc, i, argtyp, argp, argno);
-						if (i==ERROR) HARD_EXIT; /* return; */
+        else
+        {
+          /* do recursive TypeDefine */
+          i = RecursiveRegister(desc, i, argtyp, argp, argno);
+          if (i==ERROR) HARD_EXIT;                                       /* return; */
 
-						#ifdef DebugTypeDefine
-						sprintf(cBuffer,"    %3d, %08x, %06d\n",
-							argtyp, argp, theTypeDefs[argtyp].size);
-						DDD_PrintDebug(cBuffer);
-						#endif
-					}
+                                                #ifdef DebugTypeDefine
+          sprintf(cBuffer,"    %3d, %08x, %06d\n",
+                  argtyp, argp, theTypeDefs[argtyp].size);
+          DDD_PrintDebug(cBuffer);
+                                                #endif
+        }
 #endif
-				}
-				else
-				{
-					char buf[40];
-					sprintf(buf,"undefined DDD_TYPE %s",
-						theTypeDefs[argtyp].name);
-					errtxt=RegisterError(desc,argno-1,buf);
-					DDD_PrintError('E', 9912, errtxt);
-					HARD_EXIT; /*return;*/
-				}
+      }
+      else
+      {
+        char buf[40];
+        sprintf(buf,"undefined DDD_TYPE %s",
+                theTypeDefs[argtyp].name);
+        errtxt=RegisterError(desc,argno-1,buf);
+        DDD_PrintError('E', 9912, errtxt);
+        HARD_EXIT;                                 /*return;*/
+      }
 
 #endif
 #ifdef F_FRONTEND
-				errtxt=RegisterError(desc,argno,"recursive DDD_TYPE not impl");
-				DDD_PrintError('E', 9912, errtxt);
-				HARD_EXIT; /*return;*/
+      errtxt=RegisterError(desc,argno,"recursive DDD_TYPE not impl");
+      DDD_PrintError('E', 9912, errtxt);
+      HARD_EXIT;                           /*return;*/
 #endif
-				break;
-		}
-	}
+      break;
+    }
+  }
 
 
-	/* check whether loop has come to a correct end */
-	if (i>=MAX_ELEMDESC && argtyp!=EL_END && argtyp!=EL_CONTINUE)
-	{
-		errtxt=RegisterError(desc,0, "too many elements");
-		DDD_PrintError('E', 1150, errtxt);
-		HARD_EXIT; /*return;*/
-	}
+  /* check whether loop has come to a correct end */
+  if (i>=MAX_ELEMDESC && argtyp!=EL_END && argtyp!=EL_CONTINUE)
+  {
+    errtxt=RegisterError(desc,0, "too many elements");
+    DDD_PrintError('E', 1150, errtxt);
+    HARD_EXIT;             /*return;*/
+  }
 
 
-	/* remember #elements in TYPE_DESC */
-    desc->nElements = i;
-	
+  /* remember #elements in TYPE_DESC */
+  desc->nElements = i;
 
-	if (argtyp==EL_END)  /* and not EL_CONTINUE */
-	{
-		/* compute aligned object length */
-		#if defined(C_FRONTEND)
-    		desc->size = va_arg(ap, char *) - adr;
-			desc->size = CEIL(desc->size);
-		#endif
-		#if defined(CPP_FRONTEND)
-			if (CPP_STRUCT(desc))
-			{
-    			desc->size = va_arg(ap, char *) - adr;
-				desc->size = CEIL(desc->size);
-			}
-			else
-			{
-				desc->size += size;
-			}
-		#endif
-		#if defined(F_FRONTEND)
-			desc->size = size + (desc->hdr ? sizeof (DDD_HEADER) : 0);
-		#endif
+
+  if (argtyp==EL_END)        /* and not EL_CONTINUE */
+  {
+    /* compute aligned object length */
+                #if defined(C_FRONTEND)
+    desc->size = va_arg(ap, char *) - adr;
+    desc->size = CEIL(desc->size);
+                #endif
+                #if defined(CPP_FRONTEND)
+    if (CPP_STRUCT(desc))
+    {
+      desc->size = va_arg(ap, char *) - adr;
+      desc->size = CEIL(desc->size);
+    }
+    else
+    {
+      desc->size += size;
+    }
+                #endif
+                #if defined(F_FRONTEND)
+    desc->size = size + (desc->hdr ? sizeof (DDD_HEADER) : 0);
+                #endif
 
 
 #       if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-			if (CPP_STRUCT(desc) CPP_AND TRUE)
-			{
-				/* do normalization */
-				if (! NormalizeDesc(desc))
-					HARD_EXIT; /*return;*/
+    if (CPP_STRUCT(desc) CPP_AND TRUE)
+    {
+      /* do normalization */
+      if (! NormalizeDesc(desc))
+        HARD_EXIT;                                 /*return;*/
 
-				/* attach copy-mask for efficient copying */
-				AttachMask(desc);
-			}
-#		endif
-#		ifdef F_FRONTEND
-            ClearHeaders (desc);
+      /* attach copy-mask for efficient copying */
+      AttachMask(desc);
+    }
+#               endif
+#               ifdef F_FRONTEND
+    ClearHeaders (desc);
 #       endif
 
-		/* change TYPE_DESC state to DEFINED */
-		desc->mode = DDD_TYPE_DEFINED;
-	}
-	else  /* argtyp==EL_CONTINUE */
-	{
-		/* change TYPE_DESC state to CONTDEF */
-		desc->mode = DDD_TYPE_CONTDEF;
-	}
+    /* change TYPE_DESC state to DEFINED */
+    desc->mode = DDD_TYPE_DEFINED;
+  }
+  else        /* argtyp==EL_CONTINUE */
+  {
+    /* change TYPE_DESC state to CONTDEF */
+    desc->mode = DDD_TYPE_CONTDEF;
+  }
 
-    va_end(ap);
+  va_end(ap);
 }
 
 
@@ -1154,28 +1155,28 @@ DDD_TYPE DDD_Library::TypeDeclareStruct (char *name)
 #endif
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 {
-    TYPE_DESC *desc = &(theTypeDefs[nDescr]);
+  TYPE_DESC *desc = &(theTypeDefs[nDescr]);
 
-	/* check whether there is one more DDD_TYPE */
-	if (nDescr==MAX_TYPEDESC)
-	{
-		DDD_PrintError('E', 9913, "no more DDD_TYPEs in DDD_TypeDeclare()");
-		HARD_EXIT; /*return(ERROR);*/
-	}
-	
-	/* set status to DECLARED and remember textual type name */
-	desc->mode = DDD_TYPE_DECLARED;
-	desc->name = name;
+  /* check whether there is one more DDD_TYPE */
+  if (nDescr==MAX_TYPEDESC)
+  {
+    DDD_PrintError('E', 9913, "no more DDD_TYPEs in DDD_TypeDeclare()");
+    HARD_EXIT;             /*return(ERROR);*/
+  }
 
-	desc->prioMatrix  = NULL;
-	desc->prioDefault = PRIOMERGE_DEFAULT;
+  /* set status to DECLARED and remember textual type name */
+  desc->mode = DDD_TYPE_DECLARED;
+  desc->name = name;
+
+  desc->prioMatrix  = NULL;
+  desc->prioDefault = PRIOMERGE_DEFAULT;
 
 #ifdef CPP_FRONTEND
-	desc->storage  = STORAGE_STRUCT;
+  desc->storage  = STORAGE_STRUCT;
 #endif
 
-	/* increase #DDD_TYPEs, but return previously defined one */
-    nDescr++; return(nDescr-1);
+  /* increase #DDD_TYPEs, but return previously defined one */
+  nDescr++; return(nDescr-1);
 }
 #endif
 
@@ -1189,39 +1190,39 @@ void DDD_TypeDeclare (char *name, int *size, DDD_TYPE *type)
 #endif
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
 {
-    TYPE_DESC *desc = &(theTypeDefs[nDescr]);
+  TYPE_DESC *desc = &(theTypeDefs[nDescr]);
 
-	/* check whether there is one more DDD_TYPE */
-	if (nDescr==MAX_TYPEDESC)
-	{
+  /* check whether there is one more DDD_TYPE */
+  if (nDescr==MAX_TYPEDESC)
+  {
 #ifdef CPP_FRONTEND
-		DDD_PrintError('E', 9913, "no more DDD_TYPEs in DDD_TypeDeclare()");
-		HARD_EXIT; /*return(ERROR);*/
+    DDD_PrintError('E', 9913, "no more DDD_TYPEs in DDD_TypeDeclare()");
+    HARD_EXIT;             /*return(ERROR);*/
 #else
-		*type = -1;
-		return;
+    *type = -1;
+    return;
 #endif
-	}
-	
-	/* set status to DECLARED and remember textual type name */
-	desc->mode = DDD_TYPE_DECLARED;
-	desc->name = name;
+  }
 
-	desc->prioMatrix  = NULL;
-	desc->prioDefault = PRIOMERGE_DEFAULT;
+  /* set status to DECLARED and remember textual type name */
+  desc->mode = DDD_TYPE_DECLARED;
+  desc->name = name;
+
+  desc->prioMatrix  = NULL;
+  desc->prioDefault = PRIOMERGE_DEFAULT;
 
 
 #ifdef CPP_FRONTEND
-	desc->storage  = STORAGE_ARRAY;
-	desc->arraySize = size;
+  desc->storage  = STORAGE_ARRAY;
+  desc->arraySize = size;
 
-	/* increase #DDD_TYPEs, but return previously defined one */
-    nDescr++; return(nDescr-1);
+  /* increase #DDD_TYPEs, but return previously defined one */
+  nDescr++; return(nDescr-1);
 #else
-	desc->arraySize = *size;
-	
-	*type = nDescr++;
-	return;
+  desc->arraySize = *size;
+
+  *type = nDescr++;
+  return;
 #endif
 }
 #endif
@@ -1230,15 +1231,15 @@ void DDD_TypeDeclare (char *name, int *size, DDD_TYPE *type)
 #ifdef CPP_FRONTEND
 void DDD_Library::TypeChangeName (DDD_TYPE id, char *name)
 {
-	/* check for plausibility */
-	if (id>=nDescr)
-	{
-		sprintf(cBuffer, "invalid DDD_TYPE %d in DDD_TypeChangeName", id);
-		DDD_PrintError('E', 9933, cBuffer);
-		HARD_EXIT; /*return;*/
-	}
+  /* check for plausibility */
+  if (id>=nDescr)
+  {
+    sprintf(cBuffer, "invalid DDD_TYPE %d in DDD_TypeChangeName", id);
+    DDD_PrintError('E', 9933, cBuffer);
+    HARD_EXIT;             /*return;*/
+  }
 
-    theTypeDefs[id].name = name;
+  theTypeDefs[id].name = name;
 }
 #endif
 
@@ -1266,168 +1267,168 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
 #endif
 
 {
-    int i;
-    TYPE_DESC *desc;
+  int i;
+  TYPE_DESC *desc;
 #ifdef F_FRONTEND
-	DDD_TYPE id = *idf;
+  DDD_TYPE id = *idf;
 #endif
 
-	/* only master should display DDD_TYPEs */
-	if (me==master)
-	{
-		/* check for plausibility */
-		if (id>=nDescr)
-		{
-			sprintf(cBuffer, "invalid DDD_TYPE %d in DDD_TypeDisplay", id);
-			DDD_PrintError('E', 9914, cBuffer);
-			HARD_EXIT; /*return;*/
-		}
+  /* only master should display DDD_TYPEs */
+  if (me==master)
+  {
+    /* check for plausibility */
+    if (id>=nDescr)
+    {
+      sprintf(cBuffer, "invalid DDD_TYPE %d in DDD_TypeDisplay", id);
+      DDD_PrintError('E', 9914, cBuffer);
+      HARD_EXIT;                   /*return;*/
+    }
 
-    	desc = &(theTypeDefs[id]);
-		if (desc->mode != DDD_TYPE_DEFINED)
-		{
-			sprintf(cBuffer, "undefined DDD_TYPE %d in DDD_TypeDisplay", id);
-			DDD_PrintError('E', 9915, cBuffer);
-			HARD_EXIT; /*return;*/
-		}
+    desc = &(theTypeDefs[id]);
+    if (desc->mode != DDD_TYPE_DEFINED)
+    {
+      sprintf(cBuffer, "undefined DDD_TYPE %d in DDD_TypeDisplay", id);
+      DDD_PrintError('E', 9915, cBuffer);
+      HARD_EXIT;                   /*return;*/
+    }
 
-		/* print header */
+    /* print header */
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-		if (CPP_STRUCT(desc) CPP_AND TRUE)
-		{
-    		sprintf(cBuffer, "/ Structure of %s--object '%s', id %d, %d byte\n",
-				desc->hasHeader ? "DDD" : "data",
-				desc->name, id, desc->size);
-		}
+    if (CPP_STRUCT(desc) CPP_AND TRUE)
+    {
+      sprintf(cBuffer, "/ Structure of %s--object '%s', id %d, %d byte\n",
+              desc->hasHeader ? "DDD" : "data",
+              desc->name, id, desc->size);
+    }
 #endif
 #if defined(F_FRONTEND) || defined(CPP_FRONTEND)
-		if (CPP_ARRAY(desc) CPP_AND TRUE)
-		{
-    		sprintf(cBuffer,
-				"/ Structure of %s--object '%s', id %d, %d byte, %d elements\n",
-				#ifdef F_FRONTEND
-				desc->hdr ? "DDD" : "data",
-				#endif
-				#ifdef CPP_FRONTEND
-				desc->hasHeader ? "DDD" : "data",
-				#endif
-				desc->name, id, desc->size, desc->arraySize);
-		}
+    if (CPP_ARRAY(desc) CPP_AND TRUE)
+    {
+      sprintf(cBuffer,
+              "/ Structure of %s--object '%s', id %d, %d byte, %d elements\n",
+                                #ifdef F_FRONTEND
+              desc->hdr ? "DDD" : "data",
+                                #endif
+                                #ifdef CPP_FRONTEND
+              desc->hasHeader ? "DDD" : "data",
+                                #endif
+              desc->name, id, desc->size, desc->arraySize);
+    }
 #endif
-		DDD_PrintLine(cBuffer);
+    DDD_PrintLine(cBuffer);
 
-    	DDD_PrintLine(
-		  "|--------------------------------------------------------------\n");
+    DDD_PrintLine(
+      "|--------------------------------------------------------------\n");
 
-		/* print one line for each element */
-    	for(i=0; i<desc->nElements; i++)
-		{
-			ELEM_DESC *e = &desc->element[i];
+    /* print one line for each element */
+    for(i=0; i<desc->nElements; i++)
+    {
+      ELEM_DESC *e = &desc->element[i];
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-		  if (CPP_STRUCT(desc) CPP_AND TRUE)
-		  {
-			int realnext = (i==desc->nElements-1) ? desc->size : (e+1)->offset;
-			int estinext = e->offset+e->size;
+      if (CPP_STRUCT(desc) CPP_AND TRUE)
+      {
+        int realnext = (i==desc->nElements-1) ? desc->size : (e+1)->offset;
+        int estinext = e->offset+e->size;
 
-			/* handle gap at the beginning */
-			if (i==0 && e->offset!=0)
-			{
-				sprintf(cBuffer, "|%5d %5d    gap (local data)\n", 0, e->offset);
-				DDD_PrintLine(cBuffer);
-			}
-
-
-			/* do visual compression of elems inherited from DDD_HDR */
-			if (id==EL_DDDHDR ||
-				(!desc->hasHeader) ||
-				e->offset < desc->offsetHeader ||
-				e->offset >= desc->offsetHeader+theTypeDefs[EL_DDDHDR].size)
-			{
-        		sprintf(cBuffer, "|%5d %5d    ", e->offset, e->size);
+        /* handle gap at the beginning */
+        if (i==0 && e->offset!=0)
+        {
+          sprintf(cBuffer, "|%5d %5d    gap (local data)\n", 0, e->offset);
+          DDD_PrintLine(cBuffer);
+        }
 
 
-				/* print one line according to type */
-        		switch (e->type)
-				{
-            		case EL_GDATA: strcat(cBuffer, "global data\n"); break;
-            		case EL_LDATA: strcat(cBuffer, "local data\n"); break;
-            		case EL_DATAPTR: strcat(cBuffer, "data pointer\n"); break;
-            		case EL_OBJPTR:
-						sprintf(cBuffer, "%sobj pointer (refs %s)\n",
-							cBuffer,
-							theTypeDefs[e->reftype].name);
-						break;
-            		case EL_GBITS: strcat(cBuffer, "bitwise global: ");
-						{
-							int ii;
-							char buf[5];
-							for(ii=0; ii<e->size; ii++)
-							{
-								sprintf(buf, "%02x ",
-									(int)e->gbits[ii]);
-								strcat(cBuffer, buf);
-							}
-							strcat(cBuffer, "\n");
-						}
-						break;
-        		}
-				DDD_PrintLine(cBuffer);
+        /* do visual compression of elems inherited from DDD_HDR */
+        if (id==EL_DDDHDR ||
+            (!desc->hasHeader) ||
+            e->offset < desc->offsetHeader ||
+            e->offset >= desc->offsetHeader+theTypeDefs[EL_DDDHDR].size)
+        {
+          sprintf(cBuffer, "|%5d %5d    ", e->offset, e->size);
 
 
-				/* handle gap */
-				if (estinext != realnext)
-				{
-					sprintf(cBuffer, "|%5d %5d    gap (local data)\n",
-						estinext, realnext-estinext);
-					DDD_PrintLine(cBuffer);
-				}
-			}
-			else
-			{
-				/* handle included DDD_HDR */
-				if (e->offset == desc->offsetHeader)
-				{
-        			sprintf(cBuffer, "|%5d %5d    ddd-header\n",
-						e->offset, theTypeDefs[EL_DDDHDR].size);
-					DDD_PrintLine(cBuffer);
-				}
-			}
-		  }
+          /* print one line according to type */
+          switch (e->type)
+          {
+          case EL_GDATA : strcat(cBuffer, "global data\n"); break;
+          case EL_LDATA : strcat(cBuffer, "local data\n"); break;
+          case EL_DATAPTR : strcat(cBuffer, "data pointer\n"); break;
+          case EL_OBJPTR :
+            sprintf(cBuffer, "%sobj pointer (refs %s)\n",
+                    cBuffer,
+                    theTypeDefs[e->reftype].name);
+            break;
+          case EL_GBITS : strcat(cBuffer, "bitwise global: ");
+            {
+              int ii;
+              char buf[5];
+              for(ii=0; ii<e->size; ii++)
+              {
+                sprintf(buf, "%02x ",
+                        (int)e->gbits[ii]);
+                strcat(cBuffer, buf);
+              }
+              strcat(cBuffer, "\n");
+            }
+            break;
+          }
+          DDD_PrintLine(cBuffer);
+
+
+          /* handle gap */
+          if (estinext != realnext)
+          {
+            sprintf(cBuffer, "|%5d %5d    gap (local data)\n",
+                    estinext, realnext-estinext);
+            DDD_PrintLine(cBuffer);
+          }
+        }
+        else
+        {
+          /* handle included DDD_HDR */
+          if (e->offset == desc->offsetHeader)
+          {
+            sprintf(cBuffer, "|%5d %5d    ddd-header\n",
+                    e->offset, theTypeDefs[EL_DDDHDR].size);
+            DDD_PrintLine(cBuffer);
+          }
+        }
+      }
 #endif
 #if defined (F_FRONTEND) || defined(CPP_FRONTEND)
-		  if (CPP_ARRAY(desc) CPP_AND TRUE)
-		  {
-        	sprintf(cBuffer, "|%5d %5d    ", i, e->size);
+      if (CPP_ARRAY(desc) CPP_AND TRUE)
+      {
+        sprintf(cBuffer, "|%5d %5d    ", i, e->size);
 
-			/* print one line according to type */
-        	switch (e->type)
-			{
-            	case EL_GDATA: strcat(cBuffer, "global data\n"); break;
-            	case EL_LDATA: strcat(cBuffer, "local data\n"); break;
-            	case EL_DATAPTR: strcat(cBuffer, "data pointer\n"); break;
-            	case EL_OBJPTR:
-					sprintf(cBuffer, "%sobj pointer (refs %s, offset %d)\n",
-						cBuffer,
-						theTypeDefs[e->reftype].name,e->msgoffset);
-					break;
-				default:
+        /* print one line according to type */
+        switch (e->type)
+        {
+        case EL_GDATA : strcat(cBuffer, "global data\n"); break;
+        case EL_LDATA : strcat(cBuffer, "local data\n"); break;
+        case EL_DATAPTR : strcat(cBuffer, "data pointer\n"); break;
+        case EL_OBJPTR :
+          sprintf(cBuffer, "%sobj pointer (refs %s, offset %d)\n",
+                  cBuffer,
+                  theTypeDefs[e->reftype].name,e->msgoffset);
+          break;
+        default :
 #ifdef F_FRONTEND
-					sprintf(cBuffer, "%sunknown elemtype %d\n",
-						cBuffer, e->type);
+          sprintf(cBuffer, "%sunknown elemtype %d\n",
+                  cBuffer, e->type);
 #endif
 #ifdef CPP_FRONTEND
-					sprintf(cBuffer, "%srecursive type %s (type_id=%d)\n",
-						cBuffer,
-						theTypeDefs[e->type].name, e->type);
+          sprintf(cBuffer, "%srecursive type %s (type_id=%d)\n",
+                  cBuffer,
+                  theTypeDefs[e->type].name, e->type);
 #endif
-        	}
-			DDD_PrintLine(cBuffer);
-		  }
+        }
+        DDD_PrintLine(cBuffer);
+      }
 #endif
-    	}
-    	DDD_PrintLine(
-		  "\\--------------------------------------------------------------\n");
-	}
+    }
+    DDD_PrintLine(
+      "\\--------------------------------------------------------------\n");
+  }
 }
 
 
@@ -1451,25 +1452,25 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
 
 static void InitHandlers (TYPE_DESC *desc)
 {
-	/* set all handler functions to default (=none) */
-	desc->handlerLDATACONSTRUCTOR = NULL;
-	desc->handlerDESTRUCTOR = NULL;
-	desc->handlerDELETE = NULL;
-	desc->handlerUPDATE = NULL;
-	desc->handlerOBJMKCONS = NULL;
-	desc->handlerSETPRIORITY = NULL;
-	desc->handlerXFERCOPY = NULL;
-	desc->handlerXFERDELETE = NULL;
-	desc->handlerXFERGATHER = NULL;
-	desc->handlerXFERSCATTER = NULL;
-	desc->handlerXFERGATHERX = NULL;
-	desc->handlerXFERSCATTERX = NULL;
+  /* set all handler functions to default (=none) */
+  desc->handlerLDATACONSTRUCTOR = NULL;
+  desc->handlerDESTRUCTOR = NULL;
+  desc->handlerDELETE = NULL;
+  desc->handlerUPDATE = NULL;
+  desc->handlerOBJMKCONS = NULL;
+  desc->handlerSETPRIORITY = NULL;
+  desc->handlerXFERCOPY = NULL;
+  desc->handlerXFERDELETE = NULL;
+  desc->handlerXFERGATHER = NULL;
+  desc->handlerXFERSCATTER = NULL;
+  desc->handlerXFERGATHERX = NULL;
+  desc->handlerXFERSCATTERX = NULL;
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-	desc->handlerXFERCOPYMANIP = NULL;
+  desc->handlerXFERCOPYMANIP = NULL;
 #endif
 #ifdef F_FRONTEND
-	desc->handlerALLOCOBJ = NULL;
-	desc->handlerFREEOBJ = NULL;
+  desc->handlerALLOCOBJ = NULL;
+  desc->handlerFREEOBJ = NULL;
 #endif
 }
 
@@ -1533,108 +1534,108 @@ void DDD_HandlerRegister (DDD_TYPE type_id, ...)
 #ifdef F_FRONTEND
 void DDD_HandlerRegister (DDD_TYPE *fid, ...)
 {
-	DDD_TYPE  type_id = *fid;
+  DDD_TYPE type_id = *fid;
 #endif
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
-    TYPE_DESC *desc = &(theTypeDefs[type_id]);
-    int       idx;
-	va_list   ap;
+TYPE_DESC *desc = &(theTypeDefs[type_id]);
+int idx;
+va_list ap;
 
-	OLDSTYLE("DDD_HandlerRegister() supported for downward compatibility only.");
-	OLDSTYLE("  (Use new DDD_SetHandlerXXX-functions instead.");
-	OLDSTYLE("   Advantage: static type checking for handler functions)");
+OLDSTYLE("DDD_HandlerRegister() supported for downward compatibility only.");
+OLDSTYLE("  (Use new DDD_SetHandlerXXX-functions instead.");
+OLDSTYLE("   Advantage: static type checking for handler functions)");
 
-	if (desc->mode != DDD_TYPE_DEFINED)
-	{
-		DDD_PrintError('E', 9916,
-			"undefined DDD_TYPE in DDD_HandlerRegister()");
-		HARD_EXIT; /*return;*/
-	}
+if (desc->mode != DDD_TYPE_DEFINED)
+{
+  DDD_PrintError('E', 9916,
+                 "undefined DDD_TYPE in DDD_HandlerRegister()");
+  HARD_EXIT;               /*return;*/
+}
 
-    /* read argument list, fill object structure definition */
-	#ifdef C_FRONTEND
-    	va_start(ap, type_id);
-	#endif
-	#ifdef F_FRONTEND
-    	va_start(ap, fid);
-	#endif
+/* read argument list, fill object structure definition */
+        #ifdef C_FRONTEND
+va_start(ap, type_id);
+        #endif
+        #ifdef F_FRONTEND
+va_start(ap, fid);
+        #endif
 
-    while ((idx = FTYPE va_arg(ap, int FTYPE)) != HANDLER_END)
-	{
-		switch(idx)
-		{
-			case HANDLER_LDATACONSTRUCTOR:
-				desc->handlerLDATACONSTRUCTOR =
-					va_arg(ap, HandlerLDATACONSTRUCTOR);
-				break;
-			case HANDLER_DESTRUCTOR:
-				desc->handlerDESTRUCTOR =
-					 va_arg(ap, HandlerDESTRUCTOR);
-				break;
-			case HANDLER_DELETE:
-				desc->handlerDELETE =
-					 va_arg(ap, HandlerDELETE);
-				break;
-			case HANDLER_UPDATE:
-				desc->handlerUPDATE =
-					 va_arg(ap, HandlerUPDATE);
-				break;
-			case HANDLER_OBJMKCONS:
-				desc->handlerOBJMKCONS =
-					 va_arg(ap, HandlerOBJMKCONS);
-				break;
-			case HANDLER_SETPRIORITY:
-				desc->handlerSETPRIORITY =
-					 va_arg(ap, HandlerSETPRIORITY);
-				break;
-			case HANDLER_XFERCOPY:
-				desc->handlerXFERCOPY =
-					 va_arg(ap, HandlerXFERCOPY);
-				break;
-			case HANDLER_XFERDELETE:
-				desc->handlerXFERDELETE =
-					 va_arg(ap, HandlerXFERDELETE);
-				break;
-			case HANDLER_XFERGATHER:
-				desc->handlerXFERGATHER =
-					 va_arg(ap, HandlerXFERGATHER);
-				break;
-			case HANDLER_XFERSCATTER:
-				desc->handlerXFERSCATTER =
-					 va_arg(ap, HandlerXFERSCATTER);
-				break;
-			case HANDLER_XFERGATHERX:
-				desc->handlerXFERGATHERX =
-					 va_arg(ap, HandlerXFERGATHERX);
-				break;
-			case HANDLER_XFERSCATTERX:
-				desc->handlerXFERSCATTERX =
-					 va_arg(ap, HandlerXFERSCATTERX);
-				break;
+while ((idx = FTYPE va_arg(ap, int FTYPE)) != HANDLER_END)
+{
+  switch(idx)
+  {
+  case HANDLER_LDATACONSTRUCTOR :
+    desc->handlerLDATACONSTRUCTOR =
+      va_arg(ap, HandlerLDATACONSTRUCTOR);
+    break;
+  case HANDLER_DESTRUCTOR :
+    desc->handlerDESTRUCTOR =
+      va_arg(ap, HandlerDESTRUCTOR);
+    break;
+  case HANDLER_DELETE :
+    desc->handlerDELETE =
+      va_arg(ap, HandlerDELETE);
+    break;
+  case HANDLER_UPDATE :
+    desc->handlerUPDATE =
+      va_arg(ap, HandlerUPDATE);
+    break;
+  case HANDLER_OBJMKCONS :
+    desc->handlerOBJMKCONS =
+      va_arg(ap, HandlerOBJMKCONS);
+    break;
+  case HANDLER_SETPRIORITY :
+    desc->handlerSETPRIORITY =
+      va_arg(ap, HandlerSETPRIORITY);
+    break;
+  case HANDLER_XFERCOPY :
+    desc->handlerXFERCOPY =
+      va_arg(ap, HandlerXFERCOPY);
+    break;
+  case HANDLER_XFERDELETE :
+    desc->handlerXFERDELETE =
+      va_arg(ap, HandlerXFERDELETE);
+    break;
+  case HANDLER_XFERGATHER :
+    desc->handlerXFERGATHER =
+      va_arg(ap, HandlerXFERGATHER);
+    break;
+  case HANDLER_XFERSCATTER :
+    desc->handlerXFERSCATTER =
+      va_arg(ap, HandlerXFERSCATTER);
+    break;
+  case HANDLER_XFERGATHERX :
+    desc->handlerXFERGATHERX =
+      va_arg(ap, HandlerXFERGATHERX);
+    break;
+  case HANDLER_XFERSCATTERX :
+    desc->handlerXFERSCATTERX =
+      va_arg(ap, HandlerXFERSCATTERX);
+    break;
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-			case HANDLER_XFERCOPYMANIP:
-				desc->handlerXFERCOPYMANIP =
-					 va_arg(ap, HandlerXFERCOPYMANIP);
-				break;
+  case HANDLER_XFERCOPYMANIP :
+    desc->handlerXFERCOPYMANIP =
+      va_arg(ap, HandlerXFERCOPYMANIP);
+    break;
 #endif
 #ifdef F_FRONTEND
-			case HANDLER_ALLOCOBJ:
-				desc->handlerALLOCOBJ =
-					 va_arg(ap, HandlerALLOCOBJ);
-				break;
-			case HANDLER_FREEOBJ:
-				desc->handlerFREEOBJ =
-					 va_arg(ap, HandlerFREEOBJ);
-				break;
+  case HANDLER_ALLOCOBJ :
+    desc->handlerALLOCOBJ =
+      va_arg(ap, HandlerALLOCOBJ);
+    break;
+  case HANDLER_FREEOBJ :
+    desc->handlerFREEOBJ =
+      va_arg(ap, HandlerFREEOBJ);
+    break;
 #endif
-			default:
-				DDD_PrintError('E', 9917,
-					"undefined HandlerId in DDD_HandlerRegister()");
-				HARD_EXIT;
-		}
-	}
+  default :
+    DDD_PrintError('E', 9917,
+                   "undefined HandlerId in DDD_HandlerRegister()");
+    HARD_EXIT;
+  }
+}
 
-    va_end(ap);
+va_end(ap);
 }
 
 #endif
@@ -1654,7 +1655,7 @@ void DDD_HandlerRegister (DDD_TYPE *fid, ...)
 
 int DDD_InfoTypes (void)
 {
-	return nDescr;
+  return nDescr;
 }
 
 
@@ -1676,9 +1677,9 @@ int DDD_InfoTypes (void)
 
 int DDD_InfoHdrOffset (DDD_TYPE type_id)
 {
-    TYPE_DESC *desc = &(theTypeDefs[type_id]);
+  TYPE_DESC *desc = &(theTypeDefs[type_id]);
 
-	return desc->offsetHeader;
+  return desc->offsetHeader;
 }
 
 #endif
@@ -1703,44 +1704,53 @@ void ddd_TypeMgrInit (void)
 void DDD_Library::ddd_TypeMgrInit (void)
 #endif
 {
-	int i;
+  int i;
 
-	/* set all theTypeDefs to INVALID, i.e., no DDD_TYPE has been defined */
-	for(i=0; i<MAX_TYPEDESC; i++)
-	{
-		theTypeDefs[i].mode = DDD_TYPE_INVALID;
-		theTypeDefs[i].currTypeDefCall = 0;
-	}
+  /* set all theTypeDefs to INVALID, i.e., no DDD_TYPE has been defined */
+  for(i=0; i<MAX_TYPEDESC; i++)
+  {
+    theTypeDefs[i].mode = DDD_TYPE_INVALID;
+    theTypeDefs[i].currTypeDefCall = 0;
+  }
 
 
-	/* reset declared types */
-	nDescr = 0;
+  /* reset declared types */
+  nDescr = 0;
 
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-	/* init DDD_HEADER as first type, with DDD_TYPE=0 */
-	{
-		DDD_HEADER *hdr = 0;
-		DDD_TYPE   hdr_type;
+  /* init DDD_HEADER as first type, with DDD_TYPE=0 */
+  {
+    DDD_TYPE hdr_type;
 
-		/* hdr_type will be EL_DDDHDR (=0) per default */
-		#ifdef C_FRONTEND
-			hdr_type = DDD_TypeDeclare("DDD_HDR");
-			DDD_TypeDefine(hdr_type, hdr,
-		#endif
-		#ifdef CPP_FRONTEND
-			hdr_type = TypeDeclare("DDD_HDR");
-			TypeDefine(hdr_type, hdr,
-		#endif
-			EL_GDATA, &hdr->typ,     sizeof(hdr->typ),
-			EL_LDATA, &hdr->prio,    sizeof(hdr->prio),
-			EL_GDATA, &hdr->attr,    sizeof(hdr->attr),
-			EL_GDATA, &hdr->flags,   sizeof(hdr->flags),
-			EL_LDATA, &hdr->myIndex, sizeof(hdr->myIndex),
-			EL_GDATA, &hdr->gid,     sizeof(hdr->gid),
-			EL_END,	  hdr+1
-		);
-	}
+                #ifdef C_FRONTEND
+    DDD_HEADER *hdr = 0;
+
+    /* hdr_type will be EL_DDDHDR (=0) per default */
+    hdr_type = DDD_TypeDeclare("DDD_HDR");
+    DDD_TypeDefine(hdr_type, hdr,
+                #else
+    DDD_Object *obj = 0;
+    DDD_HEADER *hdr = &(obj->_hdr);
+
+                        /* hdr_type will be EL_DDDHDR (=0) per default */
+                        hdr_type = TypeDeclare("DDD_Object");
+                        TypeDefine(hdr_type, obj,
+                #endif
+
+                   EL_GDATA, &hdr->typ,     sizeof(hdr->typ),
+                   EL_LDATA, &hdr->prio,    sizeof(hdr->prio),
+                   EL_GDATA, &hdr->attr,    sizeof(hdr->attr),
+                   EL_GDATA, &hdr->flags,   sizeof(hdr->flags),
+                   EL_LDATA, &hdr->myIndex, sizeof(hdr->myIndex),
+                   EL_GDATA, &hdr->gid,     sizeof(hdr->gid),
+
+                #ifdef C_FRONTEND
+                   EL_END,   hdr+1  );
+                #else
+                   EL_END,   obj+1  );
+                #endif
+  }
 #endif
 }
 
@@ -1759,14 +1769,14 @@ void DDD_Library::ddd_TypeMgrInit (void)
 
 void ddd_TypeMgrExit (void)
 {
-	int i;
+  int i;
 
-	/* free memory */
-	for(i=0; i<nDescr; i++)
-	{
-		if (theTypeDefs[i].cmask!=NULL)
-			FreeFix(theTypeDefs[i].cmask);
-	}
+  /* free memory */
+  for(i=0; i<nDescr; i++)
+  {
+    if (theTypeDefs[i].cmask!=NULL)
+      FreeFix(theTypeDefs[i].cmask);
+  }
 }
 
 

@@ -83,11 +83,12 @@ LC_MSGHANDLE LC_NewSendMsg (LC_MSGTYPE, DDD_PROC);
 ULONG    LC_GetTableLen (LC_MSGHANDLE, LC_MSGCOMP);
 void *   LC_GetPtr (LC_MSGHANDLE, LC_MSGCOMP);
 DDD_PROC LC_MsgGetProc (LC_MSGHANDLE);
-void     LC_MsgPrepareSend (LC_MSGHANDLE);
+size_t   LC_MsgPrepareSend (LC_MSGHANDLE);
 void     LC_SetTableLen (LC_MSGHANDLE, LC_MSGCOMP, ULONG);
 void     LC_SetTableSize (LC_MSGHANDLE, LC_MSGCOMP, ULONG);
 void     LC_SetChunkSize (LC_MSGHANDLE, LC_MSGCOMP, size_t);
 
+size_t   LC_GetBufferSize (LC_MSGHANDLE);
 
 
 

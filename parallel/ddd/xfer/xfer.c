@@ -498,7 +498,7 @@ int PrepareObjMsgs (
   XICopyObj **itemsO, int nO,
   XINewCpl **itemsNC, int nNC,
   XIOldCpl **itemsOC, int nOC,
-  XFERMSG **theMsgs)
+  XFERMSG **theMsgs, size_t *memUsage)
 {
   XFERMSG    *xm=NULL;
   int iO, iNC, iOC, nMsgs=0;
@@ -560,6 +560,7 @@ int PrepareObjMsgs (
   /* compute brutto message size from netto message size */
   for(xm=*theMsgs; xm!=NULL; xm=xm->next)
   {
+    size_t bufSize;
     xm->msg_h = LC_NewSendMsg(xferGlobals.objmsg_t, xm->proc);
     LC_SetTableSize(xm->msg_h, xferGlobals.symtab_id, xm->nPointers);
     LC_SetTableSize(xm->msg_h, xferGlobals.objtab_id, xm->nObjects);
@@ -567,8 +568,19 @@ int PrepareObjMsgs (
     LC_SetTableSize(xm->msg_h, xferGlobals.oldcpl_id, xm->nOldCpl);
     LC_SetChunkSize(xm->msg_h, xferGlobals.objmem_id, xm->size);
 
-    LC_MsgPrepareSend(xm->msg_h);
+    bufSize = LC_MsgPrepareSend(xm->msg_h);
+    *memUsage += bufSize;
+
+    if (DDD_GetOption(OPT_INFO_XFER) & XFER_SHOW_MEMUSAGE)
+    {
+      sprintf(cBuffer,
+              "DDD MESG [%03d]: SHOW_MEM "
+              "send msg  dest=%04d size=%010ld\n",
+              me, xm->proc, (long)bufSize);
+      DDD_PrintLine(cBuffer);
+    }
   }
+
 
 #       if DebugXfer<=3
   printf("%4d: PrepareObjMsgs, nMsgs=%d\n", me, nMsgs);
@@ -717,6 +729,9 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
 #endif
 #ifdef CPP_FRONTEND
     // call virtual destructor
+    printf("%4d: calling virtual destructor for %08x\n",
+           me, origD[iD]->obj);
+
     delete origD[iD]->obj;
 #endif
   }

@@ -1,5 +1,17 @@
 ---------------------------
 
+CHANGES 1.8.3 -> 1.8.4
+
+---------------------------
+970310 kb
+additional options OPT_INFO_XFER, with values XFER_SHOW_xxx.
+	- can be used to control memory allocation in Xfer module.
+970310 kb
+additional error messages in ident.c.
+970310 kb
+bugfix in basic/topo.c (error occurred with procs>64).
+---------------------------
+
 CHANGES 1.8.2 -> 1.8.3
 
 ---------------------------
