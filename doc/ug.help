@@ -574,6 +574,10 @@ clear <symbol name> [$a] [$s] [$v <value>]
 copy            # copy symbol to symbol on current level
 copy $f <from-symbol> $t <to-symbol>
 
+-copyv > solution symbol
+copyv            # num proc to copy a vector
+npinit $f <from-symbol> $t <to-symbol>
+
 -interpolate > solution symbol
 interpolate     # interpolate to current level from level below
 interpolate <symbol>
@@ -728,6 +732,10 @@ npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|r
        $damp <sc double list> $L <lu mat sym> $beta <sc double list>
        [$rest <rest vector symbol> [$ort <sc double list>]]
 
+-pbic > smoother numproc ic
+for initialisation of the damped point-block incomplete Cholesky decomposition
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $D {no|red|full}
+
 -pbilubt > smoother numproc ilu-beta threshold
 for initialisation of the damped point-block ilu with beta modification and threshold use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
@@ -746,6 +754,11 @@ npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|r
        $L <lu mat sym>
 
 -ebgs > smoother numproc gauss-seidel
+for initialisation of the equation-block Gauss-Seidel use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $Blocking <sc int list> $BlockOrder <ord list> $BlockIter <sc numproc list> $n 1 $D full;
+
+-lbgs > smoother numproc gauss-seidel
 for initialisation of the equation-block Gauss-Seidel use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
        $Blocking <sc int list> $BlockOrder <ord list> $BlockIter <sc numproc list> $n 1 $D full;
