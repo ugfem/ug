@@ -4967,6 +4967,11 @@ static int RefineGrid (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
+		#ifdef ModelP
+		/* update overlap  */
+		SETTHEFLAG(theElement,0);
+		#endif
+
 		/* do not change PrioVGhost elements */ 
 		if (EVGHOST(theElement)) continue;
 
@@ -5002,6 +5007,11 @@ static int RefineGrid (GRID *theGrid)
 			SETREFINE(theElement,MARK(theElement));
 			SETREFINECLASS(theElement,MARKCLASS(theElement));
 			SETUSED(theElement,0);
+
+			#ifdef ModelP
+			/* update overlap  */
+			SETTHEFLAG(theElement,1);
+			#endif
 
 			/* this grid is modified */
 			SETGLOBALGSTATUS(UpGrid);
@@ -5072,7 +5082,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		if (IS_REFINED(theElement) && THEFLAG(theElement))
 */
 		if (IS_REFINED(theElement))
-		if (IS_REFINED(theElement))
+	}
 }
 
 
@@ -5126,7 +5136,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		if (!IS_REFINED(theElement) || !EHGHOSTPRIO(prio)) continue;
 		INT prio = EPRIO(theElement);
 		PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
-		/* connect only done FROM hgost copies */
+		/* connec is only FROM hgost copies */
 							theElement,ID(theElement),
 							LEVEL(theElement)));
 
@@ -5149,7 +5159,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 
 			/* connect only TO master copies */
 					Sons_of_Side_List,SonSides,1,0)!=GM_OK) RETURN(GM_FATAL);
-			if (!IS_REFINED(theNeighbor) || !MASTERPRIO(prio))	continue;
+			if (!IS_REFINED(theNeighbor) || !MASTERPRIO(prio) || !THEFLAG(theNeighbor))	continue;
 			IFDEBUG(gm,1)
 				UserWriteF(PFMT " 		side=%d NSONS=%d Sons_of_Side=%d:\n",
 					me,i,NSONS(theElement),Sons_of_Side);
@@ -5249,7 +5259,6 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 	if (CheckPartitioning(theMG))
 	{
 		if (RestrictPartitioning(theMG,COARSENED)) RETURN(GM_FATAL);
-if (0)
 if (0)
 		return(GM_OK);
 	}
