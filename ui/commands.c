@@ -4184,7 +4184,7 @@ static INT InsertElementCommand (INT argc, char **argv)
   /* got the nodes via s option? */
   if (nNodes>0)
   {
-    if (InsertElement(GRID_ON_LEVEL(theMG,0),nNodes,theNodes,NULL,NULL)==NULL)
+    if (InsertElement(GRID_ON_LEVEL(theMG,0),nNodes,theNodes,NULL,NULL,NULL)==NULL)
     {
       PrintErrorMessage('E',"ie","inserting the element failed");
       return (CMDERRORCODE);
@@ -4223,7 +4223,7 @@ static INT InsertElementCommand (INT argc, char **argv)
   }
 
   /* NB: toplevel=0 is checked by InsertElementFromIDs() */
-  if (InsertElementFromIDs(GRID_ON_LEVEL(theMG,0),nNodes,Id)==NULL)
+  if (InsertElementFromIDs(GRID_ON_LEVEL(theMG,0),nNodes,Id,NULL)==NULL)
   {
     PrintErrorMessage('E',"ie","inserting the element failed");
     return (CMDERRORCODE);
