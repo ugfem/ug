@@ -882,7 +882,7 @@ static void RestrictMarks (GRID *theGrid)
 {
 	ELEMENT *theElement,*SonList[MAX_SONS];
 	EDGE *theEdge;
-	int i,j,flag,CondensedPattern,Pattern;
+	int i,j,flag,CondensedPattern,Pattern,Rule;
 	
 	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
 	{
@@ -964,9 +964,15 @@ static void RestrictMarks (GRID *theGrid)
 											/* TODO: Is ADDPATTERN needed for fitting with other green elements?? */ 
 											if (ADDPATTERN(theEdge))
 												Pattern |= (1<<j);
+											PRINTDEBUG(gm,4,("RestrictMarks(): modified Pattern=%d bisects now edge=%d too\n",Pattern,j))
 										}
 									}
-									SETMARK(theElement,PATTERN2MARK(theElement,Pattern));
+									Rule = PATTERN2RULE(theElement,Pattern);
+									SETMARK(theElement,RULE2MARK(theElement,Rule));
+									/* TODO: delete this old code 
+									SETMARK(theElement,PATTERN2MARK(theElement,Pattern)); */
+									/* TODO: this would be the quick fix 
+									SETMARK(theElement,FULL_REFRULE); */
 									break;
 								case HEXAHEDRON:
 									SETMARK(theElement,HEXA_RED);

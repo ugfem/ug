@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 /* low module */
+#include "debug.h"
 #include "fileopen.h"
 
 /* dev module */
@@ -1775,6 +1776,18 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
         #ifdef __THREEDIM__
   switch (TAG(theElement)) {
   case (TETRAHEDRON) :
+    /* convert pattern to old style */
+    pattern &= (~(1<<10));
+    IFDEBUG(gm,0)
+    int tetrarule;
+    if (pattern<0 || pattern>1023)
+      PRINTDEBUG(gm,0,("Pattern2Rule(): ERROR pattern=%d\n",pattern))
+      assert(pattern>=0 && pattern<=1023);
+    tetrarule = Pattern2Rule[TAG(theElement)][pattern];
+    if (tetrarule<0 || tetrarule>MaxRules[TETRAHEDRON])
+      PRINTDEBUG(gm,0,("Pattern2Rule(): ERROR pattern=%d rule=%d\n",pattern,tetrarule))
+      assert(tetrarule>=0 && tetrarule<=MaxRules[TETRAHEDRON]);
+    ENDDEBUG
     return(Pattern2Rule[TAG(theElement)][pattern]);
 
   case (PYRAMID) :
@@ -2167,6 +2180,7 @@ INT InitRuleManager3D (void)
   {
     if (fscanf(stream,"%d",&P2R)!=1) return (__LINE__);
     Pattern2Rule[TETRAHEDRON][i] = P2R;
+    PRINTDEBUG(gm,4,("Pattern2Rules[%4x]=%4d\n",i,P2R))
   }
 
   fclose(stream);
