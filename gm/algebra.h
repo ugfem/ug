@@ -62,6 +62,11 @@
 /*																			*/
 /****************************************************************************/
 
+/* vector classes															*/
+#define EVERY_CLASS             0       /* <= class of all vectors						*/
+#define NEWDEF_CLASS    2       /* <= class of the vectors where defect needed	*/
+#define ACTIVE_CLASS    3       /* <= class of the active vectors				*/
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
