@@ -48,6 +48,13 @@
 #define NP_EXECUTABLE                           3
 #define NP_PDT_SIZE                32
 
+/* macros for NP_BASE access */
+#define NP_MG(p)                                (((NP_BASE*)(p))->mg)
+#define NP_STATUS(p)                    (((NP_BASE*)(p))->status)
+#define NP_INIT(p)                              (((NP_BASE*)(p))->Init)
+#define NP_DISPLAY(p)                   (((NP_BASE*)(p))->Display)
+#define NP_EXECUTE(p)                   (((NP_BASE*)(p))->Execute)
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/
@@ -88,6 +95,7 @@ typedef struct
 /****************************************************************************/
 
 INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct);
+NP_CONSTRUCTOR *GetConstructor (const char *classname);
 INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname);
 
 NP_BASE *GetNumProcByName (MULTIGRID *theMG, char *objectname, char *classname);

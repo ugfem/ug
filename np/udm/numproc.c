@@ -73,7 +73,7 @@ static INT ClassVarID;
 static INT ObjectVarID;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -128,7 +128,44 @@ INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct)
   /* return OK */
   return(0);
 }
+/****************************************************************************/
+/*D
+   GetConstructor - return constructor for given class name
 
+   SYNOPSIS:
+   NP_CONSTRUCTOR *GetConstructor (const char *classname)
+
+   PARAMETERS:
+   .  classname - final class name of an existing class.
+
+   DESCRIPTION:
+   The constructor for the given class name is returned.
+
+   RETURN VALUE:
+   NP_CONSTRUCTOR *
+   .n    constructor
+   .n     NULL if not found
+   D*/
+/****************************************************************************/
+
+NP_CONSTRUCTOR *GetConstructor (const char *classname)
+{
+  ENVITEM *item;
+  INT m,i;
+
+  item = (ENVITEM *) ChangeEnvDir("/NumProcClasses");
+  if (item == NULL) return (NULL);
+  for (item=ENVITEM_DOWN(item); item!=NULL; item=NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == ClassVarID)
+    {
+      /* check classname */
+      m = strlen(ENVITEM_NAME(item));
+      for (i=m-1; i>=0; i--)
+        if (ENVITEM_NAME(item)[i]=='.') break;
+      if (strcmp(ENVITEM_NAME(item)+(i+1),classname)==0) break;
+    }
+  return ((NP_CONSTRUCTOR *)item);
+}
 
 /****************************************************************************/
 /*D
@@ -160,25 +197,12 @@ INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct)
 
 INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname)
 {
-  ENVITEM *item;
   NP_CONSTRUCTOR *constructor;
   NP_BASE *object;
   char name[NAMESIZE];
-  INT i,m;
 
   /* first find constructor */
-  item = (ENVITEM *) ChangeEnvDir("/NumProcClasses");
-  if (item == NULL) return (__LINE__);
-  for (item=ENVITEM_DOWN(item); item!=NULL; item=NEXT_ENVITEM(item))
-    if (ENVITEM_TYPE(item) == ClassVarID)
-    {
-      /* check classname */
-      m = strlen(ENVITEM_NAME(item));
-      for (i=m-1; i>=0; i--)
-        if (ENVITEM_NAME(item)[i]=='.') break;
-      if (strcmp(ENVITEM_NAME(item)+(i+1),classname)==0) break;
-    }
-  constructor = (NP_CONSTRUCTOR *) item;
+  constructor = GetConstructor(classname);
   if (constructor==NULL) {
     PrintErrorMessage('E',"CreateObject","cannot find specified class");
     return(__LINE__);
@@ -192,9 +216,9 @@ INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname)
     if (ChangeEnvDir("Objects") == NULL) return (__LINE__);
   }
   /* allocate object */
-  if (strlen(objectname)+strlen(ENVITEM_NAME(item))+2>NAMESIZE)
+  if (strlen(objectname)+strlen(ENVITEM_NAME(constructor))+2>NAMESIZE)
     return(__LINE__);
-  sprintf(name,"%s.%s",ENVITEM_NAME(item),objectname);
+  sprintf(name,"%s.%s",ENVITEM_NAME(constructor),objectname);
   object = (NP_BASE *) MakeEnvItem(name,ObjectVarID,constructor->size);
   if (object==NULL) return(__LINE__);
 
