@@ -215,7 +215,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
       /* get maximum Line/Surface-Id */
       maxLineId = GetMaximumSurfaceID(theDomain);
 
-      if ((*(theProblem->InitProblem))(nSubDom, argv, maxLineId+1, LGM_DOMAIN_PROBLEMNAME(theDomain)))
+      if ((*(theProblem->InitProblem))(nSubDom, argv, maxLineId+1, LGM_DOMAIN_PROBLEMNAME(theDomain), Heap))
       {
         UserWrite("ERROR in BVP_Init: cannot initialize problem\n");
         return (NULL);
