@@ -370,15 +370,17 @@ static DOUBLE ElementIndicator_grad (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
   return(est * area);
 }
 
-static DOUBLE ElementIndicator_minmax (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
+static DOUBLE ElementIndicator_minmax (ELEMENT *t, INT ncomp,
+                                       VECDATA_DESC *theVD)
 {
   DOUBLE theMin=1.0E100, theMax=-1.0E100;
   INT i;
 
-  for (i=0; i<CORNERS_OF_ELEM(t); i++)
-  {
-    theMin = MIN(theMin,VVALUE(NVECTOR(CORNER(t,i)),VD_CMP_OF_TYPE(theVD,NODEVEC,0)));
-    theMax = MAX(theMax,VVALUE(NVECTOR(CORNER(t,i)),VD_CMP_OF_TYPE(theVD,NODEVEC,0)));
+  for (i=0; i<CORNERS_OF_ELEM(t); i++) {
+    theMin = MIN(theMin,VVALUE(NVECTOR(CORNER(t,i)),
+                               VD_CMP_OF_TYPE(theVD,NODEVEC,0)));
+    theMax = MAX(theMax,VVALUE(NVECTOR(CORNER(t,i)),
+                               VD_CMP_OF_TYPE(theVD,NODEVEC,0)));
   }
 
   return(theMax-theMin);
@@ -431,14 +433,16 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
   mfc = 0;
   for (k=0; k<=toplevel; k++)
     for (t=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); t!=NULL; t=SUCCE(t))
-      if (EstimateHere(t))
-      {
+      if (EstimateHere(t)) {
         est = ElementIndicator(t,ncomp,theVD);
         min = MIN(min,est);
         max = MAX(max,est);
         List[nel++] = est;
       }
-
+    #ifdef ModelP
+  max = UG_GlobalMaxDOUBLE(max);
+  min = UG_GlobalMinDOUBLE(min);
+    #endif
   rf = max * refine;
   cr = max * coarse;
   nel = 0;
@@ -483,8 +487,8 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
   Release(MGHEAP(theMG),FROM_TOP);
 
         #ifdef ModelP
-  mfr = UG_GlobalSumDOUBLE((DOUBLE)mfr);
-  mfc = UG_GlobalSumDOUBLE((DOUBLE)mfc);
+  mfr = UG_GlobalSumINT(mfr);
+  mfc = UG_GlobalSumINT(mfc);
         #endif
 
   if (SetStringValue("indicator:mfr",(DOUBLE)mfr))
@@ -584,11 +588,14 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
   }
 
   if (SurfaceIndicator(theMG,y,np->refine,np->coarse,
-                       np->project,np->from,np->to,np->clear,eresult) == -1) NP_RETURN(1,eresult->error_code);
+                       np->project,np->from,np->to,np->clear,eresult) == -1)
+    NP_RETURN(1,eresult->error_code);
   i = 0;
   if (np->update) {
     i = 1;
-    if (RefineMultiGrid(theMG,GM_REFINE_TRULY_LOCAL,GM_REFINE_PARALLEL,GM_REFINE_NOHEAPTEST) != GM_OK) NP_RETURN(1,eresult->error_code);
+    if (RefineMultiGrid(theMG,GM_REFINE_TRULY_LOCAL,GM_REFINE_PARALLEL,
+                        GM_REFINE_NOHEAPTEST) != GM_OK)
+      NP_RETURN(1,eresult->error_code);
     UserWrite("[r]");
   }
   if (np->interpolate) {
@@ -597,7 +604,8 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
       if (GSTATUS(theGrid,GSTATUS_INTERPOLATE)) {
         RESETGSTATUS(theGrid,GSTATUS_INTERPOLATE);
         if (StandardInterpolateNewVectors
-              (theGrid,(const VECDATA_DESC *)x) != NUM_OK) NP_RETURN(1,eresult->error_code);
+              (theGrid,(const VECDATA_DESC *)x) != NUM_OK)
+          NP_RETURN(1,eresult->error_code);
         UserWriteF(" [i%d]",i);
       }
     }
