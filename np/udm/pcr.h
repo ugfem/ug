@@ -63,11 +63,6 @@
 #define PCR_AVERAGE_SD                  4
 #define PCR_INTERN_SD                   5
 
-#define OPTIONLEN                       32
-#define OPTIONLENSTR            "31"
-#define VALUELEN                        64
-#define VALUELENSTR                     "63"
-
 /****************************************************************************/
 /*																			*/
 /* function declarations													*/

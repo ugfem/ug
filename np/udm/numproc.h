@@ -90,6 +90,6 @@ typedef struct
 INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct);
 INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname);
 
-NP_BASE *GetNumProcByName (MULTIGRID *theMG, char *name);
+NP_BASE *GetNumProcByName (MULTIGRID *theMG, char *objectname, char *classname);
 
 #endif

@@ -38,6 +38,8 @@
 #include "ugenv.h"
 #include "devices.h"
 
+#include "formats.h"
+#include "pcr.h"
 #include "np.h"
 
 /****************************************************************************/
@@ -393,6 +395,8 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
     return (NULL);
 
   vd = GetVecDataDescByName(theMG,value);
+  if (vd == NULL)
+    vd = CreateVecDescOfTemplate (theMG,value,NULL);
   if (vd != NULL) VM_LOCKED(vd) = 1;
 
   return(vd);
@@ -434,6 +438,9 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, char *name,
     return (NULL);
 
   md = GetMatDataDescByName(theMG,value);
+  if (md == NULL)
+    md = CreateMatDescOfTemplate (theMG,value,NULL);
+
   if (md != NULL) VM_LOCKED(md) = 1;
 
   return(md);
@@ -444,11 +451,13 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, char *name,
    ReadArgvNumProc - Read command strings
 
    SYNOPSIS:
-   NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, char *name, INT argc, char **argv);
+   NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, char *name, char *class,
+   INT argc, char **argv);
 
    PARAMETERS:
    .  theMG - pointer to a multigrid
    .  name - name of the argument
+   .  class - name of the class
    .  argc - argument counter
    .  argv - argument vector
 
@@ -463,7 +472,8 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, char *name,
    D*/
 /****************************************************************************/
 
-NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, char *name, INT argc, char **argv)
+NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, char *name, char *class,
+                          INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN],value[VALUELEN];
@@ -473,7 +483,7 @@ NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, char *name, INT argc, char **argv)
                expandfmt(CONCAT5("%",OPTIONLENSTR,"[a-zA-Z0-9_] %",
                                  VALUELENSTR,"[ -~]")),option,value)==2)
       if (strcmp(option,name) == 0)
-        return(GetNumProcByName(theMG,value));
+        return(GetNumProcByName(theMG,value,class));
 
   return (NULL);
 }

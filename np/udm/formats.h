@@ -31,6 +31,7 @@
 #define __FORMATS__
 
 #include "gm.h"
+#include "np.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -59,6 +60,11 @@
 /* function declarations                                                    */
 /*                                                                          */
 /****************************************************************************/
+
+VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
+                                       char *name, char *template);
+MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
+                                       char *name, char *template);
 
 INT CreateFormatCmd                             (INT argc, char **argv);
 INT CreateVecDescCmd            (MULTIGRID *theMG, INT argc, char **argv);

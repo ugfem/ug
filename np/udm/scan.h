@@ -78,7 +78,7 @@ VECDATA_DESC *ReadArgvVecDesc      (MULTIGRID *theMG, char *name,
 MATDATA_DESC *ReadArgvMatDesc      (MULTIGRID *theMG, char *name,
                                     INT argc, char **argv);
 
-NP_BASE      *ReadArgvNumProc      (MULTIGRID *theMG, char *name,
+NP_BASE      *ReadArgvNumProc      (MULTIGRID *theMG, char *name, char *class,
                                     INT argc, char **argv);
 
 /* tools for VEC_SCALAR                                                     */

@@ -254,6 +254,52 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
   return (vd);
 }
 
+VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, VECDATA_DESC *theVD,
+                                char *name, SHORT *NCmpInType, SHORT *Comps)
+{
+  VECDATA_DESC *vd;
+  SHORT offset[NVECOFFSETS];
+  SHORT *offptr;
+  INT j,tp,ncmp,size;
+
+  if (theMG == NULL)
+    return (NULL);
+
+  if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
+  if (ChangeEnvDir("Vectors") == NULL)
+    MakeEnvItem("Vectors",VectorDirID,sizeof(ENVDIR));
+  if (ChangeEnvDir("Vectors") == NULL) return (NULL);
+
+  if (name == NULL)
+    if (GetNewVectorName(theMG,name)) return (NULL);
+  ConstructVecOffsets(NCmpInType,offset);
+  ncmp = offset[NVECTYPES];
+  offptr = VD_OFFSETPTR(theVD);
+  if (ncmp <= 0) return (NULL);
+  size = sizeof(VECDATA_DESC)+(ncmp-1)*sizeof(SHORT);
+  vd = (VECDATA_DESC *) MakeEnvItem (name,VectorVarID,size);
+  if (vd == NULL) return (NULL);
+
+  /* fill data in vec data desc */
+  for (tp=0; tp<NVECTYPES; tp++) {
+    VD_NCMPS_IN_TYPE(vd,tp) = NCmpInType[tp];
+    for (j=0; j<NCmpInType[tp]; j++) {
+      VM_COMP_NAME(vd,offset[tp]+j) =
+        VM_COMP_NAME(theVD,offptr[tp]+Comps[tp]+j);
+      VD_CMP_OF_TYPE(vd,tp,j) = VD_CMP_OF_TYPE(theVD,tp,Comps[tp]+j);
+    }
+  }
+  for (tp=0; tp<NVECOFFSETS; tp++)
+    VD_OFFSET(vd,tp) = offset[tp];
+
+  /* fill fields with scalar properties */
+  SetScalVecSettings(vd);
+  VM_LOCKED(vd) = 0;
+
+  return (vd);
+}
+
 /****************************************************************************/
 /*D
    CreateMatDesc - create a matrix and fill extra data
@@ -408,6 +454,57 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
       if (READ_DR_MAT_FLAG(theMG,tp,j)) continue;
       Comp[i++] = j;
       SET_DR_MAT_FLAG(theMG,tp,j);
+    }
+  }
+  for (tp=0; tp<NMATOFFSETS; tp++)
+    MD_MTYPE_OFFSET(md,tp) = offset[tp];
+
+  /* fill fields with scalar properties */
+  SetScalMatSettings(md);
+  VM_LOCKED(md) = 0;
+
+  return (md);
+}
+
+MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *theMD,
+                                char *name, SHORT *RowsInType,
+                                SHORT *ColsInType, SHORT *Comps)
+{
+  MATDATA_DESC *md;
+  SHORT offset[NVECOFFSETS],*Comp;
+  SHORT *offptr;
+  INT j,tp,ncmp,size;
+
+  if (theMG == NULL)
+    return (NULL);
+
+  if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
+  if (ChangeEnvDir("Matrices") == NULL)
+    MakeEnvItem("Matrices",MatrixDirID,sizeof(ENVDIR));
+  if (ChangeEnvDir("Matrices") == NULL) return (NULL);
+
+  if (name == NULL)
+    if (GetNewMatrixName(theMG,name)) return (NULL);
+  ConstructMatOffsets(RowsInType,ColsInType,offset);
+  ncmp = offset[NMATTYPES];
+  offptr = MD_OFFSETPTR(theMD);
+  if (ncmp <= 0) return (NULL);
+  size = sizeof(MATDATA_DESC)+(ncmp-1)*sizeof(SHORT);
+  md = (MATDATA_DESC *) MakeEnvItem (name,MatrixVarID,size);
+  if (md == NULL) return (NULL);
+
+  /* fill data in vec data desc */
+  for (tp=0; tp<NMATTYPES; tp++) {
+    MD_ROWS_IN_MTYPE(md,tp) = RowsInType[tp];
+    MD_COLS_IN_MTYPE(md,tp) = ColsInType[tp];
+    for (j=0; j<RowsInType[tp]*ColsInType[tp]; j++) {
+      VM_COMP_NAME(md,offset[tp]+2*j) =
+        VM_COMP_NAME(theMD,offptr[tp]+Comps[tp]+2*j);
+      VM_COMP_NAME(md,offset[tp]+2*j+1) =
+        VM_COMP_NAME(theMD,offptr[tp]+Comps[tp]+2*j+1);
+      MD_MCMP_OF_MTYPE(md,tp,j) =
+        MD_MCMP_OF_MTYPE(theMD,tp,Comps[tp]+j);
     }
   }
   for (tp=0; tp<NMATOFFSETS; tp++)
@@ -698,7 +795,7 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 
 /****************************************************************************/
 /*D
-   AllocMDfromMD - dynamic matrix allocation
+   AllocMDFromMD - dynamic matrix allocation
 
    SYNOPSIS:
    INT AllocMDfromMD (MULTIGRID *theMG, INT fl, INT tl,
@@ -721,7 +818,7 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
  */
 /****************************************************************************/
 
-INT AllocMDfromMD (MULTIGRID *theMG, INT fl, INT tl,
+INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
                    MATDATA_DESC *template_desc, MATDATA_DESC **new_desc)
 {
   INT i,tp;
