@@ -443,10 +443,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
   np->transfer.x = ReadArgvVecDesc(np->transfer.base.mg,"x",argc,argv);
   np->transfer.b = ReadArgvVecDesc(np->transfer.base.mg,"b",argc,argv);
 
-  if ((np->transfer.A!=NULL)&&(np->transfer.x!=NULL)&&(np->transfer.b!=NULL))
-    return(NP_EXECUTABLE);
-  else
-    return(NP_ACTIVE);
+  return(NP_EXECUTABLE);
 }
 
 
@@ -651,6 +648,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                aggLimit has been set to a value that indicates that
                coarse grid agglomeration is desired. */
         if (level>agglevel && np->levelLimit>=np->aggLimit) {
+          PRINTDEBUG(np,1,("%d: start aggl on level %d\n",me,level));
           AMGAgglomerate(theMG);
           l_amgmatrix_collect(theGrid,A);
           agglevel = level;
@@ -660,6 +658,8 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                 #endif
         break;
       }
+
+      PRINTDEBUG(np,1,("%d: AGG %d agglev %d\n",me,level-1,agglevel));
 
       if (np->MarkStrong != NULL) {
         UnmarkAll(theGrid,NULL,0.0);
@@ -673,6 +673,8 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                         #endif
       if (breakflag) break;
 
+      PRINTDEBUG(np,1,("%d: breakflag coarsen %d\n",me,breakflag));
+
       newGrid=theGrid->coarser;
       ASSERT(newGrid!=NULL);
 
@@ -682,6 +684,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         REP_ERR_RETURN(1);
       }
             #endif
+
       if ((result[0]=(np->SetupIR)(theGrid,A,NULL /*preliminary!*/))!=0)
         REP_ERR_RETURN(result[0]);
       if (AllocMDFromMD(theMG,level-1,level-1,A,&A)) {
@@ -765,10 +768,25 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         REP_ERR_RETURN(1);
       if (dmatset(theMG,level-1,level-1,ALL_VECTORS,A,0.0) != NUM_OK)
         REP_ERR_RETURN(1);
-      if ((result[0]=(np->SetupCG)(theGrid,A,NULL /* preliminary!! */,
+      if ((result[0]=(np->SetupCG)(GRID_ON_LEVEL(theMG,level),
+                                   A,NULL /* preliminary!! */,
                                    np->symmetric))!=0)
         REP_ERR_RETURN(result[0]);
+      if (np->display == PCR_FULL_DISPLAY)
+        UserWriteF(" [%d:g]",level);
+                        #ifdef ModelP
+      if (level-1==np->aggLimit) {
+        l_amgmatrix_collect(GRID_ON_LEVEL(theMG,level-1),A);
+        agglevel = level;
+        PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration"
+                         " on level %d due to aggLimit criterion\n",
+                         me,level-1));
+      }
+                        #endif
+
     }
+    if (np->display == PCR_FULL_DISPLAY)
+      UserWriteF("\n");
   }
   for (level=0; level>= theMG->bottomLevel; level--)
     if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b)) {
@@ -857,6 +875,15 @@ INT AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
   NP_AMG_TRANSFER *npa;
   INT result,level;
 
+  if (ReadArgvOption("dispose",argc,argv)) {
+    if (DisposeAMGLevels(theNP->mg) != 0) {
+      PrintErrorMessage('E',"AMGTransferPostProcess",
+                        "could not dispose AMG levels");
+      REP_ERR_RETURN(1);
+    }
+    UserWriteF("amg disposed\n");
+    return(0);
+  }
   if ((level = CURRENTLEVEL(theNP->mg))!=0)
   {
     PrintErrorMessage('E',"AMGTransferExecute",
