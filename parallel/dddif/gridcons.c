@@ -288,10 +288,12 @@ void dddif_SetOverlapPriorities (GRID *theGrid)
 
 INT CheckInterfaces(GRID *theGrid)
 {
-  /* check ddd interface consistency */
-  DDD_ConsCheck();
+  int errors = 0;
 
-  return(GM_OK);
+  /* check ddd interface consistency */
+  errors += DDD_ConsCheck();
+
+  return(errors);
 }
 
 /****************************************************************************/

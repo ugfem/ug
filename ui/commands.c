@@ -6690,12 +6690,7 @@ static INT CheckCommand (INT argc, char **argv)
                 #else
     if (CheckGrid(theGrid,checkgeom,checkalgebra,checklists,checkif)!=GM_OK)
                 #endif
-    {
       err++;
-      UserWriteF(", grid BAD");
-    }
-    else
-      UserWriteF(", grid ok");
 
     UserWrite("]\n");
   }

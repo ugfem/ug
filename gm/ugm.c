@@ -4601,12 +4601,12 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
     UserWrite("   ");
     for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     {
-      sprintf(buffer," N%d=" ID_FFMTX,i,ID_PRTX(CORNER(theElement,i)));
+      sprintf(buffer," N%d=" ID_FMTX,i,ID_PRTX(CORNER(theElement,i)));
       UserWrite(buffer);
     }
     if (EFATHER(theElement)!=NULL)
     {
-      sprintf(buffer,"FA=%ld ",(long)ID(EFATHER(theElement)));
+      sprintf(buffer," FA=%ld ",(long)ID(EFATHER(theElement)));
       UserWrite(buffer);
     }
     UserWrite("\n");
@@ -5053,8 +5053,7 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT ma
     }
 }
 
-#ifdef __TWODIM__
-static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, INT *NodeError)
+static INT CheckElementold (ELEMENT *theElement, INT *SideError, INT *EdgeError, INT *NodeError)
 {
   int i,j,k,n;
   EDGE *theEdge;
@@ -5120,7 +5119,7 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   return (0);
 }
 
-INT CheckGeometry (GRID *theGrid) /* 2D VERSION */
+INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
 {
   NODE *theNode;
   ELEMENT *theElement;
@@ -5128,32 +5127,11 @@ INT CheckGeometry (GRID *theGrid) /* 2D VERSION */
   int i,j;
   INT SideError, EdgeError, NodeError,count,n;
 
-  /* reset used flags
-     for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-     {
-     #ifdef Debug
-     #ifdef ModelP
-          printf("%2d: CheckGeometry:   n=%x\n",me,theNode);
-     #endif
-     #endif
-
-          SETUSED(theNode,0);
-          for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
-            SETUSED(MYEDGE(theLink),0);
-          }
-     }
-
-     #ifdef Debug
-     #ifdef ModelP
-     printf("%2d: CheckGeometry: all nodes and links are SETUSED\n",me);
-     #endif
-   #endif */
-
   /* check neighbors and edges of elements */
   for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     n = SIDES_OF_ELEM(theElement);
-    if (CheckElement(theElement, &SideError, &EdgeError, &NodeError)==0) continue;
+    if (CheckElementold(theElement, &SideError, &EdgeError, &NodeError)==0) continue;
     sprintf(buffer,"ELEM " EID_FMTE ":\n", EID_PRTE(theElement));
     UserWrite(buffer);
 
@@ -5315,10 +5293,9 @@ INT CheckGeometry (GRID *theGrid) /* 2D VERSION */
   }
   return(GM_OK);
 }
-#endif
 
-#ifdef __THREEDIM__
-static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, INT *NodeError, INT *ESonError, INT *NSonError)
+static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError,
+                         INT *NodeError, INT *ESonError, INT *NSonError)
 {
   INT i,j,k,l,n;
   NODE *theNode;
@@ -5332,18 +5309,23 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   *EdgeError = 0;
   *ESonError = 0;
   *NSonError = 0;
-  if (ECLASS(theElement)!=YELLOW_CLASS)
-    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+
+  /* check side information */
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+  {
+    NbElement = NBELEM(theElement,i);
+    if (NbElement != NULL)
     {
-      NbElement = NBELEM(theElement,i);
-      if (NbElement != NULL)
+      /* lets see if NbElement has the neighbor theElement */
+      for (j=0; j<SIDES_OF_ELEM(NbElement); j++)
+        if (NBELEM(NbElement,j) == theElement)
+          break;
+      if (j == SIDES_OF_ELEM(NbElement))
+        *SideError |= (1<<i);
+
+
+      if (ECLASS(theElement)!=YELLOW_CLASS)
       {
-        /* lets see if NbElement has the neighbor theElement */
-        for (j=0; j<SIDES_OF_ELEM(NbElement); j++)
-          if (NBELEM(NbElement,j) == theElement)
-            break;
-        if (j == SIDES_OF_ELEM(NbElement))
-          *SideError |= (1<<i);
         n = CORNERS_OF_SIDE(theElement,i);
         for (k=0; k<n; k++)
           if (CORNER(theElement,CORNER_OF_SIDE(theElement,i,k))
@@ -5355,58 +5337,41 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
           if (CORNER(theElement,
                      CORNER_OF_SIDE(theElement,i,(n+k-l)%n))
               != CORNER(NbElement,CORNER_OF_SIDE(NbElement,j,l)))
+          {
             *SideError |= (1<<i);
-      }
-      else
-      {
-        if (OBJT(theElement) == IEOBJ)
-          *SideError |= (1<<(i+MAX_SIDES_OF_ELEM));
-        else
-        {
-          if (SIDE_ON_BND(theElement,i))
-          {
-            for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
-            {
-              theVertex = MYVERTEX(CORNER(theElement,(k=CORNER_OF_SIDE(theElement,i,j))));
-              if (OBJT(theVertex) == IVOBJ)
-                *NodeError |= (1<<(k+MAX_CORNERS_OF_ELEM));
-            }
           }
-          else
-            *SideError |= (1<<(i+2*MAX_SIDES_OF_ELEM));
-        }
       }
     }
-  else
-    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+    else
     {
-      NbElement = NBELEM(theElement,i);
-      if (NbElement != NULL)
+      if (ECLASS(theElement)!=YELLOW_CLASS)
+        if (OBJT(theElement) == IEOBJ)
+                                #ifdef ModelP
+          if (DDD_InfoPriority(PARHDRE(theElement)) == PrioMaster)
+                                #endif
+          *SideError |= (1<<(i+MAX_SIDES_OF_ELEM));
+
+      if (OBJT(theElement) == BEOBJ)
       {
-        /* lets see if NbElement has the neighbor theElement */
-        for (j=0; j<SIDES_OF_ELEM(NbElement); j++)
-          if (NBELEM(NbElement,j) == theElement)
-            break;
-        if (j == SIDES_OF_ELEM(NbElement))
-          *SideError |= (1<<i);
-      }
-      else
-      {
-        if (OBJT(theElement) == BEOBJ)
+        if (SIDE_ON_BND(theElement,i))
         {
-          if (SIDE_ON_BND(theElement,i))
+          for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
-            {
-              theVertex = MYVERTEX(CORNER(theElement,(k=CORNER_OF_SIDE(theElement,i,j))));
-              if (OBJT(theVertex) == IVOBJ)
-                *NodeError |= (i<<(k+MAX_CORNERS_OF_ELEM));
-            }
+            theVertex = MYVERTEX(CORNER(theElement,(k=CORNER_OF_SIDE(theElement,i,j))));
+            if (OBJT(theVertex) == IVOBJ)
+              *NodeError |= (1<<(k+MAX_CORNERS_OF_ELEM));
           }
         }
+        else if (ECLASS(theElement)!=YELLOW_CLASS)
+                                        #ifdef ModelP
+          if (DDD_InfoPriority(PARHDRE(theElement)) == PrioMaster)
+                                        #endif
+          *SideError |= (1<<(i+2*MAX_SIDES_OF_ELEM));
       }
     }
+  }
 
+  /* check edge information */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
     SETUSED(CORNER(theElement,i),1);
@@ -5414,32 +5379,36 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
 
   for (i=0; i<EDGES_OF_ELEM(theElement); i++)
   {
-    theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
-                      CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
     assert(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0))!=NULL);
     assert(CORNER(theElement,CORNER_OF_EDGE(theElement,i,1))!=NULL);
-    if (theEdge==NULL) {
+
+    theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
+                      CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+    if (theEdge==NULL)
+    {
       *EdgeError |= 1<<i;
       continue;
     }
     else
       SETUSED(theEdge,1);
+
     theNode = MIDNODE(theEdge);
     if (theNode == NULL)
       continue;
+
     theVertex = MYVERTEX(theNode);
     if (VFATHER(theVertex) != theElement)
       continue;
-    if (i != ONEDGE(theVertex)) {
-                        #ifdef ModelP
-      printf("%d: EID=%d VID=%d edgenumber of vertex wrong\n",me,ID(theElement),ID(theVertex));
-                        #else
-      printf("EID=%d VID=%d edgenumber of vertex wrong\n",ID(theElement),ID(theVertex));
-                        #endif
+
+    if (i != ONEDGE(theVertex))
+    {
+      UserWriteF(PFMT "EID=%d VID=%d edgenumber of vertex wrong\n",
+                 me,ID(theElement),ID(theVertex));
       *EdgeError |= 1<<i;
     }
   }
 
+  /* check son information */
   if (NSONS(theElement)!=0)
   {
     if (GetSons(theElement,SonList))
@@ -5454,8 +5423,8 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
 
       if (REFINE(theElement)==0)
       {
-        sprintf(buffer,"ELEM(ID=%d): element is not refined but has NSONS=%d\n",ID(theElement),NSONS(theElement));
-        UserWrite(buffer);
+        UserWriteF("ELEM(" EID_FMTX "): element is not refined but "
+                   "has NSONS=%d\n",EID_PRTX(theElement),NSONS(theElement));
       }
     }
   }
@@ -5466,14 +5435,15 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   return (0);
 }
 
-INT CheckGeometry (GRID *theGrid) /* 3D VERSION */
+INT CheckGeometry (GRID *theGrid)
 {
   NODE *theNode;
   ELEMENT *theElement;
+  EDGE *theEdge;
   LINK *theLink;
   int i,j;
   INT SideError, EdgeError, NodeError, ESonError, NSonError, count;
-  EDGE *theEdge;
+  INT errors = 0;
 
   /* reset used flags */
   for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
@@ -5483,159 +5453,191 @@ INT CheckGeometry (GRID *theGrid) /* 3D VERSION */
       SETUSED(MYEDGE(theLink),0);
   }
 
-  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  /* check elements */
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
+       theElement=SUCCE(theElement))
   {
-    if (CheckElement(theElement,&SideError,&EdgeError,&NodeError,&ESonError,&NSonError)==0) continue;
-                #ifdef ModelP
-    sprintf(buffer,"ELEM %ld/%08x/%x:\n",(long)ID(theElement),
-            DDD_InfoGlobalId(PARHDRE(theElement)),theElement);
-                #else
-    sprintf(buffer,"ELEM %ld:\n",(long)ID(theElement));
-                #endif
-    UserWrite(buffer);
+    if (CheckElement(theElement,&SideError,&EdgeError,
+                     &NodeError,&ESonError,&NSonError)==0) continue;
+
+    UserWriteF("ELEM=" EID_FMTX "\n",EID_PRTX(theElement));
+
+    /* evaluate side information */
     if (SideError)
       for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       {
+        /* back pointer failure */
         if (SideError & 1<<i)
         {
+          errors++;
+
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))));
-            UserWrite(buffer);
+            UserWriteF(ID_FMTX,ID_PRTX(CORNER(theElement,
+                                              CORNER_OF_SIDE(theElement,i,j))));
+
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
           UserWrite(") has neighbour but a backPtr does not exist\n");
         }
+
+        /* neighbor pointer failure */
         if (SideError & 1<<(i+MAX_SIDES_OF_ELEM))
         {
+          errors++;
+
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))));
-            UserWrite(buffer);
+            UserWriteF(ID_FMTX,ID_PRTX(CORNER(theElement,
+                                              CORNER_OF_SIDE(theElement,i,j))));
+
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
           UserWrite(") has no neighbour but element is IEOBJ\n");
         }
+
+        /* boundary failure */
         if (SideError & 1<<(i+2*MAX_SIDES_OF_ELEM))
         {
+          errors++;
+
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))));
-            UserWrite(buffer);
+            UserWriteF(ID_FMTX,ID_PRTX(CORNER(theElement,
+                                              CORNER_OF_SIDE(theElement,i,j))));
+
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
-          UserWrite(") has no neighbour, element is BEOBJ but there is no SIDE\n");
+          UserWrite(") has no neighbour, element is BEOBJ "
+                    "but there is no SIDE\n");
         }
       }
+
+    /* evaluate edge information */
     if (EdgeError)
       for (i=0; i<EDGES_OF_ELEM(theElement); i++)
       {
         if (!(EdgeError & 1<<i)) continue;
-                                #ifdef ModelP
-        sprintf(buffer,"   EDGE(%ld,%ld) is missing\n",(long)ID(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0))),(long)ID(CORNER(theElement,CORNER_OF_EDGE(theElement,i,1))));
-        UserWrite(buffer);
-                                #endif
+
+        errors++;
+        UserWriteF("   EDGE(" ID_FMTX " , " ID_FMTX ") is missing\n",
+                   ID_PRTX(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0))),
+                   ID_PRTX(CORNER(theElement,CORNER_OF_EDGE(theElement,i,1))));
       }
 
+    /* evaluate node information */
     if (NodeError)
       for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
       {
         if (NodeError & (1<<i))
         {
-          sprintf(buffer,"   CORNER %ld is BVOBJ, ids from elementside and vertexsegment are not consistent\n",(long)ID(CORNER(theElement,i)));
-          UserWrite(buffer);
+          errors++;
+          UserWriteF("   CORNER=" ID_FMTX " is BVOBJ,"
+                     " ids from elementside "
+                     "and vertexsegment are not consistent\n",
+                     ID_PRTX(CORNER(theElement,i)));
         }
         if (NodeError & (1<<(i+MAX_CORNERS_OF_ELEM)))
         {
-          sprintf(buffer,"   CORNER %ld is IVOBJ, but lies on elementside\n",(long)ID(CORNER(theElement,i)));
-          UserWrite(buffer);
+          errors++;
+          UserWriteF("   CORNER " ID_FMTX " is IVOBJ, but lies on "
+                     "elementside\n",ID_PRTX(CORNER(theElement,i)));
         }
       }
+
+    /* evaluate son information */
     if (ESonError)
     {
       for (i=0; i<NSONS(theElement); i++)
       {
         if ((ESonError & 1<<i))
         {
-          sprintf(buffer,"   ESON(%d) has wrong EFATHER pointer\n",i);
-          UserWrite(buffer);
+          errors++;
+          UserWriteF("   ESON(%d) has wrong EFATHER "
+                     "pointer\n",i);
         }
       }
     }
+
     if (NSonError)
     {
       for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
       {
         if (NSonError & (1<<i))
         {
-          sprintf(buffer,"   SONNODE(CORNER %d) != CORNER(ESON)\n",i);
-          UserWrite(buffer);
+          errors++;
+          UserWriteF("   SONNODE(CORNER %d) != CORNER(ESON)\n",i);
         }
         if (NSonError & (1<<(i+MAX_CORNERS_OF_ELEM)))
         {
-          sprintf(buffer,"   CORNER %d != EFATHER(CORNER(ESON))\n",i);
-          UserWrite(buffer);
+          errors++;
+          UserWriteF("   CORNER %d != EFATHER(CORNER(ESON))\n",i);
         }
       }
 
       for (i=0; i<MAX_EDGES_OF_ELEM; i++)
       {
 
-        if (NSonError & (1<<(i+2*MAX_CORNERS_OF_ELEM)))
+        if (NSonError & (1<<(i+MAX_CORNERS_OF_ELEM)))
         {
-          sprintf(buffer,"   MIDNODE(edge %d) != CORNER(ESON)\n",i);
-          UserWrite(buffer);
+          errors++;
+          UserWriteF("   MIDNODE(edge %d) != CORNER(ESON)\n",i);
         }
       }
-      if (NSonError & (1<<(6+2*MAX_CORNERS_OF_ELEM)))
+
+      if (NSonError & (1<<(MAX_EDGES_OF_ELEM+2*MAX_CORNERS_OF_ELEM)))
       {
-        sprintf(buffer,"   NFATHER(CENTERNODE(ESON)) != NULL\n");
-        UserWrite(buffer);
+        errors++;
+        UserWriteF("   NFATHER(CENTERNODE(ESON)) != NULL\n");
       }
     }
   }
 
   /* look for dead edges */
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
-                    #ifdef ModelP
       theEdge = MYEDGE(theLink);
       if (!USED(theEdge))
       {
-        UserWriteF("edge between %ld and %ld has no element, NO_OF_ELEM=%d \n",
-                   (long)ID(theNode),(long)ID(NBNODE(theLink)),NO_OF_ELEM(theEdge));
+        errors++;
+        UserWriteF("edge between " ID_FMTX " and " ID_FMTX
+                   " has no element, NO_OF_ELEM=%d \n",
+                   ID_PRTX(theNode),ID_PRTX(NBNODE(theLink)),
+                   NO_OF_ELEM(theEdge));
+
+                                #ifdef Debug
         {
           NODE *nb;
+          LINK *theLink1;
+
           nb = NBNODE(theLink);
+          UserWriteF("linklist of nbnode %d:",ID(nb));
+
+          for (theLink1=START(nb); theLink1!=NULL;
+               theLink1=NEXT(theLink1))
           {
-            LINK *theLink;
-            UserWriteF("linklist of nbnode %d:",ID(nb));
-            for (theLink=START(nb); theLink!=NULL; theLink=NEXT(theLink)) {
-              UserWriteF(" %d-%d",ID(NBNODE(theLink)),ID(NBNODE(REVERSE(theLink))));
-            }
+            UserWriteF(" %d-%d",ID(NBNODE(theLink1)),
+                       ID(NBNODE(REVERSE(theLink1))));
           }
           UserWrite("\n");
         }
+                                #endif
       }
-                        #endif
     }
   }
 
   /* look for dead nodes */
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     if (!USED(theNode))
     {
-                    #ifdef ModelP
-      sprintf(buffer,"node %ld is dead ",(long)ID(theNode));
-      UserWrite(buffer);
-      UserWrite("\n");
-                        #endif
+      errors++;
+      UserWriteF("node=" ID_FMTX " is dead\n",ID_PRTX(theNode));
     }
     else
       SETUSED(theNode,0);
@@ -5643,53 +5645,66 @@ INT CheckGeometry (GRID *theGrid) /* 3D VERSION */
 
   /* check number of elem and their pointers */
   count = 0;
-  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
+       theElement=SUCCE(theElement))
   {
     if (SUCCE(theElement)!=NULL)
     {
-      if (OBJT(SUCCE(theElement))!=IEOBJ && OBJT(SUCCE(theElement))!=BEOBJ)
+      if (OBJT(SUCCE(theElement))!=IEOBJ &&
+          OBJT(SUCCE(theElement))!=BEOBJ)
       {
-        sprintf(buffer,"pointer of ELEM(%ld) (number %ld) to next element is no pointer to an element\n",(long)ID(theElement),(long)count);
-        UserWrite(buffer);
+        errors++;
+        UserWriteF("pointer of ELEM(" EID_FMTX ") (number %ld) "
+                   "to next element is no pointer to an element\n",
+                   EID_PRTX(theElement),(long)count);
         break;
       }
       if (PREDE(SUCCE(theElement))!=NULL)
       {
         if (PREDE(SUCCE(theElement))!=theElement)
         {
-          sprintf(buffer,"pointer of ELEM(%ld) (number %ld) to previous element is not the previous element\n",(long)ID(SUCCE(theElement)),(long)(count+1));
-          UserWrite(buffer);
+          errors++;
+          UserWriteF("pointer of ELEM(" EID_FMTX ") (number %ld) "
+                     "to previous element is not the previous element\n",
+                     EID_PRTX(SUCCE(theElement)),(long)(count+1));
         }
       }
+                        #ifndef ModelP
       else
       {
-        sprintf(buffer,"pointer of ELEM(%ld) (number %ld) to previous element is NULL\n",(long)ID(SUCCE(theElement)),(long)(count+1));
-        UserWrite(buffer);
+        errors++;
+        UserWriteF("pointer of ELEM(" EID_FMTX ") (number %ld) "
+                   "to previous element is NULL\n",
+                   EID_PRTX(SUCCE(theElement)),(long)(count+1));
       }
+                        #endif
     }
     count++;
   }
+
   if (FIRSTELEMENT(theGrid) != NULL)
     if (PREDE(FIRSTELEMENT(theGrid)) != NULL)
     {
-      sprintf(buffer,"first element of the grid has a previous 'element'\n");
-      UserWrite(buffer);
+      errors++;
+      UserWriteF("first element of the grid has a previous 'element'\n");
     }
+
   if (LASTELEMENT(theGrid) != NULL)
     if (SUCCE(LASTELEMENT(theGrid)) != NULL)
     {
-      sprintf(buffer,"last element of the grid has a following 'element'\n");
-      UserWrite(buffer);
+      errors++;
+      UserWriteF("last element of the grid has a following 'element'\n");
     }
-  if (count != theGrid->nElem)
+
+  if (count != NT(theGrid))
   {
-    sprintf(buffer,"there are %ld elements but %ld expected\n",(long)(count),(long)theGrid->nElem);
-    UserWrite(buffer);
+    errors++;
+    UserWriteF("there are %ld elements but %ld expected\n",(long)(count),
+               (long)NT(theGrid));
   }
 
-  return(GM_OK);
+  return(errors);
 }
-#endif
 
 INT CheckLists (GRID *theGrid)
 {
@@ -5737,7 +5752,9 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
                INT checkif)
 #endif
 {
-  INT error = GM_OK;
+  INT error               = 0;
+  INT errors              = 0;
+  INT totalerrors = 0;
 
   /* check geometrical data structures */
   if (checkgeom)
@@ -5745,10 +5762,11 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
     UserWrite(" geometry:");
     fflush(stdout);
 
-    if (CheckGeometry(theGrid) != GM_OK)
+    if ((errors = CheckGeometry(theGrid)) != GM_OK)
     {
+      totalerrors += errors;
       error++;
-      UserWrite(" BAD");
+      UserWriteF(" geometry BAD: %d errors",errors);
       fflush(stdout);
     }
     else
@@ -5763,10 +5781,11 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
     UserWrite(", algebra:");
     fflush(stdout);
 
-    if (CheckAlgebra(theGrid) != GM_OK)
+    if (errors = CheckAlgebra(theGrid) != GM_OK)
     {
+      totalerrors += errors;
       error++;
-      UserWrite(" BAD");
+      UserWriteF(" algebra BAD: %d errors",errors);
       fflush(stdout);
     }
     else
@@ -5781,10 +5800,11 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
     UserWrite(", lists:");
     fflush(stdout);
 
-    if (CheckLists(theGrid) != GM_OK)
+    if (errors = CheckLists(theGrid) != GM_OK)
     {
+      totalerrors += errors;
       error++;
-      UserWrite(" BAD");
+      UserWriteF(" lists BAD: %d errors",errors);
       fflush(stdout);
     }
     else
@@ -5800,10 +5820,11 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
     UserWrite(", interface:");
     fflush(stdout);
 
-    if (CheckInterfaces(theGrid) != GM_OK)
+    if (errors = CheckInterfaces(theGrid) != GM_OK)
     {
+      totalerrors += errors;
       error++;
-      UserWrite(" BAD");
+      UserWriteF(" interfaces BAD: %d errors",errors);
       fflush(stdout);
     }
     else
@@ -5812,6 +5833,11 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
     }
   }
         #endif
+
+  if (totalerrors)
+    UserWriteF(", grid BAD: %d checks has %d totalerrors",error,totalerrors);
+  else
+    UserWrite(", grid ok");
 
   return(error);
 }

@@ -2411,7 +2411,7 @@ INT PrepareAlgebraModification (MULTIGRID *theMG)
    RETURN VALUE:
    INT
    .n     0 if ok
-   .n     1 if error occured.
+   .n     != 0 if errors occured.
    D*/
 /****************************************************************************/
 
@@ -2422,12 +2422,11 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
   VECTOR *vec1[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
   CONNECTION *theCon;
   char buffer[256], msg[128];
-  INT ReturnCode;
+  INT errors = 0;
 
   sprintf(msg,"ERROR: missing connection between element %lu and %lu: ",
           (long)ID(Elem0),(long)ID(Elem1));
 
-  ReturnCode = GM_OK;
   cnt0 = GetAllVectorsOfElement(theGrid,Elem0,vec0);
   if (Elem0 == Elem1)
   {
@@ -2442,26 +2441,24 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
             theCon = GetConnection(vec0[i],vec0[j]);
             if (theCon==NULL)
             {
+              errors++;
               UserWrite(msg);
-              sprintf(buffer,"vec0[%d]=" VINDEX_FMTX
-                      " to vec0[%d]=" VINDEX_FMTX "\n",
-                      i,VINDEX_PRT(vec0[i]),
-                      j,VINDEX_PRT(vec0[j]));
-              UserWrite(buffer);
-              ReturnCode = GM_ERROR;
+              UserWriteF("vec0[%d]=" VINDEX_FMTX
+                         " to vec0[%d]=" VINDEX_FMTX "\n",
+                         i,VINDEX_PRT(vec0[i]),
+                         j,VINDEX_PRT(vec0[j]));
             }
             else
             {
               theCon = GetConnection(vec0[j],vec0[i]);
               if (theCon==NULL)
               {
+                errors++;
                 UserWrite(msg);
-                sprintf(buffer,"vec0[%d]=" VINDEX_FMTX
-                        " to vec0[%d]=" VINDEX_FMTX "\n",
-                        j,VINDEX_PRTX(vec0[j]),
-                        i,VINDEX_PRTX(vec0[i]));
-                UserWrite(buffer);
-                ReturnCode = GM_ERROR;
+                UserWriteF("vec0[%d]=" VINDEX_FMTX
+                           " to vec0[%d]=" VINDEX_FMTX "\n",
+                           j,VINDEX_PRTX(vec0[j]),
+                           i,VINDEX_PRTX(vec0[i]));
               }
               else
               {
@@ -2470,7 +2467,7 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
             }
           }
       }
-    return (ReturnCode);
+    return (errors);
   }
 
   cnt1 = GetAllVectorsOfElement(theGrid,Elem1,vec1);
@@ -2485,38 +2482,36 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
           theCon = GetConnection(vec0[i],vec1[j]);
           if (theCon==NULL)
           {
+            errors++;
             UserWrite(msg);
-            sprintf(buffer,"vec0[%d]=" VINDEX_FMTX
-                    " to vec1[%d]=" VINDEX_FMTX "\n",
-                    i,VINDEX_PRTX(vec0[i]),
-                    j,VINDEX_PRTX(vec1[j]));
-            UserWrite(buffer);
-            ReturnCode = GM_ERROR;
+            UserWriteF("vec0[%d]=" VINDEX_FMTX
+                       " to vec1[%d]=" VINDEX_FMTX "\n",
+                       i,VINDEX_PRTX(vec0[i]),
+                       j,VINDEX_PRTX(vec1[j]));
           }
           else
           {
             theCon = GetConnection(vec1[j],vec0[i]);
             if (theCon == NULL)
             {
+              errors++;
               UserWrite(msg);
-              sprintf(buffer,"vec1[%d]=" VINDEX_FMTX
-                      " to vec0[%d]=%x/" VINDEX_FMTX "\n",
-                      j,VINDEX_PRTX(vec1[j]),
-                      i,VINDEX_PRTX(vec0[i]));
-              UserWrite(buffer);
-              ReturnCode = GM_ERROR;
+              UserWriteF("vec1[%d]=" VINDEX_FMTX
+                         " to vec0[%d]=%x/" VINDEX_FMTX "\n",
+                         j,VINDEX_PRTX(vec1[j]),
+                         i,VINDEX_PRTX(vec0[i]));
             }
             else
               SETCUSED(theCon,1);
           }
         }
     }
-  return (ReturnCode);
+  return (errors);
 }
 
-static ELEMENT *CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth, INT *MatSize)
+static INT CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth, INT *MatSize)
 {
-  int i;
+  int i,errors = 0;
   ELEMENT *theErrorElement;
 
   /* is anything to do ? */
@@ -2524,16 +2519,16 @@ static ELEMENT *CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *
 
   /* action */
   if (ActDepth>=0)
-    if (ElementElementCheck(theGrid,centerElement,theElement,ActDepth,ConDepth,MatSize))
-      return (centerElement);
+    if ((errors+=ElementElementCheck(theGrid,centerElement,theElement,ActDepth,ConDepth,MatSize))!=0)
+      return (errors);
 
   /* call all neighbors recursively */
   if (ActDepth<MaxDepth)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      if ((theErrorElement=CheckNeighborhood(theGrid,NBELEM(theElement,i),centerElement,ConDepth,ActDepth+1,MaxDepth,MatSize))!=NULL)
-        return(theErrorElement);
+      if ((errors+=CheckNeighborhood(theGrid,NBELEM(theElement,i),centerElement,ConDepth,ActDepth+1,MaxDepth,MatSize))!=0)
+        return(errors);
 
-  return (NULL);
+  return (0);
 }
 
 /****************************************************************************/
@@ -2541,7 +2536,7 @@ static ELEMENT *CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *
    ElementCheckConnection - Check connection of the element
 
    SYNOPSIS:
-   ELEMENT *ElementCheckConnection (GRID *theGrid, ELEMENT *theElement);
+   INT   ElementCheckConnection (GRID *theGrid, ELEMENT *theElement);
 
    PARAMETERS:
    .  theGrid - pointer to grid
@@ -2551,14 +2546,14 @@ static ELEMENT *CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *
    This function checks all connections of the given element.
 
    RETURN VALUE:
-   ELEMENT *
-   .n   pointer to  ELEMENT
-   .n   NULL if ok
-   .n   != NULL if error occured in that connection.
+   INT
+   .n   number of errors
+   .n   0 if ok
+   .n   != 0 if errors occured in that connection.
    D*/
 /****************************************************************************/
 
-ELEMENT *ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
+INT ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
 {
   FORMAT *theFormat;
   MULTIGRID *theMG;
@@ -2601,6 +2596,7 @@ INT CheckConnections (GRID *theGrid)
 {
   ELEMENT *theElement;
   INT errors;
+  INT error;
 
   errors = 0;
 
@@ -2608,11 +2604,15 @@ INT CheckConnections (GRID *theGrid)
        theElement!=NULL;
        theElement=SUCCE(theElement))
   {
-    if (ElementCheckConnection(theGrid,theElement)!=NULL)
-      errors++;
+    if(error=ElementCheckConnection(theGrid,theElement)!=0)
+    {
+      UserWriteF(PFMT "%d: element=" EID_FMTX " has bad connections\n",
+                 me, EID_PRTX(theElement));
+      errors+=error;
+    }
   }
 
-  if (errors>0) return(GM_ERROR);else return(GM_OK);
+  return(errors);
 }
 
 
@@ -2638,63 +2638,85 @@ INT CheckConnections (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString, VECTOR *theVector, int VectorType)
+static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString,
+                        VECTOR *theVector, int VectorType)
 {
   GEOM_OBJECT *VecObject;
-  INT error=GM_OK;
+  INT errors = 0;
 
-  if (theVector == NULL) {
-    UserWriteF("%d: %s ID=%ld  has NO VECTOR\n",me, ObjectString, ID(theObject));
-    error = GM_ERROR;
+  if (theVector == NULL)
+  {
+    errors++;
+    UserWriteF("%d: %s ID=%ld  has NO VECTOR\n",me, ObjectString,
+               ID(theObject));
   }
-  else {
+  else
+  {
     SETUSED(theVector,1);
 
     VecObject = VOBJECT(theVector);
-    if (VecObject == NULL) {
+    if (VecObject == NULL)
+    {
+      errors++;
       UserWriteF("%d: vector ID=%ld %s ID=%ld  has NO BACKPTR\n",
                  me, (long) ID(theVector), ObjectString, (long) ID(theObject));
-      error = GM_ERROR;
     }
-    else {
-      if (VTYPE(theVector) != VectorType) {
-        UserWriteF("%d: %s vector ID=%ld has incompatible type=%d, should be type=%d\n",
-                   me, ObjectString, (long) ID(theVector), VTYPE(theVector), VectorType);
-        error = GM_ERROR;
+    else
+    {
+      if (VTYPE(theVector) != VectorType)
+      {
+        errors++;
+        UserWriteF("%d: %s vector ID=%ld has incompatible type=%d, "
+                   "should be type=%d\n",
+                   me, ObjectString, (long) ID(theVector), VTYPE(theVector),
+                   VectorType);
       }
 
-      if (VecObject != theObject) {
-        if (OBJT(VecObject) != OBJT(theObject)) {
-          UserWriteF("%d: vector ID=%ld has type %s, but points to wrong obj=%x type OBJT=%ld\n",
-                     me, (long) ID(theVector), VecObject, (long) OBJT(VecObject));
-          error = GM_ERROR;
+      if (VecObject != theObject)
+      {
+        if (OBJT(VecObject) != OBJT(theObject))
+        {
+          errors++;
+          UserWriteF("%d: vector ID=%ld has type %s, but points "
+                     "to wrong obj=%x type OBJT=%ld\n",
+                     me, (long) ID(theVector), VecObject,
+                     (long) OBJT(VecObject));
         }
-        else {
+        else
+        {
                                         #ifdef __THREEDIM__
-          if (VectorType == SIDEVECTOR) {
+          if (VectorType == SIDEVECTOR)
+          {
             /* TODO: check side vector */
           }
           else
                                         #endif
           {
-            UserWriteF("%d: %s vector ID=%ld is referenced by obj0=%x, but points to wrong obj1=%x\n",
-                       me, ObjectString, (long) ID(theVector), theObject, VecObject);
+            errors++;
+            UserWriteF("%d: %s vector ID=%ld is referenced by "
+                       "obj0=%x, but points to wrong obj1=%x\n",
+                       me, ObjectString, (long) ID(theVector),
+                       theObject, VecObject);
                                                 #ifdef ModelP
             if (strcmp(ObjectString,"EDGE")==0)
-              UserWriteF("%d: obj0: n0=%d n1=%d  obj1: n0=%d n1=%d\n",me,
-                         DDD_InfoGlobalId(PARHDR(NBNODE(LINK0(&(theObject->ed))))),
-                         DDD_InfoGlobalId(PARHDR(NBNODE(LINK1(&(theObject->ed))))),
-                         DDD_InfoGlobalId(PARHDR(NBNODE(LINK0(&(VecObject->ed))))),
-                         DDD_InfoGlobalId(PARHDR(NBNODE(LINK1(&(VecObject->ed))))) );
+              UserWriteF("%d: obj0: n0=%d n1=%d  obj1: "
+                         "n0=%d n1=%d\n",me,
+                         DDD_InfoGlobalId(PARHDR(NBNODE(
+                                                   LINK0(&(theObject->ed))))),
+                         DDD_InfoGlobalId(PARHDR(NBNODE(
+                                                   LINK1(&(theObject->ed))))),
+                         DDD_InfoGlobalId(PARHDR(NBNODE(
+                                                   LINK0(&(VecObject->ed))))),
+                         DDD_InfoGlobalId(PARHDR(NBNODE(
+                                                   LINK1(&(VecObject->ed))))) );
                                                 #endif
-            error = GM_ERROR;
           }
         }
       }
     }
   }
 
-  return(error);
+  return(errors);
 }
 
 /****************************************************************************/
@@ -2709,7 +2731,7 @@ static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString, VECTOR *theV
 
    DESCRIPTION:
    This function checks the consistency of the algebraic data structures
-   and involves the interconnection between the geometric part.
+   including the interconnections between the geometric part.
    This function assumes a correct geometric data structure.
 
    RETURN VALUE:
@@ -2731,48 +2753,63 @@ INT CheckAlgebra (GRID *theGrid)
   INT i;
 #       endif
 
-  errors = GM_OK;
+  errors = 0;
 
   /* reset USED flag */
-  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector)) {
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+  {
     SETUSED(theVector,0);
   }
 
   /* check pointers to element, side, edge vector */
-  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
+       theElement=SUCCE(theElement))
+  {
 
     /* check element vectors */
-    if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR)) {
+    if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+    {
       theVector = EVECTOR(theElement);
-      errors += CheckVector((GEOM_OBJECT *) theElement, "ELEMENT", theVector, ELEMVECTOR);
+      errors += CheckVector((GEOM_OBJECT *) theElement, "ELEMENT",
+                            theVector, ELEMVECTOR);
     }
 
                 #ifdef __THREEDIM__
     /* check side vectors */
-    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR)) {
-      for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
+    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+    {
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+      {
         theVector = SVECTOR(theElement,i);
-        errors += CheckVector((GEOM_OBJECT *) theElement, "ELEMSIDE", theVector, SIDEVECTOR);
+        errors += CheckVector((GEOM_OBJECT *) theElement, "ELEMSIDE",
+                              theVector, SIDEVECTOR);
       }
     }
                 #endif
   }
 
-  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  {
 
     /* check node vectors */
-    if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR)) {
+    if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+    {
       theVector = NVECTOR(theNode);
-      errors += CheckVector((GEOM_OBJECT *) theNode, "NODE", theVector, NODEVECTOR);
+      errors += CheckVector((GEOM_OBJECT *) theNode, "NODE", theVector,
+                            NODEVECTOR);
     }
 
     /* check edge vectors */
-    if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR)) {
-      for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink)) {
+    if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+    {
+      for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+      {
         theEdge = GetEdge(theNode,NBNODE(theLink));
         if (theEdge != NULL) {
           theVector = EDVECTOR(theEdge);
-          errors += CheckVector((GEOM_OBJECT *) theEdge, "EDGE", theVector, EDGEVECTOR);
+          errors += CheckVector((GEOM_OBJECT *) theEdge, "EDGE",
+                                theVector, EDGEVECTOR);
         }
       }
     }
@@ -2784,7 +2821,9 @@ INT CheckAlgebra (GRID *theGrid)
   {
     if (USED(theVector) != 1)
     {
-      UserWriteF("%d: vector ID=%d NOT referenced by an geom_object: vtype=%d, objptr=%x",
+      errors++;
+      UserWriteF("%d: vector ID=%d NOT referenced by an geom_object: "
+                 "vtype=%d, objptr=%x",
                  me, ID(theVector), VTYPE(theVector), VOBJECT(theVector));
       if (VOBJECT(theVector) != NULL)
         UserWriteF(" objtype=%d\n",OBJT(VOBJECT(theVector)));
@@ -2836,6 +2875,7 @@ INT CheckAlgebra (GRID *theGrid)
 
       if (MDEST(Adj) != theVector)
       {
+        errors++;
         UserWriteF(PFMT "ERROR: dest=%x of adj matrix "
                    " unequal vec=" VINDEX_FMTX "\n",
                    me, MDEST(Adj),VINDEX_PRTX(theVector));
@@ -2846,6 +2886,7 @@ INT CheckAlgebra (GRID *theGrid)
                         #endif
       if (MUSED(theMatrix) != 1)
       {
+        errors++;
         UserWriteF(PFMT "ERROR: connection dead vec=" VINDEX_FMTX
                    " vecto=" VINDEX_FMTX " con=%x mat=%x\n",
                    me,VINDEX_PRTX(theVector),VINDEX_PRTX(MDEST(theMatrix)),
@@ -2855,6 +2896,7 @@ INT CheckAlgebra (GRID *theGrid)
                         #ifdef ModelP
       if (prio == PrioGhost)
       {
+        errors++;
         UserWriteF(PFMT "ERROR: ghost vector has matrix vec="
                    VINDEX_FMTX " con=%x mat=%x\n",
                    me,VINDEX_PRTX(theVector),MMYCON(theMatrix),theMatrix);
@@ -2863,7 +2905,7 @@ INT CheckAlgebra (GRID *theGrid)
     }
   }
 
-  if (errors>0) return(GM_ERROR);else return(GM_OK);
+  return(errors);
 }
 
 /****************************************************************************/
