@@ -259,7 +259,7 @@ extern "C" {
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 #undef CURRENT_TIME_LONG
-#define CURRENT_TIME_LONG   aix_long_time();
+#define CURRENT_TIME_LONG   aix_long_clock()
 
 #endif
 
