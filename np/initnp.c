@@ -153,6 +153,10 @@ INT InitNumerics ()
     SetHiWrd(err,__LINE__);
     return (err);
   }
+  if ((err=InitIter_2())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
   if ((err=InitNLIter())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
