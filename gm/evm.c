@@ -268,6 +268,7 @@ INT PointInTriangle (const COORD_POINT *Points, const COORD_POINT Point)
     COORD x;
     COORD y;
    };
+   .ve
 
    DESCRIPTION:
    This function decides if 'Point' lies in the polygon of 'Points'.
@@ -279,7 +280,7 @@ INT PointInTriangle (const COORD_POINT *Points, const COORD_POINT Point)
    INT
    .n     0 when lies not in the polygon
    .n     1 when lies in the polygon.
-                                                                        D*/
+   D*/
 /****************************************************************************/
 
 #define POLYMAX         8
