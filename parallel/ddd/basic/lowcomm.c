@@ -46,7 +46,7 @@
 /*                                                                          */
 /*            The LowComm subsystem is able to handle low-memory situations,*/
 /*            where the available memory is not enough for all send- and    */
-/*            receive-buffers. The LC_MsgAlloc for details.                 */
+/*            receive-buffers. See LC_MsgAlloc for details.                 */
 /*                                                                          */
 /****************************************************************************/
 
@@ -414,6 +414,12 @@ static void LC_MsgRecv (MSG_DESC *md)
     md->chunks[i].size    = (size_t)(hdr[j++]);
     md->chunks[i].entries =          hdr[j++];
   }
+
+        #if     DebugLowComm<=2
+  sprintf(cBuffer, "%4d: LC_MsgRecv(). from=%d ready.\n",
+          me, md->proc);
+  DDD_PrintDebug(cBuffer);
+        #endif
 }
 
 
@@ -636,18 +642,38 @@ int LC_MsgAlloc (LC_MSGHANDLE msg)
         give_up = TRUE;
       else
       {
+#                               if DebugLowComm<=7
+        sprintf(cBuffer, "%4d: LC_MsgAlloc(%s) detected low memory.\n",
+                me, md->msgType->name);
+        DDD_PrintDebug(cBuffer);
+#                               endif
+
         /* couldn't get msg-buffer. try to poll previous messages. */
         /* first, poll receives to avoid communication deadlock. */
         LC_PollRecv();
 
         /* now, try to poll sends and free their message buffers */
         remaining  = LC_PollSend();
+
+#                               if DebugLowComm<=6
+        sprintf(cBuffer,
+                "%4d: LC_MsgAlloc(%s) preliminary poll, sends_left=%d.\n",
+                me, md->msgType->name, remaining);
+        DDD_PrintDebug(cBuffer);
+#                               endif
       }
     }
   } while (md->buffer==NULL && !give_up);
 
   if (give_up)
+  {
+#               if DebugLowComm<=7
+    sprintf(cBuffer, "%4d: LC_MsgAlloc(%s) giving up, no memory.\n",
+            me, md->msgType->name);
+    DDD_PrintDebug(cBuffer);
+#               endif
     return(FALSE);
+  }
 
 
   /* enter control data into message header */
