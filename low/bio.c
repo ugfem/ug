@@ -28,6 +28,9 @@
 /****************************************************************************/
 
 #include <stdio.h>
+
+#include "general.h"
+
 #include "bio.h"
 
 /****************************************************************************/
@@ -74,6 +77,9 @@ static RW_mint_proc Read_mint, Write_mint;
 static RW_mdouble_proc Read_mdouble, Write_mdouble;
 static RW_string_proc Read_string, Write_string;
 
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/
@@ -111,7 +117,6 @@ static int DEBUG_Write_mint (int n, int *intList)
 static int DEBUG_Read_mdouble (int n, double *doubleList)
 {
   int i;
-  double dValue;
 
   for (i=0; i<n; i++)
     if (fscanf(stream,"%lf\n",doubleList+i)!=1) return (1);
@@ -121,7 +126,6 @@ static int DEBUG_Read_mdouble (int n, double *doubleList)
 static int DEBUG_Write_mdouble (int n, double *doubleList)
 {
   int i,m;
-  double fValue;
 
   for (i=0; i<n; i++)
   {
@@ -200,7 +204,6 @@ static int ASCII_Write_mint (int n, int *intList)
 static int ASCII_Read_mdouble (int n, double *doubleList)
 {
   int i;
-  double dValue;
 
   for (i=0; i<n; i++)
     if (fscanf(stream,"%lf ",doubleList+i)!=1) return (1);
@@ -210,7 +213,6 @@ static int ASCII_Read_mdouble (int n, double *doubleList)
 static int ASCII_Write_mdouble (int n, double *doubleList)
 {
   int i,m;
-  double fValue;
 
   for (i=0; i<n; i++)
   {

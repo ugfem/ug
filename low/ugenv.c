@@ -441,8 +441,6 @@ static INT RemoveEnvDirContent (ENVITEM *theItem)
 
 INT RemoveEnvDir (ENVITEM *theItem)
 {
-  ENVITEM *Item,*Next;
-
   ENVITEM *anItem;
   ENVDIR *currentDir;
 
