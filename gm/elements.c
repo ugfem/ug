@@ -69,6 +69,10 @@ INT data_offset[TAGS];
 GENERAL_ELEMENT *element_descriptors[TAGS],     *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
 INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 
+#ifndef ModelP
+static INT nOBJT, OBJT4Elements[MAXOBJECTS];
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* definition of local variables											*/
@@ -880,11 +884,20 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
                    possible remedy: store element OBJT in mg and release when it is closed. Also
                    don't reallocate them for a given mg */
   el->mapped_inner_objt = GetFreeOBJT();
-  if (el->mapped_inner_objt < 0)
-    return(GM_ERROR);
+  if (el->mapped_inner_objt < 0) return(GM_ERROR);
+
+#ifndef ModelP
+  if (nOBJT>=MAXOBJECTS-1) return(GM_ERROR);
+  OBJT4Elements[nOBJT++]=el->mapped_inner_objt;
+#endif
+
   el->mapped_bnd_objt = GetFreeOBJT();
-  if (el->mapped_bnd_objt < 0)
-    return(GM_ERROR);
+  if (el->mapped_bnd_objt < 0) return(GM_ERROR);
+
+#ifndef ModelP
+  OBJT4Elements[nOBJT++]=el->mapped_bnd_objt;
+  if (nOBJT>=MAXOBJECTS-1) return(GM_ERROR);
+#endif
 
   return(GM_OK);
 }
@@ -958,10 +971,18 @@ INT PreInitElementTypes (void)
 
 INT InitElementTypes (MULTIGRID *theMG)
 {
-  INT err;
+  INT i,err;
 
   if (theMG==NULL)
     return(GM_ERROR);
+
+#ifndef ModelP
+  /* release allocated OBJTs */
+  for (i=0; i<nOBJT; i++)
+    if (ReleaseOBJT (OBJT4Elements[i]))
+      return (GM_ERROR);
+  nOBJT=0;
+#endif
 
 #ifdef __TWODIM__
   err = ProcessElementDescription(theMG,&def_triangle);
