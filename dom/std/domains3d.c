@@ -95,6 +95,15 @@ typedef DOUBLE DOUBLE_VECTOR[DIM];
 
 static DOUBLE_VECTOR x_hex[8];
 
+/* for the square cylinder domain */
+static DOUBLE SQCYL_H;
+static DOUBLE SQCYL_B;
+static DOUBLE SQCYL_Lin;
+static DOUBLE SQCYL_Lout;
+static DOUBLE SQCYL_ht;
+static DOUBLE SQCYL_hb;
+static DOUBLE SQCYL_d;
+
 REP_ERR_FILE;
 
 /* RCS string */
@@ -3599,6 +3608,706 @@ static INT InitHole (void)
 }
 
 /****************************************************************************/
+/*                                                                          */
+/*               define the square cylinder domain                          */
+/*                                                                          */
+/****************************************************************************/
+
+static INT SQCyl_FrontBLBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + (lambda1-1.0)*SQCYL_Lin;
+  result[1] = -0.5*SQCYL_d + (lambda2-1.0)*SQCYL_hb;
+  result[2] = 0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_FrontMLBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + (lambda1-1.0)*SQCYL_Lin;
+  result[1] = -0.5*SQCYL_d + lambda2*SQCYL_d;
+  result[2] = 0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_FrontTLBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + (lambda1-1.0)*SQCYL_Lin;
+  result[1] = 0.5*SQCYL_d + lambda2*SQCYL_ht;
+  result[2] = 0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_FrontBMBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + lambda1*SQCYL_d;
+  result[1] = -0.5*SQCYL_d + (lambda2-1.0)*SQCYL_hb;
+  result[2] = 0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_FrontTMBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + lambda1*SQCYL_d;
+  result[1] = 0.5*SQCYL_d + lambda2*SQCYL_ht;
+  result[2] = 0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_FrontBRBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + lambda1*SQCYL_Lout;
+  result[1] = -0.5*SQCYL_d + (lambda2-1.0)*SQCYL_hb;
+  result[2] = 0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_FrontMRBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + lambda1*SQCYL_Lout;
+  result[1] = -0.5*SQCYL_d + lambda2*SQCYL_d;
+  result[2] = 0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_FrontTRBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + lambda1*SQCYL_Lout;
+  result[1] = 0.5*SQCYL_d + lambda2*SQCYL_ht;
+  result[2] = 0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BackBLBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + (lambda1-1.0)*SQCYL_Lin;
+  result[1] = -0.5*SQCYL_d + (lambda2-1.0)*SQCYL_hb;
+  result[2] = -0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BackMLBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + (lambda1-1.0)*SQCYL_Lin;
+  result[1] = -0.5*SQCYL_d + lambda2*SQCYL_d;
+  result[2] = -0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BackTLBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + (lambda1-1.0)*SQCYL_Lin;
+  result[1] = 0.5*SQCYL_d + lambda2*SQCYL_ht;
+  result[2] = -0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BackBMBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + lambda1*SQCYL_d;
+  result[1] = -0.5*SQCYL_d + (lambda2-1.0)*SQCYL_hb;
+  result[2] = -0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BackTMBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + lambda1*SQCYL_d;
+  result[1] = 0.5*SQCYL_d + lambda2*SQCYL_ht;
+  result[2] = -0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BackBRBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + lambda1*SQCYL_Lout;
+  result[1] = -0.5*SQCYL_d + (lambda2-1.0)*SQCYL_hb;
+  result[2] = -0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BackMRBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + lambda1*SQCYL_Lout;
+  result[1] = -0.5*SQCYL_d + lambda2*SQCYL_d;
+  result[2] = -0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BackTRBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + lambda1*SQCYL_Lout;
+  result[1] = 0.5*SQCYL_d + lambda2*SQCYL_ht;
+  result[2] = -0.5*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_InletBBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d - SQCYL_Lin;
+  result[1] = -0.5*SQCYL_d + (lambda2-1.0)*SQCYL_hb;
+  result[2] = 0.5*SQCYL_B - lambda1*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_InletMBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d - SQCYL_Lin;
+  result[1] = -0.5*SQCYL_d + lambda2*SQCYL_d;
+  result[2] = 0.5*SQCYL_B - lambda1*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_InletTBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d - SQCYL_Lin;
+  result[1] = 0.5*SQCYL_d + lambda2*SQCYL_ht;
+  result[2] = 0.5*SQCYL_B - lambda1*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_OutletBBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + SQCYL_Lout;
+  result[1] = -0.5*SQCYL_d + (lambda2-1.0)*SQCYL_hb;
+  result[2] = 0.5*SQCYL_B - lambda1*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_OutletMBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + SQCYL_Lout;
+  result[1] = -0.5*SQCYL_d + lambda2*SQCYL_d;
+  result[2] = 0.5*SQCYL_B - lambda1*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_OutletTBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + SQCYL_Lout;
+  result[1] = 0.5*SQCYL_d + lambda2*SQCYL_ht;
+  result[2] = 0.5*SQCYL_B - lambda1*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BottomLBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d - (1.0-lambda1)*SQCYL_Lin;
+  result[1] = -0.5*SQCYL_d - SQCYL_hb;
+  result[2] = 0.5*SQCYL_B - lambda2*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BottomMBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + lambda1*SQCYL_d;
+  result[1] = -0.5*SQCYL_d - SQCYL_hb;
+  result[2] = 0.5*SQCYL_B - lambda2*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_BottomRBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + lambda1*SQCYL_Lout;
+  result[1] = -0.5*SQCYL_d - SQCYL_hb;
+  result[2] = 0.5*SQCYL_B - lambda2*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_TopLBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d - (1.0-lambda1)*SQCYL_Lin;
+  result[1] = 0.5*SQCYL_d + SQCYL_ht;
+  result[2] = 0.5*SQCYL_B - lambda2*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_TopMBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + lambda1*SQCYL_d;
+  result[1] = 0.5*SQCYL_d + SQCYL_ht;
+  result[2] = 0.5*SQCYL_B - lambda2*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_TopRBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d + lambda1*SQCYL_Lout;
+  result[1] = 0.5*SQCYL_d + SQCYL_ht;
+  result[2] = 0.5*SQCYL_B - lambda2*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_CylInBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d;
+  result[1] = -0.5*SQCYL_d + lambda2*SQCYL_d;
+  result[2] = 0.5*SQCYL_B - lambda1*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_CylOutBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = 0.5*SQCYL_d;
+  result[1] = -0.5*SQCYL_d + lambda2*SQCYL_d;
+  result[2] = 0.5*SQCYL_B - lambda1*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_CylTopBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + lambda1*SQCYL_d;
+  result[1] = 0.5*SQCYL_d;
+  result[2] = 0.5*SQCYL_B - lambda2*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+static INT SQCyl_CylBottomBnd (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1,lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  result[0] = -0.5*SQCYL_d + lambda1*SQCYL_d;
+  result[1] = -0.5*SQCYL_d;
+  result[2] = 0.5*SQCYL_B - lambda2*SQCYL_B;
+
+  /* return ok */
+  return(0);
+}
+
+static INT InitSQcylinder (void)
+{
+  INT point[CORNERS_OF_BND_SEG];
+  DOUBLE radius,MidPoint[3], alpha[DIM_OF_BND], beta[DIM_OF_BND];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 0.5*(SQCYL_Lout - SQCYL_Lin);
+  MidPoint[1] = 0.5*(SQCYL_ht - SQCYL_hb);
+  MidPoint[2] = 0.0;
+  radius = 0.5*sqrt(SQCYL_B*SQCYL_B+(SQCYL_d + SQCYL_Lin + SQCYL_Lout)*(SQCYL_d + SQCYL_Lin + SQCYL_Lout) + (SQCYL_ht+SQCYL_hb+SQCYL_d)*(SQCYL_ht+SQCYL_hb+SQCYL_d));
+
+  if (CreateDomain("SQcylinder",MidPoint,radius,32,32,NO)==NULL) return(1);
+
+  /* allocate the boundary segments */
+  alpha[0]=0.0; alpha[1]=0.0;
+  beta[0] =1.0; beta[1] =1.0;
+
+  point[0]=0; point[1]=8; point[2]=10; point[3]=2;
+  if (CreateBoundarySegment("frontbl",0,1,0,NON_PERIODIC,1,point,alpha,beta,SQCyl_FrontBLBnd, NULL)==NULL) return(1);
+
+  point[0]=1; point[1]=9; point[2]=11; point[3]=3;
+  if (CreateBoundarySegment("backbl",1,0,1,NON_PERIODIC,1,point,alpha,beta,SQCyl_BackBLBnd, NULL)==NULL) return(1);
+
+  point[0]=2; point[1]=10; point[2]=12; point[3]=4;
+  if (CreateBoundarySegment("frontml",0,1,2,NON_PERIODIC,1,point,alpha,beta,SQCyl_FrontMLBnd, NULL)==NULL) return(1);
+
+  point[0]=3; point[1]=11; point[2]=13; point[3]=5;
+  if (CreateBoundarySegment("backml",1,0,3,NON_PERIODIC,1,point,alpha,beta,SQCyl_BackMLBnd, NULL)==NULL) return(1);
+
+  point[0]=4; point[1]=12; point[2]=14; point[3]=6;
+  if (CreateBoundarySegment("fronttl",0,1,4,NON_PERIODIC,1,point,alpha,beta,SQCyl_FrontTLBnd, NULL)==NULL) return(1);
+
+  point[0]=5; point[1]=13; point[2]=15; point[3]=7;
+  if (CreateBoundarySegment("backttl",1,0,5,NON_PERIODIC,1,point,alpha,beta,SQCyl_BackTLBnd, NULL)==NULL) return(1);
+
+  point[0]=8; point[1]=16; point[2]=18; point[3]=10;
+  if (CreateBoundarySegment("frontbm",0,1,6,NON_PERIODIC,1,point,alpha,beta,SQCyl_FrontBMBnd, NULL)==NULL) return(1);
+
+  point[0]=9; point[1]=17; point[2]=19; point[3]=11;
+  if (CreateBoundarySegment("backbm",1,0,7,NON_PERIODIC,1,point,alpha,beta,SQCyl_BackBMBnd, NULL)==NULL) return(1);
+
+  point[0]=12; point[1]=20; point[2]=22; point[3]=14;
+  if (CreateBoundarySegment("fronttm",0,1,8,NON_PERIODIC,1,point,alpha,beta,SQCyl_FrontTMBnd, NULL)==NULL) return(1);
+
+  point[0]=13; point[1]=21; point[2]=23; point[3]=15;
+  if (CreateBoundarySegment("backtm",1,0,9,NON_PERIODIC,1,point,alpha,beta,SQCyl_BackTMBnd, NULL)==NULL) return(1);
+
+  point[0]=16; point[1]=24; point[2]=26; point[3]=18;
+  if (CreateBoundarySegment("frontbr",0,1,10,NON_PERIODIC,1,point,alpha,beta,SQCyl_FrontBRBnd, NULL)==NULL) return(1);
+
+  point[0]=17; point[1]=25; point[2]=27; point[3]=19;
+  if (CreateBoundarySegment("backbr",1,0,11,NON_PERIODIC,1,point,alpha,beta,SQCyl_BackBRBnd, NULL)==NULL) return(1);
+
+  point[0]=18; point[1]=26; point[2]=28; point[3]=20;
+  if (CreateBoundarySegment("frontmr",0,1,12,NON_PERIODIC,1,point,alpha,beta,SQCyl_FrontMRBnd, NULL)==NULL) return(1);
+
+  point[0]=19; point[1]=27; point[2]=29; point[3]=21;
+  if (CreateBoundarySegment("backmr",1,0,13,NON_PERIODIC,1,point,alpha,beta,SQCyl_BackMRBnd, NULL)==NULL) return(1);
+
+  point[0]=20; point[1]=28; point[2]=30; point[3]=22;
+  if (CreateBoundarySegment("fronttr",0,1,14,NON_PERIODIC,1,point,alpha,beta,SQCyl_FrontTRBnd, NULL)==NULL) return(1);
+
+  point[0]=21; point[1]=29; point[2]=31; point[3]=23;
+  if (CreateBoundarySegment("backttr",1,0,15,NON_PERIODIC,1,point,alpha,beta,SQCyl_BackTRBnd, NULL)==NULL) return(1);
+
+  point[0]=0; point[1]=1; point[2]=3; point[3]=2;
+  if (CreateBoundarySegment("inletb",1,0,16,NON_PERIODIC,1,point,alpha,beta,SQCyl_InletBBnd, NULL)==NULL) return(1);
+
+  point[0]=24; point[1]=25; point[2]=27; point[3]=26;
+  if (CreateBoundarySegment("outletb",0,1,17,NON_PERIODIC,1,point,alpha,beta,SQCyl_OutletBBnd, NULL)==NULL) return(1);
+
+  point[0]=2; point[1]=3; point[2]=5; point[3]=4;
+  if (CreateBoundarySegment("inletm",1,0,18,NON_PERIODIC,1,point,alpha,beta,SQCyl_InletMBnd, NULL)==NULL) return(1);
+
+  point[0]=26; point[1]=27; point[2]=29; point[3]=28;
+  if (CreateBoundarySegment("outletm",0,1,19,NON_PERIODIC,1,point,alpha,beta,SQCyl_OutletMBnd, NULL)==NULL) return(1);
+
+  point[0]=4; point[1]=5; point[2]=7; point[3]=6;
+  if (CreateBoundarySegment("inlett",1,0,20,NON_PERIODIC,1,point,alpha,beta,SQCyl_InletTBnd, NULL)==NULL) return(1);
+
+  point[0]=28; point[1]=29; point[2]=31; point[3]=30;
+  if (CreateBoundarySegment("outlett",0,1,21,NON_PERIODIC,1,point,alpha,beta,SQCyl_OutletTBnd, NULL)==NULL) return(1);
+
+  point[0]=0; point[1]=8; point[2]=9; point[3]=1;
+  if (CreateBoundarySegment("bottoml",1,0,22,NON_PERIODIC,1,point,alpha,beta,SQCyl_BottomLBnd, NULL)==NULL) return(1);
+
+  point[0]=6; point[1]=14; point[2]=15; point[3]=7;
+  if (CreateBoundarySegment("topl",0,1,23,NON_PERIODIC,1,point,alpha,beta,SQCyl_TopLBnd, NULL)==NULL) return(1);
+
+  point[0]=8; point[1]=16; point[2]=17; point[3]=9;
+  if (CreateBoundarySegment("bottomm",1,0,24,NON_PERIODIC,1,point,alpha,beta,SQCyl_BottomMBnd, NULL)==NULL) return(1);
+
+  point[0]=14; point[1]=22; point[2]=23; point[3]=15;
+  if (CreateBoundarySegment("topm",0,1,25,NON_PERIODIC,1,point,alpha,beta,SQCyl_TopMBnd, NULL)==NULL) return(1);
+
+  point[0]=16; point[1]=24; point[2]=25; point[3]=17;
+  if (CreateBoundarySegment("bottomr",1,0,26,NON_PERIODIC,1,point,alpha,beta,SQCyl_BottomRBnd, NULL)==NULL) return(1);
+
+  point[0]=22; point[1]=30; point[2]=31; point[3]=23;
+  if (CreateBoundarySegment("topr",0,1,27,NON_PERIODIC,1,point,alpha,beta,SQCyl_TopRBnd, NULL)==NULL) return(1);
+
+  point[0]=10; point[1]=11; point[2]=13; point[3]=12;
+  if (CreateBoundarySegment("cylin",0,1,28,NON_PERIODIC,1,point,alpha,beta,SQCyl_CylInBnd, NULL)==NULL) return(1);
+
+  point[0]=18; point[1]=19; point[2]=21; point[3]=20;
+  if (CreateBoundarySegment("cylout",1,0,29,NON_PERIODIC,1,point,alpha,beta,SQCyl_CylOutBnd, NULL)==NULL) return(1);
+
+  point[0]=10; point[1]=18; point[2]=19; point[3]=11;
+  if (CreateBoundarySegment("cylbottom",0,1,30,NON_PERIODIC,1,point,alpha,beta,SQCyl_CylBottomBnd, NULL)==NULL) return(1);
+
+  point[0]=12; point[1]=20; point[2]=21; point[3]=13;
+  if (CreateBoundarySegment("cyltop",1,0,31,NON_PERIODIC,1,point,alpha,beta,SQCyl_CylTopBnd, NULL)==NULL) return(1);
+
+  /* return ok */
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitFEMDomains - Calls all inits of format definitions
 
@@ -3687,6 +4396,39 @@ INT NS_PREFIX STD_BVP_Configure (INT argc, char **argv)
     }
   }
 
+  if (strcmp(DomainName,"SQcylinder") == 0) {
+    if (ReadArgvDOUBLE("l",&SQCYL_d,argc,argv)) {
+      SQCYL_d = 0.1;
+    }
+    if (ReadArgvDOUBLE("H",&SQCYL_H,argc,argv)) {
+      SQCYL_H = 15*SQCYL_d;
+    }
+    if (ReadArgvDOUBLE("B",&SQCYL_B,argc,argv)) {
+      SQCYL_B = 5*SQCYL_d;
+    }
+    if (ReadArgvDOUBLE("Lin",&SQCYL_Lin,argc,argv)) {
+      SQCYL_Lin = 15*SQCYL_d;
+    }
+    if (ReadArgvDOUBLE("Lout",&SQCYL_Lout,argc,argv)) {
+      SQCYL_Lout = 15*SQCYL_d;
+    }
+    if (ReadArgvDOUBLE("hb",&SQCYL_hb,argc,argv)) {
+      SQCYL_hb = 7*SQCYL_d;
+    }
+    if (ReadArgvDOUBLE("ht",&SQCYL_ht,argc,argv)) {
+      SQCYL_ht = 7*SQCYL_d;
+    }
+    if (ABS(SQCYL_hb+SQCYL_ht+SQCYL_d - SQCYL_H)>SMALL_D)
+    {
+      PrintErrorMessageF('E',"STD_BVP_Configure","parameter mismatch: H=%g,hb=%g,ht=%g,d=%g ",SQCYL_H,SQCYL_hb,SQCYL_ht,SQCYL_d);
+      return (1);
+    }
+    else
+    {
+      UserWriteF("Using: H=%g, hb=%g, d=%g, ht=%g\n",SQCYL_H,SQCYL_hb,SQCYL_d,SQCYL_ht);
+    }
+  }
+
   if (theDomain == NULL)
   {
     if (strcmp(DomainName,"Ball") == 0)
@@ -3717,6 +4459,11 @@ INT NS_PREFIX STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Hole") == 0)
     {
       if (InitHole())
+        return(1);
+    }
+    else if (strcmp(DomainName,"SQcylinder") == 0)
+    {
+      if (InitSQcylinder())
         return(1);
     }
     else
