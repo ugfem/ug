@@ -385,7 +385,11 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
         {
           /* matrix diagonal entry, no other vector is involved */
           CONNECTION *conn = (CONNECTION *)
+                                        #ifndef DYNAMIC_MEMORY_ALLOCMODEL
                              GetFreelistMemory(MGHEAP(dddctrl.currMG), MSIZE(mcopy));
+                                        #else
+                             GetMemoryForObject(dddctrl.currMG,MSIZE(mcopy),MAOBJ);
+                                        #endif
 
           nconn++; newconn++;
 
@@ -432,8 +436,13 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
           {
             MATRIX *otherm;
             CONNECTION *conn = (CONNECTION *)
+                                                #ifndef DYNAMIC_MEMORY_ALLOCMODEL
                                GetFreelistMemory(dddctrl.currMG->theHeap,
                                                  2 * MSIZE(mcopy));
+                                                #else
+                               GetMemoryForObject(dddctrl.currMG,MSIZE(mcopy),MAOBJ);
+                                                #endif
+
             nconn++; newconn++;
 
             if (conn==NULL)
@@ -519,16 +528,6 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
   /* ensure diagonal entry being at first position */
   if (nconn > 0)
   {
-                #ifdef Debug
-    MATRIX *mat;
-    PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX():  v="
-                        VINDEX_FMTX "new matrices:\n",me,VINDEX_PRTX(vec)));
-    for (mat=first; mat!=NULL; mat=MNEXT(mat))
-    {
-      PRINTDEBUG(dddif,4,(PFMT "     mat=%x dest=" EID_FMTX "\n",me,mat,VINDEX_PRTX(MDEST(mat))));
-    }
-                #endif
-
     if (VSTART(vec)!=NULL)
     {
       MNEXT(last) = MNEXT(VSTART(vec));
@@ -539,6 +538,20 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
       MNEXT(last) = NULL;
       VSTART(vec) = first;
     }
+
+                #ifdef Debug
+    /*
+                    {
+                    MATRIX *mat;
+            PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX():  v="
+                    VINDEX_FMTX "new matrices:\n",me,VINDEX_PRTX(vec)));
+                    for (mat=first; mat!=NULL; mat=MNEXT(mat))
+                    {
+                    PRINTDEBUG(dddif,4,(PFMT "     mat=%x dest=" EID_FMTX "\n",me,mat,VINDEX_PRTX(MDEST(mat))));
+                    }
+                    }
+     */
+                #endif
   }
 
 #ifdef Debug
@@ -552,10 +565,10 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
         if (MDIAG(mat)) continue;
 
         if (!MDIAG(mat))
-          PrintDebug(PFMT " VectorScatterConnX(): NOT DIAGONAL v="
-                     VINDEX_FMTX " conn=%x mat=%x Size=%d vectoID=" VINDEX_FMTX
-                     "\n",me,VINDEX_PRTX(vec),MMYCON(mat),mat,MSIZE(mat),
-                     VINDEX_PRTX(MDEST(mat)));
+          PRINTDEBUG(dddif,1,(PFMT " VectorScatterConnX(): NOT DIAGONAL v="
+                              VINDEX_FMTX " conn=%x mat=%x Size=%d vectoID=" VINDEX_FMTX
+                              "\n",me,VINDEX_PRTX(vec),MMYCON(mat),mat,MSIZE(mat),
+                              VINDEX_PRTX(MDEST(mat))));
       }
     }
   }
@@ -609,7 +622,18 @@ void VectorObjMkCons (DDD_OBJ obj, int newness)
 
       ASSERT(!MDIAG(theMatrix));
 
-      DisposeMem(dddctrl.currMG->theHeap,MMYCON(theMatrix));
+      {
+        INT size = ((MDIAG(theMatrix)) ? MSIZE(theMatrix) : 2*MSIZE(theMatrix));
+                        #ifndef DYNAMIC_MEMORY_ALLOCMODEL
+        /*
+           DisposeMem(dddctrl.currMG->theHeap,MMYCON(theMatrix));
+         */
+        PutFreelistMemory(dddctrl.currMG->theHeap,MMYCON(theMatrix),size);
+                        #else
+        PutFreeObject(dddctrl.currMG,MMYCON(theMatrix),size,MAOBJ);
+                        #endif
+      }
+
 
       MNEXT(Prev) = Next;
 
