@@ -53,21 +53,14 @@
 
 #endif
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* configuration of interface                                                                                           */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* configuration of interface                                               */
+/*                                                                          */
 /****************************************************************************/
 
 #define MGIO_VERSION                                    "UG_IO_2.5"
@@ -452,8 +445,6 @@ int     CloseMGFile                     (void);
 int     MGIO_Init                       (void);
 int             MGIO_dircreate          (char *filename, int rename);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

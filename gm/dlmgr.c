@@ -48,6 +48,7 @@
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+USING_UG_NAMESPACES
 
 /* element */
 #define OTYPE  ELEMENT

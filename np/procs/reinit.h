@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      reinit.h                                                          */
+/* File:      reinit.h                                                      */
 /*                                                                          */
 /* Purpose:   numproc interface to reinit problem classes                   */
 /*                                                                          */
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __REINIT__
@@ -35,16 +35,9 @@
 
 #include "np.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -106,8 +99,6 @@ INT REINIT_Display (NP_BASE *base);
 INT InitReinit (void);
 
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

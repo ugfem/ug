@@ -34,9 +34,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-/* for the definition of NS_PREFIX and __TWODIM__ */
-#include "domain.h"
-
 /* interface includes */
 #include "compiler.h"
 #include "ugdevices.h"
@@ -44,15 +41,7 @@
 #include "general.h"
 
 
-#ifdef __cplusplus
-#ifdef _2
-using namespace UG2d;
-#elif _3
-using namespace UG3d;
-#else
-#error The dimension is unknown at this point!
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/

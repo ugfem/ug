@@ -38,28 +38,13 @@
 #ifndef __REFINE__
 #define __REFINE__
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __GM__
 #include "gm.h"
-#endif
-
-#ifndef __ALGEBRA__
 #include "algebra.h"            /* just for ALGEBRA_N_CE */
-#endif
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -280,8 +265,6 @@ INT             Get_Sons_of_ElementSide                                 (ELEMENT
 INT     Connect_Sons_of_ElementSide                     (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag);
 INT             Refinement_Changes                                              (ELEMENT *theElement);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

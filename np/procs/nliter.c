@@ -54,13 +54,7 @@
 #include "fas.h"
 #include "nliter.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */
@@ -72,7 +66,7 @@ using namespace UG3d;
 /*                                                                          */
 /****************************************************************************/
 
-REP_ERR_FILE;
+  REP_ERR_FILE;
 
 #define BUFFER_SIZE                 MAX(256,2*DISPLAY_WIDTH+4)
 

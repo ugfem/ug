@@ -42,14 +42,12 @@
 #define __GGMAIN__
 
 #include "compiler.h"
-
-#ifndef __GM__
 #include "gm.h"
-#endif
-
-#ifndef __GGM__
 #include "ggm.h"
-#endif
+
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -61,5 +59,7 @@ INT GenerateBnodes  (MULTIGRID *theMG, DOUBLE RelRasterSize,
                      DOUBLE h_global, INT meshsizecoeffno);
 INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff, INT Single_Mode, INT display);
 INT InitGG (void);
+
+END_NAMESPACE
 
 #endif

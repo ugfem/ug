@@ -24,15 +24,10 @@
 #include "scan.h"
 #include "udm.h"
 
-REP_ERR_FILE;
+USING_UG_NAMESPACES
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+  REP_ERR_FILE;
+
 
 /* MacOS doesn't support the non-standard (!) strdup function */
 #if ( defined(__MWCW__) || defined(__OPENSTEP__) )

@@ -28,13 +28,11 @@
 
 #include <stdio.h>
 
-/* only for the definition of NS_PREFIX */
-#include "domain.h"
-
 #include "compiler.h"
 #include "general.h"
 #include "fifo.h"
 
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

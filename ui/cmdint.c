@@ -65,13 +65,7 @@
 #include "xmain.h"
 #endif
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */
@@ -111,7 +105,7 @@ using namespace UG3d;
 
 #define Boolean int
 
-#define ISALPHA(c)                      (isalpha((int)c) || (((char)c) == '_') || (((char)c) == ':'))
+#define ISALPHA(c)                      (isalpha((int)c) || (((char) c) == '_') || (((char) c) == ':'))
 #define ISNUMBER(c)                      isdigit((int)c)
 
 static char blanks[]                    = " \t\n";

@@ -32,9 +32,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* only for the definition of NS_PREFIX */
-#include "domain.h"
-
 #include "defaults.h"
 #include "fileopen.h"
 #include "ugdevices.h"
@@ -42,16 +39,10 @@
 #include "general.h"
 
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
-/*																			*/
+/*																*/
 /* defines in the following order											*/
 /*																			*/
 /*		  compile time constants defining static data size (i.e. arrays)	*/
@@ -87,7 +78,7 @@ using namespace UG3d;
 /* Adjust a little endian variable from the native data length to
    the standard legth */
 
-#define ADJLEN(VALP,STD_SIZE) ((void*)(((char *)(VALP)) + (sizeof(*(VALP)) - (STD_SIZE))))
+#define ADJLEN(VALP,STD_SIZE) ((void*) (((char *) (VALP)) + (sizeof(*(VALP)) - (STD_SIZE))))
 
 #define NAT2STDS(VAL) ((myshort = swap_short(VAL)),(ADJLEN(&(myshort),STD_SHORT)))
 

@@ -49,13 +49,7 @@
 #include "mgheapmgr.h"
 #include "cw.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 #define SMALL_LOCAL    1.E-4
 

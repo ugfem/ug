@@ -47,13 +47,7 @@
 #include "numproc.h"
 #include "np.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/

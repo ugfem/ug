@@ -41,16 +41,7 @@
 #include "ugdevices.h"
 #include "general.h"
 
-/* only for the definition of NS_PREFIX */
-#include "domain.h"
-
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/

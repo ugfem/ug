@@ -145,16 +145,7 @@
 #define DEBUG_MODE "OFF"
 #endif
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -2596,8 +2587,12 @@ typedef struct {
   /* ... the refinement rules should be placed here later */
 } GENERAL_ELEMENT;
 
+END_NAMESPACE
+
 /* TODO: move this to include section, when other general element stuff is separated */
 #include "elements.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -3297,8 +3292,6 @@ char *PrintElementInfo (ELEMENT *theElement,INT full);
 INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid);
 #endif
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

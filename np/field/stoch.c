@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /************************************************************************/
-/*																		*/
+/*                                                                      */
 /* File:	stoch.c														*/
 /*																		*/
 /* Purpose:	Interface between the fieldgenerator and ug					*/
@@ -54,13 +54,7 @@
 #include "field.h"
 
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /************************************************************************/
 /*																		*/
@@ -98,9 +92,9 @@ using namespace UG3d;
 #define M1      259200
 #define M2      134456
 #define M3      243000
-#define RM1     (1.0 / (DOUBLE)M1)
-#define RM2     (1.0 / (DOUBLE)M2)
-#define RM3     (1.0 / (DOUBLE)M3)
+#define RM1     (1.0 / (DOUBLE) M1)
+#define RM2     (1.0 / (DOUBLE) M2)
+#define RM3     (1.0 / (DOUBLE) M3)
 #define IA1     7141
 #define IA2     8121
 #define IA3     4561

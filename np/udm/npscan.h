@@ -39,16 +39,9 @@
 #include "numproc.h"
 #include "formats.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -131,8 +124,6 @@ INT esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, cons
 /* scanning argument lists                                                  */
 INT ReadArgvDisplay (INT argc, char **argv);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

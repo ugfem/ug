@@ -42,6 +42,9 @@
 #include "compiler.h"
 #include "gm.h"
 
+#include "namespace.h"
+
+START_NAMESPACE
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -180,5 +183,7 @@ INT DisposeFrontList            (FRONTLIST *theFL);
 INT DisposeFrontComp            (FRONTLIST *myList, FRONTCOMP *theFC);
 
 MG_GGDATA *GetMGdataPointer (MULTIGRID *theMG);
+
+END_NAMESPACE
 
 #endif

@@ -35,21 +35,14 @@
 
 #include "compiler.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
-/*                                                                            */
+/*                                                                          */
 /* data structures exported by the corresponding source file                */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 typedef struct {
@@ -71,8 +64,6 @@ INT     fifo_full    (const FIFO *myfifo);
 INT     fifo_in     (FIFO *myfifo, void *newelement);
 void    *fifo_out    (FIFO *myfifo);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

@@ -37,16 +37,9 @@
 #include "ls.h"
 #include "assemble.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -194,8 +187,6 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv);
 /* create standard LinearSolver num proc type */
 INT InitNonlinearSolver (void);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

@@ -4,16 +4,16 @@
 /*                                                                          */
 /* File:      npcheck.h                                                     */
 /*                                                                          */
-/* Purpose:   check of numerical structures (header file)                                       */
+/* Purpose:   check of numerical structures (header file)                   */
 /*                                                                          */
-/* Author:        Christian Wieners                                                                             */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        email: ug@ica3.uni-stuttgart.de                                                       */
-/*                                                                                                                                                      */
-/* History:   Juli 1 97 begin                                                                           */
+/* Author:    Christian Wieners                                                                             */
+/*            Institut fuer Computeranwendungen III                                                 */
+/*            Universitaet Stuttgart                                                                                */
+/*            Pfaffenwaldring 27                                                                                    */
+/*            70569 Stuttgart                                                                                               */
+/*            email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                          */
+/* History:   Juli 1 97 begin                                               */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -35,16 +35,9 @@
 
 #include "np.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -77,8 +70,6 @@ namespace UG3d {
 INT CheckSymmetryOfMatrix (GRID *theGrid, MATDATA_DESC *A);
 INT CheckNP (MULTIGRID *theMG, INT argc, char **argv);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

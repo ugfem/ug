@@ -2,11 +2,11 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      tstep.h                                                           */
+/* File:      tstep.h                                                       */
 /*                                                                          */
 /* Purpose:   time-stepping scheme for (non-)linear time-dependent problems */
 /*                                                                          */
-/* Author:    Klaus Johannsen                                                                                           */
+/* Author:    Klaus Johannsen                                               */
 /*            Institut fuer Computeranwendungen III                         */
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
@@ -35,16 +35,9 @@
 
 #include "np.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -124,8 +117,6 @@ typedef struct np_t_step NP_T_STEP;
 
 INT InitTStep (void);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

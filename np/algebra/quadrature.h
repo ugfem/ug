@@ -35,18 +35,9 @@
 
 #include "gm.h"
 
+#include "namespace.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
-
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -110,8 +101,6 @@ QUADRATURE *GetQuadratureRule(INT dim, INT n, INT order);
 QUADRATURE *GetSymmetricQuadratureRule(INT dim, INT n, INT order);
 INT GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

@@ -67,15 +67,9 @@
 /* domain module */
 #include "std_domain.h"
 
+#include "namespace.h"
 
-
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */
@@ -1651,7 +1645,7 @@ M_BNDS_Dispose (HEAP * Heap, BNDS * theBndS)
  */
 /****************************************************************************/
 
-PROBLEM *NS_PREFIX
+PROBLEM *
 CreateProblem (char *domain, char *name, int id, ConfigProcPtr config,
                int numOfCoefficients, CoeffProcPtr coeffs[],
                int numOfUserFct, UserProcPtr userfct[])
@@ -1734,7 +1728,7 @@ GetProblem (const char *domain, const char *name)
  */
 /****************************************************************************/
 
-BOUNDARY_CONDITION *NS_PREFIX
+BOUNDARY_CONDITION * NS_PREFIX
 CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond,
                          void *Data)
 {
@@ -1831,7 +1825,7 @@ GetFirstBoundaryCondition (PROBLEM * theProblem)
  */
 /****************************************************************************/
 
-DOMAIN *NS_PREFIX
+DOMAIN * NS_PREFIX
 CreateDomainWithParts (char *name, DOUBLE * MidPoint, DOUBLE radius,
                        INT segments, INT corners, INT Convex, INT nParts,
                        const DOMAIN_PART_INFO * dpi)
@@ -3966,6 +3960,8 @@ GenerateBnodes_h (HEAP * Heap, STD_BVP * theBVP, BNDP ** bndp,
 
 /****************************************************************************/
 /** \brief  Decompose a strip into triangles
+ *
+ * \todo Which function does this doc block belong to?
  *
  * @param  n,m - stripe with n+1 nodes on the bottom and m+1 nodes on the top
  * @param  c0,c1,c2,c3 - corner node ids

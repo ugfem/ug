@@ -4,7 +4,7 @@
 /*                                                                          */
 /* File:      ggm.c                                                         */
 /*                                                                          */
-/* Purpose:   manager for grid generator                                                        */
+/* Purpose:   manager for grid generator                                    */
 /*                                                                          */
 /* Author:    Wolfgang Hoffmann, Henrik Renz-Reichert	                    */
 /*			  Institut fuer Computeranwendungen III                                                 */
@@ -42,6 +42,8 @@
 #include "general.h"
 
 #include "ggm.h"
+
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */
@@ -418,11 +420,11 @@ INT DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
 /* Input:     GRID *theGrid: grid to remove from                                                */
 /*            FRONTCOMP *theFC: front component to remove                   */
 /*                                                                          */
-/* Output:    INT 0: ok                                                                                                         */
+/* Output:    INT 0: ok                                                         */
 /*                                                                          */
 /****************************************************************************/
 
-INT DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
+INT NS_PREFIX DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
 {
   HEAPFAULT(theFC);
 

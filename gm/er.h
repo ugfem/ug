@@ -39,16 +39,9 @@
 
 #include "mgio.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -88,8 +81,6 @@ INT GetOrderedSons                                              (ELEMENT *theEle
 INT NEW_Write_RefRules                                  (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR_RULE **mrule_handle);
 INT ResetRefineTagsBeyondRuleManager    (MULTIGRID *mg);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

@@ -84,32 +84,9 @@
 #include "ugenv.h"
 #include "heaps.h"
 
+#include "namespace.h"
 
-
-/***************************************************/
-/* The namespace prefix if this is compiled as c++ */
-/***************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-#define NS_PREFIX UG2d::
-#else
-#define NS_PREFIX UG3d::
-#endif
-#else
-#define NS_PREFIX
-#endif
-
-
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+START_NAMESPACE
 
 /** \brief Offset of additional parameters for boundary condition function call */
 enum DOM_IN_PARAMS {
@@ -835,9 +812,8 @@ void BVertexScatterBndP  (BNDP **bndp, int cnt, char *data);
 /* miscellaneous */
 INT         InitDom               (void);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+
+END_NAMESPACE
 
 #endif
 

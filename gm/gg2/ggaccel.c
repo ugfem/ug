@@ -31,6 +31,8 @@
 #include  "ggm.h"
 #include "general.h"
 
+USING_UG_NAMESPACES
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */

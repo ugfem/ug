@@ -1,8 +1,8 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:      nliter.c                                                          */
+/*                                                                          */
+/* File:      nliter.c                                                      */
 /*                                                                          */
 /* Purpose:   nonlinear iteration num procs                                 */
 /*                                                                          */
@@ -14,15 +14,15 @@
 /*            email: ug@ica3.uni-stuttgart.de                               */
 /*                                                                          */
 /* History:   30.07.97 begin, ug version 3.8                                */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __NLITER__
@@ -31,16 +31,9 @@
 #include "np.h"
 #include "assemble.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -131,8 +124,6 @@ INT NPNLIterExecute (NP_BASE *theNP, INT argc , char **argv);
 /* create nonlinear iter num proc type */
 INT InitNLIter (void);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

@@ -37,26 +37,16 @@
 #define __UGSTRUCT__
 
 #include "compiler.h"
-
-#ifndef __UGENV__
 #include "ugenv.h"
-#endif
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* defines in the following order                                                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
 /*                compile time constants defining static data size (i.e. arrays)        */
 /*                other constants                                                                                                       */
 /*                macros                                                                                                                        */
@@ -123,8 +113,6 @@ INT              PrintCurrentStructContents (int flag, char *buffer, int bufLen,
 /* initialization of this module */
 INT     InitUgStruct                            (void);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

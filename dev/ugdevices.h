@@ -1,23 +1,23 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          ugdevices.h                                                                                                   */
-/*                                                                                                                                                      */
-/* Purpose:   implements a simple but portable graphical user interface         */
-/*                                                                                                                                                      */
-/* Author:        Peter Bastian                                                                                                 */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        email: ug@ica3.uni-stuttgart.de                                                       */
-/*                                                                                                                                                      */
-/* History:   14.06.93 begin, ug version ug21Xmas3d                                             */
-/*                        16.12.94 restructured for ug version 3.0                                              */
-/*                                                                                                                                                      */
-/* Remarks:   was "devices.h" in earlier version of UG                                          */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      ugdevices.h                                                   */
+/*                                                                          */
+/* Purpose:   implements a simple but portable graphical user interface     */
+/*                                                                          */
+/* Author:    Peter Bastian                                                 */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   14.06.93 begin, ug version ug21Xmas3d                         */
+/*            16.12.94 restructured for ug version 3.0                      */
+/*                                                                          */
+/* Remarks:   was "devices.h" in earlier version of UG                      */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -26,9 +26,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __DEVICESH__
@@ -36,29 +36,18 @@
 
 #include <stdio.h>
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
 
-#ifndef __UGENV__
 #include "ugenv.h"
-#endif
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/*      constants                                                                                                                               */
-/*                                                                                                                                                      */
+/*                                                                          */
+/*      constants                                                           */
+/*                                                                          */
 /****************************************************************************/
 
 /* markers                                                                                                                                      */
@@ -377,8 +366,6 @@ INT               MouseStillDown                        (void);
 void              DrawInfoBox                           (WINDOWID win, const char *info);
 INT                       WhichTool                                     (WINDOWID win, const INT mouse[2], INT *tool);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

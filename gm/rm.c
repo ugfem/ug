@@ -5,10 +5,10 @@
 /* File:      rm.c                                                          */
 /*                                                                          */
 /* Purpose:   rule manager for 2D and 3D refinement rules                   */
-/*																			*/
-/* Author:	  Stefan Lang                                                                                   */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
+/*                                                                          */
+/* Author:    Stefan Lang                                                   */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
 /*			  Pfaffenwaldring 27											*/
 /*			  70550 Stuttgart												*/
 /*																			*/
@@ -55,14 +55,7 @@
 #include "parallel.h"
 #endif
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
-
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -115,7 +108,7 @@ INT NS_PREFIX MaxNewCorners[TAGS] = {0,0,0,0,0,0,0,0};
 INT NS_PREFIX MaxNewEdges[TAGS] = {0,0,0,0,0,0,0,0};
 INT NS_PREFIX CenterNodeIndex[TAGS] = {0,0,0,0,0,0,0,0};
 REFRULE * NS_PREFIX RefRules[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
-SHORT   *Pattern2Rule[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+SHORT   * NS_PREFIX Pattern2Rule[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
 #ifdef __THREEDIM__
 /* define the standard regular rules for tetrahedrons */

@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*                                                                                                                                                      */
+/*                                                                          */
 /* File:          bdf.h                                                                                                         */
 /*                                                                                                                                                      */
 /* Purpose:   header file for BDF time solver                                                           */
@@ -35,16 +35,9 @@
 
 #include "db.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -125,7 +118,7 @@ typedef struct
 /****************************************************************************/
 /*                                                                                                                                                      */
 /* definition of exported functions                                                                                     */
-/*                                                                                                                                                      */
+/*                                                                          */
 /****************************************************************************/
 
 /* create standard LinearSolver num proc type */
@@ -142,8 +135,6 @@ INT InitBDFSolver (void);
 INT BDFInit (NP_BASE *base, INT argc, char **argv);
 INT BDFDisplay (NP_BASE *theNumProc);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

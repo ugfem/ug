@@ -42,13 +42,7 @@
 #include "ppif.h"
 #endif
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

@@ -52,14 +52,7 @@ typedef int INT;
 typedef double DOUBLE;
 #endif
 
-
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

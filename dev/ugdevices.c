@@ -1,15 +1,15 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ugdevices.c                                                                                                   */
-/*																			*/
-/* Purpose:   Initialization and hardware independent part of devices		*/
-/*																			*/
-/* Author:	  Peter Bastian/Klaus Johannsen                                                                 */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
+/*                                                                          */
+/* File:      ugdevices.c                                                   */
+/*                                                                          */
+/* Purpose:   Initialization and hardware independent part of devices       */
+/*                                                                          */
+/* Author:    Peter Bastian/Klaus Johannsen                                 */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
 /*			  email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
@@ -20,7 +20,7 @@
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
+/*															*/
 /* include files															*/
 /*			  system include files											*/
 /*			  application include files                                                                     */
@@ -32,8 +32,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <assert.h>
-
-#include "domain.h"
 
 /* low module */
 #include "compiler.h"
@@ -56,18 +54,12 @@
 #include "ppif.h"
 #endif
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
 /*		  compile time constants defining static data size (i.e. arrays)	*/
 /*		  other constants													*/
 /*		  macros															*/

@@ -51,18 +51,10 @@
 
 #include "ugenv.h"
 
+#include "namespace.h"
 
+START_NAMESPACE
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -907,9 +899,7 @@ BVP *CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName);
 /* scanning of coordinates */
 INT   ReadAndPrintArgvPosition    (char *name, INT argc, char **argv, DOUBLE *pos);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 /** @} */
 

@@ -69,6 +69,7 @@
 
 #include "ugdevices.h"
 
+#include "algebra.h"
 #include "dlmgr.h"
 #include "gm.h"
 #include "elements.h"
@@ -76,7 +77,6 @@
 #include "ugm.h"
 #include "evm.h"
 #include "misc.h"
-#include "algebra.h"
 #include "dlmgr.h"
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 #include "mgheapmgr.h"
@@ -88,22 +88,18 @@
 
 #include "cw.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+#include "namespace.h"
+
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
 /*                                                                          */
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
+/*    compile time constants defining static data size (i.e. arrays)	*/
+/*    other constants													*/
 /*		  macros															*/
-/*																			*/
+/*                                                                          */
 /****************************************************************************/
 
 /* DG local refinement hack */
@@ -145,16 +141,16 @@ static INT ce_VCSTRONG;
 /*                                                                          */
 /****************************************************************************/
 
-const char * NS_PREFIX ObjTypeName[MAXVOBJECTS];
+const char* NS_PREFIX ObjTypeName[MAXVOBJECTS];
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
-static INT theAlgDepDirID;                      /* env type for Alg Dep dir                     */
-static INT theAlgDepVarID;                      /* env type for ALG_DEP vars                    */
+static INT theAlgDepDirID;                      /* env type for Alg Dep dir	*/
+static INT theAlgDepVarID;                      /* env type for ALG_DEP vars	*/
 
 static INT theFindCutDirID;                     /* env type for FindCut dir                     */
 static INT theFindCutVarID;                     /* env type for FIND_CUT vars                   */
@@ -168,9 +164,9 @@ static VECTOR **GBNV_list=NULL;         /* list pointer							*/
 static INT GBNV_MarkKey;                        /* key for Mark/Release					*/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /* 2 often used blockvector description formats */

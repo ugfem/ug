@@ -48,16 +48,10 @@
 #include "iter.h"
 #include "ls.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* defines in the following order											*/
 /*																			*/
 /*		  compile time constants defining static data size (i.e. arrays)	*/
@@ -73,9 +67,9 @@ using namespace UG3d;
 #define CSTOP(t,c)  t+=(CURRENT_TIME_LONG-clock_start);c++
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
-/*		  in the corresponding include file!)								*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
+/* in the corresponding include file!)                                      */
 /*                                                                          */
 /****************************************************************************/
 

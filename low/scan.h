@@ -1,23 +1,23 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          scan.h                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      scan.h                                                        */
+/*                                                                          */
 /* Purpose:   header file for scanning routines for npinit calls            */
-/*                                                                                                                                                      */
-/* Author:        Christian Wieners                                                                     */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        email: ug@ica3.uni-stuttgart.de                                                               */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* Author:    Christian Wieners                                             */
+/*            Institut fuer Computeranwendungen III                                                 */
+/*            Universitaet Stuttgart                                                                                */
+/*            Pfaffenwaldring 27                                                                                    */
+/*            70569 Stuttgart                                                                                               */
+/*            email: ug@ica3.uni-stuttgart.de                                                               */
+/*                                                                                           */
 /* History:   December 8, 1996                                                                  */
 /*                        low part of former np/udm/scan.c, 15.5.97                                             */
 /*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -37,16 +37,9 @@
 #include "compiler.h"
 #include "heaps.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -96,8 +89,6 @@ INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv);
 INT ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv);
 INT ReadArgvOption (const char *name, INT argc, char **argv);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

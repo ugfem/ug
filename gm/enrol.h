@@ -5,23 +5,23 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          enrol.h                                                                                                               */
-/*                                                                                                                                                      */
-/* Purpose:   contains functions to enrol user defineable structures to         */
-/*                        ug's environment.  (header file)                              */
-/*                                                                                                                                                      */
-/* Author:        Peter Bastian                                                                                                 */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        email: ug@ica3.uni-stuttgart.de                                                           */
-/*                                                                                                                                                      */
-/* History:   12.11.94 begin, ug version 3.0                                                            */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      enrol.h                                                       */
+/*                                                                          */
+/* Purpose:   contains functions to enrol user defineable structures to     */
+/*                        ug's environment.  (header file)                  */
+/*                                                                          */
+/* Author:    Peter Bastian                                                 */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   12.11.94 begin, ug version 3.0                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -30,9 +30,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __ENROL__
@@ -42,16 +42,9 @@
 #include "compiler.h"
 #include "gm.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -86,8 +79,6 @@ namespace UG3d {
 
 INT InitEnrol                   (void);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

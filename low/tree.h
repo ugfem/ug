@@ -34,16 +34,9 @@
 #include "fifo.h"
 #include "heaps.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -135,8 +128,6 @@ TREE_ENTRY *GetFirstLeafinQuader(TREE *theTree, DOUBLE *ll, DOUBLE *ur);
 TREE_ENTRY *GetNextLeafinQuader(TREE *theTree);
 
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

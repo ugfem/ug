@@ -11,15 +11,15 @@
 /*                                                                          */
 /* File:      gg3d.h                                                        */
 /*                                                                          */
-/* Purpose:   header file for the 3d grid generator                                             */
+/* Purpose:   header file for the 3d grid generator                         */
 /*                                                                          */
 /* Author:    Christian Wieners                                             */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart, Germany                                                                              */
-/*                        email: ug@ica3.uni-stuttgart.de                                                       */
-/*                                                                                                                                                      */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart, Germany                                      */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
 /* History:   18 March 96 begin, ug version 3.2                             */
 /*                                                                          */
 /* Remarks:                                                                 */
@@ -40,24 +40,12 @@
 #ifndef __GG3D__
 #define __GG3D__
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __GM__
 #include "gm.h"
-#endif
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -70,8 +58,6 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
                     INT argc, char **argv);
 int Get_Local_h(double *in, double *out);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

@@ -34,17 +34,10 @@
 #define __INITUG__
 
 #include "compiler.h"
+#include "namespace.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+START_NAMESPACE
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -59,9 +52,6 @@ INT InitUg (int *argcp, char ***argvp);
 INT ExitUg (void);
 
 
-
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

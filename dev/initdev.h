@@ -28,9 +28,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __INITDEV__
@@ -40,22 +40,14 @@
 #include "compiler.h"
 #include "ugdevices.h"
 
+#include "namespace.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+START_NAMESPACE
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* init and exit functions called internally by ugdevices.c                                                     */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* init and exit functions called internally by ugdevices.c                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -77,8 +69,6 @@ INT InitPostScriptBW (void);
 /* ppm device */
 INT InitPPMDevice(void);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

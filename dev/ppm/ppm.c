@@ -30,9 +30,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* only for the definition of NS_PREFIX */
-#include "domain.h"
-
 #include "defaults.h"
 #include "fileopen.h"
 #include "ugdevices.h"
@@ -40,13 +37,7 @@
 #include "general.h"
 
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/

@@ -4,7 +4,7 @@
 * File:      bbtree.h                                                       *
 * Purpose:   bounding box tree data structure                               *
 *                                                                           *
-* Author:	  O. Sterz                                                       *
+* Author:        O. Sterz                                                       *
 *                                                                           *
 * History:   Nov 2002 begin, ug3.8                                          *
 * Remarks:   similar to boxtree.c, but more natural to compute distances    *
@@ -15,7 +15,12 @@
 *****************************************************************************/
 #ifndef __BBTREE__
 #define __BBTREE__
+
 #include "heaps.h"
+
+#include "namespace.h"
+
+START_NAMESPACE
 
 /*****************************************************************************
 * defines in the following order:                                           *
@@ -77,5 +82,7 @@ void BBT_ClosestBBoxesToPoint(BBT_TREE *tree, DOUBLE *x, BBT_FUNC func,
                               void *bypass);
 DOUBLE BBT_TreePointDistance(BBT_TREE *tree, DOUBLE *x, void **obj,
                              BBT_POINT_DIST_FUNC dist);
+
+END_NAMESPACE
 
 #endif

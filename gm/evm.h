@@ -11,17 +11,17 @@
 /*                                                                          */
 /* Purpose:   elementary vector manipulations, header for evm.c             */
 /*                                                                          */
-/* Author:        Klaus Johannsen                                                                                               */
-/*                        Institut fuer Computeranwendungen                                                     */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        internet: ug@ica3.uni-stuttgart.de                                            */
-/*                                                                                                                                                      */
-/* History:   8.12.94 begin, ug3-version                                                                        */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/* Author:    Klaus Johannsen                                               */
+/*            Institut fuer Computeranwendungen                             */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            internet: ug@ica3.uni-stuttgart.de                            */
+/*                                                                          */
+/* History:   8.12.94 begin, ug3-version                                    */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -39,15 +39,13 @@ $Header$
 #define __EVM__
 
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __GM__
 #include "gm.h"
-#endif
 
 #include "debug.h"
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -65,16 +63,6 @@ $Header$
 /*                                                                          */
 /****************************************************************************/
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-    namespace UG3d {
-#endif
-#endif
 
 /* space dimension indices */
 #define _X_             0
@@ -638,8 +626,6 @@ INT             M4_Invert                                                       
 DOUBLE          GeneralElementVolume                            (INT tag, DOUBLE *x_co[]);
 DOUBLE          ElementVolume                                           (const ELEMENT *elem);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

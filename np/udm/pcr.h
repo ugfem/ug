@@ -43,16 +43,9 @@
 #include "numproc.h"
 #include "scan.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -90,8 +83,6 @@ INT         PrepareEPCR                 (EVECDATA_DESC *Vsym, INT DispMode, cons
 INT             PostPCR                                         (INT ID, char *path);
 INT             DoPCR                                           (INT ID, VEC_SCALAR Defect, INT PrintMode);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

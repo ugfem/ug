@@ -1,33 +1,33 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          ugblas.h                                                                                                              */
-/*                                                                                                                                                      */
-/* Purpose:   basic linear algebra routines                                                             */
-/*            working on the matrix-vector and                                                              */
-/*                        matrix-blockvector structure                                                                  */
-/*                                                                                                                                                      */
-/* Author:        Henrik Rentz-Reichert                                                                                 */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                                                                                                                                                      */
-/*                        blockvector routines from:                                                                    */
-/*                        Christian Wrobel                                                                              */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                                                                                                                                                      */
-/*                        email: ug@ica3.uni-stuttgart.de                                                       */
-/*                                                                                                                                                      */
-/* History:   06.03.95 begin, ug version 3.0                                                            */
-/*                        28.09.95 blockvector routines implemented (Christian Wrobel)  */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      ugblas.h                                                      */
+/*                                                                          */
+/* Purpose:   basic linear algebra routines                                 */
+/*            working on the matrix-vector and                              */
+/*            matrix-blockvector structure                                  */
+/*                                                                          */
+/* Author:    Henrik Rentz-Reichert                                         */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*                                                                          */
+/*            blockvector routines from:                                    */
+/*            Christian Wrobel                                              */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*                                                                          */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   06.03.95 begin, ug version 3.0                                */
+/*            28.09.95 blockvector routines implemented (Christian Wrobel)  */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -46,16 +46,9 @@
 
 #include "np.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -381,8 +374,6 @@ INT  VecCheckConsistency                        (const VECDATA_DESC *x, const VE
 INT  MatmulCheckConsistency             (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y);
 INT  TraceUGBlas                                        (INT trace);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

@@ -83,16 +83,9 @@
 /* Switch between sparse/standard block storage: */
 #undef _SPARSE_
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /* loop type */
 #define BLAS_LOOP_M     0x0000
@@ -143,8 +136,6 @@ INT MG_Matrix_Loop(MULTIGRID *mg, INT fl, INT tl, INT mode,
                    int N_vals, const DOUBLE *value, DOUBLE *result);
 
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif /* __BLASM__ */

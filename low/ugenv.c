@@ -30,9 +30,6 @@
 #include <string.h>
 #include <stdio.h>
 
-/* Needs to be the first UG include for the dimension and the namespace */
-#include "domain.h"
-
 #include "compiler.h"
 #include "heaps.h"
 #include "general.h"
@@ -41,16 +38,7 @@
 /** \todo this is a hierarchy conflict, remove. (VR) */
 #include "ugdevices.h"
 
-/* Only for the definition of NS_PREFIX */
-#include "domain.h"
-
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

@@ -1,10 +1,10 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
+/*                                                                          */
+/* File:      fileopen.h                                                                                                    */
 /*                                                                                                                                                      */
-/* File:          fileopen.h                                                                                                    */
-/*                                                                                                                                                      */
-/* Author:        Henrik Rentz-Reichert                                                                                 */
+/* Author:    Henrik Rentz-Reichert                                                                                 */
 /*                        Institut fuer Computeranwendungen III                                                 */
 /*                        Universitaet Stuttgart                                                                                */
 /*                        Pfaffenwaldring 27                                                                                    */
@@ -23,7 +23,7 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
+/*                                                                          */
 /* auto include mechanism and other include files                                                       */
 /*                                                                                                                                                      */
 /****************************************************************************/
@@ -42,16 +42,10 @@
 #include "compiler.h"
 #endif
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -128,8 +122,6 @@ const char*     AddBasePath                                     (const char *pat
 
 INT                     InitFileOpen                            (void);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

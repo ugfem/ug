@@ -6,7 +6,7 @@
 /*                                                                          */
 /* Purpose:   newton method (type nls)                                      */
 /*                                                                          */
-/* Author:    Peter Bastian                                                                                             */
+/* Author:    Peter Bastian                                                 */
 /*            Institut fuer Computeranwendungen III                         */
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
@@ -49,13 +49,7 @@
 #include "transfer.h"
 #include "newton.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

@@ -34,10 +34,7 @@
 #ifndef __QUADTREE__
 #define __QUADTREE__
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -47,6 +44,9 @@
 #include  "ugm.h"
 #include "ggm.h"
 
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -133,4 +133,7 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL,
                       DOUBLE xt[3], DOUBLE yt[3], DOUBLE searchradis);
 
 FRONTCOMP* AccelBaseTreeSearch(FRONTLIST** myList);
+
+END_NAMESPACE
+
 #endif

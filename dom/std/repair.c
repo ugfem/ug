@@ -1,9 +1,9 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  repair.c	                                                                                                */
-/*																			*/
+/*                                                                          */
+/* File:      repair.c                                                      */
+/*                                                                          */
 /* Purpose:   repair tool                                                                               */
 /*																			*/
 /* Author:	  Christian Wieners                                                                     */
@@ -56,16 +56,10 @@
 /* domain module */
 #include "std_domain.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* defines in the following order											*/
 /*																			*/
 /*		  compile time constants defining static data size (i.e. arrays)	*/

@@ -34,23 +34,13 @@
 #include <math.h>
 #include <time.h>
 
-/* only for the definition of NS_PREFIX */
-#include "domain.h"
-
-
 #include "defaults.h"
 #include "fileopen.h"
 #include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -80,7 +70,7 @@ using namespace UG3d;
 
 #define COLORS          256
 #define GRAY                    0.5
-#define GRAY_CC                 (~(short) 0)
+#define GRAY_CC                 (~(short)0)
 
 #define TRFMX(pt) (((float)(pt.x))*mxx + ((float)(pt.y))*mxy + tx)
 #define TRFMY(pt) (((float)(pt.x))*myx + ((float)(pt.y))*myy + ty)

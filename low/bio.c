@@ -39,9 +39,6 @@
 #include <stdio.h>
 #include <string.h>
 
-/* For NS_PREFIX */
-#include <domain.h>
-
 #ifndef __MWCW__
 #include <rpc/rpc.h>    /* to include xdr.h in a portable way */
 #endif
@@ -49,6 +46,8 @@
 #include "general.h"
 
 #include "bio.h"
+
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

@@ -40,9 +40,6 @@
 /* ANSI-C includes */
 #include <stdio.h>
 
-/* for the definition of NS_PREFIX */
-#include "domain.h"
-
 /* low module */
 #include "compiler.h"
 #include "misc.h"
@@ -56,13 +53,7 @@
 /* own header */
 #include "initlow.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

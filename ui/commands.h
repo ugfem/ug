@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __COMMANDS__
@@ -41,16 +41,9 @@
 #include "cmdline.h"
 #include "gm.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /** I need this in DUNE
    maybe only temporarily. */
@@ -105,8 +98,6 @@ INT                      QualityElement                 (MULTIGRID *theMG, ELEME
 MULTIGRID       *GetCurrentMultigrid    (void);
 INT              SetCurrentMultigrid    (MULTIGRID *theMG);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

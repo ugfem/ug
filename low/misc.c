@@ -37,9 +37,6 @@
 #include <limits.h>
 #include <float.h>
 
-/* only for the definition of NS_PREFIX */
-#include "domain.h"
-
 #ifdef __NECSX4__
 #include <sys/types.h>
 #include <sys/syssx.h>
@@ -55,13 +52,7 @@
 #include "misc.h"
 #include "heaps.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

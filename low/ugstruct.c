@@ -36,9 +36,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/* only for the definition of NS_PREFIX */
-#include "domain.h"
-
 #include "compiler.h"
 #include "general.h"
 #include "heaps.h"
@@ -48,18 +45,12 @@
 #include "ugstruct.h"
 
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
 /*		  compile time constants defining static data size (i.e. arrays)	*/
 /*		  other constants													*/
 /*		  macros															*/

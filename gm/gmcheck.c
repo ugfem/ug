@@ -69,21 +69,15 @@
 
 #include "cw.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
 /*                                                                          */
 /* compile time constants defining static data size (i.e. arrays)           */
-/*		  other constants													*/
-/*		  macros															*/
+/* other constants                                                          */
+/* macros                                                                   */
 /*                                                                          */
 /****************************************************************************/
 

@@ -44,13 +44,7 @@
 /* own header */
 #include "freebnd.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -87,7 +81,7 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
-REP_ERR_FILE;
+  REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

@@ -14,9 +14,9 @@
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
 /*            70550 Stuttgart                                               */
-/*            email: ug@ica3.uni-stuttgart.de                                   */
+/*            email: ug@ica3.uni-stuttgart.de                               */
 /*                                                                          */
-/* History:   960915 sl  start of dynamic list management                                       */
+/* History:   960915 sl  start of dynamic list management                   */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*            Management of dynamic linked lists, which consist of          */
@@ -51,17 +51,9 @@
 #include "parallel.h"
 #endif
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
 
+START_NAMESPACE
 
 #ifdef ModelP
 
@@ -137,8 +129,6 @@ PRINT_LIST(VERTEX);
 PRINT_LIST(VECTOR);
 #endif
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif /* __DLMGR_H__ */

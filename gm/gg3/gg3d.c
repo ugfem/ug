@@ -9,9 +9,9 @@
 /* Author:    Christian Wieners                                             */
 /*            Institut fuer Computeranwendungen III                         */
 /*		Universitaet Stuttgart                                        */
-/*		Pfaffenwaldring 27				                            */
-/*		70569 Stuttgart, Germany			                            */
-/*		email: ug@ica3.uni-stuttgart.de		                        */
+/*		Pfaffenwaldring 27				                   */
+/*		70569 Stuttgart, Germany			                   */
+/*		email: ug@ica3.uni-stuttgart.de		                   */
 /*                                                                          */
 /* History:   18 March 96 begin, ug version 3.2                             */
 /*                                                                          */
@@ -46,13 +46,7 @@
 #include "gg3d.h"
 #include "cw.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

@@ -50,16 +50,9 @@
 #include "stdlib.h" /* for the patched malloc */
 #endif
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -256,9 +249,7 @@ INT          DefineBlock            (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM si
 INT          FreeBlock                (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id);
 /* @} */
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 /** @} */
 

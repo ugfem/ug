@@ -7,15 +7,15 @@
 
 /****************************************************************************/
 /*                                                                          */
-/* File:          ugm.h                                                                                                                 */
+/* File:      ugm.h                                                         */
 /*                                                                          */
-/* Purpose:   unstructured grid manager header file                                             */
-/*                        internal interface in grid manager module                                     */
-/*                                                                                                                                                      */
-/* Author:        Peter Bastian                                                                                                 */
-/*                        Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
-/*                        Universitaet Heidelberg                                                                               */
-/*                        Im Neuenheimer Feld 368                                                                               */
+/* Purpose:   unstructured grid manager header file                         */
+/*            internal interface in grid manager module                     */
+/*                                                                          */
+/* Author:    Peter Bastian                                                                                                 */
+/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*            Universitaet Heidelberg                                                                               */
+/*            Im Neuenheimer Feld 368                                                                               */
 /*                        6900 Heidelberg                                                                                               */
 /*                        internet: ug@ica3.uni-stuttgart.de                                            */
 /*                                                                                                                                                      */
@@ -44,16 +44,9 @@
 #include "gm.h"
 #include "dlmgr.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -178,8 +171,6 @@ INT                     SetPerVecVOBJECT                        (GRID *g);
 INT                     Grid_CheckPeriodicity           (GRID *g);
 #endif
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif

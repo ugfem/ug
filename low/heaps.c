@@ -47,18 +47,13 @@
 #include "gm.h"
 #include "commands.h"
 #include "mgheapmgr.h"
+#include "namespace.h"
+USING_UG_NAMESPACES
 NS_PREFIX MULTIGRID * NS_PREFIX GetCurrentMultigrid (void);
+#else
+USING_UG_NAMESPACES
 #endif
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#elif defined __THREEDIM__
-using namespace UG3d;
-#else
-#error Neither __TWODIM__ nor __THREEDIM__ is defined!
-#endif
-#endif
 
 /****************************************************************************/
 /*                                                                          */

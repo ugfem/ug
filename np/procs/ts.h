@@ -2,11 +2,11 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      ts.h                                                              */
+/* File:      ts.h                                                          */
 /*                                                                          */
 /* Purpose:   time-stepping scheme for (non-)linear time-dependent problems */
 /*                                                                          */
-/* Author:    Peter Bastian                                                                                             */
+/* Author:    Peter Bastian                                                 */
 /*            Institut fuer Computeranwendungen III                         */
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __TS__
@@ -37,16 +37,9 @@
 #include "nls.h"
 #include "assemble.h"
 
-/**************************************************/
-/* A namespace for the c++ version                */
-/**************************************************/
-#ifdef __cplusplus
-#ifdef __TWODIM__
-namespace UG2d {
-#else
-namespace UG3d {
-#endif
-#endif
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -109,7 +102,7 @@ typedef INT (*TimePostProcessProcPtr)                                        \
 /****************************************************************************/
 /*                                                                                                                                                      */
 /* definition of exported functions                                                                                     */
-/*                                                                                                                                                      */
+/*                                                                          */
 /****************************************************************************/
 
 /* default init function for tsolver num procs */
@@ -124,8 +117,6 @@ INT NPTSolverExecute (NP_BASE *np, INT argc, char **argv);
 /* init */
 INT InitTSolver (void);
 
-#ifdef __cplusplus
-}  /* namespace UG{2|3}d */
-#endif
+END_NAMESPACE
 
 #endif
