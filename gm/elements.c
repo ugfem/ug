@@ -266,7 +266,10 @@ RCSID("$Header$",UG_RCS_STRING)
 static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
 {
   INT p_count, tag;
-  INT i,j,k,l,m,n,n1,n2,from,to;
+  INT i,j,k,l,n,from,to;
+        #ifdef __THREEDIM__
+  INT m,n1,n2;
+        #endif
 
   tag = el->tag;
   p_count = 0;

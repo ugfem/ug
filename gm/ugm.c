@@ -195,8 +195,6 @@ INT GetFreeOBJT ()
 
 INT ReleaseOBJT (INT type)
 {
-  MULTIGRID *theMG;
-
   if (type>=MAXOBJECTS)
     RETURN (GM_ERROR);
 
@@ -411,7 +409,7 @@ INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
 INT MGMemory (MULTIGRID *theMG, INT *used, INT *free)
 {
   void *ptr;
-  INT i,j,k,l;
+  INT j,k;
 
   *used = HeapSize(MGHEAP(theMG));
   *free = HeapUsed(MGHEAP(theMG));
@@ -998,7 +996,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 
 NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
 {
-  COORD *global,*local,lambda[DIM-1];
+  COORD *global,*local;
   INT n,m,j,moved;
   VERTEX *theVertex,*VertexOnEdge[MAX_EDGES_OF_ELEM];
   NODE *theNode;
@@ -1250,7 +1248,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
                         NODE **nodes)
 {
   ELEMENT *pe;
-  INT i,j;
+  INT i;
   VECTOR *pv;
 
   if (objtype == IEOBJ)
@@ -2090,10 +2088,8 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
 
 static INT DisposeNode (GRID *theGrid, NODE *theNode)
 {
-  LINK *link0,*link1,*pl;
-  EDGE *pe;
   VERTEX *theVertex;
-  NODE *to,*father;
+  NODE *father;
 
   HEAPFAULT(theNode);
 
@@ -2219,12 +2215,15 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 {
   INT i,j,edge,tag;
-  VECTOR *theVector;
   NODE *theNode;
   VERTEX *theVertex;
   EDGE *theEdge;
   ELEMENTSIDE *theElementSide;
-  ELEMENT *theNeighbor,*theFather;
+  ELEMENT *theFather;
+        #ifdef __THREEDIM__
+  VECTOR *theVector;
+  ELEMENT *theNeighbor;
+        #endif
 
   HEAPFAULT(theElement);
 
@@ -2597,7 +2596,7 @@ static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
 
 /****************************************************************************/
 /*D
-   OrderNodesInGrid - reorder double linked ÔNODEÔ list
+   OrderNodesInGrid - reorder double linked ŒNODEŒ list
 
    SYNOPSIS:
    INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign);
@@ -2903,14 +2902,18 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
   GRID *theGrid;
   NODE *theNode;
   VERTEX *theVertex;
-  VSEGMENT *vs,*vs1;
-  PATCH *Patch;
+  VSEGMENT *vs;
   PATCH_DESC thePatchDesc;
-  INT i,j,k,from,to,npc,node_on_edge;
+  INT i;
+        #ifdef __THREEDIM__
+  PATCH *Patch;
   COORD *from_local,*to_local;
   COORD diff1[DIM_OF_BND],diff2[DIM_OF_BND],local[DIM_OF_BND];
   COORD_VECTOR global;
   DOUBLE val,lambda;
+  VSEGMENT *vs1;
+  INT j,k,from,to,npc,node_on_edge;
+        #endif
 
   /* check level */
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
@@ -3084,13 +3087,10 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
 
 INT InsertBoundaryNode (MULTIGRID *theMG, INT patch_id, COORD *pos)
 {
-  NODE *theNode;
-  VERTEX *theVertex;
   BVP *theBVP;
   BVP_DESC theBVPDesc;
   PATCH *thePatch;
   PATCH_DESC thePatchDesc;
-  int i;
 
   /* get BVP description */
   theBVP = MG_BVP(theMG);
@@ -3377,7 +3377,7 @@ INT MoveMidNode (MULTIGRID *theMG,
   VSEGMENT *vs0,*vs1,*vs;
   PATCH *thePatch;
   COORD *x[MAX_CORNERS_OF_ELEM],*lambda0,*lambda1,*mid_lambda,*global,*local;
-  COORD_VECTOR oldPos,bnd_global;
+  COORD_VECTOR bnd_global;
   DOUBLE diff;
   INT n,k,i,co0,co1,edge,moved;
 
@@ -3501,7 +3501,6 @@ INT MoveMidNode (MULTIGRID *theMG,
 INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 {
   INT l,i,n,m;
-  DOUBLE ratio;
   DOUBLE N;
   GRID *theGrid;
   NODE *node;
@@ -3666,15 +3665,17 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
   GRID             *theGrid;
   INT i,j,k,l,m,found,num,tag,ElementType;
   INT NeighborSide[MAX_SIDES_OF_ELEM];
-  NODE             *sideNode[MAX_CORNERS_OF_SIDE],*NeighborNode,*theNode;
-  VERTEX           *Vertex[MAX_CORNERS_OF_ELEM],*sideVertex[MAX_CORNERS_OF_SIDE],*theVertex;
+  NODE             *sideNode[MAX_CORNERS_OF_SIDE],*NeighborNode;
+  VERTEX           *Vertex[MAX_CORNERS_OF_ELEM],*sideVertex[MAX_CORNERS_OF_SIDE];
   ELEMENT          *theElement,*Neighbor[MAX_SIDES_OF_ELEM];
-  EDGE             *theEdge;
   COORD param[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE][DIM_OF_BND];
   COORD        *plambda[MAX_CORNERS_OF_SIDE];
   VSEGMENT         *vs,*vs1;
   PATCH            *thePatch[MAX_SIDES_OF_ELEM], *Patch;
-  PATCH_DESC thePatchDesc;
+        #ifdef __TWODIM__
+  VERTEX           *theVertex;
+  NODE             *theNode;
+        #endif
 
   /* check level */
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
@@ -4049,8 +4050,6 @@ INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSION */
 {
   GRID *theGrid;
   ELEMENT *theNeighbor;
-  LINK *theLink;
-  EDGE *theEdge;
   INT i,j,found;
 
   /* check level */
@@ -5450,7 +5449,6 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
   ELEMENT *theElement;
   LINK *theLink;
   int i,j;
-  EDGE *theEdge;
   INT SideError, EdgeError, NodeError,count,n;
 
   /* reset used flags
@@ -5799,8 +5797,10 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
   ELEMENT *theElement;
   LINK *theLink;
   int i,j;
-  EDGE *theEdge;
   INT SideError, EdgeError, NodeError, ESonError, NSonError, count;
+        #ifdef ModelP
+  EDGE *theEdge;
+        #endif
 
   /* reset used flags */
   for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))

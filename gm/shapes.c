@@ -31,6 +31,7 @@
 
 #include <math.h>
 #include <assert.h>
+#include <stddef.h>
 
 #include "compiler.h"
 #include "misc.h"
@@ -581,7 +582,6 @@ INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
        DOUBLE result[DIM])
 {
 	DOUBLE GradRef[DIM],sub1,sub2,sub3,sub4;
-	INT i;
 
 	if (dim==2)
 	{
@@ -1220,6 +1220,7 @@ COORD *LMP (INT n)
 		case 8:	return (LMP_Hexahedron);
 	}
 #endif
+	return (NULL);
 }
 
 /****************************************************************************/

@@ -2258,8 +2258,6 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   INT i,n,found,NeighborSide[4];
   NODE *Node[3];
   ELEMENT *theElement,*Neighbor[4];
-  EDGE *theEdge;
-  LINK *theLink;
   INT reply;
 
 
@@ -2427,7 +2425,6 @@ static FRONTCOMP *CreateOrSelectFC (
 {
   FRONTCOMP *thenewFC;
   VERTEX *theVertex;
-  NODE *innerNodeNew;
   COORD_VECTOR pos;
 
   if (recursiondepth > 10)
@@ -2509,7 +2506,7 @@ static FRONTCOMP *CreateOrSelectFC (
 /*                                                                          */
 /* Purpose:   necessary for dynamic object data in ug 3.0					*/
 /*            the different data structures for the grid generator get their*/
-/*			  id«s															*/
+/*			  id´s															*/
 /*                                                                          */
 /*                                                                          */
 /****************************************************************************/
