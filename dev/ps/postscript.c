@@ -65,6 +65,8 @@
 #define  PAPER_X                   600
 #define  PAPER_Y                   850
 
+#define REL_CHARWIDTH                      0.7
+
 #define COLORS          256
 #define GRAY                    0.5
 #define GRAY_CC                 (~(unsigned long)0)
@@ -362,6 +364,8 @@ static void PSText (const char *s, INT mode)
 
 static void PSCenteredText (SHORT_POINT point, const char *s, INT mode)
 {
+  /* centering?? */
+  point.x -= 0.5*REL_CHARWIDTH*PSts*strlen(s);
   PSMoveTo(point);
   PSText(s,mode);
 }
