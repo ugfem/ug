@@ -20,6 +20,7 @@ then
 	echo "         DEC (set ARCH = DEC)";
 	echo "         PARAGON (set ARCH = PARAGON)";
 	echo "         PC (set ARCH = PC)";
+	echo "         MKLINUX (set ARCH = MKLINUX)";
 	echo "         POWERGC (set ARCH = POWERGC)";
 	echo "         CC (set ARCH = CC)";
 	echo "         AIX (set ARCH = AIX)";
@@ -253,6 +254,9 @@ edit_ugconf()
 		;;
 	PC)
 		sed 's/^ARCH.*$/ARCH = PC/' $1 > $1.tmp
+		;;
+	MKLINUX)
+		sed 's/^ARCH.*$/ARCH = MKLINUX/' $1 > $1.tmp
 		;;
 	POWERGC)
 		sed 's/^ARCH.*$/ARCH = POWERGC/' $1 > $1.tmp
