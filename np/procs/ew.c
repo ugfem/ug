@@ -412,8 +412,7 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
   UserWrite("M level\n");
   PrintMatrix(GRID_ON_LEVEL(theMG,tl),M,3,3);
   UserWrite("M surface\n");
-  PrintSMatrix(theMG,M);
-
+  /*PrintSMatrix(theMG,M);*/
 
 
   if (l_ddot(GRID_ON_LEVEL(theMG,tl),t,EVERY_CLASS,x,scal1) != NUM_OK)
