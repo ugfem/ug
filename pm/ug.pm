@@ -6,7 +6,7 @@ use Exporter;
 $VERSION = 1.0;
 @ISA = qw(Exporter);
 
-@EXPORT = qw(ug float tmpfile time_start time_stop time_eval);
+@EXPORT = qw(ug float tmpfile time_start time_stop time_set time_eval);
 @EXPORT_OK = qw();
 %EXPORT_TAGS = qw();
 
@@ -48,8 +48,8 @@ BEGIN
 	{
 		my $name=shift;
 		
-		$time{$name}=gettimeofday();
 		if (!(defined $time{"$name"})) { $time{"total $name"}=$time{"diff $name"}=0; } 
+		$time{$name}=gettimeofday();
 		$time{"running $name"}=1;
 	}
 	sub time_stop
@@ -61,6 +61,16 @@ BEGIN
 		$dt=gettimeofday()-$time{$name};
 		$time{"total $name"}+=$dt;
 		$time{"diff $name"}+=$dt;
+		$time{"running $name"}=0;
+	}
+	sub time_set
+	{
+		my $name=shift;
+		my $dt=shift;
+
+		if (!(defined $time{"$name"})) { $time{"total $name"}=$time{"diff $name"}=$dt; }
+		else { $time{"total $name"}+=$dt; $time{"diff $name"}=$dt; }
+		$time{$name}=-1;
 		$time{"running $name"}=0;
 	}
 	sub time_eval
