@@ -1,0 +1,78 @@
+#!/bin/sh
+# ugproject
+if test "$1" = "-help"
+then
+	echo "usage: $0 [options]";
+	echo "purpose: compile all ug libraries and applications";
+	echo "Options are";
+	echo " ug2, ug3, appl2, appl3 "
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+# set -e to stop after the first error; otherwise you may miss errors.
+set -e
+
+
+ug2 () 
+{
+	ugconf 2
+	ugmake ug  xmc
+	ugmake dom xmc
+
+	ugmake diff2d xmc
+	ugmake ns2d   xmc
+	ugmake fem    xmc
+	ugmake cd     xmc
+	ugmake scalar xmc
+
+	ugmake simple
+	ugmake diff2da
+	ugmake ns2da
+	ugmake fema xmc
+	ugmake cda
+	ugmake scalar2d
+}
+
+ug3 () 
+{
+	ugconf 3
+	ugmake ug  xmc
+	ugmake dom xmc
+
+	ugmake fem    xmc
+	ugmake cd     xmc
+	ugmake scalar xmc
+
+	ugmake fema xmc
+	ugmake cda
+	ugmake scalar3d
+}
+
+ugmake dev xmc
+
+ugconf save
+
+ugconf 2
+ugconf NONETGEN
+ug2
+
+ugmake cda -i ifdef
+ugmake fem -i ifdef
+ugmake scalar -i clean
+
+ugconf 3
+if test "$1" = "netgen"
+then
+    ugconf NETGEN
+fi
+ug3
+
+ugconf restore
+
+echo "simple, diff2da, ns2da, cd2d, cd3d, fem2d, fem3d, scalar2d, scalar3d created"

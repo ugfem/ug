@@ -15,21 +15,23 @@ then
 fi
 
 ugmake ug -i clean
+ugmake scalar -i clean
+ugmake cda -i clean
+
 ugmake simple -i clean
 ugmake diff2d -i clean
 ugmake diff2da -i clean
-ugmake cda -i clean
 ugmake fema -i clean
 ugmake ns2d -i clean
 ugmake ns2da -i clean
-ugmake scalar -i clean
 ugmake scalar2d -i clean
 ugmake scalar3d -i clean
-ugmake tools -i clean
 
 if test "$1" = "all"
 then
 	rm -f $UGROOT/lib/*.a
+	rm -f $UGROOT/../*/pclib/*.a
 	rm -f -r $UGROOT/include
+	ugmake tools -i clean
 fi
 
