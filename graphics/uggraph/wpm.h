@@ -107,7 +107,7 @@
 #define PO_MAXCONTOURS                  50
 
 #define PO_STATUS(p)                    ((p)->theHead.status)
-#define PO_CBD(p)                               ((p)->theHead.clearBevoreDraw)
+#define PO_CBD(p)                               ((p)->theHead.clearBeforeDraw)
 #define PO_POT(p)                               ((p)->theHead.thePlotObjType)
 #define PO_MIDPOINT(p)                  ((p)->theHead.theMidPoint)
 #define PO_RADIUS(p)                    ((p)->theHead.theRadius)
@@ -198,7 +198,7 @@ struct PlotObjHead {                                            /* head of all P
   MULTIGRID *theMG;                                                     /* the data base								*/
   COORD theMidPoint[3];                                         /* MidPoint of covering 2/3D sphere                     */
   COORD theRadius;                                                      /* radius of covering 2/3D sphere				*/
-  INT clearBevoreDraw;                                          /* YES or NO									*/
+  INT clearBeforeDraw;                                          /* YES or NO									*/
 };
 
 /*----------- application dimension independent PlotObj ---------------------*/
