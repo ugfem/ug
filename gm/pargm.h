@@ -71,9 +71,16 @@ enum Priorities
 
 /* define mapping from object priority to position in linked list */
 #define PRIO2LISTPART(listtype,prio) \
-  ((listtype == ELEMENT_LIST) ? ((prio == PrioGhost) ? 0 : (prio == PrioMaster) ? 1 : -1) :\
+  ((listtype == ELEMENT_LIST) ? ((prio == PrioGhost) ? 0 :\
+                                 (prio == PrioMaster) ? 1 : -1) :\
    ((prio == PrioGhost) ? 0 : (prio == PrioBorder) ? 1 : \
       (prio == PrioMaster) ? 2 : -1))
+
+#define LISTPART2PRIO(listtype,listpart) \
+  ((listtype == ELEMENT_LIST) ? ((listpart == 0) ? PrioGhost :\
+                                 (listpart == 1) ? PrioMaster : -1) :\
+   ((listpart == 0) ? PrioGhost : (listpart == 1) ? PrioBorder : \
+      (listpart == 2) ? PrioMaster : -1))
 
 
 /* map pointer to structure onto a pointer to its DDD_HDR */
@@ -118,6 +125,9 @@ enum Priorities
 #define ID_FMTE     "%ld/%08x/%d"
 #define ID_FFMTE    "%9ld/%08x/%02d"
 #define ID_PRTE(x)  ((long)ID(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#define ID_FMTX     "%x/%ld/%08x/%d"
+#define ID_FFMTX    "%x/%9ld/%08x/%02d"
+#define ID_PRTX(x)  x,((long)ID(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
 
 #define VID_FMT     ID_FMT
 #define VID_FFMT    ID_FFMT
@@ -125,6 +135,9 @@ enum Priorities
 #define VID_FMTE    ID_FMTE
 #define VID_FFMTE   ID_FFMTE
 #define VID_PRTE(x) ((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x)),DDD_InfoPriority(PARHDRV(x))
+#define VID_FMTX    ID_FMTX
+#define VID_FFMTX   ID_FFMTX
+#define VID_PRTX(x) x,((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x)),DDD_InfoPriority(PARHDRV(x))
 
 #define EID_FMT     ID_FMT
 #define EID_FFMT    ID_FFMT
@@ -132,6 +145,9 @@ enum Priorities
 #define EID_FMTE    ID_FMTE
 #define EID_FFMTE   ID_FFMTE
 #define EID_PRTE(x) ((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x)),DDD_InfoPriority(PARHDRE(x))
+#define EID_FMTX    ID_FMTX
+#define EID_FFMTX   ID_FFMTX
+#define EID_PRTX(x) x,((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x)),DDD_InfoPriority(PARHDRE(x))
 
 #define VINDEX_FMT     ID_FMT
 #define VINDEX_FFMT    ID_FFMT
@@ -139,7 +155,11 @@ enum Priorities
 #define VINDEX_FMTE    ID_FMTE
 #define VINDEX_FFMTE   ID_FFMTE
 #define VINDEX_PRTE(x) ((long)VINDEX(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#define VINDEX_FMTX    ID_FMTX
+#define VINDEX_FFMTX   ID_FFMTX
+#define VINDEX_PRTX(x) x,((long)VINDEX(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
 
+#define PFMT            "%3d:"
 #else
 
 #define ID_FMT      "%ld"
@@ -147,7 +167,10 @@ enum Priorities
 #define ID_PRT(x)   ((long)ID(x))
 #define ID_FMTE     "%ld"
 #define ID_FFMTE    "%9ld"
-#define ID_PRTE(x)  ID_PTR(x)
+#define ID_PRTE(x)  ID_PRT(x)
+#define ID_FMTX     "%ld"
+#define ID_FFMTX    "%9ld"
+#define ID_PRTX(x)  ID_PRT(x)
 
 #define VID_FMT     ID_FMT
 #define VID_FFMT    ID_FFMT
@@ -155,6 +178,9 @@ enum Priorities
 #define VID_FMTE    ID_FMTE
 #define VID_FFMTE   ID_FFMTE
 #define VID_PRTE(x) VID_PRT(x)
+#define VID_FMTX    ID_FMTX
+#define VID_FFMTX   ID_FFMTX
+#define VID_PRTX(x) VID_PRT(x)
 
 #define EID_FMT     ID_FMT
 #define EID_FFMT    ID_FFMT
@@ -162,6 +188,9 @@ enum Priorities
 #define EID_FMTE    ID_FMTE
 #define EID_FFMTE   ID_FFMTE
 #define EID_PRTE(x) EID_PRT(x)
+#define EID_FMTX    ID_FMTX
+#define EID_FFMTX   ID_FFMTX
+#define EID_PRTX(x) EID_PRT(x)
 
 #define VINDEX_FMT     ID_FMT
 #define VINDEX_FFMT    ID_FFMT
@@ -169,7 +198,11 @@ enum Priorities
 #define VINDEX_FMTE    ID_FMTE
 #define VINDEX_FFMTE   ID_FFMTE
 #define VINDEX_PRTE(x) VINDEX_PRT(x)
+#define VINDEX_FMTX    ID_FMTX
+#define VINDEX_FFMTX   ID_FFMTX
+#define VINDEX_PRTX(x) VINDEX_PRT(x)
 
+#define PFMT            "%1d:"
 #endif
 
 
