@@ -2062,7 +2062,7 @@ static INT compare_node (const void *e0, const void *e1)
 	return(0);
 }
 
-static INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
+INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 							 ELEMENT *SonList[MAX_SONS], INT *SonSides, 
 							 INT NeedSons)
 {
