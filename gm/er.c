@@ -23,6 +23,36 @@
 #undef __PATCH_UG_RULES__
 
 /****************************************************************************/
+/*
+        storage allocation stages:
+
+        Notation:	M - Mark(Tmp)Mem
+                                G - Get(Tmp)Mem
+                                R - Release(Tmp)Mem
+
+
+        ------------------------+-+-+-+-+---+-+-+-+-+
+   |BOTTOM	|	|  TOP	|
+        ------------------------+-+-+-+-+---+-+-+-+-+
+                stack level			|0|1|2|3|	|0|1|2|3|
+        ------------------------+-+-+-+-+---+-+-+-+-+
+        (1) for hrules			|M| | | |	| | | | |
+        (2) hash table			| | | | |	| |M| | |
+ | | | | |	| |G| | |
+        (3) interface rules		| | | | |	| | |M| |
+ | | | | |	| | |G| |
+        (4) hrules				|G| | | |	| | | | |
+        (5) free (3)			| | | | |	| | |R| |
+        (6) further hrules		|G| | | |	| | | | |
+        (6) hrule table			|G| | | |	| | | | |
+        (7) free (2)			| | | | |	| |R| | |
+        (7) mrule table (rm+er)	| | | | |	|G| | | |
+        (9) free hrules			|R| | | |	| | | | |
+        ------------------------+-+-+-+-+---+-+-+-+-+
+ */
+/****************************************************************************/
+
+/****************************************************************************/
 /*																			*/
 /* include files															*/
 /*			  system include files											*/
@@ -39,7 +69,6 @@
 #include "rm.h"
 #include "mgio.h"
 #include "ugm.h"
-#include "GenerateRules.h"
 
 /* own header */
 #include "er.h"
@@ -80,7 +109,7 @@ enum NB_STATUS {
 };
 
 #define HASH_SIZE                               1000
-#define HASH_FACTOR                             .618033988              /* 0.5*(sqrt(5)-1)			*/
+#define HASH_FACTOR                             .61803398874989         /* golden section: 0.5*(sqrt(5)-1) */
 #define HASH_ADDRESS(k)                 floor(HASH_SIZE*(k*HASH_FACTOR-floor(k*HASH_FACTOR)))
 
 #define ER_NSONS(p)                             ((p)->nsons)
@@ -106,6 +135,8 @@ enum NB_STATUS {
   (long)REFINE(e),                                                                                                                        \
   (int)NSONS(e),                                                                                                                          \
   (int)ns
+#define PD_ERR(l,x,e)                   {PRINTDEBUG(gm,l,x); e++; /* ASSERT(FALSE);*/}
+#define PD(x)                                   {PrintDebug x;}
 
 /****************************************************************************/
 /*																			*/
@@ -116,9 +147,10 @@ enum NB_STATUS {
 
 typedef struct {
 
-  SHORT nsons;
-  SHORT nco[MAX_SONS];
-  DOUBLE dco[MAX_SONS];
+  SHORT nsons;                                  /* number of son elements					*/
+  SHORT nco[MAX_SONS];                  /* number of son corners					*/
+  DOUBLE dco[MAX_SONS];                 /* corners coded as digits to base			*/
+  /* MAX_REFINED_CORNERS_DIM					*/
 
 } ERULE;
 
@@ -126,15 +158,26 @@ typedef INT HRID;
 
 struct hashed_rule {
 
-  HRID id;
-  DOUBLE key;
-  SHORT tag;
-  struct hashed_rule *next;
+  HRID id;                                              /* rule id will continue tag-wise rm-rules	*/
+  DOUBLE key;                                           /* hash key									*/
+  SHORT tag;                                            /* tag of element							*/
+  struct hashed_rule *next;             /* list of rules per hash entry				*/
 
-  ERULE erule;
+  ERULE erule;                                  /* refinement rule							*/
   /* will be allocated with additional doubles for ordered sons			*/
   /* CAUTION: storage occupied may be < sizeof(HRULE)						*/
 };
+
+/* HRULE example for 3 sons:
+        id
+        key
+        tag
+        next
+        nsons						// begin of ERULE
+        nco[MAX_SONS]
+        dco[3]
+        oco[3]						// corners in ascending order
+ */
 
 typedef struct hashed_rule HRULE;
 typedef REFRULE URULE;
@@ -155,22 +198,24 @@ typedef REFRULE URULE;
 
 static struct {
 
-  HRULE **hash_table;
-  HRULE **hrule[TAGS];
-  long maxrule[TAGS];
-  long maxrules;
-  long nelem_inspected[TAGS];
-  long nelems_inspected;
-  long nelem_not_inspected[TAGS];
-  long nelems_not_inspected;
-  HEAP *heap;
+  HEAP *heap;                                                   /* multigrid heap						*/
+
+  HRULE **hash_table;                                   /* hash table							*/
+  HRULE **hrule[TAGS];                          /* tables with hrules sorted by id		*/
+
+  long maxrule[TAGS];                                   /* max rule id per tag (rm+er)			*/
+  long maxrules;                                        /* max rule id (rm+er)					*/
+  long nelem_inspected[TAGS];                   /* elements getting er-rules per tag	*/
+  long nelems_inspected;                        /* elements getting er-rules			*/
+  long nelem_not_inspected[TAGS];       /* elements having rm-rules per tag		*/
+  long nelems_not_inspected;                    /* elements having rm-rules				*/
 
         #ifdef ModelP
-  long if_elems;
-  ERULE *interface_rules;
+  long if_elems;                                        /* number of elements getting er-rules	*/
+  ERULE *interface_rules;                       /* table of interface rules				*/
         #endif
 
-} global;
+} global;                                                       /* static globals of this module		*/
 
 REP_ERR_FILE;
 
@@ -183,52 +228,26 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*
-        storage allocation stages:
-
-        Notation:	M - Mark(Tmp)Mem
-                                G - Get(Tmp)Mem
-                                R - Release(Tmp)Mem
-
-
-        ------------------------+-+-+-+-+---+-+-+-+-+
-   |BOTTOM	|	|  TOP	|
-        ------------------------+-+-+-+-+---+-+-+-+-+
-                stack level			|0|1|2|3|	|0|1|2|3|
-        ------------------------+-+-+-+-+---+-+-+-+-+
-        (1) for hrules			|M| | | |	| | | | |
-        (2) hash table			| | | | |	| |M| | |
- | | | | |	| |G| | |
-        (3) interface rules		| | | | |	| | |M| |
- | | | | |	| | |G| |
-        (4) hrules				|G| | | |	| | | | |
-        (5) free (3)			| | | | |	| | |R| |
-        (6) further hrules		|G| | | |	| | | | |
-        (6) hrule table			|G| | | |	| | | | |
-        (7) free (2)			| | | | |	| |R| | |
-        (7) mrule table (rm+er)	| | | | |	|G| | | |
-        (9) free hrules			|R| | | |	| | | | |
-        ------------------------+-+-+-+-+---+-+-+-+-+
- */
-/****************************************************************************/
-
 
 /****************************************************************************/
-/*D
-   name - short_description
+/*doctext_disabled
+    Corner2DCorners - map corner array to DOUBLE
 
-   SYNOPSIS:
+    SYNOPSIS:
+    static DOUBLE Corner2DCorners (INT n, SHORT corners[])
 
-   PARAMETERS:
-   .  par - meaning
+    PAAMETERS:
+   .   n - number of corners
+   .   corners - array of corner IDs
 
-   DESCRIPTION:
+    DESCRIPTION:
+        Convert list of corner IDs into one DOUBLE value. Corner IDs are digits
+        in a MAX_REFINED_CORNERS_DIM base.
 
-   RETURN VALUE:
-
-   SEE ALSO:
-   D*/
+    RETURN VALUE:
+    DOUBLE
+   .n   coded coners
+   doctext_disabled*/
 /****************************************************************************/
 
 static DOUBLE Corner2DCorners (INT n, SHORT corners[])
@@ -244,6 +263,30 @@ static DOUBLE Corner2DCorners (INT n, SHORT corners[])
   return (dco);
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    DCorners2Corners - convert DOUBLE into array of corner IDs
+
+    SYNOPSIS:
+    static void DCorners2Corners (INT n, DOUBLE dco, SHORT corners[])
+
+    PAAMETERS:
+   .   n - number of corners
+   .   dco - corners coded on DOUBLE
+   .   corners - array of corner IDs
+
+    DESCRIPTION:
+        Convert DOUBLE into array of corner IDs. For encoding see 'Corner2DCorners'.
+
+    RETURN VALUE:
+    void
+   .n   none
+
+        SEE_ASLO:
+        Corner2DCorners
+   doctext_disabled*/
+/****************************************************************************/
+
 static void DCorners2Corners (INT n, DOUBLE dco, SHORT corners[])
 {
   int i;
@@ -257,6 +300,31 @@ static void DCorners2Corners (INT n, DOUBLE dco, SHORT corners[])
   return;
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    CornerCompare - compare two corners for qsort (ascending order)
+
+    SYNOPSIS:
+    static int CornerCompare (const SHORT *c0, const SHORT *c1)
+
+    PAAMETERS:
+   .   c0 - first corner
+   .   c1 - second corner
+
+    DESCRIPTION:
+        Compare two corners for qsort (ascending order). The qsort is called
+        by 'FillOrderedSons'.
+
+    RETURN VALUE:
+    int
+   .n    1	c0>c1
+   .n   -1	c0<c1
+
+    SEE ALSO:
+        FillOrderedSons
+   doctext_disabled*/
+/****************************************************************************/
+
 static int CornerCompare (const SHORT *c0, const SHORT *c1)
 {
   if (*c0>*c1)
@@ -265,6 +333,31 @@ static int CornerCompare (const SHORT *c0, const SHORT *c1)
     return (-1);
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    SonCompare - compare two sons (corners as DOUBLEs)
+
+    SYNOPSIS:
+    static int SonCompare (const DOUBLE *s0, const DOUBLE *s1)
+
+    PAAMETERS:
+   .   s0 - first son
+   .   s1 - second son
+
+    DESCRIPTION:
+        Compare two sons given as corners in ascending order coded on a DOUBLE
+        (cf. 'Corner2DCorners'). The qsort is called in 'FillOrderedSons'.
+
+    RETURN VALUE:
+    int
+   .n    1	s0>s1
+   .n   -1	s0<s1
+
+        SEE ALSO:
+        FillOrderedSons
+   doctext_disabled*/
+/****************************************************************************/
+
 static int SonCompare (const DOUBLE *s0, const DOUBLE *s1)
 {
   if (*s0>*s1)
@@ -272,6 +365,26 @@ static int SonCompare (const DOUBLE *s0, const DOUBLE *s1)
   else
     return (-1);
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    FillOrderedSons - fill array with ordered sons
+
+    SYNOPSIS:
+    static void FillOrderedSons (const ERULE *er, DOUBLE oco[])
+
+    PAAMETERS:
+   .   er - rule
+   .   oco - array of ordered sons
+
+    DESCRIPTION:
+        Fill array with sons in ascending order whose ordered corners are coded as DOUBLEs.
+
+    RETURN VALUE:
+    void
+   .n   none
+   doctext_disabled*/
+/****************************************************************************/
 
 static void FillOrderedSons (const ERULE *er, DOUBLE oco[])
 {
@@ -294,6 +407,26 @@ static void FillOrderedSons (const ERULE *er, DOUBLE oco[])
   return;
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    Hash_Init - allocate and initialize hash table
+
+    SYNOPSIS:
+    static INT Hash_Init (int MarkKey)
+
+    PAAMETERS:
+   .   MarkKey - mark key for memory alocation
+
+    DESCRIPTION:
+        Allocate and initialize hash table
+
+    RETURN VALUE:
+    INT
+   .n   0: ok
+   .n   1: no memory
+   doctext_disabled*/
+/****************************************************************************/
+
 static INT Hash_Init (int MarkKey)
 {
   int i;
@@ -307,6 +440,30 @@ static INT Hash_Init (int MarkKey)
 
   return (0);
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    Hash_InsertRule - insert a rule into the hash table
+
+    SYNOPSIS:
+    static HRID Hash_InsertRule (INT etag, INT key, const ERULE *er, const DOUBLE oco[], HRULE **next_handle)
+
+    PAAMETERS:
+   .   etag - element tag
+   .   key - hash key
+   .   er - rule
+   .   oco - ordered corners
+   .   next_handle - insert here into linked list of rules in hash table
+
+    DESCRIPTION:
+        Make an HRULE from an ERULE and insert it into the hash table.
+
+    RETURN VALUE:
+    HRID
+   .n   >=0: ok
+   .n    -1: no memory for HRULE
+   doctext_disabled*/
+/****************************************************************************/
 
 static HRID Hash_InsertRule (INT etag, INT key, const ERULE *er, const DOUBLE oco[], HRULE **next_handle)
 {
@@ -334,6 +491,28 @@ static HRID Hash_InsertRule (INT etag, INT key, const ERULE *er, const DOUBLE oc
   return (id);
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    SonsAreEqual - compare sons of rule with array of ordered sons
+
+    SYNOPSIS:
+    static INT SonsAreEqual (INT nsons, const DOUBLE oco[], const HRULE *hr)
+
+    PAAMETERS:
+   .   nsons - number of sons
+   .   oco - array of ordered sons
+   .   hr - rule
+
+    DESCRIPTION:
+        Compare sons of rule with array of ordered sons
+
+    RETURN VALUE:
+    INT
+   .n   YES: sons are equal
+   .n   NO:  sons are not equal
+   doctext_disabled*/
+/****************************************************************************/
+
 static INT SonsAreEqual (INT nsons, const DOUBLE oco[], const HRULE *hr)
 {
   if (nsons!=HR_NSONS(hr))
@@ -347,6 +526,27 @@ static INT SonsAreEqual (INT nsons, const DOUBLE oco[], const HRULE *hr)
     return (YES);
   }
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    GetRuleID - insert in hash table if not found there and return rule id for element
+
+    SYNOPSIS:
+    static HRID GetRuleID (ELEMENT *elem,       INT etag,       const ERULE *er)
+
+    PAAMETERS:
+   .   elem - element (only in debug mode)
+   .   etag - element tag
+   .   er - rule
+
+    DESCRIPTION:
+        Insert in hash table if not found there and return rule id for element.
+
+    RETURN VALUE:
+    HRID
+   .n   rule id (starting after rm IDs per tag)
+   doctext_disabled*/
+/****************************************************************************/
 
 static HRID GetRuleID
 (
@@ -388,6 +588,28 @@ static HRID GetRuleID
 
   return (Hash_InsertRule(etag,key,er,oco,&HR_NEXT(hr)));
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    RuleCompare - compare er-rule with existing rm-rule
+
+    SYNOPSIS:
+    static INT RuleCompare (int id, const URULE *ur, const ERULE *er)
+
+    PAAMETERS:
+   .   id - element id
+   .   ur - rm rule
+   .   er - er rule
+
+    DESCRIPTION:
+        Compare er-rule with existing rm-rule (used in __PATCH_UG_RULES__ mode).
+
+    RETURN VALUE:
+    INT
+   .n   YES: rules are equal
+   .n   NO:  rules are not equal
+   doctext_disabled*/
+/****************************************************************************/
 
 static INT RuleCompare (int id, const URULE *ur, const ERULE *er)
 {
@@ -446,6 +668,27 @@ static INT RuleCompare (int id, const URULE *ur, const ERULE *er)
   return (YES);
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    ExtractERule - extract rule from element
+
+    SYNOPSIS:
+    static INT ExtractERule (ELEMENT *elem, ERULE *er)
+
+    PAAMETERS:
+   .   elem - element
+   .   er - extracted rule
+
+    DESCRIPTION:
+        Extract rule from element (rule may be incomplete in parallel)
+
+    RETURN VALUE:
+    INT
+   .n    0: ok
+   .n   >0: error
+   doctext_disabled*/
+/****************************************************************************/
+
 static INT ExtractERule (ELEMENT *elem, ERULE *er)
 {
   int nsons = NSONS(elem);
@@ -495,25 +738,80 @@ static INT ExtractERule (ELEMENT *elem, ERULE *er)
   return (0);
 }
 
+/****************************************************************************/
+/*
+        functions for parallel mode only
+ */
+/****************************************************************************/
+
 #ifdef ModelP
+
+/****************************************************************************/
+/*doctext_disabled
+    CountIFElements - count interface elements having no rm-rule
+
+    SYNOPSIS:
+    static int CountIFElements (DDD_OBJ obj)
+
+    PAAMETERS:
+   .   obj - element
+
+    DESCRIPTION:
+        Count interface elements having no rm-rule (masters and VH-hgosts).
+        Those elements are flagged true.
+
+    RETURN VALUE:
+    int
+   .n   0: ok
+
+    SEE ALSO:
+        ExtractInterfaceRules
+   doctext_disabled*/
+/****************************************************************************/
+
 static int CountIFElements (DDD_OBJ obj)
 {
   ELEMENT *elem = (ELEMENT*) obj;
 
   if (HAS_NO_RULE(elem))
   {
-    SETTHEFLAG(elem,FALSE);
-    return (0);
+    SETTHEFLAG(elem,TRUE);
+
+    ASSERT(global.if_elems<MAX_IFID);
+
+    SETREFINE(elem,global.if_elems);
+    global.if_elems++;
   }
-  SETTHEFLAG(elem,TRUE);
-
-  ASSERT(global.if_elems<MAX_IFID);
-
-  SETREFINE(elem,global.if_elems);
-  global.if_elems++;
+  else
+  {
+    SETTHEFLAG(elem,FALSE);
+  }
 
   return (0);
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    InitMasterRules - init rules of master elements
+
+    SYNOPSIS:
+    static int InitMasterRules (DDD_OBJ obj)
+
+    PAAMETERS:
+   .   obj - element
+
+    DESCRIPTION:
+        Init rules of master elements at processor interface with sons of master.
+
+    RETURN VALUE:
+    int
+   .n    0: ok
+   .n   >0: error
+
+    SEE ALSO:
+        ExtractInterfaceRules
+   doctext_disabled*/
+/****************************************************************************/
 
 static int InitMasterRules (DDD_OBJ obj)
 {
@@ -528,6 +826,30 @@ static int InitMasterRules (DDD_OBJ obj)
     return (0);
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    Gather_ERULE - extract rules from interface elements
+
+    SYNOPSIS:
+    static int Gather_ERULE (DDD_OBJ obj, void *data)
+
+    PAAMETERS:
+   .   obj - element
+   .   data - rule
+
+    DESCRIPTION:
+        Extract rules from interface elements (masters and VH-ghosts)
+
+    RETURN VALUE:
+    int
+   .n    0: ok
+   .n   >0: error
+
+    SEE ALSO:
+        ExtractInterfaceRules
+   doctext_disabled*/
+/****************************************************************************/
+
 static int Gather_ERULE (DDD_OBJ obj, void *data)
 {
   ELEMENT *elem   = (ELEMENT*) obj;
@@ -537,6 +859,29 @@ static int Gather_ERULE (DDD_OBJ obj, void *data)
   else
     return (0);
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    Scatter_ERULE - write completed rule for VH-ghosts
+
+    SYNOPSIS:
+    static int Scatter_ERULE (DDD_OBJ obj, void *data)
+
+    PAAMETERS:
+   .   obj - element
+   .   data - rule previously completed by master
+
+    DESCRIPTION:
+        Write completed rule for VH-ghosts.
+
+    RETURN VALUE:
+    int
+   .n   0: ok
+
+    SEE ALSO:
+        ExtractInterfaceRules
+   doctext_disabled*/
+/****************************************************************************/
 
 static int Scatter_ERULE (DDD_OBJ obj, void *data)
 {
@@ -550,6 +895,29 @@ static int Scatter_ERULE (DDD_OBJ obj, void *data)
 
   return (0);
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    Scatter_partial_ERULE - add son-info from VH-ghosts to master rule
+
+    SYNOPSIS:
+    static int Scatter_partial_ERULE (DDD_OBJ obj, void *data)
+
+    PAAMETERS:
+   .   obj - element
+   .   data - rule
+
+    DESCRIPTION:
+        Add son-info from VH-ghosts to master rule.
+
+    RETURN VALUE:
+    int
+   .n   0: ok
+
+    SEE ALSO:
+        ExtractInterfaceRules
+   doctext_disabled*/
+/****************************************************************************/
 
 static int Scatter_partial_ERULE (DDD_OBJ obj, void *data)
 {
@@ -577,17 +945,40 @@ static int Scatter_partial_ERULE (DDD_OBJ obj, void *data)
   return (0);
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    ExtractInterfaceERule - extract rule from interface element
+
+    SYNOPSIS:
+    static int ExtractInterfaceERule (DDD_OBJ obj)
+
+    PAAMETERS:
+   .   obj - element
+
+    DESCRIPTION:
+        Extract rule from interface element and get id from hash table (if there
+        is no rm-rule for this element).
+
+    RETURN VALUE:
+    int
+   .n   0: ok
+
+    SEE ALSO:
+        ExtractInterfaceRules
+   doctext_disabled*/
+/****************************************************************************/
+
 static int ExtractInterfaceERule (DDD_OBJ obj)
 {
   ELEMENT *elem   = (ELEMENT*)obj;
 
   if (THEFLAG(elem))
   {
-    ERULE *er               = global.interface_rules+REFINE(elem);
-    int id                  = GetRuleID(
-                                                                        #ifdef Debug
+    ERULE *er       = global.interface_rules+REFINE(elem);
+    int id          = GetRuleID(
+                                                                #ifdef Debug
       elem,
-                                                                        #endif
+                                                                #endif
       TAG(elem),er);
 
     ASSERT(id<MAX_HRID);
@@ -616,6 +1007,26 @@ static int ExtractInterfaceERule (DDD_OBJ obj)
 
   return (0);
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    ExtractInterfaceRules - extract all rules from interface elements without rm-rule
+
+    SYNOPSIS:
+    static INT ExtractInterfaceRules (MULTIGRID *mg)
+
+    PAAMETERS:
+   .   mg - multigrid
+
+    DESCRIPTION:
+        Extract all rules from interface elements without rm-rule.
+
+    RETURN VALUE:
+    INT
+   .n    0: ok
+   .n   >0: error in storage allocation
+   doctext_disabled*/
+/****************************************************************************/
 
 static INT ExtractInterfaceRules (MULTIGRID *mg)
 {
@@ -682,7 +1093,27 @@ static INT ExtractInterfaceRules (MULTIGRID *mg)
 
   return (0);
 }
-#endif
+#endif  /* ModelP */
+
+/****************************************************************************/
+/*doctext_disabled
+    ExtractRules - extract all realized rules that have no rm-rule
+
+    SYNOPSIS:
+    static INT ExtractRules (MULTIGRID *mg)
+
+    PAAMETERS:
+   .   mg - multigrid
+
+    DESCRIPTION:
+        Extract all realized rules of the mg that have no rm-rule.
+
+    RETURN VALUE:
+    INT
+   .n    0: ok
+   .n   >0: error
+   doctext_disabled*/
+/****************************************************************************/
 
 static INT ExtractRules (MULTIGRID *mg)
 {
@@ -797,6 +1228,27 @@ static INT ExtractRules (MULTIGRID *mg)
   return (0);
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    FindPathForNeighbours - recursive function computing path infos
+
+    SYNOPSIS:
+    static void FindPathForNeighbours (MGIO_RR_RULE *rule, SHORT myID, SHORT Status[MAX_SONS])
+
+    PAAMETERS:
+   .   rule - mrule
+   .   myID - son ID
+   .   Status - status (see 'enum NB_STATUS' in er.c)
+
+    DESCRIPTION:
+        Recursive function computing path infos for sons.
+
+    RETURN VALUE:
+    void
+   .n   none
+   doctext_disabled*/
+/****************************************************************************/
+
 static void FindPathForNeighbours (MGIO_RR_RULE *rule, SHORT myID, SHORT Status[MAX_SONS])
 {
   SHORT i,nbID;
@@ -828,6 +1280,25 @@ static void FindPathForNeighbours (MGIO_RR_RULE *rule, SHORT myID, SHORT Status[
   return;
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    FillSonPaths - fill son path components in mrule
+
+    SYNOPSIS:
+    static void FillSonPaths (MGIO_RR_RULE *rule)
+
+    PAAMETERS:
+   .   rule - mrule
+
+    DESCRIPTION:
+        Fill son path components in mrule by recursion (using 'FindPathForNeighbours').
+
+    RETURN VALUE:
+    void
+   .n   none
+   doctext_disabled*/
+/****************************************************************************/
+
 static void FillSonPaths (MGIO_RR_RULE *rule)
 {
   SHORT Status[MAX_SONS];
@@ -838,6 +1309,7 @@ static void FillSonPaths (MGIO_RR_RULE *rule)
 
   /* son 0 has trivial path */
   Status[0] = NB_DONE;
+  rule->sons[0].path = 0;
   for (i=1; i<rule->nsons; i++)
     Status[i] = NB_NOTDONE;
 
@@ -846,6 +1318,29 @@ static void FillSonPaths (MGIO_RR_RULE *rule)
 
   return;
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    GetFSidesOfCorners - fill array for father side the given side corners belong to
+
+    SYNOPSIS:
+    static INT GetFSidesOfCorners (int tag, int n, SHORT corners[MAX_CORNERS_OF_SIDE], SHORT corner_on_side[MAX_CORNERS_OF_SIDE][MAX_SIDES_OF_ELEM])
+
+    PAAMETERS:
+   .   tag - father tag
+   .   n - number of side nodes
+   .   corners - side node local IDs
+   .   corner_on_side - YES/NO indicating corner lying on father side
+
+    DESCRIPTION:
+        Fill array for father side the given side corners belong to.
+
+    RETURN VALUE:
+    INT
+   .n   YES: ok, maybe there is a common father side
+   .n   NO:  sorry, center node definitely not on a father side
+   doctext_disabled*/
+/****************************************************************************/
 
 static INT GetFSidesOfCorners (int tag, int n, SHORT corners[MAX_CORNERS_OF_SIDE], SHORT corner_on_side[MAX_CORNERS_OF_SIDE][MAX_SIDES_OF_ELEM])
 {
@@ -877,11 +1372,11 @@ static INT GetFSidesOfCorners (int tag, int n, SHORT corners[MAX_CORNERS_OF_SIDE
     {
       /* edge mid node */
       int ed = corners[co]-coe;
-      int i;
 
                         #ifdef __TWODIM__
       corner_on_side[co][ed] = TRUE;
                         #else
+      int i;
       for (i=0; i<MAX_SIDES_OF_EDGE; i++)
       {
         int sd = SIDE_WITH_EDGE_TAG(tag,ed,i);
@@ -904,6 +1399,28 @@ static INT GetFSidesOfCorners (int tag, int n, SHORT corners[MAX_CORNERS_OF_SIDE
   return (YES);
 }
 
+/****************************************************************************/
+/*doctext_disabled
+    GetCommonFSide - return common father element side iff
+
+    SYNOPSIS:
+    static INT GetCommonFSide (int nco, int nsi, SHORT corner_on_side[MAX_CORNERS_OF_SIDE][MAX_SIDES_OF_ELEM])
+
+    PAAMETERS:
+   .   nco - number of corners on side
+   .   nsi - number of sides
+   .   corner_on_side - array filled by 'GetFSidesOfCorners'
+
+    DESCRIPTION:
+        Return common father element side iff.
+
+    RETURN VALUE:
+    INT
+   .n   father side if common for all side corners
+   .n   nsi else
+   doctext_disabled*/
+/****************************************************************************/
+
 static INT GetCommonFSide (int nco, int nsi, SHORT corner_on_side[MAX_CORNERS_OF_SIDE][MAX_SIDES_OF_ELEM])
 {
   int i,side;
@@ -918,6 +1435,29 @@ static INT GetCommonFSide (int nco, int nsi, SHORT corner_on_side[MAX_CORNERS_OF
   }
   return (nsi);
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    IsOnFatherSide - determine whether son side lies on father side
+
+    SYNOPSIS:
+    static INT IsOnFatherSide (int tag, int nsco, SHORT sco[], SHORT *nb)
+
+    PAAMETERS:
+   .   tag - father tag
+   .   nsco - number of side corners
+   .   sco - side corner array
+   .   nb - fill nb component with FATHER_SIDE_OFFSET+fside iff common father side
+
+    DESCRIPTION:
+        Determine whether son side lies on father side.
+
+    RETURN VALUE:
+    INT
+   .n   YES: there is a  common father side
+   .n   NO:  there is no common father side
+   doctext_disabled*/
+/****************************************************************************/
 
 static INT IsOnFatherSide (int tag, int nsco, SHORT sco[], SHORT *nb)
 {
@@ -935,6 +1475,28 @@ static INT IsOnFatherSide (int tag, int nsco, SHORT sco[], SHORT *nb)
   }
   return (NO);
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    SidesMatch - check whether two son sides match
+
+    SYNOPSIS:
+    static INT SidesMatch (int nsco, SHORT sco0[], SHORT sco1[])
+
+    PAAMETERS:
+   .   nsco - number of side corners
+   .   sco0 - side corners of first son
+   .   sco1 - side corners of second son
+
+    DESCRIPTION:
+        Check whether two son sides match.
+
+    RETURN VALUE:
+    INT
+   .n   YES: son sides are mathing
+   .n   NO:  son sides are not mathing
+   doctext_disabled*/
+/****************************************************************************/
 
 static INT SidesMatch (int nsco, SHORT sco0[], SHORT sco1[])
 {
@@ -957,6 +1519,26 @@ static INT SidesMatch (int nsco, SHORT sco0[], SHORT sco1[])
   }
   return (NO);
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    HRule2Mrule - convert rule to MGIO_RR_RULE
+
+    SYNOPSIS:
+    static void HRule2Mrule (const HRULE *hr, MGIO_RR_RULE *mr)
+
+    PAAMETERS:
+   .   hr - hashed rule
+   .   mr - mgio rule
+
+    DESCRIPTION:
+        Convert local rule type HRULE (hashed rule) to MGIO_RR_RULE.
+
+    RETURN VALUE:
+    void
+   .n
+   doctext_disabled*/
+/****************************************************************************/
 
 static void HRule2Mrule (const HRULE *hr, MGIO_RR_RULE *mr)
 {
@@ -1056,11 +1638,34 @@ static void HRule2Mrule (const HRULE *hr, MGIO_RR_RULE *mr)
       }
   }
 
+        #ifdef __THREEDIM__
+  /* 2D: not even in rm */
   /* son path */
   FillSonPaths(mr);
+        #endif
 
   return;
 }
+
+/****************************************************************************/
+/*doctext_disabled
+    URule2Mrule - convert rule manager rule to MGIO_RR_RULE
+
+    SYNOPSIS:
+    static void URule2Mrule (const URULE *ur, MGIO_RR_RULE *mr)
+
+    PAAMETERS:
+   .   ur - rule manager rule
+   .   mr - mgio rule
+
+    DESCRIPTION:
+        Convert rule manager rule to mgio rule.
+
+    RETURN VALUE:
+    void
+   .n
+   doctext_disabled*/
+/****************************************************************************/
 
 static void URule2Mrule (const URULE *ur, MGIO_RR_RULE *mr)
 {
@@ -1103,14 +1708,14 @@ static void WriteDebugInfo (void)
     long n_er = global.maxrule[tag]-UGMAXRULE(tag);
     N_rm += n_rm;
     N_er += n_er;
-    PrintDebug("tag %d: %ld rm rules, %ld extracted rules (elems inspected: %ld yes %ld no)\n",
+    PrintDebug("tag %d: %3ld rm rules, %4ld extracted rules (elems inspected: %6ld yes %6ld no)\n",
                tag,
                n_rm,
                n_er,
                global.nelem_inspected[tag],
                global.nelem_not_inspected[tag]);
   }
-  PrintDebug("total: %ld rm rules, %ld extracted rules (elems inspected: %ld yes %ld no)\n",
+  PrintDebug("total: %3ld rm rules, %4ld extracted rules (elems inspected: %6ld yes %6ld no)\n",
              N_rm,
              N_er,
              global.nelem_inspected[tag],
@@ -1120,6 +1725,307 @@ static void WriteDebugInfo (void)
 
   return;
 }
+
+INT GetOrderedSons (ELEMENT *theElement, MGIO_RR_RULE *theRule, NODE **NodeContext, ELEMENT **SonList, INT *nmax)
+{
+  INT i,j,k,l,nfound,found;
+  ELEMENT *NonorderedSonList[MAX_SONS];
+  NODE *theNode;
+
+  nfound = *nmax = 0;
+
+  if (GetAllSons(theElement,NonorderedSonList)) REP_ERR_RETURN(1);
+  for (i=0; i<theRule->nsons; i++)
+  {
+    found=1;
+    for (j=0; j<CORNERS_OF_TAG(theRule->sons[i].tag); j++)
+      if (NodeContext[theRule->sons[i].corners[j]] == NULL)
+      {
+        found=0;
+        break;
+      }
+    if (!found)
+    {
+      SonList[i] = NULL;
+      continue;
+    }
+
+    /* identify (hopefully) an element of SonList */
+    for (j=0; NonorderedSonList[j]!=NULL; j++)
+    {
+      found=0;
+      for (l=0; l<CORNERS_OF_TAG(theRule->sons[i].tag); l++)
+      {
+        theNode = NodeContext[theRule->sons[i].corners[l]];
+        for (k=0; k<CORNERS_OF_ELEM(NonorderedSonList[j]); k++)
+          if (theNode==CORNER(NonorderedSonList[j],k))
+          {
+            found++;
+            break;
+          }
+      }
+      if (found==CORNERS_OF_TAG(theRule->sons[i].tag))
+      {
+        SonList[i] = NonorderedSonList[j];
+        *nmax = i+1;
+        break;
+      }
+      else
+        SonList[i] = NULL;
+    }
+  }
+
+  return (0);
+}
+
+static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrules)
+{
+  ELEMENT *elem;
+  int l;
+  int max_path_depth = 0;
+  int use_bug_in_rule = TRUE;
+  short *bug_in_rule[TAGS];
+  INT MarkKey;
+
+  if (MarkTmpMem(global.heap,&MarkKey))
+    use_bug_in_rule = FALSE;
+  else
+  {
+    bug_in_rule[0] = (short*) GetTmpMem(global.heap,global.maxrules*sizeof(short),MarkKey);
+    if (bug_in_rule[0]==NULL)
+      use_bug_in_rule = FALSE;
+    else
+    {
+      int t,i;
+      for (t=0; t<TAGS; t++)
+      {
+        bug_in_rule[t] = bug_in_rule[0] + RefRuleOffset[t];
+        for (i=0; i<global.maxrule[t]; i++)
+          bug_in_rule[t][i] = FALSE;
+      }
+    }
+  }
+
+  for (l=0; l<TOPLEVEL(mg); l++)
+    for (elem=PFIRSTELEMENT(GRID_ON_LEVEL(mg,l)); elem!=NULL; elem=SUCCE(elem))
+      if (NSONS(elem)>0)
+      {
+        int refi                        = REFINE(elem);
+        int tag                         = TAG(elem);
+        MGIO_RR_RULE *mr        = mrules + RefRuleOffset[tag] + refi;
+        long id                         = ID(elem);
+        int nsons                       = mr->nsons;
+        int coe                         = CORNERS_OF_TAG(tag);
+        int eoe                         = EDGES_OF_TAG(tag);
+        int soe                         = SIDES_OF_TAG(tag);
+        NODE *nodes[MAX_REFINED_CORNERS_DIM];
+        NODE **newnodes         = nodes+coe;
+        NODE **midnodes         = newnodes;
+                                #ifdef __THREEDIM__
+        NODE **sidenodes        = newnodes+eoe;
+                                #endif
+        NODE **centernode       = newnodes+CENTER_NODE_INDEX(elem);
+        int maxsonex            = 0;
+        ELEMENT *sons[MAX_SONS];
+        int some_path_wrong = FALSE;
+        int error = 0;
+        int s,i;
+
+        /* check nsons */
+        if (NSONS(elem)!=nsons)
+          PD_ERR(4,("ERROR in CheckMRules, elem %ld: NSONS(elem)!=mr->nsons\n",id),error);
+
+        if (GetNodeContext(elem,nodes))
+          ASSERT(FALSE);
+
+        /* check pattern */
+        for (i=0; i<MAX_NEW_CORNERS_DIM; i++)
+          if (mr->pattern[i])
+          {
+                                                #ifndef ModelP
+            if (newnodes[i]==NULL)
+              PD_ERR(4,("ERROR in CheckMRules, elem %ld: pattern %d inconsistent (says ex but doesn't)\n",id,i),error);
+                                                #endif
+          }
+          else
+          {
+            if (newnodes[i]!=NULL)
+              PD_ERR(4,("ERROR in CheckMRules, elem %ld: pattern %d inconsistent (says nonex but does)\n",id,i),error);
+          }
+
+        /* check sons */
+        if (GetOrderedSons(elem,mr,nodes,sons,&maxsonex))
+          ASSERT(FALSE);
+                                #ifndef ModelP
+        if (maxsonex!=nsons)
+          PD_ERR(4,("ERROR in CheckMRules, elem %ld: wrong number of sons (%d vs %d)\n",id,maxsonex,nsons),error);
+                                #endif
+        for (s=0; s<maxsonex; s++)
+        {
+          ELEMENT *son = sons[s];
+          if (son!=NULL)
+          {
+            struct mgio_sondata *rson = &(mr->sons[s]);
+            int nco = CORNERS_OF_ELEM(son);
+            int nsi = SIDES_OF_ELEM(son);
+            int co,si;
+
+            if (rson->tag!=TAG(son))
+              PD_ERR(4,("ERROR in CheckMRules, elem %ld: wrong tag of son %d (%d vs %d)\n",id,s,rson->tag,TAG(son)),error);
+
+            /* check corners */
+            for (co=0; co<nco; co++)
+              if (CORNER(son,co)!=nodes[rson->corners[co]])
+                PD_ERR(4,("ERROR in CheckMRules, elem %ld: corner %d of son %d inconsistent\n",id,co,s),error);
+
+            /* check neighbours */
+            for (si=0; si<nsi; si++)
+            {
+              ELEMENT *nb = NBELEM(son,si);
+              if (nb!=NULL)
+              {
+                ELEMENT *nbf = EFATHER(nb);
+
+                if (nbf==elem)
+                {
+                  /* check inner side */
+                                                                        #ifdef ModelP
+                  if (sons[rson->nb[si]]!=NULL)
+                                                                        #endif
+                  if (nb!=sons[rson->nb[si]])
+                    PD_ERR(4,("ERROR in CheckMRules, elem %ld: inner nb %d of son %d inconsistent\n",id,si,s),error);
+                }
+                else if (nbf!=NULL)
+                {
+                  int j;
+
+                  /* check father side */
+                  for (j=0; j<soe; j++)
+                    if (NBELEM(elem,j)==nbf)
+                      break;
+                  if (j!=(rson->nb[si]-FATHER_SIDE_OFFSET))
+                    PD_ERR(4,("ERROR in CheckMRules, elem %ld: outer nb %d of son %d inconsistent\n",id,si,s),error);
+                }
+              }
+              else
+              {
+                                                                #ifndef ModelP
+                if (rson->nb[si]<FATHER_SIDE_OFFSET)
+                  PD_ERR(4,("ERROR in CheckMRules, elem %ld: son %d has no nb but %d no fatherside\n",id,s,si),error);
+                                                                #endif
+              }
+            }
+                                                #ifndef ModelP
+                                                #ifdef __THREEDIM__
+            if (s>0)
+            {
+              ELEMENT *nson = sons[0];
+              int path = rson->path;
+              int pd = PATHDEPTH(path);
+              int son_path_ok = FALSE;
+              int j;
+
+              max_path_depth = MAX(max_path_depth,pd);
+
+              /* check path */
+              for (j=0; j<pd; j++)
+              {
+                int ns = NEXTSIDE(path,j);
+
+                if (nson==NULL)
+                {
+                  PD_ERR(4,("ERROR in CheckMRules, elem %ld: nson==NULL for son %d at %d\n",id,s,j),error);
+                  break;
+                }
+                if (ns>=SIDES_OF_ELEM(nson))
+                {
+                  PD_ERR(4,("ERROR in CheckMRules, elem %ld: path of son %d at %d has invalid side %s\n",id,s,j,ns),error);
+                  break;
+                }
+                nson = NBELEM(nson,ns);
+              }
+              if (nson!=son)
+                PD_ERR(4,("ERROR in CheckMRules, elem %ld: wrong path of son %d\n",id,s),error)
+                else
+                  son_path_ok = TRUE;
+              if (!son_path_ok)
+                some_path_wrong = TRUE;
+            }
+                                                #endif
+                                                #endif
+          }
+        }
+        /*if (!some_path_wrong)
+                PD_ERR(4,("FINE in CheckMRules (%c-rule), elem %ld: all paths ok\n",(refi<UGMAXRULE(tag))?'r':'e',id),error);*/
+
+        /* check sonandnode */
+        for (i=0; i<MAX_NEW_CORNERS_DIM; i++)
+          if (newnodes[i]!=NULL)
+            if (sons[mr->sonandnode[i][0]]!=NULL)
+              if (CORNER(sons[mr->sonandnode[i][0]],mr->sonandnode[i][1]) != newnodes[i])
+                PD_ERR(4,("ERROR in CheckMRules, elem %ld: sonandnode %d inconsistent\n",id,i),error);
+
+        /* summary */
+        if (error)
+        {
+          PD(("in total %3d ERRORS in CheckMRules (%c-rule %3d of %d), elem %ld\n",error,(refi<UGMAXRULE(tag)) ? 'r' : 'e',refi,tag,id));
+          if (use_bug_in_rule)
+            bug_in_rule[tag][refi] = TRUE;
+        }
+        else
+          PrintDebug("FINE in CheckMRules (%c-rule %4d of %d), elem %ld: everything ok\n",(refi<UGMAXRULE(tag)) ? 'r' : 'e',refi,tag,id);
+      }
+  PrintDebug("CheckMRules: max_path_depth %d\n",max_path_depth);
+
+  if (use_bug_in_rule)
+  {
+    int t,i;
+
+    PrintDebug("--------------- CheckMRules: rules with bugs ---------------\n");
+
+    for (t=0; t<TAGS; t++)
+      for (i=0; i<global.maxrule[t]; i++)
+        if (bug_in_rule[t][i])
+        {
+          PrintDebug("-- rule %4d of %d\n",i,t);
+          if (i<UGMAXRULE(t))
+            ShowRefRuleX(t,i,PrintDebug);
+          else
+            PrintDebug("sorry, no ShowRefRule for mgio-rules\n");
+        }
+
+    PrintDebug("------------------------------------------------------------\n");
+
+    if (ReleaseTmpMem(global.heap,MarkKey))
+      ASSERT(FALSE);
+  }
+  else
+    PrintDebug("sorry, no storage available for use_bug_in_rule\n");
+}
+
+/****************************************************************************/
+/*D
+    NEW_Write_RefRules - write refinement rules of multigrid to file
+
+    SYNOPSIS:
+    INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR_RULE **mrule_handle)
+
+    PAAMETERS:
+   .   mg - multigrid
+   .   RefRuleOffset - tag-wise offsets for refrules
+   .   MarkKey - mark key for temporary storage of ugio
+   .   mrule_handle - pointer to mgio rules allocated on temporary storage of ugio
+
+    DESCRIPTION:
+        Write refinement rules of multigrid to file (rm rules as far as available, the remainder
+        is covered by rules extracted by the er module).
+
+    RETURN VALUE:
+    INT
+   .n    0: ok
+   .n   >0: error
+   D*/
+/****************************************************************************/
 
 INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR_RULE **mrule_handle)
 {
@@ -1147,6 +2053,10 @@ INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR
   if (ExtractRules(mg))
     REP_ERR_RETURN(1);
         #endif
+
+  global.maxrules = 0;
+  for (tag=0; tag<TAGS; tag++)
+    global.maxrules += global.maxrule[tag];
 
   /* write refrules general */
   RefRuleOffset[0] = 0;
@@ -1201,8 +2111,31 @@ INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR
 
   PRINTDEBUG(gm,1,("Write_RefRules (er): when finished (storage occupied by MGIO_RR_RULE list): HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
 
+  IFDEBUG(gm,3)
+  CheckMRules(mg,RefRuleOffset,*mrule_handle);
+  ENDDEBUG
+
   return (0);
 }
+
+/****************************************************************************/
+/*D
+   ResetRefineTagsBeyondRuleManager - reset refine tags to what refine expects there
+
+   SYNOPSIS:
+   INT ResetRefineTagsBeyondRuleManager (MULTIGRID *mg)
+
+   PARAMETERS:
+   .  mg - multigrid
+
+   DESCRIPTION:
+   Reset refine tags to what refine expects there.
+
+   RETURN VALUE:
+   INT
+   .n   0: ok
+   D*/
+/****************************************************************************/
 
 INT ResetRefineTagsBeyondRuleManager (MULTIGRID *mg)
 {
