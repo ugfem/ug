@@ -195,7 +195,7 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  XferElemsAndOverlap                                           */
+/* Function:  XferGridWithOverlap                                           */
 /*                                                                          */
 /* Purpose:   send elements to other procs, keep overlapping region of one  */
 /*            element, maintain correct priorities at interfaces.           */
@@ -212,7 +212,7 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
 /*                                                                          */
 /****************************************************************************/
 
-static void XferElemsAndOverlap (GRID *theGrid)
+static void XferGridWithOverlap (GRID *theGrid)
 {
   ELEMENT *elem;
   NODE *node;
@@ -303,11 +303,13 @@ static void XferElemsAndOverlap (GRID *theGrid)
   }
 
   /* evaluate _VECTOR flag for nodes */
-  for(node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
-  {
-    if (XFERNODE(node)==DEL_VECTOR)
-      DDD_XferDeleteObj(PARHDR(NVECTOR(node)));
-  }
+  /*
+          for(node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
+          {
+                  if (XFERNODE(node)==DEL_VECTOR)
+                          DDD_XferDeleteObj(PARHDR(NVECTOR(node)));
+          }
+   */
 }
 
 
@@ -333,13 +335,29 @@ static void CenterOfMass (ELEMENT *e, COORD *pos)
 /****************************************************************************/
 
 
+static void InheritPartition (ELEMENT *e)
+{
+  int i;
+
+  for(i=0; i<SONS_OF_ELEM(e); i++)
+  {
+    ELEMENT *son = SON(e,i);
+    if (son==NULL) break;
+
+    PARTITION(son) = PARTITION(e);
+    InheritPartition(son);
+  }
+}
+
+
+
 int BalanceGrid (MULTIGRID *theMG)
 {
   HEAP *theHeap = theMG->theHeap;
-  GRID *theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+  GRID *theGrid = GRID_ON_LEVEL(theMG,0);       /* balance coarse grid */
   LB_INFO *lbinfo;
   ELEMENT *e;
-  int i;
+  int i, son;
 
   /* distributed grids cannot be redistributed by this function */
 
@@ -376,11 +394,28 @@ int BalanceGrid (MULTIGRID *theMG)
   }
 
 
+  /* send son elements to father element */
+  for (e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+  {
+    InheritPartition(e);
+  }
+
+
+
   /* start physical transfer */
   DDD_XferBegin();
-  if (me==master && NT(theGrid)>0) XferElemsAndOverlap(theGrid);
+  if (me==master)
+  {
+    /* send all grids */
+    int g;
+    for(g=TOPLEVEL(theMG); g>=0; g--)
+    {
+      GRID *grid = GRID_ON_LEVEL(theMG,g);
+      if (NT(grid)>0) XferGridWithOverlap(grid);
+    }
+  }
+
   DDD_XferEnd();
-  /*	DeleteLocalStuff();  */
 
 
   if (me==master)

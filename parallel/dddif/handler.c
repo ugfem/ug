@@ -46,6 +46,7 @@
 #include "parallel.h"
 #include "heaps.h"
 #include "ugm.h"
+#include "algebra.h"
 #include "general.h"
 
 /****************************************************************************/
@@ -84,6 +85,18 @@
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
 
+
+/* dieses flag dient dazu, die prioritaet des gesendeten elements bis
+	an den node-vector durchzureichen, um zu entscheiden, ob dieser
+	geschickt werden soll oder nicht. zur behebung dieser haesslichkeit
+	muss entweder ddd um senden gleicher objekte mit verschiedenen
+	prioritaeten erweitert werden (wird im zuge der Xfer-umgestaltung in
+	der naechsten version geschehen) oder ein flag im node-cw eingefuehrt
+	werden, das diese aufgabe uebernimmt.
+*/
+static DDD_PRIO ganz_haesslicher_fix;
+
+
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/
@@ -119,7 +132,6 @@ static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
 /*			HANDLER_XFERDELETE,        handler: delete cmd during xfer      */
 /*			HANDLER_XFERGATHER,        handler: send additional data        */
 /*			HANDLER_XFERSCATTER,       handler: recv additional data        */
-/*			HANDLER_COPYMANIP,         handler: manipulate incoming copy    */
 /*																			*/
 /*																			*/
 /*	    For each of the ddd (data) objects the handlers needed for the      */
@@ -451,7 +463,7 @@ void VectorDelete (DDD_OBJ obj)
 	PRINTDEBUG(dddif,2,("%2d: VectorDelete(): v=%08x/%x VOBJ=%d l=%d\n",me,\
 		DDD_InfoGlobalId(PARHDR(pv)),pv,OBJT(pv),level))
 
-	theGrid = GetGridOnDemand(dddctrl.currMG,level);
+	theGrid = GRID_ON_LEVEL(dddctrl.currMG,level);
 
 	/* remove vector from its object */
 	if (VTYPE(pv)==NODEVECTOR)
@@ -465,7 +477,7 @@ void VectorDelete (DDD_OBJ obj)
 	}
 
 	/* dispose vector itself */
-	DisposeVector(theGrid, pv, FALSE);
+	DisposeVector(theGrid, pv);
 }
 
 
@@ -620,12 +632,6 @@ void BVertexScatterVSegment (DDD_OBJ ver, int cnt, DDD_TYPE type_id, void *Data)
 /****************************************************************************/
 /****************************************************************************/
 
-void NodeCopyManip(DDD_OBJ copy)
-{
-	NODE *node	= (NODE *) copy;
-
-	PRINTDEBUG(dddif,2,("%2d: NodeCopyManip(): n=%x NDOBJ=%d\n",me,node,OBJT(node)))
-}
 
 void NodeDestructor(DDD_OBJ obj)
 {
@@ -641,45 +647,45 @@ void NodeObjInit(DDD_OBJ obj)
 	PRINTDEBUG(dddif,2,("%2d: NodeObjInit(): n=%x NDOBJ=%d\n",me,node,OBJT(node)))
 }
 
+
 void NodeObjMkCons(DDD_OBJ obj)
 {
-	LINK *link;
 	NODE *node	= (NODE *) obj;
+/*
+	LINK *link;
 	NODE *nodeto;
+*/
 
 	PRINTDEBUG(dddif,2,("%2d: NodeObjMkCons(): n=%x NDOBJ=%d\n",me,node,OBJT(node)))
 
+/*
 	for (link=START(node); link!=NULL; link=NEXT(link))
 	{
-		PRINTDEBUG(dddif,3,("%2d: NodeObjMkCons(): XFERLINK(link)=%d\n",me,XFERLINK(link)))
-		/* TODO: Durch schnelle Version ersetzen */
-		if (XFERLINK(link)==COPY) {
+*/
+		/* TODO: wird das hier noch benoetigt? */
+		/*
 			nodeto = NBNODE(link);
+		*/
 
 			/* restore pointer from vector to its edge */
+		/*
 			if (dddctrl.edgeData) 
 				VOBJECT(EDVECTOR(MYEDGE(link))) = (void*)MYEDGE(link);	
-		}
-		else
-		{
-			if (XFERLINK(REVERSE(link)) == COPY) 
-			{
-				continue;
-			}
-			else
-			{
-				PRINTDEBUG(dddif,0,("%2d NodeObjMkCons():     NO copy flag in edge with link=%x link\n",me,link,REVERSE(link)))
-				continue;
-			}
-		}
+		*/
+
 
 		/* is nodeto really stored on this proc? */
+		/* TODO: wird das hier noch benoetigt? */
+		/*
 		if (nodeto!=NULL)
 		{
 			NEXT(REVERSE(link)) = START(nodeto);
 			START(nodeto) = REVERSE(link);
 		}
+		*/
+/*
 	}
+*/
 
 	/* reconstruct node pointer */
 	if (dddctrl.nodeData && NVECTOR(node)) VOBJECT(NVECTOR(node)) = (void*)node;
@@ -769,7 +775,7 @@ void NodeXferCopy (DDD_OBJ obj, int proc, int prio)
 	DDD_XferCopyObj(PARHDRV(MYVERTEX(node)), proc, PrioVertex);
 
 	/* copy vector if defined */
-	if (dddctrl.nodeData && prio==PrioMaster)
+	if (dddctrl.nodeData && ganz_haesslicher_fix==PrioMaster)
 	  {
 		vec = NVECTOR(node);
 		Size = sizeof(VECTOR)-sizeof(DOUBLE)+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
@@ -971,7 +977,7 @@ void ElementDelete (DDD_OBJ obj)
 	PRINTDEBUG(dddif,2,("%2d: ElementDelete(): e=%08x/%x EOBJ=%d l=%d\n",me,\
 		DDD_InfoGlobalId(PARHDRE(pe)),pe,OBJT(pe),level))
 
-	theGrid = GetGridOnDemand(dddctrl.currMG,level);
+	theGrid = GRID_ON_LEVEL(dddctrl.currMG,level);
 	DisposeElement(theGrid, pe, FALSE);
 }
 
@@ -1024,16 +1030,6 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 	DDD_XferAddData(EDGES_OF_ELEM(pe), TypeEdge);
 
 
-	/* send father element. this is a temporary solution, which will
-	   be removed lateron when thinking about real load balancing. */
-	{
-		ELEMENT *f = EFATHER(pe);
-		if (f!=NULL)
-			DDD_XferCopyObjX(PARHDRE(f), proc, prio,
-				(OBJT(f)==BEOBJ) ? BND_SIZE_TAG(TAG(f)) : INNER_SIZE_TAG(TAG(f))
-        	);
-	}
-
 	
 	/* copy corner nodes */
 	for(i=0; i<CORNERS_OF_ELEM(pe); i++)
@@ -1042,7 +1038,8 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 
 		PRINTDEBUG(dddif,2,("%2d: ElementXferCopy():  e=%x Xfer n=%x i=%d\n",\
 				me, pe, node, i))
-		DDD_XferCopyObj(PARHDR(node), proc, prio);
+ganz_haesslicher_fix = prio;
+		DDD_XferCopyObj(PARHDR(node), proc, PrioNode);
 	}
 
 
@@ -1382,7 +1379,6 @@ void ddd_HandlerInit (void)
 	);
 
 	DDD_HandlerRegister(TypeNode,
-		HANDLER_COPYMANIP,			NodeCopyManip,
 		HANDLER_LDATACONSTRUCTOR,	NodeObjInit,
 		HANDLER_DESTRUCTOR,			NodeDestructor,
 		HANDLER_OBJMKCONS,			NodeObjMkCons,

@@ -123,9 +123,20 @@ static void buggy_ElemShow (ELEMENT *e)
 {
   int i;
 
+  printf("%4d:    ID=%06d LEVEL=%02d corners=%03d\n", me,
+         ID(e), LEVEL(e), CORNERS_OF_ELEM(e));
+
   if (EFATHER(e))
     printf("%4d:    father=%08x\n", me,
            DDD_InfoGlobalId(PARHDRE(EFATHER(e))));
+
+  if (PREDE(e))
+    printf("%4d:    pred=%08x\n", me,
+           DDD_InfoGlobalId(PARHDRE(PREDE(e))));
+
+  if (SUCCE(e))
+    printf("%4d:    succ=%08x\n", me,
+           DDD_InfoGlobalId(PARHDRE(SUCCE(e))));
 
   for(i=0; i<SIDES_OF_ELEM(e); i++)
   {

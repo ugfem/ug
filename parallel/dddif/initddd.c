@@ -92,7 +92,9 @@ DDD_TYPE TypeEdge;
 DDD_TYPE TypeElementSide;
 
 /* DDD interfaces needed for distributed computation */
-DDD_IF ElementIF, NodeIF;
+DDD_IF ElementIF, NodeIF, VertexIF;
+DDD_IF VectorIF;
+
 
 
 /* DDD global controls */
@@ -537,9 +539,17 @@ static void ddd_IfInit (void)
   ElementIF = DDD_IFDefine(2,O,1,A,1,B);
 
   O[0] = TypeNode;
-  A[0] = 0; A[1] = 7;
-  B[0] = 0; B[1] = 7;
-  NodeIF = DDD_IFDefine(1,O,2,A,2,B);
+  A[0] = PrioNode;
+  NodeIF = DDD_IFDefine(1,O,1,A,1,A);
+
+  O[0] = TypeIVertex;
+  O[1] = TypeBVertex;
+  A[0] = PrioVertex;
+  VertexIF = DDD_IFDefine(2,O,1,A,1,A);
+
+  O[0] = TypeVector;
+  A[0] = PrioVector;
+  VectorIF = DDD_IFDefine(1,O,1,A,1,A);
 }
 #endif
 
@@ -660,7 +670,17 @@ int InitParallel (int *argc, char ***argv)
 {
   int i;
 
+  /* init DDD and set options */
   DDD_Init(argc, argv);
+
+  /* we are using varsized DDD objects, turn warnings off */
+  DDD_SetOption(OPT_WARNING_VARSIZE_OBJ, OPT_OFF);
+  DDD_SetOption(OPT_WARNING_SMALLSIZE, OPT_OFF);
+
+  /* show messages during transfer, for debugging */
+  /*
+          DDD_SetOption(OPT_DEBUG_XFERMESGS, OPT_ON);
+   */
 
   /* initialize context */
   /* TODO: malloc() should be replaced by HEAPs or ddd_memmgr */
