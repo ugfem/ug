@@ -650,6 +650,9 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 {
   VECDATA_DESC *vd;
 
+  if (*new_desc != NULL)
+    if (VM_LOCKED(*new_desc))
+      return(0);
   if (AllocVecDesc(theMG,fl,tl,*new_desc)) {
     for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd)) {
       if (VM_LOCKED(vd)) continue;
@@ -781,6 +784,9 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
   SHORT RowsInType[NMATTYPES];
   SHORT ColsInType[NMATTYPES];
 
+  if (*new_desc != NULL)
+    if (VM_LOCKED(*new_desc))
+      return(0);
   if (AllocMatDesc(theMG,fl,tl,*new_desc)) {
     for (i=0; i<NVECTYPES; i++)
       for (j=0; j<NVECTYPES; j++) {
@@ -839,6 +845,9 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
 {
   MATDATA_DESC *md;
 
+  if (*new_desc != NULL)
+    if (VM_LOCKED(*new_desc))
+      return(0);
   if (AllocMatDesc(theMG,fl,tl,*new_desc)) {
     for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md)) {
       if (VM_LOCKED(md)) continue;
