@@ -48,7 +48,7 @@
 /****************************************************************************/
 
 #ifdef __TWODIM__
-#define MAX_NODAL_VECTORS       8
+#define MAX_NODAL_VECTORS       9
 #define MAX_NODAL_VALUES        20
 #define MAX_BND_VECTORS         4
 #endif
