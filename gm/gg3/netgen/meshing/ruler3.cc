@@ -1,39 +1,27 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   ruler3.cc                                                    */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream.h>
 #include <math.h>
 
-#include <template.hh>
-#include <array.hh>
+#include <myadt.hh>
 
 #include <linalg/linalg.hh>
 #include <geom/geom2d.hh>
 #include <geom/geom3d.hh>
-#include <limits.h>
 
 #include <meshing/global.hh>
 #include <meshing/ruler3.hh>
 
-static double CalcElementBadness (const ARRAY<POINT3D> & points,
-                                  const ELEMENT & elem)
+static double CalcElementBadness (const ARRAY<Point3d> & points,
+                                  const Element & elem)
 {
   double vol, l, l4, l5, l6;
 
-  VEC3D v1 = points[elem.PNum(2)] - points[elem.PNum(1)];
-  VEC3D v2 = points[elem.PNum(3)] - points[elem.PNum(1)];
-  VEC3D v3 = points[elem.PNum(4)] - points[elem.PNum(1)];
+  Vec3d v1 = points[elem.PNum(2)] - points[elem.PNum(1)];
+  Vec3d v2 = points[elem.PNum(3)] - points[elem.PNum(1)];
+  Vec3d v3 = points[elem.PNum(4)] - points[elem.PNum(1)];
 
   vol = - (Cross (v1, v2) * v3);
   l4 = Dist (points[elem.PNum(2)], points[elem.PNum(3)]);
@@ -51,8 +39,8 @@ static double CalcElementBadness (const ARRAY<POINT3D> & points,
 
 
 int ApplyVRules (const ARRAY<vnetrule*> & rules, double tolfak,
-                 ARRAY<POINT3D> & lpoints, ARRAY<ELEMENT> & lfaces,
-                 ARRAY<ELEMENT> & elements,
+                 ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
+                 ARRAY<Element> & elements,
                  ARRAY<INDEX> & delfaces, int tolerance, int rotind1,
                  float & retminerr, ARRAY<char*> & problems)
 {
@@ -62,23 +50,23 @@ int ApplyVRules (const ARRAY<vnetrule*> & rules, double tolfak,
   float hf, err, minerr, teterr, minteterr;
   char ok, found, hc;
   vnetrule * rule;
-  VECTOR oldu, newu;
-  VEC3D ui;
-  POINT3D np;
+  Vector oldu, newu;
+  Vec3d ui;
+  Point3d np;
   int oldnp, noldlp, noldlf;
-  const ELEMENT * locface = NULL;
+  const Element * locface = NULL;
   int loktestmode;
 
   static ARRAY<int> pused, fused;
   static ARRAY<int> pmap, pfixed;
   static ARRAY<int> fmapi, fmapr;
-  static ARRAY<POINT3D> transfreezone;
+  static ARRAY<Point3d> transfreezone;
   static INDEX cnt = 0;
 
-  static ARRAY<POINT3D> tempnewpoints;
-  static ARRAY<ELEMENT> tempnewfaces;
+  static ARRAY<Point3d> tempnewpoints;
+  static ARRAY<Element> tempnewfaces;
   static ARRAY<int> tempdelfaces;
-  static ARRAY<ELEMENT> tempelements;
+  static ARRAY<Element> tempelements;
 
   static ARRAY<int> notnewnewfaces;
 
@@ -588,7 +576,7 @@ int ApplyVRules (const ARRAY<vnetrule*> & rules, double tolfak,
               for (i = rule->GetNOldF() + 1; i <= rule->GetNF(); i++)
                 if (!fmapi[i])
                 {
-                  ELEMENT nface;
+                  Element nface;
                   nface.SetNP(3);
                   for (j = 1; j <= 3; j++)
                     nface.PNum(j) = pmap[rule->GetPointNr (i, j)];

@@ -1,22 +1,11 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   netrule3.cc                                                  */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
-
 #include <stdlib.h>
 #include <fstream.h>
 #include <iostream.h>
 #include <math.h>
 
-#include <template.hh>
-#include <array.hh>
+#include <myadt.hh>
 
 #include <linalg/linalg.hh>
 #include <geom/geom2d.hh>
@@ -38,7 +27,7 @@ vnetrule :: vnetrule ()
 
 
 /*
-   void vnetrule :: GetFreeZone (ARRAY<POINT3D> & afreezone)
+   void vnetrule :: GetFreeZone (ARRAY<Point3d> & afreezone)
    {
    int i;
 
@@ -57,7 +46,7 @@ int vnetrule :: TestFlag (char flag) const
 }
 
 
-void vnetrule :: SetFreeZoneTransformation (const VECTOR & u)
+void vnetrule :: SetFreeZoneTransformation (const Vector & u)
 {
   int i;
   double nx, ny, nz, v1x, v1y, v1z, v2x, v2y, v2z;
@@ -101,14 +90,14 @@ void vnetrule :: SetFreeZoneTransformation (const VECTOR & u)
   for (fs = 1; fs <= freesets.Size(); fs++)
   {
     ARRAY<threeint> & freesetfaces = *freefaces.Get(fs);
-    MATRIX & freesetinequ = *freefaceinequ.Get(fs);
+    DenseMatrix & freesetinequ = *freefaceinequ.Get(fs);
 
     for (i = 1; i <= freesetfaces.Size(); i++)
     {
       ti = &freesetfaces.Get(i);
-      const POINT3D & p1 = transfreezone.Get(ti->i1);
-      const POINT3D & p2 = transfreezone.Get(ti->i2);
-      const POINT3D & p3 = transfreezone.Get(ti->i3);
+      const Point3d & p1 = transfreezone.Get(ti->i1);
+      const Point3d & p2 = transfreezone.Get(ti->i2);
+      const Point3d & p3 = transfreezone.Get(ti->i3);
 
       v1x = p2.X() - p1.X();
       v1y = p2.Y() - p1.Y();
@@ -155,7 +144,7 @@ int vnetrule :: ConvexFreeZone () const
   for (fs = 1; fs <= freesets.Size(); fs++)
   {
     ARRAY<threeint> & freesetfaces = *freefaces[fs];
-    MATRIX & freesetinequ = *freefaceinequ[fs];
+    DenseMatrix & freesetinequ = *freefaceinequ[fs];
     ARRAY<int> & freeset = *freesets[fs];
 
     for (i = 1; i <= freesetfaces.Size(); i++)
@@ -180,7 +169,7 @@ int vnetrule :: ConvexFreeZone () const
 }
 
 
-int vnetrule :: IsInFreeZone (const POINT3D & p) const
+int vnetrule :: IsInFreeZone (const Point3d & p) const
 {
   int i, fs;
   char inthis;
@@ -192,7 +181,7 @@ int vnetrule :: IsInFreeZone (const POINT3D & p) const
   {
     inthis = 1;
     ARRAY<threeint> & freesetfaces = *freefaces[fs];
-    MATRIX & freesetinequ = *freefaceinequ[fs];
+    DenseMatrix & freesetinequ = *freefaceinequ[fs];
 
     for (i = 1; i <= freesetfaces.Size() && inthis; i++)
     {
@@ -208,7 +197,7 @@ int vnetrule :: IsInFreeZone (const POINT3D & p) const
 }
 
 
-int vnetrule :: IsTriangleInFreeZone (const POINT3D & p1, const POINT3D & p2, const POINT3D & p3)
+int vnetrule :: IsTriangleInFreeZone (const Point3d & p1, const Point3d & p2, const Point3d & p3)
 {
   int fs;
   int infreeset, cannot = 0;
@@ -224,11 +213,11 @@ int vnetrule :: IsTriangleInFreeZone (const POINT3D & p1, const POINT3D & p2, co
 }
 
 
-int vnetrule :: IsTriangleInFreeSet (const POINT3D & p1, const POINT3D & p2,
-                                     const POINT3D & p3, int fs)
+int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
+                                     const Point3d & p3, int fs)
 {
   int i, ii;
-  VEC3D n;
+  Vec3d n;
   int allleft, allright;
   int hos1, hos2, hos3, os1, os2, os3;
   double hf, lam1, lam2, f, c1, c2, alpha;
@@ -242,7 +231,7 @@ int vnetrule :: IsTriangleInFreeSet (const POINT3D & p1, const POINT3D & p2,
 
 
   ARRAY<threeint> & freesetfaces = *freefaces.Get(fs);
-  MATRIX & freesetinequ = *freefaceinequ[fs];
+  DenseMatrix & freesetinequ = *freefaceinequ[fs];
 
 
   if (p1.X() <= fzminx && p2.X() <= fzminx && p3.X() <= fzminx ||
@@ -301,7 +290,7 @@ int vnetrule :: IsTriangleInFreeSet (const POINT3D & p1, const POINT3D & p2,
   allleft = allright = 1;
   for (i = 1; i <= transfreezone.Size() && (allleft || allright); i++)
   {
-    const POINT3D & p = transfreezone.Get(i);
+    const Point3d & p = transfreezone.Get(i);
     float scal = (p.X() - p1.X()) * n.X() +
                  (p.Y() - p1.Y()) * n.Y() +
                  (p.Z() - p1.Z()) * n.Z();
@@ -479,7 +468,7 @@ int vnetrule :: IsTriangleInFreeSet (const POINT3D & p1, const POINT3D & p2,
 
 
 
-float vnetrule :: CalcPointDist (int pi, const POINT3D & p) const
+float vnetrule :: CalcPointDist (int pi, const Point3d & p) const
 {
   float dx = p.X() - points.Get(pi).X();
   float dy = p.Y() - points.Get(pi).Y();

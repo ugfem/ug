@@ -24,9 +24,7 @@
 
 
 
-#include <template.hh>
-#include <array.hh>
-// #include <spbita2d.hh>
+#include <myadt.hh>
 #include <geom/geom2d.hh>
 #include <geom/geom3d.hh>
 #include <linalg/linalg.hh>
@@ -57,28 +55,30 @@ void MyError (char * ch)
 
 
 
-ARRAY<POINT3D> * points;
-ARRAY<ELEMENT> * volelements;
-int nbp;              // number of boundary points
+static ARRAY<Point3d> * points;
+static ARRAY<Element> * volelements;
+static int nbp,disp;
+static double vol0;
 
-
-class my_meshing3 : public meshing3
+class my_meshing3 : public Meshing3
 {
 public:
   my_meshing3 (char * rulefilename);
-  virtual int SavePoint (const POINT3D & p);
-  virtual void SaveElement (const ELEMENT & elem);
+  virtual int SavePoint (const Point3d & p);
+  virtual void SaveElement (const Element & elem);
+
+  friend int StartNetgen (double h, int smooth, int display);
 };
 
 
 
 my_meshing3 :: my_meshing3 (char * rulefilename)
-  : meshing3 (rulefilename)
+  : Meshing3 (rulefilename)
 {
   ;
 }
 
-int my_meshing3 :: SavePoint (const POINT3D & p)
+int my_meshing3 :: SavePoint (const Point3d & p)
 {
   return points -> Append (p);
 }
@@ -95,50 +95,52 @@ int my_meshing3 :: SavePoint (const POINT3D & p)
 
 #define V3_CLEAR(A)                                {(A)[0] = 0.0; (A)[1]= 0.0; (A)[2] = 0.0;}
 
-void my_meshing3 :: SaveElement (const ELEMENT & elem)
+void my_meshing3 :: SaveElement (const Element & elem)
 {
-  float x[4][3],diam,fac,global[3],inndiam,dist;
+  float x[4][3],diam,fac,global[3],inndiam,dist,percent;
   int i,n;
 
-  n = 4;
-  x[0][0] = points -> Get(elem.PNum(1)).X();
-  x[0][1] = points -> Get(elem.PNum(1)).Y();
-  x[0][2] = points -> Get(elem.PNum(1)).Z();
-  x[1][0] = points -> Get(elem.PNum(2)).X();
-  x[1][1] = points -> Get(elem.PNum(2)).Y();
-  x[1][2] = points -> Get(elem.PNum(2)).Z();
-  x[2][0] = points -> Get(elem.PNum(3)).X();
-  x[2][1] = points -> Get(elem.PNum(3)).Y();
-  x[2][2] = points -> Get(elem.PNum(3)).Z();
-  x[3][0] = points -> Get(elem.PNum(4)).X();
-  x[3][1] = points -> Get(elem.PNum(4)).Y();
-  x[3][2] = points -> Get(elem.PNum(4)).Z();
-
-  V3_CLEAR(global);
-  for (i=0; i<n; i++)
-    V3_ADD(x[i],global,global);
-  fac = 1.0 / n;
-  V3_SCALE(fac,global);
-  diam = 0.0;
-  inndiam = 100000000.0;
-  for (i=0; i<n; i++)
+  if (disp)
   {
-    V3_EUKLIDNORM_OF_DIFF(x[i],global,fac);
-    if (fac < inndiam)
-      inndiam = fac;
-    if (fac > diam)
-      diam = fac;
+    n = 4;
+    x[0][0] = points -> Get(elem.PNum(1)).X();
+    x[0][1] = points -> Get(elem.PNum(1)).Y();
+    x[0][2] = points -> Get(elem.PNum(1)).Z();
+    x[1][0] = points -> Get(elem.PNum(2)).X();
+    x[1][1] = points -> Get(elem.PNum(2)).Y();
+    x[1][2] = points -> Get(elem.PNum(2)).Z();
+    x[2][0] = points -> Get(elem.PNum(3)).X();
+    x[2][1] = points -> Get(elem.PNum(3)).Y();
+    x[2][2] = points -> Get(elem.PNum(3)).Z();
+    x[3][0] = points -> Get(elem.PNum(4)).X();
+    x[3][1] = points -> Get(elem.PNum(4)).Y();
+    x[3][2] = points -> Get(elem.PNum(4)).Z();
+
+    V3_CLEAR(global);
+    for (i=0; i<n; i++)
+      V3_ADD(x[i],global,global);
+    fac = 1.0 / n;
+    V3_SCALE(fac,global);
+    diam = 0.0;
+    inndiam = 100000000.0;
+    for (i=0; i<n; i++)
+    {
+      V3_EUKLIDNORM_OF_DIFF(x[i],global,fac);
+      if (fac < inndiam)
+        inndiam = fac;
+      if (fac > diam)
+        diam = fac;
+    }
+    dist = sqrt(global[0]*global[0]+global[1]*global[1]+global[2]*global[2]);
+
+    volelements -> Append (elem);
+
+    percent = 100.0 * adfront->Volume() / vol0;
+
+    UserWriteF(" ID(Elem)=%4d midPoint %6.2f %6.2f %6.2f dist %6.2f diam %6.2f %6.2f vol %6.3f\%\n",
+               volelements -> Size(),global[0],global[1],global[2],
+               dist,inndiam,diam,percent);
   }
-  dist = sqrt(global[0]*global[0]+global[1]*global[1]+global[2]*global[2]);
-
-  volelements -> Append (elem);
-
-  UserWriteF(" ID(Elem)=%4d midPoint %6.2f %6.2f %6.2f dist %6.2f diam %6.2f %6.2f\n",
-             volelements -> Size(),global[0],global[1],global[2],
-             dist,inndiam,diam);
-
-  /*UserWriteF("%4d",volelements -> Size());
-     if (volelements -> Size()%10 == 0)   UserWriteF ("\n");*/
 }
 
 
@@ -147,15 +149,15 @@ static my_meshing3 * meshing;
 
 int AddSurfaceNode (int nodeid, double x, double y, double z)
 {
-  points -> Append (POINT3D(x, y, z));
-  meshing -> AddPoint (POINT3D(x, y, z), nodeid+1);
+  points -> Append (Point3d(x, y, z));
+  meshing -> AddPoint (Point3d(x, y, z), nodeid+1);
   return 0;
 }
 
 
 int AddSurfaceTriangle (int node0, int node1, int node2)
 {
-  ELEMENT elem(3);
+  Element elem(3);
 
   elem.PNum(1) = node0 + 1;
   elem.PNum(2) = node1 + 1;
@@ -172,18 +174,20 @@ int InitNetgen (char * rulefilename)
   testout = new ofstream("test.out");
   meshing = new my_meshing3(rulefilename);
 
-  points = new ARRAY<POINT3D>;
-  volelements = new ARRAY<ELEMENT>;
+  points = new ARRAY<Point3d>;
+  volelements = new ARRAY<Element>;
   nbp = 0;
 
   return 0;
 }
 
-int StartNetgen (double h, int smooth)
+int StartNetgen (double h, int smooth, int display)
 {
   int i;
 
   nbp = points->Size();
+  disp = display;
+  vol0 = meshing->adfront->Volume();
 
   meshing -> Mesh (h);
 

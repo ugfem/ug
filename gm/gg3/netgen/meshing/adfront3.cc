@@ -1,30 +1,56 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   adfront3.cc                                                  */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream.h>
 #include <iostream.h>
 #include <math.h>
-#include <limits.h>
 
-#include <template.hh>
-#include <array.hh>
+#include <myadt.hh>
+
 #include <geom/geom2d.hh>
 #include <geom/geom3d.hh>
 
 
 #include <meshing/adfront3.hh>
 
+ADFRONT3 :: FrontPoint3 :: FrontPoint3 ()
+{
+  globalindex = 0;
+  nfacetopoint = 0;
+  frontnr = 1000;
+}
+
+
+ADFRONT3 :: FrontPoint3 :: FrontPoint3 (const Point3d & ap, INDEX agi)
+{
+  p = ap;
+  globalindex = agi;
+  nfacetopoint = 0;
+  frontnr = 1000;
+}
+
+
+ADFRONT3 :: FrontFace :: FrontFace ()
+{
+  qualclass = 1;
+  oldfront = 0;
+}
+
+ADFRONT3 :: FrontFace :: FrontFace (const Element & af)
+{
+  f = af;
+  oldfront = 0;
+  qualclass = 1;
+}
+
+
+void ADFRONT3 :: FrontFace :: Invalidate ()
+{
+  f.PNum(1) = 0;
+  oldfront = 0;
+  qualclass = 1000;
+}
 
 
 ADFRONT3 :: ADFRONT3 ()
@@ -34,134 +60,45 @@ ADFRONT3 :: ADFRONT3 ()
 }
 
 
-/*
-   void ADFRONT3 :: Load (char * filename, float & h)
-   {
-   cout << "Load File: " << filename << endl;
 
-   ifstream listin(filename);
-
-   INDEX linesize, pointsize;
-   INDEX i;
-   POINT3D p;
-   ELEMENT el;
-
-   if (!listin.good())
-    {
-    MyError ("Input file bad");
-    exit (1);
-    }
-
-   listin >> h;
-   listin >> pointsize;  //Anzahl der Punkte
-
-   for (i = 1; i <= pointsize; i++)
-    {
-    listin >> p.X() >> p.Y() >> p.Z();
-    AddPoint (p);
-    }
-
-   listin >> linesize;   //Anzahl der Linien
-
-   for (i = 1; i <= linesize; i++)
-    {
-    el.SetNP(3);
-    listin >> el.PNum(1) >> el.PNum(2) >> el.PNum(3);
-    AddFace (el);
-    }
-   }
-
-
-   void ADFRONT3 :: Save (char * filename, float h)
-   {
-   ofstream listout(filename);
-
-   INDEX i;
-   //  POINT3D p;
-   //  ELEMENT el;
-   ARRAY<INDEX> valnum(points.Size());
-   INDEX vn;
-
-   vn = 0;
-   for (i = 1; i <= points.Size(); i++)
-    {
-    if (points[i].Valid())
-      {
-      vn++;
-      valnum[i] = vn;
-      }
-    else
-      {
-      valnum[i] = 0;
-      }
-    }
-
-   listout << h << endl;
-   listout << vn << endl;
-
-   for (i = 1; i <= points.Size(); i++)
-    {
-    if (points[i].Valid())
-      {
-      listout << points[i].p.X() << " "
-              << points[i].p.Y() << " "
-              << points[i].p.Z() << endl;
-      }
-    }
-
-   listout << nff << endl;
-
-   for (i = 1; i <= faces.Size(); i++)
-    {
-    if (faces[i].Valid())
-      {
-      listout << valnum[faces[i].f.PNum(1)] << " "
-              << valnum[faces[i].f.PNum(2)] << " "
-              << valnum[faces[i].f.PNum(3)] << endl;
-      }
-    }
-   }
- */
-
-
-void ADFRONT3 :: GetPoints (ARRAY<POINT3D> & apoints) const
+void ADFRONT3 :: GetPoints (ARRAY<Point3d> & apoints) const
 {
   INDEX i;
   for (i = 1; i <= points.Size(); i++)
-    apoints.Append (points[i].p);
+    apoints.Append (points[i].P());
 }
 
 
 
-INDEX ADFRONT3 :: AddPoint (const POINT3D & p, INDEX globind)
+INDEX ADFRONT3 :: AddPoint (const Point3d & p, INDEX globind)
 {
   if (delpointl.Size() != 0)
   {
     INDEX pi = delpointl[delpointl.Size()];
     delpointl.DeleteLast ();
 
-    points[pi] = frontpoint3 (p, globind);
+    points[pi] = FrontPoint3 (p, globind);
     return pi;
   }
   else
   {
-    return points.Append (frontpoint3 (p, globind));
+    return points.Append (FrontPoint3 (p, globind));
   }
 }
 
 
-INDEX ADFRONT3 :: AddFace (const ELEMENT & aface)
+INDEX ADFRONT3 :: AddFace (const Element & aface)
 {
   int i, minfn;
 
   nff++;
 
   for (i = 1; i <= aface.NP(); i++)
-    points[aface.PNum(i)].nlinetopoint++;
+    points[aface.PNum(i)].AddFace();
 
-  const POINT3D & p1 = points[aface.PNum(1)].p;
-  const POINT3D & p2 = points[aface.PNum(2)].p;
-  const POINT3D & p3 = points[aface.PNum(3)].p;
+  const Point3d & p1 = points[aface.PNum(1)].P();
+  const Point3d & p2 = points[aface.PNum(2)].P();
+  const Point3d & p3 = points[aface.PNum(3)].P();
 
   vol += 1.0/6.0 * (p1.X() + p2.X() + p3.X()) *
          ( (p2.Y() - p1.Y()) * (p3.Z() - p1.Z()) -
@@ -170,14 +107,13 @@ INDEX ADFRONT3 :: AddFace (const ELEMENT & aface)
 
   minfn = 1000;
   for (i = 1; i <= aface.NP(); i++)
-    if (i == 1 || points[aface.PNum(i)].frontnr < minfn)
-      minfn = points[aface.PNum(i)].frontnr;
+    if (i == 1 || points[aface.PNum(i)].FrontNr() < minfn)
+      minfn = points[aface.PNum(i)].FrontNr();
 
   for (i = 1; i <= aface.NP(); i++)
-    if (points[aface.PNum(i)].frontnr > minfn+1)
-      points[aface.PNum(i)].frontnr = minfn+1;
+    points[aface.PNum(i)].DecFrontNr (minfn+1);
 
-  return faces.Append(frontface (aface));
+  return faces.Append(FrontFace (aface));
 }
 
 
@@ -188,20 +124,17 @@ void ADFRONT3 :: DeleteFace (INDEX fi)
 
   nff--;
 
-  for (i = 1; i <= faces[fi].f.NP(); i++)
+  for (i = 1; i <= faces[fi].Face().NP(); i++)
   {
-    pi = faces[fi].f.PNum(i);
-    points[pi].nlinetopoint--;
-    if (points[pi].nlinetopoint == 0)
-    {
-      points[pi].Invalidate();
+    pi = faces[fi].Face().PNum(i);
+    points[pi].RemoveFace();
+    if (!points[pi].Valid())
       delpointl.Append (pi);
-    }
   }
 
-  const POINT3D & p1 = points[faces[fi].f.PNum(1)].p;
-  const POINT3D & p2 = points[faces[fi].f.PNum(2)].p;
-  const POINT3D & p3 = points[faces[fi].f.PNum(3)].p;
+  const Point3d & p1 = points[faces[fi].Face().PNum(1)].P();
+  const Point3d & p2 = points[faces[fi].Face().PNum(2)].P();
+  const Point3d & p3 = points[faces[fi].Face().PNum(3)].P();
 
   vol -= 1.0/6.0 * (p1.X() + p2.X() + p3.X()) *
          ( (p2.Y() - p1.Y()) * (p3.Z() - p1.Z()) -
@@ -214,17 +147,13 @@ void ADFRONT3 :: DeleteFace (INDEX fi)
 
 void ADFRONT3 :: IncrementClass (INDEX fi)
 {
-  faces[fi].qualclass++;
+  faces[fi].IncrementQualClass();
 }
 
 
 void ADFRONT3 :: ResetClass (INDEX fi)
 {
-  if (faces[fi].qualclass > 1)
-  {
-    faces[fi].qualclass = 1;
-    faces[fi].oldfront = 0;
-  }
+  faces[fi].ResetQualClass();
 }
 
 
@@ -233,8 +162,8 @@ void ADFRONT3 :: ResetClass (INDEX fi)
 
 
 
-int ADFRONT3 :: GetLocals (ARRAY<POINT3D> & locpoints,
-                           ARRAY<ELEMENT> & locfaces,       // local index
+int ADFRONT3 :: GetLocals (ARRAY<Point3d> & locpoints,
+                           ARRAY<Element> & locfaces,       // local index
                            ARRAY<INDEX> & pindex,
                            ARRAY<INDEX> & findex,
                            float xh)
@@ -244,17 +173,17 @@ int ADFRONT3 :: GetLocals (ARRAY<POINT3D> & locpoints,
   char found;
   int minval, hi;
   INDEX pi;
-  POINT3D midp, p0;
+  Point3d midp, p0;
 
 
   minval = INT_MAX;
 
   for (i = 1; i<= faces.Size(); i++)
   {
-    hi = faces.Get(i).qualclass +
-         2 * min (points.Get(faces.Get(i).f.PNum(1)).frontnr,
-                  points.Get(faces.Get(i).f.PNum(2)).frontnr,
-                  points.Get(faces.Get(i).f.PNum(3)).frontnr);
+    hi = faces.Get(i).QualClass() +
+         2 * min (points.Get(faces.Get(i).Face().PNum(1)).FrontNr(),
+                  points.Get(faces.Get(i).Face().PNum(2)).FrontNr(),
+                  points.Get(faces.Get(i).Face().PNum(3)).FrontNr() );
 
     if (hi < minval || i == 1)
     {
@@ -263,24 +192,24 @@ int ADFRONT3 :: GetLocals (ARRAY<POINT3D> & locpoints,
     }
   }
 
-  pstind = faces[fstind].f.PNum(1);
-  p0 = points[pstind].p;
+  pstind = faces[fstind].Face().PNum(1);
+  p0 = points[pstind].P();
 
-  locfaces.Append(faces[fstind].f);
+  locfaces.Append(faces[fstind].Face());
   findex.Append(fstind);
 
   for (i = 1; i <= faces.Size(); i++)
   {
     if (faces.Get(i).Valid() && i != fstind)
     {
-      midp = Center (points.Get(faces.Get(i).f.PNum(1)).p,
-                     points.Get(faces.Get(i).f.PNum(2)).p);
+      midp = Center (points.Get(faces.Get(i).Face().PNum(1)).P(),
+                     points.Get(faces.Get(i).Face().PNum(2)).P());
 
       // Center genauer !!!
 
       if (Dist (midp, p0) <= xh)
       {
-        locfaces.Append(faces.Get(i).f);
+        locfaces.Append(faces.Get(i).Face());
         findex.Append(i);
       }
     }
@@ -305,7 +234,7 @@ int ADFRONT3 :: GetLocals (ARRAY<POINT3D> & locpoints,
       if (!found)
       {
         pindex.Append (pi);
-        locfaces.Elem(i).PNum(j) = locpoints.Append (points.Get(pi).p);
+        locfaces.Elem(i).PNum(j) = locpoints.Append (points.Get(pi).P());
       }
     }
   }
@@ -326,14 +255,14 @@ int ADFRONT3 :: GetLocals (ARRAY<POINT3D> & locpoints,
           }
         }
    */
-  return faces.Get(fstind).qualclass;
+  return faces.Get(fstind).QualClass();
 }
 
 
 
 void ADFRONT3 :: GetGroup (int fi,
-                           ARRAY<POINT3D> & grouppoints,
-                           ARRAY<ELEMENT> & groupelements,
+                           ARRAY<Point3d> & grouppoints,
+                           ARRAY<Element> & groupelements,
                            ARRAY<INDEX> & pindex,
                            ARRAY<INDEX> & findex
                            ) const
@@ -344,24 +273,26 @@ void ADFRONT3 :: GetGroup (int fi,
 
   for (i = 1; i <= pingroup.Size(); i++)
     pingroup[i] = 0;
-  pingroup[faces[fi].f.PNum(1)] = 1;
+  for (j = 1; j <= 3; j++)
+    pingroup.Elem (faces.Get(fi).Face().PNum(j)) = 1;
 
   do
   {
     changed = 0;
 
     for (i = 1; i <= faces.Size(); i++)
-      if (faces[i].Valid())
+      if (faces.Get(i).Valid())
       {
         fused = 0;
-        for (j = 1; j <= faces[i].f.NP(); j++)
-          if (pingroup[faces[i].f.PNum(j)])
-            fused = 1;
-        if (fused)
-          for (j = 1; j <= faces[i].f.NP(); j++)
-            if (!pingroup[faces[i].f.PNum(j)])
+        for (j = 1; j <= faces.Get(i).Face().NP(); j++)
+          if (pingroup[faces[i].Face().PNum(j)])
+            fused++;
+
+        if (fused >= 2)
+          for (j = 1; j <= faces[i].Face().NP(); j++)
+            if (!pingroup[faces[i].Face().PNum(j)])
             {
-              pingroup[faces[i].f.PNum(j)] = 1;
+              pingroup[faces[i].Face().PNum(j)] = 1;
               changed = 1;
             }
       }
@@ -372,7 +303,7 @@ void ADFRONT3 :: GetGroup (int fi,
 
   for (i = 1; i <= points.Size(); i++)
   {
-    grouppoints.Append (points[i].p);
+    grouppoints.Append (points[i].P());
     pindex.Append (i);
   }
 
@@ -380,12 +311,13 @@ void ADFRONT3 :: GetGroup (int fi,
     if (faces[i].Valid())
     {
       fused = 0;
-      for (j = 1; j <= faces[i].f.NP(); j++)
-        if (pingroup[faces[i].f.PNum(j)])
-          fused = 1;
-      if (fused)
+      for (j = 1; j <= faces[i].Face().NP(); j++)
+        if (pingroup[faces[i].Face().PNum(j)])
+          fused++;
+
+      if (fused >= 2)
       {
-        groupelements.Append (faces[i].f);
+        groupelements.Append (faces[i].Face());
         findex.Append (i);
       }
     }
@@ -399,8 +331,8 @@ void ADFRONT3 :: SetStartFront ()
 
   for (i = 1; i <= faces.Size(); i++)
     if (faces.Get(i).Valid())
-      for (j = 1; j <= faces[i].f.NP(); j++)
-        points[faces[i].f.PNum(j)].frontnr = 0;
+      for (j = 1; j <= faces[i].Face().NP(); j++)
+        points[faces[i].Face().PNum(j)].DecFrontNr(0);
 }
 
 void ADFRONT3 :: Print () const
@@ -424,11 +356,11 @@ void ADFRONT3 :: Print () const
 
 int ADFRONT3 :: TestOk () const
 {
-  INDEX i;
+  //  INDEX i;
 
-  for (i = 1; i <= points.Size(); i++)
-    if (points[i].nlinetopoint == 1 || points[i].nlinetopoint == 2)
-      return 0;
+  //  for (i = 1; i <= points.Size(); i++)
+  //    if (points[i].nlinetopoint == 1 || points[i].nlinetopoint == 2)
+  //      return 0;
   return 1;
 }
 
@@ -437,7 +369,7 @@ void ADFRONT3 :: SaveSurface (char * filename, double h)
 {
   INDEX i, np, nf;
   int j;
-  ofstream outfile("nul");
+  ofstream outfile(filename);
   ARRAY<INDEX> pointnr;
 
 
@@ -451,11 +383,11 @@ void ADFRONT3 :: SaveSurface (char * filename, double h)
     if (faces[i].Valid())
     {
       nf++;
-      for (j = 1; j <= faces[i].f.NP(); j++)
-        if (pointnr[faces[i].f.PNum(j)] == 0)
+      for (j = 1; j <= faces[i].Face().NP(); j++)
+        if (pointnr[faces[i].Face().PNum(j)] == 0)
         {
           np++;
-          pointnr[faces[i].f.PNum(j)] = np;
+          pointnr[faces[i].Face().PNum(j)] = np;
         }
     }
 
@@ -466,14 +398,14 @@ void ADFRONT3 :: SaveSurface (char * filename, double h)
   for (j = 1; j <= np; j++)
     for (i = 1; i <= points.Size(); i++)
       if (pointnr[i] == j)
-        outfile << points[i].p.X() << " "
-                << points[i].p.Y() << " "
-                << points[i].p.Z() << endl;
+        outfile << points[i].P().X() << " "
+                << points[i].P().Y() << " "
+                << points[i].P().Z() << endl;
 
   outfile << nf << endl;
   for (i = 1; i <= faces.Size(); i++)
     if (faces[i].Valid())
-      outfile << pointnr[faces[i].f.PNum(1)] << " "
-              << pointnr[faces[i].f.PNum(2)] << " "
-              << pointnr[faces[i].f.PNum(3)] << endl;
+      outfile << pointnr[faces[i].Face().PNum(1)] << " "
+              << pointnr[faces[i].Face().PNum(2)] << " "
+              << pointnr[faces[i].Face().PNum(3)] << endl;
 }

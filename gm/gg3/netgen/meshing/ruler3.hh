@@ -1,38 +1,34 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   ruler3.hh                                                    */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
 #ifndef FILE_RULER3
 #define FILE_RULER3
 
 
 class vnetrule
 {
+public:
+  //  struct twoint { int i1, i2; };
+  //  struct threeint { int i1, i2, i3; };
+  //  struct fourint { int i1, i2, i3, i4; };
+
 private:
 
   int quality;
   char * name;
-  ARRAY<POINT3D> points;
-  ARRAY<ELEMENT> faces;
+  ARRAY<Point3d> points;
+  ARRAY<Element> faces;
   ARRAY<twoint> edges;
 
-  ARRAY<POINT3D> freezone;
+  ARRAY<Point3d> freezone;
   ARRAY<ARRAY<threeint>*> freefaces;
   ARRAY<ARRAY<int>*> freesets;
-  ARRAY<POINT3D> transfreezone;
+  ARRAY<Point3d> transfreezone;
 
   ARRAY<int> delfaces;
-  ARRAY<ELEMENT> elements;
+  ARRAY<Element> elements;
   ARRAY<double> tolerances, linetolerances;
-  SPARSE_MATRIX oldutonewu, oldutofreezone;
-  ARRAY<MATRIX*> freefaceinequ;
+  SparseMatrix oldutonewu, oldutofreezone;
+  ARRAY<DenseMatrix*> freefaceinequ;
   ARRAY<fourint> orientations;
   ARRAY<char> flags;
   ARRAY<int> fnearness;
@@ -57,23 +53,23 @@ public:
   int GetFNearness (int fi) const { return fnearness.Get(fi); }
 
 
-  const POINT3D & GetPoint (int i) const { return points.Get(i); }
-  const ELEMENT & GetFace (int i) const { return faces.Get(i); }
-  const ELEMENT & GetElement (int i) const { return elements.Get(i); }
+  const Point3d & GetPoint (int i) const { return points.Get(i); }
+  const Element & GetFace (int i) const { return faces.Get(i); }
+  const Element & GetElement (int i) const { return elements.Get(i); }
   const twoint & GetEdge (int i) const { return edges.Get(i); }
   int GetDelFace (int i) const { return delfaces.Get(i); }
   int IsDelFace (int fn) const;
 
-  float CalcPointDist (int pi, const POINT3D & p) const;
+  float CalcPointDist (int pi, const Point3d & p) const;
 
-  void SetFreeZoneTransformation (const VECTOR & u);
-  int IsInFreeZone (const POINT3D & p) const;
-  int IsTriangleInFreeZone (const POINT3D & p1, const POINT3D & p2,
-                            const POINT3D & p3);
-  int IsTriangleInFreeSet (const POINT3D & p1, const POINT3D & p2,
-                           const POINT3D & p3, int fs);
+  void SetFreeZoneTransformation (const Vector & u);
+  int IsInFreeZone (const Point3d & p) const;
+  int IsTriangleInFreeZone (const Point3d & p1, const Point3d & p2,
+                            const Point3d & p3);
+  int IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
+                           const Point3d & p3, int fs);
   int ConvexFreeZone () const;
-  const POINT3D & GetTransFreeZone (int i) { return transfreezone.Get(i); }
+  const Point3d & GetTransFreeZone (int i) { return transfreezone.Get(i); }
 
   int GetNP (int fn) const
   { return faces.Get(fn).NP(); }
@@ -85,12 +81,12 @@ public:
 
   int TestFlag (char flag) const;
 
-  const SPARSE_MATRIX & GetOldUToNewU () const { return oldutonewu; }
-  const SPARSE_MATRIX & GetOldUToFreeZone () const { return oldutofreezone; }
+  const SparseMatrix & GetOldUToNewU () const { return oldutonewu; }
+  const SparseMatrix & GetOldUToFreeZone () const { return oldutofreezone; }
   const char * Name () const { return name; }
   void LoadRule (istream & ist);
 
-  const ARRAY<POINT3D> & GetTransFreeZone () { return transfreezone; }
+  const ARRAY<Point3d> & GetTransFreeZone () { return transfreezone; }
   int TestOk () const;
 
   friend void TestRules ();
@@ -100,8 +96,8 @@ public:
 
 
 extern int ApplyVRules (const ARRAY<vnetrule*> & rules, double tolfak,
-                        ARRAY<POINT3D> & lpoints, ARRAY<ELEMENT> & lfaces,
-                        ARRAY<ELEMENT> & elements,
+                        ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
+                        ARRAY<Element> & elements,
                         ARRAY<INDEX> & delfaces, int tolerance, int rotind1,
                         float & retminerr, ARRAY<char*> & problems);
 

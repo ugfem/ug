@@ -1,14 +1,5 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   meshing3.hh                                                  */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
 #ifndef FILE_MESHING3
 #define FILE_MESHING3
 
@@ -16,8 +7,9 @@
 #include <meshing/adfront3.hh>
 #include <meshing/ruler3.hh>
 
-class meshing3
+class Meshing3
 {
+protected:
   ADFRONT3 * adfront;
   ARRAY<vnetrule*> rules;
   ARRAY<int> ruleused;
@@ -25,26 +17,41 @@ class meshing3
   double tolfak;
 
 public:
-  meshing3 (char * rulefilename);
-  virtual ~meshing3 ();
+  Meshing3 (char * rulefilename);
+  virtual ~Meshing3 ();
 
   void LoadRules (char * filename);
   void Mesh (double gh);
 
-  void ImproveMesh (ARRAY<POINT3D> & points, const ARRAY<ELEMENT> & surfelements,
-                    const ARRAY<ELEMENT> & elements,
+  void ImproveMesh (ARRAY<Point3d> & points,
+                    const ARRAY<Element> & surfelements,
+                    const ARRAY<Element> & elements,
                     double h);
 
-  void ImproveMesh (ARRAY<POINT3D> & points,
-                    const ARRAY<ELEMENT> & elements,
+  void ImproveMesh (ARRAY<Point3d> & points,
+                    const ARRAY<Element> & elements,
                     int nboundnodes,
                     double h);
 
-  void AddPoint (const POINT3D & p, INDEX globind);
-  void AddBoundaryElement (const ELEMENT & elem, int inverse);
+  void CombineImprove (ARRAY<Point3d> & points,
+                       ARRAY<Element> & elements,
+                       int nboundnodes,
+                       double h);
 
-  virtual int SavePoint (const POINT3D & p) { return 0; }
-  virtual void SaveElement (const ELEMENT & elem) { };
+  void SplitImprove (ARRAY<Point3d> & points,
+                     ARRAY<Element> & elements, ARRAY<Element> & surfelements,
+                     double h);
+
+  void SwapImprove (ARRAY<Point3d> & points,
+                    ARRAY<Element> & elements, ARRAY<Element> & surfelements,
+                    double h);
+
+
+  void AddPoint (const Point3d & p, INDEX globind);
+  void AddBoundaryElement (const Element & elem, int inverse);
+
+  virtual int SavePoint (const Point3d & /* p */) { return 0; }
+  virtual void SaveElement (const Element & /* elem */) { };
 
   friend void PlotVolMesh (const ROT3D & r, char key);
   friend void TestRules ();

@@ -1,28 +1,18 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   meshtype.hh                                                  */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
-
 #ifndef MESHTYPE
 #define MESHTYPE
 
-class ELEMENT
+class Element
 {
   int np;
   int pnum[4];
   int surfaceind;
 
 public:
-  ELEMENT () { np = 0; }
-  ELEMENT (int anp) { np = anp; }
-  ELEMENT & operator= (const ELEMENT & el2);
+  Element () { np = 0; }
+  Element (int anp) { np = anp; }
+  Element & operator= (const Element & el2);
 
   void SetNP (int anp) { np = anp; }
   int NP () const { return np; }
@@ -35,5 +25,16 @@ public:
 };
 
 
-class SURFACE;
+class Segment
+{
+public:
+  Segment() { p1 = p2 = 0; }
+  int p1, p2;         // point indices
+  int s1, s2;         // surface indices
+  int edgenr;         // edge index
+  int invs1, invs2;   // inverse direction for surface 1 resp surface 2
+};
+
+
+class Surface;
 #endif

@@ -1,15 +1,5 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   meshing3.cc                                                  */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream.h>
@@ -19,10 +9,9 @@
 #include <new.h>
 #include <ctype.h>
 #include <string.h>
+#include <limits.h>
 
-#include <template.hh>
-#include <array.hh>
-#include <table.hh>
+#include <myadt.hh>
 
 #include <geom/geom2d.hh>
 #include <geom/geom3d.hh>
@@ -38,22 +27,11 @@
 #include <meshing/global.hh>
 #include <meshing/meshing3.hh>
 
-#ifdef SOLIDGEOM
-#include <geom/solid.hh>
-#include <meshing/specpoin.hh>
-#include <meshing/edgeflw.hh>
-#endif
-
-extern void BFGS (VECTOR & x, double (*f)(const VECTOR & x, VECTOR & g));
-
-#ifdef SOLIDGEOM
-extern ARRAY<SURFACE*> surfaces;
-#endif
 
 // global variables for plotting:
 
-static ARRAY<POINT3D> locpoints;
-static ARRAY<ELEMENT> locfaces;
+static ARRAY<Point3d> locpoints;
+static ARRAY<Element> locfaces;
 static ARRAY<INDEX> pindex, findex;
 static ARRAY<int> style;
 static int drawrad = 100;
@@ -66,21 +44,21 @@ static float vol0, err, h;
 static int problemindex = 1;
 
 
-static meshing3 * meshing;
+static Meshing3 * meshing;
 
 
 
 // for useful point
-static ARRAY<POINT3D> grouppoints;
-static ARRAY<ELEMENT> groupfaces;
+static ARRAY<Point3d> grouppoints;
+static ARRAY<Element> groupfaces;
 static ARRAY<INDEX> grouppindex, groupfindex;
 
-extern int FindInnerPoint (const ARRAY<POINT3D> & grouppoints,
-                           const ARRAY<ELEMENT> & groupfaces,
-                           POINT3D & p);
+extern int FindInnerPoint (const ARRAY<Point3d> & grouppoints,
+                           const ARRAY<Element> & groupfaces,
+                           Point3d & p);
 
 
-meshing3 :: meshing3 (char * rulefilename)
+Meshing3 :: Meshing3 (char * rulefilename)
 {
   int i;
 
@@ -96,17 +74,17 @@ meshing3 :: meshing3 (char * rulefilename)
     problems[i] = new char[255];
 }
 
-meshing3 :: ~meshing3 ()
+Meshing3 :: ~Meshing3 ()
 {}
 
-void meshing3 :: AddPoint (const POINT3D & p, INDEX globind)
+void Meshing3 :: AddPoint (const Point3d & p, INDEX globind)
 {
   adfront->AddPoint (p, globind);
 }
 
-void meshing3 :: AddBoundaryElement (const ELEMENT & elem, int inverse)
+void Meshing3 :: AddBoundaryElement (const Element & elem, int inverse)
 {
-  ELEMENT helem;
+  Element helem;
   INDEX hi;
 
   helem = elem;
@@ -125,17 +103,17 @@ void meshing3 :: AddBoundaryElement (const ELEMENT & elem, int inverse)
 
 
 
-void DrawPnF(const ARRAY<POINT3D> & pointl, const ARRAY<ELEMENT> & facel,
+void DrawPnF(const ARRAY<Point3d> & pointl, const ARRAY<Element> & facel,
              ARRAY<int> & style, float xh , const ROT3D & r)
 {
 #ifdef MYGRAPH
   INDEX i;
   int j;
-  const ELEMENT * face;
+  const Element * face;
   int points2d[8];
   int nold = 0, nnew = 0;
 
-  POINT3D c, c2;
+  Point3d c, c2;
 
   MySetColor (LIGHTBLUE);
 
@@ -251,27 +229,27 @@ void PlotVolMesh (const ROT3D & r, char key)
 
 
 
-void meshing3 :: Mesh (double ah)
+void Meshing3 :: Mesh (double ah)
 {
-  ARRAY<POINT3D> plainpoints;
+  ARRAY<Point3d> plainpoints;
   ARRAY<int> delpoints, delfaces;
   ARRAY<int> changepoints;
-  ARRAY<ELEMENT> locelements;
+  ARRAY<Element> locelements;
   int i, j, oldnp, oldnf;
   int found;
   referencetransform trans;
   int rotind;
   INDEX globind;
-  POINT3D inp;
+  Point3d inp;
 
   float minerr;
   int hasfound;
   double tetvol;
 
-  ARRAY<POINT3D> tempnewpoints;
-  ARRAY<ELEMENT> tempnewfaces;
+  ARRAY<Point3d> tempnewpoints;
+  ARRAY<Element> tempnewfaces;
   ARRAY<int> tempdelfaces;
-  ARRAY<ELEMENT> templocelements;
+  ARRAY<Element> templocelements;
 
   int pause = 1, redraw = 1, shouldredraw = 1;
 
@@ -285,13 +263,6 @@ void meshing3 :: Mesh (double ah)
   vol0 = adfront -> Volume();
   tetvol = 0;
 
-  //  adfront -> GetGroup (1, grouppoints, groupfaces);
-  //  FindInnerPoint (grouppoints, groupfaces, inp);
-
-  //  grouppoints.Append (inp);
-  //  adfront->AddPoint (inp, 10000);
-
-  //  Plot3D (PlotGroup, 1, 1);
 
 
   while (!adfront -> Empty())
@@ -343,7 +314,7 @@ void meshing3 :: Mesh (double ah)
         delfaces.SetSize (0);
 
         INDEX npi;
-        ELEMENT newel;
+        Element newel;
 
         npi = SavePoint (inp);
         newel.SetNP(4);
@@ -399,8 +370,8 @@ void meshing3 :: Mesh (double ah)
       {
         ruleused[found]++;
 
-        ARRAY<POINT3D> pts;
-        POINT3D hp;
+        ARRAY<Point3d> pts;
+        Point3d hp;
 
         pts.SetSize (rules[found]->GetTransFreeZone().Size());
 
@@ -540,7 +511,7 @@ void meshing3 :: Mesh (double ah)
 
       for (i = 1; i <= locelements.Size(); i++)
       {
-        POINT3D * hp1, * hp2, * hp3, * hp4;
+        Point3d * hp1, * hp2, * hp3, * hp4;
         hp1 = &locpoints[locelements[i].PNum(1)];
         hp2 = &locpoints[locelements[i].PNum(2)];
         hp3 = &locpoints[locelements[i].PNum(3)];
@@ -588,351 +559,4 @@ void meshing3 :: Mesh (double ah)
   for (i = 1; i <= ruleused.Size(); i++)
     (*testout) << setw(4) << ruleused[i]
                << " times used rule " << rules[i] -> Name() << endl;
-}
-
-
-
-
-
-static POINT3D sp1;
-static VEC3D n, t1, t2;
-static ARRAY<INDEX> locelements(0);
-static ARRAY<int> locrots(0);
-static ARRAY<POINT3D> * optpoints;
-static const ARRAY<ELEMENT> * optelements;
-static int locerr2;
-static double loch;
-static int surfi, surfi2;
-
-
-
-static double CalcTetBadness (const POINT3D & p1, const POINT3D & p2,
-                              const POINT3D & p3, const POINT3D & p4)
-{
-  double vol, l, l4, l5, l6;
-  double err1, err2;
-
-  VEC3D v1 = p2 - p1;
-  VEC3D v2 = p3 - p1;
-  VEC3D v3 = p4 - p1;
-
-  vol = - (Cross (v1, v2) * v3) / 6;
-  l4 = Dist (p2, p3);
-  l5 = Dist (p2, p4);
-  l6 = Dist (p3, p4);
-
-  l = v1.Length() + v2.Length() + v3.Length() + l4 + l5 + l6;
-
-  if (vol < 1e-8) return 1e10;
-  err1 = (l*l*l) / (1832.82 * vol);    // 6^4 * sqrt(2)
-  err2 = l / (6 * loch) + loch * ( 1 / v1.Length() + 1 / v2.Length() + 1 / v3.Length() + 1 / l4 + 1 / l5 + 1 / l6);
-  return err1 + err2;
-}
-
-
-double PointFunctionValue (const POINT3D & pp)
-{
-  int j, k;
-  INDEX eli;
-  const ELEMENT * el;
-  double badness;
-  ARRAY<const POINT3D*> p(4);
-
-  badness = 0;
-
-  for (j = 1; j <= locelements.Size(); j++)
-  {
-    eli = locelements.Get(j);
-    el = &optelements->Get(eli);
-
-    for (k = 1; k <= 4; k++)
-      p.Elem(k) = &optpoints->Get(el->PNum(k));
-    p.Elem(locrots.Get(j)) = &pp;
-
-    badness += CalcTetBadness (*p.Get(1), *p.Get(2), *p.Get(3), *p.Get(4));
-  }
-  return badness;
-}
-
-
-double PointFunctionValueGrad (const POINT3D & pp, VECTOR & grad)
-{
-  double f, fr, fl, delta = 1e-6;
-  POINT3D hpp;
-
-  f = PointFunctionValue (pp);
-
-  hpp = pp;
-  hpp.X() = pp.X() + delta;
-  fr = PointFunctionValue (hpp);
-  hpp.X() = pp.X() - delta;
-  fl = PointFunctionValue (hpp);
-  grad.Elem(1) = (fr - fl) / (2 * delta);
-
-  hpp = pp;
-  hpp.Y() = pp.Y() + delta;
-  fr = PointFunctionValue (hpp);
-  hpp.Y() = pp.Y() - delta;
-  fl = PointFunctionValue (hpp);
-  grad.Elem(2) = (fr - fl) / (2 * delta);
-
-  hpp = pp;
-  hpp.Z() = pp.Z() + delta;
-  fr = PointFunctionValue (hpp);
-  hpp.Z() = pp.Z() - delta;
-  fl = PointFunctionValue (hpp);
-  grad.Elem(3) = (fr - fl) / (2 * delta);
-
-  return f;
-}
-
-double Opti3FunctionValueGrad (const VECTOR & x, VECTOR & grad)
-{
-  POINT3D pp;
-  pp.X() = sp1.X() + x.Get(1);
-  pp.Y() = sp1.Y() + x.Get(2);
-  pp.Z() = sp1.Z() + x.Get(3);
-
-  return PointFunctionValueGrad (pp, grad);
-}
-
-
-#ifdef SOLIDGEOM
-double Opti3SurfFunctionValueGrad (const VECTOR & x, VECTOR & grad)
-{
-  VEC3D n, v1, v2, e1, e2, vgrad;
-  POINT3D pp1;
-  double badness;
-  static VECTOR freegrad(3);
-
-  pp1 = sp1 + (x.Get(1) * t1) + (x.Get(2) * t2);
-  surfaces[surfi] -> Project (pp1);
-
-  badness = PointFunctionValueGrad (pp1, freegrad);
-  vgrad.X() = freegrad.Get(1);
-  vgrad.Y() = freegrad.Get(2);
-  vgrad.Z() = freegrad.Get(3);
-
-  surfaces[surfi] -> GetNormalVector (pp1, n);
-
-  vgrad -= (vgrad * n) * n;
-
-  grad.Elem(1) = vgrad * t1;
-  grad.Elem(2) = vgrad * t2;
-  return badness;
-}
-#endif
-
-
-#ifdef SOLIDGEOM
-double Opti3EdgeFunctionValueGrad (const VECTOR & x, VECTOR & grad)
-{
-  VEC3D n1, n2, v1, vgrad;
-  POINT3D pp1;
-  double badness;
-  static VECTOR freegrad(3);
-
-  pp1 = sp1 + x.Get(1) * t1;
-  ProjectToEdge ( surfaces[surfi], surfaces[surfi2], pp1);
-
-  badness = PointFunctionValueGrad (pp1, freegrad);
-
-  vgrad.X() = freegrad.Get(1);
-  vgrad.Y() = freegrad.Get(2);
-  vgrad.Z() = freegrad.Get(3);
-
-  surfaces[surfi] -> GetNormalVector (pp1, n1);
-  surfaces[surfi2] -> GetNormalVector (pp1, n2);
-
-  v1 = Cross (n1, n2);
-  v1 /= v1.Length();
-
-  grad.Elem(1) = (vgrad * v1) * (t1 * v1);
-  return badness;
-}
-#endif
-
-
-
-
-#ifdef SOLIDGEOM
-void meshing3 :: ImproveMesh (ARRAY<POINT3D> & points,
-                              const ARRAY<ELEMENT> & surfelements,
-                              const ARRAY<ELEMENT> & elements, double h)
-{
-  INDEX i, eli;
-  int j, k, it, ito, rot, surfi3;
-  const ELEMENT * el;
-
-  VEC3D n1, n2;
-  TABLE<INDEX> elementsonpoint(points.Size());
-  TABLE<INDEX> surfelementsonpoint(points.Size());
-  VECTOR x(3), xsurf(2), xedge(1);
-
-  (*testout).precision(8);
-
-  for (i = 1; i <= elements.Size(); i++)
-    for (j = 1; j <= elements[i].NP(); j++)
-      elementsonpoint.Add (elements[i].PNum(j), i);
-  for (i = 1; i <= surfelements.Size(); i++)
-    for (j = 1; j <= surfelements[i].NP(); j++)
-      surfelementsonpoint.Add (surfelements[i].PNum(j), i);
-
-  loch = h;
-  optpoints = &points;
-  optelements = &elements;
-
-  for (i = 1; i <= points.Size(); i++)
-  {
-    //    testout << "i = " << i << endl;
-    sp1 = points.Elem(i);
-
-    locelements.SetSize(0);
-    locrots.SetSize (0);
-
-    surfi = surfi2 = surfi3 = 0;
-
-    for (j = 1; j <= surfelementsonpoint.EntrySize(i); j++)
-    {
-      eli = surfelementsonpoint.Get(i, j);
-      el = &surfelements.Get(eli);
-
-      if (!surfi)
-        surfi = el->SurfaceIndex();
-      else if (surfi != el->SurfaceIndex())
-      {
-        if (!surfi2)
-          surfi2 = el->SurfaceIndex();
-        else if (surfi2 != el->SurfaceIndex())
-          surfi3 = el->SurfaceIndex();
-      }
-    }
-
-    for (j = 1; j <= elementsonpoint.EntrySize(i); j++)
-    {
-      eli = elementsonpoint.Get(i, j);
-      el = &elements.Get(eli);
-
-      locelements.Append (eli);
-
-      for (k = 1; k <= el->NP(); k++)
-        if (el->PNum(k) == i)
-          locrots.Append (k);
-    }
-
-    if (surfi2 && !surfi3)
-    {
-      (*testout) << "Edgepoint" << endl;
-      surfaces[surfi] -> GetNormalVector (sp1, n1);
-      surfaces[surfi2] -> GetNormalVector (sp1, n2);
-      t1 = Cross (n1, n2);
-
-      xedge = 0;
-      BFGS (xedge, Opti3EdgeFunctionValueGrad);
-
-      points.Elem(i).X() += xedge.Get(1) * t1.X();
-      points.Elem(i).Y() += xedge.Get(1) * t1.Y();
-      points.Elem(i).Z() += xedge.Get(1) * t1.Z();
-      ProjectToEdge (surfaces[surfi], surfaces[surfi2], points.Elem(i));
-    }
-
-    if (surfi && !surfi2)
-    {
-      //      testout << "Surfacepoint" << endl;
-      surfaces[surfi] -> GetNormalVector (sp1, n);
-      if (fabs (n.X()) > 0.3)
-      {
-        t1.X() = n.Y();
-        t1.Y() = -n.X();
-        t1.Z() = 0;
-        t1 /= t1.Length();
-      }
-      else
-      {
-        t1.X() = 0;
-        t1.Y() = -n.Z();
-        t1.Z() = n.Y();
-        t1 /= t1.Length();
-      }
-      t2 = Cross (n, t1);
-
-      xsurf = 0;
-      BFGS (xsurf, Opti3SurfFunctionValueGrad);
-
-      points.Elem(i).X() += (xsurf.Get(1) * t1.X() + xsurf.Get(2) * t2.X());
-      points.Elem(i).Y() += (xsurf.Get(1) * t1.Y() + xsurf.Get(2) * t2.Y());
-      points.Elem(i).Z() += (xsurf.Get(1) * t1.Z() + xsurf.Get(2) * t2.Z());
-      surfaces[surfi]->Project (points.Elem(i));
-    }
-
-    if (!surfi)
-    {
-      //      testout << "Volumepoint" << endl;
-      x = 0;
-      BFGS (x, Opti3FunctionValueGrad);
-
-      points.Elem(i).X() += x.Get(1);
-      points.Elem(i).Y() += x.Get(2);
-      points.Elem(i).Z() += x.Get(3);
-    }
-  }
-}
-#endif
-
-
-void meshing3 :: ImproveMesh (ARRAY<POINT3D> & points,
-                              const ARRAY<ELEMENT> & elements,
-                              int nboundnodes, double h)
-{
-  INDEX i, eli;
-  int j, k, it, ito, rot, surfi3;
-  const ELEMENT * el;
-
-  (*testout) << "Improve Mesh" << endl;
-
-  VEC3D n1, n2;
-  TABLE<INDEX> elementsonpoint(points.Size());
-  VECTOR x(3);
-
-  (*testout).precision(8);
-
-  for (i = 1; i <= elements.Size(); i++)
-    for (j = 1; j <= elements[i].NP(); j++)
-      elementsonpoint.Add (elements[i].PNum(j), i);
-
-  loch = h;
-  optpoints = &points;
-  optelements = &elements;
-
-
-
-  for (i = nboundnodes+1; i <= points.Size(); i++)
-  {
-    (*testout) << "Node " << i << endl;
-    sp1 = points.Elem(i);
-
-    locelements.SetSize(0);
-    locrots.SetSize (0);
-
-    for (j = 1; j <= elementsonpoint.EntrySize(i); j++)
-    {
-      eli = elementsonpoint.Get(i, j);
-      el = &elements.Get(eli);
-
-      locelements.Append (eli);
-
-      for (k = 1; k <= el->NP(); k++)
-        if (el->PNum(k) == i)
-          locrots.Append (k);
-    }
-
-    x = 0;
-    (*testout) << "Start BFGS" << endl;
-
-    BFGS (x, Opti3FunctionValueGrad);
-
-    points.Elem(i).X() += x.Get(1);
-    points.Elem(i).Y() += x.Get(2);
-    points.Elem(i).Z() += x.Get(3);
-  }
 }

@@ -1,21 +1,12 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   parser3.cc                                                   */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
 #include <stdlib.h>
+// #include <iostream.h>
 #include <fstream.h>
 #include <math.h>
 #include <string.h>
 
-#include <template.hh>
-#include <array.hh>
+#include <myadt.hh>
 
 #include <linalg/linalg.hh>
 #include <geom/geom2d.hh>
@@ -27,7 +18,7 @@
 #include <meshing/meshing3.hh>
 
 
-void LoadVMatrixLine (istream & ist, MATRIX & m, int line)
+void LoadVMatrixLine (istream & ist, DenseMatrix & m, int line)
 {
   char ch;
   int pnum;
@@ -64,11 +55,11 @@ void vnetrule :: LoadRule (istream & ist)
 {
   char buf[256];
   char ch, ok;
-  POINT3D p;
-  ELEMENT face;
+  Point3d p;
+  Element face;
   int i, j, i1, i2, i3, fs, ii, ii1, ii2, ii3;
   twoint edge;
-  MATRIX tempoldutonewu(30, 20), tempoldutofreezone(30, 20);
+  DenseMatrix tempoldutonewu(30, 20), tempoldutofreezone(30, 20);
 
   tempoldutonewu = 0;
   tempoldutofreezone = 0;
@@ -336,7 +327,7 @@ void vnetrule :: LoadRule (istream & ist)
 
       while (ch == '(')
       {
-        elements.Append (ELEMENT());
+        elements.Append (Element());
 
         elements.Last().SetNP(1);
         ist >> elements.Last().PNum(1);
@@ -473,7 +464,7 @@ void vnetrule :: LoadRule (istream & ist)
             i2 = freeset[ii2];
             i3 = freeset[ii3];
 
-            VEC3D v1, v2, n;
+            Vec3d v1, v2, n;
 
             v1 = freezone[i3] - freezone[i1];
             v2 = freezone[i2] - freezone[i1];
@@ -503,7 +494,7 @@ void vnetrule :: LoadRule (istream & ist)
 
   for (fs = 1; fs <= freesets.Size(); fs++)
   {
-    freefaceinequ.Append (new MATRIX (freefaces[fs]->Size(), 4));
+    freefaceinequ.Append (new DenseMatrix (freefaces[fs]->Size(), 4));
   }
 
 
@@ -556,16 +547,15 @@ void vnetrule :: LoadRule (istream & ist)
 
 
 
-void meshing3 :: LoadRules (char * filename)
+void Meshing3 :: LoadRules (char * filename)
 {
   char buf[256];
   ifstream ist (filename);
 
   if (!ist.good())
   {
-    MyError ("3D - Rulefile not found");
-    MyError (filename);
-    return;
+    cerr << "Rule description file " << filename << " not found" << endl;
+    exit (1);
   }
 
   while (!ist.eof())

@@ -1,13 +1,6 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   findip.cc                                                    */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
+// find inner point
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,37 +12,35 @@
 #include <ctype.h>
 #include <string.h>
 
-#include <template.hh>
-#include <array.hh>
+#include <myadt.hh>
 
 #include <geom/geom2d.hh>
 #include <geom/geom3d.hh>
 #include <linalg/linalg.hh>
 
+// #include <geom/solid.hh>
 
 #ifdef MYGRAPH
-#include <geom/rot.hh>
+#include <geom/rot3d.hh>
 #include <graphics/mygraph.hh>
 #endif
 
 #include <meshing/global.hh>
 
 
-extern ostream * testout;
 
-
-int FindInnerPoint (const ARRAY<POINT3D> & points,
-                    const ARRAY<ELEMENT> & faces,
-                    POINT3D & p)
+int FindInnerPoint (const ARRAY<Point3d> & points,
+                    const ARRAY<Element> & faces,
+                    Point3d & p)
 {
-  int i, j;
-  ARRAY<VEC3D> a;
+  int i;
+  ARRAY<Vec3d> a;
   ARRAY<double> c;
-  POINT3D p1, pmin;
+  Point3d p1, pmin;
   int i1, i2, i3, i4;
   int nf;
-  MATRIX m(3), inv(3);
-  VECTOR rs(3), x(3);
+  DenseMatrix m(3), inv(3);
+  Vector rs(3), x(3);
   double f, fmin, hd;
 
   nf = faces.Size();
@@ -70,7 +61,7 @@ int FindInnerPoint (const ARRAY<POINT3D> & points,
   }
 
   fmin = 100;
-  pmin = POINT3D (0, 0, 0);
+  pmin = Point3d (0, 0, 0);
   for (i1 = 1; i1 <= nf; i1++)
     for (i2 = i1+1; i2 <= nf; i2++)
       for (i3 = i2+1; i3 <= nf; i3++)
