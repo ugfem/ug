@@ -7686,8 +7686,8 @@ int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_in
 	if (ProblemName[0] == '\0')
     {
 		UserWrite("Warning: in LGM_ANSYS_ReadDomain no problemname defined in ANSYS-File\n");
-		UserWrite("Warning: using elder_problem as default value\n");
-    	strcpy(domain_info->ProblemName,"elder_problem");
+		UserWrite("Warning: using _Configurable_ as default value\n");
+    	strcpy(domain_info->ProblemName,"_Configurable_");
     }
     else
     {
