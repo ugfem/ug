@@ -3774,9 +3774,9 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
   BVP_DESC *theBVPDesc;
   struct ElemScalarPlotObj2D *theEspo;
   char buffer[64];
-  INT i, ret;
+  INT i, ret, cv_num;
   int iValue;
-  float fValue;
+  float fValue, cv[10];
 
   theEspo = &(thePlotObj->theEspo);
   theBVPDesc = MG_BVPD(PO_MG(thePlotObj));
@@ -3793,6 +3793,7 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEspo->PlotGrid               = NO;
     theEspo->depth                  = 0;
     theEspo->numOfContours  = 10;
+    theEspo->EvalFct = NULL;
   }
 
   /* set plot grid option */
@@ -3871,7 +3872,23 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
         theEspo->numOfContours = iValue;
       break;
     }
-  if (theEspo->numOfContours <= 1 )
+
+  /* user specified contour values */
+  cv_num = 0;
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='v')
+    {
+      cv_num=sscanf(argv[i],"v %f %f %f %f %f %f %f %f %f %f %f",&cv[0],&cv[1],&cv[2],
+                    &cv[3],&cv[4],&cv[5],&cv[6],&cv[7],&cv[8],&cv[9],&fValue);
+      if (cv_num<1 || cv_num>10)
+      {
+        UserWrite("specify 1 to 10 values with the $v option\n");
+        ret = NOT_ACTIVE;
+      }
+      theEspo->numOfContours = cv_num;
+    }
+
+  if (theEspo->numOfContours <= 1 && cv_num==0 )
   {
     UserWrite("number of contours is smaller than 1\n");
     ret = NOT_ACTIVE;
@@ -3915,9 +3932,18 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
 
   /* do what is to do */
   if (theEspo->mode == PO_CONTOURS_EQ && ret == ACTIVE)
-    for (i=0; i<theEspo->numOfContours; i++)
-      theEspo->contValues[i] = theEspo->min + (DOUBLE)i * (theEspo->max - theEspo->min) / (DOUBLE)(theEspo->numOfContours-1);
-
+  {
+    if (cv_num==0)
+    {
+      for (i=0; i<theEspo->numOfContours; i++)
+        theEspo->contValues[i] = theEspo->min + (DOUBLE)i * (theEspo->max - theEspo->min) / (DOUBLE)(theEspo->numOfContours-1);
+    }
+    else
+    {
+      for (i=0; i<theEspo->numOfContours; i++)
+        theEspo->contValues[i] = cv[i];
+    }
+  }
   /* return */
   return (ret);
 }
