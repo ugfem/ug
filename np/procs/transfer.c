@@ -696,7 +696,7 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         return (1);
       }
                 #ifdef ModelP
-    FreeMD(NP_MG(theNP),*fl,tl,np->L);
+    if (FreeMD(NP_MG(theNP),*fl,tl,np->L)) REP_ERR_RETURN(1);
                 #endif
   }
 
@@ -1571,7 +1571,7 @@ static INT PartTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 {
   NP_PART_TRANSFER *thePT;
   NP_TRANSFER *trans;
-  INT i,k;
+  INT i;
 
   thePT = (NP_PART_TRANSFER *) theNP;
 
@@ -1592,22 +1592,6 @@ static INT PartTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                             PT_SMD(thePT,i),
                             result))
         REP_ERR_RETURN(1);
-  }
-
-  /* dispose the auxiliary XXXDATA_DESCs */
-  for (i=0; i<PT_NTRANS(thePT); i++)
-  {
-    if (DisposeMD(PT_SMD(thePT,i)))
-      REP_ERR_RETURN(1);
-    if (DisposeMD(PT_SMDI(thePT,i)))
-      REP_ERR_RETURN(1);
-    for (k=0; k<PT_NVD(thePT); k++)
-    {
-      if (DisposeVD(PT_SVD(thePT,k,i)))
-        REP_ERR_RETURN(1);
-      if (DisposeVD(PT_SVDI(thePT,k,i)))
-        REP_ERR_RETURN(1);
-    }
   }
   PT_NVD(thePT) = 0;
 
