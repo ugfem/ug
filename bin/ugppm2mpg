@@ -71,11 +71,7 @@ echo "Converting YUV to MPG: wait..."
 # get image size
 #
 
-#
-# TODO: This is for a ppm header without comment lines.
-#       Extend header parsing to this case.
-
-set header = `head -2 $infile`
+set header = `awk '! /^#/ {print; if (++lines==3) exit;}' $infile`
 @ width  = $header[2]
 @ height = $header[3]
 
