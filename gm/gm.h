@@ -1564,6 +1564,7 @@ typedef struct {
   INT side_with_edge[MAX_EDGES_OF_ELEM][MAX_SIDES_OF_EDGE];
   INT corner_of_side_inv[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_ELEM];
   INT edges_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
+  INT corner_of_oppedge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
 
   /* ... the refinement rules should be placed here later */
 } GENERAL_ELEMENT;
@@ -1597,6 +1598,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define EDGE_OF_SIDE(p,s,e)             (element_descriptors[TAG(p)]->edge_of_side[(s)][(e)])
 #define CORNER_OF_SIDE(p,s,c)           (element_descriptors[TAG(p)]->corner_of_side[(s)][(c)])
 #define CORNER_OF_EDGE(p,e,c)           (element_descriptors[TAG(p)]->corner_of_edge[(e)][(c)])
+#define CORNER_OF_OPPEDGE(p,e,c)        (element_descriptors[TAG(p)]->corner_of_oppedge[(e)][(c)])
 
 #define INNER_SIZE(tag)                 (element_descriptors[tag]->inner_size)
 #define BND_SIZE(tag)                   (element_descriptors[tag]->bnd_size)
@@ -1645,6 +1647,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define PREDS(p)                (p)->pred
 #define SEGDESC(p)              (p)->segdesc
 #define PARAM(p,i,j)    (p)->lambda[i][j]
+#define PARAMPTR(p,i)   (p)->lambda[i]
 
 /****************************************************************************/
 /*																			*/
@@ -1923,7 +1926,7 @@ void            ListElementRange                (MULTIGRID *theMG, INT from, INT
 void            ListVector                              (MULTIGRID *theMG, VECTOR *theVector,   INT matrixopt, INT dataopt);
 void            ListVectorSelection     (MULTIGRID *theMG,                                              INT matrixopt, INT dataopt);
 void            ListVectorOfElementSelection(MULTIGRID *theMG,                                  INT matrixopt, INT dataopt);
-void            ListVectorRange                 (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to,    INT matrixopt, INT dataopt);
+void            ListVectorRange                 (MULTIGRID *theMG,                      INT fl, INT tl, INT fromV, INT toV, INT matrixopt, INT dataopt);
 
 /* query */
 LINK            *GetLink                                (NODE *from, NODE *to);
