@@ -8,8 +8,8 @@
 ARCH_TYPE     = __SUN__
 
 ARCH_MAKE     = make
-ARCH_CC       = cc
-ARCH_C++      = cc
+ARCH_CC       = cc -Xa     # -X[a|c|s|t]  varying degrees of ANSI conformance
+ARCH_C++      = CC
 ARCH_LINK     = cc
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
@@ -17,9 +17,10 @@ ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm -lc
 
-ARCH_CFLAGS   = 
-ARCH_C++FLAGS =
-ARCH_LFLAGS   =
+# -g           debug
+ARCH_CFLAGS   = -g
+ARCH_C++FLAGS = -g
+ARCH_LFLAGS   = -g
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES = -I/usr/openwin/share/include -I.
