@@ -1295,7 +1295,7 @@ D*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
-DOUBLE dNds (int n, int i, DOUBLE s, DOUBLE t)
+DOUBLE dNds (INT n, INT i, DOUBLE s, DOUBLE t)
 {
 	if (n==3)
 	{
@@ -1346,7 +1346,7 @@ D*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
-DOUBLE dNdt (int n, int i, DOUBLE s, DOUBLE t)
+DOUBLE dNdt (INT n, INT i, DOUBLE s, DOUBLE t)
 {
 	if (n==3)
 	{

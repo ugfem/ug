@@ -513,7 +513,7 @@ static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT
         if (Patch_GetPatchID(FIRSTPATCH(MYVERTEX(theNode)))==segID && MOVE(MYVERTEX(theNode)) != 0)
           NodeHandle[i++] = theNode;
 
-      qsort(NodeHandle,nNodes,sizeof(NODE *),(INT (*)(const void *, const void *))LambdaCompare);
+      qsort(NodeHandle,nNodes,sizeof(NODE *),(int (*)(const void *, const void *))LambdaCompare);
 
       if ((lastFC = CreateFrontComp (theFL, lastFC, nNodes, NodeHandle))==NULL)
       {
@@ -2682,7 +2682,8 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   FRONTCOMP *theFC,*thesuccFC,*thenewFC;
   FRONTCOMP *the_old_succ;
   COORD xt[3],yt[3];
-  INT printelem,FlgForAccel;
+  INT printelem;
+  int FlgForAccel;
   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS];
   ELEMENT_CONTEXT theElementContext;
   BVP             *theBVP;
@@ -2952,7 +2953,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   {
     UserWrite("could not create connection in multigrid\n");
     DisposeMultiGrid(theMG);
-    return(NULL);
+    return(1);
   }
 
   TerminateGG(theMG,0);

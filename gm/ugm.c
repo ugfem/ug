@@ -3433,7 +3433,7 @@ INT MoveMidNode (MULTIGRID *theMG,
               mid_lambda[i] = (1.0-lambda) * lambda0[i]
                               + lambda * lambda1[i];
             if (Patch_local2global(thePatch,mid_lambda,bnd_global))
-              return (NULL);
+              return (GM_ERROR);
 
             /* check if moved */
             V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);

@@ -802,7 +802,7 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
   /* set sizes */
   if (!Diag)
   {
-    Size = (unsigned int)pm - (unsigned int)pc;
+    Size = (unsigned INT)pm - (unsigned INT)pc;
     SETMSIZE(pc,Size);
     SETMSIZE(pm,Size);
   }
