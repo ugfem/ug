@@ -1268,6 +1268,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   Mesh->VertexPrio = NULL;
   Mesh->ElementLevel = NULL;
   Mesh->ElementPrio = NULL;
+  Mesh->ElemSideOnBnd = NULL;
   Mesh->theBndPs = (BNDP **) GetTmpMem(Heap,n*sizeof(BNDP *),MarkKey);
   if (Mesh->theBndPs == NULL)
     return (NULL);
