@@ -32,6 +32,8 @@
 #include "famg_system.h"
 #include "famg_sparse.h"
 
+//#define TIMING_ON
+
 #ifndef FAMG_SPARSE_BLOCK
 
 struct FAMGMatrixLocal
@@ -48,10 +50,12 @@ struct FAMGMatrixLocal
     int *lmap;
 };
 
+#ifdef TIMING_ON
 static int time1 = 0;
 static int time2 = 0;
 static int time3 = 0;
 static int time4 = 0;
+#endif
 
 
 int FAMGGrid::ConstructLocalMatrix(const FAMGVectorEntry &veci, struct FAMGMatrixLocal *localmatrix, double *&tv1, double *&tv2, double &normr, double &norml)
@@ -640,16 +644,22 @@ int FAMGGrid::AnalyseNode6(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 {  
     FAMGMatrixLocal localmatrix, new_localmatrix;
     double *tv1, *tv2, *w1, *w2, normr, norml;
+#ifdef TIMING_ON
     int t, dt;
+#endif
 
     palist = NULL;
  
     FAMGMarkHeap(FAMG_FROM_TOP);
 
+#ifdef TIMING_ON
     t = (int) clock();
+#endif
     ConstructLocalMatrix(veci,&localmatrix,tv1,tv2,normr, norml);
+#ifdef TIMING_ON
     dt = (int) clock() - t;
     time1 += dt;
+#endif
 
     if((normr < 1e-25) || (norml < 1e-25))
     {
@@ -658,27 +668,40 @@ int FAMGGrid::AnalyseNode6(const FAMGVectorEntry &veci, FAMGPaList *&palist)
         return 0;
     }
 
+#ifdef TIMING_ON
     t = (int) clock();
+#endif
     LocalMatMult(&new_localmatrix,&localmatrix);
+#ifdef TIMING_ON
     dt = (int) clock() - t;
     time2 += dt;
+#endif
 
 
+#ifdef TIMING_ON
     t = (int) clock();
+#endif
     LocalScalarProducts(&new_localmatrix,w1,w2);
+#ifdef TIMING_ON
     dt = (int) clock() - t;
     time3 += dt;
+#endif
 
 
+#ifdef TIMING_ON
     t = (int) clock();
+#endif
     GetLocalMinimum1(palist,w1,w2,tv1,tv2,&new_localmatrix);
     if(palist == 0) GetLocalMinimum2(palist,w1,w2,tv1,tv2,&new_localmatrix);
+#ifdef TIMING_ON
     dt = (int) clock() - t;
     time4 += dt;
+#endif
 
     FAMGReleaseHeap(FAMG_FROM_TOP);
 
 
+#ifdef TIMING_ON
     if(veci.GetIndex() == n-1) 
     {
 #ifdef ModelP
@@ -699,6 +722,7 @@ int FAMGGrid::AnalyseNode6(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 		cout << "time4 " << time4 << endl;
 		time1 = time2 = time3 = time4 = 0;
     }
+#endif
 
      return 0;
 
