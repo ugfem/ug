@@ -343,7 +343,7 @@ free(data);
    }
  */
 
-INT OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task)
+UGWINDOW *OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task)
 {
   INT i,j;
   PLACEMENT_REAL real;
@@ -351,14 +351,14 @@ INT OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task)
   PICTURE *thePic[WPM_PLM_PMAX];
 
   /* check */
-  if (task->n<1) return (1);
+  if (task->n<1) return (NULL);
 
   /* place pictures */
-  if (PlacePictures(task,&real)) return (1);
+  if (PlacePictures(task,&real)) return (NULL);
 
   /* realize pictures */
   theWin = CreateUgWindow(theOutputDevice,task->win_name,real.winLL[0],real.winLL[1],real.winUR[0]-real.winLL[0],real.winUR[1]-real.winLL[1]);
-  if (theWin==NULL) return (1);
+  if (theWin==NULL) return (NULL);
   for (i=0; i<task->n; i++)
   {
     thePic[i] = CreatePicture (task->pic_name[i],theWin,real.picLL[i],real.picUR[i]);
@@ -366,11 +366,11 @@ INT OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task)
     {
       for (j=0; j<i; j++)
         DisposePicture(thePic[j]);
-      return (1);
+      return (NULL);
     }
   }
 
-  return (0);
+  return (theWin);
 }
 
 /****************************************************************************/

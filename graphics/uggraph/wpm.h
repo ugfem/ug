@@ -529,9 +529,6 @@ struct placement_real {
 typedef struct placement_task PLACEMENT_TASK;
 typedef struct placement_real PLACEMENT_REAL;
 
-INT                     PlacePictures                           (PLACEMENT_TASK *task, PLACEMENT_REAL *real);
-INT             OpenPlacedPictures          (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task);
-
 /****************************************************************************/
 /*																			*/
 /*					typedef for structs                                                                     */
@@ -561,6 +558,9 @@ PICTURE            *CreatePicture                                       (const c
 INT                     DisposePicture                                  (PICTURE *thePicture);
 PICTURE            *GetFirstPicture                             (const UGWINDOW *theUgWindow);
 PICTURE            *GetNextPicture                                      (const PICTURE *thePicture);
+INT                     PlacePictures                               (PLACEMENT_TASK *task, PLACEMENT_REAL *real);
+UGWINDOW *      OpenPlacedPictures              (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task);
+
 
 /* validate/invalidate ... */
 INT                     InvalidatePicture                               (PICTURE *thePicture);

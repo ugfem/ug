@@ -7644,6 +7644,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
   float fValue;
   OUTPUTDEVICE *theOutDev;
   char devname[NAMESIZE],qarray[NAMESIZE],rarray[NAMESIZE],buffer[NAMESIZE];
+  UGWINDOW *theWin;
 
   /* get number of pictures */
   if (sscanf(argv[0],"openppic %d",&iValue)!=1)
@@ -7772,7 +7773,9 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
   }
 
   /* place pictures */
-  if (OpenPlacedPictures (theOutDev,&task)) return (PARAMERRORCODE);
+  theWin = OpenPlacedPictures(theOutDev,&task);
+  if (theWin==NULL) return (PARAMERRORCODE);
+  SetCurrentUgWindow(theWin);
 
   return (OKCODE);
 }
