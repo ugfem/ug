@@ -24,10 +24,16 @@ all : $(OBJECTS) $(DEVICES) Makefile.dev
 .c.o:
 	$(CC) $(CFLAGS) $(LCFLAGS) $<
 
-XIF:
+XIF: $(OBJECTS) Makefile.dev
+	rm ../lib/libdev.a
+	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
+	cd meta; make -f Makefile.meta; cd ..;
 	cd xif; make -f Makefile.xif; cd ..;
 
-SIF:
+SIF: $(OBJECTS) Makefile.dev
+	rm ../lib/libdev.a
+	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
+	cd meta; make -f Makefile.meta; cd ..;
 	cd sif; make -f Makefile.sif; cd ..;
 
 META:
