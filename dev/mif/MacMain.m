@@ -50,9 +50,9 @@
 #define menuCount			1
 
 /* menu ids */
-#define appleID 128
+#define appleID				129
 
-#define appleM	0
+#define appleM				0
 
 /* apple menu commands */
 #define aboutCommand		1

@@ -10,7 +10,7 @@ data 'CNTL' (129, "hor scroll bar") {
 	$"72"                                                 /* r */
 };
 
-data 'MENU' (128, preload) {
+data 'MENU' (129, preload) {
 	$"0080 0000 0000 0000 0000 FFFF FFFF 0114"            /* .€........ÿÿÿÿ.. */
 	$"0C41 626F 7574 2075 6720 2E2E 2E00 0000"            /* .About ug ...... */
 	$"0000"                                               /* .. */
