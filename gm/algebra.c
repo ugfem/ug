@@ -6475,6 +6475,7 @@ INT DisposeIMatrixList (GRID *theGrid, VECTOR *theVector)
   if (DisposeIMatrices(theGrid,VISTART(theVector)))
     RETURN (1);
   VISTART(theVector) = NULL;
+  return (0);
 }
 
 /****************************************************************************/
