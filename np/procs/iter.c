@@ -86,6 +86,7 @@
 #define NPFF_DISPLAY(p)                 ((p)->display)
 #define NPFF_BVDF(p)                    (&(p)->bvdf)
 #define NPFF_ParSim(p)                  ((p)->par_sim)
+#define NPFF_AssDirichlet(p)    ((p)->ass_dirichlet)
 
 /* macros for the symmetric Gauss-Seidel smoother */
 #define NP_SGS_t(p)                             ((p)->t)
@@ -219,6 +220,7 @@ typedef struct
   INT all_freq;                         /* flag; TRUE == smooth for all relevant frequencies */
   INT display;
   INT par_sim;                          /* temp for: simulating parallel algo on SEQ */
+  INT ass_dirichlet;                    /* assemble Dirichlet boundary condition (only necessary if not done otherwise (fetransfer) */
 #ifdef __BLOCK_VECTOR_DESC__
   BV_DESC_FORMAT bvdf;
 #endif
@@ -309,7 +311,6 @@ static VEC_SCALAR Factor_One;
 
 REP_ERR_FILE;
 
-static MATDATA_DESC *FF_MATDATA_DESC_ARRAY[FF_MAX_MATS];
 static VECDATA_DESC *FF_VECDATA_DESC_ARRAY[FF_MAX_VECS];
 
 /* RCS string */
@@ -2562,6 +2563,8 @@ static INT LUConstruct (NP_BASE *theNP)
    .  $display - display mode: 'no', 'red'uced or 'full'
    .  $wr - relative frequency [0..1] for 2D OR 'all' for the whole logarithmic sequence of frequencies
    .  $wr3D - relative frequency [0..1] for 3D
+   .  $AssDirichlet - assemble Dirichlet boundary conditions
+   .  $parsim~[0|1] - perform simulation of the parallel algorithm on a sequential machine
 
    'npexecute <name> [$i] [$s] [$p]'
 
@@ -2704,11 +2707,20 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
   else
     NPFF_ParSim(np) = (NPFF_ParSim(np)==1);
 
+  NPFF_AssDirichlet(np) = ReadArgvOption("AssDirichlet",argc,argv);
+
+
 #ifdef __TWODIM__
+
+#ifdef ModelP
+  (void)InitBVDF( NPFF_BVDF(np), 256 );
+#else
   if ( NPFF_ParSim(np) )
     (void)InitBVDF( NPFF_BVDF(np), 64 );
   else
     *NPFF_BVDF(np) = two_level_bvdf;
+#endif
+
 #else
   *NPFF_BVDF(np) = three_level_bvdf;
 #endif
@@ -2797,6 +2809,7 @@ static INT FFDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"ParSim",(int)NPFF_ParSim(np));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"AssDirichlet",(int)NPFF_AssDirichlet(np));
 
   return (0);
 }
@@ -2948,7 +2961,13 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 #ifdef __THREEDIM__
   n = 2;
 #else
+
+#ifdef ModelP
+  n = 2;
+#else
   n = 1;
+#endif
+
 #endif
 
   /* first component is always the original, global stiffness matrix */
@@ -2998,12 +3017,32 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
   }
   /*	}*/
 
-  /* construction of Dirichlet boundary conditions */
-  if (AssembleDirichletBoundary (theGrid,A,x,b))
-    NP_RETURN(1,result[0]);
-  UserWrite(" [d]\n");
+  /* construction of Dirichlet boundary conditions only necessary if no
+     fetransfer is done */
+  if ( NPFF_AssDirichlet(np) )
+  {
+                #ifdef ModelP
+    if (a_vector_vecskip(MYMG(theGrid), GLEVEL(theGrid), GLEVEL(theGrid), x)!= NUM_OK)
+      NP_RETURN(1,result[0]);
+                #endif
 
-#ifdef FF_PARALLEL_SIMULATION
+    if (AssembleDirichletBoundary (theGrid,A,x,b))
+      NP_RETURN(1,result[0]);
+    UserWrite(" [d]\n");
+  }
+
+#ifdef ModelP
+  /*    if (l_matrix_consistent(theGrid,np->smoother.L,np->smoother.cons_mode)
+                  != NUM_OK)
+              NP_RETURN(1,result[0]);
+   */
+
+  if ( PTFFPrepareSolver( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
+  {
+    PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed for ParSim");
+    NP_RETURN(1,result[0]);
+  }
+#elif defined FF_PARALLEL_SIMULATION
   if ( NPFF_ParSim(np) )
   {
     if ( PTFFPrepareSolver( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
@@ -3047,11 +3086,12 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
       PrintErrorMessage('E',"FFPreProcess","decomposition failed");
       NP_RETURN(1,result[0]);
     }
-    else if (NPFF_DO_FF(np) && FFDecomp( wavenr, wavenr3D, GFIRSTBV(theGrid), &bvd,
-                                         NPFF_BVDF(np),
-                                         VD_SCALCMP( NPFF_tv(np) ),
-                                         VD_SCALCMP( NPFF_tv2(np) ),
-                                         theGrid ) != NUM_OK )
+    else
+    if (NPFF_DO_FF(np) && FFDecomp( wavenr, wavenr3D, GFIRSTBV(theGrid), &bvd,
+                                    NPFF_BVDF(np),
+                                    VD_SCALCMP( NPFF_tv(np) ),
+                                    VD_SCALCMP( NPFF_tv2(np) ),
+                                    theGrid ) != NUM_OK )
     {
       PrintErrorMessage('E',"FFPreProcess","decomposition failed");
       NP_RETURN(1,result[0]);
@@ -3207,6 +3247,17 @@ static INT FFIter (NP_ITER *theNP, INT level,
   {             /* smooth only for 1 testvector frequency */
                 /* copy defect to tv because FFMultWithMInv destroys its defect */
     dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPFF_tv(np) ), VD_SCALCMP( b ) );
+#ifdef ModelP
+    if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
+                        VD_SCALCMP( x ),
+                        VD_SCALCMP( NPFF_tv(np)),
+                        x,
+                        theGrid) != NUM_OK)
+    {
+      PrintErrorMessage('E',"FFStep","inversion failed");
+      NP_RETURN(1,result[0]);
+    }
+#else
     if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
                         VD_SCALCMP( x ),
                         VD_SCALCMP( NPFF_tv(np) ) ) != NUM_OK)
@@ -3214,6 +3265,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       PrintErrorMessage('E',"FFStep","inversion failed");
       NP_RETURN(1,result[0]);
     }
+#endif
     /* defect -= A * corr_update */
     dmatmul_minusBS( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
                      VD_SCALCMP( b ), MD_SCALCMP( A ), VD_SCALCMP( x ));
@@ -3258,6 +3310,20 @@ static INT FFIter (NP_ITER *theNP, INT level,
 
       /* copy defect to aux because FFMultWithMInv destroys its defect */
       dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPFF_t(np) ), VD_SCALCMP( b ) );
+#ifdef ModelP
+      if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
+                          VD_SCALCMP( NPFF_t(np) ),
+                          VD_SCALCMP( NPFF_t(np) ),
+                          NPFF_t(np),
+                          theGrid ) != NUM_OK)
+      {
+        PrintErrorMessage('E',"FFStep","inversion failed");
+        NP_RETURN(1,result[0]);
+      }
+
+      /* NOTE: the corr update is already consistent from FFMultWithMInv!
+               don't try to make it consistent again! */
+#else
       if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
                           VD_SCALCMP( NPFF_t(np) ),
                           VD_SCALCMP( NPFF_t(np) ) ) != NUM_OK)
@@ -3265,7 +3331,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
         PrintErrorMessage('E',"FFStep","inversion failed");
         NP_RETURN(1,result[0]);
       }
-
+#endif
       /* corr += corr_update */
       daddBS( GFIRSTBV(theGrid), VD_SCALCMP( x ), VD_SCALCMP( NPFF_t(np) ) );
 
@@ -3278,6 +3344,9 @@ static INT FFIter (NP_ITER *theNP, INT level,
         start_norm = new_norm;
         if(dnrm2BS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
 
+#ifdef ModelP
+        UserWrite( "ONLY LOCAL:" );                             /* otherwise communication is necessary for the residuum */
+#endif
         UserWriteF( "Wnr plane = %4g Wnr line = %4g new defect = %12lg "
                     "conv. rate = %12lg\n", wavenr, wavenr, new_norm,
                     new_norm/start_norm );

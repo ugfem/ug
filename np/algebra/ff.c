@@ -184,7 +184,11 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
   dsetBS( bv_source, aux_comp, 0.0 );
   gs_solveBS ( bv_source, bvd_source, bvdf, 1e-16, 100, Theta_comp, aux_comp, aux4_COMP, aux5_COMP, TRUE );
 #else
+        #ifdef ModelP
+  FFMultWithMInv( bv_source, bvd_source, bvdf, aux_comp, aux_comp, NULL, NULL );
+        #else
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux_comp, aux_comp );
+        #endif
 #endif
 
   /* calculate Theta */
@@ -411,8 +415,13 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
   dmatmul_addBS( bv_source, bvd_dest, bvdf, aux2_comp, K_comp, tv2_comp );
 
   /* aux_i = (T_i)^-1 * aux_i */
+#ifdef ModelP
+  FFMultWithMInv( bv_source, bvd_source, bvdf, aux1_comp, aux1_comp, NULL, NULL );
+  FFMultWithMInv( bv_source, bvd_source, bvdf, aux2_comp, aux2_comp, NULL, NULL );
+#else
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux1_comp, aux1_comp );
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux2_comp, aux2_comp );
+#endif
 
   /* aux_i+1 := L_(i+1,i) * aux_i */
   dsetBS( bv_dest, aux1_comp, 0.0 );
@@ -961,42 +970,57 @@ INT FFDecomp( DOUBLE wavenr,
       FFConstructTestvector_loc( bv_i, tv2_comp, wavenr+1.0, wavenr3D );
     }
 
-#ifdef FF_PARALLEL_SIMULATION
-    if ( BV_IS_DIAG_BV(bv_im1) && (BVPRED(bv_im1)==NULL) )
+#if (defined ModelP) || (defined FF_PARALLEL_SIMULATION)
+    if ( BVNUMBER(bv_i) == -100 )               /* lines */
     {
       /* construct FF filtered approximation of the leaf blocks of the schur complement */
       /* the determination of the "lines" block is only a quick hack!!! */
       ConstructSchurFFApprox( bv_im1, bv_i, bvd_im1, bvd_i, bvdf, tv1_comp, tv2_comp, grid );
+
+                        #ifdef ModelP
+      ASSERT(grid!=NULL);
+      /* make Schur complement matrix consistent */
+      if( l_matrix_consistent( grid, DECOMP_MATDATA_DESC_ON_LEVEL(bv), MAT_CONS )!=NUM_OK ) REP_ERR_RETURN(NUM_ERROR);
+                        #endif
     }
     else
     {
       FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
+
+                        #ifdef ModelP
+      if ( BVNUMBER(bv_i) == -101 )                     /* crosspoints */
+      {
+        ASSERT(grid!=NULL);
+        /* make Schur complement matrix consistent */
+        if( l_matrix_consistent( grid, DECOMP_MATDATA_DESC_ON_LEVEL(bv), MAT_CONS )!=NUM_OK ) REP_ERR_RETURN(NUM_ERROR);
+                                #endif
     }
+  }
 #else
     FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 #endif
-    /* update BVDs for the next loop */
-    bv_im1 = bv_i;
-    SWAP( bvd_i, bvd_im1, bvd_temp );
+  /* update BVDs for the next loop */
+  bv_im1 = bv_i;
+  SWAP( bvd_i, bvd_im1, bvd_temp );
+  bv_i = BVSUCC( bv_i );
+  while( (bv_i != bv_end) && BV_IS_EMPTY( bv_i ) )                      /* search first nonempty bv */
     bv_i = BVSUCC( bv_i );
-    while( (bv_i != bv_end) && BV_IS_EMPTY( bv_i ) )                    /* search first nonempty bv */
-      bv_i = BVSUCC( bv_i );
-    if( bv_i != bv_end )
-    {
-      BVD_DISCARD_LAST_ENTRY( bvd_i );
-      BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
-    }
-    /* else: bv_i and bvd_i are never used;
-       thus the content of them have not to be updated */
+  if( bv_i != bv_end )
+  {
+    BVD_DISCARD_LAST_ENTRY( bvd_i );
+    BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
   }
-  /* now bv_im1 and bvd_im1 points to the last block */
+  /* else: bv_i and bvd_i are never used;
+     thus the content of them have not to be updated */
+}
+/* now bv_im1 and bvd_im1 points to the last block */
 
-  /* calculate the last (T_n)^-1 */
-  FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
+/* calculate the last (T_n)^-1 */
+FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 
-  /*	printvBS(bv, tv1_comp);printvBS(bv, tv2_comp);*/
-  /*printf("K_comp\n"); printmBS(bv,bv,K_comp);printf("FF_comp\n"); printmBS(bv,bv,FF_comp); printf("\n");*/
-  return(NUM_OK);
+/*	printvBS(bv, tv1_comp);printvBS(bv, tv2_comp);*/
+/*printf("K_comp\n"); printmBS(bv,bv,K_comp);printf("FF_comp\n"); printmBS(bv,bv,FF_comp); printf("\n");*/
+return(NUM_OK);
 }
 
 
@@ -1120,7 +1144,11 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
 
     /* cor := M^-1 * f */
     dcopyBS( bv, cor_comp, f_comp );
+#ifdef ModelP
+    FFMultWithMInv( bv, bvd, bvdf, cor_comp, cor_comp, NULL, NULL );
+#else
     FFMultWithMInv( bv, bvd, bvdf, cor_comp, cor_comp );
+#endif
 
 #ifdef CHECK_CALCULATION
     {
@@ -1135,7 +1163,11 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
       dmatmul_addBS( bv, bvd, bvdf, aux2_COMP, K_comp, tv_comp );
 
       /* aux2 := M^-1 * aux2 */
+#ifdef ModelP
+      FFMultWithMInv( bv, bvd, bvdf, aux2_COMP, K_comp, LU_comp, aux2_COMP, aux3_COMP, auxsub_comp, FF_comp, NULL, NULL );
+#else
       FFMultWithMInv( bv, bvd, bvdf, aux2_COMP, K_comp, LU_comp, aux2_COMP, aux3_COMP, auxsub_comp, FF_comp );
+#endif
 
       /* aux2 -= tv */
       dsubBS( bv, aux2_COMP, tv_comp );
@@ -1162,7 +1194,11 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
 
       /* aux2 := M^-1 * aux2 */
       dcopyBS( bv, aux_comp, tv_comp );
+#ifdef ModelP
+      FFMultWithMInv( bv, bvd, bvdf, aux2_COMP, K_comp, LU_comp, aux2_COMP, aux3_COMP, auxsub_comp, FF_comp, NULL, NULL );
+#else
       FFMultWithMInv( bv, bvd, bvdf, aux2_COMP, K_comp, LU_comp, aux2_COMP, aux3_COMP, auxsub_comp, FF_comp );
+#endif
 
       /* aux2 -= tv */
       dsubBS( bv, aux2_COMP, tv_comp );
@@ -1186,7 +1222,11 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
 
       /* aux := M^-1 * tv */
       dcopyBS( bv, aux_comp, tv_comp );
+#ifdef ModelP
+      FFMultWithMInv( bv, bvd, bvdf, aux_comp, K_comp, LU_comp, aux_comp, aux3_COMP, auxsub_comp, FF_comp, NULL, NULL );
+#else
       FFMultWithMInv( bv, bvd, bvdf, aux_comp, K_comp, LU_comp, aux_comp, aux3_COMP, auxsub_comp, FF_comp );
+#endif
 
       /* aux2 := M * aux */
       FFMultWithM( bv, bvd, bvdf, aux2_COMP, FF_comp, K_comp, LU_comp, aux_comp, aux3_COMP, auxsub_comp, FF_comp );
@@ -1213,7 +1253,11 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
 
       /* aux3 := M^-1 * tv */
       dcopyBS( bv, aux3_COMP, tv_comp );
+#ifdef ModelP
+      FFMultWithMInv( bv, bvd, bvdf, aux3_COMP, K_comp, LU_comp, aux3_COMP, aux2_COMP, auxsub_comp, FF_comp, NULL, NULL );
+#else
       FFMultWithMInv( bv, bvd, bvdf, aux3_COMP, K_comp, LU_comp, aux3_COMP, aux2_COMP, auxsub_comp, FF_comp );
+#endif
 
       /* aux2 := K * aux3 */
       dsetBS( bv, aux2_COMP, 0.0 );

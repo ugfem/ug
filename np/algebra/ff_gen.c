@@ -102,6 +102,7 @@ DOUBLE FFaccuracy = 1e-10;
 
 /* global array to hold the matrix hierarchy */
 INT FF_Mats[FF_MAX_MATS];
+MATDATA_DESC *FF_MATDATA_DESC_ARRAY[FF_MAX_MATS];
 
 /* global array to hold the auxiliary vectors */
 INT FF_Vecs[FF_MAX_VECS];
@@ -723,7 +724,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 #endif /* weglassen */
 
   /*printmBS( bv_inner, bv_inner, 0 );*/
-  printBV( bvdf );
+  printBVgrid( grid, bvdf );
 
   return 0;
 }
@@ -1182,7 +1183,11 @@ INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
     dmatmul_addBS( bv_i, bvd_ip1, bvdf, aux_comp, L_comp, x_comp );
 
     /* aux_i := (T_i)^-1 * aux_i */
+#ifdef ModelP
+    FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, aux_comp, NULL, NULL );
+#else
     FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, aux_comp );
+#endif
 
     /* aux_i += x_i */
     daddBS( bv_i, aux_comp, x_comp );
@@ -1285,11 +1290,17 @@ INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
    D*/
 /****************************************************************************/
 
-INT FFMultWithMInv( const BLOCKVECTOR *bv,
-                    const BV_DESC *bvd,
-                    const BV_DESC_FORMAT *bvdf,
-                    INT v_comp,
-                    INT b_comp )
+INT FFMultWithMInv(
+  const BLOCKVECTOR *bv,
+  const BV_DESC *bvd,
+  const BV_DESC_FORMAT *bvdf,
+  INT v_comp,
+  INT b_comp
+#ifdef ModelP
+  ,const VECDATA_DESC *v,
+  GRID *grid
+#endif
+  )
 {
   register BLOCKVECTOR *bv_i, *bv_ip1, *bv_stop;
   register BV_DESC *bvd_i=NULL, *bvd_ip1, *bvd_temp;
@@ -1316,7 +1327,11 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
       if( !BV_IS_EMPTY(bv_i) )
       {
         BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
+#ifdef ModelP
+        FFMultWithMInv( bv_i, &bvd1, bvdf, v_comp, b_comp, NULL, NULL );
+#else
         FFMultWithMInv( bv_i, &bvd1, bvdf, v_comp, b_comp );
+#endif
         BVD_DISCARD_LAST_ENTRY(&bvd1);
       }
 
@@ -1378,7 +1393,19 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
     else
       gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, aux_comp, b_comp, auxA_comp, TRUE, TRUE );
 #else
+                #ifdef ModelP
+    FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, b_comp, NULL, NULL );
+                #else
     FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, b_comp );
+                #endif
+#endif
+
+#ifdef ModelP
+    if( BVNUMBER(bv_i) == -100 )             /* lines blockvector */
+    {
+      /* in the case of ModelP: make the new solution on the interface consistent */
+      if( l_vector_consistentBS( grid, bvd_i, bvdf, aux_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+    }
 #endif
 
     /* b_i+1 -= L_(i+1,i) * aux_i */
@@ -1408,7 +1435,21 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
     gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, v_comp, auxB_comp, auxA_comp, TRUE, TRUE );
   }
 #else
+        #ifdef ModelP
+  FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp, NULL, NULL );
+        #else
   FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp );
+        #endif
+#endif
+
+#ifdef ModelP
+  if( BVNUMBER(bv_i) == -100 )       /* lines blockvector */
+  {
+    ASSERT( v != NULL );
+    ASSERT( grid != NULL );
+    /* in the case of ModelP: make the new solution on the interface consistent */
+    if( l_vector_consistentBS( grid, bvd_i, bvdf, v_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+  }
 #endif
 
   /* solve upper triangular matrix; the last block is already calculated */
@@ -1447,7 +1488,11 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
       gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, v_comp, auxB_comp, auxA_comp, TRUE, TRUE );
     }
 #else
+                #ifdef ModelP
+    FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, v_comp, NULL, NULL );
+                #else
     FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, v_comp );
+                #endif
 #endif
 
     /* v_i := aux_i - v_i */
@@ -1476,5 +1521,76 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
 
   return NUM_OK;
 }
+
+#ifdef QQQQQQQQQQQQ
+INT FFMultWithMInvDD( GRID *grid,
+                      const BV_DESC_FORMAT *bvdf,
+                      const VECDATA_DESC *v,
+                      const VECDATA_DESC *b )
+{
+  register BLOCKVECTOR *bv_subdom, *bv_lines;
+  BV_DESC bvd_subdom, bvd_lines;
+  INT v_comp, b_comp, aux_comp, L_comp;
+  bv_subdom = GFIRSTBV(grid);
+  bv_lines = BVSUCC(bv_subdom);
+
+  ASSERT( !BV_IS_LEAF_BV(bv_subdom) );
+  ASSERT( !BV_IS_LEAF_BV(bv_lines) );
+  ASSERT( VD_IS_SCALAR(v) );
+  ASSERT( VD_IS_SCALAR(b) );
+
+  v_comp = VD_SCALCMP(v);
+  b_comp = VD_SCALCMP(b);
+  L_comp = STIFFMAT_ON_LEVEL( bv_subdom );
+  ASSERT( L_comp>-1 );
+
+  aux_comp = GET_AUX_VEC;
+  ASSERT( aux_comp>-1 );
+
+  ASSERT( v_comp != aux_comp );
+  ASSERT( b_comp != aux_comp );
+
+  BVD_INIT( &bvd_subdom );
+  BVD_PUSH_ENTRY( &bvd_subdom, BVNUMBER(bv_subdom), bvdf );
+  BVD_INIT( &bvd_lines );
+  BVD_PUSH_ENTRY( &bvd_lines, BVNUMBER(bv_lines), bvdf );
+
+  /* solve lower triangular matrix; except the last block */
+  /* aux := ( L + T )^-1 * b */
+
+  /* aux_subdom := (T_subdom)^-1 * b_subdomi */
+  FFMultWithMInv( bv_subdom, &bvd_subdom, bvdf, aux_comp, b_comp );
+
+  /* b_lines -= L_(lines,subdom) * aux_subdom */
+  dmatmul_minusBS( bv_lines, &bvd_subdom, bvdf, b_comp, L_comp, aux_comp );
+
+  /* special treatment: v_last = (T_last)^-1 * b_last */
+  /* aux_lines := (T_lines)^-1 * b_lines */
+  FFMultWithMInv( bv_lines, &bvd_lines, bvdf, v_comp, b_comp );
+
+  /* in the case of ModelP: make the new solution on the interface consistent */
+  if( l_vector_consistentBS( grid, v )!=NUM_OK ) REP_ERR_RETURN (1);
+
+  /* cross points still missing */
+
+
+  /* solve upper triangular matrix; the last block is already calculated */
+  /* v := (T^-1*U + I )^-1 * aux */
+
+  /* v_subdom := L_(subdom,lines) * v_lines */
+  dsetBS( bv_subdom, v_comp, 0.0 );
+  dmatmul_addBS( bv_subdom, bvd_lines, bvdf, v_comp, L_comp, v_comp );
+
+  /* v_subdom := (T_subdom)^-1 * v_subdom */
+  FFMultWithMInv( bv_subdom, bvd_subdom, bvdf, v_comp, v_comp );
+
+  /* v_subdom := aux_subdom - v_subdom */
+  dminusaddBS( bv_subdom, v_comp, aux_comp );
+
+  FREE_AUX_VEC( aux_comp );
+
+  return NUM_OK;
+}
+#endif /* QQQQQQQQQQQ */
 
 #endif /* __BLOCK_VECTOR_DESC__ */

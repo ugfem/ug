@@ -64,6 +64,7 @@
 
 #define STIFFMAT_ON_LEVEL(bv)                           (FF_Mats[BVLEVEL(bv)])
 #define DECOMPMAT_ON_LEVEL(bv)                          (FF_Mats[BVLEVEL(bv)+1])
+#define DECOMP_MATDATA_DESC_ON_LEVEL(bv)                        (FF_MATDATA_DESC_ARRAY[BVLEVEL(bv)+1])
 /* if you are already on the level of the single blocks */
 #define STIFFMAT_ON_LEVEL_BLOCKWISE(bv)         (FF_Mats[BVLEVEL(bv)-1])
 #define DECOMPMAT_ON_LEVEL_BLOCKWISE(bv)        (FF_Mats[BVLEVEL(bv)])
@@ -146,6 +147,7 @@ extern DOUBLE FFaccuracy;
 
 /* global array to hold the matrix hierarchy */
 extern INT FF_Mats[FF_MAX_MATS];
+extern MATDATA_DESC *FF_MATDATA_DESC_ARRAY[FF_MAX_MATS];
 
 /* global array to hold the auxiliary vectors */
 extern INT FF_Vecs[FF_MAX_VECS];
@@ -194,12 +196,19 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D );
 void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D );
 
-INT FFMultWithMInv( const BLOCKVECTOR *bv,
-                    const BV_DESC *bvd,
-                    const BV_DESC_FORMAT *bvdf,
-                    INT v_comp, INT b_comp );
-
 INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT y_comp, INT x_comp );
+
+INT FFMultWithMInv(
+  const BLOCKVECTOR *bv,
+  const BV_DESC *bvd,
+  const BV_DESC_FORMAT *bvdf,
+  INT v_comp,
+  INT b_comp
+#ifdef ModelP
+  ,const VECDATA_DESC *v,
+  GRID *grid
+#endif
+  );
 
 INT InitFF (void);
 
