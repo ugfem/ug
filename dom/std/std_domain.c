@@ -1010,6 +1010,11 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   return ((BVP*)theBVP);
 }
 
+INT BVP_Dispose (BVP *theBVP)
+{
+  return (0);
+}
+
 /****************************************************************************/
 /*D
    BVP_GetFirst - Return a pointer to the first STD_BVP
