@@ -426,7 +426,7 @@ INT solveLUMatBS        (const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DES
 INT l_luiter_fine       (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
 INT l_luiterB           (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
 INT l_lltiter           (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
-INT l_pgs           (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, INT depth, INT mode);
+INT l_pgs           (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, INT depth, INT mode, DOUBLE vdamp);
 
 /* intergrid transfer */
 

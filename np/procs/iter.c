@@ -188,6 +188,7 @@ typedef struct
   VECDATA_DESC *t;
   INT mode;
   INT depth;
+  DOUBLE vdamp;
 
 } NP_PGS;
 
@@ -1566,6 +1567,9 @@ static INT PGSInit (NP_BASE *theNP, INT argc , char **argv)
   if (ReadArgvINT("depth",&(np->depth),argc,argv))
     np->depth = 2;
 
+  if (ReadArgvDOUBLE("vdamp",&(np->vdamp),argc,argv))
+    np->vdamp = 1.0;
+
   return (SmootherInit(theNP,argc,argv));
 }
 
@@ -1579,6 +1583,7 @@ static INT PGSDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
   UserWriteF(DISPLAY_NP_FORMAT_SI,"mode",(int)np->mode);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"depth",(int)np->depth);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"vdamp",np->vdamp);
 
   return (0);
 }
@@ -1681,10 +1686,10 @@ static INT PGSPreProcess  (NP_ITER *theNP, INT level,
   /* get storage for extra temp */
   if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->t))
     NP_RETURN(1,result[0]);
-
-  if (SortMatrices(theGrid,A))
-    NP_RETURN(1,result[0]);
-
+  /*
+     if (SortMatrices(theGrid,A))
+          NP_RETURN(1,result[0]);
+   */
   return (0);
 }
 
@@ -1706,13 +1711,13 @@ static INT PGSSmoother (NP_ITER *theNP, INT level,
   /* iterate forward */
     #ifdef ModelP
   if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
-  if (l_pgs(theGrid,x,np->smoother.L,b,np->depth,np->mode)
+  if (l_pgs(theGrid,x,np->smoother.L,b,np->depth,np->mode,np->vdamp)
       != NUM_OK)
     NP_RETURN(1,result[0]);
   if (l_vector_consistent(theGrid,x) != NUM_OK)
     NP_RETURN(1,result[0]);
     #else
-  if (l_pgs(theGrid,x,A,b,np->depth,np->mode))
+  if (l_pgs(theGrid,x,A,b,np->depth,np->mode,np->vdamp))
     NP_RETURN(1,result[0]);
     #endif
 
