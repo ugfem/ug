@@ -1857,9 +1857,14 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
         && (REFINECLASS(theElement) != RED_CLASS)))
     return(-1);
 
+        #ifdef __THREEDIM__
   /* tetrahedra have their own ruleset */
-  if (DIM==3 && TAG(theElement)==TETRAHEDRON && MARK(theElement)==FULL_REFRULE)
-    *rule=RED;return(GM_RULE_WITHOUT_ORIENTATION);
+  if (TAG(theElement)==TETRAHEDRON && MARK(theElement)==FULL_REFRULE)
+  {
+    *rule=RED;
+    return(GM_RULE_WITHOUT_ORIENTATION);
+  }
+        #endif
 
   switch (MARK(theElement))
   {
