@@ -4639,14 +4639,14 @@ static INT MarkCommand (INT argc, char **argv)
   for (i=1; i<argc; i++)
     if (argv[i][0]=='p')
     {
-#ifdef __TWODIMM__
-      if (sscanf(argv[i],"pos %f %f %f",&x,&y) != 2)
+#ifdef __TWODIM__
+      if (sscanf(argv[i],"pos %f %f",&x,&y) != 2)
         return (CMDERRORCODE);
       global[0] = x;
       global[1] = y;
 #endif
 
-#ifdef __THREEDIMM__
+#ifdef __THREEDIM__
       if (sscanf(argv[i],"pos %f %f %f",&x,&y,&z) != 3)
         return (CMDERRORCODE);
       global[0] = x;
