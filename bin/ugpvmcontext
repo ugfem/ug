@@ -1,7 +1,7 @@
 #!/bin/sh
 if test $# -ge 2 -o "$1" = "-help"
 then
-	echo "usage: $0 <expression> [<applicationpath>]";
+	echo "usage: $0 [<applicationpath>]";
 	exit 1;
 fi
 
