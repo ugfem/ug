@@ -82,6 +82,15 @@
 #define LGM_BNDP_OBJECTS                LGM_BNDP_SURFACES
 #define LGM_BNDP_OBJECT_GOBJECT LGM_BNDP_SURFACE_GSURFACE
 #define LGM_BNDP_OBJECT_LOCAL   LGM_BNDP_SURFACE_LOCAL
+#ifdef NO_PROJECT
+#define LGM_BNDP_LINE_LEFT              LGM_BNDP_LINE_GLOBALLEFT
+#define LGM_BNDP_LINE_RIGHT             LGM_BNDP_LINE_GLOBALRIGHT
+#define LGM_BNDP_LOCAL_LEFT             LGM_BNDP_GLOBAL_LEFT
+#define LGM_BNDP_LOCAL_RIGHT    GM_BNDP_GLOBAL_RIGHT
+#define LGM_BNDP_LOCAL                  LGM_BNDP_GLOBAL
+#define LGM_BNDP_SURFACE_LOCAL  LGM_BNDP_SURFACE_GLOBAL
+#define LGM_BNDS_LOCAL                  LGM_BNDS_GLOBAL
+#endif
 #endif
 
 /****************************************************************************/

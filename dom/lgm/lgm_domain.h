@@ -171,6 +171,9 @@
 #endif
 
 #if (LGM_DIM==3)
+
+#define NO_PROJECT
+
 #define MAXTRIANGLES 30
 
 /* macros for LGM_POINT */
@@ -258,32 +261,47 @@
 #define LGM_BNDP_NLINE(p)                                       ((p)->nlines)
 #define LGM_BNDP_LINES(p,i)                                     ((p)->Line[(i)])
 #define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].theLine)
+#ifndef NO_PROJECT
 #define LGM_BNDP_LINE_LEFT(p,i)                         ((p)->Line[(i)].local_left)
 #define LGM_BNDP_LINE_RIGHT(p,i)                        ((p)->Line[(i)].local_right)
+#else
 #define LGM_BNDP_LINE_GLOBALLEFT(p,i)           ((p)->Line[(i)].global_left)
 #define LGM_BNDP_LINE_GLOBALRIGHT(p,i)          ((p)->Line[(i)].global_right)
+#endif
 #define LGM_BNDP_LINE_GLINE(p)                          ((p).theLine)
+#ifndef NO_PROJECT
 #define LGM_BNDP_LOCAL_LEFT(p)                          ((p).local_left)
 #define LGM_BNDP_LOCAL_RIGHT(p)                         ((p).local_right)
+#else
 #define LGM_BNDP_GLOBAL_LEFT(p)                         ((p).global_left)
 #define LGM_BNDP_GLOBAL_RIGHT(p)                        ((p).global_right)
+#endif
 #define LGM_BNDP_N(p)                                           ((p)->nsurf)
 #define LGM_BNDP_SURFACES(p,i)                          ((p)->Surf[(i)])
 #define LGM_BNDP_SURFACE(p,i)                           ((p)->Surf[(i)].theSurf)
 #define LGM_BNDP_SURFACEPTR(p)                          ((p)->Surf)
 #define LGM_BNDP_LINEPTR(p)                                     ((p)->Line)
 
+#ifndef NO_PROJECT
 #define LGM_BNDP_LOCAL(p,i)                                     ((p)->Surf[(i)].local)
+#else
 #define LGM_BNDP_GLOBAL(p,i)                            ((p)->Surf[(i)].global)
+#endif
 #define LGM_BNDP_SURFACE_GSURFACE(p)            ((p).theSurf)
+#ifndef NO_PROJECT
 #define LGM_BNDP_SURFACE_LOCAL(p)                       ((p).local)
+#else
 #define LGM_BNDP_SURFACE_GLOBAL(p)                      ((p).global)
+#endif
 
 /* macros for LGM_BNDS */
 #define LGM_BNDS_N(p)                                           ((p)->nn)
 #define LGM_BNDS_SURFACE(p)                                     ((p)->theSurf)
+#ifndef NO_PROJECT
 #define LGM_BNDS_LOCAL(p,i,j)                           ((p)->local[(i)][(j)])
+#else
 #define LGM_BNDS_GLOBAL(p,i,j)                          ((p)->global[(i)][(j)])
+#endif
 #define LGM_BNDS_TRIANGLE(p,i)                          ((p)->triangle[(i)])
 
 
@@ -424,8 +442,6 @@ typedef struct lgm_bnds LGM_BNDS;
 /*	3D structures															*/
 /*						                            */
 /****************************************************************************/
-
-#define NO_PROJECT
 
 struct lgm_point {
 
