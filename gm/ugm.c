@@ -4657,7 +4657,7 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
   {
     BNDP_Dispose(MGHEAP(MYMG(theGrid)),bndp);
     PrintErrorMessage('E',"InsertBoundaryNode","cannot create vertex");
-    return(NULL);
+    REP_ERR_RETURN(NULL);
   }
   if (BNDP_Global(bndp,CVECT(theVertex)))
   {
@@ -4678,7 +4678,7 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
   {
     DisposeVertex(theGrid,theVertex);
     PrintErrorMessage('E',"InsertBoundaryNode","cannot create node");
-    return(NULL);
+    REP_ERR_RETURN(NULL);
   }
         #ifdef TOPNODE
   TOPNODE(theVertex) = theNode;
@@ -6829,11 +6829,11 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
     theGrid = GRID_ON_LEVEL(theMG,0);
     for (i=0; i<theMesh->nBndP; i++)
       if (InsertBoundaryNode(theGrid,theMesh->theBndPs[i]) == NULL)
-        return(GM_ERROR);
+        REP_ERR_RETURN(GM_ERROR);
 
     for (i=0; i<theMesh->nInnP; i++)
       if (InsertInnerNode(theGrid,theMesh->Position[i]) == NULL)
-        return(GM_ERROR);
+        REP_ERR_RETURN(GM_ERROR);
     return(GM_OK);
   }
 
@@ -8960,7 +8960,7 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
       if (dataopt && theFormat->PrintMatrix!=NULL)
       {
         Data = (void*)(&MVALUE(theMatrix,0));
-        if ((*(FMT_PR_MAT(theFormat)))(MROOTTYPE(theMatrix)*MAXVECTORS+MDESTTYPE(theMatrix),Data,"       ",buffer))
+        if ((*(FMT_PR_MAT(theFormat)))(MTYPE(theMatrix), Data, "       ", buffer))
           return;
         UserWrite(buffer);
       }

@@ -203,7 +203,7 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
                       INT nodeelementlist, INT edata, INT ndata)
 {
   FORMAT *fmt;
-  INT i, j, type, part, obj, MaxDepth, NeighborhoodDepth, MaxType;
+  INT i, j, type, type2, part, obj, MaxDepth, NeighborhoodDepth, MaxType;
 
 
   /* change to /Formats directory */
@@ -232,7 +232,7 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
   {
     FMT_S_VEC_TP(fmt,i) = 0;
   }
-  for (i=0; i<MAXMATRICES; i++)
+  for (i=0; i<MAXCONNECTIONS; i++)
   {
     FMT_S_MAT_TP(fmt,i) = 0;
     FMT_CONN_DEPTH_TP(fmt,i) = 0;
@@ -277,22 +277,53 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
   {
     if ((mDesc[i].from<0)||(mDesc[i].from>=MAXVECTORS)) REP_ERR_RETURN(NULL);
     if ((mDesc[i].to<0)  ||(mDesc[i].to>=MAXVECTORS)) REP_ERR_RETURN(NULL);
+    if (mDesc[i].diag<0) REP_ERR_RETURN(NULL);
     if ((mDesc[i].size<0)||(mDesc[i].depth<0)) REP_ERR_RETURN(NULL);
-    if (FMT_S_VEC_TP(fmt,mDesc[i].from)>0 &&
-        FMT_S_VEC_TP(fmt,mDesc[i].to)>0 &&
-        mDesc[i].size>0 && mDesc[i].depth>=0)
+
+    if (FMT_S_VEC_TP(fmt,mDesc[i].from)<=0) REP_ERR_RETURN(NULL);
+    if (FMT_S_VEC_TP(fmt,mDesc[i].to)<=0) REP_ERR_RETURN(NULL);
+
+    if (mDesc[i].size>0 && mDesc[i].depth>=0)
     {
-      FMT_S_MAT_TP(fmt,MatrixType[mDesc[i].from][mDesc[i].to]) = mDesc[i].size;
-#ifdef __INTERPOLATION_MATRIX__
-      FMT_S_IMAT_TP(fmt,MatrixType[mDesc[i].from][mDesc[i].to]) = mDesc[i].isize;
-#endif
-      FMT_CONN_DEPTH_TP(fmt,MatrixType[mDesc[i].from][mDesc[i].to]) = mDesc[i].depth;
-      MaxDepth = MAX(MaxDepth,mDesc[i].depth);
-      if ((FMT_TYPE_USES_OBJ(fmt,mDesc[i].from,ELEMVEC))&&(FMT_TYPE_USES_OBJ(fmt,mDesc[i].to,ELEMVEC)))
-        NeighborhoodDepth = MAX(NeighborhoodDepth,mDesc[i].depth);
+      if (mDesc[i].from==mDesc[i].to)
+      {
+        /* set data (ensuring that size(diag) >= size(off-diag) */
+        if (mDesc[i].diag)
+        {
+          type=DIAGMATRIXTYPE(mDesc[i].from);
+          type2=MATRIXTYPE(mDesc[i].from,mDesc[i].from);
+          if (mDesc[i].size>=FMT_S_MAT_TP(fmt,type2))
+            FMT_S_MAT_TP(fmt,type) = mDesc[i].size;
+          else
+            FMT_S_MAT_TP(fmt,type) = FMT_S_MAT_TP(fmt,type2);
+        }
+        else
+        {
+          type=MATRIXTYPE(mDesc[i].from,mDesc[i].from);
+          FMT_S_MAT_TP(fmt,type) = mDesc[i].size;
+          type2=DIAGMATRIXTYPE(mDesc[i].from);
+          if (mDesc[i].size>=FMT_S_MAT_TP(fmt,type2))
+            FMT_S_MAT_TP(fmt,type2) = mDesc[i].size;
+        }
+      }
       else
-        NeighborhoodDepth = MAX(NeighborhoodDepth,mDesc[i].depth+1);
+      {
+        /* set data (ensuring size symmetry, which is needed at the moment) */
+        type=MATRIXTYPE(mDesc[i].from,mDesc[i].to);
+        FMT_S_MAT_TP(fmt,type) = mDesc[i].size;
+        type2 = MATRIXTYPE(mDesc[i].to,mDesc[i].from);
+        if (mDesc[i].size>FMT_S_MAT_TP(fmt,type2))
+          FMT_S_MAT_TP(fmt,type2) = mDesc[i].size;
+      }
     }
+    /* set connection depth information */
+    FMT_CONN_DEPTH_TP(fmt,type) = mDesc[i].depth;
+    MaxDepth = MAX(MaxDepth,mDesc[i].depth);
+    if ((FMT_TYPE_USES_OBJ(fmt,mDesc[i].from,ELEMVEC))&&(FMT_TYPE_USES_OBJ(fmt,mDesc[i].to,ELEMVEC)))
+      NeighborhoodDepth = MAX(NeighborhoodDepth,mDesc[i].depth);
+    else
+      NeighborhoodDepth = MAX(NeighborhoodDepth,mDesc[i].depth+1);
+
   }
   FMT_CONN_DEPTH_MAX(fmt) = MaxDepth;
   FMT_NB_DEPTH(fmt)           = NeighborhoodDepth;
@@ -300,7 +331,7 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
 #ifdef __INTERPOLATION_MATRIX__
   for (i=0; i<MAXVECTORS; i++)
     for (j=0; j<MAXVECTORS; j++)
-      FMT_S_IMAT_TP(fmt,MatrixType[i][j]) = ImatTypes[i] * ImatTypes[j] * sizeof(DOUBLE);
+      FMT_S_IMAT_TP(fmt,MATRIXTYPE(i,j)) = ImatTypes[i] * ImatTypes[j] * sizeof(DOUBLE);
 #endif
 
   /* derive additional information */

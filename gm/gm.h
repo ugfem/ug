@@ -219,8 +219,8 @@
 
 #define MAX_ELEM_VECTORS                (MAX_CORNERS_OF_ELEM+MAX_EDGES_OF_ELEM+1+MAX_SIDES_OF_ELEM)
 
-#define MAX_NDOF_MOD_32         3           /* max number of doubles in a vector or matrix mod 32 */
-
+#define MAX_NDOF_MOD_32         64           /* max number of doubles in a vector or matrix mod 32 */
+#define MAX_NDOF 32*MAX_NDOF_MOD_32
 /****************************************************************************/
 /*																			*/
 /* switch-define dependent defines											*/
@@ -254,8 +254,11 @@
 #define BITWISE_TYPE(t) (1<<(t))                                        /* transforms type into bitpattern				*/
 
 /* derived sizes for algebra */
-#define MAXMATRICES             ((MAXVECTORS*(MAXVECTORS+1))/2) /* max number of diff. matrix types			*/
-#define MAXCONNECTIONS  (MAXMATRICES + MAXVECTORS)              /* max number of diff. connections              */
+#define MAXMATRICES             MAXVECTORS*MAXVECTORS       /* max number of diff. matrix types			*/
+#define MAXCONNECTIONS  (MAXMATRICES + MAXVECTORS)      /* max number of diff. connections              */
+
+#define MATRIXTYPE(rt,ct)   ((rt)*MAXVECTORS+(ct))
+#define DIAGMATRIXTYPE(rt)  (MAXMATRICES+rt)
 
 /* defines for vectors */
 #define NODEVEC                                                 0                       /* vector associated to a node					*/
@@ -301,6 +304,7 @@
 #define GSTATUS_BDF                             1
 #define GSTATUS_INTERPOLATE             2
 #define GSTATUS_ASSEMBLED               4
+#define GSTATUS_ORDERED             8
 
 /* selection mode */
 #define nodeSelection                   1                       /* objects selected are nodes			*/
@@ -391,7 +395,7 @@ typedef INT (*TaggedConversionProcPtr)( /* tagged print user data --> string*/
 
 struct format {
 
-  /* fields for enironment variable */
+  /* fields for environment variable */
   ENVDIR d;
 
   /* variables of format */
@@ -399,11 +403,11 @@ struct format {
   INT sMultiGrid;                        /* size of mg user data structure in bytes	*/
   INT VectorSizes[MAXVECTORS];       /* number of doubles in vectors                    */
   char VTypeNames[MAXVECTORS];       /* a single char for abstract type name    */
-  INT MatrixSizes[MAXMATRICES];      /* number of doubles in matrices			*/
+  INT MatrixSizes[MAXCONNECTIONS];      /* number of doubles in matrices		*/
 #ifdef __INTERPOLATION_MATRIX__
   INT IMatrixSizes[MAXMATRICES];      /* number of doubles in matrices	        */
 #endif
-  INT ConnectionDepth[MAXMATRICES];      /* depth of connection for matrices    */
+  INT ConnectionDepth[MAXCONNECTIONS];      /* depth of connection for matrices	*/
   INT elementdata;
   INT nodeelementlist;
   INT nodedata;
@@ -446,6 +450,7 @@ typedef struct {
 typedef struct {
   int from;                                             /* This connection goes from position from	*/
   int to;                                               /* to position to							*/
+  int diag;                                             /* 1 if diagonal, 0 if not                  */
   int size;                                             /* with size bytes per connection			*/
   int isize;                                            /* size of interpolation matrices			*/
   int depth;                                            /* connect with depth in dual graph             */
@@ -965,9 +970,9 @@ union object_with_key {                                         /* objects that 
 typedef struct
 {
   unsigned INT VecReserv[MAXVECTORS][MAX_NDOF_MOD_32];
-  unsigned INT MatReserv[MAXMATRICES][MAX_NDOF_MOD_32];
-  unsigned INT VecConsistentStatus[MAXMATRICES][MAX_NDOF_MOD_32];
-  unsigned INT VecCollectStatus[MAXMATRICES][MAX_NDOF_MOD_32];
+  unsigned INT MatReserv[MAXCONNECTIONS][MAX_NDOF_MOD_32];
+  unsigned INT VecConsistentStatus[MAXMATRICES][MAX_NDOF_MOD_32];       /* where used? */
+  unsigned INT VecCollectStatus[MAXMATRICES][MAX_NDOF_MOD_32];       /* where used? */
 } DATA_STATUS;
 
 struct grid {
@@ -1288,6 +1293,7 @@ enum GM_CE {
   VCCUT_CE,
   VCCOARSE_CE,
   NEW_DEFECT_CE,
+  VACTIVE_CE,
   FINE_GRID_DOF_CE,
   MOFFSET_CE,
   MROOTTYPE_CE,
@@ -1298,6 +1304,9 @@ enum GM_CE {
   CEXTRA_CE,
   MDOWN_CE,
   MUP_CE,
+  MLOWER_CE,
+  MUPPER_CE,
+  MACTIVE_CE,
   BVDOWNTYPE_CE,
   BVLEVEL_CE,
   BVTVTYPE_CE,
@@ -1381,6 +1390,7 @@ enum LV_ID_TYPES {
 /*							3: red or green elem							*/
 /* VNEW          |19	|*| | 1 if vector is new								*/
 /* VCNEW	 |20	|*| | 1 if vector has a new connection					*/
+/* VACTIVE   |24	|*| | 1 if vector is active inside a smoother			*/
 /* VCCUT	 |26	|*| |                                                                                                   */
 /* VTYPE	 |27-28 |*| | abstract vector type								*/
 /* VPART	 |29-30 |*| | domain part										*/
@@ -1391,11 +1401,15 @@ enum LV_ID_TYPES {
 /* MROOTTYPE |1 - 2 | |*| VTYPE of root vector								*/
 /* MDESTTYPE |3 - 4 | |*| VTYPE of destination vector						*/
 /* MDIAG	 |5     | |*| 1 if diagonal matrix element						*/
-/* MTYPE	 |6 -11 | |*| one of the (different sized) 10+4 matricees		*/
+/* MNEW          |6     | |*| ???                                                       */
+/* CEXTRA	 |7     | |*| 1 if is extra connection							*/
+/* MDOWN         |8     | |*| ???                                                       */
+/* MUP           |9     | |*| ???                                                       */
+/* MLOWER        |10    | |*| 1 if matrix belongs to lower triangular part      */
+/* MUPPER        |11    | |*| 1 if matrix belongs to upper triangular part      */
+/* MSIZE	 |12-25 | |*| size of the matrix in bytes						*/
 /* MUSED	 |12	| |*| general purpose flag								*/
-/* MSIZE	 |13-27 | |*| size of the matrix in bytes						*/
 /* MNEW          |28	| |*| 1 if matrix/connection is new                                     */
-/* CEXTRA	 |29	| |*| 1 if is extra connection							*/
 /*																			*/
 /* Use of the control word in 'BLOCKVECTOR':								*/
 /* BVDOWNTYPE 0	 BVDOWNTYPEVECTOR if the down component points to a vector,	*/
@@ -1523,6 +1537,11 @@ enum LV_ID_TYPES {
         #error  *** VPART_LEN too small ***
 #endif
 
+#define VACTIVE_SHIFT                       24
+#define VACTIVE_LEN                                 1
+#define VACTIVE(p)                                  CW_READ_STATIC(p,VACTIVE_,VECTOR_)
+#define SETVACTIVE(p,n)                     CW_WRITE_STATIC(p,VACTIVE_,VECTOR_,n)
+
 #define VCFLAG(p)                                       THEFLAG(p)
 #define SETVCFLAG(p,n)                          SETTHEFLAG(p,n)
 
@@ -1627,13 +1646,28 @@ enum LV_ID_TYPES {
 #define MUP(p)                                          CW_READ_STATIC(p,MUP_,MATRIX_)
 #define SETMUP(p,n)                             CW_WRITE_STATIC(p,MUP_,MATRIX_,n)
 
-#define MSIZE_SHIFT                             10
-#define MSIZE_LEN                                       15
+#define MLOWER_SHIFT                            10
+#define MLOWER_LEN                                      1
+#define MLOWER(p)                                       CW_READ_STATIC(p,MLOWER_,MATRIX_)
+#define SETMLOWER(p,n)                          CW_WRITE_STATIC(p,MLOWER_,MATRIX_,n)
+
+#define MUPPER_SHIFT                            11
+#define MUPPER_LEN                                      1
+#define MUPPER(p)                                       CW_READ_STATIC(p,MUPPER_,MATRIX_)
+#define SETMUPPER(p,n)                          CW_WRITE_STATIC(p,MUPPER_,MATRIX_,n)
+
+#define MACTIVE_SHIFT                           12
+#define MACTIVE_LEN                             1
+#define MACTIVE(p)                                      CW_READ_STATIC(p,MACTIVE_,MATRIX_)
+#define SETMACTIVE(p,n)                         CW_WRITE_STATIC(p,MACTIVE_,MATRIX_,n)
+
+#define MSIZE_SHIFT                             13
+#define MSIZE_LEN                                       12
 #define MSIZEMAX                                        (POW2(MSIZE_LEN)-1)
 #define MSIZE(p)                                        (CW_READ(p,MSIZE_CE)+sizeof(MATRIX)-sizeof(DOUBLE))
 #define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,(n-sizeof(MATRIX)+sizeof(DOUBLE)))
 
-#define MTYPE(p)                                        (MatrixType[MROOTTYPE(p)][MDESTTYPE(p)])
+#define MTYPE(p)                                        (MDIAG(p) ? (MAXMATRICES+MROOTTYPE(p)) : (MROOTTYPE(p)*MAXVECTORS+MDESTTYPE(p)))
 
 #define MUSED(p)                                        USED(p)
 #define SETMUSED(p,n)               SETUSED(p,n)

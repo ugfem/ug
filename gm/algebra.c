@@ -87,13 +87,7 @@
 /****************************************************************************/
 
 /* for LexAlgDep */
-#ifdef __SGI__
-/* qsort on SGI cannot handle nontransitive compare routines,               */
-/* resulting by rounding errors                                             */
-#define ORDERRES                0       /* resolution for LexAlgDep					*/
-#else
-#define ORDERRES                1e-3    /* resolution for LexAlgDep					*/
-#endif
+#define ORDERRES                1e-3       /* resolution for LexAlgDep					*/
 
 /* for GetDomainPart indicating an element is meant rather than an element side */
 #define NOSIDE          -1
@@ -128,7 +122,6 @@ static INT ce_VCSTRONG;
 /*                                                                          */
 /****************************************************************************/
 
-INT MatrixType[MAXVECTORS][MAXVECTORS];
 const char *ObjTypeName[MAXVOBJECTS];
 
 /****************************************************************************/
@@ -734,6 +727,12 @@ static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType,
   VOBJECT(pv) = object;
   VINDEX(pv) = (long)theGrid->nVector;
   SUCCVC(pv) = FIRSTVECTOR(theGrid);
+  VECSKIP(pv) = 0;
+  VSTART(pv) = NULL;
+
+    #ifdef __INTERPOLATION_MATRIX__
+  VISTART(pv) = NULL;
+    #endif
 
   GRID_LINK_VECTOR(theGrid,pv,PrioMaster);
 
@@ -1009,7 +1008,10 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
   Diag = ((from == to) ? 1 : 0);
   RootType = VTYPE(from);
   DestType = VTYPE(to);
-  MType = MatrixType[RootType][DestType];
+  if (Diag)
+    MType=DIAGMATRIXTYPE(RootType);
+  else
+    MType=MATRIXTYPE(RootType,DestType);
 
   /* check expected size */
   theMG = MYMG(theGrid);
@@ -2594,7 +2596,7 @@ INT DisposeConnectionsInGrid (GRID *theGrid)
 
 static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT *MatSize)
 {
-  INT cnt0,cnt1,i,j,mtype;
+  INT cnt0,cnt1,i,j,itype,jtype,mtype,size;
   VECTOR *vec0[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
   VECTOR *vec1[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
 
@@ -2602,14 +2604,28 @@ static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMEN
   if (Elem0 == Elem1)
   {
     for (i=0; i<cnt0; i++)
+    {
+      itype=VTYPE(vec0[i]);
       for (j=i; j<cnt0; j++)
       {
-        mtype = MatrixType[VTYPE(vec0[i])][VTYPE(vec0[j])];
-        if (MatSize[mtype] > 0)
+        if (i==j)
+        {
+          mtype = DIAGMATRIXTYPE(itype);
+          size  = MatSize[mtype];
+        }
+        else
+        {
+          jtype = VTYPE(vec0[j]);
+          size  = MatSize[MATRIXTYPE(jtype,itype)];
+          mtype = MATRIXTYPE(itype,jtype);
+          if (MatSize[mtype]>size) size=MatSize[mtype];
+        }
+        if (size > 0)
           if (ActDepth <= ConDepth[mtype])
             if (CreateConnection(theGrid,vec0[i],vec0[j])==NULL)
               RETURN(GM_ERROR);
       }
+    }
     if (NELIST_DEF_IN_GRID(theGrid))
       for (i=0; i<CORNERS_OF_ELEM(Elem0); i++)
         if (CreateElementList(theGrid,CORNER(Elem0,i),Elem0))
@@ -2620,14 +2636,28 @@ static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMEN
 
   cnt1 = GetAllVectorsOfElement(theGrid,Elem1,vec1);
   for (i=0; i<cnt0; i++)
+  {
+    itype=VTYPE(vec0[i]);
     for (j=0; j<cnt1; j++)
     {
-      mtype = MatrixType[VTYPE(vec0[i])][VTYPE(vec1[j])];
-      if (MatSize[mtype] > 0)
+      if (vec0[i]==vec1[j])
+      {
+        mtype = DIAGMATRIXTYPE(itype);
+        size  = MatSize[mtype];
+      }
+      else
+      {
+        jtype = VTYPE(vec1[j]);
+        size  = MatSize[MATRIXTYPE(jtype,itype)];
+        mtype = MATRIXTYPE(itype,jtype);
+        if (MatSize[mtype]>size) size=MatSize[mtype];
+      }
+      if (size > 0)
         if (ActDepth <= ConDepth[mtype])
           if (CreateConnection(theGrid,vec0[i],vec1[j])==NULL)
             RETURN(GM_ERROR);
     }
+  }
 
   return (0);
 }
@@ -3362,7 +3392,7 @@ INT PrepareAlgebraModification (MULTIGRID *theMG)
 
 static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT *MatSize)
 {
-  INT cnt0,cnt1,i,j,mtype;
+  INT cnt0,cnt1,i,j,itype,jtype,mtype,size;
   VECTOR *vec0[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
   VECTOR *vec1[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
   CONNECTION *theCon;
@@ -3376,10 +3406,23 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
   if (Elem0 == Elem1)
   {
     for (i=0; i<cnt0; i++)
+    {
+      itype=VTYPE(vec0[i]);
       for (j=0; j<cnt0; j++)
       {
-        mtype = MatrixType[VTYPE(vec0[i])][VTYPE(vec0[j])];
-        if (MatSize[mtype] > 0)
+        if (i==j)
+        {
+          mtype = DIAGMATRIXTYPE(itype);
+          size  = MatSize[mtype];
+        }
+        else
+        {
+          jtype = VTYPE(vec0[j]);
+          size  = MatSize[MATRIXTYPE(jtype,itype)];
+          mtype = MATRIXTYPE(itype,jtype);
+          if (MatSize[mtype]>size) size=MatSize[mtype];
+        }
+        if (size > 0)
           if (ActDepth <= ConDepth[mtype])
           {
             /* check connection in both directions */
@@ -3410,15 +3453,29 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
             }
           }
       }
+    }
     return (errors);
   }
 
   cnt1 = GetAllVectorsOfElement(theGrid,Elem1,vec1);
   for (i=0; i<cnt0; i++)
+  {
+    itype=VTYPE(vec0[i]);
     for (j=0; j<cnt1; j++)
     {
-      mtype = MatrixType[VTYPE(vec0[i])][VTYPE(vec1[j])];
-      if (MatSize[mtype] > 0)
+      if (i==j)
+      {
+        mtype = DIAGMATRIXTYPE(itype);
+        size  = MatSize[mtype];
+      }
+      else
+      {
+        jtype = VTYPE(vec1[j]);
+        size  = MatSize[MATRIXTYPE(jtype,itype)];
+        mtype = MATRIXTYPE(itype,jtype);
+        if (MatSize[mtype]>size) size=MatSize[mtype];
+      }
+      if (size > 0)
         if (ActDepth <= ConDepth[mtype])
         {
           /* check connection in both directions */
@@ -3447,6 +3504,8 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
           }
         }
     }
+  }
+
   return (errors);
 }
 
@@ -7806,7 +7865,7 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
 
   RootType = VTYPE(fvec);
   DestType = VTYPE(cvec);
-  MType = MatrixType[RootType][DestType];
+  MType = MATRIXTYPE(RootType,DestType);
 
   /* check expected size */
   theMG = MYMG(theGrid);
@@ -7994,27 +8053,6 @@ INT InitAlgebra (void)
     return(__LINE__);
   }
   theFindCutVarID = GetNewEnvVarID();
-
-  /* set MatrixType-field */
-  /* example for MAXVECTORS=4
-     0 4 7 9
-     4 1 5 8
-     7 5 2 6
-     9 8 6 3
-   */
-  n=0;
-  for (i=0; i<MAXVECTORS; i++)
-    for (j=0; j<MAXVECTORS-i; j++)
-    {
-      MatrixType[j][j+i] = n;
-      MatrixType[j+i][j] = n;
-      n++;
-    }
-  if (n != MAXMATRICES)
-    return (__LINE__);
-
-  if (n+MAXVECTORS != MAXCONNECTIONS)
-    return (__LINE__);
 
   /* init standard algebraic dependencies */
   if (CreateAlgebraicDependency ("lex",LexAlgDep)==NULL) return(__LINE__);
