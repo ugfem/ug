@@ -1938,7 +1938,7 @@ GetDomain (char *name)
 
 BOUNDARY_SEGMENT *NS_PREFIX
 CreateBoundarySegment (char *name,
-                       INT left, INT right, INT id, BoundaryType type, INT res,
+                       INT left, INT right, INT id, enum BoundaryType type, INT res,
                        INT * point, DOUBLE * alpha, DOUBLE * beta,
                        BndSegFuncPtr BndSegFunc, void *data)
 {

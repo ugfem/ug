@@ -858,7 +858,7 @@ DOMAIN                     *CreateDomain                        (char *name, DOU
 
 DOMAIN *GetDomain                           (char *name);
 BOUNDARY_SEGMENT   *CreateBoundarySegment       (char *name, INT left, INT right,
-                                                 INT id, BoundaryType type, INT res,
+                                                 INT id, enum BoundaryType type, INT res,
                                                  INT *point,
                                                  DOUBLE *alpha, DOUBLE *beta,
                                                  BndSegFuncPtr BndSegFunc,
