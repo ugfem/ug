@@ -11,7 +11,7 @@ include $(UGROOT)/ug.conf
 
 .SUFFIXES: .cc
 
-LIBRARY	= libgcoupl$(UG_LIBSUFFIX).a
+LIBRARY	= libugcpl$(UG_LIBSUFFIX).a
 
 OBJECTS = partdisc.o globdisc.o sparsepattern.o multivd.o coupleddiscinit.o
 
