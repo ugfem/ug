@@ -69,6 +69,7 @@ typedef struct
   TransGridProcPtr intcor;
   InterpolateNewVectorsProcPtr intnew;
 
+  MATDATA_DESC *L;
   VECDATA_DESC *t;
   INT mode;                                                                /* mode selected in init			*/
   DOUBLE cut;                                                              /* cut value for scaled mg		*/
@@ -429,6 +430,8 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
       np->intcor = StandardInterpolateCorrection;
       np->intnew = StandardInterpolateNewVectors;
     }
+  np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
 
   return (NPTransferInit(&np->transfer,argc,argv));
 }
@@ -467,6 +470,10 @@ static INT TransferDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
   else if (np->display == PCR_FULL_DISPLAY)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+  if (np->L != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
 
   return (0);
 }
@@ -477,26 +484,53 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT fl, INT tl,
 {
   NP_STANDARD_TRANSFER *np;
   MULTIGRID *theMG;
-  INT i;
+  INT i,err;
+  GRID *theGrid;
 
   np = (NP_STANDARD_TRANSFER *) theNP;
   theMG = theNP->base.mg;
 
   if (np->mode == SCALEDMG_MODE)
   {
-    /* create restriction matrices */
-    for (i=tl; i>fl; i--)
-      if (InstallScaledRestrictionMatrix(GRID_ON_LEVEL(theMG,i),
-                                         A,np->cut)!=NUM_OK) {
-        result[0] = __LINE__;
-        return(1);
-      }
-    /* scale equations */
+                #ifdef ModelP
+    if (AllocMDFromMD(theNP->base.mg,fl,tl,A,&np->L)) {
+      result[0] = __LINE__;
+      return (1);
+    }
     for (i=tl; i>=fl; i--)
-      if (DiagonalScaleSystem(GRID_ON_LEVEL(theMG,i),A,b)!=NUM_OK) {
+    {
+      theGrid = GRID_ON_LEVEL(theMG,i);
+      if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) {
         result[0] = __LINE__;
         return (1);
       }
+      if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK) {
+        result[0] = __LINE__;
+        return (1);
+      }
+    }
+                #else
+    np->L = A;
+                #endif
+    /* create restriction matrices */
+    for (i=tl; i>fl; i--)
+    {
+      err = InstallScaledRestrictionMatrix(GRID_ON_LEVEL(theMG,i),np->L,np->cut);
+      if (err!=NUM_OK) {
+        UserWriteF("InstallScaledRestrictionMatrix failed in %d\n",err);
+        result[0] = __LINE__;
+        return(1);
+      }
+    }
+    /* scale equations */
+    for (i=tl; i>=fl; i--)
+      if (DiagonalScaleSystem(GRID_ON_LEVEL(theMG,i),A,np->L,b)!=NUM_OK) {
+        result[0] = __LINE__;
+        return (1);
+      }
+                #ifdef ModelP
+    FreeMD(theNP->base.mg,fl,tl,np->L);
+                #endif
   }
 
   return(0);
