@@ -175,7 +175,7 @@ void VectorUpdate (DDD_OBJ obj)
 	after = LASTVECTOR(theGrid);
 
     /* insert in vector list */
-	GRID_LINK_VECTOR(theGrid,pv,prio)
+	GRID_LINK_VECTOR(theGrid,pv,prio);
 
 	VSTART(pv) = NULL;
 
@@ -498,9 +498,9 @@ void VectorPriorityUpdate (DDD_OBJ obj, int new)
 		return;
 	}
 
-	GRID_UNLINK_VECTOR(theGrid,pv)
+	GRID_UNLINK_VECTOR(theGrid,pv);
 
-	GRID_LINK_VECTOR(theGrid,pv,new)
+	GRID_LINK_VECTOR(theGrid,pv,new);
 	
 	return;
 }
@@ -623,9 +623,9 @@ void VertexPriorityUpdate (DDD_OBJ obj, int new)
         return;
     }
 
-    GRID_UNLINK_VERTEX(theGrid,pv)
+    GRID_UNLINK_VERTEX(theGrid,pv);
 
-    GRID_LINK_VERTEX(theGrid,pv,new)
+    GRID_LINK_VERTEX(theGrid,pv,new);
 
     return;
 }
@@ -725,35 +725,15 @@ void NodeUpdate (DDD_OBJ obj)
 	theGrid = GRID_ON_LEVEL(dddctrl.currMG,level);
 	after = LASTNODE(theGrid);
 
-	GRID_LINK_NODE(theGrid,node,prio)
+	GRID_LINK_NODE(theGrid,node,prio);
 
-/* TODO: delete this */
-if (0) {
-        /* insert in vertex list */
-        if (after==NULL)
-        {
-                SUCCN(node) = FIRSTNODE(theGrid);
-                PREDN(node) = NULL;
-                if (SUCCN(node)!=NULL) PREDN(SUCCN(node)) = node;
-                /*FIRSTNODE(theGrid) = node;*/
-                if (LASTNODE(theGrid)==NULL) LASTNODE(theGrid) = node;
-        }
-        else
-        {
-                SUCCN(node) = SUCCN(after);
-                PREDN(node) = after;
-                if (SUCCN(node)!=NULL) PREDN(SUCCN(node)) = node; else LASTNODE(theGrid) = node;
-                SUCCN(after) = node;
-        }
-}
+	START(node) = NULL;
 
-		START(node) = NULL;
+	/* incremant counter */
+	theGrid->nNode++;
 
-        /* incremant counter */
-        theGrid->nNode++;
-
-		/* TODO: change to global id */
-		ID(node) = (theGrid->mg->nodeIdCounter)++;
+	/* TODO: change to global id */
+	ID(node) = (theGrid->mg->nodeIdCounter)++;
 }
 
 /****************************************************************************/
@@ -920,9 +900,9 @@ void NodePriorityUpdate (DDD_OBJ obj, int new)
 		return;
 	}
 
-	GRID_UNLINK_NODE(theGrid,pn)
+	GRID_UNLINK_NODE(theGrid,pn);
 
-	GRID_LINK_NODE(theGrid,pn,new)
+	GRID_LINK_NODE(theGrid,pn,new);
 	
 	return;
 }
@@ -966,7 +946,7 @@ void ElementLDataConstructor (DDD_OBJ obj)
 	SETLEVEL(pe,level);
 	sides = 0;
 
-	GRID_LINK_ELEMENT(theGrid,pe,prio)
+	GRID_LINK_ELEMENT(theGrid,pe,prio);
 
 	if (OBJT(pe)==BEOBJ)
 	{
@@ -1395,9 +1375,9 @@ void ElementPriorityUpdate (DDD_OBJ obj, int new)
 		return;
 	}
 
-	GRID_UNLINK_ELEMENT(theGrid,pe)
+	GRID_UNLINK_ELEMENT(theGrid,pe);
 
-	GRID_LINK_ELEMENT(theGrid,pe,new)
+	GRID_LINK_ELEMENT(theGrid,pe,new);
 	
 	return;
 }
