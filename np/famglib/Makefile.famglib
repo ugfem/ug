@@ -13,19 +13,23 @@ include $(UGROOT)/ug.conf
 # path to library
 FAMGLIB      = ../lib/libfamg.a
 
-OBJECTS = heap.o misc.o matrix.o decomp.o transfer.o graph.o approx.o construct.o grid.o multigrid.o system.o uginterface.o
+OBJECTS = heap.o misc.o matrix.o decomp.o transfer.o graph.o approx.o \
+          construct.o grid.o multigrid.o system.o uginterface.o ug-famg.o
 
 
 # paths to include files
 
 
-$(FAMGLIB) : $(OBJECTS) Makefile.famg
+$(FAMGLIB) : $(OBJECTS) Makefile.famglib
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(FAMGLIB) $(OBJECTS) 
 
-.SUFFIXES: .o .c
+.SUFFIXES: .o .c .C
  
 .C.o:
 	$(ARCH_C++) $(UG_C++FLAGS) -DUG_DRAW $<
+
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) -DUG_DRAW $<
 
 clean:
 	rm -f *.o

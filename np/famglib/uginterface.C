@@ -21,7 +21,7 @@
 
 extern "C"
 {
-#include "../solve/cmginterface.h"
+#include "famginterface.h"
 }
 #include "matrix.h"
 #include "system.h"
