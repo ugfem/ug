@@ -1,15 +1,32 @@
 #!/bin/sh
 
-if [ $# -ge 1 ]; then
-    echo "just type '`basename $0`' to create a TAGS file for Emacs"
+if [ "$1" = "-help" -o "$1" = "-h" ]; then
+    echo "usage:   `basename $0` [<app1> <app2> ...]"
+    echo "purpose: create an Emacs TAGS file for ug, app1, app2, ..."
     exit 1
 fi
 
-if [ "x$UGROOT" = "x" ]; then
+if [ -z "$UGROOT" ]; then
     echo "you must set the shell environment variable UGROOT!"
     exit 1
 fi
 
+if [ -x /bin/mktemp ]; then
+    TMP=`mktemp /tmp/ugetags.XXXXXX`
+else
+    TMP="$HOME/ugetags.tmp"
+fi
+
 cd $UGROOT
-find . -path './include' -prune -o -path './parallel/ddd/include' -prune \
-    -o -name '*.[ch]' -print | etags -
+find $PWD -path "$PWD/include" -prune -o -path "$PWD/parallel/ddd/include" -prune \
+    -o -name "*.[ch]" -print >$TMP
+	
+for i do
+    cd $UGROOT/../$i
+    find $PWD -name "*.[ch]" -print >>$TMP
+done
+
+cd $UGROOT/..
+cat $TMP | etags -
+
+rm -f $TMP
