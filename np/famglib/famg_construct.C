@@ -1091,7 +1091,8 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
         case 3: if (gridptr->AnalyseNode3(nodei->GetVec(),palist)) return 1; break;
         case 4: if (gridptr->AnalyseNode4(nodei->GetVec(),palist)) return 1; break;
         case 5: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
-        }
+        case 6: if (gridptr->AnalyseNode6(nodei->GetVec(),palist)) return 1; break;
+       }
         nodei->SetPaList(palist);
     }
     InitNSons();
@@ -1195,6 +1196,7 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
         case 3: if (gridptr->AnalyseNode3(nodei->GetVec(),palist)) return 1; break;
         case 4: if (gridptr->AnalyseNode4(nodei->GetVec(),palist)) return 1; break;
         case 5: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
+        case 6: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
         }
         nodei->SetPaList(palist);
         nodei->SetNSons(0);

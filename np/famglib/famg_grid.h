@@ -131,6 +131,11 @@ public:
   int AnalyseNode4(const FAMGVectorEntry &veci, FAMGPaList *&palist);
   int AnalyseNode5(const FAMGVectorEntry &veci, FAMGPaList *&palist);
 
+  int AnalyseNode6(const FAMGVectorEntry &veci, FAMGPaList *&palist);
+  int GetLocalMinimum1(FAMGPaList *&palist, double *w1, double *w2, double *t1, double *t2, struct FAMGMatrixLocal *localmatrix);
+  int GetLocalMinimum2(FAMGPaList *&palist, double *w1, double *w2, double *t1, double *t2, struct FAMGMatrixLocal *localmatrix);
+  int ConstructLocalMatrix(const FAMGVectorEntry &veci, struct FAMGMatrixLocal *localmatrix, double *&tv1, double *&tv2, double &normr, double &norml);
+
   int SetFlagsAndCount(int i, int f);
   int Connected(int i, int z);
   void SetFlags(int i, int f);
