@@ -116,7 +116,7 @@ DDD_IF BorderVectorIF, BorderVectorSymmIF,
        VectorVIF, VectorVAllIF;
 DDD_IF VertexIF;
 #ifdef __THREEDIM__
-DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF;
+DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeAllIF;
 #endif
 
 
@@ -699,7 +699,6 @@ static void ddd_IfInit (void)
   DDD_IFSetName(NodeAllIF, "NodeAllIF: All/All");
 
 
-
   /* define vector interfaces */
   O[0] = TypeVector;
 
@@ -761,6 +760,11 @@ static void ddd_IfInit (void)
   B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioGhost;
   EdgeHIF = DDD_IFDefine(1,O,2,A,3,B);
   DDD_IFSetName(EdgeHIF, "EdgeHIF: Master/Border");
+
+  A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioVGhost; A[3] = PrioGhost;
+  B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioVGhost; B[3] = PrioGhost;
+  EdgeAllIF = DDD_IFDefine(1,O,4,A,4,B);
+  DDD_IFSetName(EdgeAllIF, "EdgeAllIF: All/All");
 
         #endif
 }
