@@ -8956,6 +8956,11 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			DO_2l(theDO) = edgecolor;
 			DO_inc(theDO);
 		}
+		else
+		{
+			DO_2l(theDO) = EE2D_NoColor[ECLASS(theElement)];
+			DO_inc(theDO);
+		}
 	}
 	else
 	{
