@@ -1,0 +1,36 @@
+This directory contains the files needed for the UG 
+graphical interface for Apple Macintosh.
+
+Until the introduction of MacOS X (Server) the
+Interface was programmed using the MacOS Toolbox
+functionality; these files were needed:
+
+MacGraph.c
+MacGraph.h
+MacMain.c
+MacMain.h
+MacMain.m
+MacShell.c
+MacShell.h
+MacSurface.c
+MacSurface.h
+mif.make
+ugrsrc.r
+
+With the introduction of MacOS X (Server) a new
+interface was needed.  For MacOS X Server the interface
+uses the DisplayPostscript Functions; MacOS X will be build
+ariound the Carbon Programers interface.  Both versions
+will use the YellowBox Frameworks for non-graphical
+programming.
+
+Files needed for MacOS X start with a capital M.
+
+Since there will be two settings for ARCH, namely
+MACOSXSERVER and MACOSX, the decision wether 
+DisplayPostscript or Carbon should be used can be 
+detected therefrom.
+
+When invoked from 'ugmake' the Makefile 'Makefile.mif' is used.
+The other Makefiles ('Makefile', 'Makefile.preample' and
+'Makefile.postamble') are inherited from the ProjectBuilder.

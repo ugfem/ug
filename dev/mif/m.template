@@ -1,0 +1,107 @@
+$$ Lines starting with $$ are not inserted into newly created files
+$$ The following substitutions are made:
+$$
+$$ $FILENAME$                e.g. foo.m
+$$ $FILENAMESANSEXTENSION$   e.g. foo
+$$ $DIRECTORY$               e.g. /tmp/MyNewApp
+$$ $PROJECTNAME$             e.g. MyNewApp
+$$ $SUBPROJECTNAME$          e.g. TheGoodPart.subproj
+$$ $USERNAME$                e.g. mwagner
+$$ $DATE$                    e.g. Jan-1-1994
+$$
+/* $FILENAME$ created by $USERNAME$ on $DATE$ */
+
+/****************************************************************************/
+/*																			*/
+/* File:	  source.c														*/
+/*																			*/
+/* Purpose:   standard source file template 								*/
+/*																			*/
+/* Author:	  $USERNAME$													*/
+/*			  Interdisziplin"ares Zentrum f"ur Wissenschaftliches Rechnen	*/
+/*			  Universit"at Heidelberg										*/
+/*			  Im Neuenheimer Feld 368										*/
+/*			  69210 Heidelberg												*/
+/*			  email: Volker.Reichenberger@IWR.Uni-Heidelberg.DE		    	*/
+/*																			*/
+/*	History:  $DATE$ begin (based on OPENSTEP code)							*//*																			*/
+/* Remarks: 																*/
+/*																			*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*																			*/
+/* include files															*/
+/*			  system include files											*/
+/*			  application include files 									*/
+/*																			*/
+/****************************************************************************/
+
+#include "general.h"
+
+#import "$FILENAMESANSEXTENSION$.h"
+
+
+/****************************************************************************/
+/*																			*/
+/* defines in the following order											*/
+/*																			*/
+/*		  compile time constants defining static data size (i.e. arrays)	*/
+/*		  other constants													*/
+/*		  macros															*/
+/*																			*/
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*																			*/
+/* data structures used in this source file (exported data structures are	*/
+/*		  in the corresponding include file!)								*/
+/*																			*/
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*																			*/
+/* definition of exported global variables									*/
+/*																			*/
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*																			*/
+/* definition of variables global to this source file only (static!)		*/
+/*																			*/
+/****************************************************************************/
+
+
+/****************************************************************************/
+/*																			*/
+/* forward declarations of functions used before they are defined			*/
+/*																			*/
+/****************************************************************************/
+
+
+/****************************************************************************/
+/*D
+   name - short_description
+   
+   SYNOPSIS:
+   
+   PARAMETERS:
+.  par - meaning
+   
+   DESCRIPTION:
+   
+   RETURN VALUE:
+   
+   SEE ALSO:
+D*/
+/****************************************************************************/
+
+@implementation $FILENAMESANSEXTENSION$
+
+@end

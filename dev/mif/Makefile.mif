@@ -1,0 +1,43 @@
+##############################################################################
+#									 #
+#	Makefile for MacOS X interface										 #
+#																			 #
+#	created 17 August 1992													 #
+#																			 #
+##############################################################################
+
+
+
+# include configuration and all makefile macro definitions
+include ../../ug.conf
+
+OBJECTS = MGraphicWindow.o MShellTextView.o MAppController.o MInterface.o \
+          MShellView.o MGraphicView.o MShell.o MShellWindow.o
+
+
+# local C compiler flags
+LCFLAGS = -I../../include -Wall \
+    -precomp-trustfile /Local/Users/reichenb/UG/ug/dev/mif/mif.build/derived_src/TrustedPrecomps.txt \
+    -fno-common -pipe -I/System/Library/Frameworks/AppKit.framework/Headers
+
+all : $(OBJECTS) $(GUI) Makefile.mif
+	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdevM.a $(OBJECTS) 
+
+.m.o:
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) -ObjC $<
+
+ON:
+	echo "creating gui toolbox"
+	cd gui; make -f Makefile.gui; cd ..;
+
+OFF:
+	echo "no gui toolbox"
+
+clean:
+	find . -name '*.o' -exec rm {} \; -print
+	find . -name '*.a' -exec rm {} \; -print
+
+extract:
+	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdevX.a $(OBJECTS)
+
+xmc: extract all clean

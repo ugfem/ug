@@ -1,0 +1,75 @@
+$$
+/****************************************************************************/
+/*																			*/
+/* File:	  $FILENAME$													*/
+/*																			*/
+/* Purpose:   $FILENAMESANSEXTENSION$ 										*/
+/*																			*/
+/* Author:	  $USERNAME$													*/
+/*			  Interdisziplin"ares Zentrum f"ur Wissenschaftliches Rechnen	*/
+/*			  Universit"at Heidelberg										*/
+/*			  Im Neuenheimer Feld 368										*/
+/*			  69210 Heidelberg												*/
+/*			  email: Volker.Reichenberger@IWR.Uni-Heidelberg.DE		    	*/
+/*																			*/
+/*	History:  $DATE$ begin													*/
+/*																			*/
+/* Remarks: 																*/
+/*																			*/
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*																			*/
+/* auto include mechanism and other include files							*/
+/*																			*/
+/****************************************************************************/
+
+#ifndef __$FILENAMESANSEXTENSION$__
+#define __$FILENAMESANSEXTENSION$__
+
+/****************************************************************************/
+/*																			*/
+/* defines in the following order											*/
+/*																			*/
+/*		  compile time constants defining static data size (i.e. arrays)	*/
+/*		  other constants													*/
+/*		  macros															*/
+/*																			*/
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*																			*/
+/* data structures exported by the corresponding source file				*/
+/*																			*/
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*																			*/
+/* definition of exported global variables									*/
+/*																			*/
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*																			*/
+/* function declarations													*/
+/*																			*/
+/****************************************************************************/
+
+#import <AppKit/AppKit.h>
+
+@interface $FILENAMESANSEXTENSION$ : NSObject
+{
+
+}
+
+@end
+
+#endif
