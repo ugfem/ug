@@ -144,7 +144,7 @@ static int ComputeNodeBorderPrios (DDD_OBJ obj)
     return(0);
 
   if (me!=min_proc)
-    DDD_PrioritySet(PARHDR(node), PrioBorder);
+    SETPRIO(node, PrioBorder);
 }
 
 static int ComputeVectorBorderPrios (DDD_OBJ obj)
@@ -167,7 +167,7 @@ static int ComputeVectorBorderPrios (DDD_OBJ obj)
     return(0);
 
   if (me!=min_proc)
-    DDD_PrioritySet(PARHDR(vector), PrioBorder);
+    SETPRIO(vector, PrioBorder);
 }
 
 #ifdef __THREEDIM__
@@ -191,7 +191,7 @@ static int ComputeEdgeBorderPrios (DDD_OBJ obj)
     return(0);
 
   if (me!=min_proc)
-    DDD_PrioritySet(PARHDR(edge), PrioBorder);
+    SETPRIO(edge, PrioBorder);
 }
 #endif
 

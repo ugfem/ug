@@ -199,7 +199,7 @@ void VectorUpdate (DDD_OBJ obj)
 	VECTOR	*pv			= (VECTOR *)obj;
 	INT		level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
-	INT		prio		= DDD_InfoPriority(PARHDR(pv));
+	INT		prio		= PRIO(pv);
 
 	PRINTDEBUG(dddif,1,(PFMT " VectorUpdate(): v=" VINDEX_FMTX
 		" VEOBJ=%d\n",me,VINDEX_PRTX(pv),OBJT(pv)))
@@ -225,7 +225,7 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 		"prio=%d vtype=%d\n",me,VINDEX_PRTX(pv),proc,prio,VTYPE(pv)))
 
     #ifdef __EXCHANGE_CONNECTIONS__
-	if (prio!=PrioGhost && prio!=PrioVGhost)
+	if (!GHOSTPRIO(prio))
 	{
 		for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat))
 		{
@@ -300,7 +300,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 				*last		= NULL;
 	INT			level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(vec)));
 	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
-	INT			prio 		= DDD_InfoPriority(PARHDR(vec));
+	INT			prio 		= PRIO(vec);
 	INT			i;
 	INT			nconn		= 0;
 	INT			newconn		= 0;
@@ -309,7 +309,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 		" cnt=%d type=%d veobj=%d vtype=%d\n",\
 		me,VINDEX_PRTX(vec),cnt,type_id,OBJT(vec),VTYPE(vec)))
 
-	if (prio==PrioGhost || prio==PrioVGhost)
+	if (GHOSTPRIO(prio))
 	{
 		PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v=" VINDEX_FMTX
 			" USELESS since ghost vector\n",
@@ -333,8 +333,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 			continue;
 		}
 
-		if (DDD_InfoPriority(PARHDR(MDEST(mcopy)))==PrioGhost ||
-			DDD_InfoPriority(PARHDR(MDEST(mcopy)))==PrioVGhost)
+		if (GHOST(MDEST(mcopy)))
 		{
 			/* destination vector has only prio Ghost on this processor */
 			/* -> matrix entry is useless, throw away                     */
@@ -595,7 +594,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 	VECTOR	*pv			= (VECTOR *)obj;
 	INT		level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
-	INT		old			= DDD_InfoPriority(PARHDR(pv));
+	INT		old			= PRIO(pv);
 
 	PRINTDEBUG(dddif,2,(PFMT " VectorPriorityUpdate(): v=" VINDEX_FMTX
 						" old=%d new=%d level=%d attr=%d\n",
@@ -621,7 +620,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 
 	/* dispose connections for geom levels not for amg levels */
 	if (level>=0)
-		if (new==PrioGhost || new==PrioVGhost)
+		if (GHOSTPRIO(new))
 		{
 			MATRIX *theMatrix,*next;
 
@@ -691,7 +690,7 @@ void VertexUpdate (DDD_OBJ obj)
 	VERTEX	*theVertex	= (VERTEX *) obj;
 	INT		level		= LEVEL(theVertex);
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
-	INT		prio		= DDD_InfoPriority(PARHDRV(theVertex));
+	INT		prio		= VXPRIO(theVertex);
 
 	PRINTDEBUG(dddif,1,(PFMT " VertexUpdate(): v=" VID_FMTX " I/BVOBJ=%d\n",
 		me,VID_PRTX(theVertex),OBJT(theVertex)))
@@ -749,7 +748,7 @@ void VertexPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
     VERTEX	*theVertex			= (VERTEX *)obj;
     INT		level		= LEVEL(theVertex);
     GRID	*theGrid 	= GetGridOnDemand(dddctrl.currMG,level);
-    INT		old			= DDD_InfoPriority(PARHDRV(theVertex));
+    INT		old			= VXPRIO(theVertex);
 
     PRINTDEBUG(dddif,2,(PFMT " VertexPriorityUpdate(): v=" VID_FMTX 
 		" old=%d new=%d level=%d\n",me,VID_PRTX(theVertex),old,new,level))
@@ -875,7 +874,7 @@ void NodeUpdate (DDD_OBJ obj)
 	VERTEX	*theVertex	= MYVERTEX(theNode);
 	INT		level		= LEVEL(theNode);
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
-	INT		prio		= DDD_InfoPriority(PARHDR(theNode));
+	INT		prio		= PRIO(theNode);
 
 	PRINTDEBUG(dddif,1,(PFMT " NodeUpdate(): n=" ID_FMTX " NDOBJ=%d\n",
 		me,ID_PRTX(theNode),OBJT(theNode)))
@@ -1091,7 +1090,7 @@ void NodePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 	NODE	*pn			= (NODE *)obj;
 	INT		level		= LEVEL(pn);
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
-	INT		old			= DDD_InfoPriority(PARHDR(pn));
+	INT		old			= PRIO(pn);
 
 	PRINTDEBUG(dddif,2,(PFMT " NodePriorityUpdate(): n=" ID_FMTX " old=%d new=%d "
 		"level=%d\n",me,ID_PRTX(pn),old,new,level))
@@ -1169,7 +1168,7 @@ void ElementLDataConstructor (DDD_OBJ obj)
 	ELEMENT	*pe			= (ELEMENT *)obj;
 	INT		level		= LEVEL(pe);
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
-	INT		prio		= DDD_InfoPriority(PARHDRE(pe));
+	INT		prio		= EPRIO(pe);
 	void    *q;
 
 	PRINTDEBUG(dddif,2,(PFMT " ElementLDataConsX(): pe=" EID_FMTX 
@@ -1678,7 +1677,7 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
 	INT		i,j;
 	INT		lostson		= 0;
 	ELEMENT	*pe			= (ELEMENT *)obj;
-	INT		prio 		= DDD_InfoPriority(PARHDRE(pe));
+	INT		prio 		= EPRIO(pe);
 	ELEMENT *theFather	= EFATHER(pe);
 	ELEMENT *NbElement;
 	INT		level		= LEVEL(pe);
@@ -1785,7 +1784,7 @@ if (0 && newness != XFER_NEW)
 if (0)
 {
 				next = SUCCE(pe); 
-				while (next!=NULL && DDD_InfoPriority(PARHDRE(next))==prio
+				while (next!=NULL && EPRIO(next)==prio
 						&& theFather==EFATHER(next))
 				{
 					SETNSONS(theFather,NSONS(theFather)+1);
@@ -1803,8 +1802,7 @@ if (0)
 			#ifdef Debug
 			if (level > 0)
 				/* only ghost elements may have no father */
-				assert(DDD_InfoPriority(PARHDRE(pe))==PrioGhost ||
-					   DDD_InfoPriority(PARHDRE(pe))==PrioVGhost   );
+				assert(EGHOST(pe));
 			#endif
 		}
 	}
@@ -1915,8 +1913,7 @@ void ElementObjMkCons_Refineold (DDD_OBJ obj, int newness)
 		}
 		else
 			/* only GhostElements may have no father */
-			assert(DDD_InfoPriority(PARHDRE(pe))==PrioGhost ||
-				   DDD_InfoPriority(PARHDRE(pe))==PrioVGhost   );
+			assert(EGHOST(pe));
 	}
 
 }
@@ -1929,7 +1926,7 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 	ELEMENT *succe		= SUCCE(pe);
 	INT		level		= LEVEL(pe);
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
-	INT		old			= DDD_InfoPriority(PARHDRE(pe));
+	INT		old			= EPRIO(pe);
 	INT		lostson		= 1;
 
 	PRINTDEBUG(dddif,1,(PFMT "  ElementPriorityUpdate(): e=" EID_FMTX 
@@ -2004,7 +2001,7 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 			if (pe == SON(theFather,oldwhere))
 			{
 				if (succe != NULL)
-					if (EFATHER(succe)==theFather && DDD_InfoPriority(PARHDRE(succe))==old)
+					if (EFATHER(succe)==theFather && EPRIO(succe)==old)
 						Next = succe;
 
 				SET_SON(theFather,oldwhere,Next);
@@ -2027,7 +2024,7 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 
 				/* add successor elements which were decoupled before */
 				next = SUCCE(pe); 
-				while (next!=NULL && DDD_InfoPriority(PARHDRE(next))==new
+				while (next!=NULL && EPRIO(next)==new
 						&& theFather==EFATHER(next))
 				{
 					SETNSONS(theFather,NSONS(theFather)+1);
@@ -2047,11 +2044,8 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 /*
 			if (level > 0)
 			{
-				assert(new==PrioGhost ||
-					   new==PrioVGhost   );
-
-				assert(DDD_InfoPriority(PARHDRE(pe))==PrioGhost ||
-					   DDD_InfoPriority(PARHDRE(pe))==PrioVGhost   );
+				assert(EGHOSTPRIO(new));
+				assert(EGHOST(pe));
 			}
 */
 		}
@@ -2059,9 +2053,9 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 
 /* TODO: delete this
 	#ifdef Debug
-	DDD_InfoPriority(PARHDRE(pe)) = new;
+	SETEPRIO(pe,new);
 	DEBUGNSONS(EFATHER(pe),"end ElementPriorityUpdate");
-	DDD_InfoPriority(PARHDRE(pe)) = old;
+	SETEPRIO(pe,old);
 	#endif
 */
 
