@@ -3006,6 +3006,389 @@ static INT InitSkin (void)
 }
 /* end of skin-domain-definition */
 
+
+/****************************************************************************/
+/*                                                                          */
+/*  define Composed1 (A Part of the domain "Holes")                         */
+/*    -----------------                                                     */
+/*    |               |                                                     */
+/*    -----------------                                                     */
+/*    |  |   |  |  |  |                                                     */
+/*    ----   ----  ----                                                     */
+/*                                                                          */
+/****************************************************************************/
+
+static const INT c1_sd2p[2] = {0,0};
+static const INT c1_sg2p[24] =
+{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static const INT c1_pt2p[24] =
+{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static const DOMAIN_PART_INFO c1_dpi = {c1_sd2p,c1_sg2p,c1_pt2p};
+
+static INT InitComposed1 (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 2.5;
+  MidPoint[1] = 1.5;
+  radius = 3.0;
+  if (CreateDomainWithParts("Composed1",MidPoint,radius,24,24,NO,2,&c1_dpi)
+      ==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+                              Start5Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+                              Start6Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left3"  ,1,0, 2, 2,3, 1.0,0.0,1.0,
+                              Start7Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left4"  ,1,0, 3, 3,0, 1.0,0.0,1.0,
+                              Start8Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1.0,0.0,1.0,
+                              Start25Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1.0,0.0,1.0,
+                              Start26Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle3",1,0, 6, 6,7, 1.0,0.0,1.0,
+                              Start27Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle4",1,0, 7, 7,4, 1.0,0.0,1.0,
+                              Start28Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("right1" ,1,0, 8, 8,9, 1.0,0.0,1.0,
+                              Start45Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("right2" ,1,0, 9, 9,10, 1.0,0.0,1.0,
+                              Start46Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("right3" ,1,0, 10, 10,11, 1.0,0.0,1.0,
+                              Start47Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("right4" ,1,0, 11, 11,8, 1.0,0.0,1.0,
+                              Start48Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppersouth1",1,0, 12, 12,13, 1.0,0.0,1.0,
+                              Start9Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 13, 13,14, 1.0,0.0,1.0,
+                              Start17Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth3",1,0, 14, 14,15, 1.0,0.0,1.0,
+                              Start29Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 15, 15,16, 1.0,0.0,1.0,
+                              Start37Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 16, 16,17, 1.0,0.0,1.0,
+                              Start49Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppereast",1,0, 17, 17,18, 1.0,0.0,1.0,
+                              Start50Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 18, 18,19, 1.0,0.0,1.0,
+                              Start51Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 19, 19,20, 1.0,0.0,1.0,
+                              Start39Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 20, 20,21, 1.0,0.0,1.0,
+                              Start31Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 21, 21,22, 1.0,0.0,1.0,
+                              Start19Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 22, 22,23, 1.0,0.0,1.0,
+                              Start11Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("upperwest",1,0, 23, 23,12, 1.0,0.0,1.0,
+                              Start12Boundary,NULL)==NULL) return(1);
+
+  return(0);
+}
+
+static INT InitComposed1a (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 2.5;
+  MidPoint[1] = 1.5;
+  radius = 3.0;
+  if (CreateDomain("Composed1a",MidPoint,radius,18,18,NO)==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+                              Start5Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+                              Start6Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 2, 2,3, 1.0,0.0,1.0,
+                              Start17Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("middle4",1,0, 3, 3,4, 1.0,0.0,1.0,
+                              Start28Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1.0,0.0,1.0,
+                              Start25Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1.0,0.0,1.0,
+                              Start26Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 6, 6,7, 1.0,0.0,1.0,
+                              Start37Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("right4" ,1,0, 7, 7,8, 1.0,0.0,1.0,
+                              Start48Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("right1" ,1,0, 8, 8,9, 1.0,0.0,1.0,
+                              Start45Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("right2" ,1,0, 9, 9,10, 1.0,0.0,1.0,
+                              Start46Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppereast",1,0, 10, 10,11, 1.0,0.0,1.0,
+                              Start50Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 11, 11,12, 1.0,0.0,1.0,
+                              Start51Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 12, 12,13, 1.0,0.0,1.0,
+                              Start39Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 13, 13,14, 1.0,0.0,1.0,
+                              Start31Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 14, 14,15, 1.0,0.0,1.0,
+                              Start19Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 15, 15,16, 1.0,0.0,1.0,
+                              Start11Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("upperwest",1,0, 16, 16,17, 1.0,0.0,1.0,
+                              Start12Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left4"  ,1,0, 17, 17,0, 1.0,0.0,1.0,
+                              Start8Boundary,NULL)==NULL) return(1);
+
+  return(0);
+}
+
+/****************************************************************************/
+/*                                                                          */
+/*  define Composed2 (A Part of the domain "Holes")                         */
+/*    -----------------                                                     */
+/*    |               |                                                     */
+/*    -----------------                                                     */
+/*    |  |   |  |                                                           */
+/*    ----   ----                                                           */
+/*                                                                          */
+/****************************************************************************/
+
+static const INT c2_sd2p[2] = {0,0};
+static const INT c2_sg2p[20] =
+{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static const INT c2_pt2p[20] =
+{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static const DOMAIN_PART_INFO c2_dpi = {c2_sd2p,c2_sg2p,c2_pt2p};
+
+static INT InitComposed2 (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 2.5;
+  MidPoint[1] = 1.5;
+  radius = 3.0;
+  if (CreateDomainWithParts("Composed2",MidPoint,radius,20,20,NO,2,&c2_dpi)
+      ==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+                              Start5Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+                              Start6Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left3"  ,1,0, 2, 2,3, 1.0,0.0,1.0,
+                              Start7Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left4"  ,1,0, 3, 3,0, 1.0,0.0,1.0,
+                              Start8Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1.0,0.0,1.0,
+                              Start25Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1.0,0.0,1.0,
+                              Start26Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle3",1,0, 6, 6,7, 1.0,0.0,1.0,
+                              Start27Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle4",1,0, 7, 7,4, 1.0,0.0,1.0,
+                              Start28Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppersouth1",1,0, 8, 8,9, 1.0,0.0,1.0,
+                              Start9Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 9, 9,10, 1.0,0.0,1.0,
+                              Start17Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth3",1,0, 10, 10,11, 1.0,0.0,1.0,
+                              Start29Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 11, 11,12, 1.0,0.0,1.0,
+                              Start37Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 12, 12,13, 1.0,0.0,1.0,
+                              Start49Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppereast",1,0, 13, 13,14, 1.0,0.0,1.0,
+                              Start50Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 14, 14,15, 1.0,0.0,1.0,
+                              Start51Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 15, 15,16, 1.0,0.0,1.0,
+                              Start39Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 16, 16,17, 1.0,0.0,1.0,
+                              Start31Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 17, 17,18, 1.0,0.0,1.0,
+                              Start19Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 18, 18,19, 1.0,0.0,1.0,
+                              Start11Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("upperwest",1,0, 19, 19,8, 1.0,0.0,1.0,
+                              Start12Boundary,NULL)==NULL) return(1);
+
+  return(0);
+}
+
+static INT InitComposed2a (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 2.5;
+  MidPoint[1] = 1.5;
+  radius = 3.0;
+  if (CreateDomain("Composed2a",MidPoint,radius,16,16,NO)==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+                              Start5Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+                              Start6Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 2, 2,3, 1.0,0.0,1.0,
+                              Start17Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("middle4",1,0, 3, 3,4, 1.0,0.0,1.0,
+                              Start28Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1.0,0.0,1.0,
+                              Start25Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1.0,0.0,1.0,
+                              Start26Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 6, 6,7, 1.0,0.0,1.0,
+                              Start37Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 7, 7,8, 1.0,0.0,1.0,
+                              Start49Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppereast",1,0, 8, 8,9, 1.0,0.0,1.0,
+                              Start50Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 9, 9,10, 1.0,0.0,1.0,
+                              Start51Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 10, 10,11, 1.0,0.0,1.0,
+                              Start39Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 11, 11,12, 1.0,0.0,1.0,
+                              Start31Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 12, 12,13, 1.0,0.0,1.0,
+                              Start19Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 13, 13,14, 1.0,0.0,1.0,
+                              Start11Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("upperwest",1,0, 14, 14,15, 1.0,0.0,1.0,
+                              Start12Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left4"  ,1,0, 15, 15,0, 1.0,0.0,1.0,
+                              Start8Boundary,NULL)==NULL) return(1);
+
+  return(0);
+}
+
+/****************************************************************************/
+/*                                                                          */
+/*  define Composed3 (A Part of the domain "Holes")                         */
+/*    -----------------                                                     */
+/*    |               |                                                     */
+/*    -----------------                                                     */
+/*    |  |                                                                  */
+/*    ----                                                                  */
+/*                                                                          */
+/****************************************************************************/
+
+static const INT c3_sd2p[2] = {0,0};
+static const INT c3_sg2p[16] =
+{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static const INT c3_pt2p[16] =
+{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static const DOMAIN_PART_INFO c3_dpi = {c3_sd2p,c3_sg2p,c3_pt2p};
+
+static INT InitComposed3 (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 2.5;
+  MidPoint[1] = 1.5;
+  radius = 3.0;
+  if (CreateDomainWithParts("Composed3",MidPoint,radius,16,16,NO,2,&c3_dpi)
+      ==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+                              Start5Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+                              Start6Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left3"  ,1,0, 2, 2,3, 1.0,0.0,1.0,
+                              Start7Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left4"  ,1,0, 3, 3,0, 1.0,0.0,1.0,
+                              Start8Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppersouth1",1,0, 4, 4,5, 1.0,0.0,1.0,
+                              Start9Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 5, 5,6, 1.0,0.0,1.0,
+                              Start17Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth3",1,0, 6, 6,7, 1.0,0.0,1.0,
+                              Start29Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 7, 7,8, 1.0,0.0,1.0,
+                              Start37Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 8, 8,9, 1.0,0.0,1.0,
+                              Start49Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppereast",1,0, 9, 9,10, 1.0,0.0,1.0,
+                              Start50Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 10, 10,11, 1.0,0.0,1.0,
+                              Start51Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 11, 11,12, 1.0,0.0,1.0,
+                              Start39Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 12, 12,13, 1.0,0.0,1.0,
+                              Start31Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 13, 13,14, 1.0,0.0,1.0,
+                              Start19Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 14, 14,15, 1.0,0.0,1.0,
+                              Start11Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("upperwest",1,0, 15, 15,4, 1.0,0.0,1.0,
+                              Start12Boundary,NULL)==NULL) return(1);
+
+  return(0);
+}
+
+static INT InitComposed3a (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 2.5;
+  MidPoint[1] = 1.5;
+  radius = 3.0;
+  if (CreateDomain("Composed3a",MidPoint,radius,14,14,NO)==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+                              Start5Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+                              Start6Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 2, 2,3, 1.0,0.0,1.0,
+                              Start17Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth3",1,0, 3, 3,4, 1.0,0.0,1.0,
+                              Start29Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 4, 4,5, 1.0,0.0,1.0,
+                              Start37Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 5, 5,6, 1.0,0.0,1.0,
+                              Start49Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("uppereast",1,0, 6, 6,7, 1.0,0.0,1.0,
+                              Start50Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 7, 7,8, 1.0,0.0,1.0,
+                              Start51Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 8, 8,9, 1.0,0.0,1.0,
+                              Start39Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 9, 9,10, 1.0,0.0,1.0,
+                              Start31Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 10, 10,11, 1.0,0.0,1.0,
+                              Start19Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 11, 11,12, 1.0,0.0,1.0,
+                              Start11Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("upperwest",1,0, 12, 12,13, 1.0,0.0,1.0,
+                              Start12Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left4"  ,1,0, 13, 13,0, 1.0,0.0,1.0,
+                              Start8Boundary,NULL)==NULL) return(1);
+
+  return(0);
+}
+
+/* configuring a domain */
+
 INT STD_BVP_Configure (INT argc, char **argv)
 {
   STD_BVP *theBVP;
@@ -3334,6 +3717,36 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Skin") == 0)
     {
       if (InitSkin())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Composed1") == 0)
+    {
+      if (InitComposed1())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Composed1a") == 0)
+    {
+      if (InitComposed1a())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Composed2") == 0)
+    {
+      if (InitComposed2())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Composed2a") == 0)
+    {
+      if (InitComposed2a())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Composed3") == 0)
+    {
+      if (InitComposed3())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Composed3a") == 0)
+    {
+      if (InitComposed3a())
         return(1);
     }
     else
