@@ -467,6 +467,8 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
       if (whichWindow==(WindowPtr)&(shell.theRecord))
       {
         /* shell window */
+        if (whichWindow==FrontWindow())
+          SetMyCursor(textCurs);
         UpdateShellWin();
       }
       else
@@ -475,6 +477,8 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         gw = WhichGW(whichWindow);
         assert(gw!=NULL);
 
+        if (whichWindow==FrontWindow())
+          SetMyCursor(gw->currTool);
         Mac_UpdateOutput((WINDOWID)gw,arrowTool);
         reportEvent->Type                       = DOC_UPDATE;
         reportEvent->DocUpdate.win      = (WINDOWID) gw;
@@ -483,22 +487,36 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
 
     case keyDown :
     case autoKey :
+    {
+      char c=(char)BitAnd(theEvent.message,charCodeMask);
       if (BitAnd(theEvent.modifiers,cmdKey))
       {
-        if ((char)BitAnd(theEvent.message,charCodeMask)=='\36')
+        if (c=='\34')
         {
           reportEvent->NoEvent.InterfaceEvent = 1;
-          ShellHandleKeybordEvent('\v');
+          ShellHandleKeybordEvent(SK_PAGE_LEFT,0);
           break;
         }
-        if ((char)BitAnd(theEvent.message,charCodeMask)=='\37')
+        if (c=='\35')
         {
           reportEvent->NoEvent.InterfaceEvent = 1;
-          ShellHandleKeybordEvent('\f');
+          ShellHandleKeybordEvent(SK_PAGE_RIGHT,0);
+          break;
+        }
+        if (c=='\36')
+        {
+          reportEvent->NoEvent.InterfaceEvent = 1;
+          ShellHandleKeybordEvent(SK_PAGE_UP,0);
+          break;
+        }
+        if (c=='\37')
+        {
+          reportEvent->NoEvent.InterfaceEvent = 1;
+          ShellHandleKeybordEvent(SK_PAGE_DOWN,0);
           break;
         }
         reportEvent->Type = TERM_CMDKEY;
-        reportEvent->TermCmdKey.CmdKey = (char)BitAnd(theEvent.message,charCodeMask);
+        reportEvent->TermCmdKey.CmdKey = c;
 
         /* cmd + shift + 1 --> cmd + ! */
         if (reportEvent->TermCmdKey.CmdKey=='1')
@@ -506,7 +524,46 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
             reportEvent->TermCmdKey.CmdKey = '!';
         break;
       }
-      else if ((s=ShellHandleKeybordEvent((char)BitAnd(theEvent.message,charCodeMask)))==NULL)
+      else if (BitAnd(theEvent.modifiers,optionKey))
+      {
+        if (c=='\34')
+        {
+          reportEvent->NoEvent.InterfaceEvent = 1;
+          ShellHandleKeybordEvent(SK_COL_LEFT,0);
+          break;
+        }
+        if (c=='\35')
+        {
+          reportEvent->NoEvent.InterfaceEvent = 1;
+          ShellHandleKeybordEvent(SK_COL_RIGHT,0);
+          break;
+        }
+        if (c=='\36')
+        {
+          reportEvent->NoEvent.InterfaceEvent = 1;
+          ShellHandleKeybordEvent(SK_LINE_UP,0);
+          break;
+        }
+        if (c=='\37')
+        {
+          reportEvent->NoEvent.InterfaceEvent = 1;
+          ShellHandleKeybordEvent(SK_LINE_DOWN,0);
+          break;
+        }
+      }
+      if (c=='\f')
+      {
+        reportEvent->NoEvent.InterfaceEvent = 1;
+        ShellHandleKeybordEvent(SK_PAGE_DOWN,0);
+        break;
+      }
+      else if (c=='\v')
+      {
+        reportEvent->NoEvent.InterfaceEvent = 1;
+        ShellHandleKeybordEvent(SK_PAGE_UP,0);
+        break;
+      }
+      else if ((s=ShellHandleKeybordEvent(SK_NONE,c))==NULL)
       {
         reportEvent->NoEvent.InterfaceEvent = 1;
         break;
@@ -517,6 +574,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         strcpy(reportEvent->TermString.String,s);
       }
       break;
+    }
     }
   }
   return (0);

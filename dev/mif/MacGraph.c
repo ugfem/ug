@@ -111,6 +111,7 @@
 static GRAPH_WINDOW *currgw;                    /* active output					*/
 static GRAPH_WINDOW *windowList=NULL;   /* list of our windows				*/
 static OUTPUTDEVICE *MacOutputDevice;   /* outputdevice that has been initi */
+static long CurrColor=0;
 
 static long guiHeapSize=32000;  /* size of system heap						*/
 static HEAP *guiHeap=NULL;              /* system heap structure					*/
@@ -118,6 +119,15 @@ static char buffer[255];
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
+
+/****************************************************************************/
+/*																			*/
+/* forward declarations of functions used before they are defined			*/
+/*																			*/
+/****************************************************************************/
+
+static void MacGetPaletteEntry (long index, short *r, short *g, short *b);
+static void MacSetPaletteEntry (long index, short r, short g, short b);
 
 /****************************************************************************/
 /*																			*/
@@ -177,6 +187,31 @@ static void MacPolygon (SHORT_POINT *points, INT n)
   PaintPoly(myPoly);
   FramePoly(myPoly);
   KillPoly(myPoly);
+}
+
+static void MacShadedPolygon (SHORT_POINT *points, INT n, DOUBLE intensity)
+{
+  PaletteHandle myPalette;
+  RGBColor theColor;
+  //short r,g,b;
+
+  if (n<3) return;
+
+  /* change color */
+  //MacGetPaletteEntry(CurrColor,&r,&g,&b);
+  //MacSetPaletteEntry(CurrColor,r*intensity,g*intensity,b*intensity);
+  myPalette = GetPalette(MAC_WIN(currgw));
+  GetEntryColor(myPalette,(short) CurrColor,&theColor);
+
+  theColor.red   *= intensity;
+  theColor.green *= intensity;
+  theColor.blue  *= intensity;
+
+  RGBForeColor(&theColor);
+  MacPolygon(points,n);
+
+  /* retsore color */
+  //MacSetPaletteEntry(CurrColor,r,g,b);
 }
 
 static void MacInversePolygon (SHORT_POINT *points, INT n)
@@ -496,6 +531,7 @@ static void MacSetTextSize (short s)
 static void MacSetColor (long index)
 {
   PmForeColor((short)index);
+  CurrColor = index;
 }
 
 static void MacSetPaletteEntry (long index, short r, short g, short b)
@@ -504,9 +540,9 @@ static void MacSetPaletteEntry (long index, short r, short g, short b)
   PaletteHandle myPalette;
 
   myPalette = GetPalette(MAC_WIN(currgw));
-  newColor.red = r;
-  newColor.green = g;
-  newColor.blue = b;
+  newColor.red = 2*r;
+  newColor.green = 2*g;
+  newColor.blue = 2*b;
   SetEntryColor(myPalette,(short) index,&newColor);
   ActivatePalette(MAC_WIN(currgw));
 }
@@ -518,6 +554,7 @@ static void MacSetNewPalette (long start, long count, short *r, short *g, short 
   long i;
 
   myPalette = GetPalette(MAC_WIN(currgw));
+  assert(myPalette!=NULL);
   for (i=start; i<start+count; i++)
   {
     newColor.red = r[i];
@@ -535,9 +572,9 @@ static void MacGetPaletteEntry (long index, short *r, short *g, short *b)
 
   myPalette = GetPalette(MAC_WIN(currgw));
   GetEntryColor(myPalette,(short) index,&theColor);
-  *r = theColor.red;
-  *g = theColor.green;
-  *b = theColor.blue;
+  *r = theColor.red/2;
+  *g = theColor.green/2;
+  *b = theColor.blue/2;
 }
 
 static void MacFlush (void)
@@ -589,6 +626,7 @@ static void InitMacPort ()
   MacOutputDevice->Polyline                       = MacPolyline;
   MacOutputDevice->InversePolyline        = MacInversePolyline;
   MacOutputDevice->Polygon                        = MacPolygon;
+  MacOutputDevice->ShadedPolygon          = MacShadedPolygon;
   MacOutputDevice->InversePolygon         = MacInversePolygon;
   MacOutputDevice->ErasePolygon           = MacErasePolygon;
   MacOutputDevice->Polymark                       = MacPolymark;
@@ -1023,7 +1061,7 @@ static INT GraphOpen (GRAPH_WINDOW *gw, const char *title, short h, short v, sho
 /****************************************************************************/
 
 static WINDOWID Mac_OpenOutput (
-  const char *title,                                                    /* tiltle of the window                 */
+  const char *title,                                                    /* title of the window                  */
   INT x, INT y, INT width, INT height,          /* plot rgn in standard coord.	*/
   INT *Global_LL, INT *Global_UR,                       /* global machine coordinates	*/
   INT *Local_LL, INT *Local_UR,                         /* local machine coordinates	*/

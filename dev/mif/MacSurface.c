@@ -337,8 +337,8 @@ void SetUpMenus ()
 
 INT GetScreenSize (INT size[2])
 {
-  size[0] = SCREEN_WIDTH;
-  size[1] = SCREEN_HEIGHT-MENU_BAR;
+  size[0] = SCREEN_WIDTH-SCROLL_BAR;
+  size[1] = SCREEN_HEIGHT-MENU_BAR-TITLE_BAR;
 
   return (1);
 }
