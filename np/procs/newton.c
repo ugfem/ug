@@ -472,8 +472,8 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     /* reduce time step if not accepted */
     if (!accept) {
       UserWrite("line search not accepted, Newton diverged\n");
-      res->error_code = __LINE__;
-      break;
+      res->error_code = 0;
+      goto exit;
     }
 
     /* print norm of defect */
@@ -501,7 +501,6 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
   /* print norm of defect */
   if (DoPCR(PrintID,defect,PCR_AVERAGE))  {res->error_code = __LINE__; return(res->error_code);}
-  if (PostPCR(PrintID,NULL))                              {res->error_code = __LINE__; return(res->error_code);}
 
   /* if converged, then accept new time step */
   if (res->converged) {
@@ -522,6 +521,8 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     }
 
 exit:
+  if (PostPCR(PrintID,NULL))                              {res->error_code = __LINE__; return(res->error_code);}
+
   /* deallocate local XDATA_DESCs */
   FreeVD(mg,0,level,newton->d);
   FreeVD(mg,0,level,newton->v);
