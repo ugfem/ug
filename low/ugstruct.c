@@ -1004,6 +1004,66 @@ INT SetStringVar (const char *name, char *sval)
 
 /****************************************************************************/
 /*D
+   SetnStringVar - Set a string variable to a given string
+
+   SYNOPSIS:
+   INT SetnStringVar (const char *name, const char *sval, int n);
+
+   PARAMETERS:
+   .  name - variable name
+   .  sval - address of the string
+   .  n - length of string
+
+   DESCRIPTION:
+   This function searches a string variable and sets it to the given string.
+   If the string variable does not yet exist it is created, if it is
+   too short for the string, it is removed and newly created.
+
+   The difference to 'SetStringVar' is that the string is not terminated
+   by '\0'.
+
+   SEE ALSO:
+   SetStringVar, FindStructDir, FindStringVar, RemoveStringVar, MakeStructItem
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 structure directory not found
+   .n     2 could not allocate variable
+   D*/
+/****************************************************************************/
+
+INT SetnStringVar (const char *name, const char *sval, int n)
+{
+  char *lastname;
+  ENVDIR *theDir;
+  STRVAR *myVar;
+
+  if ((theDir=FindStructDir(name,&lastname))==NULL)
+    return(1);                  /* structure directory not found */
+
+  myVar=FindStringVar(theDir,lastname);
+
+  if ((myVar!=NULL) && (myVar->length<=n))
+  {
+    RemoveStringVar(theDir, myVar);
+    myVar=NULL;
+  }
+
+  if (myVar==NULL)
+  {
+    myVar = (STRVAR *) MakeStructItem(theDir,lastname,theStringVarID,n);
+    if (myVar==NULL)
+      return(2);                        /* could not allocate variable */
+  }
+
+  strncpy(myVar->s,sval,(size_t) n);
+  myVar->s[n] = '\0';
+
+  return(0);
+}
+/****************************************************************************/
+/*D
    SetStringVarNotify - Set a string variable to a given string and notify if changed
 
    SYNOPSIS:
