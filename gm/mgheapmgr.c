@@ -44,15 +44,12 @@
 
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 
-
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-
 
 /****************************************************************************/
 /*																			*/
@@ -63,12 +60,13 @@
 INT usefreelistmemory = 1;
 INT freelist_end_mark = 0;
 
-
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -78,7 +76,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
-
 
 /****************************************************************************/
 /*D
