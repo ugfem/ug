@@ -4248,7 +4248,7 @@ static INT InsertElementCommand (INT argc, char **argv)
   /* got the nodes via s option? */
   if (nNodes>0)
   {
-    if (InsertElement(theMG,nNodes,theNodes,NULL)!=GM_OK)
+    if (InsertElement(theMG,nNodes,theNodes,NULL,NULL)!=GM_OK)
     {
       PrintErrorMessage('E',"ie","inserting the element failed");
       return (CMDERRORCODE);
