@@ -909,6 +909,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   int lastnumber;
 #ifdef ModelP
   int ftype;
+  int error;
 #endif
 
   /* check */
