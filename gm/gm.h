@@ -192,8 +192,8 @@ namespace UG3d {
 #undef DOMAIN
 
 /** @name Some size parameters */
-/*@{*
-   /** \brief  maximal space dimension                              */
+/*@{*/
+/** \brief  maximal space dimension                              */
 #define DIM_MAX                                 3
 /** \brief  maximal dimension of boundary surface*/
 #define DIM_OF_BND_MAX                  2
@@ -208,8 +208,8 @@ namespace UG3d {
 /*@}*/
 
 /** @name Some size macros for allocation purposes */
-/*@{*
-   /** \brief max number of sides of an elem       */
+/*@{*/
+/** \brief max number of sides of an elem       */
 #define MAX_SIDES_OF_ELEM               6
 /** \brief max number of edges of an element*/
 #define MAX_EDGES_OF_ELEM               12
@@ -240,9 +240,9 @@ namespace UG3d {
 #define MAX_NDOF_MOD_32        256
 /** \brief max number of doubles in a vector or matrix */
 #define MAX_NDOF 32*MAX_NDOF_MOD_32
-/*@}*
+/*@}*/
 
-   /****************************************************************************/
+/****************************************************************************/
 /*                                                                          */
 /* switch-define dependent defines                                          */
 /*                                                                          */
