@@ -60,7 +60,7 @@ int FAMGMultiGrid::Init(const FAMGSystem &system)
 int FAMGMultiGrid::Construct()
 {
     FAMGGrid *g, *cg;
-    int level, nnc, nn, ilu, cgilu;
+    int level, nnc, nn, ilu, cgilu, coarsen_weak = 0, leave;
 
     // read parameter
     const int cgnodes = FAMGGetParameter()->Getcgnodes();
@@ -85,10 +85,11 @@ int FAMGMultiGrid::Construct()
     for(level = 0; level < FAMGMAXGRIDS-1; level++)
     {
         nn = g->GetN();
+		leave = ( coarsen_weak || nn <= cgnodes || level>=cglevels) && (gamma > 0);
 #ifdef ModelP
-		nn = UG_GlobalMinINT(nn);
+		leave = UG_GlobalMaxINT(leave);
 #endif
-        if ((nn <= cgnodes || level>=cglevels) && (gamma > 0))
+        if (leave)
 		{
 			g->Stencil();
 			break;
@@ -125,8 +126,7 @@ int FAMGMultiGrid::Construct()
 //printf("after Galerkin:\n");
 //prm(0,0);prm(0,1); prim(0);
 //prm(-1,0);
-        if(nnc > nn*mincoarse)
-			break;
+        coarsen_weak = (nnc > nn*mincoarse);
     }
 
     if(level == FAMGMAXGRIDS-1)
