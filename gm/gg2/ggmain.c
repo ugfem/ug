@@ -317,7 +317,7 @@ static INT DetermineOrientation (FRONTLIST *theFL)
 /****************************************************************************/
 
 static INT HandleSubdomain (INDEPFRONTLIST *theIFL, NODE **Nodes,
-                            INT SubdomainID, INT n, INT **node_id)
+                            INT SubdomainID, INT n, INT **node_id, INT MarkKey)
 {
   MULTIGRID *theMG;
   NODE **NodeHandle;
@@ -327,9 +327,9 @@ static INT HandleSubdomain (INDEPFRONTLIST *theIFL, NODE **Nodes,
 
   theMG = MYMG(MYGRID(theIFL));
 
-  NodeHandle = (NODE **) GetMem(theMG->theHeap,n*sizeof(NODE*),FROM_TOP);
+  NodeHandle = (NODE **) GetTmpMem(theMG->theHeap,n*sizeof(NODE*),MarkKey);
   if (NodeHandle==NULL) return (1);
-  SideFlag = (INT *) GetMem(theMG->theHeap,n*sizeof(INT),FROM_TOP);
+  SideFlag = (INT *) GetTmpMem(theMG->theHeap,n*sizeof(INT),MarkKey);
   if (SideFlag==NULL) return (1);
   for (i=0; i<n; i++) SideFlag[i] = 0;
 
@@ -403,7 +403,7 @@ static INT HandleSubdomain (INDEPFRONTLIST *theIFL, NODE **Nodes,
 /*                                                                          */
 /****************************************************************************/
 
-static INT AssembleFrontLists (MULTIGRID *theMG, MESH *mesh)
+static INT AssembleFrontLists (MULTIGRID *theMG, MESH *mesh, INT MarkKey)
 {
   GRID *theGrid;
   NODE *theNode,**Nodes;
@@ -414,7 +414,7 @@ static INT AssembleFrontLists (MULTIGRID *theMG, MESH *mesh)
   numOfSubdomains = mesh->nSubDomains;
   numOfBndP = mesh->nBndP;
 
-  Nodes = (NODE **) GetTmpMem(MGHEAP(theMG),numOfBndP*sizeof(NODE *));
+  Nodes = (NODE **) GetTmpMem(MGHEAP(theMG),numOfBndP*sizeof(NODE *),MarkKey);
   if (Nodes == NULL)
     return(1);
 
@@ -432,13 +432,13 @@ static INT AssembleFrontLists (MULTIGRID *theMG, MESH *mesh)
   if (SingleMode<=0 || SingleMode>numOfSubdomains)
   {
     for (SubdomainID=1; SubdomainID<=numOfSubdomains; SubdomainID++)
-      if (HandleSubdomain (theIFL,Nodes,SubdomainID, mesh->nSides[SubdomainID], mesh->Side_corner_ids[SubdomainID]))
+      if (HandleSubdomain (theIFL,Nodes,SubdomainID, mesh->nSides[SubdomainID], mesh->Side_corner_ids[SubdomainID],MarkKey))
         return (1);
   }
   else
   {
     SubdomainID = SingleMode;
-    if (HandleSubdomain (theIFL,Nodes,SubdomainID, mesh->nSides[SubdomainID], mesh->Side_corner_ids[SubdomainID]))
+    if (HandleSubdomain (theIFL,Nodes,SubdomainID, mesh->nSides[SubdomainID], mesh->Side_corner_ids[SubdomainID],MarkKey))
       return (1);
   }
 
@@ -2251,7 +2251,7 @@ static INT CheckNewElement(FRONTLIST *theFL,  DOUBLE xt[3], DOUBLE yt[3])
   FRONTCOMP *thecompFC;
   VERTEX *theVertex;
   DOUBLE xM, yM, xR, yR, xQ, yQ, lambda1, lambda2;
-  DOUBLE xMQ,yMQ,xMR,yMR,denominator;
+  DOUBLE denominator;
   DOUBLE lambdacomp = MAX_C;
   INT i;
 
@@ -2318,7 +2318,7 @@ static INT Cross_Point(DOUBLE p0[2], DOUBLE n0[2], DOUBLE p1[2], DOUBLE n1[2], D
 
 static DOUBLE Calc_Circumcircusmidpoint(DOUBLE xt[3], DOUBLE yt[3], DOUBLE *midp)
 {
-  DOUBLE p0[2], p1[2], p2[2], n0[2], n1[2], n2[2], cp01[2], cp12[2], cp20[2], l, circ;
+  DOUBLE p0[2], p1[2], p2[2], n0[2], n1[2], n2[2], cp01[2], l;
 
   /* edgemidpoints */
   p0[0] = 0.5 * ( xt[0] + xt[1] );
@@ -2386,7 +2386,7 @@ static FRONTCOMP *CreateDelaunayTriangle (
   DOUBLE meshsize, pos[2], circ, min_circ;
   INT i, subdomain, ok;
   DOUBLE midp[2], np_midp[2], np[2];
-  DOUBLE circ0, circ1, circ2, np_circ;
+  DOUBLE np_circ;
   ELEMENT_2D *help;
 
   min_circ = MAXDOUBLE;
@@ -2577,7 +2577,7 @@ static INT FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContex
 static INT FillDelContext(ELEMENT_CONTEXT* theElementContext, DELAUNAY_CONTEXT* theDelaunayContext)
 {
   DOUBLE xt[3], yt[3], midp[2], radius;
-  INT i, j;
+  INT i;
 
   for(i=0; i<3; i++)
   {
@@ -2681,6 +2681,7 @@ static INT PrintFront(MULTIGRID *theMG)
   }
   printf("#################################################\n");
 
+  return (0);
 }
 
 /****************************************************************************/
@@ -2718,12 +2719,13 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   INT printelem,FlgForAccel,nElement, i, j;
   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS];
   ELEMENT_CONTEXT theElementContext;
-  ELEMENT_2D *elem_context_list, *elem_con_input, *w;
+  ELEMENT_2D *elem_context_list;
   MESH2D mesh_2d;
   ELEMENT_2D *elem_2d;
-
   FRONTCOMP *disp_FC;
   FRONTLIST *disp_FL;
+  INT MarkKey=GetCoarseGridMarkKey();
+
 
   SingleMode = Single_Mode;
   nElement = 0;
@@ -2778,7 +2780,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
     return (4);
   }
 
-  if (AssembleFrontLists (theMG,mesh)!=0)
+  if (AssembleFrontLists (theMG,mesh,MarkKey)!=0)
   {
     return (5);
   }
@@ -2792,13 +2794,13 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   {
     /* allocate memory for mesh_2d */
     elem_context_list = NULL;
-    mesh_2d.nElements = (INT *) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(INT));
+    mesh_2d.nElements = (INT *) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(INT),MarkKey);
     if (mesh_2d.nElements == NULL)
       return(NULL);
-    mesh_2d.Element = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*));
+    mesh_2d.Element = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*),MarkKey);
     if (mesh_2d.Element == NULL)
       return(NULL);
-    mesh_2d.start = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*));
+    mesh_2d.start = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*),MarkKey);
     if (mesh_2d.start == NULL)
       return(NULL);
     for(i=1; i<=theMG->theBVPD.nSubDomains; i++)
@@ -2994,7 +2996,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
           FlgForAccel = FINALCASE;
           /* we make this last element and dispose the list */
 
-          elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D));
+          elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D),MarkKey);
           if (elem_2d == NULL)
             return(NULL);
           elem_2d->succel = NULL;
@@ -3051,7 +3053,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
           return (10);
 
-        elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D));
+        elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D),MarkKey);
         if (elem_2d == NULL)
           return(NULL);
         elem_2d->succel = NULL;

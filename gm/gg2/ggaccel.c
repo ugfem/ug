@@ -99,9 +99,6 @@ static void DELETE_ND ( FRONTCOMP *delete_p );
 
 static INT InitAccelObjs (MULTIGRID *theMG)
 {
-
-  Mark(MGHEAP(theMG),FROM_TOP);
-
   QuObj    = GetFreeOBJT();
   ScObj    = GetFreeOBJT();
   QfclObj  = GetFreeOBJT();
@@ -126,8 +123,6 @@ INT TerminateAccel (MULTIGRID *theMG, INT flag)
   ReleaseOBJT(ScObj);
   ReleaseOBJT(QfclObj);
   ReleaseOBJT(EttObj);
-
-  Release(MGHEAP(theMG),FROM_TOP);
 
   return (0);
 }
