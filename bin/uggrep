@@ -36,7 +36,7 @@ then
 			-type d -name doc -prune -o \
 			-type d -name man -prune -o \
 			\( -name '*.h' -o -name '*.c' -o -name '*.cc' -o -name '*.hh' \) \
-			${FOLLOW_LINKS} -exec egrep $1 {} \; -print
+			${FOLLOW_LINKS} -exec egrep "$1" {} \; -print
 fi
 
 # if two parameters are specified search the specific module for $1
@@ -44,6 +44,6 @@ if test $# -eq 2
 then
 	find ${UGROOT}/$2 \
 		\( -name '*.h' -o -name '*.c' \) \
-		${FOLLOW_LINKS} -exec egrep $1 {} \; -print
+		${FOLLOW_LINKS} -exec egrep "$1" {} \; -print
 fi
 
