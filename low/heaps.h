@@ -1,5 +1,14 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/*! \file heaps.h
+ * \ingroup low
+ */
+
+/** \addtogroup low
+ *
+ * @{
+ */
+
 /****************************************************************************/
 /*                                                                          */
 /* File:      heaps.h                                                       */
@@ -72,16 +81,22 @@ namespace UG3d {
 /* defines for the simple and general heap management                       */
 /****************************************************************************/
 
-#define MIN_HEAP_SIZE   256              /* smallest heap to allocate       */
-#define MARK_STACK_SIZE  20              /* max depth of mark/release calls */
+/** \brief Smallest heap to allocate       */
+#define MIN_HEAP_SIZE   256
 
-#define GENERAL_HEAP      0              /* heap with alloc/free mechanism  */
-#define SIMPLE_HEAP       1              /* heap with mark/release mechanism*/
+/** \brief Max depth of mark/release calls */
+#define MARK_STACK_SIZE  20
 
-#define FROM_TOP          1              /* allocate from top of stack      */
-#define FROM_BOTTOM       2              /* allocate from bottom of stack   */
+enum {GENERAL_HEAP,                  /**< Heap with alloc/free mechanism  */
+      SIMPLE_HEAP                  /**< Heap with mark/release mechanism*/
+};
 
-#define MAXFREEOBJECTS  128                     /* number of free object pionters  */
+enum {FROM_TOP=1,                  /**< Allocate from top of stack      */
+      FROM_BOTTOM=2                  /**< Allocate from bottom of stack   */
+};
+
+/** \brief Number of free object pointers  */
+#define MAXFREEOBJECTS  128
 
 /* by convention, tempory memory on a simple heap should allocated FROM_TOP */
 /* the Freelist memory is allocated FROM_BOTTOM                             */
@@ -91,23 +106,30 @@ namespace UG3d {
 #define ReleaseTmpMem(p,k)       Release(p,FROM_TOP,k)
 
 /****************************************************************************/
-/* defines and macros for the virtual heap management                       */
 /****************************************************************************/
+/** @name Defines and macros for the virtual heap management                 */
 
-#define MAXNBLOCKS         50        /* that many blocks can be allocated   */
-#define SIZE_UNKNOWN        0        /* pass to init routine if no heap yet */
+/** \brief That many blocks can be allocated   */
+#define MAXNBLOCKS         50
+
+/** \brief Pass to init routine if no heap yet */
+#define SIZE_UNKNOWN        0
+
+/** \brief The memory sized neded for the vhm  */
 #define SIZEOF_VHM            sizeof(VIRT_HEAP_MGMT)
-/* the memory sized neded for the vhm  */
 
-#define BHM_OK              0        /* ok return code for virtual heap mgmt*/
+/** \brief Ok return code for virtual heap mgmt*/
+#define BHM_OK              0
 
-/* return codes of DefineBlock */
-#define HEAP_FULL            1       /* return code if storage exhausted    */
-#define BLOCK_DEFINED        2       /* return code if block already defined*/
-#define NO_FREE_BLOCK        3       /* return code if no free block found  */
+/** \brief Return codes of DefineBlock */
+enum {HEAP_FULL =           1,           /**< Return code if storage exhausted    */
+      BLOCK_DEFINED =       2,           /**< Return code if block already defined*/
+      NO_FREE_BLOCK =       3           /**< Return code if no free block found  */
+};
 
 /* return codes of FreeBlock */
-#define BLOCK_NOT_DEFINED    1       /* return code if the block is not def */
+/** \brief Return code if the block is not defined */
+#define BLOCK_NOT_DEFINED    1
 
 /* some useful macros */
 #define OFFSET_IN_HEAP(vhm,id)  (GetBlockDesc((VIRT_HEAP_MGMT*)vhm,id).offset)
@@ -116,6 +138,7 @@ namespace UG3d {
 
 #define CEIL(n)          ((n)+((ALIGNMENT-((n)&(ALIGNMENT-1)))&(ALIGNMENT-1)))
 
+/* @} */
 /****************************************************************************/
 /*                                                                          */
 /* data structures exported by the corresponding source file                */
@@ -159,22 +182,22 @@ typedef struct {
 
 typedef struct {
 
-  INT id;                           /* id for this block                    */
-  MEM offset;                       /* offset of the data in the heap       */
-  MEM size;                         /* size of the data in the heap         */
+  INT id;                           /*!< Id for this block                    */
+  MEM offset;                       /*!< Offset of the data in the heap       */
+  MEM size;                         /*!< Size of the data in the heap         */
 
 } BLOCK_DESC;
 
 typedef struct {
 
-  INT locked;                       /* if TRUE the TotalSize is fixed        */
-  MEM TotalSize;                    /* total size of the associated heap     */
-  MEM TotalUsed;                    /* total size used                       */
-  INT UsedBlocks;                   /* number of blocks initialized          */
-  INT nGaps;                        /* TRUE if a gap between exist. blocks   */
-  MEM LargestGap;                   /* largest free gap between blocks       */
+  INT locked;                       /**< If TRUE the TotalSize is fixed        */
+  MEM TotalSize;                    /**< Total size of the associated heap     */
+  MEM TotalUsed;                    /**< Total size used                       */
+  INT UsedBlocks;                   /**< Number of blocks initialized          */
+  INT nGaps;                        /**< TRUE if a gap between exist. blocks   */
+  MEM LargestGap;                   /**< Largest free gap between blocks       */
   BLOCK_DESC BlockDesc[MAXNBLOCKS];
-  /* the different block descriptors       */
+  /**< The different block descriptors       */
 } VIRT_HEAP_MGMT;
 
 /****************************************************************************/
@@ -203,7 +226,8 @@ extern INT check_of_putcallstack;
 
 INT          InitHeaps                (void);
 
-/* functions for the simple and general heap management */
+/** @name Functions for the simple and general heap management */
+/* @{ */
 HEAP        *NewHeap                (INT type, MEM size, void *buffer);
 void        *GetMem                 (HEAP *theHeap, MEM n, INT mode);
 void            *GetMemUsingKey                 (HEAP *theHeap, MEM n, INT mode, INT key);
@@ -221,17 +245,22 @@ MEM                      HeapFree                               (const HEAP *the
 MEM          HeapFreelistUsed       (const HEAP *theHeap);
 MEM                      HeapTotalFree                  (const HEAP *theHeap);
 void             HeapStat                               (const HEAP *theHeap);
+/* @} */
 
-/* functions for the virtual heap management */
+/** @name Functions for the virtual heap management */
+/* @{ */
 INT          InitVirtualHeapManagement(VIRT_HEAP_MGMT *theVHM, MEM TotalSize);
 MEM          CalcAndFixTotalSize    (VIRT_HEAP_MGMT *theVHM);
 BLOCK_ID     GetNewBlockID            (void);
 BLOCK_DESC  *GetBlockDesc            (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id);
 INT          DefineBlock            (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM size);
 INT          FreeBlock                (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id);
+/* @} */
 
 #ifdef __cplusplus
 }  /* namespace UG{2|3}d */
 #endif
+
+/** @} */
 
 #endif
