@@ -285,6 +285,10 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
 
   /* now special mode */
   if (Bio_Read_string(mg_general->version)) return (1);
+  if (strcmp(mg_general->version,"UG_IO_2.2")==0)
+  {
+    strcpy(mg_general->version,"UG_IO_2.3");
+  }
   if (Bio_Read_string(mg_general->ident)) return (1);
   if (Bio_Read_string(mg_general->DomainName)) return (1);
   if (Bio_Read_string(mg_general->MultiGridName)) return (1);

@@ -45,7 +45,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_2.2"
+#define MGIO_VERSION                                    "UG_IO_2.3"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
@@ -122,6 +122,7 @@
 
 /* defines for MGIO_MG_GENERAL */
 #define MGIO_NAMELEN                            128
+#define MGIO_IDENTLEN               4096
 #define MGIO_NODEVECTOR                         1
 #define MGIO_EDGEVECTOR                         2
 #define MGIO_SIDEVECTOR                         4
@@ -145,7 +146,7 @@ struct mgio_mg_general {
   int mode;                                             /* macros see above							*/
   char version[MGIO_NAMELEN];       /* version of i/o							*/
   int magic_cookie;                             /* identification number					*/
-  char ident[MGIO_NAMELEN];             /* identification string from input file	*/
+  char ident[MGIO_IDENTLEN];            /* identification string from input file	*/
 
   /* parallel part */
   int nparfiles;                                /* number of processors						*/
