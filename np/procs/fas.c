@@ -189,13 +189,13 @@ static INT RestrictSolNodeVector (GRID *FineGrid, const VECDATA_DESC *to, const 
       vc = NVECTOR((NODE*)NFATHER(theNode));
       vecskip = VECSKIP(vc);
       for (i=0; i<ncomp; i++)
-        /*{
-                if (!(vecskip & (1<<j)))
-                        VVALUE(vc,toComp[i]) = damp[i] * VVALUE(v,fromComp[i]);
-           }*/
-        for (i=0; i<ncomp; i++)
-          if (vecskip)
-            VVALUE(vc,toComp[i]) = VVALUE(v,fromComp[i]);
+      {
+        if (!(vecskip & (1<<i)))
+          VVALUE(vc,toComp[i]) = damp[i] * VVALUE(v,fromComp[i]);
+      }
+      for (i=0; i<ncomp; i++)
+        if (vecskip)
+          VVALUE(vc,toComp[i]) = VVALUE(v,fromComp[i]);
     }
     /*else
        {
@@ -686,8 +686,16 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
 
   for (i=0; i<n_unk; i++) damp_factor[i] = -1.0*fas->damp[i];
 
+  /* get multigrid and grid */
+  mg = NP_MG(fas);
+  g = GRID_ON_LEVEL(mg,level);
+
   if (level<=fas->baselevel)
   {
+    /* keep value */
+    if (dcopy(mg,level,level,ALL_VECTORS,fas->l,x))
+      return (1);
+
     for (i=0; i<fas->niter; i++) {
       if ((*fas->nliter->NLIter)
             (fas->nliter,fas->baselevel,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
@@ -697,10 +705,6 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
     }
     return(0);
   }
-  /* get multigrid and grid */
-  mg = NP_MG(fas);
-  g = GRID_ON_LEVEL(mg,level);
-
   /* keep value */
   if (dcopy(mg,level,level,ALL_VECTORS,fas->l,x))
     return (1);
@@ -737,8 +741,8 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
       return (1);
 
   /* interpolate correction */
-  if (dcopy(mg,level-1,level-1,ALL_VECTORS,fas->v,x))
-    return(1);
+  /*if (dcopy(mg,level-1,level-1,ALL_VECTORS,fas->v,x))
+      return(1);*/
   if (daxpyx (mg,level-1,level-1,ALL_VECTORS,fas->v,Factor_Minus_One,fas->l))
     return (1);
   if (StandardInterpolateCorrection(g,fas->v,fas->v,Factor_One))
