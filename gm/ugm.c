@@ -2299,9 +2299,33 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 		NODE *theNode0 = MidNodes[EDGE_OF_SIDE(theElement,j,0)];
 		NODE *theNode1 = MidNodes[EDGE_OF_SIDE(theElement,j,2)];
 
+		/* consider all cases here, because theNode0 or theNode1 may be NULL, */
+		/* but SideNode may exist                                             */
+		if (theNode0==NULL || theNode1==NULL)
+		{
+			theNode0 = theNode1 = NULL;
+			for (i=0; i<EDGES_OF_SIDE(theElement,j); i++)
+			{
+				NODE *MidNode = MidNodes[EDGE_OF_SIDE(theElement,j,i)];
+
+				if (MidNode != NULL)
+				{
+					if (theNode0 == NULL)
+						theNode0 = MidNode;
+					else
+					{
+						theNode1 = MidNode;
+						break;
+					}
+				}
+			}
+			if (theNode0==NULL || theNode1==NULL || theNode0==theNode1)
+				theNode0 = theNode1 = NULL;
+		}
+
 		theNode = NULL;
 
-		if (theNode0 != NULL && theNode1 != NULL)
+		if (theNode0!=NULL && theNode1!=NULL)
 			theNode = GetSideNode(theElement,theNode0,theNode1,j);
 
 		if (theNode!=NULL && VFATHER(MYVERTEX(theNode))==theElement)
@@ -6241,9 +6265,9 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 		LOCAL_TO_GLOBAL(n,x,local,global1);
 		V_DIM_EUKLIDNORM_OF_DIFF(global1,global,diff);
 		if (diff > MAX_PAR_DIST) {
-		    UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX " vertex=" VID_FMTX
+		    UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX "/%d vertex=" VID_FMTX
 			" VFATHER=%x local and global coordinates don't match\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
-			VID_PRTX(theVertex),theFather);
+			NTYPE(theNode),VID_PRTX(theVertex),theFather);
 			nerrors++;
 		}
 	}
