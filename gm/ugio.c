@@ -1131,7 +1131,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   return (0);
 }
 
-MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, DOUBLE_VECTOR global0, DOUBLE_VECTOR global1, DOUBLE_VECTOR global2)
+MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
@@ -1171,7 +1171,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   if (Read_OpenMGFile (filename))                                                                         {return (NULL);}
   if (Read_MG_General(&mg_general))                                                                       {CloseMGFile (); return (NULL);}
   if (mg_general.dim!=DIM)                                                                                        {UserWrite("ERROR: wrong dimension\n");CloseMGFile (); return (NULL);}
-  if (strcmp(mg_general.version,MGIO_VERSION)!=0)                                         {UserWrite("ERROR: wrong version\n");CloseMGFile (); return (NULL);}
+  if (strcmp(mg_general.version,MGIO_VERSION)!=0 && force==0)                                             {UserWrite("ERROR: wrong version\n");CloseMGFile (); return (NULL);}
 
   /* BVP and format */
   if (BVPName==NULL) strcpy(BndValName,mg_general.DomainName);
