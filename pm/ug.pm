@@ -162,10 +162,15 @@ sub ug
 }
 sub float
 {
-	my $real='[+-]?\d*\.?\d*[eE]?[+-]?\d*';
-	my @list;
+	my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+';
+	my (@list,$f,$s);
 
-	@list=split /\s+/,$_[0];
+	if (@_==1) { @list=grep /$real/,split /($real)/,$_[0]; }
+	else 
+	{
+		($f,$s)=split /$_[0]/,$_[1],2;
+		@list=grep /$real/,split /($real)/,$s;
+	}
 	return wantarray ? @list : $list[0];
 }
 
