@@ -2308,7 +2308,8 @@ static INT SaveCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   char Name[NAMESIZE],type[NAMESIZE],Comment[LONGSTRSIZE];
-  INT i,autosave;
+  INT i,autosave,rename,res;
+  int ropt;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -2322,7 +2323,7 @@ static INT SaveCommand (INT argc, char **argv)
     strcpy(Name,ENVITEM_NAME(theMG));
 
   /* check options */
-  autosave=0;
+  autosave=rename=0;
   strcpy(Comment,NO_COMMENT);
   strcpy(type,"asc");
   for (i=1; i<argc; i++)
@@ -2348,13 +2349,18 @@ static INT SaveCommand (INT argc, char **argv)
       autosave=1;
       break;
 
+    case 'r' :
+      res = sscanf(argv[i]," r %d",&ropt);
+      if (res==0 || (res==1 && ropt==1)) rename = 1;
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("save",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
 
-  if (SaveMultiGrid(theMG,Name,type,Comment,autosave)) return (CMDERRORCODE);
+  if (SaveMultiGrid(theMG,Name,type,Comment,autosave,rename)) return (CMDERRORCODE);
 
   return(OKCODE);
 }
@@ -2458,7 +2464,7 @@ static INT SaveDataCommand (INT argc, char **argv)
   char *NamePtr[5];
   EVALUES *theEValues[5];
   EVECTOR *theEVector[5];
-  INT i,j,n,ret,number;
+  INT i,j,n,ret,number,rename;
   int iValue;
   float fValue[3];
   DOUBLE t[3];
@@ -2472,6 +2478,7 @@ static INT SaveDataCommand (INT argc, char **argv)
   strcpy(type,"asc");
   number = -1;
   t[0]=t[1]=t[2]=-1.0;
+  rename=0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -2511,6 +2518,10 @@ static INT SaveDataCommand (INT argc, char **argv)
         return(PARAMERRORCODE);
       }
       break;
+    case 'r' :
+      ret = sscanf(argv[i]," r %d",&iValue);
+      if (ret==0 || (ret==1 && iValue==1)) rename = 1;
+      break;
     }
   if (((t[0]<0.0) && number>=0) || ((t[0]>=0.0) && number<0))
   {
@@ -2539,7 +2550,7 @@ static INT SaveDataCommand (INT argc, char **argv)
     }
 
   if (n<=0) return (PARAMERRORCODE);
-  if (SaveData(theMG,FileName,type,number,t[0],t[1],t[2],n,theVDList,theEValues,theEVector,Names)) return (PARAMERRORCODE);
+  if (SaveData(theMG,FileName,rename,type,number,t[0],t[1],t[2],n,theVDList,theEValues,theEVector,Names)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
@@ -2572,11 +2583,13 @@ static INT LoadDataCommand (INT argc, char **argv)
   VECDATA_DESC *theVDList[5];
   INT i,m,n,number,force;
   int iValue;
+  MEM heapSize;
 
   /* scan filename */
   if (sscanf(argv[0],expandfmt(CONCAT3(" loaddata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
 
   strcpy(type,"asc");
+  heapSize=0;
   force=0;
   number = -1;
   for (i=1; i<argc; i++)
@@ -2606,12 +2619,19 @@ static INT LoadDataCommand (INT argc, char **argv)
         PrintHelp("loaddata",HELPITEM," (number out of range [0,9999])");
         return(PARAMERRORCODE);
       }
+    case 'h' :
+      if (ReadMemSizeFromString(argv[i]+1,&heapSize)!=0)                           /* skip leading 'h' in argv */
+      {
+        PrintHelp("new",HELPITEM," (cannot read heapsize specification)");
+        return(PARAMERRORCODE);
+      }
+      break;
     }
 
   /* open or reopen multigrid */
   if (force)
   {
-    currMG = OpenMGFromDataFile(currMG,number,type,FileName);
+    currMG = OpenMGFromDataFile(currMG,number,type,FileName,heapSize);
     if (currMG==NULL)
     {
       PrintErrorMessage('E',"loaddata","cannot open multigrid");
