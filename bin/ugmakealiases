@@ -69,7 +69,7 @@ do
 	echo "alias cd`basename $i` 'cd \$UGROOT/$i'" >> $UGALIASESFILE;
 done
 
-
+chmod 755 $UGALIASESFILE;
 
 
 # create aliases for application and problem part
