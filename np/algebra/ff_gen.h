@@ -46,6 +46,11 @@
 /*																			*/
 /****************************************************************************/
 
+/* if defined, special BV communication routines are used */
+#ifdef FF_ModelP
+#define FFCOMM
+#endif
+
 #ifndef M_LN2
 #define M_LN2         0.69314718055994530942
 #endif
@@ -77,11 +82,6 @@
 #else
 #define GET_AUX_VEC                                     (FF_Vecs[TOS_FF_Vecs++])
 #define FREE_AUX_VEC(vec)                       (TOS_FF_Vecs--);
-#endif
-
-/* if defined, special BV communication routines are used */
-#ifdef FF_ModelP
-#define FFCOMM
 #endif
 
 /* solve subproblems in MultWithMInv exactly by recursive solving */
@@ -129,18 +129,22 @@
 #ifdef ModelP
 
 #define FFCommBufferBV(bv)      ((FFCommBuffer*)BVUSERDATA(bv))
-#define FFVChannel(bv)      (FFCommBufferBV(bv)->vc)
+#define FFVChannelIn(bv)    (FFCommBufferBV(bv)->vcin)
+#define FFVChannelOut(bv)   (FFCommBufferBV(bv)->vcout)
 #define FFMsgIn(bv)             (FFCommBufferBV(bv)->msgIn)
 #define FFMsgOut(bv)            (FFCommBufferBV(bv)->msgOut)
 #define FFBufferIn(bv)      (FFCommBufferBV(bv)->inbuffer)
 #define FFBufferOut(bv)     (FFCommBufferBV(bv)->outbuffer)
+#define FFSteps(bv)             (FFCommBufferBV(bv)->steps)
+#define FFStepCounter(bv)   (FFCommBufferBV(bv)->stepcounter)
 
-#define FFHasCommBuffer(bv) ((bv)!=NULL && FFCommBufferBV(bv)!=NULL && FFBufferIn(bv)!=NULL && FFBufferOut(bv)!=NULL && FFVChannel(bv)!=NULL)
+#define FFHasCommBuffer(bv) ((bv)!=NULL && FFCommBufferBV(bv)!=NULL && FFBufferIn(bv)!=NULL && FFBufferOut(bv)!=NULL && FFVChannelIn(bv)!=NULL && FFVChannelOut(bv)!=NULL)
 
 #define FFCommTridiagMatSize(bv)        ((3 * BVNUMBEROFVECTORS(bv) - 2) * sizeof(DOUBLE))
 #define FFCommVecSize(bv)                       (BVNUMBEROFVECTORS(bv) * sizeof(DOUBLE))
 #define FFCommSize(bv,ffcommobjt)       ((ffcommobjt)==FFCommVec ? FFCommVecSize(bv) : (ffcommobjt)==FFCommTridiagMat ? FFCommTridiagMatSize(bv) : -1)
 #define FFCommMaxSize(bv)                       FFCommTridiagMatSize(bv)
+
 
 /****************************************************************************/
 /*																			*/
@@ -150,8 +154,9 @@
 
 struct ffcommbuffer
 {
-  VChannelPtr vc;
+  VChannelPtr vcin, vcout;
   msgid msgIn, msgOut;
+  INT steps, stepcounter;
   char *inbuffer, *outbuffer;
   DOUBLE bufferspace[1];                /* will be extended at allocation time! */
   /* type DOUBLE neccessary for maximal alignment */
@@ -161,9 +166,7 @@ typedef struct ffcommbuffer FFCommBuffer;
 
 typedef enum ffcommobject {FFCommNone,FFCommVec,FFCommTridiagMat} FFCommObjectType;
 
-typedef void (*FFBufferProc)(char *bp, BLOCKVECTOR *bv);
-typedef INT (*FFStartProc)(BLOCKVECTOR *bv, FFCommObjectType ffcommobjt, FFBufferProc b_proc);
-typedef INT (*FFFinishFct)(BLOCKVECTOR *bv, FFBufferProc b_proc);
+typedef INT (*FFBufferFunc)(BLOCKVECTOR *bv, FFCommObjectType ffcommobjt);
 
 #endif
 
@@ -219,13 +222,14 @@ extern INT aux6_COMP;
 /****************************************************************************/
 
 #ifdef ModelP
-INT FFStartDeallocBuffer( BLOCKVECTOR *bv, FFCommObjectType ffcommobjt, FFBufferProc b_proc );
-INT FFFinishDeallocBuffer( BLOCKVECTOR *bv, FFBufferProc b_proc );
+INT FFStartDeallocBuffer( BLOCKVECTOR *bv, FFCommObjectType ffcommobjt );
+INT FFFinishDeallocBuffer( BLOCKVECTOR *bv, FFCommObjectType ffcommobjt );
 
-INT FFStartComm( BLOCKVECTOR *bv, FFStartProc s_proc, FFCommObjectType ffcommobjt, FFBufferProc b_proc );
-void FFFinishComm( BLOCKVECTOR *bv, FFFinishFct f_fct, FFBufferProc b_proc, INT calls );
-void FFVectorConsistent( BLOCKVECTOR *bv, INT v_comp );
-void FFTridiagMatConsistent( BLOCKVECTOR *bv, INT m_comp );
+INT FFStartComm( BLOCKVECTOR *bv, FFBufferFunc b_func, FFCommObjectType ffcommobjt );
+void FFFinishComm( BLOCKVECTOR *bv, FFBufferFunc b_func, FFCommObjectType ffcommobjt, INT calls );
+void FFMakeConsistent( BLOCKVECTOR *bv, FFCommObjectType ffcommobjt, INT comp );
+#define FFVectorConsistent(bv,v_comp)           (FFMakeConsistent(bv,FFCommVec,v_comp))
+#define FFTridiagMatConsistent(bv,m_comp)       (FFMakeConsistent(bv,FFCommTridiagMat,m_comp))
 #endif
 
 

@@ -3150,7 +3150,8 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
   theMG = np->smoother.iter.base.mg;
 
 #ifdef FF_ModelP
-  num_buffers = FFStartComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFStartDeallocBuffer, FFCommNone, NULL );
+  num_buffers = FFStartComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFStartDeallocBuffer, FFCommNone );
+  num_buffers = FFStartComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFStartDeallocBuffer, FFCommNone );
 #endif
 
   if (NPFF_tv(np) != NULL)
@@ -3179,7 +3180,8 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
   }
 
 #ifdef FF_ModelP
-  FFFinishComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFFinishDeallocBuffer, NULL, num_buffers );
+  FFFinishComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFFinishDeallocBuffer, FFCommNone, num_buffers );
+  FFFinishComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFFinishDeallocBuffer, FFCommNone, num_buffers );
 #endif
 
   FreeAllBV( GRID_ON_LEVEL(theMG,level) );

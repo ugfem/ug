@@ -989,17 +989,15 @@ INT FFDecomp( DOUBLE wavenr,
       ConstructSchurFFApprox( bv_im1, bv_i, bvd_im1, bvd_i, bvdf, tv1_comp, tv2_comp, grid );
 
                         #ifdef ModelP
-      ASSERT(grid!=NULL);
       /* make Schur complement matrix for lines consistent */
-      printf(PFMT " vor\n",me);
-      printmBS(bv_i,bv_i,FF_comp);
+      /*printf(PFMT" vor\n",me);printmBS(bv_i,bv_i,FF_comp);*/
 #ifdef FFCOMM
       FFTridiagMatConsistent( bv_i, FF_comp );
 #else
+      ASSERT(grid!=NULL);
       if( l_matrix_consistent( grid, DECOMP_MATDATA_DESC_ON_LEVEL(bv), MAT_CONS )!=NUM_OK ) REP_ERR_RETURN(NUM_ERROR);
 #endif
-      printf(PFMT " nach\n",me);
-      printmBS(bv_i,bv_i,FF_comp);
+      /*printf(PFMT" nach\n",me);printmBS(bv_i,bv_i,FF_comp);*/
                         #endif
     }
     else
@@ -1009,9 +1007,13 @@ INT FFDecomp( DOUBLE wavenr,
                         #ifdef ModelP
       if ( BVNUMBER(bv_i) == -101 )                     /* crosspoints */
       {
-        ASSERT(grid!=NULL);
         /* make Schur complement matrix for cross points consistent */
+#ifdef FFCOMM
+        FFTridiagMatConsistent( bv_i, FF_comp );
+#else
+        ASSERT(grid!=NULL);
         if( l_matrix_consistent( grid, DECOMP_MATDATA_DESC_ON_LEVEL(bv), MAT_CONS )!=NUM_OK ) REP_ERR_RETURN(NUM_ERROR);
+#endif
       }
                         #endif
     }
