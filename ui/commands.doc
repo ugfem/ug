@@ -38,7 +38,7 @@
 
 \section Syntax
    'mute \<value>'
-.   \<value> - integer which gives the mutelevel
+  <li>  \<value> - integer which gives the mutelevel
 
    REMARK:
    Formally, this is not an ug command, 'mute' is checked in 
@@ -59,9 +59,9 @@
 \section Syntax
    help [[\<helpitem>] $k]
 
-.   no~option      - this is  equivalent to 'help help'
-.   \<helpitem>     - print help for \<helpitem> (string)
-.   $k             - search for keyword \<helpitem> (multiple occurence)
+  <li>  no~option      - this is  equivalent to 'help help'
+  <li>  \<helpitem>     - print help for \<helpitem> (string)
+  <li>  $k             - search for keyword \<helpitem> (multiple occurence)
 
  \section Example
    'help PlotObj'
@@ -106,8 +106,8 @@
 \section Syntax
    'cmfn \<name> \<var>'
 
-.  \<name> - first part of the metafile names
-.  \<var> - the contents of var will be appended to the name
+  <li> \<name> - first part of the metafile names
+  <li> \<var> - the contents of var will be appended to the name
 
  \section Example
 \verbatim
@@ -186,9 +186,9 @@ repeat {
 \section Syntax
    'date [$s] [$S]'
 
-.  no~option - print the date to the shell
-.  $s  		 -  put in the string variable ':date'.
-.  $S   	 -  use short format of the form yy.mm.dd
+  <li> no~option - print the date to the shell
+  <li> $s  		 -  put in the string variable ':date'.
+  <li> $S   	 -  use short format of the form yy.mm.dd
    
  \section Keywords
    time, calendar
@@ -227,8 +227,8 @@ repeat {
 \section Syntax
    'cd [\<path>]'
 
-.  no~option - cd to root (cd /)
-.  \<path>	 - \<path> contains the relative or absolute path in UNIX-style
+  <li> no~option - cd to root (cd /)
+  <li> \<path>	 - \<path> contains the relative or absolute path in UNIX-style
    
  \section Keywords
    environment, directory, working
@@ -275,10 +275,10 @@ repeat {
 \section Syntax
    'set {\<struct> \<value>} | {[\<structdir> | \<struct>] [$r]}'
 
-.  \<struct>~\<value>   			- assign \<value> (just a string of arbitrary length) to \<struct>
-.  [\<structdir>|\<struct>]~[$r]  - display contents of \<struct> or \<structdir> 
+  <li> \<struct>~\<value>   			- assign \<value> (just a string of arbitrary length) to \<struct>
+  <li> [\<structdir>|\<struct>]~[$r]  - display contents of \<struct> or \<structdir> 
 .n                                (default: current struct dir)
-.  $r        					- specifies the directory, its contents is listed recursively
+  <li> $r        					- specifies the directory, its contents is listed recursively
    
  \section Keywords
    variable, create, set, assign, value, struct, show, display, print
@@ -296,7 +296,7 @@ repeat {
 \section Syntax
    dv \<variable name>
 
-.  \<variable name>    - \<variable name> consists of a complete path related to the
+  <li> \<variable name>    - \<variable name> consists of a complete path related to the
                         current struct dir or the structure root directory in the environment
    
  \section Keywords
@@ -317,7 +317,7 @@ repeat {
 \section Syntax
    'ms \<structdir>'
 
-.  \<structdir>     - the \<structdir> consists of a complete path related to the
+  <li> \<structdir>     - the \<structdir> consists of a complete path related to the
                      current struct dir or the string variable root in the environment
    
  \section Keywords
@@ -338,7 +338,7 @@ repeat {
 \section Syntax
    'cs \<structdir>'
 
-.  \<structdir>   - the \<structdir> consists of a complete path related to the
+  <li> \<structdir>   - the \<structdir> consists of a complete path related to the
                    current struct dir or the string variable root in the environment
    
  \section Keywords
@@ -370,7 +370,7 @@ repeat {
 \section Syntax
    'ds \<structdir>'
 
-.  \<structdir>   - the \<structdir> consists of a complete path related to the
+  <li> \<structdir>   - the \<structdir> consists of a complete path related to the
 .n                 current struct dir or the string variable root in the environment
    
  \section Keywords
@@ -394,11 +394,11 @@ repeat {
 \section Syntax
    'protocol {$i[ ]\<verbatim text> | $n[ ]\<verbatim text> | $t[ ]\<verbatim text> | $f}*'
 
-.   $%i   - append \<verbatim text> to protocol file
-.   $%n   - write a line feed and append \<verbatim text> to protocol file
-.   $%t   - write a tab and append \<verbatim text> to protocol file
+  <li>  $%i   - append \<verbatim text> to protocol file
+  <li>  $%n   - write a line feed and append \<verbatim text> to protocol file
+  <li>  $%t   - write a tab and append \<verbatim text> to protocol file
 .n          NOTE: the first space (if there) following the option character is skipped
-.   $%f   - flush the file buffer
+  <li>  $%f   - flush the file buffer
 
   \section Example
 \verbatim
@@ -430,11 +430,11 @@ Then, the file 'exp.proto' will consist of the string
 \section Syntax
    'protoOn \<filename> [$r[!] | $a]'
 
-.   \<filename>  - name of the protocol file      
-.    $r!        - if a file named \<filename> exist already, rename it to \<filename>.saved
+  <li>  \<filename>  - name of the protocol file      
+  <li>   $r!        - if a file named \<filename> exist already, rename it to \<filename>.saved
 .n                break if the renaming fails
-.   $r          - like above but proceed even if renaming fails
-.   $a          - append to existing file named \<filename>
+  <li>  $r          - like above but proceed even if renaming fails
+  <li>  $a          - append to existing file named \<filename>
    
  \section Keywords
    protocol, file, open, output, format
@@ -470,12 +470,12 @@ Then, the file 'exp.proto' will consist of the string
 \section Syntax
    'logon \<logfilename> [$p] [$e] [$a] [$f] [$r [0|1]]'
 
-.   \<filename>  - name of logfile
-.   $p			- write log to open protocol file
-.   $e			- extend filename with numbers of processors (parallel only)
-.   $a			- extend filename with processor id (parallel only)
-.   $f			- force (close open logfile iff)
-.   $r~[0|1]	- 0: replace (default), 1: rename existing log file (using modification date)
+  <li>  \<filename>  - name of logfile
+  <li>  $p			- write log to open protocol file
+  <li>  $e			- extend filename with numbers of processors (parallel only)
+  <li>  $a			- extend filename with processor id (parallel only)
+  <li>  $f			- force (close open logfile iff)
+  <li>  $r~[0|1]	- 0: replace (default), 1: rename existing log file (using modification date)
    
  \section Keywords
    protocol, file, open, output
@@ -494,7 +494,7 @@ Then, the file 'exp.proto' will consist of the string
 \section Syntax
    'logoff $p'
    
-.  $p - logging is detached from open protocol file
+  <li> $p - logging is detached from open protocol file
 
  \section Keywords
    protocol, file, close, output
@@ -551,7 +551,7 @@ Then, the file 'exp.proto' will consist of the string
 \section Syntax
    'close [$a]'
 
-.   $a  - close all multigrids
+  <li>  $a  - close all multigrids
    
  \section Keywords
    multigrid, close
@@ -608,15 +608,15 @@ Then, the file 'exp.proto' will consist of the string
 \section Syntax
    'open \<filename> [$t \<type>] [$m \<mg name>] [$b \<problem>] [$f \<format>] [$h \<heapsize>]'
 
-.  \<filename>             		- the name of the multigrid file (the fule name will be composed
+  <li> \<filename>             		- the name of the multigrid file (the fule name will be composed
 									to: \<filename>.ug.mg.\<type>
-.  $t~\<type>					- file was saved with type: asc (default) or bin
-.  \<mg~name>					- grid will be created with this name
-.  $p~\<boundary~value~problem>	- a boundary value problem
+  <li> $t~\<type>					- file was saved with type: asc (default) or bin
+  <li> \<mg~name>					- grid will be created with this name
+  <li> $p~\<boundary~value~problem>	- a boundary value problem
 									(overrides saved one)
-.  $f~\<format>            		- one of the enroled formats matching with \<boundary value problem>
+  <li> $f~\<format>            		- one of the enroled formats matching with \<boundary value problem>
 									(overrides saved one)
-.  $h~\<heapsize>          		- the heapsize to be allocated
+  <li> $h~\<heapsize>          		- the heapsize to be allocated
 									(overrides saved one)
    
  \section Keywords
@@ -636,13 +636,13 @@ Then, the file 'exp.proto' will consist of the string
 \section Syntax
    'save [\<name>] [$t \<type>] [$r [0|1]] [$c \<comment>]'
 
-.  \<name>                  - name to save with (default is the mgname)
+  <li> \<name>                  - name to save with (default is the mgname)
 .n								if name is ending in .scr a script file is saved which
 								will generate the surface of the grid as level 0 on execution
-.  $t~\<type>			   - type can be asc (default> or bin. asc and bin can be opened with
+  <li> $t~\<type>			   - type can be asc (default> or bin. asc and bin can be opened with
 								the open command
-.  $c~\<comment>            - optionally specify a comment string
-.  $r~[0|1]                - 0: replace (default), 1: rename existing mg file (using modification date)
+  <li> $c~\<comment>            - optionally specify a comment string
+  <li> $r~[0|1]                - 0: replace (default), 1: rename existing mg file (using modification date)
    
  \section Keywords
    multigrid, save, write, data, file, output
@@ -737,12 +737,12 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'savedata \<filename> [$t \<type>] [$n \<number>] [$T \<time>] [$r [0|1]] [$a \<vd name> [$b \<vd name>[$c \<vd name>[$d \<vd name>[$e \<vd name>]]]]]'
    
-.  \<filename>		- the filename will be composed to \<filename>.ug.data.\<type>
-.  $t~\<type>		- type can be asc (default) or bin
-.  $n~\<number>		- picture number for movie
-.  $T~\<time>		- assign this time level
-.  $a~\<vd name>...	- read data from this vec data descriptors
-.  $r~[0|1]			- 0: replace (default), 1: rename existing data file (using modification date)
+  <li> \<filename>		- the filename will be composed to \<filename>.ug.data.\<type>
+  <li> $t~\<type>		- type can be asc (default) or bin
+  <li> $n~\<number>		- picture number for movie
+  <li> $T~\<time>		- assign this time level
+  <li> $a~\<vd name>...	- read data from this vec data descriptors
+  <li> $r~[0|1]			- 0: replace (default), 1: rename existing data file (using modification date)
    
  \section Keywords
    multigrid, save, write, data, file, output
@@ -761,14 +761,14 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'loaddata \<filename> [$t \<type>] [$n \<number>] [$f [$h \<heapsize>]] [$a \<vd name> [$b \<vd name>[$c \<vd name>[$d \<vd name>[$e \<vd name>]]]]]'
    
-.  \<filename>		- the filename will be composed to \<filename>.ug.data.\<type>
-.  $t~\<type>		- type can be asc (default) or bin
-.  $n~\<number>		- picture number of movie
-.  $f				- open or reopen multigrid corresponding to data file
-.  $h~\<heapsize>    - the heapsize to be allocated
+  <li> \<filename>		- the filename will be composed to \<filename>.ug.data.\<type>
+  <li> $t~\<type>		- type can be asc (default) or bin
+  <li> $n~\<number>		- picture number of movie
+  <li> $f				- open or reopen multigrid corresponding to data file
+  <li> $h~\<heapsize>    - the heapsize to be allocated
 									(overrides saved one)
-.  $a~\<vd name>...	- save data to this vec data descriptors
-.  $r 				- read data in current multigrid
+  <li> $a~\<vd name>...	- save data to this vec data descriptors
+  <li> $r 				- read data in current multigrid
    
  \section Keywords
    multigrid, load, read, file, data
@@ -787,7 +787,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'changemc \<mc>'
    
-.  \<mc>				- new magic cookie
+  <li> \<mc>				- new magic cookie
    
  \section Keywords
    multigrid, load, read, file, data
@@ -806,9 +806,9 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    level \<level> | + | -
 
-.  \<level> - go to level \<level>
-.  +       - go to the next finer level 
-.  -       - go to the next coarser level 
+  <li> \<level> - go to level \<level>
+  <li> +       - go to the next finer level 
+  <li> -       - go to the next coarser level 
    
  \section Keywords
    multigrid, current
@@ -857,7 +857,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'mglist [$s]'
 
-.  $s - short format for less information
+  <li> $s - short format for less information
    
  \section Keywords
    multigrid, list, display, show
@@ -889,17 +889,17 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'nlist {$s | $i \<fromID> [\<toID>] | $g \<global id> | $k \<key>} [$d] [$b] [$n] [$v] [$a]'
 
-.  $s  - list info for the selected nodes
-.  $i  - list info for nodes with an ID in the range \<fromID> through \<toID>
+  <li> $s  - list info for the selected nodes
+  <li> $i  - list info for nodes with an ID in the range \<fromID> through \<toID>
          if \<fromID> is omitted only the node with \<fromID> is listed
-.  $g \<glob. id>- list info for node with global id (only for ModelP)
-.  $k \<key>     - list info for node with key
+  <li> $g \<glob. id>- list info for node with global id (only for ModelP)
+  <li> $k \<key>     - list info for node with key
 
-.  $d  - up to version 2.3 ONLY: list also user data space
-.  $b  - print additional info for boundary nodes
-.  $n  - list also neighbours of each node
-.  $v  - print extended info (verbose mode)
-.  $a  - list all nodes
+  <li> $d  - up to version 2.3 ONLY: list also user data space
+  <li> $b  - print additional info for boundary nodes
+  <li> $n  - list also neighbours of each node
+  <li> $v  - print extended info (verbose mode)
+  <li> $a  - list all nodes
    
  \section Keywords
    multigrid, node, link, list, display, show
@@ -916,18 +916,18 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'elist $s | {$i \<fromID> [\<toID>]} [$d] [$b] [$n] [$v] [$a]'
 
-.  $s  - list info for the selected elements
-.  $i  - list info for elements with an ID in the range \<fromID> through \<toID>
+  <li> $s  - list info for the selected elements
+  <li> $i  - list info for elements with an ID in the range \<fromID> through \<toID>
          if \<fromID> is omitted only the element with \<fromID> is listed
-.  $g \<glob. id>- list info for element with global id (only for ModelP)
-.  $k \<key>     - list info for element with key
+  <li> $g \<glob. id>- list info for element with global id (only for ModelP)
+  <li> $k \<key>     - list info for element with key
 
-.  $d  - up to version 2.3 ONLY: list also user data space
-.  $b  - print additional info for boundary elements
-.  $n  - list also neighbours of each element
-.  $v  - print extended info (verbose mode)
-.  $l  - list only elements of current level
-.  $a  - list all elements
+  <li> $d  - up to version 2.3 ONLY: list also user data space
+  <li> $b  - print additional info for boundary elements
+  <li> $n  - list also neighbours of each element
+  <li> $v  - print extended info (verbose mode)
+  <li> $l  - list only elements of current level
+  <li> $a  - list all elements
    
  \section Keywords
    multigrid, element, list, display, show
@@ -945,10 +945,10 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'slist [$d] [$b] [$n] [$v]'
 
-.   $d  - up to version 2.3 ONLY: list also user data space
-.   $b  - print additional info for boundary nodes/elements
-.   $n  - list also neighbours of each node/element
-.   $v  - print extended info (verbose mode)
+  <li>  $d  - up to version 2.3 ONLY: list also user data space
+  <li>  $b  - print additional info for boundary nodes/elements
+  <li>  $n  - list also neighbours of each node/element
+  <li>  $v  - print extended info (verbose mode)
    
  \section Keywords
    multigrid, selection, list, display, show
@@ -968,7 +968,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'rlist [tri|qua|tet|hex] {[rulenumber] | [$a]}'
 
-.  $a  - list all rules for element type
+  <li> $a  - list all rules for element type
    
  \section Keywords
    multigrid, element, rule, type, list, display, show
@@ -1036,7 +1036,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'in \<x> \<y> [\<z>]'
 
-.  \<x>~\<y>~[\<z>] - specify as much coordinates as the space has dimensions
+  <li> \<x>~\<y>~[\<z>] - specify as much coordinates as the space has dimensions
    
  \section Keywords
    multigrid, insert, create, node, edit
@@ -1056,8 +1056,8 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 
    for the domain module std .... is
    '\<Id> \<s> [\<t>]'
-.  \<Id>        	- insert a boundary node on the patch with \<Id>
-.  \<s>~[\<t>]    - specify as much patch coordinates as the boundary has dimensions
+  <li> \<Id>        	- insert a boundary node on the patch with \<Id>
+  <li> \<s>~[\<t>]    - specify as much patch coordinates as the boundary has dimensions
    
  \section Keywords
    multigrid, insert, create, node, edit
@@ -1077,8 +1077,8 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'gn \<x> \<y> [\<z>] [$r \<res>]'
    
-.  \<x>~\<y>~[\<z>]		- global coordinates 
-.  $r~\<res>				- resolution
+  <li> \<x>~\<y>~[\<z>]		- global coordinates 
+  <li> $r~\<res>				- resolution
 
  \section Keywords
    multigrid, insert, create, node, edit
@@ -1095,8 +1095,8 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'deln \<Id> | $s'
 
-.  \<Id>  - ID of the node to be deleted
-.  $s    - delete ALL nodes from the selection
+  <li> \<Id>  - ID of the node to be deleted
+  <li> $s    - delete ALL nodes from the selection
    
  \section Keywords
    multigrid, delete, remove, node, edit
@@ -1114,9 +1114,9 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'move {\<Id> | $s} {$i \<x> \<y> [\<z>] | $b \<SegId> \<s> [\<t>]}'
 
-.  \<Id>                - Id of the node to be moved
-.  $i~\<x>~\<y>~[\<z>]    - specify as much coordinates as the space has dimensions
-.  $b~\<Id>~\<s>~[\<t>]   - in the current implementation (domain module dependent)
+  <li> \<Id>                - Id of the node to be moved
+  <li> $i~\<x>~\<y>~[\<z>]    - specify as much coordinates as the space has dimensions
+  <li> $b~\<Id>~\<s>~[\<t>]   - in the current implementation (domain module dependent)
 		 				 boundary nodes can not be moved
    
  \section Keywords
@@ -1135,8 +1135,8 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'ie {\<Id>}+ | $s'
 
-.  {\<Id>}+  - specify at least three (2d) or four (3d) corner nodes, the corresponding (unique) element will be created
-.  $s 		- taking selected nodes 
+  <li> {\<Id>}+  - specify at least three (2d) or four (3d) corner nodes, the corresponding (unique) element will be created
+  <li> $s 		- taking selected nodes 
    
  \section Keywords
    multigrid, insert, create, element, edit
@@ -1153,8 +1153,8 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'dele \<Id> | $s'
 
-.  \<Id> - ID of the element to be deleted
-.  $s   - delete all elements from the selection
+  <li> \<Id> - ID of the element to be deleted
+  <li> $s   - delete all elements from the selection
    
  \section Keywords
    multigrid, delete, remove, element, edit
@@ -1165,21 +1165,23 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /** \page adapt adapt - Adapt the current multigrid
 
  \section Description
-   This command adapt the multigrid according to the refinement marks 
-   set in the elements, calling the function 'AdaptMultiGrid'.
+   This command adapts the multigrid according to the refinement marks 
+   set in the elements, calling the function AdaptMultiGrid().
    If coarsen marks are set refinements are deleted.
 
 \section Syntax
    'adapt [$g] [$a] [$h] [$x] [$d \<vector plot proc>]'
 
-.  no~option				- only local refinement
-.  $g						- copy nonrefined regions to new level 
-.  $a						- refine all elements
-.  $d~\<vector~plot~proc>	- 3D only: use vector eval proc for determination of
-								regular refinement direction of tetrahedra
-.  $h						- refine not closed (not implemented yet)
-.  $x						- use hexahedra (not implemented yet)
-   
+<ul>
+  <li> no~option		- only local refinement </li>
+  <li> $g			- copy nonrefined regions to new level  </li>
+  <li> $a			- refine all elements </li>
+  <li> $d~\<vector~plot~proc>	- 3D only: use vector eval proc for determination of
+				regular refinement direction of tetrahedra </li>
+  <li> $h			- refine not closed (not implemented yet) </li>
+  <li> $x			- use hexahedra (not implemented yet) </li>
+</ul>   
+
  \section Keywords
    multigrid, adapt, mark
 */
@@ -1222,16 +1224,16 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'mark [$h | {[\<rule> [\<side>]] [$a | $i \<Id> | $s]} | $c] [$pos \<x y [z]>] [$x \<x>] [$y \<y>] [$z \<z>]'
 
-.  \<rule>     - specify a refinement rule ("red" is default)
-.  \<side>     - has to be specified if the corresponding rule can be applied in several orientations
-.  $a         - refine all (leave) elements
-.  $c		  - set all marks to no refinement
-.  $i \<Id>    - refine the element with \<Id>
-.  $s         - refine all elements from the current selection
-.  $h         - show available rules
-.  $x         - marks elements with corner[0] \< x
-.  $y         - marks elements with corner[1] \< y
-.  $z         - marks elements with corner[2] \< z
+  <li> \<rule>     - specify a refinement rule ("red" is default)
+  <li> \<side>     - has to be specified if the corresponding rule can be applied in several orientations
+  <li> $a         - refine all (leave) elements
+  <li> $c		  - set all marks to no refinement
+  <li> $i \<Id>    - refine the element with \<Id>
+  <li> $s         - refine all elements from the current selection
+  <li> $h         - show available rules
+  <li> $x         - marks elements with corner[0] \< x
+  <li> $y         - marks elements with corner[1] \< y
+  <li> $z         - marks elements with corner[2] \< z
    
  \section Keywords
    multigrid, refine, adapt, rule, type, mark
@@ -1251,9 +1253,9 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'smooth \<nIt\> [$b] [$nc]'
 
-.    \<nIt>   - number of iterations
-.    $b      - also smooth boundary nodes
-.    $nc     - improvement for nonconvex domains
+  <li>   \<nIt>   - number of iterations
+  <li>   $b      - also smooth boundary nodes
+  <li>   $nc     - improvement for nonconvex domains
    
  \section Keywords
    multigrid
@@ -1300,9 +1302,9 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'ordernodes ur|ul|dr|dl|ru|rd|lu|ld [$l \<level>] [$L]'
 
-.   $l~\<level> - only on level \<level>
+  <li>  $l~\<level> - only on level \<level>
 .n   			   u=up, d=down, r=right, l=left
-.   $L		   - also order links
+  <li>  $L		   - also order links
 
   \section Example
 	'ordernodes rd $l2'
@@ -1328,11 +1330,11 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'lexorderv ur|ul|dr|dl|ru|rd|lu|ld [$l \<level>] [$m] [$w s|n] [$s \<|>]'
 
-.   $l~\<level> - only on level \<level>
+  <li>  $l~\<level> - only on level \<level>
 .n   			   u=up, d=down, r=right, l=left
-.   $m		   - also order matrices
-.   $w~s|n	   - order skip or nonskip vectors resp.
-.   $s \<|>	   - put skip vectors at begin or end of the list resp.
+  <li>  $m		   - also order matrices
+  <li>  $w~s|n	   - order skip or nonskip vectors resp.
+  <li>  $s \<|>	   - put skip vectors at begin or end of the list resp.
    
  \section Keywords
    multigrid, order
@@ -1350,9 +1352,9 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'shellorderv f | l | s'
 
-.  f - take first vector as seed
-.  l - take last vector as seed
-.  s - take selected vector as seed
+  <li> f - take first vector as seed
+  <li> l - take last vector as seed
+  <li> s - take selected vector as seed
 
  \section Keywords
    multigrid, order, shell
@@ -1371,10 +1373,10 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'orderv $m FFCCLL | FCFCLL $d \<dep-proc> $o \<dep-proc options> $c \<find-cut-proc> [$a]'
 
-.  $m FFCCLL | FCFCLL     - possible modes are FFCCLL or FCFCLL
-.  $d \<dep-proc>          - the ordering algorithm uses this dependency procedure...
-.  $o \<dep-proc options>  - ...and passes these options to it
-.  $a                     - order all levels of the current multigrid
+  <li> $m FFCCLL | FCFCLL     - possible modes are FFCCLL or FCFCLL
+  <li> $d \<dep-proc>          - the ordering algorithm uses this dependency procedure...
+  <li> $o \<dep-proc options>  - ...and passes these options to it
+  <li> $a                     - order all levels of the current multigrid
 
    SEE ALSO:
    'lineorderv'
@@ -1394,7 +1396,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'revvecorder [$a]'
 
-.  $a  - reorder all levels of the current multigrid
+  <li> $a  - reorder all levels of the current multigrid
    
  \section Keywords
    multigrid, order, reverse
@@ -1413,11 +1415,11 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'lineorderv $d \<dep-proc> $o \<dep-proc options> $c \<find-cut-proc> [$a] [$v \<level>]'
 
-.  $d \<dep-proc>          - the ordering algorithm uses this dependency procedure...
-.  $o \<dep-proc options>  - ...and passes these options to it
-.  $c					  - user supplied find cut procedure
-.  $a                     - order all levels of the current multigrid
-.  $v~\<level>			  - verbose level
+  <li> $d \<dep-proc>          - the ordering algorithm uses this dependency procedure...
+  <li> $o \<dep-proc options>  - ...and passes these options to it
+  <li> $c					  - user supplied find cut procedure
+  <li> $a                     - order all levels of the current multigrid
+  <li> $v~\<level>			  - verbose level
 
    SEE ALSO:
    'orderv'
@@ -1453,11 +1455,11 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    find \<x> \<y> \<z> {$n \<tol> | $v \<tol> | $e} [$s]
 
-.  \<x> \<y> \<z> - specify as much coordinates as the space has dimensions
-.  $n \<tol>    - find a node maching the position with tolerance \<tol>
-.  $v \<tol>    - find a vector maching the position with tolerance \<tol>
-.  $e          - find an element maching the position
-.  $s          - add the selected node (element) to the selection buffer
+  <li> \<x> \<y> \<z> - specify as much coordinates as the space has dimensions
+  <li> $n \<tol>    - find a node maching the position with tolerance \<tol>
+  <li> $v \<tol>    - find a vector maching the position with tolerance \<tol>
+  <li> $e          - find an element maching the position
+  <li> $s          - add the selected node (element) to the selection buffer
                	 (if not specified the node is just listed)
    
  \section Keywords
@@ -1480,10 +1482,10 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'select $i | $c | $n {+|-} \<Id> | $e {+|-} \<Id>'
 
-.  $i				- print type and number of list members
-.  $c               - clear the selection buffer
-.  $n~{+|-}~\<Id>    - add (+) or remove (-) the node with \<Id> to (from) the selection buffer
-.  $e~{+|-}~\<Id>    - add (+) or remove (-) the element with \<Id> to (from) the selection buffer
+  <li> $i				- print type and number of list members
+  <li> $c               - clear the selection buffer
+  <li> $n~{+|-}~\<Id>    - add (+) or remove (-) the node with \<Id> to (from) the selection buffer
+  <li> $e~{+|-}~\<Id>    - add (+) or remove (-) the element with \<Id> to (from) the selection buffer
    
  \section Keywords
    multigrid, select, element, node
@@ -1501,7 +1503,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'extracon [$d]'
 
-.  $c - also check the connections
+  <li> $c - also check the connections
    
  \section Keywords
    multigrid, matrices, connections, pattern, delete, remove
@@ -1520,14 +1522,14 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'check {$a | $g | $c | $l | $i | $w}* [$n]'
 
-.  $a - all possible checks are done
-.  $g - check the geometric part of data structures (default)
-.  $c - also check the algebraic part of data structures
-.  $l - also check the lists of objects and counters of a grid
-.  $i - also check interfaces (only parallel version)
-.  $b - also check boundary value problems
-.  $n - also check the numerical part of data structures
-.  $w - print a list of all control words of object types with control entries to stdout
+  <li> $a - all possible checks are done
+  <li> $g - check the geometric part of data structures (default)
+  <li> $c - also check the algebraic part of data structures
+  <li> $l - also check the lists of objects and counters of a grid
+  <li> $i - also check interfaces (only parallel version)
+  <li> $b - also check boundary value problems
+  <li> $n - also check the numerical part of data structures
+  <li> $w - print a list of all control words of object types with control entries to stdout
    
  \section Keywords
    multigrid, check, consistency, data structure, algebra, counters, interfaces
@@ -1546,13 +1548,13 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'quality $a | $s | {$i \<fromID> [\<toID>]} [$\< \<angle>] [$> \<angle>]'
 
-.    $a          - check angles of all elements in the multigrid
-.    $s          - check angles of the selected elements
-.    $i          - check angles of elements with an ID in the range \<fromID> through \<toID>
+  <li>   $a          - check angles of all elements in the multigrid
+  <li>   $s          - check angles of the selected elements
+  <li>   $i          - check angles of elements with an ID in the range \<fromID> through \<toID>
 .n                 if \<fromID> is omitted only the element with \<fromID> is listed
 
-.    $\<~\<angle>  - print info for all elements the minangle of which is \< \<angle>
-.    $>~\<angle>  - print info for all elements the maxangle of which is > \<angle>
+  <li>   $\<~\<angle>  - print info for all elements the minangle of which is \< \<angle>
+  <li>   $>~\<angle>  - print info for all elements the maxangle of which is > \<angle>
 
      (angles in degree 0-360)
    
@@ -1574,16 +1576,16 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'makegrid ${W|w|K|k} [$E] [$h \<val>] [$m \<no>] [$S \<search>] [$A \<angle>] [$d \<subdom>]'
 
-.  ${W|w|K|k}	- W resp. K are using the quadtree accellerator, 
-.  $W~resp.~w	- use the angle criterion,
-.  $K~resp.~k	- use the edge criterion
-.  $E 			- grid generator tries to create equilateral triangles (edgelength h)
+  <li> ${W|w|K|k}	- W resp. K are using the quadtree accellerator, 
+  <li> $W~resp.~w	- use the angle criterion,
+  <li> $K~resp.~k	- use the edge criterion
+  <li> $E 			- grid generator tries to create equilateral triangles (edgelength h)
 .n 					default: isosceles triangles (height h)
-.  $h~\<val> 	- mesh size 
-.  $m~\<no>		- id of mesh size coefficient function 
-.  $S~\<search>	- search radius (experts only)
-.  $A~\<angle>	- try to avoid angle smaller than \<angle>
-.  $d~\<subdom>	- restrict grid generation to subdomain with id \<subdom>
+  <li> $h~\<val> 	- mesh size 
+  <li> $m~\<no>		- id of mesh size coefficient function 
+  <li> $S~\<search>	- search radius (experts only)
+  <li> $A~\<angle>	- try to avoid angle smaller than \<angle>
+  <li> $d~\<subdom>	- restrict grid generation to subdomain with id \<subdom>
 
  \section Example
    'makegrid $k $h 1.0;'
@@ -1596,9 +1598,9 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    
    'makegrid [$s] [$h \<meshsize>] [$d]'
 
-.   $s				- smooth generated grid
-.   $h \<meshsize>	- preferred meshsize (default 1.0)
-.   $d				- ?
+  <li>  $s				- smooth generated grid
+  <li>  $h \<meshsize>	- preferred meshsize (default 1.0)
+  <li>  $d				- ?
    
  \section Keywords
    multigrid, generate, create, mesh, net, grid, coarse, advancing front
@@ -1613,7 +1615,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    distribution and some loadbalacing measures for parallel.
 
 \section Syntax
-.  ${W|w|K|k}	- W resp. K are using the quadtree accellerator, 
+  <li> ${W|w|K|k}	- W resp. K are using the quadtree accellerator, 
 
  \section Keywords
    multigrid, loadbalancing, mesh, net, grid, adaptive refinement, estimator 
@@ -1666,7 +1668,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    workstation.
 
 \section Syntax
-.  hostname		- hostname of workstation which runs Covise
+  <li> hostname		- hostname of workstation which runs Covise
 
  \section Keywords
    multigrid, graphics, Covise, plot
@@ -1700,11 +1702,11 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'openwindow \<h> \<v> \<dh> \<dv> [$d \<output device>] [$n \<window name>]'
 
-.  \<h>~\<v>                - the lower left corner of the plotting region in the 'standardRefSys'
-.  \<dh>~\<dv>              - the width and height resp. of the plotting region of the window
-.  $d~\<output~device>     - specify the name of an output device (default: screen)
-.  $n~\<window~name>       - optionally you can specify the window name
-.  $r~[0|1]               - if not default device: 0: replace (default), 1: rename existing graphics file (using modification date)
+  <li> \<h>~\<v>                - the lower left corner of the plotting region in the 'standardRefSys'
+  <li> \<dh>~\<dv>              - the width and height resp. of the plotting region of the window
+  <li> $d~\<output~device>     - specify the name of an output device (default: screen)
+  <li> $n~\<window~name>       - optionally you can specify the window name
+  <li> $r~[0|1]               - if not default device: 0: replace (default), 1: rename existing graphics file (using modification date)
    
    SEE ALSO:
    'closewindow', 'openpicture', 'closepicture'
@@ -1725,9 +1727,9 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'closewindow [$n \<window name> | $a]'
 
-.  $n~\<window~name>  - close the window with the specified name
+  <li> $n~\<window~name>  - close the window with the specified name
 .n      	             (default: the current window)
-.  $a                - close all open windows
+  <li> $a                - close all open windows
    
  \section Keywords
    graphics, plot, window, close, remove
@@ -1747,7 +1749,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'setcurrwindow \<window name>'
 
-.  \<window~name> - name of a window
+  <li> \<window~name> - name of a window
    
  \section Keywords
    graphics, plot, window, current, active
@@ -1766,13 +1768,13 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'drawtext \<xpos> \<ypos> \<text> [$w \<window name>] [$c] [$i]'
 
-.  \<xpos>                 - x-coordinate in pixels (origin is the lower left corner)
-.  \<ypos>                 - y-coordinate in pixels (origin is the lower left corner)
-.  \<text>                 - text to draw
-.  $w~\<window~name>       - draw text into this window (default: current window)
-.  $i                     - draw text inverse
-.  $c                     - center text at \<xpos> \<ypos>
-.  $s~\<size>              - text size
+  <li> \<xpos>                 - x-coordinate in pixels (origin is the lower left corner)
+  <li> \<ypos>                 - y-coordinate in pixels (origin is the lower left corner)
+  <li> \<text>                 - text to draw
+  <li> $w~\<window~name>       - draw text into this window (default: current window)
+  <li> $i                     - draw text inverse
+  <li> $c                     - center text at \<xpos> \<ypos>
+  <li> $s~\<size>              - text size
    
  \section Keywords
    graphics, plot, window, text
@@ -1793,12 +1795,12 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'openpicture [$w \<window name>] [$s \<h> \<v> \<dh> \<dv>] [$n \<picture name>]'
 
-.  $w~\<window~name>       - open a picture on this window (default: current window)
-.  $s~\<h>~\<v>~\<dh>~\<dv>   - specify the location and size in the 'standardRefSys' with
+  <li> $w~\<window~name>       - open a picture on this window (default: current window)
+  <li> $s~\<h>~\<v>~\<dh>~\<dv>   - specify the location and size in the 'standardRefSys' with
 							the origin located in the lower left corner of the parent window
 .n                       	(default: picture size = parent window size)
 
-.  $n~\<picture~name>      - optionally you can specify the picture name
+  <li> $n~\<picture~name>      - optionally you can specify the picture name
    
  \section Keywords
    graphics, plot, window, picture, open, create
@@ -1817,7 +1819,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'openppic ??? [$R [0|1]]'
 
-.  $R~[0|1]               - if not default device: 0: replace (default), 1: rename existing graphics file (using modification date)
+  <li> $R~[0|1]               - if not default device: 0: replace (default), 1: rename existing graphics file (using modification date)
    
  \section Keywords
    graphics, plot, window, picture, open, create
@@ -1837,10 +1839,10 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'closepicture [$a | {$w \<window name> {\<picture name> | $a}}]'
 
-.  $w~\<window~name>        - close a picture of this window 
+  <li> $w~\<window~name>        - close a picture of this window 
 								(default: the current picture)
-.  $a                      - close all pictures of the current window
-.  {\<picture~name>~|~$a}   - close the picture with the specified name or all pictures of that window
+  <li> $a                      - close all pictures of the current window
+  <li> {\<picture~name>~|~$a}   - close the picture with the specified name or all pictures of that window
    
  \section Keywords
    graphics, plot, window, picture, close, remove
@@ -1859,8 +1861,8 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'setcurrpicture \<picture name> [$w \<window name>]'
 
-.  \<picture~name>         - name of the picture
-.  $w~\<window~name>       - picture resides in this window (default: current window)
+  <li> \<picture~name>         - name of the picture
+  <li> $w~\<window~name>       - picture resides in this window (default: current window)
    
  \section Keywords
    graphics, plot, window, picture, current, active
@@ -1949,22 +1951,22 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 
 .n                         all coordinates have to be given in physical coordinates
 
-.   $i                     - return to default settings first
-.   $o \<x> \<y> \<z>         - 3D objects ONLY: specify the observer stand
-.   $p \< | =               - 3D objects ONLY: choose central (\<) or parallel (=) perspective
-.   $t \<x> \<y> [\<z>]       - specify the target point in the viewplane
+  <li>  $i                     - return to default settings first
+  <li>  $o \<x> \<y> \<z>         - 3D objects ONLY: specify the observer stand
+  <li>  $p \< | =               - 3D objects ONLY: choose central (\<) or parallel (=) perspective
+  <li>  $t \<x> \<y> [\<z>]       - specify the target point in the viewplane
 .n	                         (NB: the viewplane is then defined to be normal to the line observer-target)
 
-.   $x \<x> \<y> [\<z>]       - define an x-axis in the viewplane (which will be to the right in the picture)
+  <li>  $x \<x> \<y> [\<z>]       - define an x-axis in the viewplane (which will be to the right in the picture)
    
    
    Some 3D plot objects allow to define a cut. It can be set and manipulated using the
    following options:~
 
-.   $C                     - define a default cut facing to x-direction and cutting the objects midpoint
-.   $P~\<x>~\<y>~\<z>         - a point on the cut plane
-.   $N~\<x>~\<y>~\<z>         - the normal of the cut plane
-.   $R					   - remove cut    
+  <li>  $C                     - define a default cut facing to x-direction and cutting the objects midpoint
+  <li>  $P~\<x>~\<y>~\<z>         - a point on the cut plane
+  <li>  $N~\<x>~\<y>~\<z>         - the normal of the cut plane
+  <li>  $R					   - remove cut    
    
    For first definition of cut specify either C-option or both P- and N-option.
     
@@ -1986,7 +1988,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 \section Syntax
    'vdisplay [$s]'
    
-.   $s		- print settings in 'setview'-command style. This is especially
+  <li>  $s		- print settings in 'setview'-command style. This is especially
 				useful after interactive zoom and pan. Pasting the output into
 				a script file will reproduce the current view of the picture.
    
@@ -2008,8 +2010,8 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 
 \section Syntax
    'cpview [$a] [$c]'
-.  a - set views of all pictures in all windows
-.  c - set also cut (if defined for plot object)
+  <li> a - set views of all pictures in all windows
+  <li> c - set also cut (if defined for plot object)
    
  \section Keywords
    graphics, plot, window, picture, view, cutting plane, copy
@@ -2029,7 +2031,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 \section Syntax
    'walk \<x> \<y> [\<z>]'
 
-.   \<x>~\<y>~[\<z>] - coordinates
+  <li>  \<x>~\<y>~[\<z>] - coordinates
    
  \section Keywords
    graphics, plot, window, picture, view, observer, move
@@ -2049,10 +2051,10 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 \section Syntax
    'walkaround \<viewplane angle> \<rotation angle>'
 
-.  \<viewplane~angle>      - this angle runs in the view plane math pos from the x-axis and defines
+  <li> \<viewplane~angle>      - this angle runs in the view plane math pos from the x-axis and defines
 .n                        - together with the target-observer direction a plane
 
-.  \<rotation~angle>       - the observer will be rotated around the target point in the above plane
+  <li> \<rotation~angle>       - the observer will be rotated around the target point in the above plane
 
    (angles in degree 0 - 360)
    
@@ -2076,7 +2078,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 \section Syntax
    'zoom \<factor>'
 
-.  \<factor>  - values \< 1 magnify picture 
+  <li> \<factor>  - values \< 1 magnify picture 
    
  \section Keywords
    graphics, plot, window, picture, view, zoom, magnify
@@ -2097,7 +2099,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 \section Syntax
    'drag \<dx> \<dy>'
 
-.  \<dx>~\<dy>  - displacement vector 
+  <li> \<dx>~\<dy>  - displacement vector 
    
  \section Keywords
    graphics, plot, window, picture, view, observer, pan, move
@@ -2118,7 +2120,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 \section Syntax
    'rotate \<angle>'
 
-.  \<angle>  - \<angle> runs in the view plane math pos from the x-axis
+  <li> \<angle>  - \<angle> runs in the view plane math pos from the x-axis
    
  \section Keywords
    graphics, plot, window, picture, view, observer, rotate
@@ -2166,7 +2168,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 \section Syntax
    'setplotobject [\<object type name>] [$a] ... '
 
-.    \<object~type~name>   - possible are:
+  <li>   \<object~type~name>   - possible are:
 .n								2 and 3D:~
 .n								'Matrix'
 
@@ -2179,7 +2181,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 .n								2D only:~
 .n								'line'
 
-.    $a					  - (for 3d plot objects) moves the observer to a place outside
+  <li>   $a					  - (for 3d plot objects) moves the observer to a place outside
 		                    the bounding sphere of the plot object  
 
 
@@ -2238,9 +2240,9 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'plot [$o [0|1|2]] [$b [\<factor>]] [$a]'
 
-.   $o	- ordering strategy (only used for 3D hidden surface)
-.   $b  - use bullet plotter
-.   $a  - plot all pictures in all windows
+  <li>  $o	- ordering strategy (only used for 3D hidden surface)
+  <li>  $b  - use bullet plotter
+  <li>  $a  - plot all pictures in all windows
    
  \section Keywords
    graphics, plot, window, picture, plotobject, draw
@@ -2259,9 +2261,9 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'findrange [$z \<zoom factor>] [$s] [$p]'
 
-.  $z~\<zoom factor>       - zoom the range by this factor
-.  $s                     - symmetrize the range (min=max)
-.  $p                     - store range in plot object
+  <li> $z~\<zoom factor>       - zoom the range by this factor
+  <li> $s                     - symmetrize the range (min=max)
+  <li> $p                     - store range in plot object
    
  \section Keywords
    graphics, plot, window, picture, plotobject, range, values
@@ -2280,7 +2282,7 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'setcurrmg \<mgname>'
 
-.  \<mgname>  - name of the open multigrid which will be made the current one
+  <li> \<mgname>  - name of the open multigrid which will be made the current one
    
  \section Keywords
    multigrid, current, active
@@ -2333,7 +2335,7 @@ setplotobject EScalar $e v_sol $d 1;
 
 \section Syntax
    'setpalette c|bw|g [$d \<device>]'
-.  $d~\<device>     - specify the name of an output device (default: screen)
+  <li> $d~\<device>     - specify the name of an output device (default: screen)
    
  \section Keywords
    graphics, plot, window, picture, device
@@ -2351,9 +2353,9 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'clear \<symbol name> [$a] [$u] [$v \<value>] [$x] [$y] [$z]'
 
-.  $a         - from level 0 through current level (default: current level only)
-.  $s         - do not change skip (Dirichlet) values
-.  $v~\<value> - assign this value (instead of 0.0)
+  <li> $a         - from level 0 through current level (default: current level only)
+  <li> $s         - do not change skip (Dirichlet) values
+  <li> $v~\<value> - assign this value (instead of 0.0)
    
  \section Keywords
    multigrid, numerics, userdata, vecdata, clear, set
@@ -2372,8 +2374,8 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'makevdsub \<vd> $sub \<vt> \<sub>'
 
-.  \<vd>				- existing descriptor
-.  $sub~\<vt>~\<sub>	- template and name of sub of this template
+  <li> \<vd>				- existing descriptor
+  <li> $sub~\<vt>~\<sub>	- template and name of sub of this template
    
  \section Keywords
    multigrid, numerics, userdata, vecdata, descriptor
@@ -2389,10 +2391,10 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'mflops $x \<vec> [$y \<tmp>] [$A \<mat>] [$l \<loop>]'
 
-.  $x~\<vec>   - vector
-.  $y~\<tmp>   - second vector
-.  $A~\<mat>   - matrix
-.  $l~\<loop>  - loop number
+  <li> $x~\<vec>   - vector
+  <li> $y~\<tmp>   - second vector
+  <li> $A~\<mat>   - matrix
+  <li> $l~\<loop>  - loop number
 
    REMARK:
    Due to the inaccuracy of the most UNIX clock systems take a huge loop number
@@ -2410,10 +2412,10 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'rand \<symbol name> [$a] [$s] [$f \<value>] [$t \<value>]'
 
-.  $a         - from level 0 through current level (default: current level only)
-.  $s         - set skip (Dirichlet) values to zero, default is no skip
-.  $f~\<value> - low bound of random range, default is 0
-.  $t~\<value> - upper bound of random range, default is 1
+  <li> $a         - from level 0 through current level (default: current level only)
+  <li> $s         - set skip (Dirichlet) values to zero, default is no skip
+  <li> $f~\<value> - low bound of random range, default is 0
+  <li> $t~\<value> - upper bound of random range, default is 1
    
  \section Keywords
    multigrid, numerics, userdata, vecdata, clear, set
@@ -2433,9 +2435,9 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'copy $f \<from vec sym> $t \<to vec sym> [$a]'
 
-.  $f~\<from~vec~sym>      - from vector symbol
-.  $t~\<from~vec~sym>      - to vector symbol
-.  $a                     - all levels
+  <li> $f~\<from~vec~sym>      - from vector symbol
+  <li> $t~\<from~vec~sym>      - to vector symbol
+  <li> $a                     - all levels
 
  \section Example
    'copy $f sol $t old;'
@@ -2457,9 +2459,9 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'add $x \<vec sym> $y \<vec sym> [$a]'
 
-.  $x~\<vec~sym>      - vector symbol 
-.  $y~\<vec~sym>      - vector symbol
-.  $a                - all levels
+  <li> $x~\<vec~sym>      - vector symbol 
+  <li> $y~\<vec~sym>      - vector symbol
+  <li> $a                - all levels
 
  \section Example
    'add $x sol $y old;'
@@ -2481,9 +2483,9 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'sub $x \<vec sym> $y \<vec sym> [$a]'
 
-.  $x~\<vec~sym>      - vector symbol 
-.  $y~\<vec~sym>      - vector symbol
-.  $a                - all levels
+  <li> $x~\<vec~sym>      - vector symbol 
+  <li> $y~\<vec~sym>      - vector symbol
+  <li> $a                - all levels
 
  \section Example
    'sub $x sol $y old;'
@@ -2506,10 +2508,10 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'homotopy $v \<val> $x \<x vec sym> $y \<y vec sym> [$a]'
 
-.  $v~\<val>               - value
-.  $x~\<x~vec~sym>         - vector symbol
-.  $y~\<y~vec~sym>         - vector symbol
-.  $a                     - all levels
+  <li> $v~\<val>               - value
+  <li> $x~\<x~vec~sym>         - vector symbol
+  <li> $y~\<y~vec~sym>         - vector symbol
+  <li> $a                     - all levels
 
  \section Example
    'homotopy $v 0.5 $x sol $y old;'
@@ -2554,7 +2556,7 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'reinit [$b \<boundary value problem>] ...'
 
-.  $b~\<boundary~value~problem> - problem to initialize
+  <li> $b~\<boundary~value~problem> - problem to initialize
 							     (default is the problem of the current mg)
    
  \section Keywords
@@ -2571,7 +2573,7 @@ setplotobject EScalar $e v_sol $d 1;
 \section Syntax
    'delformat \<format name>'
 
-.  \<format~name> - name of the fomat
+  <li> \<format~name> - name of the fomat
    
  \section Keywords
    storage, format
@@ -2649,7 +2651,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'npexecute [\<num proc name>] \<argument list to be passed>'
 
-.  \<num~proc~name> - name of an existing NumProc
+  <li> \<num~proc~name> - name of an existing NumProc
    
  \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, numproc, execute
@@ -2668,9 +2670,9 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'npdisplay [\<num proc name>] [$c [\<class>] | $a]'
 
-.  \<num~proc~name> - name of an existing NumProc (default is the current NumProc)
-.  $c~[\<class>]    - list all num procs of \<class> or list classes if \<class> omitted
-.  $a              - list all num procs
+  <li> \<num~proc~name> - name of an existing NumProc (default is the current NumProc)
+  <li> $c~[\<class>]    - list all num procs of \<class> or list classes if \<class> omitted
+  <li> $a              - list all num procs
    
  \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, numproc, display, show, print
@@ -2690,8 +2692,8 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'npcreate \<num proc name> $c \<constructor>'
 
-.  \<num~proc~name> 		- name of the new NumProc
-.  $c~\<num~proc~type>	- name of an existing constructor
+  <li> \<num~proc~name> 		- name of the new NumProc
+  <li> $c~\<num~proc~type>	- name of an existing constructor
    
  \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, numproc, create, install
@@ -2750,9 +2752,9 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'createvector \<v1> [\<v2> ...] [$t \<template>] [$m \<name>]'
 
-.  v1 		- vector name
-.  template - template name (default is the first vector template)
-.  name 	- multigrid name (default is the current multigrid)
+  <li> v1 		- vector name
+  <li> template - template name (default is the first vector template)
+  <li> name 	- multigrid name (default is the current multigrid)
    
  \section Keywords
    multigrid, numerics, userdata, vecdata, create
@@ -2772,9 +2774,9 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'creatematrix \<M1> [\<M2> ...] [$t \<template>] [$m \<name>]'
 
-.  M1 		- matrix name
-.  template - template name (default is the first matrix template)
-.  name 	- multigrid name (default is the current multigrid)
+  <li> M1 		- matrix name
+  <li> template - template name (default is the first matrix template)
+  <li> name 	- multigrid name (default is the current multigrid)
    
  \section Keywords
    multigrid, numerics, userdata, matdata, create
@@ -2793,8 +2795,8 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'freematrix \<M1> [\<M2> ...] [$m \<name>]'
 
-.  M1 		- matrix name
-.  name 	- multigrid name (default is the current multigrid)
+  <li> M1 		- matrix name
+  <li> name 	- multigrid name (default is the current multigrid)
    
  \section Keywords
    multigrid, numerics, userdata, matdata, create
@@ -2815,13 +2817,13 @@ setplotobject EScalar $e v_sol $d 1;
    'symlist {$V [\<vd>] | $M [\<md>]  [$alloc] [$scal]}'
 
 	Specify either option V or M with or without:~
-.  \<vd> - name of a vec data desc, if omitted ALL vec data descs of the current
+  <li> \<vd> - name of a vec data desc, if omitted ALL vec data descs of the current
 			multigrid are listed
-.  \<md> - name of a mat data desc, if omitted ALL mat data descs of the current
+  <li> \<md> - name of a mat data desc, if omitted ALL mat data descs of the current
 			multigrid are listed
 			
-.  \<alloc> - is descriptor allocated and/or locked
-.  \<scal> - is descriptor scalar or not
+  <li> \<alloc> - is descriptor allocated and/or locked
+  <li> \<scal> - is descriptor scalar or not
    
  \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, list, show, display, print
@@ -2841,10 +2843,10 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'setkey $\<command char> [$c \<comment text>] [$-] $"\<command sequence>"*'
 
-.  $k~\<command~char>      - specifiy a single character which will be the command key
-.  $c~\<coment~text>       - will be displayed by keylist rather than command(s)
-.  $-                     - keylist prints a hor bar befor this key
-.  $"\<command~sequence>"  - give an arbitrary sequence of statements which is to be executed when the command key is pressed
+  <li> $k~\<command~char>      - specifiy a single character which will be the command key
+  <li> $c~\<coment~text>       - will be displayed by keylist rather than command(s)
+  <li> $-                     - keylist prints a hor bar befor this key
+  <li> $"\<command~sequence>"  - give an arbitrary sequence of statements which is to be executed when the command key is pressed
 
  \section Example
    'setkey $r $"mark $a" $"refine";'
@@ -2878,8 +2880,8 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'delkey $all | $\<command char>'
 
-.  $all                   - delete all command keys allocated before
-.  $\<command~char>        - delete only the command key associated with \<command char>
+  <li> $all                   - delete all command keys allocated before
+  <li> $\<command~char>        - delete only the command key associated with \<command char>
    
  \section Keywords
    shortcut, hotkey, remove, undefine
@@ -2899,7 +2901,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'keylist [$l]'
 
-.  $l - show commands and comment (iff)
+  <li> $l - show commands and comment (iff)
    
  \section Keywords
    shortcut, hotkey, list, show, display, print
@@ -2919,7 +2921,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'refreshon [$b [factor]]'
    
-.  $b - use bullet plotter for refresh
+  <li> $b - use bullet plotter for refresh
 
  \section Keywords
    graphics, plot, window, picture, plotobject, invalid, update
@@ -3015,20 +3017,20 @@ setplotobject EScalar $e v_sol $d 1;
    			based on the clustering technique
 
  \section Description
-   The lb command performs load balancing.  If not run on a parallel machine
-   it will do nothing.  If run on a parallel machine it will try to use Chaco,
-   provided the CHACO option for ug was turned on.  If Chaco is not available
-   a simple RCB load balancing will be employed.  In the latter case some of
+   The lb command performs load balancing  <li> If not run on a parallel machine
+   it will do nothing  <li> If run on a parallel machine it will try to use Chaco,
+   provided the CHACO option for ug was turned on  <li> If Chaco is not available
+   a simple RCB load balancing will be employed  <li> In the latter case some of
    the optional arguments will be ignored.
    
  \section Syntax
    'lb  [\<strategy>] [$c \<minlevel>] [$d \<depth>] [$f \<maxlevel>] [$e \<minelem>]'
 
-.  \<strategy>		- load balancing strategy 
-.  $c \<minlevel>	- start load balancing at this level
-.  $d \<depth>		- depth of clusters
-.  $f \<maxlevel>	- no load balancing above this level
-.  $e \<minelem>		- minimal number of elements on each processor
+  <li> \<strategy>		- load balancing strategy 
+  <li> $c \<minlevel>	- start load balancing at this level
+  <li> $d \<depth>		- depth of clusters
+  <li> $f \<maxlevel>	- no load balancing above this level
+  <li> $e \<minelem>		- minimal number of elements on each processor
 
  \section Keywords
    parallel, processors, load balance, chaco
@@ -3058,9 +3060,9 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'context \<processor\> | $a | $e'
    
-.  \<processor>		- processor id
-.  $a				- add all processors
-.  $e				- remove all processors (empty context)
+  <li> \<processor>		- processor id
+  <li> $a				- add all processors
+  <li> $e				- remove all processors (empty context)
    
  \section Keywords
    parallel, processors, display, show, print, DDD, configure
@@ -3124,7 +3126,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'debug $\<module> [$\<level>]'
 
-.   $\<module>	- module can be one of
+  <li>  $\<module>	- module can be one of
 .n					init
 .n					dddif
 .n					dev
@@ -3138,7 +3140,7 @@ setplotobject EScalar $e v_sol $d 1;
 .n					time
 .n                  pclib
 .n                  appl
-.   $\<level>	- assign this level (if omitted display current level for the
+  <li>  $\<level>	- assign this level (if omitted display current level for the
 					specified module)
    
  \section Keywords
@@ -3154,7 +3156,7 @@ setplotobject EScalar $e v_sol $d 1;
 
  \section Syntax
    'trace [$blas \<n>]'
-.   $blas~\<n>	- 0: off, 1: show parameters (default),
+  <li>  $blas~\<n>	- 0: off, 1: show parameters (default),
 					2: parameters and vector contents (blas level 1)
    
  \section Keywords
@@ -3222,17 +3224,17 @@ setplotobject EScalar $e v_sol $d 1;
    'save') and the postfix 'ar' for 'array'.
 
    CONSTRUCTION and DESTRUCTION:
-.  crar~$n~\<name>~{$n_i}+ 			 - create array of specified size
-.  dear~$n~\<name> 		  			 - delete array
+  <li> crar~$n~\<name>~{$n_i}+ 			 - create array of specified size
+  <li> dear~$n~\<name> 		  			 - delete array
 
    ACCESS to values:
-.  wrar~$n~\<name>~{$n_i}+~$v~\<value> - write array[n_1][n_2]...[n_k] := \<value>
-.  rear~$n~\<name>~{$n_i}+			 - read array[n_1][n_2]...[n_k] to ':ARRAY_VALUE'
-.  clar~$n~\<name>					 - clear array, all entries := 0.0
+  <li> wrar~$n~\<name>~{$n_i}+~$v~\<value> - write array[n_1][n_2]...[n_k] := \<value>
+  <li> rear~$n~\<name>~{$n_i}+			 - read array[n_1][n_2]...[n_k] to ':ARRAY_VALUE'
+  <li> clar~$n~\<name>					 - clear array, all entries := 0.0
 
    FILEOPERATIONS:
-.  saar~$n~\<name>					 - save array to file '\<name>.array'
-.  loar~$n~\<name>					 - load array from file '\<name>.array'
+  <li> saar~$n~\<name>					 - save array to file '\<name>.array'
+  <li> loar~$n~\<name>					 - load array from file '\<name>.array'
 
  \section Example
    Use the array commands to realize a consecutively numbering of logfiles 
@@ -3279,8 +3281,8 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'crar $n \<name> {$\<n_i>}+'
 
-.  \<name> - name of the array structure
-.  \<n_i>  - extension in the i.th dimension, 1 \<= i \<= 'AR_NVAR_MAX'
+  <li> \<name> - name of the array structure
+  <li> \<n_i>  - extension in the i.th dimension, 1 \<= i \<= 'AR_NVAR_MAX'
 
  \section Example
 \verbatim
@@ -3306,7 +3308,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'dear $n \<name>'
 
-.  \<name> - name of the array structure
+  <li> \<name> - name of the array structure
    
  \section Keywords
    values, array, manipulate, load, store, data, indexed
@@ -3326,7 +3328,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'saar $n \<name>'
 
-.  \<name> - name of the array structure
+  <li> \<name> - name of the array structure
 
    REMARK:
    The file is written in the binary mode, thus be careful when exchanging
@@ -3351,7 +3353,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'loar $n \<name>'
 
-.  \<name> - name of the array structure
+  <li> \<name> - name of the array structure
 
    REMARK:
    The file is written in the binary mode, thus be careful when exchanging
@@ -3374,9 +3376,9 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'wrar $n \<name> {$\<n_i>}+ $v \<value>'
 
-.  \<name>  - name of the array structure
-.  \<n_i>   - i.th coordinate of the entry, 0 \<= n_i \< allocated extension
-.  \<value> - double value to be stored
+  <li> \<name>  - name of the array structure
+  <li> \<n_i>   - i.th coordinate of the entry, 0 \<= n_i \< allocated extension
+  <li> \<value> - double value to be stored
 
    REMARK:
    Like in C if the array is allocated with 'n' components in a dimension,
@@ -3407,8 +3409,8 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'rear $n \<name> {$\<n_i>}+'
 
-.  \<name>  - name of the array structure
-.  \<n_i>   - i.th coordinate of the entry, 0 \<= n_i \< allocated extension
+  <li> \<name>  - name of the array structure
+  <li> \<n_i>   - i.th coordinate of the entry, 0 \<= n_i \< allocated extension
 
    REMARK:
    Like in C if the array is allocated with 'n' components in a dimension,
@@ -3440,7 +3442,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'clar $n \<name>'
 
-.  \<name> - name of the array structure
+  <li> \<name> - name of the array structure
    
  \section Keywords
    values, array, manipulate, load, store, data, indexed
@@ -3459,7 +3461,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Syntax
    'dumpalg \<name\>'
 
-.  \<name\> - file name
+  <li> \<name\> - file name
    
  \section Keywords
    data, io
