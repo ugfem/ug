@@ -745,7 +745,7 @@ ENVITEM *MakeStructItem (ENVDIR *where, const char *name, INT type, INT size)
   /* allocate memory from environment heap */
   if (type==theStringVarID)
   {
-    newsize = ((size+31)/32)*32;
+    newsize = (1+size/32)*32;
     newItem = (ENVITEM *) AllocEnvMemory(sizeof(STRVAR)+newsize);
     if (newItem==NULL) return(NULL);
     ((STRVAR *) newItem)->length = newsize;
@@ -899,7 +899,7 @@ INT SetStringVar (const char *name, char *sval)
 
   myVar=FindStringVar(theDir,lastname);
 
-  if ((myVar!=NULL) && (myVar->length<strlen(sval)))
+  if ((myVar!=NULL) && (myVar->length<=strlen(sval)))
   {
     RemoveEnvItem((ENVITEM *) myVar);
     myVar=NULL;
@@ -959,7 +959,7 @@ INT SetnStringVar (const char *name, const char *sval, int n)
 
   myVar=FindStringVar(theDir,lastname);
 
-  if ((myVar!=NULL) && (myVar->length<n))
+  if ((myVar!=NULL) && (myVar->length<=n))
   {
     RemoveEnvItem((ENVITEM *) myVar);
     myVar=NULL;
