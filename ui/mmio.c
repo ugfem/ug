@@ -27,7 +27,7 @@
 REP_ERR_FILE;
 
 /* MacOS doesn't support the non-standard (!) strdup function */
-#ifdef __MWCW__
+#if ( defined(__MWCW__) || defined(__OPENSTEP__) )
 char *strdup(const char *text);  /* forward declaration to make ANSI compilers happy */
 
 char *strdup(const char *text)
