@@ -145,6 +145,7 @@ static DOUBLE LevelValue (const ELEMENT *theElement, const DOUBLE **CornersCoord
   DOUBLE phi;
 
   phi = LEVEL(theElement);
+  if (phi>0 && ECLASS(theElement)<=GREEN_CLASS) phi -= 1;
   return(phi);
 }
 
