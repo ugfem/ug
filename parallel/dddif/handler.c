@@ -381,6 +381,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 
           /* TODO: define clearly
              memcpy(conn,mcopy,MSIZE(mcopy)); */
+          memset(conn,0,MSIZE(mcopy));
           memcpy(conn,mcopy,sizeof(MATRIX)-sizeof(DOUBLE));
 
           if (first==NULL) first = conn;
@@ -461,6 +462,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 
           /* TODO: define clearly
              memcpy(newm,mcopy,MSIZE(mcopy)); */
+          memset(newm,0,MSIZE(mcopy));
           memcpy(newm,mcopy,sizeof(MATRIX)-sizeof(DOUBLE));
 
           if (first==NULL) first = newm;
