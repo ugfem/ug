@@ -873,7 +873,8 @@ char *ShellHandleKeybordEvent (ShellWindow *sh, XEvent *report,int *cmdKey, int 
   count = XLookupString(&keyevent,buffer,bufsize,&keysym,&compose);
   /* vorher XLookupString(report,buffer,bufsize,&keysym,&compose) */
 
-  if((keysym==XK_Alt_L)||(keysym==XK_Alt_R))
+  if((keysym==XK_Alt_L)||(keysym==XK_Alt_R)||
+     (keysym==XK_Meta_L)||(keysym==XK_Meta_R))
   {
     AltFlag = 1;
     return(NULL);
