@@ -172,10 +172,9 @@ INT GetUniqueOTypeOfVType (const FORMAT *fmt, INT vtype)
 
 INT GetUniquePartOfVType (const MULTIGRID *mg, INT vtype)
 {
-  FORMAT *fmt;
+  FORMAT *fmt=MGFORMAT(mg);
   INT i,n,found,parts,part;
 
-  fmt = MGFORMAT(mg);
   n = BVPD_NPARTS(MG_BVPD(mg));
   parts = FMT_T2P(fmt,vtype);
   found = 0;
@@ -190,6 +189,49 @@ INT GetUniquePartOfVType (const MULTIGRID *mg, INT vtype)
     return (part);
   else
     REP_ERR_RETURN (-1);
+}
+
+/****************************************************************************/
+/*D
+   IsVDdefinedInAllObjects - check whether descriptor covers objects in all parts
+
+   SYNOPSIS:
+   INT IsVDdefinedInAllObjects (const MULTIGRID *mg, const VECDATA_DESC *vd, INT obj_flags)
+
+   PARAMETERS:
+   .  mg		 - multigrid
+   .  vd		 - check this descriptor ...
+   .  obj_flags - ... for these objects (bitwise coded)
+
+   DESCRIPTION:
+   This function checks whether a vector descriptor covers certain object types
+   in all parts (i.e. in the whole domain)
+
+   RETURN VALUE:
+   INT
+   .n    YES
+   .n    NO
+   D*/
+/****************************************************************************/
+
+INT IsVDdefinedInAllObjects (const MULTIGRID *mg, const VECDATA_DESC *vd, INT obj_flags)
+{
+  FORMAT *fmt=MGFORMAT(mg);
+  INT tp,i,n,parts;
+
+  parts = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vd,tp))
+      if (FMT_T2O(fmt,tp) & obj_flags)
+        parts |= FMT_T2P(fmt,tp);
+
+  n = BVPD_NPARTS(MG_BVPD(mg));
+  for (i=0; i<n; i++)
+    if (!(parts & (1<<i)))
+      /* not all parts covered */
+      return (NO);
+
+  return (YES);
 }
 
 /****************************************************************************/
@@ -810,6 +852,40 @@ static INT CompVecDesc (const VECDATA_DESC *vd, const SHORT *NCmpsInType)
   return(0);
 }
 
+static INT IsVecDescAlloc (MULTIGRID *theMG, INT fl, INT tl, const VECDATA_DESC *vd)
+{
+  GRID *theGrid;
+  INT i,j,tp;
+
+  if (vd == NULL) return(NO);
+
+  /* are the components of vd free */
+  for (i=fl; i<=tl; i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    for (tp=0; tp<NVECTYPES; tp++)
+      for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
+        if (READ_DR_VEC_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j))==NO)
+          return(NO);
+  }
+
+  return (YES);
+}
+
+static INT GetVecDescAllocLevels (MULTIGRID *theMG, const VECDATA_DESC *vd, INT AllocLev[MAXLEVEL])
+{
+  INT lev;
+
+  for (lev=0; lev<MAXLEVEL; lev++) AllocLev[lev] = NO;
+
+  if (vd == NULL) REP_ERR_RETURN(1);
+
+  for (lev=0; lev<=TOPLEVEL(theMG); lev++)
+    AllocLev[lev] = IsVecDescAlloc(theMG,lev,lev,vd);
+
+  return (NUM_OK);
+}
+
 static INT AllocVecDesc (MULTIGRID *theMG, INT fl, INT tl, const VECDATA_DESC *vd)
 {
   GRID *theGrid;
@@ -1125,12 +1201,13 @@ INT DisposeVD (VECDATA_DESC *vd)
    DisplayVecDataDesc - Display VECDATA_DESC entries
 
    SYNOPSIS:
-   INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer)
+   INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer, INT modifiers)
 
    PARAMETERS:
    .  fmt - associated format for names of abstract types
    .  vd - VECDATA_DESC to display
    .  buffer - print here
+   .  modifiers - modifier flags
 
    DESCRIPTION:
    This function displays the entries of a VECDATA_DESC: comp-names, comp-positions etc.
@@ -1142,7 +1219,47 @@ INT DisposeVD (VECDATA_DESC *vd)
    D*/
 /****************************************************************************/
 
-INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer)
+static INT lev2str (const levels[MAXLEVEL], char *list)
+{
+  INT i,f,t,p;
+
+  p = 0;
+  for (i=0; i<MAXLEVEL; i++)
+  {
+    /* skip NOs */
+    while (!levels[i] && i<MAXLEVEL) i++;
+
+    if (i>=MAXLEVEL)
+      if (p==0)
+        return (1);
+      else
+        break;
+
+    f = i;
+
+    /* skip NOs */
+    while (levels[i] && i<MAXLEVEL) i++;
+
+    t = i-1;
+
+    switch (t-f)
+    {
+    case 0 :
+      p += sprintf(list+p,"%d,",f);
+      break;
+    case 1 :
+      p += sprintf(list+p,"%d,%d,",f,t);
+      break;
+    default :
+      p += sprintf(list+p,"%d-%d,",f,t);
+    }
+  }
+  list[p-1] = '\0';
+
+  return (0);
+}
+
+INT DisplayVecDataDesc (const VECDATA_DESC *vd, INT modifiers, char *buffer)
 {
   const FORMAT *fmt;
   const SHORT *offset;
@@ -1151,7 +1268,7 @@ INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer)
 
   if (vd==NULL) REP_ERR_RETURN (1);
 
-  buffer += sprintf(buffer,"contents of vector symbol '%s'\n",ENVITEM_NAME(vd));
+  buffer += sprintf(buffer,"vector data descriptor '%s'\n",ENVITEM_NAME(vd));
 
   fmt = MGFORMAT(VD_MG(vd));
   cn = VM_COMP_NAMEPTR(vd);
@@ -1165,13 +1282,31 @@ INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer)
     }
   buffer += sprintf(buffer,"-------\n");
 
-  if (VD_IS_SCALAR(vd))
-  {
-    buffer += sprintf(buffer,"\nvecsym is scalar:\n");
-    buffer += sprintf(buffer,"  comp %2d\n",VD_SCALCMP(vd));
-    buffer += sprintf(buffer,"  mask %2d\n",VD_SCALTYPEMASK(vd));
-  }
+  if (READ_FLAG(modifiers,SCAL_PROP))
+    if (VD_IS_SCALAR(vd))
+    {
+      buffer += sprintf(buffer,"\ndescriptor is scalar:\n");
+      buffer += sprintf(buffer,"  comp %2d\n",VD_SCALCMP(vd));
+      buffer += sprintf(buffer,"  mask %2d\n",VD_SCALTYPEMASK(vd));
+    }
 
+  if (READ_FLAG(modifiers,ALLOC_STAT))
+  {
+    if (VM_LOCKED(vd))
+      buffer += sprintf(buffer,"descriptor is locked\n");
+    else
+    {
+      INT levels[MAXLEVEL];
+      char LevelList[MAXLEVEL];
+
+      if (GetVecDescAllocLevels(VD_MG(vd),vd,levels))
+        REP_ERR_RETURN (1);
+      if (lev2str(levels,LevelList))
+        buffer += sprintf(buffer,"descriptor is not allocated\n");
+      else
+        buffer += sprintf(buffer,"descriptor is allocated on levels [%s]\n",LevelList);
+    }
+  }
   buffer += sprintf(buffer,"\n");
 
   return (NUM_OK);

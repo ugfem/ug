@@ -63,8 +63,19 @@
 #define GENERATED_NAMES_SEPERATOR               "_"
 
 /* defines for getting object type specific information from XXXDATA_DESCs	*/
-#define STRICT                  123
-#define NON_STRICT              124
+enum VECTOR_DATA_IN_OBJ
+{
+  STRICT,
+  NON_STRICT
+};
+
+/* modifier flags for DisplayXXXDataDesc */
+enum DISP_DATA_DESC_MODIF
+{
+  DEFAULT                 = (1<<0),
+  ALLOC_STAT              = (1<<1),
+  SCAL_PROP               = (1<<2)
+};
 
 /* VECDATA_DESC */
 #define VD_MG(vd)                                                       ((vd)->mg)
@@ -283,7 +294,7 @@ INT VDequal (const VECDATA_DESC *vd0, const VECDATA_DESC *vd1);
 INT FillRedundantComponentsOfVD (VECDATA_DESC *vd);
 INT FillRedundantComponentsOfMD (MATDATA_DESC *md);
 
-INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer);
+INT DisplayVecDataDesc (const VECDATA_DESC *vd, INT modifiers, char *buffer);
 INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer);
 
 VECDATA_DESC *GetVecDataDescByName (const MULTIGRID *theMG, char *name);
@@ -347,6 +358,7 @@ INT SwapPartSkipflags           (INT fl, INT tl, const VECDATA_DESC *vdg, const 
 /* vtypes and object types */
 INT             GetUniqueOTypeOfVType                                           (const FORMAT *fmt, INT vtype);
 INT             GetUniquePartOfVType                                            (const MULTIGRID *mg, INT vtype);
+INT             IsVDdefinedInAllObjects                                         (const MULTIGRID *mg, const VECDATA_DESC *vd, INT obj_flags);
 INT             FillCompsForOType                                                       (const FORMAT *fmt, INT otype, INT n, SHORT cmps[]);
 
 /* VECDATA_DESCs and object type */
