@@ -47,8 +47,8 @@
 #include <Errors.h>
 /* NB: On Macs the structs of <types.h> are defined locally in <stat.h> */
 #else
-#include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #endif
 
 
@@ -836,16 +836,16 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
 
         PARAMETERS:
    .   fname - subdirectory name to be created
-   .   paths - try paths specified in the environment item '/Paths/<paths> which was
+   .   paths - try paths specified in the environment item '/Paths/<paths>' which was
                         set by --> 'ReadSearchingPaths'
 
         DESCRIPTION:
         The functions trys to create a directory with 'filename' using one by one the
-        paths specified in the environment item '/Paths/<paths> which was
+        paths specified in the environment item '/Paths/<paths>' which was
         set by --> 'ReadSearchingPaths'. It is used in several places in ug (all paths
         are read from the standard --> 'defaults' file)":"
 
-   .n   'srciptpaths' is used by the interpreter for script execution
+   .n   'scriptpaths' is used by the interpreter for script execution
    .n   'gridpaths' is used by ugio to read grids from (they are stored in the
    .n   first path
 
@@ -874,13 +874,13 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
 
         PARAMETERS:
    .   fname - subdirectory name to be created
-   .   paths - try paths specified in the environment item '/Paths/<paths> which was
+   .   paths - try paths specified in the environment item '/Paths/<paths>' which was
                         set by --> 'ReadSearchingPaths'
    .   rename - if TRUE an already existing subdirectory will be renamed
 
         DESCRIPTION:
         The functions trys to create a subdirectory with 'filename' using one by one the
-        paths specified in the environment item '/Paths/<paths> which was
+        paths specified in the environment item '/Paths/<paths>' which was
         set by --> 'ReadSearchingPaths'. It is used in several places in ug (all paths
         are read from the standard --> 'defaults' file)":"
 
@@ -957,12 +957,12 @@ int DirCreateUsingSearchPaths_r (const char *fname, const char *paths, int renam
     PARAMETERS:
    .   fname - file name to be opened
    .   mode - see ANSI-C 'fopen'
-   .   paths - try paths specified in the environment item '/Paths/<paths> which was
+   .   paths - try paths specified in the environment item '/Paths/<paths>' which was
                         set by --> 'ReadSearchingPaths'
 
         DESCRIPTION:
         The functions trys to open the file with 'filename' using one by one the
-        paths specified in the environment item '/Paths/<paths> which was
+        paths specified in the environment item '/Paths/<paths>' which was
         set by --> 'ReadSearchingPaths'. It is used in several places in ug (all paths
         are read from the standard --> 'defaults' file)":"
 
@@ -995,13 +995,13 @@ FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char 
     PARAMETERS:
    .   fname - file name to be opened
    .   mode - see ANSI-C 'fopen'
-   .   paths - try paths specified in the environment item '/Paths/<paths> which was
+   .   paths - try paths specified in the environment item '/Paths/<paths>' which was
                         set by --> 'ReadSearchingPaths'
    .   rename - if TRUE an already existing file will be renamed (wise only for writing)
 
         DESCRIPTION:
         The functions trys to open the file with 'filename' using one by one the
-        paths specified in the environment item '/Paths/<paths> which was
+        paths specified in the environment item '/Paths/<paths>' which was
         set by --> 'ReadSearchingPaths'. It is used in several places in ug (all paths
         are read from the standard --> 'defaults' file)":"
 
@@ -1126,13 +1126,13 @@ FILE *FileOpenUsingSearchPath_r (const char *fname, const char *mode, const char
 
     PARAMETERS:
    .   fname - file name to be opened
-   .   paths - try paths specified in the environment item '/Paths/<paths> which was
+   .   paths - try paths specified in the environment item '/Paths/<paths>' which was
                         set by --> 'ReadSearchingPaths'
 
         DESCRIPTION:
         The functions trys to determine the file type of the file named
         'filename' using one by one the paths specified in the environment
-        item '/Paths/<paths> which was set by --> 'ReadSearchingPaths'.
+        item '/Paths/<paths>' which was set by --> 'ReadSearchingPaths'.
         It is used in several places in ug (all paths are read from the
         standard --> 'defaults' file)":"
 
