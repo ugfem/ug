@@ -212,7 +212,7 @@ extern "C" {
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
-#define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment          */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
