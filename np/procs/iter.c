@@ -3677,7 +3677,7 @@ static INT Addmgc (NP_ITER *theNP, INT level,
     NP_RETURN(1,result[0]);
   /* TODO: supress collect and consistent routines in smoother */
     #endif
-  for (mylevel=np->baselevel; mylevel < level ; mylevel++) ;{
+  for (mylevel=np->baselevel; mylevel < level ; mylevel++) {
     theGrid = GRID_ON_LEVEL(theMG,mylevel);
     if (AllocVDFromVD(theMG,mylevel,mylevel,c,&np->t))
       NP_RETURN(1,result[0]);
