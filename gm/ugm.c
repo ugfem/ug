@@ -23,6 +23,10 @@
 #pragma segment ugm
 #endif
 
+#ifdef __NECSX4__
+#define SIZE_T_TOO_SMALL
+#endif
+
 /****************************************************************************/
 /*																			*/
 /*		defines to exclude functions										*/
@@ -1692,6 +1696,9 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   PATCH *thePatch, **PatchList;
   PATCH_DESC thePatchDesc;
   FORMAT *theFormat;
+#ifdef SIZE_T_TOO_SMALL
+  unsigned long heap_temp;
+#endif
 
   theFormat = GetFormat(format);
   if (theFormat==NULL)
@@ -1711,10 +1718,20 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   }
 
   /* allocate the heap */
+#ifdef SIZE_T_TOO_SMALL
+  heap_temp = heapSize;
+  heapSize /= 1024;
+  if ( (heapSize * 1024) < heap_temp )
+    heapSize++;
+  theHeap = NewHeap(SIMPLE_HEAP, heapSize*1024, calloc(heapSize,1024));
+  heapSize *= 1024;
+  assert(heapSize!=0);
+#else
   theHeap = NewHeap(SIMPLE_HEAP, heapSize, malloc(heapSize));
+#endif
   if (theHeap==NULL)
   {
-    PRINTDEBUG(gm,0,("CreateMultiGrid: cannot allocate %d bytes\n",
+    PRINTDEBUG(gm,0,("CreateMultiGrid: cannot allocate %ld bytes\n",
                      heapSize));
     DisposeMultiGrid(theMG);
     return(NULL);
