@@ -168,7 +168,7 @@
 #define EXTERN                                                  4
 #define RECURSIVE                                               5
 
-#define MAX_NO_CYCLES                                   4
+#define MAX_NO_CYCLES                                   5
 
 #define WP_WORKMODE(p)                                  ((p)->WorkMode)
 #define WP_ELEMWISE(p)                                  (&((p)->ElemWiseWorkProcs))
