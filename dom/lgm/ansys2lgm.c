@@ -3606,14 +3606,20 @@ INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
 	DOUBLE A[3],B[3],C[3],V[3];
 	DOUBLE alpha,cos_alpha,Laenge_C,Laenge_V;
 	INT offs;
+	INT imal3,jmal3,kmal3,vmal3;
+
+	imal3 = i * 3;
+	jmal3 = j * 3;
+	kmal3 = k * 3;
+	vmal3 = v * 3;
 	
 	/* II[3],JJ[3],KK[3],VV[3] fuellen mit cadconvert-Feldern und den Parametern i,j,k und v*/
 	for(offs = 0; offs<3; offs++)
 	{
-		II[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[i+offs];
-		JJ[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[j+offs];
-		KK[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[k+offs];
-		VV[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[v+offs];
+		II[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[imal3+offs];
+		JJ[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[jmal3+offs];
+		KK[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[kmal3+offs];
+		VV[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[vmal3+offs];
 	}
 	
 	/*Berechnung des Vektors A von II nach JJ sowie  des Vektors B von JJ nach KK
@@ -3634,9 +3640,9 @@ INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
 	cos_alpha = ( ( C[0]*V[0] + C[1]*V[1] + C[2]*V[2] ) / (Laenge_C) / (Laenge_V) );
 	
 	if(cos_alpha > 0.0)
-		return(T);
-	else
 		return(F);
+	else
+		return(T);
 }
 
 
