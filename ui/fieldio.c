@@ -29,7 +29,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifndef __MWCW__
 #include <rpc/rpc.h>
+#endif
 
 #include "general.h"
 #include "gm.h"
@@ -53,6 +55,8 @@
 /*		macros																*/
 /*																			*/
 /****************************************************************************/
+
+#ifndef __MWCW__
 
 #undef ASCII   /* use ACSII or XDR */
 
@@ -822,14 +826,18 @@ failed:
 }
 
 /******************************************************************************/
+#endif /* MWCW */
 
 INT InitFieldIO(void)
 {
+#ifndef __MWCW__
   if (CreateCommand("savefield", SaveFieldCommand) == NULL) return __LINE__;
   if (CreateCommand("loadfield", LoadFieldCommand) == NULL) return __LINE__;
+#endif
   return 0;
 }
 
+#ifndef __MWCW__
 /*** EOF ***/
 
 /*******************************************************************************
@@ -941,3 +949,5 @@ static double AreaOfIntersection(COORD_POINT * a, int na, COORD_POINT * b, int n
   return 1.0; /* just for fun ... */
 #endif
 }
+
+#endif /* MWCW */
