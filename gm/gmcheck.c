@@ -178,8 +178,9 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 		LOCAL_TO_GLOBAL(n,x,local,global1);
 		V_DIM_EUKLIDNORM_OF_DIFF(global1,global,diff);
 		if (diff > MAX_PAR_DIST) {
+			nerrors++;
 			#ifdef ModelP
-			if (!CORNERTYPE(theNode))
+			if (CORNERTYPE(theNode))
 			{
 				nerrors = 0;
 				IFDEBUG(gm,1)
@@ -187,12 +188,13 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 				ENDDEBUG
 			}
 			#endif
-			if (nerrors == 0) return(nerrors);
-		   	UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX "/%d vertex=" VID_FMTX
-				" WARNING VFATHER=%x WARNING diff %f local and global coordinates don't match\n",
-				me,EID_PRTX(theElement),ID_PRTX(theNode),
-				NTYPE(theNode),VID_PRTX(theVertex),theFather,diff);
-			nerrors++;
+			if (nerrors >= 1)
+			{
+				UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX "/%d vertex=" VID_FMTX
+					" WARNING VFATHER=%x WARNING diff %f local and global coordinates don't match\n",
+					me,EID_PRTX(theElement),ID_PRTX(theNode),
+					NTYPE(theNode),VID_PRTX(theVertex),theFather,diff);
+			}
 		}
 	}
 
