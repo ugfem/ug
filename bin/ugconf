@@ -39,9 +39,7 @@ fi
 if test $# -eq 0
 then 
 	echo "current ug configuration is:";
-	egrep '^[ ]*ARCH|^[ ]*MODEL|^[ ]*DIM|\
-	^[ ]*GRAPE|^[ ]*NETGEN|^[ ]*DOM_MODULE|\
-	^[ ]*DEBUG_MODE' $UGROOT/ug.conf;
+	egrep '^[ ]*ARCH|^[ ]*MODEL|^[ ]*DIM|^[ ]*GRAPE|^[ ]*NETGEN|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE' $UGROOT/ug.conf;
 	exit 0;
 fi
 
