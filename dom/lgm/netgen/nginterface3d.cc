@@ -87,7 +87,7 @@ static const char * rname;
 static int cntelem;
 static int oldnl;
 static int qualclass, surfind;
-static int LGM_DEBUG = 1;
+static int LGM_DEBUG = 0;
 static double SMALL = 0.0005;
 
 class surfacemeshing
