@@ -30,9 +30,15 @@
 #include "general.h"
 #include "compiler.h"
 
+/* gm */
+#include "gm.h"
+#include "evm.h"
+
+/* np */
 #include "np.h"
 #include "udm.h"
 
+/* own header */
 #include "freebnd.h"
 
 /****************************************************************************/
@@ -122,7 +128,7 @@ INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd)
   return (1);
         #endif
 
-  if (VD_ncmps_in_otype_mod(vd,NODEVEC,NON_STRICT)!=DIM)
+  if (VD_ncmps_in_otype_mod(vd,NODEVEC,NON_STRICT)<DIM)
     REP_ERR_RETURN(1);
 
   if (!VD_SUCC_COMP(vd))
@@ -133,9 +139,11 @@ INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd)
       if ((lev==level) || FINE_GRID_DOF(vec))
       {
         vert = MYVERTEX((NODE*)VOBJECT(vec));
-        if (MOVE(vert)!=DIM)
-          continue;
         if (!VD_ISDEF_IN_TYPE(vd,VTYPE(vec)))
+          continue;
+        if (OBJT(vert)!=BVOBJ)
+          continue;
+        if (MOVE(vert)!=DIM)
           continue;
         if (MoveFreeBoundaryVertex(mg,vert,VVALUEPTR(vec,VD_CMP_OF_TYPE(vd,VTYPE(vec),0))))
           REP_ERR_RETURN (1);
@@ -144,5 +152,116 @@ INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd)
   if (FinishMovingFreeBoundaryVertices(mg))
     REP_ERR_RETURN(1);
 
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   StoreMGgeom - store all vertex local and global coordinates
+
+   SYNOPSIS:
+   INT StoreMGgeom (const MULTIGRID *mg, const VECDATA_DESC *vd)
+
+   PARAMETERS:
+   .  mg - multigrid
+   .  vd - data descriptor describing ALL nodes having at least 2*DIM comps
+
+   DESCRIPTION:
+   This function stores all vertex local and global coordinates. For later
+   restore by 'RestoreMGgeom'.
+
+   RETURN VALUE:
+   INT
+   .n		0:		ok
+   .n		n>0:	else
+
+   SEE ALSO:
+   RestoreMGgeom
+   D*/
+/****************************************************************************/
+
+INT StoreMGgeom (const MULTIGRID *mg, const VECDATA_DESC *vd)
+{
+  NODE *nd;
+  VECTOR *vec;
+  DOUBLE *pos;
+  INT l,vt;
+
+  if (VD_ncmps_in_otype(vd,NODEVEC)<2*DIM)
+    REP_ERR_RETURN (1);
+
+  if (!VD_SUCC_COMP(vd))
+    REP_ERR_RETURN(1);
+
+  for (l=0; l<=TOPLEVEL(mg); l++)
+    for (nd=FIRSTNODE(GRID_ON_LEVEL(mg,l)); nd!=NULL; nd=SUCCN(nd))
+    {
+      vec = NVECTOR(nd);
+      ASSERT(vec!=NULL);
+      vt = VTYPE(vec);
+      ASSERT(VD_ISDEF_IN_TYPE(vd,vt));
+
+      pos = CVECT(MYVERTEX(nd));
+      V_DIM_COPY(pos,VVALUEPTR(vec,VD_CMP_OF_TYPE(vd,vt,0)));
+      pos = LCVECT(MYVERTEX(nd));
+      V_DIM_COPY(pos,VVALUEPTR(vec,VD_CMP_OF_TYPE(vd,vt,DIM)));
+    }
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   RestoreMGgeom - restore all vertex local and global coordinates
+
+   SYNOPSIS:
+   INT RestoreMGgeom (MULTIGRID *mg, const VECDATA_DESC *vd)
+
+   PARAMETERS:
+   .  mg - multigrid
+   .  vd - data descriptor describing ALL nodes having at least 2*DIM comps
+
+   DESCRIPTION:
+   This function restores all vertex local and global coordinates previously
+   stored by 'StoreMGgeom'.
+
+   RETURN VALUE:
+   INT
+   .n		0:		ok
+   .n		n>0:	else
+
+   SEE ALSO:
+   StoreMGgeom
+   D*/
+/****************************************************************************/
+
+INT RestoreMGgeom (MULTIGRID *mg, const VECDATA_DESC *vd)
+{
+  VERTEX *vtx;
+  NODE *nd;
+  VECTOR *vec;
+  INT l,vt;
+
+  if (VD_ncmps_in_otype(vd,NODEVEC)<2*DIM)
+    REP_ERR_RETURN (1);
+
+  if (!VD_SUCC_COMP(vd))
+    REP_ERR_RETURN(1);
+
+  for (l=0; l<=TOPLEVEL(mg); l++)
+    for (nd=FIRSTNODE(GRID_ON_LEVEL(mg,l)); nd!=NULL; nd=SUCCN(nd))
+    {
+      vec = NVECTOR(nd);
+      ASSERT(vec!=NULL);
+      vt = VTYPE(vec);
+      ASSERT(VD_ISDEF_IN_TYPE(vd,vt));
+
+      vtx = MYVERTEX(nd);
+
+      if (MOVE(vtx)==DIM)
+        if (SetVertexGlobalAndLocal(vtx,
+                                    VVALUEPTR(vec,VD_CMP_OF_TYPE(vd,vt,0)),
+                                    VVALUEPTR(vec,VD_CMP_OF_TYPE(vd,vt,DIM))))
+          REP_ERR_RETURN (1);
+    }
   return (0);
 }

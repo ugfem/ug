@@ -70,6 +70,8 @@
 /*																			*/
 /****************************************************************************/
 
-INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd);
+INT MoveFreeBoundary    (MULTIGRID *mg, INT level, const VECDATA_DESC *vd);
+INT StoreMGgeom                 (const MULTIGRID *mg, const VECDATA_DESC *vd);
+INT RestoreMGgeom               (MULTIGRID *mg, const VECDATA_DESC *vd);
 
 #endif
