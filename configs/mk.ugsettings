@@ -68,6 +68,14 @@ UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(CAD_CFLAGS) $(GUI_CFLAGS) \
 			-I$(UGROOT)/include
 
+UG_COFLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
+			$(ARCH_CFLAGS) $(ARCH_OPTIM) $(PPIF_CFLAGS) $(MODEL_CFLAGS) \
+			$(ARCH_XINCLUDES) $(ENV_CFLAGS) \
+			$(RIF_CFLAGS) $(CHACO_CFLAGS) \
+			$(NETGEN_CFLAGS) $(COVISE_CFLAGS) $(GRAPE_CFLAGS) \
+			$(CAD_CFLAGS) $(GUI_CFLAGS) \
+			-I$(UGROOT)/include
+
 UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(ARCH_C++FLAGS) $(MODEL_CFLAGS) -I$(UGROOT)/include
 
@@ -81,9 +89,9 @@ UG_LIB    = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a
 
 UG_LIBS   = $(UG_LIB) \
 			$(UGROOT)/lib/libdom$(UG_DOMSUFFIX).a \
-			$(UGROOT)/lib/libgrape$(GRAPE)$(DIM).a \
-			$(UGROOT)/lib/libgg$(DIM).a \
-			$(UGROOT)/lib/libdev$(IF).a
+			$(UGROOT)/lib/libgrape$(GRAPE)$(UG_LIBSUFFIX).a \
+			$(UGROOT)/lib/libgg$(UG_LIBSUFFIX).a \
+			$(UGROOT)/lib/libdev$(IF)$(UG_LIBSUFFIX).a
 
 UG_POSTLINK = $(ARCH_POSTLINK) ; ugbcheck
 
