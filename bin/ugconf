@@ -38,7 +38,7 @@ then
 	echo "         SHMEM (set MODEL = SHMEM)";
 	echo "         SHMEMT3D (set MODEL = SHMEMT3D)";
 	echo "         STD_DOMAIN (set DOM_MODUL = STD_DOMAIN)";
-	echo "         GSF_DOMAIN (set DOM_MODUL = GSF_DOMAIN)";
+	echo "         LGM_DOMAIN (set DOM_MODUL = LGM_DOMAIN)";
 	echo "         DEBUG (set DEBUG_MODE = ON)";
 	echo "         NODEBUG (set DEBUG_MODE = OFF)";
 	echo "         CHACO (set CHACO = ON)";
@@ -290,8 +290,8 @@ edit_ugconf()
 	STD_DOMAIN)
 		sed 's/^DOM_MODULE.*$/DOM_MODULE = STD_DOMAIN/' $1 > $1.tmp
 		;;
-	GSF_DOMAIN)
-		sed 's/^DOM_MODULE.*$/DOM_MODULE = GSF_DOMAIN/' $1 > $1.tmp
+	LGM_DOMAIN)
+		sed 's/^DOM_MODULE.*$/DOM_MODULE = LGM_DOMAIN/' $1 > $1.tmp
 		;;
 	DEBUG)
 		sed 's/^DEBUG_MODE.*$/DEBUG_MODE = ON/' $1 > $1.tmp
