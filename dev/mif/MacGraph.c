@@ -1062,6 +1062,7 @@ static INT GraphOpen (GRAPH_WINDOW *gw, const char *title, short h, short v, sho
 
 static WINDOWID Mac_OpenOutput (
   const char *title,                                                    /* title of the window                  */
+  INT rename,                                   /* dummy at this place          */
   INT x, INT y, INT width, INT height,          /* plot rgn in standard coord.	*/
   INT *Global_LL, INT *Global_UR,                       /* global machine coordinates	*/
   INT *Local_LL, INT *Local_UR,                         /* local machine coordinates	*/
