@@ -76,6 +76,9 @@
 #define LINKX(OTYPE)     void CAT(GRID_LINKX_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio, OTYPE *After)
 #define INIT(OTYPE)      void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid))
 #define CHECK(OTYPE)     void CAT3(GRID_CHECK_,OTYPE,_LIST(GRID *Grid))
+#ifdef ModelP
+#define PRINT_LIST(OTYPE) void CAT(PRINT_LIST_STARTS_,OTYPE) (GRID *Grid, INT prios)
+#endif
 
 LINK(ELEMENT);
 LINKX(ELEMENT);
@@ -97,5 +100,12 @@ LINK(VECTOR);
 UNLINK(VECTOR);
 INIT(VECTOR);
 CHECK(VECTOR);
+
+#ifdef ModelP
+PRINT_LIST(ELEMENT);
+PRINT_LIST(NODE);
+PRINT_LIST(VERTEX);
+PRINT_LIST(VECTOR);
+#endif
 
 #endif /* __DLMGR_H__ */

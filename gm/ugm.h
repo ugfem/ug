@@ -113,7 +113,13 @@ NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement);
 #ifdef __THREEDIM__
 NODE            *CreateSideNode                 (GRID *theGrid, ELEMENT *theElement, INT side);
 NODE            *GetSideNode                    (ELEMENT *theElement, INT side);
-
 #endif
+
+#ifdef ModelP
+void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type);
+INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type);
+#endif
+
+INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode);
 
 #endif
