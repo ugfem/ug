@@ -157,8 +157,8 @@ static int InitClustering (MULTIGRID *mg, ELEMENT ***elements)
 	INT ne;
 
 	/* allocate storage for clusters in each processor */
+	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(CLUSTER)));
 	clusters = GetMem(MGHEAP(mg),MAXCLUSTERS*sizeof(CLUSTER),FROM_BOTTOM);
-printf("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(CLUSTER));
 	if (clusters==NULL) return(1);
 	for (i=0; i<MAXSETS; i++)
 	{
@@ -169,8 +169,8 @@ printf("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(CLUSTER));
 	startid   = 1;
 
 	/* allocate array of cluster pointers for sorting */
+	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(clusters)));
 	sort_clusters = (CLUSTER **) GetMem(MGHEAP(mg),MAXCLUSTERS*sizeof(clusters),FROM_BOTTOM);
-printf("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(clusters));
 	if (sort_clusters==NULL) return(1);
 
 	/* allocate memory for array of pointers to elements used in load transfer */
@@ -180,8 +180,8 @@ printf("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(clusters))
 	for (i=0; i<=TOPLEVEL(mg); i++)
 		if (GRID_ON_LEVEL(mg,i)!=NULL)
 			ne += NT(GRID_ON_LEVEL(mg,i));
+	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem nitems=%d bytes=%d\n",me,ne,ne*sizeof(ELEMENT *)));
 	*elements = (ELEMENT **) GetMem(MGHEAP(mg),ne*sizeof(ELEMENT *),FROM_TOP);
-printf("%d: InitClustering() GetMem nitems=%d bytes=%d\n",me,ne,ne*sizeof(ELEMENT *));
 	if (*elements==NULL && ne>0) return(1);
 
 	return(0);
