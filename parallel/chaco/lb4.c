@@ -293,7 +293,12 @@ static CLUSTER *new_cluster (void)
 	CLUSTER *c;
 	int i;
 
-	if (total_cnt>=MAXCLUSTERS) return(NULL);
+	if (total_cnt>=MAXCLUSTERS)
+	{
+		printf( PFMT "new_cluster(): increase MAXCLUSTERS in lb4.c\n" );
+		PrintErrorMessage('E',"new_cluster","increase MAXCLUSTERS in lb4.c\n");
+		return(NULL);
+	}
 	cluster_cnt[0]++;
 	c = clusters+(total_cnt);
 	c->source = me;
