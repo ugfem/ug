@@ -252,7 +252,7 @@
 	a0*(x)[0][2]+a1*(x)[1][2]+a2*(x)[2][2]+a3*(x)[3][2]+(local)[2]*(x)[4][2];}}
 
 #define LOCAL_TO_GLOBAL_PRISM(x,local,global)                               \
- {DOUBLE a,b,a0,a1,a2,a3,a4,a5,a6,a7;                                       \
+ {DOUBLE a,b,a0,a1,a2,a3,a4,a5;	                                        	\
   a = 1.0 - (local)[0] - (local)[1];                                        \
   b = 1.0 - (local)[2];                                                     \
   a0 = a * b;                                                               \
