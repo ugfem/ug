@@ -17,7 +17,7 @@ $debug = 0;
 @ugmods = ( "ug", "dev", "meta", "xif", "gm", "sif", "mif",
 "graphics", "low", "np", "ui", "gg2", "gg3", "dom", "std", "lgm", "gen", "netgen",
 	"diff2d", "diff2da", "cd", "cda", "fem", "fema", "ns", "ns2d", "ns3d", "simple",
-	"scalar", "tools", "tutor"
+	"scalar", "tools", "tutor", "parallel"
 );
 
 # if '-help' appears on the command line, we show the help, and do nothing else
@@ -45,6 +45,7 @@ determine_architecture();
 determine_dimension();
 
 # determine parallel, this defines $parallel (0 or 1)
+$parallel = 0;
 determine_parallel();
 
 # do we want CHACO?
@@ -180,7 +181,6 @@ if (@ARGV==0) {
 		"util" => "parallel/chaco/util",
 		"dddif" => "parallel/dddif",
 		"dddobj" => "parallel/dddobj",
-		"ppif" => "parallel/ppif",
 		"tools" => "tools",
 		"ui" => "ui"
 );
@@ -299,7 +299,7 @@ sub make_module {
 
 sub make_in_directory {
 	my ($dir) = @_;
-	print "[ugmakepl] cd $ugroot/$dir; $make $globaloptions\n";
+	print "[ugmake.pl] cd $ugroot/$dir; $make $globaloptions\n";
 	system("cd $ugroot/$dir; $make $globaloptions") == 0
 		or die "[ugmake.pl] Couldn't make in $ugroot/$dir\n";
 }
@@ -308,21 +308,21 @@ sub make_dev {
 	make_module("meta");
 	make_module("ppm");
 	make_module("ps");
-	print "[ugmakepl] cd $ugroot/dev; $make -f Makefile.dev $globaloptions\n";
+	print "[ugmake.pl] cd $ugroot/dev; $make -f Makefile.dev $globaloptions\n";
 	system("cd $ugroot/dev; $make -f Makefile.dev $globaloptions") == 0
 		or die "[ugmake.pl] Couldn't make dev\n";
 }
 
 # TODO: Use parallel make
 sub make_dom {
-	print "[ugmakepl] cd $ugroot/dom; $make -f Makefile.dom $globaloptions\n";
+	print "[ugmake.pl] cd $ugroot/dom; $make -f Makefile.dom $globaloptions\n";
 	system("cd $ugroot/dom; $make -f Makefile.dom $globaloptions") == 0
 		or die "[ugmake.pl] Couldn't make dom\n";
 }
 
 sub make_gm {
 	make_module("gg$dim");
-	print "[ugmakepl] cd $ugroot/gm; $make -f Makefile.gm $globaloptions\n";
+	print "[ugmake.pl] cd $ugroot/gm; $make -f Makefile.gm $globaloptions\n";
 	system("cd $ugroot/gm; $make -f Makefile.gm $globaloptions") == 0
 		or die "[ugmake.pl] Couldn't make gm\n";
 
@@ -330,7 +330,7 @@ sub make_gm {
 
 sub make_graphics {
 	make_module("uggraph");
-	print "[ugmakepl] cd $ugroot/graphics; $make -f Makefile.graphics $globaloptions\n";
+	print "[ugmake.pl] cd $ugroot/graphics; $make -f Makefile.graphics $globaloptions\n";
 	system("cd $ugroot/graphics; $make -f Makefile.graphics $globaloptions") == 0
 		or die "[ugmake.pl] Couldn't make graphics\n";
 }
@@ -340,15 +340,15 @@ sub make_np {
 	make_module("field");
 	make_module("procs");
 	make_module("udm");
-	print "[ugmakepl] cd $ugroot/np/amglib; $make -f Makefile.amglib $globaloptions\n";
+	print "[ugmake.pl] cd $ugroot/np/amglib; $make -f Makefile.amglib $globaloptions\n";
 	system("cd $ugroot/np/amglib; $make -f Makefile.amglib $globaloptions") == 0
 		or die "[ugmake.pl] Couldn't make amglib\n";
 	if (!$makeclean)	{
-		print "[ugmakepl] cd $ugroot/np; $make -f Makefile.np initnp.o $globaloptions\n";
+		print "[ugmake.pl] cd $ugroot/np; $make -f Makefile.np initnp.o $globaloptions\n";
 		system("cd $ugroot/np; $make -f Makefile.np initnp.o $globaloptions") == 0
 			or die "[ugmake.pl] Couldn't make initnp.o\n";
 	}
-	print "[ugmakepl] cd $ugroot/np; $make -f Makefile.np $globaloptions\n";
+	print "[ugmake.pl] cd $ugroot/np; $make -f Makefile.np $globaloptions\n";
 	system("cd $ugroot/np; $make -f Makefile.np $globaloptions") == 0
 		or die "[ugmake.pl] Couldn't make np\n";
 }
@@ -356,10 +356,10 @@ sub make_np {
 sub make_parallel	{
 	make_module("dddif");
 	make_module("dddobj");
-	make_module("ppif");
+	#make_module("ppif");
 	if ($chaco) { make_chaco(); }
-	print "[ugmakepl] cd $ugroot/parallel; $make -f Makefile.parallel $globaloptions\n";
-	system("cd $ugroot/np/parallel; $make -f Makefile.parallel $globaloptions") == 0
+	print "[ugmake.pl] cd $ugroot/parallel; $make -f Makefile.parallel $globaloptions\n";
+	system("cd $ugroot/parallel; $make -f Makefile.parallel $globaloptions") == 0
 		or die "[ugmake.pl] Couldn't make parallel\n";
 }
 
@@ -379,8 +379,8 @@ sub make_chaco {
 	make_module("optimize");
 	make_module("symmlq");
 	make_module("util");
-	print "[ugmakepl] cd $ugroot/parallel/chaco; $make -f Makefile.chaco $globaloptions\n";
-	system("cd $ugroot/np/parallel/chaco; $make -f Makefile. chaco $globaloptions") == 0
+	print "[ugmake.pl] cd $ugroot/parallel/chaco; $make -f Makefile.chaco $globaloptions\n";
+	system("cd $ugroot/parallel/chaco; $make -f Makefile.chaco $globaloptions") == 0
 		or die "[ugmake.pl] Couldn't make chaco \n";
 }
 
@@ -423,14 +423,14 @@ sub determine_parallel	{
     while(<UGCONF>)
     {
         $line = $_;
-        if ( $line =~ /^[ \t]*(MODEL)([ \t]*=[ \t]*)([23])[ \t]*$/ )	{
+        if ( $line =~ /^[ \t]*(MODEL)([ \t]*=[ \t]*)(\w*)[ \t]*$/ )	{
             $model = $3;
         }
     }
     if ( $model eq "SEQ" ) { $parallel=0; }
     else { $parallel = 1; }
     close(UGCONF);
-    if ($debug) {
+    if ($parallel) {
         if ($parallel) { print "parallel support is on\n"; }
         else { print "parallel support is off\n"; }
     }
@@ -443,7 +443,7 @@ sub determine_chaco	{
     while(<UGCONF>)
     {
         $line = $_;
-        if ( $line =~ /^[ \t]*(CHACO)([ \t]*=[ \t]*)([23])[ \t]*$/ )	{
+        if ( $line =~ /^[ \t]*(CHACO)([ \t]*=[ \t]*)(\w*)[ \t]*$/ )	{
             $tmp = $3;
         }
     }
