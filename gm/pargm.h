@@ -191,9 +191,9 @@ enum Priorities
 #define EID_FMTE    ID_FMTE
 #define EID_FFMTE   ID_FFMTE
 #define EID_PRTE(x) ((long)ID(x)),EGID(x),EPRIO(x)
-#define EID_FMTX    ID_FMTX "/%d"
+#define EID_FMTX    ID_FMTX "/%d/%d"
 #define EID_FFMTX   ID_FFMTX "/%d"
-#define EID_PRTX(x) x,((long)ID(x)),EGID(x),EPRIO(x),TAG(x)
+#define EID_PRTX(x) x,((long)ID(x)),EGID(x),EPRIO(x),TAG(x),LEVEL(x)
 
 #define VINDEX_FMT     ID_FMT
 #define VINDEX_FFMT    ID_FFMT
