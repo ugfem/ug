@@ -11,7 +11,7 @@ include ../ug.conf
 
 OBJECTS = ugenv.o heaps.o fifo.o misc.o \
 		  defaults.o initlow.o fileopen.o \
-		  ugstruct.o debug.o bio.o pfile.o scan.o
+		  ugstruct.o debug.o bio.o pfile.o scan.o tree.o
 
 # local C compiler flags
 LCFLAGS = -I../include
