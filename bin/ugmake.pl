@@ -13,6 +13,7 @@
 
 
 $debug = 0;
+$ugroot = "";
 
 @ugmods = ( "ug", "dev", "meta", "xif", "gm", "sif", "mif",
 "graphics", "low", "np", "ui", "gg2", "gg3", "dom", "std", "lgm", "gen", "netgen",
@@ -28,10 +29,18 @@ foreach $arg (@ARGV)	{
 	}
 }
 
+for ($i=1; $i<@ARGV; $i++) {
+    if ($ARGV[$i] eq "-ugroot") {
+	$ugroot = $ARGV[$i+1];
+    }
+}
+
 #################################################################################################
 # determine ug location
-$ENV{'UGROOT'} or die "[ugmake.pl] environment variable 'UGROOT' not defined\n";
-$ugroot = $ENV{UGROOT};
+if ( $ugroot eq "" ) {
+    $ENV{'UGROOT'} or die "[ugmake.pl] environment variable 'UGROOT' not defined\n";
+    $ugroot = $ENV{UGROOT};
+}
 if ($debug) { print "UGROOT is $ugroot\n"; }
 
 $ugconf=$ugroot.'/ug.conf';
@@ -247,6 +256,7 @@ sub make_module {
 	if (exists($simple{$module}))	{
 		print "cd $ugroot/$simple{$module}\n";
 		@makef = <$ugroot/$simple{$module}/Makefile*>;
+		@makef == 1 or die "More than one Makefile found in $ugroot/$simple{$module}\n";
 		print "$make -f @makef $globaloptions\n";
 		system("cd $ugroot/$simple{$module}; $make -f @makef $globaloptions") == 0
 			or die "[ugmake.pl] Couldn't make $module\n";
@@ -277,6 +287,12 @@ sub make_module {
 					or die "[ugmake.pl] Couldn't make initug.o\n";
 			}
 
+		}
+		elsif ($module eq "dev")	{
+			make_dev();
+		}
+		elsif ($module eq "dom")	{
+			make_dom();
 		}
 		elsif ($module eq "gm")	{
 			make_gm();
