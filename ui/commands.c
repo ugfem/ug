@@ -9110,6 +9110,10 @@ static INT DragCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   float dx,dy;
 
+    #ifdef ModelP
+  if (me!=master) return (OKCODE);
+    #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
