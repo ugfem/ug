@@ -136,5 +136,6 @@ void SetPrintDebugProc          (PrintfProcPtr print);
 void PrintDebug                         (const char *format, ...);
 int  PrintDebugToFile           (const char *format, ...);
 int  SetPrintDebugToFile        (const char *fname);
+int  RemoveDebugFileIfEmpty (void);
 
 #endif

@@ -94,7 +94,8 @@ extern int me, master;
 /****************************************************************************/
 
 static PrintfProcPtr printdebug=printf;
-static FILE                                     *debugfile;
+static FILE                                     *debugfile=NULL;
+static char                             *debugfilename;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -173,24 +174,45 @@ int PrintDebugToFile (const char *format, ...)
 
 int SetPrintDebugToFile (const char *fname)
 {
+  if (debugfile!=NULL)
+    return (1);
   if ((debugfile=fileopen(fname,"w"))==NULL)
     return (1);
 
+  debugfilename = StrDup(fname);
   SetPrintDebugProc(PrintDebugToFile);
 
   return (0);
 }
 
-
-static int InitDebug()
+int RemoveDebugFileIfEmpty (void)
 {
-  SetPrintDebugProc(printf);
-  return(0);
+#       ifndef ModelP
+  if (debugfile==NULL)
+    return (1);
+  if (debugfilename==NULL)
+    return (1);
+  rewind(debugfile);
+  if (getc(debugfile)==EOF)
+  {
+    if (fclose(debugfile))
+      return (1);
+    if (remove(debugfilename))
+      return (1);
+  }
+#       endif
+  return (0);
 }
-
 
 /* TODO: delete this */
 /*
+
+   static int InitDebug()
+   {
+        SetPrintDebugProc(printf);
+        return(0);
+   }
+
    main()
    {
         char string[10]= "Hallo";
