@@ -811,6 +811,7 @@ static INT WriteElementParInfo (ELEMENT *theElement, MGIO_PARINFO *pinfo)
   INT i,j,k,s,n_max;
   int *pl;
   NODE *theNode;
+  VERTEX *theVertex;
   EDGE *theEdge;
 
   n_max = PROCLISTSIZE-(ActProcListPos-ProcList);
@@ -838,7 +839,21 @@ static INT WriteElementParInfo (ELEMENT *theElement, MGIO_PARINFO *pinfo)
       for (i=0,j=2; i<pinfo->ncopies_node[k]; i++,j+=2)
         ActProcListPos[s++] = pl[j];
     }
-    pinfo->n_ident[k] = GID(CORNER(theElement,k));
+    pinfo->n_ident[k] = GID(theNode);
+  }
+  for (k=0; k<CORNERS_OF_ELEM(theElement); k++)
+  {
+    theVertex = MYVERTEX(CORNER(theElement,k));
+    pinfo->prio_vertex[k] = DDD_InfoPriority(PARHDRV(theVertex));
+    pinfo->ncopies_vertex[k] = DDD_InfoNCopies(PARHDRV(theVertex));
+    if (n_max<pinfo->ncopies_vertex[k]+s) RETURN (1);
+    if (pinfo->ncopies_vertex[k]>0)
+    {
+      pl = DDD_InfoProcList(PARHDRV(theVertex));
+      for (i=0,j=2; i<pinfo->ncopies_vertex[k]; i++,j+=2)
+        ActProcListPos[s++] = pl[j];
+    }
+    pinfo->v_ident[k] = VXGID(theVertex);
   }
 #ifdef __THREEDIM__
   for (k=0; k<EDGES_OF_ELEM(theElement); k++)
@@ -1238,8 +1253,10 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
 {
   INT i,j,k,s,prio,where,oldwhere,old;
   INT evec,nvec,edvec,svec;
+  GRID            *vgrid;
   ELEMENT         *theFather,*After,*Next,*Succe;
   NODE            *theNode;
+  VERTEX          *theVertex;
   EDGE            *theEdge;
   VECTOR          *theVector;
 
@@ -1271,7 +1288,7 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
         Next = NULL;
         Succe = SUCCE(theElement);
         if (Succe != NULL)
-          if (EFATHER(Succe)==theFather && EPRIO(Succe)==old)
+          if (EFATHER(Succe)==theFather && PRIO2INDEX(EPRIO(Succe))==PRIO2INDEX(old))
             Next = Succe;
         SET_SON(theFather,oldwhere,Next);
       }
@@ -1328,6 +1345,29 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
     }
     else
       s += pinfo->ncopies_node[j];
+  }
+  for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+  {
+    theVertex = MYVERTEX(CORNER(theElement,j));
+    if (USED(theVertex) == 0)
+    {
+      vgrid = GRID_ON_LEVEL(MYMG(theGrid),LEVEL(theVertex));
+      if ((prio = pinfo->prio_vertex[j]) != PrioMaster)
+      {
+        GRID_UNLINK_VERTEX(vgrid,theVertex);
+        SETVXPRIO(theVertex,prio);
+        GRID_LINK_VERTEX(vgrid,theVertex,prio);
+      }
+      PRINTDEBUG(gm,1,("Evaluate-pinfo():vid=%d prio=%d\n",ID(theVertex),prio);fflush(stdout));
+      for (i=0; i<pinfo->ncopies_vertex[j]; i++)
+      {
+        DDD_IdentifyNumber(PARHDRV(theVertex),pinfo->proclist[s],pinfo->v_ident[j]);
+        s++;
+      }
+      SETUSED(theVertex,1);
+    }
+    else
+      s += pinfo->ncopies_vertex[j];
   }
 #if (MGIO_DIM==3)
   for (j=0; j<EDGES_OF_ELEM(theElement); j++)
