@@ -7394,11 +7394,6 @@ static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
 	GEN_FR_min = UG_GlobalMinDOUBLE(GEN_FR_min);
 	GEN_FR_max = UG_GlobalMaxDOUBLE(GEN_FR_max);
 	#endif	
-	
-	#ifdef ModelP
-	Broadcast(&GEN_FR_min,sizeof(double));
-	Broadcast(&GEN_FR_max,sizeof(double));
-	#endif
 
 	if (GEN_FR_min>GEN_FR_max)
 	{
@@ -14605,8 +14600,7 @@ static INT Insert(INT *htab, INT gid)
 */
 /****************************************************************************/
 
-
-static INT GatherGraphs(DDD_OBJ obj, void *data)
+static int GatherGraphs(DDD_OBJ obj, void *data)
 {
 	ELEMENT *p, *son, *nbElem, *sonList[MAX_SONS];
 	INT *d, *d1, *d2, i, j, na, cnt; 
@@ -14617,7 +14611,7 @@ static INT GatherGraphs(DDD_OBJ obj, void *data)
 	/* something to send? */
 	if (N_GLOBAL_SONS(p) == N_LOCAL_SONS(p) || N_LOCAL_SONS(p) == 0) {
 		*d = 0;
-		return ;
+		return 0;
 	}
 
 	/* compute & compact partial graph */
@@ -14646,7 +14640,7 @@ static INT GatherGraphs(DDD_OBJ obj, void *data)
 	*d1 = d - d1;
 }
 	
-static INT ScatterGraphs(DDD_OBJ obj, void *data)
+static int ScatterGraphs(DDD_OBJ obj, void *data)
 {
 	ELEMENT *p;
 	INT *d, *d1, i, j, n, na, gid;
@@ -14655,13 +14649,13 @@ static INT ScatterGraphs(DDD_OBJ obj, void *data)
 	d = (INT *)data;
 	
 	/* got something? */
-	if (*d == 0) return;
+	if (*d == 0) return 0;
 
 	/* allocate & init memory, if necessary */
 	if (SH_LINK(p) == NULL)
 		if ((SH_LINK(p) = (SH_DATA *)GetMem(OE_Heap, sizeof(SH_DATA), FROM_TOP)) == NULL) {
 			OE_Error =1;
-			return;
+			return 0;
 		}
 		else {
 			for (i = 0; i < HT_LEN; i++) 
@@ -14676,7 +14670,7 @@ static INT ScatterGraphs(DDD_OBJ obj, void *data)
 		i = Insert(HTAB(p), gid); 
 		if ((GR_LINK(p)[i] = (GR_DATA *)GetMem(OE_Heap, sizeof(GR_DATA), FROM_TOP)) == NULL) {
 			OE_Error = 1;
-			return;
+			return 0;
 		}
 		HIS_GAP(p, i)  = *d;  d++;
 		CNT(p, i)      = *d;  d++;
@@ -14684,7 +14678,7 @@ static INT ScatterGraphs(DDD_OBJ obj, void *data)
 		if (na > 0) {
 			if ((ADJACENT(p, i) = (INT *)GetMem(OE_Heap, na*sizeof(INT), FROM_TOP)) == NULL) {
 				OE_Error = 1;
-				return;
+				return 0;
 			}
 			for (j = 0; j < na; j++) {
 				ADJACENT(p, i)[j] = *d;
@@ -14819,7 +14813,7 @@ static INT GatherOrdering(DDD_OBJ obj, void *data)
 	d = (INT *)data;
 
 	/* something to send? */
-	if (SH_LINK(p) == NULL) return;
+	if (SH_LINK(p) == NULL) return 0;
 
 	/* send numbered elements */
 	pid = PLOT_ID(p);
@@ -14841,7 +14835,7 @@ static INT ScatterOrdering(DDD_OBJ obj, void *data)
 	d = (INT *)data;
 
 	/* got something? */
-	if (N_LOCAL_SONS(p) == N_GLOBAL_SONS(p)) return;
+	if (N_LOCAL_SONS(p) == N_GLOBAL_SONS(p)) return 0;
 
 	/* init local hash table */
 	for (i = 0; i < HT_LEN; i++)
@@ -15014,7 +15008,7 @@ static INT NumberCoarseGrid(INT *table, MULTIGRID *mg)
 	
 	/* copy local coarse grid pointers */
 	i = 0;
-	for (p = FIRSTELEMENT(mg->grids[0]); p != NULL; p = SUCCE(p))
+	for (p = FIRSTELEMENT(GRID_ON_LEVEL(mg,0)); p != NULL; p = SUCCE(p))
 		mine[i++] = p;
 
 	/* sort local coarse grid pointers by gid */
@@ -15069,7 +15063,7 @@ static INT CollectCoarseGrid(MULTIGRID *mg)
 		inmsg[WOP_DOWN_CHANNELS];
 
 	/* init */
-	elem = FIRSTELEMENT(mg->grids[0]);
+	elem = FIRSTELEMENT(GRID_ON_LEVEL(mg,0));
 	heap = mg->theHeap;
 	error = k = 0;
 	Mark(heap, FROM_BOTTOM);
@@ -15389,7 +15383,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	HEAP *heap;
 	GRID *grid;
 	ELEMENT *p;
-	INT err, n;
+	INT err, n, k;
 	#ifndef ModelP
 	ELEMENT **table;
 	#else
@@ -15397,7 +15391,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	#endif
 
 	heap = mg->theHeap;
-	grid = mg->grids[0];
+	grid = GRID_ON_LEVEL(mg,0);
 	Mark(heap, FROM_TOP);
 
 	#ifdef ModelP
@@ -15473,7 +15467,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 			err = OrderFathersSEL(mg, table);
 			break;
 		}
-		if (!err) PutAtEndOfList(grid, grid->nElem, table);
+		if (!err) PutAtEndOfList(grid,grid->nElem, table);
     #else
 		err = OrderFathersXSH(mg, table);
 		if (err == 1) 
