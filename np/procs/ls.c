@@ -177,7 +177,7 @@ INT NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
 
 INT NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
 {
-  if ((np->x != NULL) || (np->b 1= NULL) || (np->A 1= NULL)) {
+  if ((np->x != NULL) || (np->b != NULL) || (np->A != NULL)) {
     UserWrite("symbolic user data:\n");
     if (np->A != NULL)
       UserWriteF(DISPLAY_NP_FORMAT_SS,"A",ENVITEM_NAME(np->A));
