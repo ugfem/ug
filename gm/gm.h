@@ -1179,7 +1179,7 @@ extern CONTROL_ENTRY
 /* general query macros */
 
 /* dynamic control words */
-#define _DEBUG_CW_
+#undef _DEBUG_CW_
 #if (defined _DEBUG_CW_) && \
   !(defined __COMPILE_CW__)                             /* to avoid infinite recursion during ReadCW */
 
