@@ -167,60 +167,7 @@ static DOUBLE F_q (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3)
 
   return(sqrt(V3_SCAL_PROD(n,n)));
 }
-
-/* volume computations, orientation is same as in general element definition ! */
-static DOUBLE V_te (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3)
-{
-  DOUBLE_VECTOR a, b, h, n;
-
-  V3_SUBTRACT(x1,x0,a);
-  V3_SUBTRACT(x2,x0,b);
-  V3_SUBTRACT(x3,x0,h);
-  V3_VECTOR_PRODUCT(a,b,n);
-
-  return(OneSixth*V3_SCAL_PROD(n,h));
-}
-
-static DOUBLE V_py (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3, DOUBLE *x4)
-{
-  DOUBLE_VECTOR a,b,h,n;
-
-  V3_SUBTRACT(x2,x0,a);
-  V3_SUBTRACT(x3,x1,b);
-  V3_SUBTRACT(x4,x0,h);
-  V3_VECTOR_PRODUCT(a,b,n);
-
-  return(OneSixth*V3_SCAL_PROD(n,h));
-}
-
-static DOUBLE V_pr (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3, DOUBLE *x4, DOUBLE *x5)
-{
-  DOUBLE_VECTOR a,b,c,d,e,m,n;
-
-  V3_SUBTRACT(x4,x0,a);
-  V3_SUBTRACT(x1,x3,b);
-  V3_SUBTRACT(x1,x0,c);
-  V3_SUBTRACT(x2,x0,d);
-  V3_SUBTRACT(x5,x0,e);
-  a[0] = x4[0]-x0[0]; a[1] = x4[1]-x0[1]; a[2] = x4[2]-x0[2];
-  b[0] = x1[0]-x3[0]; b[1] = x1[1]-x3[1]; b[2] = x1[2]-x3[2];
-  c[0] = x1[0]-x0[0]; c[1] = x1[1]-x0[1]; c[2] = x1[2]-x0[2];
-  d[0] = x2[0]-x0[0]; d[1] = x2[1]-x0[1]; d[2] = x2[2]-x0[2];
-  e[0] = x5[0]-x0[0]; e[1] = x5[1]-x0[1]; e[2] = x5[2]-x0[2];
-
-  V3_VECTOR_PRODUCT(a,b,m);
-  V3_VECTOR_PRODUCT(c,d,n);
-  V3_ADD(n,m,n);
-
-  return(OneSixth*V3_SCAL_PROD(n,e));
-}
-
-static DOUBLE V_he (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3, DOUBLE *x4, DOUBLE *x5, DOUBLE *x6, DOUBLE *x7)
-{
-  return(V_pr(x0,x1,x2,x4,x5,x6)+V_pr(x0,x2,x3,x4,x6,x7));
-}
 #endif
-
 
 /****************************************************************************/
 /*D
@@ -925,14 +872,14 @@ INT GetSkewedUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPV
 
 INT GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
 {
-  const DOUBLE_VECTOR *x;
+  const DOUBLE_VECTOR *x=FVG_GCOPTR(geo);
   DOUBLE_VECTOR y;
-  const ELEMENT *elem;
-  INT ip,co0,co1,corn,sd,side,tag;
+  const ELEMENT *elem=FVG_ELEM(geo);
+  INT ip,corn,sd,side,tag=FVG_TAG(geo);
+#ifdef __TWODIM__
   DOUBLE d0, d1;
-  x = FVG_GCOPTR(geo);
-  tag = FVG_TAG(geo);
-  elem = FVG_ELEM(geo);
+  INT co0,co1;
+#endif
 
   for (ip=0; ip<FVG_NSCVF(geo); ip++)
   {
