@@ -413,7 +413,7 @@ void MakeRefMarkandMarkClassConsistent (int level)
 }
 #endif
 
-#ifdef ModelP
+#ifdef ModelPTest
 /****************************************************************************/
 /*																			*/
 /* Function:  CheckPartitioning												*/
