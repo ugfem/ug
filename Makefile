@@ -10,11 +10,11 @@
 include ug.conf
 
 # the following list may be extended
-UGMODULES = LOW GM NP GRAPHICS UI $(MODEL_TARGET)
-MODULES = DEV DOM $(UGMODULES)
+UGMODULES = LOWtarget GMtarget NPtarget GRAPHICStarget UItarget $(MODEL_TARGET)target
+MODULES = DEVtarget DOMtarget $(UGMODULES)
 
 # modules for ug server daemon
-UGDMODULES = LOW DEV 
+UGDMODULES = LOWtarget DEVtarget 
 
 # object files for both dimensions
 OBJECTS = initug.o
@@ -27,7 +27,7 @@ all: include $(MODULES) $(OBJECTS)
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 	echo "libug, libdom and libdev compiled"
 
-uglib: include $(UGMODULES)
+ugtarget: include $(UGMODULES)
 	make $(UG_LIB) 	
 	echo "libug compiled"
 
@@ -45,28 +45,28 @@ $(UG_LIB): $(OBJECTS)
 
 ##############################################################################
 
-LOW: include
+LOWtarget: include
 	cd low && make -f Makefile.low
 
-DEV: include
+DEVtarget: include
 	cd dev && make -f Makefile.dev
 
-DOM: include
+DOMtarget: include
 	cd dom && make -f Makefile.dom
 
-GM: include
+GMtarget: include
 	cd gm && make -f Makefile.gm
 
-NUMERICS: include
+NUMERICStarget: include
 	cd numerics && make -f Makefile.numerics
 
-NP: include
+NPtarget: include
 	cd np && make -f Makefile.np
 
-GRAPHICS: include
+GRAPHICStarget: include
 	cd graphics && make -f Makefile.graphics
 
-UI: include
+UItarget: include
 	cd ui && make -f Makefile.ui
 
 
@@ -76,7 +76,7 @@ UI: include
 
 SEQUENTIAL:
 
-PARALLEL: include
+PARALLELtarget: include
 	cd parallel; $(ARCH_MAKE) -f Makefile.parallel
 
 

@@ -25,19 +25,19 @@ OBJECTS = initparallel.o
 
 # $(CHACO) is set to ON or OFF in ug.conf
 
-all: include DDDIF DDDOBJ UTIL ppif_all $(CHACO) $(OBJECTS)
+all: include DDDIFtarget DDDOBJtarget UTILtarget ppif_all $(CHACO) $(OBJECTS)
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 
 include:
 	ln -s ../include include
 
-DDDIF:
+DDDIFtarget:
 	cd dddif && make -f Makefile.dddif
 
-DDDOBJ:
+DDDOBJtarget:
 	cd dddobj && make -f Makefile.dddobj
 
-UTIL:
+UTILtarget:
 	cd util && make -f Makefile.util
 
 ON:

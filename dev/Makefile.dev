@@ -12,7 +12,7 @@ include ../ug.conf
 
 
 # select your devices: one of { NIF, XIF, SIF, RIF }. META and PS are optional
-DEVICES = $(IF)IF META PS PPM
+DEVICES = $(IF)IFtarget METAtarget PStarget PPMtarget
 OBJECTS = ugdevices.o sockcomm.o
 
 
@@ -25,28 +25,28 @@ all : $(OBJECTS) $(DEVICES) Makefile.dev
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
-NIF:
+NIFtarget:
 	cd nif && make -f Makefile.nif
 
-MIF:
+MIFtarget:
 	cd mif && make -j 2 -f Makefile.mif
 
-XIF:
+XIFtarget:
 	cd xif && make -f Makefile.xif
 
-SIF:
+SIFtarget:
 	cd sif && make -f Makefile.sif
 
-RIF:
+RIFtarget:
 	cd rif && make -f Makefile.rif
 
-META:
+METAtarget:
 	cd meta && make -f Makefile.meta
 
-PS:
+PStarget:
 	cd ps && make -f Makefile.ps
 	
-PPM:
+PPMtarget:
 	cd ppm && make -f Makefile.ppm
 
 XLIB: 

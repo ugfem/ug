@@ -18,7 +18,7 @@ LCFLAGS = -I../include
 
 # $(GRAPE) is set to ON or OFF in ug.conf
 
-all: $(OBJECTS) $(GRAPE) UGGRAPH $(COVISE_TARGET) $(PV3_TARGET)
+all: $(OBJECTS) $(GRAPE) UGGRAPHtarget $(COVISE_TARGET) $(PV3_TARGET)
 	$(ARCH_AR)  $(ARCH_ARFLAGS) ../lib/libug$(DIM).a $(OBJECTS)
 
 .c.o:
@@ -28,7 +28,7 @@ all: $(OBJECTS) $(GRAPE) UGGRAPH $(COVISE_TARGET) $(PV3_TARGET)
 ar: $(GRAPE) 
 	cd uggraph && make -f Makefile.uggraph ar
 
-UGGRAPH:
+UGGRAPHtarget:
 	cd uggraph && make -f Makefile.uggraph
 
 ON:

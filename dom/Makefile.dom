@@ -34,15 +34,15 @@ LGM_DOMAIN:
 GEN_DOMAIN:
 	cd gen && make -f Makefile.gen
 
-STD: 
+STDtarget: 
 	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
 	cd std && make -f Makefile.std
 
-LGM: 
+LGMtarget: 
 	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
 	cd lgm && make -f Makefile.lgm
 
-GEN: 
+GENtarget: 
 	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
 	cd gen && make -f Makefile.gen
 

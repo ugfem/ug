@@ -18,7 +18,7 @@
 include make.inc
 
 # modules of SuperLU
-MODULES = CBLAS SUPERLU
+MODULES = CBLAStarget SUPERLUtarget
 
 # object files
 OBJECTS = slu.o
@@ -30,10 +30,10 @@ all: $(OBJECTS) $(MODULES) Makefile.slu
 $(UG_LIB): $(OBJECTS)
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 
-CBLAS:
+CBLAStarget:
 	cd cblas && make
 
-SUPERLU:
+SUPERLUtarget:
 	cd src && make
 
 .c.o:
