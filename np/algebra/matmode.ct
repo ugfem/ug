@@ -58,6 +58,9 @@ if (MD_IS_SCALAR(M)
 	#endif
 
     #include "matloop.ct"	
+
+    #undef T_RTYPE
+    #undef T_CTYPE
 }
 else 
 #endif
@@ -312,4 +315,7 @@ else
                         #include "matloop.ct"	
 				}
 			}
+    #undef T_RTYPE
+    #undef T_CTYPE
 }
+

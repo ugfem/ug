@@ -41,10 +41,10 @@ $Header$
 						{
 							T_MOD_MATRIX
 						}
+					}	
 	                #ifdef T_POST_MATRIX
     	            T_POST_MATRIX
         	        #endif
-					}	
 				}		
 	for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,tl)); v!=NULL; v=SUCCVC(v)) 
 		if (NEW_DEFECT(v)) 	
@@ -99,8 +99,6 @@ $Header$
 			}	
 	#endif
 
-#undef T_RTYPE
-#undef T_CTYPE
 #undef T_LOOP
 #undef T_MOD_MATRIX
 #undef T_POST_MATRIX
