@@ -60,7 +60,7 @@
 
 /*----------- typedef for functions ----------------------------------------*/
 
-typedef INT (*PreprocessingProcPtr)(MULTIGRID *);
+typedef INT (*PreprocessingProcPtr)(const char *, MULTIGRID *);
 typedef DOUBLE (*ElementPlotProcPtr)(const ELEMENT *,const COORD **,COORD *);
 typedef void (*ElementVectorProcPtr)(const ELEMENT *,const COORD **,COORD *,DOUBLE *);
 typedef DOUBLE (*MatrixPlotProcPtr)(const MATRIX *);
