@@ -120,6 +120,17 @@ INT InitUg (int *argcp, char ***argvp)
   char debugfilename[NAMESIZE];
         #endif
 
+        #ifdef ModelP
+  /* init ppif module */
+  if ((err=InitPPIF(argcp, argvp)) != PPIF_SUCCESS)
+  {
+    printf("ERROR in InitParallel while InitPPIF.\n");
+    printf ("aborting ug\n");
+
+    return (1);
+  }
+        #endif
+
   /* init the low module */
   if ((err=InitLow())!=0)
   {
