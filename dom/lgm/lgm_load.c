@@ -37,7 +37,9 @@
 #include "lgm_domain.h"
 #include "lgm_load.h"
 #include "lgm_transfer.h"
-#include "ansys2lgm.h"
+#ifdef __THREEDIM__
+        #include "ansys2lgm.h"
+#endif
 #include "misc.h"
 #include "general.h"
 #ifdef ModelP
