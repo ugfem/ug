@@ -30,6 +30,9 @@
 #include "general.h"
 #include "compiler.h"
 
+/* dev */
+#include "devices.h"
+
 /* gm */
 #include "gm.h"
 #include "evm.h"
