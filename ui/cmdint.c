@@ -2260,7 +2260,9 @@ static INT InterpretString (void)
 
       if (filePtr==NULL)
       {
-        PrintErrorMessage('E',"InterpretString","could not open file");
+        char buf[128];
+        sprintf(buf,"could not open file %s",filename);
+        PrintErrorMessage('E',"InterpretString",buf);
         return(8515);                           /* could not open file */
       }
       if ((error=setvbuf(filePtr,fileBuffer,_IOFBF,FILEBUFSIZE))!=0)
