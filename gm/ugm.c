@@ -66,6 +66,7 @@
 #include "refine.h"
 #include "domain.h"
 
+
 #ifdef ModelP
 #include "parallel.h"
 #endif
@@ -98,6 +99,7 @@
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
+
 
 /****************************************************************************/
 /*																			*/
@@ -1577,6 +1579,15 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   for (i=0; i<MAXLEVEL; i++)
     theMG->grids[i] = NULL;
 
+  /* CAD */
+  theMG->ndelemptrarray = GetMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),FROM_TOP);
+  for (i=0; i<NDELEM_BLKS_MAX; i++)
+  {
+    MGNDELEMBLK(theMG,i) = NULL;
+  }
+  MGNDELEMPTRARRAYFLAG(theMG) = 1;       /*by default the NoDeELEMentPoinTeRARRAY is used */
+  /* CAD */
+
   /* allocate level 0 grid */
   theGrid = CreateNewLevel(theMG);
   if (theGrid==NULL)
@@ -1586,13 +1597,11 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   }
 
   /* allocate predefined mesh, e. g. corner vertices pointers */
-        #ifndef CAD
   if (InsertMesh(theMG,&mesh))
   {
     DisposeMultiGrid(theMG);
     return(NULL);
   }
-        #endif
 
   ReleaseTmpMem(theHeap);
 
@@ -3195,10 +3204,380 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 }
 #endif
 
+
+
+static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, ELEMENT **Nbr)
+{
+  INT i,j,k,l,m,index,fnd,num,IndexOfDivPart,IndexOfModPart;
+  NODE            *sideNode[MAX_CORNERS_OF_SIDE];
+  ELEMENT         *interestingElements[ELEMS_OF_NODE_MAX];
+  ELEMENT         *newinterestingElements[ELEMS_OF_NODE_MAX];
+  ELEMENT         *theElement;
+  NODE            *NeighborNode;
+
+  /* for all sides of the element to be created */
+  for (i=0; i<SIDES_OF_REF(n); i++)
+  {
+    for(j=0; j<CORNERS_OF_SIDE_REF(n,i); j++)            /* for the 3 corners*/
+    {
+      sideNode[j] = Node[CORNER_OF_SIDE_REF(n,i,j)];                  /* into sideNode*/
+    }
+
+    /*CAD*/
+    /* Ziel: theElement = ... */
+    j=0;
+
+    /*fülle interestingElements mit den Elements des ersten Nodes:*/
+    m = 0;index=0;
+    IndexOfDivPart = ID(sideNode[0]) / NO_NODES_OF_BLK;
+    IndexOfModPart = ID(sideNode[0]) % NO_NODES_OF_BLK;
+    index = MGNDELEMOFFS(IndexOfModPart,0);
+    while(MGNDELEMBLKENTRY(theMG,IndexOfDivPart,index) != NULL)
+    {
+      interestingElements[m] = MGNDELEMBLKENTRY(theMG,IndexOfDivPart,index);
+      m++; index++;
+    }
+    interestingElements[m] = NULL;
+
+    /*  an dieser Stelle hier ist
+       interestingElements[m]  nie ganz
+       gefuellt ist, sondern maximal mit (ELEMS_OF_NODE_MAX-1) Eintraegen.
+       Wenn es ganz voll ist, wird  oben schon durch die Abfrage
+                            "if (helpIndex == ELEMS_OF_NODE_MAX)"
+       in den O(n*n)-Alg. verzweigt. */
+
+    j=1;             /*because the first node was already considered*/
+
+    while( (j < CORNERS_OF_SIDE_REF(n,i) ) && (interestingElements[0] != NULL) )
+    {
+      k=0;
+      l=0;
+      IndexOfDivPart = ID(sideNode[j]) / NO_NODES_OF_BLK;
+      IndexOfModPart = ID(sideNode[j]) % NO_NODES_OF_BLK;
+
+      while (interestingElements[k] != NULL)
+      {
+        index = MGNDELEMOFFS(IndexOfModPart,0);
+
+        while(MGNDELEMBLKENTRY(theMG,IndexOfDivPart,index) != NULL)
+        {
+          if(interestingElements[k] == MGNDELEMBLKENTRY(theMG,IndexOfDivPart,index))
+          {
+            newinterestingElements[l] = interestingElements[k];
+            l++;
+          }
+          index++;
+        }                         /* of while(MGNDELEMBLKENTRY(theMG,IndexOfDivPart,index) != NULL) */
+        k++;
+      }                  /* of while (interestingElements[k] != NULL)*/
+
+
+      m = 0;
+      newinterestingElements[l] = NULL;
+
+      while (newinterestingElements[m] != NULL)
+      {
+        interestingElements[m] = newinterestingElements[m];
+        m++;
+      }
+      interestingElements[m] = NULL;
+
+      j++;                   /*next node of sideNode[j]*/
+
+    }             /* while( (j < CORNERS_OF_SIDE_REF(n,i) ) && (interestingElements[0] != NULL) ) */
+
+    theElement = interestingElements[0];
+
+    /* Ziel: theElement = foundElements[i]; */
+    /*CAD*/
+
+    if (theElement != NULL)
+    {
+      /*for all sides of the already existing neighbour elememt*/
+      fnd = 0;
+
+
+
+      for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+      {
+        num = 0;
+        /* for all corners of the side of the neighbour */
+        for (m=0; m<CORNERS_OF_SIDE(theElement,j); m++)
+        {
+          NeighborNode = CORNER(theElement,
+                                CORNER_OF_SIDE(theElement,j,m));
+          /* for all corners of the side of the
+              element to be created */
+          for (k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
+            if(NeighborNode==sideNode[k])
+            {
+              num++;
+              break;
+            }
+        }
+        if(num==CORNERS_OF_SIDE_REF(n,i))
+        {
+          if (NBELEM(theElement,j)!=NULL)
+          {
+            PrintErrorMessage('E',"InsertElement -> NeighborSearch_O_n",
+                              "neighbor relation inconsistent");
+            return(1);
+          }
+          Nbr[i] = theElement;
+          NbrS[i] = j;
+          fnd = 1;
+        }
+
+        if (fnd == 1)
+          j = SIDES_OF_ELEM(theElement);               /*go on with next side*/
+
+      }
+    }
+  }
+
+  return(0);
+  /*... O(n)InsertElement ...*/
+
+
+} /*of static INT NeighborSearch_O_n()*/
+
+
+
+
+static INT NeighborSearch_O_nn(INT n, NODE **Node, GRID *theGrid, INT *NghbrSide, ELEMENT **Nghbr)
+{
+  INT i,jj,k,m,num;
+  NODE            *sideNode[MAX_CORNERS_OF_SIDE];
+  ELEMENT         *theElement;
+  NODE            *NeighborNode;
+
+  /*O(n*n)InsertElement ...*/
+  /* for all sides of the element to be created */
+  for (i=0; i<SIDES_OF_REF(n); i++)
+  {
+    for(jj=0; jj<CORNERS_OF_SIDE_REF(n,i); jj++ )
+      sideNode[jj] = Node[CORNER_OF_SIDE_REF(n,i,jj)];
+
+    /* for all neighbouring elements allready inserted */
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+         theElement=SUCCE(theElement))
+    {
+      /* for all sides of the neighbour element */
+      for (jj=0; jj<SIDES_OF_ELEM(theElement); jj++)
+      {
+        num = 0;
+        /* for all corners of the side of the neighbour */
+        for (m=0; m<CORNERS_OF_SIDE(theElement,jj); m++)
+        {
+          NeighborNode = CORNER(theElement,
+                                CORNER_OF_SIDE(theElement,jj,m));
+          /* for all corners of the side of the
+                  element to be created */
+          for (k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
+            if(NeighborNode==sideNode[k])
+            {
+              num++;
+              break;
+            }
+        }
+        if(num==CORNERS_OF_SIDE_REF(n,i))
+        {
+          if (NBELEM(theElement,jj)!=NULL)
+          {
+            PrintErrorMessage('E',"InsertElement -> NeighborSearch_O_nn",
+                              "neighbor relation inconsistent");
+            return(1);
+          }
+          Nghbr[i] = theElement;
+          NghbrSide[i] = jj;
+        }
+      }
+    }
+  }
+  /* ... O(n*n)InsertElement */
+
+
+  return(0);
+} /*of "static INT NeighborSearch_O_nn()"*/
+
+
+static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT *MIndex, INT *MBlock, NODE **Node, GRID *theGrid, INT* NbrS, ELEMENT** Nbr)
+{
+  INT retval, j, IndexOfDivPart, IndexOfModPart, Index, merkeIndex, helpIndex;
+
+  /*CAD*/
+  /*evaluate indexes for "Insert in NodeElementMatrix"*/
+  /*check if ELEMS_OF_NODE_MAX is too small */
+  /* O(n)InsertElement  . . . */
+  for(j=0; j<MAX_CORNERS_OF_ELEM; j++)
+  {
+    MIndex[j] = -1;
+    MBlock[j] = -1;
+    /* theElement is the new one !!! created in CreateElement !!*/
+  }
+
+  for(j=0; j<CORNERS_OF_REF(n); j++)      /* for the 4 corners*//*CORNERS_OF_ELEM_REF gibtsowas?*/
+  {
+    IndexOfDivPart = 2 *j;
+    IndexOfModPart = IndexOfDivPart + 1;
+    if (cornerID[IndexOfDivPart] < NDELEM_BLKS_MAX)
+    {
+      Index =   MGNDELEMOFFS(cornerID[IndexOfModPart],0);
+      merkeIndex = Index;
+      if(MGNDELEMBLK(theMG,cornerID[IndexOfDivPart]) != NULL)
+      {
+        /*only in this case  problems like Attention !!! Node has more than ELEMS_OF_NODE_MAX !!iare possible*/
+
+        while(  (MGNDELEMBLKENTRY(theMG,cornerID[IndexOfDivPart],Index) != NULL) && (MGNDELEMPTRARRAYFLAG(theMG) ==1) )
+        {
+          Index++;
+          helpIndex = Index - merkeIndex;
+          if (helpIndex == ELEMS_OF_NODE_MAX)
+          {
+            /* change to O(n*n)InsertElement ...*/
+            MGNDELEMPTRARRAYFLAG(theMG) = 0;                             /* set the O(n)InsertAlgFlag to zero*/
+            UserWrite("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+            UserWrite("Warning concerning InsertElement :\n");
+            UserWrite("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+            UserWrite("\n");
+            UserWrite("The O(n) version of InsertElement cannot be continued \n");
+            UserWrite("because some nodes have more than ELEMS_OF_NODE_MAX elements!\n");
+            UserWrite("\n");
+            UserWrite("Now the O(n*n) version will finish your job.\n");
+            UserWrite("\n");
+            UserWrite("Either you drink a cup of coffee and wait till the end of\n");
+            UserWrite("the slow version or kill the job and do the following:\n");
+            UserWrite("\n");
+            UserWrite("1. increase ELEMS_OF_NODE_MAX in gm.h\n");
+            UserWrite("2. remove ugm.o\n");
+            UserWrite("3. ugmake\n");
+            UserWrite("\n");
+            UserWrite("\n");
+            UserWrite("    .  .  .  .  .  .  .  .  .  .  .  .  please wait \n");
+            UserWrite("\n");
+            UserWrite("\n");
+            UserWrite("\n");
+            UserWrite("\n");
+            UserWrite("\n");
+            UserWrite("\n");
+            /* O(n*n)InsertElement ...*/
+            if ( (retval = NeighborSearch_O_nn(n, Node, theGrid, NbrS, Nbr)) == 1 )
+            {
+              PrintErrorMessage('E',"InsertElement -> NdElPtrArray_evalIndexes",
+                                "neighbor relation inconsistent");
+              return (1);
+            }
+
+          }
+
+        }
+      }
+      MIndex[j] = Index;
+      MBlock[j] = cornerID[IndexOfDivPart];
+    }
+    if (MGNDELEMPTRARRAYFLAG(theMG) == 0)
+      j = CORNERS_OF_REF(n);
+  }
+  /*CAD*/
+  return(0);
+} /* of static INT NdElPtrArray_evalIndexes() */
+
+
+static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NODE **c_Node, INT *c_ID, NODE **Node)
+{
+  INT i,j,maxi;
+  INT IndexOfDivPart;
+  INT IndexOfModPart;
+
+  *h_ID = -1;
+
+  for (i=0; i<CORNERS_OF_REF(n); i++)
+  {
+    IndexOfDivPart = 2 *i;
+    IndexOfModPart = IndexOfDivPart + 1;
+
+
+    c_Node[i] = Node[i];
+    c_ID[IndexOfDivPart] = ID(c_Node[i]);
+    c_ID[IndexOfModPart] = c_ID[IndexOfDivPart] % NO_NODES_OF_BLK;
+    c_ID[IndexOfDivPart] = c_ID[IndexOfDivPart] / NO_NODES_OF_BLK;
+    /*now you can find the cornea ID i in the two components c_ID[IndexOfDivPart] and c_ID[IndexOfModPart]
+       where c_ID[IndexOfDivPart] includes the ID DIV NO_NODES_OF_BLK and c_ID[IndexOfModPart] the ID MOD NO_NODES_OF_BLK        */
+
+    if (*h_ID < c_ID[IndexOfDivPart])
+      *h_ID = c_ID[IndexOfDivPart];
+
+    /*Speicher bereitstellen !!!*/
+    if (c_ID[IndexOfDivPart] < NDELEM_BLKS_MAX)
+    {
+      if (MGNDELEMBLK(theMG,c_ID[IndexOfDivPart]) == NULL)                           /* wenn es noch gar keinen Speicherblock dafuer gibt ! */
+      {                               /* Speicher bereitstellen */
+        j=0;
+        while (MGNDELEMBLK(theMG,j) != NULL)
+        {
+          j++;
+        }
+
+        maxi = NO_NODES_OF_BLK*ELEMS_OF_NODE_MAX*sizeof(ELEMENT*);
+
+        while (j <= c_ID[IndexOfDivPart])
+        {
+          MGNDELEMBLK(theMG,j) = GetMem(theMG->theHeap,maxi,FROM_TOP);
+          if ( MGNDELEMBLK(theMG,j) == NULL )
+          {
+            PrintErrorMessage('E',"InsertElement","  ==> NdElPtrArray_GetMemAndCheckIDs( ) ERROR: No memory for MGNDELEMBLK(theMG,j)");
+            return(1);
+          }
+          /* Mustermemset(nodeflag_array,0,(statistik[0]+1)*sizeof(INT)); */
+          memset(MGNDELEMBLK(theMG,j),NULL,maxi);
+          j++;
+        }
+      }
+    }
+
+  }
+  return(0);
+
+} /* of static INT NdElPtrArray_GetMemAndCheckIDs()*/
+
+
+static INT Neighbor_Direct_Insert(INT n, ELEMENT **ElemList, INT *NbgSdList, INT* NbrS, ELEMENT **Nbr)
+{
+  INT i;
+
+  for (i=0; i<SIDES_OF_REF(n); i++)
+    Nbr[i] = ElemList[i];
+  if (NbgSdList != NULL)
+    for (i=0; i<SIDES_OF_REF(n); i++)
+      NbrS[i] = NbgSdList[i];
+
+  return(0);
+}
+
+static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MULTIGRID *theMG)
+{
+  INT j;
+
+  /*CAD*/
+  /* "Insert in NodeElementMatrix"*/
+  /* evaluated indexes now are used */
+  for(j=0; j<MAX_CORNERS_OF_ELEM; j++)
+  {
+    if (MIndex[j] != -1)
+      MGNDELEMBLKENTRY(theMG,MBlock[j],MIndex[j]) = theElement;
+    /* theElement is the new one !!! created in CreateElement !!*/
+  }
+
+  return(0);
+}
+
+
+
+
 ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList)
 {
   GRID             *theGrid;
-  INT i,j,k,m,found,num,tag,ElementType;
+  INT i,j,k,m,rv,found,tag,ElementType;
   INT NeighborSide[MAX_SIDES_OF_ELEM];
   NODE             *sideNode[MAX_CORNERS_OF_SIDE],*NeighborNode;
   VERTEX           *Vertex[MAX_CORNERS_OF_ELEM],*sideVertex[MAX_CORNERS_OF_SIDE];
@@ -3209,6 +3588,28 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
   VERTEX           *theVertex;
   NODE             *theNode;
         #endif
+
+  NODE            *cornerNode[MAX_CORNERS_OF_ELEM];
+  INT cornerID[2*MAX_CORNERS_OF_ELEM],max;
+
+  INT MIndex[MAX_CORNERS_OF_ELEM];
+  INT MBlock[MAX_CORNERS_OF_ELEM];
+
+
+  HEAP *theHeap;
+
+
+  INT highestid;
+
+  for (i=0; i<CORNERS_OF_REF(n); i++)
+  {
+    cornerNode[i] = NULL;
+  }
+  max = 2 * MAX_CORNERS_OF_ELEM;
+  for (i=0; i<max; i++)
+  {
+    cornerID [i] = 0;
+  }
 
   /* check level */
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
@@ -3349,64 +3750,76 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
       ElementType = BEOBJ;
   }
 
-  /* find neighboring elements */
+  /*************************************************************************************/
+  /* here begins the revised(03/97) part of InsertElement ...	                         */
+  /*    documentation see ftp://ftp.ica3.uni-stuttgart.de/pub/text/dirk.               */
+  /*                                                                                   */
   if (ElemList == NULL)
-    /* for all sides of the element to be created */
-    for (i=0; i<SIDES_OF_REF(n); i++)
+  {
+    /* find neighboring elements */
+    if(MGNDELEMPTRARRAYFLAG(theMG) ==1)
     {
-      for(j=0; j<CORNERS_OF_SIDE_REF(n,i); j++ )
-        sideNode[j] = Node[CORNER_OF_SIDE_REF(n,i,j)];
-
-      /* for all neighbouring elements allready inserted */
-      for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
-           theElement=SUCCE(theElement))
+      /* initialisations for using the node-element-pointer-array */
+      if ( (rv = NdElPtrArray_GetMemAndCheckIDs(n, theMG, &highestid, cornerNode, cornerID, Node)) == 1 )
       {
-        /* for all sides of the neighbour element */
-        for (j=0; j<SIDES_OF_ELEM(theElement); j++)
-        {
-          num = 0;
-          /* for all corners of the side of the neighbour */
-          for (m=0; m<CORNERS_OF_SIDE(theElement,j); m++)
-          {
-            NeighborNode = CORNER(theElement,
-                                  CORNER_OF_SIDE(theElement,j,m));
-            /* for all corners of the side of the
-                   element to be created */
-            for (k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
-              if(NeighborNode==sideNode[k])
-              {
-                num++;
-                break;
-              }
-          }
-          if(num==CORNERS_OF_SIDE_REF(n,i))
-          {
-            if (NBELEM(theElement,j)!=NULL)
-            {
-              PrintErrorMessage('E',"InsertElement",
-                                "neighbor relation inconsistent");
-              return(NULL);
-            }
-            Neighbor[i] = theElement;
-            NeighborSide[i] = j;
-          }
-        }
+        PrintErrorMessage('E',"InsertElement"," ERROR by calling NdElPtrArray_GetMemAndCheckIDs()");
+        return(NULL);
+      }
+      if ( (rv = NdElPtrArray_evalIndexes(n, cornerID, theMG, MIndex, MBlock, Node, theGrid, NeighborSide, Neighbor))  == 1)
+      {
+        PrintErrorMessage('E',"InsertElement"," ERROR by calling NdElPtrArray_evalIndexes()");
+        return(NULL);
       }
     }
-  else {
-    for (i=0; i<SIDES_OF_REF(n); i++) Neighbor[i] = ElemList[i];
-    if (NbgSdList != NULL)
-      for (i=0; i<SIDES_OF_REF(n); i++)
-        NeighborSide[i] = NbgSdList[i];
+
+    if ( (highestid < NDELEM_BLKS_MAX) && (MGNDELEMPTRARRAYFLAG(theMG) == 1) )
+    {
+      /* using the fast O(n) algorithm */
+      if( (rv = NeighborSearch_O_n(n, Node, theMG, NeighborSide, Neighbor)) == 1)
+      {
+        PrintErrorMessage('E',"InsertElement"," ERROR by calling NeighborSearch_O_n()");
+        return(NULL);
+      }
+    }
+    else
+    /* using the slow O(n*n) algorithm */
+    if ( (rv = NeighborSearch_O_nn(n, Node, theGrid, NeighborSide, Neighbor)) == 1 )
+    {
+      PrintErrorMessage('E',"InsertElement"," ERROR by calling NeighborSearch_O_nn()");
+      return(NULL);
+    }
+  }
+  else
+  {
+    /* use given neighboring elements */
+    if ( (rv = Neighbor_Direct_Insert(n, ElemList, NbgSdList, NeighborSide, Neighbor)) == 1)
+    {
+      PrintErrorMessage('E',"InsertElement"," ERROR by calling NeighborSearch_O_nn()");
+      return(NULL);
+    }
   }
 
-  /* create element */
+  /* create the new Element */
   theElement = CreateElement(theGrid,tag,ElementType,Node,NULL);
   if (theElement==NULL)
   {
     PrintErrorMessage('E',"InsertElement","cannot allocate element");
     return(NULL);
   }
+
+  if (MGNDELEMPTRARRAYFLAG(theMG) == 1)
+  {
+    /* update of the node-element-pointer-array */
+    if ( (rv = NdElPtrArray_Update(MIndex, MBlock, theElement, theMG)) == 1)
+    {
+      PrintErrorMessage('E',"InsertElement"," ERROR by calling NdElPtrArray_Update()");
+      return(NULL);
+    }
+  }
+  /*                                                                                   */
+  /* ... here ends the revised(03/97) part of InsertElement                              */
+  /*************************************************************************************/
+
 
   IFDEBUG(dom,1)
   {
