@@ -4596,6 +4596,7 @@ static INT RefineCommand (INT argc, char **argv)
     INT l,nmarked;
     ELEMENT *theElement;
 
+    nmarked = 0;
 
     for (l=0; l<=TOPLEVEL(theMG); l++)
       for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
@@ -4610,7 +4611,7 @@ static INT RefineCommand (INT argc, char **argv)
           else
             nmarked++;
       }
-    UserWriteF("%d: %d elements marked\n",nmarked);
+    UserWriteF("%d: %d elements marked for regular refinement\n",me,nmarked);
   }
 
   /* get velocity */
