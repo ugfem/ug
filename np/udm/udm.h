@@ -125,6 +125,10 @@ INT AllocMDfromMD (MULTIGRID *theMG, INT fl, INT tl,
 INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
 INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
 
+INT ConstructVecOffsets (SHORT *NCmpInType, SHORT *offset);
+INT ConstructMatOffsets (SHORT *RowsInType, SHORT *ColsInType, SHORT *offset);
+
+
 /* init user data manager */
 INT InitUserDataManager (void);
 

@@ -117,7 +117,7 @@ RCSID("$Header$",UG_RCS_STRING)
    D*/
 /****************************************************************************/
 
-static INT ConstructVecOffsets (SHORT *NCmpInType, SHORT *offset)
+INT ConstructVecOffsets (SHORT *NCmpInType, SHORT *offset)
 {
   INT type;
 
@@ -280,8 +280,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
    D*/
 /****************************************************************************/
 
-static INT ConstructMatOffsets (SHORT *RowsInType, SHORT *ColsInType,
-                                SHORT *offset)
+INT ConstructMatOffsets (SHORT *RowsInType, SHORT *ColsInType, SHORT *offset)
 {
   INT type;
 
@@ -509,7 +508,7 @@ static INT CompVecDesc (VECDATA_DESC *vd, SHORT *NCmpsInType)
   INT tp;
 
   for (tp=0; tp<NVECTYPES; tp++)
-    if (VD_NCMP_IN_TYPE(vd,tp) != NCmpsInType[tp])
+    if (VD_NCMPS_IN_TYPE(vd,tp) != NCmpsInType[tp])
       return(1);
 
   return(0);
@@ -523,21 +522,21 @@ static INT AllocVecDesc (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NVECTYPES; tp++)
-      for (j=0; j<VD_NCMP_IN_TYPE(vd,tp); j++)
+      for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
         if (READ_DR_VEC_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j)))
           return(1);
   }
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NVECTYPES; tp++)
-      for (j=0; j<VD_NCMP_IN_TYPE(vd,tp); j++)
+      for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
         SET_DR_MAT_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j));
   }
 
   return(0);
 }
 
-INT AllocVDfromVD (MULTIGRID *theMG, INT fl, INT tl,
+INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    VECDATA_DESC *template_desc, VECDATA_DESC **new_desc)
 {
   INT i,tp;
@@ -557,7 +556,7 @@ INT AllocVDfromVD (MULTIGRID *theMG, INT fl, INT tl,
     if (*new_desc == NULL) return(1);
   }
 
-  return (AllocVector(theMG,fl,tl,*new_desc));
+  return (AllocVecDesc(theMG,fl,tl,*new_desc));
 }
 
 /****************************************************************************/
@@ -592,7 +591,7 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NVECTYPES; tp++)
-      for (j=0; j<VD_NCMP_IN_TYPE(vd,tp); j++)
+      for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
         CLEAR_DR_VEC_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j));
   }
 
@@ -601,10 +600,10 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
 
 /****************************************************************************/
 /*D
-   AllocMDfromVD - dynamic matrix allocation
+   AllocMDFromVD - dynamic matrix allocation
 
    SYNOPSIS:
-   INT AllocMDfromVD (MULTIGRID *theMG, INT fl, INT tl,
+   INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
    VECDATA_DESC *x, VECDATA_DESC *y, MATDATA_DESC **new_desc);
 
    PARAMETERS:
@@ -648,21 +647,21 @@ static INT AllocMatDesc (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NMATTYPES; tp++)
-      for (j=0; j<MD_NCMP_IN_MTYPE(md,tp); j++)
-        if (READ_DR_MAT_FLAG(theGrid,tp,MD_CMP_OF_MTYPE(md,tp,j)))
+      for (j=0; j<MD_NCMPS_IN_MTYPE(md,tp); j++)
+        if (READ_DR_MAT_FLAG(theGrid,tp,MD_MCMP_OF_MTYPE(md,tp,j)))
           return(1);
   }
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NMATTYPES; tp++)
-      for (j=0; j<MD_NCMP_IN_MTYPE(md,tp); j++)
-        SET_DR_MAT_FLAG(theGrid,tp,MD_CMP_OF_MTYPE(md,tp,j));
+      for (j=0; j<MD_NCMPS_IN_MTYPE(md,tp); j++)
+        SET_DR_MAT_FLAG(theGrid,tp,MD_MCMP_OF_MTYPE(md,tp,j));
   }
 
   return(0);
 }
 
-INT AllocMDfromVD (MULTIGRID *theMG, INT fl, INT tl,
+INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    VECDATA_DESC *x, VECDATA_DESC *y, MATDATA_DESC **new_desc)
 {
   MATDATA_DESC *md;
@@ -674,9 +673,9 @@ INT AllocMDfromVD (MULTIGRID *theMG, INT fl, INT tl,
     for (i=0; i<NVECTYPES; i++)
       for (j=0; j<NVECTYPES; j++) {
         tp = MTP(i,j);
-        if (VD_NCMP_IN_TYPE(x,i)*VD_NCMP_IN_TYPE(y,j) > 0) {
-          RowsInType[tp] = VD_NCMP_IN_TYPE(x,i);
-          ColsInType[tp] = VD_NCMP_IN_TYPE(y,j);
+        if (VD_NCMPS_IN_TYPE(x,i)*VD_NCMPS_IN_TYPE(y,j) > 0) {
+          RowsInType[tp] = VD_NCMPS_IN_TYPE(x,i);
+          ColsInType[tp] = VD_NCMPS_IN_TYPE(y,j);
         }
         else
           RowsInType[tp] = ColsInType[tp] = 0;
@@ -779,8 +778,8 @@ INT FreeMD (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NMATTYPES; tp++)
-      for (j=0; j<MD_NCMP_IN_MTYPE(md,tp); j++)
-        CLEAR_DR_MAT_FLAG(theGrid,tp,MD_CMP_OF_MTYPE(md,tp,j));
+      for (j=0; j<MD_NCMPS_IN_MTYPE(md,tp); j++)
+        CLEAR_DR_MAT_FLAG(theGrid,tp,MD_MCMP_OF_MTYPE(md,tp,j));
   }
 
   return(0);
