@@ -860,7 +860,7 @@ if (0)
 				{
 				GRID		*downGrid;
 				MULTIGRID	*theMG;
-				INT			downlevel,downlevel1;
+				INT			downlevel;
 
 				theMG		= MYMG(theGrid);
 				downlevel	= GLEVEL(theGrid)-1;

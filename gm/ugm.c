@@ -1189,7 +1189,11 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
   EDGE *theEdge;
   DOUBLE fac;
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
-  DOUBLE len_opp, len_bnd;
+        #ifdef MOVE_MIDNODE
+        #ifndef ModelP
+  DOUBLE len_opp,len_bnd;
+    #endif
+    #endif
 
   /* check if moved side nodes exist */
   CORNER_COORDINATES(theElement,n,x);
@@ -1944,7 +1948,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
 INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
                           ELEMENT *theSon, INT son_side)
 {
-  INT n,i,k;
+  INT n,i;
   BNDS *bnds;
   BNDP *bndp[MAX_CORNERS_OF_ELEM];
   VECTOR *vec;
@@ -1980,7 +1984,7 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
     #ifdef __THREEDIM__
   /* TODO: is this necessary? */
   for (i=0; i<EDGES_OF_SIDE(theSon,son_side); i++) {
-    k  = EDGE_OF_SIDE(theSon,son_side,i);
+    int k  = EDGE_OF_SIDE(theSon,son_side,i);
     theEdge = GetEdge(CORNER(theSon,CORNER_OF_EDGE(theSon,k,0)),
                       CORNER(theSon,CORNER_OF_EDGE(theSon,k,1)));
     ASSERT(theEdge != NULL);
@@ -2829,7 +2833,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 
 INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 {
-  INT i,j,edge,tag;
+  INT i,j,tag;
   NODE    *theNode;
   VERTEX  *theVertex;
   EDGE    *theEdge;
@@ -2840,6 +2844,9 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   VECTOR  *theVector;
   DOUBLE *local,fac;
   INT k,m,o,l;
+        #endif
+        #ifndef ModelP
+  INT edge;
         #endif
 
   HEAPFAULT(theElement);
@@ -2896,8 +2903,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   /* they lost their father pointers                          */
   if (NSONS(theElement)>0)
   {
-    INT i,j,k,l,m,o;
-    DOUBLE fac,*local;
+    INT i,j;
     ELEMENT *SonList[MAX_SONS];
 
     if (GetAllSons(theElement,SonList)) RETURN(GM_FATAL);
@@ -6709,7 +6715,6 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
   INT total_elements,sum_elements;
   INT master_elements,hghost_elements,vghost_elements,vhghost_elements;
   VChannelPtr mych;
-  void *ptr;
         #endif
 
   mg_red = mg_green = mg_yellow = mg_sum = 0;

@@ -1210,9 +1210,8 @@ static INT PrepareGridClosure (GRID *theGrid)
 
 static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
 {
-	INT 	i,refinedata;
+	INT 	refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
-	EDGE	*theEdge;
 
 	PRINTDEBUG(gm,4,(PFMT "Gather_ElementClosureInfo(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
@@ -1256,9 +1255,8 @@ static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
 
 static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 {
-	INT		i,refinedata;
+	INT		refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
-	EDGE	*theEdge;
 
 	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementClosureInfo(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
@@ -1815,7 +1813,7 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 
 static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 {
-	INT 	i,pat;
+	INT 	pat;
 	ELEMENT *theElement = (ELEMENT *)obj;
 
 	pat = 0;
@@ -1849,10 +1847,10 @@ static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 
 static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 {
-	INT		i,pat;
+	INT		pat;
 	ELEMENT *theElement = (ELEMENT *)obj;
-	EDGE	*theEdge;
-
+	
+	/* TODO (HRR 971207): output after SetEdgeInfo (pat not init)? */
 	PRINTDEBUG(gm,4,(PFMT "Scatter_AddEdgePattern(): elem=" EID_FMTX "pat=%08x\n",
 		me,EID_PRTX(theElement),pat));
 
@@ -2205,7 +2203,6 @@ static int Scatter_ElementInfo (DDD_OBJ obj, void *Data)
 {
 	INT 	epat,mpat,eaddpat,maddpat;
 	ELEMENT *theElement = (ELEMENT *)obj;
-	EDGE	*theEdge;
 	struct generic_element ge;
 	ELEMENT *theMaster = (ELEMENT *)&ge;
 	char	*data = (char *)Data;
@@ -5917,7 +5914,7 @@ static INT	ConnectGridOverlap (GRID *theGrid)
 	INT		SonSides[MAX_SIDE_NODES];
 	ELEMENT	*theElement;
 	ELEMENT	*theNeighbor;
-	INT		i,j,l,Sons_of_Side,prio;
+	ELEMENT	*theSon;
 	ELEMENT *Sons_of_Side_List[MAX_SONS];
 
 	for (theElement=PFIRSTELEMENT(theGrid);theElement!=NULL;theElement=SUCCE(theElement))
