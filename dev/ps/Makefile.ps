@@ -1,0 +1,28 @@
+##############################################################################
+#																			 #
+#	Makefile for parallel ug version										 #
+#																			 #
+#	created 17 August 1992													 #
+#																			 #
+##############################################################################
+
+# ARCHDIR has to be one of: INDIGO, HP
+include ../../ug.arch
+
+# architecture-dependent makefile entries
+include ../../machines/mk.$(ARCHDIR)
+
+LCFLAGS = -I.. -I../../low
+
+OBJECTS = postscript.o
+
+all : $(OBJECTS) Makefile.ps
+	ar $(ARFLAGS) ../../lib/libdev.a $(OBJECTS) 
+
+.c.o:
+	$(CC) $(LCFLAGS) $(CFLAGS) $<
+
+clean:
+	rm *.o
+
+
