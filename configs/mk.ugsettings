@@ -21,6 +21,9 @@ UG_LIBSUFFIX = $(DIM)
 # default linker (replaced if C++ is used)
 UG_LINK = $(ARCH_LINK)
 
+#default shell
+SHELL = /bin/sh
+
 # include architecture-dependent makefile macro definitions
 include $(UGROOT)/arch/$(ARCH)/mk.arch
 
@@ -69,7 +72,7 @@ UG_LIBS   = $(UG_LIB) \
 			$(UGROOT)/lib/libdom$(UG_DOMSUFFIX).a \
 			$(UGROOT)/lib/libgrape$(GRAPE)$(DIM).a \
 			$(UGROOT)/lib/libgg$(DIM).a \
-			$(UGROOT)/lib/libdev.a
+			$(UGROOT)/lib/libdev$(IF).a
 
 UG_POSTLINK = $(ARCH_POSTLINK) ; ugbcheck
 
