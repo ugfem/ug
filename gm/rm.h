@@ -105,7 +105,7 @@
 
 /* dimension dependent MAX_SONS */
 #define MAX_SONS_2D    4
-#define MAX_SONS_3D    8
+#define MAX_SONS_3D    12
 #define MAX_SONS_DIM CONCAT3(MAX_SONS_,DIM,D)
 
 #define LEAFELEM(e)             (NSONS(e)==0)
