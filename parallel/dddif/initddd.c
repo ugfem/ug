@@ -540,51 +540,62 @@ static void ddd_IfInit (void)
   A[0] = PrioMaster;
   B[0] = PrioGhost;
   ElementIF = DDD_IFDefine(nO,O,1,A,1,B);
+  DDD_IFSetName(ElementIF, "ElementIF: Master->Ghost");
 
   A[0] = PrioMaster; A[1] = PrioGhost;
   B[0] = PrioMaster; B[1] = PrioGhost;
   ElementSymmIF = DDD_IFDefine(nO,O,2,A,2,B);
+  DDD_IFSetName(ElementSymmIF, "ElementSymmIF: Master/Ghost");
 
   O[0] = TypeNode;
   A[0] = PrioBorder;
   B[0] = PrioMaster;
   BorderNodeIF = DDD_IFDefine(1,O,1,A,1,B);
+  DDD_IFSetName(BorderNodeIF, "BorderNodeIF: Border->Master");
 
   O[0] = TypeNode;
   A[0] = PrioMaster; A[1] = PrioBorder;
   B[0] = PrioMaster; B[1] = PrioBorder;
   BorderNodeSymmIF = DDD_IFDefine(1,O,2,A,2,B);
+  DDD_IFSetName(BorderNodeSymmIF, "BorderNodeSymmIF: Border->Master");
 
   O[0] = TypeNode;
   A[0] = PrioMaster;
   B[0] = PrioGhost;
   OuterNodeIF = DDD_IFDefine(1,O,1,A,1,B);
+  DDD_IFSetName(OuterNodeIF, "OuterNodeIF: Master->Ghost");
 
   O[0] = TypeVector;
   A[0] = PrioBorder;
   B[0] = PrioMaster;
   BorderVectorIF = DDD_IFDefine(1,O,1,A,1,B);
+  DDD_IFSetName(BorderVectorIF, "BorderVectorIF: Border->Master");
 
   O[0] = TypeVector;
   A[0] = PrioMaster; A[1] = PrioBorder;
   B[0] = PrioMaster; B[1] = PrioBorder;
   BorderVectorSymmIF = DDD_IFDefine(1,O,2,A,2,B);
+  DDD_IFSetName(BorderVectorSymmIF, "BorderVectorSymmIF: Master/Border");
 
   O[0] = TypeVector;
   A[0] = PrioMaster;
   B[0] = PrioGhost;
   OuterVectorIF = DDD_IFDefine(1,O,1,A,1,B);
+  DDD_IFSetName(OuterVectorIF, "OuterVectorIF: Master->Ghost");
 
   O[0] = TypeIVertex; O[1] = TypeBVertex;
   A[0] = PrioMaster;
   B[0] = PrioMaster;
   VertexIF = DDD_IFDefine(2,O,1,A,1,B);
+  DDD_IFSetName(VertexIF, "VertexIF: Master<->Master");
 
         #ifdef __THREEDIM__
   O[0] = TypeEdge;
   A[0] = PrioMaster;
   B[0] = PrioMaster;
   EdgeIF = DDD_IFDefine(1,O,1,A,1,B);
+  DDD_IFSetName(EdgeIF, "EdgeIF: Master<->Master");
+
         #endif
 }
 

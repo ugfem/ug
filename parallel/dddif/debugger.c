@@ -55,8 +55,15 @@ void ddd_DisplayContext (void)
 
 
 
-void ddd_pstat (int cmd)
+void ddd_pstat (char *arg)
 {
+  int cmd;
+
+  if (arg==NULL)
+    return;
+
+  cmd = arg[0];
+
   switch (cmd)
   {
   case 'c' :
@@ -72,11 +79,19 @@ void ddd_pstat (int cmd)
     break;
 
   case 'i' :
+  {
+    DDD_IF ifId = atoi(arg+1);
+
     SYNC_CONTEXT;
-    DDD_IFDisplay();
+    if (ifId<=0)
+      DDD_IFDisplayAll();
+    else
+      DDD_IFDisplay(ifId);
+
     UserWrite("\n");
     SYNC_END;
-    break;
+  }
+  break;
 
   case 'l' :
     SYNC_CONTEXT;

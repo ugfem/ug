@@ -176,7 +176,7 @@ void InitDDDTypes (void);
 void InitCurrMG (MULTIGRID *);
 
 /* from debugger.c */
-void ddd_pstat (int);
+void ddd_pstat (char *);
 void ddd_DisplayContext (void);
 
 /* from test.c */
