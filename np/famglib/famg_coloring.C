@@ -51,6 +51,7 @@ static int DetermineNbs( DDD_OBJ obj)
 	proclist = DDD_InfoProcList(PARHDR(vec));
 	for( i = 2; proclist[i] != -1	; i += 2 )
 		helpNbPtr[proclist[i]] = 1;		// perhaps to much neighbors because of counting ghost-copies
+	return 0;
 }
 
 
