@@ -147,6 +147,25 @@ static GENERAL_ELEMENT def_pyramid = {
    {2,4},{3,4}}
 } ;
 
+static GENERAL_ELEMENT def_prism = {
+  6,                                                                                    /* tag							*/
+  0,                                                                                    /* max number of sons			*/
+  5,                                                                                    /* number of sides				*/
+  6,                                                                                    /* number of corners			*/
+  {{0.0,0.0,0.0},{1.0,0.0,0.0},{0.0,1.0,0.0},
+   {0.0,0.0,1.0},{1.0,0.0,1.0},{0.0,1.0,1.0}},       /* local coordinates		*/
+  9,                                                                                    /* number of edges				*/
+  {3,4,4,4,3,-1},                                                       /* edges for each side	(2D!)	*/
+  {3,4,4,4,3,-1},                                                       /* corners for each side		*/
+  2,                                                                                    /* an edge has 2 corners		*/
+  {{2,1,0,-1},{0,4,6,3},{1,5,7,4},                      /* number of edge j of side i   */
+   {2,3,8,5},{6,7,8,-1}},
+  {{0,2,1,-1},{0,1,4,3},{1,2,5,4},                      /* number of corner j of side i */
+   {2,0,3,5},{3,4,5,-1}},
+  {{0,1},{1,2},{2,0},{0,3},{1,4},{2,5},         /* number of corner j of edge i */
+   {3,4},{4,5},{5,3}}
+} ;
+
 static GENERAL_ELEMENT def_hexahedron = {
   7,                                                                                    /* tag							*/
   30,                                                                                   /* max number of sons			*/
@@ -632,6 +651,35 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
 
     break;
 
+  case PRISM :
+
+    /* corner_of_oppedge(i,j) */
+    /* is not defined!		  */
+
+    /* corner_opp_to_side(i)  */
+    /* is not defined!		  */
+
+    /* opposite_edge(i)		  */
+    /* is not defined!		  */
+
+    /* side_opp_to_corner(i)  */
+    /* is not defined!		  */
+
+    /* edge_of_corner(i,j)	  */
+    for (i=0; i<el->edges_of_elem; i++) {
+      for (j=0; j<el->corners_of_edge; j++) {
+        if (el->corner_of_edge[i][j] >=0) {
+          for (k=0; k<el->edges_of_elem; k++)
+            if (el->edge_of_corner[el->corner_of_edge[i][j]][k] < 0)
+              break;
+          assert(k<el->edges_of_elem);
+          el->edge_of_corner[el->corner_of_edge[i][j]][k] = i;
+        }
+      }
+    }
+
+    break;
+
   case HEXAHEDRON :
 
     /* corner_of_oppedge(i,j) */
@@ -659,7 +707,7 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
       assert(k<el->edges_of_elem);
 
       el->corner_of_oppedge[i][0] = el->corner_of_edge[k][0];
-      el->corner_of_oppedge[i][0] = el->corner_of_edge[k][1];
+      el->corner_of_oppedge[i][1] = el->corner_of_edge[k][1];
     }
 
     /* corner_opp_to_side(i)  */
@@ -775,6 +823,8 @@ INT InitElementTypes (MULTIGRID *theMG)
   err = ProcessElementDescription(theMG,&def_tetrahedron);
   if (err!=GM_OK) return(err);
   err = ProcessElementDescription(theMG,&def_pyramid);
+  if (err!=GM_OK) return(err);
+  err = ProcessElementDescription(theMG,&def_prism);
   if (err!=GM_OK) return(err);
   err = ProcessElementDescription(theMG,&def_hexahedron);
   if (err!=GM_OK) return(err);
