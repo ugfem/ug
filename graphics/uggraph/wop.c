@@ -4496,6 +4496,9 @@ static INT EW_SelectElement2D (DRAWINGOBJ *q)
 static INT FindRange2D (DRAWINGOBJ *q)
 {
 	INT end;
+
+	GEN_FR_min = DBL_MAX;
+	GEN_FR_max = DBL_MIN;
 	
 	end = 0;
 	while (!end)
@@ -4590,6 +4593,9 @@ static INT FindRange2D (DRAWINGOBJ *q)
 static INT FindRange3D (DRAWINGOBJ *q)
 {
 	INT end;
+	
+	GEN_FR_min = DBL_MAX;
+	GEN_FR_max = DBL_MIN;
 	
 	end = 0;
 	while (!end)
