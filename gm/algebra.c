@@ -2704,82 +2704,79 @@ INT CreateAlgebra (MULTIGRID *theMG)
   NODE *nd;
   LINK *li;
   EDGE *ed;
-  INT side;
+  INT side,i;
 
-  if (MG_COARSE_FIXED(theMG) == FALSE) {
-
-    g = GRID_ON_LEVEL(theMG,0);
-    if (TOPLEVEL(theMG) != 0)
-      REP_ERR_RETURN (GM_ERROR);
-
-    if (NVEC(g)>0)
-      return(0);
-
-    fmt = MGFORMAT(MYMG(g));
-
-    /* loop nodes and edges */
-    for (nd=FIRSTNODE(g); nd!=NULL; nd=SUCCN(nd)) {
-      /* node vector */
-      if (FMT_USES_OBJ(fmt,NODEVEC))
-      {
-        ASSERT(NVECTOR(nd)==NULL);
-        if (CreateVector (g,NODEVEC,(GEOM_OBJECT *)nd,&vec))
-          REP_ERR_RETURN (GM_ERROR);
-        NVECTOR(nd) = vec;
-      }
-      /* edge vectors */
-      if (FMT_USES_OBJ(fmt,EDGEVEC))
-        for (li=START(nd); li!=NULL; li=NEXT(li)) {
-          ed = MYEDGE(li);
-          if (li==LINK0(ed))                               /* to avoid double access of edges */
-          {
-            ASSERT(EDVECTOR(ed)==NULL);
-
-            if (CreateVector (g,EDGEVEC,(GEOM_OBJECT *)ed,&vec))
-              REP_ERR_RETURN (GM_ERROR);
-            EDVECTOR(ed) = vec;
-          }
-        }
-    }
-
-    /* loop elements and element sides */
-    for (elem=FIRSTELEMENT(g); elem!=NULL; elem=SUCCE(elem))
+  if (MG_COARSE_FIXED(theMG) == FALSE)
+  {
+    for (i=0; i<=TOPLEVEL(theMG); i++)
     {
-      /* to tell GridCreateConnection to build connections */
-      SETEBUILDCON(elem,1);
+      g = GRID_ON_LEVEL(theMG,i);
 
-      /* element vector */
-      if (FMT_USES_OBJ(fmt,ELEMVEC))
+      if (NVEC(g)>0) return(0);
+
+      fmt = MGFORMAT(MYMG(g));
+
+      /* loop nodes and edges */
+      for (nd=PFIRSTNODE(g); nd!=NULL; nd=SUCCN(nd))
       {
-        ASSERT(EVECTOR(elem)==NULL);
+        /* node vector */
+        if (FMT_USES_OBJ(fmt,NODEVEC))
+        {
+          ASSERT(NVECTOR(nd)==NULL);
+          if (CreateVector (g,NODEVEC,(GEOM_OBJECT *)nd,&vec)) REP_ERR_RETURN (GM_ERROR);
+          NVECTOR(nd) = vec;
+        }
 
-        if (CreateVector (g,ELEMVEC,(GEOM_OBJECT *)elem,&vec))
-          REP_ERR_RETURN (GM_ERROR);
-        SET_EVECTOR(elem,vec);
+        /* edge vectors */
+        if (FMT_USES_OBJ(fmt,EDGEVEC))
+          for (li=START(nd); li!=NULL; li=NEXT(li))
+          {
+            ed = MYEDGE(li);
+            if (li==LINK0(ed))                                     /* to avoid double access of edges */
+            {
+              ASSERT(EDVECTOR(ed)==NULL);
+              if (CreateVector (g,EDGEVEC,(GEOM_OBJECT *)ed,&vec)) REP_ERR_RETURN (GM_ERROR);
+              EDVECTOR(ed) = vec;
+            }
+          }
       }
 
-      /* side vectors */
-      if (FMT_USES_OBJ(fmt,SIDEVEC))
-        for (side=0; side<SIDES_OF_ELEM(elem); side++)
-          if (SVECTOR(elem,side)==NULL)
-          {
-            if (CreateSideVector (g,side,(GEOM_OBJECT *)elem,&vec))
-              REP_ERR_RETURN (GM_ERROR);
-            SET_SVECTOR(elem,side,vec);
-          }
-    }
-    MG_COARSE_FIXED(theMG) = TRUE;
+      /* loop elements and element sides */
+      for (elem=PFIRSTELEMENT(g); elem!=NULL; elem=SUCCE(elem))
+      {
+        /* to tell GridCreateConnection to build connections */
+        if (EMASTER(elem)) SETEBUILDCON(elem,1);
 
-    /* now connections */
-    if (GridCreateConnection(g))
-      REP_ERR_RETURN (1);
+        /* element vector */
+        if (FMT_USES_OBJ(fmt,ELEMVEC))
+        {
+          ASSERT(EVECTOR(elem)==NULL);
+
+          if (CreateVector (g,ELEMVEC,(GEOM_OBJECT *)elem,&vec)) REP_ERR_RETURN (GM_ERROR);
+          SET_EVECTOR(elem,vec);
+        }
+
+        /* side vectors */
+        if (FMT_USES_OBJ(fmt,SIDEVEC))
+          for (side=0; side<SIDES_OF_ELEM(elem); side++)
+            if (SVECTOR(elem,side)==NULL)
+            {
+              if (CreateSideVector (g,side,(GEOM_OBJECT *)elem,&vec)) REP_ERR_RETURN (GM_ERROR);
+              SET_SVECTOR(elem,side,vec);
+            }
+      }
+      MG_COARSE_FIXED(theMG) = TRUE;
+
+      /* now connections */
+      if (GridCreateConnection(g)) REP_ERR_RETURN (1);
+    }
   }
 
-        #ifdef ModelP
-    #ifndef __EXCHANGE_CONNECTIONS__
+#ifdef ModelP
+#ifndef __EXCHANGE_CONNECTIONS__
   MGCreateConnection(theMG);
-        #endif
-        #endif
+#endif
+#endif
 
   SetSurfaceClasses(theMG);
 

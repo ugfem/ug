@@ -612,7 +612,6 @@ static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonL
   NODE *theNode;
   INT i,j,n,sonRefined,sonex,nex;
 
-  printf("SetRefinement(): nmax=%d\n",(int)nmax);
   if (nmax==0) return (0);
   refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
   theRule = RefRules[TAG(theElement)] + REFINE(theElement);
@@ -625,6 +624,9 @@ static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonL
         for (j=0; j<CORNERS_OF_TAG(theRule->sons[i].tag); j++)
           nex |= (1<<theRule->sons[i].corners[j]);
   }
+  else
+    nex     = ~0;
+
   /* store new corner ids */
   n=0;
   for (i=0; i<CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement)+SIDES_OF_ELEM(theElement); i++)
@@ -656,7 +658,6 @@ static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonL
   }
   refinement->sonref = sonRefined;
   if (MGIO_PARFILE) refinement->sonex = sonex;
-  printf("SetRefinement(): sonex=%d\n",(int)sonex);
 
   /* not movable at the moment */
   refinement->nmoved = 0;
@@ -1236,7 +1237,7 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
           GRID_LINK_VECTOR(theGrid,theVector,prio);
         }
       }
-      printf("Evaluate-pinfo():nid=%d prio=%d\n",ID(theNode),prio);fflush(stdout);
+      /*printf("Evaluate-pinfo():nid=%d prio=%d\n",ID(theNode),prio);fflush(stdout);*/
       for (i=0; i<pinfo->ncopies_node[j]; i++)
       {
         DDD_IdentifyNumber(PARHDR(theNode),pinfo->proclist[s],pinfo->n_ident[j]);
@@ -1326,7 +1327,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   struct mgio_sondata *SonData;
   INT nbside,nex;
 
-  PRINTDEBUG(gm,0,(PFMT "InsertLocalTree(): level=%d elem=" EID_FMTX "\n",me,LEVEL(theGrid),EID_PRTX(theElement)));
+  /*PRINTDEBUG(gm,0,(PFMT "InsertLocalTree(): level=%d elem=" EID_FMTX "\n",me,LEVEL(theGrid),EID_PRTX(theElement)));*/
 
   /* read refinement */
   if (Read_Refinement(ref,rr_rules)) RETURN (1);
@@ -1418,7 +1419,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     }
     else if (ID(NodeList[i]) != ref->newcornerid[r_index])
     {
-      printf("WARNING: inconsistent node-ids\n");
+      printf("WARNING: inconsistent node-ids: %d != %d\n",(int)ID(NodeList[i]),(int)ref->newcornerid[r_index]);
       printf("pos: %f %f\n",(float)CVECT(MYVERTEX(NodeList[i]))[0],(float)CVECT(MYVERTEX(NodeList[i]))[1]);
     }
     SETNTYPE(NodeList[i],MID_NODE);
@@ -1855,6 +1856,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   /* insert coarse mesh */
   if (InsertMesh(theMG,&theMesh))                                                                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (FixCoarseGrid (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (i=0; i<=TOPLEVEL(theMG); i++)
     for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
     {
