@@ -1068,10 +1068,10 @@ static INT ExtractInterfaceRules (MULTIGRID *mg)
     GRID *grid = GRID_ON_LEVEL(mg,lev);
 
     /* count interface master and vhghost elements */
-    global.if_elems = 0;
+    global.if_elems = 1;
     DDD_IFAExecLocal(ElementVHIF, GRID_ATTR(grid), CountIFElements);
 
-    if (global.if_elems>0)
+    if (global.if_elems>1)
     {
       INT MarkKey;
 
@@ -1082,7 +1082,7 @@ static INT ExtractInterfaceRules (MULTIGRID *mg)
 
       /* REMARK (HRR 971207): storage could be Marked and Released in pieces if necessary
                                                       to allow BOTTOM-storage to grow */
-      global.interface_rules = GetTmpMem(global.heap,global.if_elems*sizeof(ERULE),MarkKey);
+      global.interface_rules = GetTmpMem(global.heap,(global.if_elems+1)*sizeof(ERULE),MarkKey);
       if (global.interface_rules==NULL)
         REP_ERR_RETURN(1);
 
