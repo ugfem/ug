@@ -6909,6 +6909,7 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 	V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 	p[0] = 0.0; p[1] = theLpo->aspectratio;
 	V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+	DO_2c(theDO) = DO_NO_INST;
 	Draw2D(WOP_DrawingObject);	
 
 	if (LINE2D_V2Y_offset<0.0)
@@ -6921,6 +6922,7 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 		p[0] = 1.0; p[1] = 0.0;
 		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		DO_2c(theDO) = DO_NO_INST;
 		Draw2D(WOP_DrawingObject);
 	}
 	else if (LINE2D_V2Y_offset>theLpo->aspectratio)
@@ -6933,6 +6935,7 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 		p[0] = 1.0; p[1] = theLpo->aspectratio;
 		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		DO_2c(theDO) = DO_NO_INST;
 		Draw2D(WOP_DrawingObject);
 	}
 	else
@@ -6945,6 +6948,7 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 		p[0] = 1.0; p[1] = LINE2D_V2Y_offset;
 		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		DO_2c(theDO) = DO_NO_INST;
 		Draw2D(WOP_DrawingObject);
 	}
 
