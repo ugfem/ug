@@ -2260,13 +2260,13 @@ static INT NewCommand (INT argc, char **argv)
 static INT OpenCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char theMultigrid[NAMESIZE],Format[NAMESIZE];
+  char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
   char *theBVP,*theFormat;
   unsigned long heapSize;
   INT i;
 
   /* get multigrid name */
-  if ((sscanf(argv[0],expandfmt(CONCAT3(" open %",NAMELENSTR,"[ -~]")),theMultigrid)!=1) || (strlen(theMultigrid)==0))
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" open %",NAMELENSTR,"[ -~]")),Multigrid)!=1) || (strlen(Multigrid)==0))
   {
     PrintErrorMessage('E',"open","specify the name of the multigrid to open");
     return (PARAMERRORCODE);
@@ -2279,11 +2279,12 @@ static INT OpenCommand (INT argc, char **argv)
     switch (argv[i][0])
     {
     case 'b' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("b %",NAMELENSTR,"[ -~]")),theBVP)!=1)
+      if (sscanf(argv[i],expandfmt(CONCAT3("b %",NAMELENSTR,"[ -~]")),BVPName)!=1)
       {
-        PrintHelp("new",HELPITEM," (cannot read BndValProblem specification)");
+        PrintHelp("open",HELPITEM," (cannot read BndValProblem specification)");
         return(PARAMERRORCODE);
       }
+      theBVP = BVPName;
       break;
 
     case 'f' :
@@ -2316,7 +2317,7 @@ static INT OpenCommand (INT argc, char **argv)
   }
 
   /* allocate the multigrid structure */
-  theMG = LoadMultiGrid(theMultigrid,theMultigrid,theBVP,theFormat,heapSize);
+  theMG = LoadMultiGrid(Multigrid,Multigrid,theBVP,theFormat,heapSize);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
