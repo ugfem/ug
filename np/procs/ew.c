@@ -35,16 +35,20 @@
 #include "general.h"
 #include "ugstruct.h"
 #include "devices.h"
+#include "debug.h"
 #include "gm.h"
 #include "ugblas.h"
+#include "disctools.h"
 #include "scan.h"
 #include "numproc.h"
 #include "pcr.h"
+#include "formats.h"
 #include "np.h"
 
 #include "assemble.h"
 #include "transfer.h"
 #include "ls.h"
+
 #include "ew.h"
 
 /****************************************************************************/
@@ -162,15 +166,25 @@ INT NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
       names++;
       while ((*names==' ')||(*names=='\t')) names++;
       token = strtok(names," ");
-      np->ev[n++] = GetVecDataDescByName(np->base.mg,token);
+      np->ev[n] = GetVecDataDescByName(np->base.mg,token);
+      if (np->ev[n] == NULL)
+        np->ev[n] = CreateVecDescOfTemplate(np->base.mg,token,NULL);
+      if (np->ev[n++] == NULL)
+        return(NP_NOT_ACTIVE);
       token = strtok(NULL," ");
-      if (sscanf(token,"%d",&n) != 1) {
-        n = 1;
-        while (token!=NULL) {
-          np->ev[n++] = GetVecDataDescByName(np->base.mg,token);
-          token = strtok(NULL," ");
+      if (token != NULL)
+        if (sscanf(token,"%d",&n) != 1) {
+          n = 1;
+          while (token!=NULL) {
+            np->ev[n++] = GetVecDataDescByName(np->base.mg,token);
+            if (np->ev[n] == NULL)
+              np->ev[n] = CreateVecDescOfTemplate(np->base.mg,
+                                                  token,NULL);
+            if (np->ev[n++] == NULL)
+              return(NP_NOT_ACTIVE);
+            token = strtok(NULL," ");
+          }
         }
-      }
     }
   np->nev = n;
   if (sc_read(np->abslimit,np->ev[0],"abslimit",argc,argv))
@@ -483,12 +497,13 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
         result[0] = __LINE__;
         return(1);
       }
+  np->reset = 0;
   if (np->interpolate) {
     if (np->Transfer->PreProcessSolution != NULL)
       if ((*np->Transfer->PreProcessSolution)
             (np->Transfer,bl,level,ev[0],result))
         return(1);
-    for (l=bl; l<=level; l++)
+    for (l=bl+1; l<=level; l++)
       for (i=0; i<nev; i++)
         if ((*np->Transfer->InterpolateNewVectors)
               (np->Transfer,level,ev[i],result))
@@ -519,6 +534,14 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
   }
   if ((*Assemble->NLAssembleDefect)(Assemble,0,level,ev,np->r,np->M,result))
     return(1);
+
+  IFDEBUG(np,5)
+  UserWriteF("r\n");
+  PrintVector(GRID_ON_LEVEL(theNP->base.mg,level),np->r,3,3);
+  UserWriteF("ev\n");
+  PrintVector(GRID_ON_LEVEL(theNP->base.mg,level),ev,3,3);
+  ENDDEBUG
+
   if (RayleighQuotient(theNP->base.mg,np->M,ev,np->r,np->t,a)) {
     result[0] = __LINE__;
     return(1);
@@ -528,6 +551,8 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
     return(1);
   }
   *q = a[0] / a[1];
+
+  PRINTDEBUG(np,1,("a %f %f q %f\n",a[0],a[1],*q));
 
   return (0);
 }
