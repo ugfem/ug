@@ -580,6 +580,7 @@ INT 		EXDecomposeMatrixDOUBLE 			(DOUBLE *Mat, INT bw, INT n);
 INT 		EXApplyLUFLOAT 						(FLOAT *Mat, INT bw, INT n, DOUBLE *Vec);
 INT 		EXApplyLUDOUBLE 					(DOUBLE *Mat, INT bw, INT n, DOUBLE *Vec);
 INT 		LineISTriangle3D 					(const DOUBLE *c1, const DOUBLE *c2, const DOUBLE *c3, const DOUBLE *p1, const DOUBLE *p2, DOUBLE *lambda);
+INT 		Yams 								(INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs);
 
 
 /* 2D routines */

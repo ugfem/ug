@@ -1565,3 +1565,97 @@ INT V2_apbmin2c (const DOUBLE *a, const DOUBLE *b, const DOUBLE *c, DOUBLE *d, D
 
   return (0);
 }
+
+/****************************************************************************/
+/*D
+   Yams - Yet another matrix solver
+
+   SYNOPSIS:
+   INT Yams (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
+
+   PARAMETERS:
+   .  n - dimesion of the system
+   .  sol - solution
+   .  rhs - rhs
+   .  mat - matrix, one row after the other
+
+   DESCRIPTION:
+   Solve for full matrix using pivoting. If rhs==NULL the decomposition
+   is carried out, otherwise linear problem is solved (no decomposition).
+   The first n*n entries of mat store the matrix or its decomposition,
+   entry n*n ... n*n+n-1 store pivot information. Previous content is
+   overwritten.
+
+   RETURN VALUE:
+   INT
+   .n    0 if o.k.
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT Yams (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
+{
+  register DOUBLE dinv,piv,sum;
+  register INT i,j,k;
+  DOUBLE *ipv=mat+(n*n);
+
+  if (rhs==NULL)
+  {
+
+    /* lr factorize mat */
+    for (i=0; i<n; i++) ipv[i]=(DOUBLE)i;
+    for (i=0; i<n; i++)
+    {
+      k=i;
+      piv = ABS(mat[i*n+i]);
+      for (j=i+1; j<n; j++)
+      {
+        sum=ABS(mat[j*n+i]);
+        if (sum>piv)
+        {
+          k=j;
+          piv=sum;
+        }
+      }
+      if (k!=i)
+      {
+        sum=ipv[i];
+        ipv[i]=ipv[k];
+        ipv[k]=sum;
+        for (j=0; j<n; j++)
+        {
+          sum=mat[k*n+j];
+          mat[k*n+j]=mat[i*n+j];
+          mat[i*n+j]=sum;
+        }
+      }
+      dinv=mat[i*n+i];
+      if (dinv==0.0) return(1);
+      dinv=mat[i*n+i]=1.0/dinv;
+      for (j=i+1; j<n; j++)
+      {
+        piv=(mat[j*n+i]*=dinv);
+        for (k=i+1; k<n; k++)
+          mat[j*n+k]-=mat[i*n+k]*piv;
+      }
+    }
+  }
+  else
+  {
+    /* solve */
+    for (i=0; i<n; i++)
+    {
+      for (sum=rhs[(int)(ipv[i])], j=0; j<i; j++)
+        sum-=mat[i*n+j]*sol[j];
+      sol[i]=sum;             /* Lii = 1 */
+    }
+    for (i=n-1; i>=0; i--)
+    {
+      for (sum=sol[i], j=i+1; j<n; j++)
+        sum-=mat[i*n+j]*sol[j];
+      sol[i]=sum*mat[i*n+i];            /* Uii = Inv(Mii) */
+    }
+  }
+
+  return(0);
+}
