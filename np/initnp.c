@@ -49,6 +49,7 @@
 #include "bdf.h"
 #include "ew.h"
 #include "field.h"
+#include "db.h"
 
 #include "initnp.h"
 #include "numproc.h"
@@ -165,6 +166,12 @@ INT InitNumerics ()
 
   /* init stochastic field */
   if ((err=InitStochField())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init data base */
+  if ((err=InitDb())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
