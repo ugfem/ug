@@ -3994,6 +3994,8 @@ static INT APPreProcess  (NP_ITER *theNP, INT level,
   NP_TS *np = (NP_TS *) theNP;
   GRID *theGrid = NP_GRID(theNP,level);
 
+  DOUBLE a = 0;
+
   if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
     NP_RETURN(1,result[0]);
   if (VDsubDescFromVT(x,np->vt,np->p_sub,&np->px))
@@ -4017,6 +4019,7 @@ static INT APPreProcess  (NP_ITER *theNP, INT level,
             (np->u_solver,level,np->ux,np->ub,np->uuA,
             baselevel,result))
         REP_ERR_RETURN(1);
+
   if (np->p_solver != NULL)
     if (np->p_solver->PreProcess != NULL)
       if ((*np->p_solver->PreProcess)
@@ -4033,11 +4036,6 @@ static INT APSmoother (NP_ITER *theNP, INT level,
 {
   NP_TS *np = (NP_TS *) theNP;
   MULTIGRID *theMG = NP_MG(theNP);
-  VEC_SCALAR defect2reach,defect;
-  DOUBLE rho,lambda;
-  INT i,PrintID;
-  char text[DISPLAY_WIDTH+4],text1[DISPLAY_WIDTH];
-  DOUBLE eunorm;
   LRESULT lresult;
 
   /* get storage for extra temp */
@@ -4049,23 +4047,21 @@ static INT APSmoother (NP_ITER *theNP, INT level,
     NP_RETURN(1,result[0]);
   if (VDsubDescFromVT(b,np->vt,np->p_sub,&np->pb))
     NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theMG,level,level,np->ux,&np->u))
+  if (AllocVDFromVD(theMG,0,level,np->ux,&np->t))
     NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theMG,level,level,np->ux,&np->t))
+  if (AllocVDFromVD(theMG,0,level,np->px,&np->s))
     NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theMG,level,level,np->px,&np->s))
+  if (dcopy(theMG,0,level,ALL_VECTORS,np->t,np->ub) != NUM_OK)
     NP_RETURN(1,result[0]);
-  if (dcopy(theMG,level,level,ALL_VECTORS,np->t,np->ub) != NUM_OK)
-    NP_RETURN(1,result[0]);
-  if (dcopy(theMG,level,level,ALL_VECTORS,np->s,np->pb) != NUM_OK)
-    NP_RETURN(1,result[0]);
-    #ifdef ModelP
-  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->t)!=NUM_OK)
-    NP_RETURN(1,result[0]);
-    #endif
-  if (dset(theMG,level,level,ALL_VECTORS,x,0.0)!= NUM_OK)
+  if (dcopy(theMG,0,level,ALL_VECTORS,np->s,np->pb) != NUM_OK)
     NP_RETURN(1,result[0]);
 
+    #ifdef ModelP
+  if (a_vector_collect(theMG,0,level,np->t)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if (dset(theMG,0,level,ALL_VECTORS,x,0.0)!= NUM_OK)
+    NP_RETURN(1,result[0]);
   if ((*np->u_solver->Residuum)
         (np->u_solver,0,level,np->ux,np->t,np->uuA,&lresult))
     NP_RETURN(1,result[0]);
@@ -4075,57 +4071,46 @@ static INT APSmoother (NP_ITER *theNP, INT level,
                               np->u_solver->reduction,&lresult))
     NP_RETURN(1,result[0]);
 
-  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,np->s,np->puA,np->ux)
-      != NUM_OK)
-    NP_RETURN(1,result[0]);
-    #ifdef ModelP
-  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->s)!=NUM_OK)
-    NP_RETURN(1,result[0]);
-    #endif
-  if (dset(theMG,level,level,ALL_VECTORS,np->r,0.0)!= NUM_OK)
-    NP_RETURN(1,result[0]);
-  if ((*np->p_iter->Iter)(np->p_iter,level,np->r,np->q,np->S,result))
-    REP_ERR_RETURN(1);
-  if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,np->upA,np->px)
-      != NUM_OK)
-    NP_RETURN(1,result[0]);
+  /*
+     UserWriteF("np->ux \n");
+     PrintSVector(theMG,np->ux);
+   */
 
+  if (dmatmul_minus(theMG,0,level,ALL_VECTORS,np->s,np->puA,np->ux)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
     #ifdef ModelP
-  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->t)!=NUM_OK)
+  if (a_vector_collect_noskip(theMG,0,level,np->s)!=NUM_OK)
     NP_RETURN(1,result[0]);
     #endif
-  if (dset(theMG,level,level,ALL_VECTORS,np->u,0.0)!= NUM_OK)
+
+  /*
+     UserWriteF("np->s \n");
+     PrintSVector(theMG,np->s);
+   */
+
+  if ((*np->p_solver->Residuum)
+        (np->p_solver,0,level,np->px,np->s,np->ppA,&lresult))
     NP_RETURN(1,result[0]);
-  if (np->v_iter != NULL) {
-    if ((*np->v_iter->Iter)(np->v_iter,level,
-                            np->u,np->t,np->uuA,result))
-      REP_ERR_RETURN(1);
-  }
-  else {
-    if ((*np->u_solver->Residuum)
-          (np->u_solver,0,level,
-          np->u,np->t,np->uuA,&lresult))
-      NP_RETURN(1,result[0]);
-    if ((*np->u_solver->Solver)(np->u_solver,level,
-                                np->u,np->t,np->uuA,
-                                np->u_solver->abslimit,
-                                np->u_solver->reduction,&lresult))
-      NP_RETURN(1,result[0]);
-  }
-  if (dsub(theMG,level,level,ALL_VECTORS,np->ux,np->u) != NUM_OK)
+  if ((*np->p_solver->Solver)(np->p_solver,level,
+                              np->px,np->s,np->ppA,
+                              np->p_solver->abslimit,
+                              np->p_solver->reduction,&lresult))
     NP_RETURN(1,result[0]);
+  /*
+     UserWriteF("np->px \n");
+     PrintSVector(theMG,np->px);
+   */
 
   /* damp */
-  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->damp)!= NUM_OK)
+  if (dscalx(NP_MG(theNP),0,level,ALL_VECTORS,x,np->damp)!= NUM_OK)
     NP_RETURN(1,result[0]);
-
   /* update defect */
-  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK)
+  if (dmatmul_minus(NP_MG(theNP),0,level,ALL_VECTORS,b,A,x)!= NUM_OK)
     NP_RETURN(1,result[0]);
 
-  FreeVD(NP_MG(theNP),level,level,np->u);
-  FreeVD(NP_MG(theNP),level,level,np->t);
-  FreeVD(NP_MG(theNP),level,level,np->s);
+  FreeVD(NP_MG(theNP),0,level,np->t);
+  FreeVD(NP_MG(theNP),0,level,np->s);
 
   return (0);
 }
@@ -4136,17 +4121,16 @@ static INT APPostProcess (NP_ITER *theNP, INT level,
 {
   NP_TS *np = (NP_TS *) theNP;
 
-  FreeMD(NP_MG(theNP),level,level,np->S);
+  if (np->p_solver != NULL)
+    if (np->p_solver->PostProcess != NULL)
+      if ((*np->p_solver->PostProcess)
+            (np->p_solver,level,np->px,np->pb,np->ppA,result))
+        REP_ERR_RETURN(1);
 
   if (np->u_solver != NULL)
     if (np->u_solver->PostProcess != NULL)
       if ((*np->u_solver->PostProcess)
             (np->u_solver,level,np->ux,np->ub,np->uuA,result))
-        REP_ERR_RETURN(1);
-  if (np->p_solver != NULL)
-    if (np->p_solver->PostProcess != NULL)
-      if ((*np->p_solver->PostProcess)
-            (np->p_solver,level,np->px,np->pb,np->ppA,result))
         REP_ERR_RETURN(1);
 
   return(0);
@@ -5241,6 +5225,13 @@ static INT ILUStep (NP_SMOOTHER *theNP, INT level,
       NP_RETURN(1,result[0]);
   }
     #endif
+
+  /*
+     PrintVector(theGrid,x,3,3);
+     PrintMatrix(theGrid,L,3,3);
+     PrintVector(theGrid,b,3,3);
+   */
+
   if (l_luiter(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
@@ -6106,6 +6097,8 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
       NP_RETURN(1,result[0]);
     }
   *baselevel = level;
+
+  /*PrintMatrix(theGrid,np->smoother.L,3,3);*/
 
   return (0);
 }
@@ -7310,10 +7303,8 @@ static INT LmgcPreProcess  (NP_ITER *theNP, INT level,
                             VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                             INT *baselevel, INT *result)
 {
-  NP_LMGC *np;
+  NP_LMGC *np = (NP_LMGC *) theNP;
   INT i;
-
-  np = (NP_LMGC *) theNP;
 
   if (np->Transfer->PreProcess != NULL)
     if ((*np->Transfer->PreProcess)
@@ -8603,6 +8594,13 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
     #ifdef ModelP
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
+
+
+  /*
+
+     PrintVector(theGrid,x,3,3);	PrintVector(theGrid,b,3,3);
+   */
+
   if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
