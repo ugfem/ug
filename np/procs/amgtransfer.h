@@ -75,7 +75,8 @@ typedef struct {
 typedef INT (*MarkConnectionsProcPtr)(GRID *, MATDATA_DESC *, DOUBLE);
 typedef INT (*CoarsenProcPtr)(GRID *);
 typedef INT (*SetupIRMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
-typedef INT (*SetupCGMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
+typedef INT (*SetupCGMatProcPtr)(GRID *, MATDATA_DESC *,
+                                 MATDATA_DESC *, INT);
 
 typedef struct
 {

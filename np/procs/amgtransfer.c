@@ -170,7 +170,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .vb
    npcreate <name> $c {selectionAMG|clusterAMG};
    npinit <name> {$strongAll|$strongAbs <thetaS>|$strongRel <thetaS>}
+                {$C {Average|RugeStueben} | $C {VanekNeuss}}
                 {$I {Average|RugeStueben} | $I {PiecewiseConstant|Vanek}}
+                {$CM {Galerkin|FastGalerkin}}
                 [{$keepAbs <thetaS>|$keepRel <thetaS>} [$lump]]
                                 [{$coarsefine|$finecoarse}]
                             [$display {full|red|no}]
@@ -182,9 +184,14 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .ve
 
    .  $strong... - defines strong connection type for coarsening
+   .  $C - specifies the coarsening
+   .     - possibilities for selectionAMG: Average, RugeStueben
+   .     - possibilities for clusterAMG: VanekNeuss
    .  $I - specifies the coarsening
    .     - possibilities for selectionAMG: Average, RugeStueben
    .     - possibilities for clusterAMG: PiecewiseConstant, Vanek
+   .  $CM - specifies the coarse grid matrix computation
+   .     - possibilities: Galerkin, FastGalerkin (up to now only for equations)
    .  $keep... - defines strong connections to keep when sparsening the CG matrix
    .  $lump... - lump omitted element to diagonal when sparsening the CG matrix
    .  $coarsefine - reorder the fine grid points to first coarse, then fine
@@ -327,6 +334,17 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
     PrintErrorMessage('E',"NPAMGTransferInit","$I ... definition is incorrect");
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   }
+
+  /* specification of coarse grid matrix computation */
+  np->SetupCG = NULL;
+  if (ReadArgvChar("CM",buffer,argc,argv) == 1) {
+    PrintErrorMessage('E',"NPAMGTransferInit","no $CM ... definition");
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+  if (strcmp(buffer,"Galerkin") == 0)
+    np->SetupCG = AssembleGalerkinFromInterpolation;
+  if (strcmp(buffer,"FastGalerkin") == 0)
+    np->SetupCG = FastGalerkinFromInterpolation;
 
   /* definition of sparsen criterion, default = no sparsening, keep all */
   np->MarkKeep=NULL;
@@ -482,8 +500,10 @@ INT AMGTransferDisplay (NP_BASE *theNP)
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","unknown");
 
-  if (np->SetupCG==GalerkinCGMatrixFromInterpolation)
+  if (np->SetupCG==AssembleGalerkinFromInterpolation)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupCG","Galerkin");
+  else if (np->SetupCG==FastGalerkinFromInterpolation)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupCG","FastGalerkin");
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupCG","AssembleGalerkin");
 
@@ -594,17 +614,26 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       if (newGrid==NULL)
         break;
             #ifdef ModelP
-      if (a_vector_vecskip(theMG,level-1,level-1,x) != NUM_OK)
+      if (a_vector_vecskip(theMG,level-1,level-1,x) != NUM_OK) {
+        result[0]=1;
         REP_ERR_RETURN(1);
+      }
             #endif
       if ((result[0]=(np->SetupIR)(theGrid,A,NULL /*preliminary!*/))!=0)
         REP_ERR_RETURN(result[0]);
-      if (AllocMDFromMD(theMG,level-1,level-1,A,&A))
+
+      if (AllocMDFromMD(theMG,level-1,level-1,A,&A)) {
+        result[0]=1;
         REP_ERR_RETURN(1);
-      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK)
+      }
+      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK) {
+        result[0]=1;
         REP_ERR_RETURN(1);
-      if (AssembleGalerkinByMatrix(theGrid,A,np->symmetric))
-        REP_ERR_RETURN(1);
+      }
+      if ((result[0]=(np->SetupCG)(theGrid,A,NULL /* preliminary!! */,
+                                   np->symmetric))!=0)
+        REP_ERR_RETURN(result[0]);
+
       if (np->MarkKeep!=NULL) {
         UnmarkAll(newGrid,NULL,0.0);
         if ((result[0]=(np->MarkKeep)(newGrid,A,np->thetaK))!=0)
@@ -612,6 +641,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         if ((result[0]=SparsenCGMatrix(newGrid,A,np->sparsenFlag))!=0)
           REP_ERR_RETURN(result[0]);
       }
+
       if (np->reorderFlag!=0) {
         if ((result[0]=ReorderFineGrid(theGrid,np->reorderFlag))!=0)
           REP_ERR_RETURN(result[0]);
@@ -644,18 +674,24 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   }
   else {
     for (level=0; level>theMG->bottomLevel; level--) {
-      if (AllocMDFromMD(theMG,level-1,level-1,A,&A))
+      if (AllocMDFromMD(theMG,level-1,level-1,A,&A)) {
+        result[0]=1;
         REP_ERR_RETURN(1);
-      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK)
+      }
+      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK) {
+        result[0]=1;
         REP_ERR_RETURN(1);
-      if (AssembleGalerkinByMatrix(GRID_ON_LEVEL(theMG,level),
-                                   A,np->symmetric))
-        REP_ERR_RETURN(1);
+      }
+      if ((result[0]=(np->SetupCG)(theGrid,A,NULL /* preliminary!! */,
+                                   np->symmetric))!=0)
+        REP_ERR_RETURN(result[0]);
     }
   }
   for (level=0; level>= theMG->bottomLevel; level--)
-    if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b))
+    if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b)) {
+      result[0]=1;
       REP_ERR_RETURN(1);
+    }
 
   /* we set the baselevel for the following cycle!! */
   *fl=theMG->bottomLevel;
@@ -829,7 +865,6 @@ static INT SelectionAMGConstruct (NP_BASE *theNP)
   np->AMGtype = SELECTION_AMG;
   np->Coarsen = CoarsenRugeStueben;
   np->SetupIR = IpRugeStueben;
-  np->SetupCG = NULL;
 
   return(0);
 }
@@ -844,7 +879,6 @@ static INT ClusterAMGConstruct (NP_BASE *theNP)
   np->AMGtype = CLUSTER_AMG;
   np->Coarsen = CoarsenVanek;
   np->SetupIR = IpVanek;
-  np->SetupCG = NULL;
 
   return(0);
 }

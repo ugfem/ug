@@ -3451,7 +3451,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   GRID *theGrid;
   LRESULT lresult;
   INT i;
-        #ifdef _DEBUG_ITER_
+        #ifdef Debug
   DOUBLE eunorm;
         #endif
 
@@ -3466,22 +3466,22 @@ static INT Lmgc (NP_ITER *theNP, INT level,
     if ((*np->BaseSolver->Residuum)
           (np->BaseSolver,np->baselevel,level,c,b,A,&lresult))
       REP_ERR_RETURN(1);
-        #ifdef _DEBUG_ITER_
+    IFDEBUG(np,4)
     l_eunorm(GRID_ON_LEVEL(theNP->base.mg,level),b,EVERY_CLASS,&eunorm);
     UserWriteF("defect before base solver : %f\n",eunorm);
     l_eunorm(GRID_ON_LEVEL(theNP->base.mg,level),c,EVERY_CLASS,&eunorm);
     UserWriteF("norm before base solver : %f\n",eunorm);
-        #endif
+    ENDDEBUG
 
     if ((*np->BaseSolver->Solver)(np->BaseSolver,level,c,b,A,
                                   np->BaseSolver->abslimit,
                                   np->BaseSolver->reduction,&lresult)) NP_RETURN(1,result[0]);
-        #ifdef _DEBUG_ITER_
+    IFDEBUG(np,4)
     l_eunorm(GRID_ON_LEVEL(theNP->base.mg,level),b,EVERY_CLASS,&eunorm);
     UserWriteF("defect after base solver : %f\n",eunorm);
     l_eunorm(GRID_ON_LEVEL(theNP->base.mg,level),c,EVERY_CLASS,&eunorm);
     UserWriteF("norm after base solver : %f\n",eunorm);
-        #endif
+    ENDDEBUG
 
     if (!lresult.converged)
       PrintErrorMessage('W',"Lmgc","no convergence of BaseSolver");
@@ -3490,10 +3490,10 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   theMG = theNP->base.mg;
   theGrid = GRID_ON_LEVEL(theMG,level);
 
-        #ifdef _DEBUG_ITER_
+  IFDEBUG(np,4)
   l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
   UserWriteF("defect before smoothing : %f\n",eunorm);
-        #endif
+  ENDDEBUG
 
   if (AllocVDFromVD(theMG,level,level,c,&np->t)) NP_RETURN(1,result[0]);
   for (i=0; i<np->nu1; i++) {
@@ -3502,10 +3502,10 @@ static INT Lmgc (NP_ITER *theNP, INT level,
     if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   }
 
-        #ifdef _DEBUG_ITER_
+  IFDEBUG(np,4)
   l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
   UserWriteF("after presmoothing : %f\n",eunorm);
-        #endif
+  ENDDEBUG
 
   if ((*np->Transfer->RestrictDefect)
         (np->Transfer,level,b,b,A,Factor_One,result))
@@ -3518,25 +3518,25 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   if ((*np->Transfer->InterpolateCorrection)
         (np->Transfer,level,np->t,c,A,Factor_One,result))
     REP_ERR_RETURN(1);
-        #ifdef _DEBUG_ITER_
+  IFDEBUG(np,4)
   l_eunorm(theGrid,np->t,EVERY_CLASS,&eunorm);
   UserWriteF("norm of interpolated correction : %f\n",eunorm);
-        #endif
+  ENDDEBUG
   if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,np->t,EVERY_CLASS) != NUM_OK) NP_RETURN(1,result[0]);
-        #ifdef _DEBUG_ITER_
+  IFDEBUG(np,4)
   l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
   UserWriteF("defect after CG correction : %f\n",eunorm);
-        #endif
+  ENDDEBUG
   for (i=0; i<np->nu2; i++) {
     if ((*np->PostSmooth->Iter)(np->PostSmooth,level,np->t,b,A,result))
       REP_ERR_RETURN(1);
     if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   }
-        #ifdef _DEBUG_ITER_
+  IFDEBUG(np,4)
   l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
   UserWriteF("defect after post smoothing : %f\n",eunorm);
-        #endif
+  ENDDEBUG
   FreeVD(theNP->base.mg,level,level,np->t);
   if (np->Transfer->AdaptCorrection != NULL)
     if ((*np->Transfer->AdaptCorrection)(np->Transfer,level,c,b,A,result))
