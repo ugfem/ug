@@ -74,6 +74,16 @@ BEGIN
 	}
 }
 
+sub module
+{
+	my $i;
+	for ($i=0; $i<@INC; $i++) 
+	{
+		-e "$INC[$i]/$_[0].pm" and return 1;
+	}
+	return 0;
+}
+
 sub usage_error
 {
 	my $cmd=shift;
@@ -190,6 +200,7 @@ sub ug
 			}
 			else
 			{
+				module('cluster') or die "cannot find module 'cluster'\n";
                 @name=split /\//,$argv{'p'};
 				$pre ="################# start ################\n";
 				$pre.="parallel application: $name[@name-1]\n";
