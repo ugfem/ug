@@ -908,6 +908,13 @@ static void InitDDDTypes (void)
  */
 /****************************************************************************/
 
+/* TODO remove this! read TODO in function below */
+#define NASTY_MAPPING(tag,idddtype,bdddtype)  \
+  MAP_TYPES(MAPPED_INNER_OBJT_TAG(tag), idddtype); \
+  dddctrl.dddObj[MAPPED_INNER_OBJT_TAG(tag)] = TRUE; \
+  MAP_TYPES(MAPPED_BND_OBJT_TAG(tag), bdddtype); \
+  dddctrl.dddObj[MAPPED_BND_OBJT_TAG(tag)] = TRUE;
+
 void InitCurrMG (MULTIGRID *MG)
 {
   dddctrl.currMG = MG;
@@ -917,13 +924,40 @@ void InitCurrMG (MULTIGRID *MG)
   dddctrl.elemData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,ELEMVEC);
   dddctrl.sideData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,SIDEVEC);
 
-  if (dddctrl.currFormat == NULL) {
+  if (dddctrl.currFormat == NULL)
+  {
+    /* InitCurrMG was called for the first time, init
+       DDD-types now. */
     InitDDDTypes();
     dddctrl.currFormat = MGFORMAT(MG);
   }
-  else if (dddctrl.currFormat !=  MGFORMAT(MG))
-    assert(0);
+  else
+  {
+    /* InitCurrMG has been called before. Check whether UG-MGFormat
+       has changed. */
+    if (dddctrl.currFormat !=  MGFORMAT(MG))
+      assert(0);
+
+    /* we assume that all DDD-types for this format have been
+       defined in the first call to InitCurrMG. */
+    /* TODO: normally we should be ready here. however,
+            UG has created new OBJT-IDs for the elements. therefore,
+        we have to remap them here. remove this in next version. */
+
+                #ifdef __TWODIM__
+    NASTY_MAPPING(TRIANGLE, TypeTrElem, TypeTrBElem);
+    NASTY_MAPPING(QUADRILATERAL, TypeQuElem, TypeQuBElem);
+                #endif /* TWODIM */
+
+                #ifdef __THREEDIM__
+    NASTY_MAPPING(TETRAHEDRON, TypeTeElem, TypeTeBElem);
+    NASTY_MAPPING(PYRAMID, TypePyElem, TypePyBElem);
+    NASTY_MAPPING(PRISM, TypePrElem, TypePrBElem);
+    NASTY_MAPPING(HEXAHEDRON, TypeHeElem, TypeHeBElem);
+                #endif /* THREEDIM */
+  }
 }
+
 
 /****************************************************************************/
 /*
