@@ -127,8 +127,7 @@ static INT PreProcessNodeValue (const char *name, MULTIGRID *theMG)
   return (0);
 }
 
-static DOUBLE NodeValue (const ELEMENT *theElement,
-                         const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
+static DOUBLE NodeValue (const ELEMENT *theElement, const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
 {
   INT i,n;
   DOUBLE phi;
@@ -138,6 +137,14 @@ static DOUBLE NodeValue (const ELEMENT *theElement,
   for (i=0; i<n; i++)
     phi += GN(n,i,LocalCoord)*VVALUE(NVECTOR(CORNER(theElement,i)),NodeValueComp);
 
+  return(phi);
+}
+
+static DOUBLE LevelValue (const ELEMENT *theElement, const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
+{
+  DOUBLE phi;
+
+  phi = LEVEL(theElement);
   return(phi);
 }
 
@@ -286,15 +293,10 @@ static DOUBLE RefMarks (const ELEMENT *theElement,
 INT InitPlotProc ()
 {
   /* install general plot procs */
-  if (CreateElementValueEvalProc("nvalue",PreProcessNodeValue,
-                                 NodeValue) == NULL)
-    return(1);
-  if (CreateElementVectorEvalProc("nvector",PreProcessNodeVector,
-                                  NodeVector,DIM) == NULL)
-    return(1);
-  if (CreateElementValueEvalProc("refmarks",PreProcessRefMarks,
-                                 RefMarks) == NULL)
-    return(1);
+  if (CreateElementValueEvalProc("nvalue",PreProcessNodeValue,NodeValue) == NULL) return(1);
+  if (CreateElementValueEvalProc("level",NULL,LevelValue) == NULL) return(1);
+  if (CreateElementVectorEvalProc("nvector",PreProcessNodeVector,NodeVector,DIM) == NULL) return(1);
+  if (CreateElementValueEvalProc("refmarks",PreProcessRefMarks,RefMarks) == NULL) return(1);
 
   return (0);
 }
