@@ -36,6 +36,7 @@
 #include <meshing/global.hh>
 #include <meshing/meshing3.hh>
 
+static int LGM_DEBUG = 0;
 
 extern "C"
 {
@@ -98,8 +99,9 @@ int my_meshing3 :: SavePoint (const Point3d & p)
 
 void my_meshing3 :: SaveElement (const Element & elem)
 {
-  float x[4][3],diam,fac,global[3],inndiam,dist,percent;
+  float x[4][3],diam,fac,global[3],inndiam,dist,percent,vol;
   int i,n;
+  FILE *file;
 
   if (disp)
   {
@@ -136,12 +138,36 @@ void my_meshing3 :: SaveElement (const Element & elem)
 
     volelements -> Append (elem);
 
+    vol = (               (x[1][0] - x[0][0]) * (x[2][1] - x[0][1]) * (x[3][2] - x[0][2])
+                          -       (x[1][0] - x[0][0]) * (x[3][1] - x[0][1]) * (x[2][2] - x[0][2])
+                          +       (x[2][0] - x[0][0]) * (x[3][1] - x[0][1]) * (x[1][2] - x[0][2])
+                          -       (x[2][0] - x[0][0]) * (x[1][1] - x[0][1]) * (x[3][2] - x[0][2])
+                          +       (x[3][0] - x[0][0]) * (x[1][1] - x[0][1]) * (x[2][2] - x[0][2])
+                          -       (x[3][0] - x[0][0]) * (x[2][1] - x[0][1]) * (x[1][2] - x[0][2])
+                          ) / 6;
+
     percent = 100.0 * adfront->Volume() / vol0;
 
-    UserWriteF(" ID(Elem)=%4d midPoint %6.2f %6.2f %6.2f dist %6.2f diam %6.2f %6.2f vol %6.3f\%\n",
+    UserWriteF(" ID(Elem)=%4d midPoint %6.2f %6.2f %6.2f dist %6.2f diam %6.2f %6.2f vol %10.6f\%\n",
                volelements -> Size(),global[0],global[1],global[2],
                dist,inndiam,diam,percent);
+    /*	  UserWriteF("%10.6f\%\n",-vol);*/
   }
+  if(LGM_DEBUG)
+    if(volelements->Size()==100)
+    {
+      file = fopen("grape100","w");
+      fprintf(file, "%d\n", points->Size());
+      for(i=1; i<=points->Size(); i++)
+        fprintf(file, "%f %f %f\n", points->Get(i).X(), points->Get(i).Y(), points->Get(i).Z());
+      fprintf(file, "%d\n", volelements->Size());
+      for(i=1; i<=volelements->Size(); i++)
+        fprintf(file, "%d %d %d %d\n", volelements->Get(i).PNum(1),
+                volelements->Get(i).PNum(2),
+                volelements->Get(i).PNum(3),
+                volelements->Get(i).PNum(4));
+      fclose(file);
+    }
 }
 
 void my_meshing3 :: Get_Local_h_3d(double *in,double *out)
@@ -155,8 +181,8 @@ static my_meshing3 * meshing;
 
 int AddSurfaceNode (int nodeid, double x, double y, double z)
 {
-  points -> Append (Point3d(x, y, z));
-  meshing -> AddPoint (Point3d(x, y, z), nodeid+1);
+  points -> Append (Point3d(x, y, z*1));
+  meshing -> AddPoint (Point3d(x, y, z*1), nodeid+1);
   return 0;
 }
 
@@ -202,9 +228,15 @@ int StartNetgen (double h, int smooth, int display)
 
   UserWriteF("\n");
   for (i = nbp + 1; i <= points -> Size(); i++)
+  {
+    if(LGM_DEBUG)
+      cout << points -> Get(i).X() << "  "
+           << points -> Get(i).Y() << "  "
+           << points -> Get(i).Z() << endl;
     AddInnerNode (points -> Get(i).X(),
                   points -> Get(i).Y(),
-                  points -> Get(i).Z());
+                  points -> Get(i).Z()/1);
+  }
 
   for (i = 1; i <= volelements -> Size(); i++)
   {

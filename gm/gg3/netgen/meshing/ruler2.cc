@@ -15,8 +15,8 @@
 #include <meshing/ruler2.hh>
 
 
-static double CalcElementBadness (const ARRAY<Point2d> & points,
-                                  const Element & elem)
+static double CalcElementBadness_old (const ARRAY<Point2d> & points,
+                                      const Element & elem)
 {
   // badness = sqrt(3) /36 * circumference^2 / area - 1 +
   //           h / li + li / h - 2
@@ -44,6 +44,68 @@ static double CalcElementBadness (const ARRAY<Point2d> & points,
          + 1/l12 + l12 + 1/l13 + l13 + 1/l23 + l23 - 6;
 }
 
+static double CalcElementBadness (const ARRAY<Point2d> & points,
+                                  const Element & elem)
+{
+  // groesster Innenwinkel bestimmt die Qualitaet des Elements
+
+  Vec2d v12, v13, v23, v21, v31, v32;
+  double l12, l13, l23, l21, l31, l32, cir, area;
+  double alpha1, alpha2, alpha3, maxalpha, minalpha;
+
+
+  v12 = points.Get(elem.PNum(2)) - points.Get(elem.PNum(1));
+  v13 = points.Get(elem.PNum(3)) - points.Get(elem.PNum(1));
+  v23 = points.Get(elem.PNum(3)) - points.Get(elem.PNum(2));
+
+  l12 = v12.Length();
+  l13 = v13.Length();
+  l23 = v23.Length();
+
+  cir = l12 + l13 + l23;
+  area = 0.5 * (v12.X() * v13.Y() - v12.Y() * v13.X());
+  if (area < 1e-6)
+  {
+    return 1e8;
+  }
+
+  v12 = points.Get(elem.PNum(1)) - points.Get(elem.PNum(2));
+  v13 = points.Get(elem.PNum(1)) - points.Get(elem.PNum(3));
+  v23 = points.Get(elem.PNum(2)) - points.Get(elem.PNum(3));
+
+  v21 = points.Get(elem.PNum(2)) - points.Get(elem.PNum(1));
+  v31 = points.Get(elem.PNum(3)) - points.Get(elem.PNum(1));
+  v32 = points.Get(elem.PNum(3)) - points.Get(elem.PNum(2));
+
+  l12 = v12.Length();
+  l13 = v13.Length();
+  l23 = v23.Length();
+
+  l21 = v21.Length();
+  l31 = v31.Length();
+  l32 = v32.Length();
+
+  alpha1 = acos( v21*v31 / (l21*l31) );
+  alpha2 = acos( v12*v32 / (l12*l32) );
+  alpha3 = acos( v23*v13 / (l23*l13) );
+
+  maxalpha = alpha1;
+  if(maxalpha<alpha2)
+    maxalpha = alpha2;
+  if(maxalpha<alpha3)
+    maxalpha = alpha3;
+
+  minalpha = alpha1;
+  if(minalpha>alpha2)
+    minalpha = alpha2;
+  if(minalpha>alpha3)
+    minalpha = alpha3;
+
+  if(minalpha<1e-3)
+    return(1e10);
+  //	cout << "quality:  " << 0.5-cos(maxalpha) << "  maxalpha: " << maxalpha << endl;
+  return 0.5-cos(maxalpha);
+}
 
 
 int ApplyRules ( const ARRAY<netrule*> & rules,

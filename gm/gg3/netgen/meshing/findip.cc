@@ -41,7 +41,7 @@ int FindInnerPoint (const ARRAY<Point3d> & points,
   int nf;
   DenseMatrix m(3), inv(3);
   Vector rs(3), x(3);
-  double f, fmin, hd;
+  double f, fmin, hd,l;
 
   nf = faces.Size();
 
@@ -88,14 +88,14 @@ int FindInnerPoint (const ARRAY<Point3d> & points,
                     testout << "rs = " << rs << endl;
                     testout << "det = " << m.Det() << endl;
            */
+          l = sqrt(rs.Elem(1)*rs.Elem(1) + rs.Elem(2)*rs.Elem(2) + rs.Elem(3)*rs.Elem(3));
 
-          if (fabs (m.Det()) > 1e-10)
+          if ( (fabs (m.Det()) > 1e-10) && (l > 1e-10))
           {
             CalcInverse (m, inv);
             inv.Mult (rs, x);
 
             //            testout << "x = " << x << endl;
-
 
             f = -1e10;
             for (i = 1; i <= nf; i++)

@@ -14,6 +14,9 @@
 #include <geom/geom2d.hh>
 #include <geom/geom3d.hh>
 
+extern int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh);
+
+
 
 #include <meshing/adfront2.hh>
 
@@ -177,9 +180,9 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
   INDEX lstind, pstind;
   char found;
   INDEX pi;
-  Point3d midp, p0;
-  int minval, hi;
-  double min,l;
+  Point3d midp, p0,p1,p2,sp1,sp2,p;
+  int minval, hi, flag;
+  double min,minn,l;
 
   minval = INT_MAX;
   min = INT_MAX;
@@ -239,15 +242,36 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
   loclines.Append(lines[lstind].L());
   lindex.Append(lstind);
 
+  /*  for (i = 1; i <= lines.Size(); i++)
+      {
+      if (lines.Get(i).Valid() && i != lstind &&
+          lines.Get(i).SurfaceIndex() == asurfaceind)
+        {
+        midp = Center (points.Get(lines.Get(i).L().I1()).P(),
+                       points.Get(lines.Get(i).L().I2()).P());
+
+        if (Dist (midp, p0) <= xh)
+          {
+          loclines.Append(lines.Get(i).L());
+          lindex.Append(i);
+          }
+        }
+      }
+   */
+  sp1 = points.Get(lines.Get(lstind).L().I1()).P();
+  sp2 = points.Get(lines.Get(lstind).L().I2()).P();
+
   for (i = 1; i <= lines.Size(); i++)
   {
-    if (lines.Get(i).Valid() && i != lstind &&
-        lines.Get(i).SurfaceIndex() == asurfaceind)
+    if (lines.Get(i).Valid() && i != lstind)
     {
       midp = Center (points.Get(lines.Get(i).L().I1()).P(),
                      points.Get(lines.Get(i).L().I2()).P());
 
-      if (Dist (midp, p0) <= xh)
+      p1 = points.Get(lines.Get(i).L().I1()).P();
+      p2 = points.Get(lines.Get(i).L().I2()).P();
+
+      if (Test_Line(p1,p2,sp1,sp2,xh))
       {
         loclines.Append(lines.Get(i).L());
         lindex.Append(i);

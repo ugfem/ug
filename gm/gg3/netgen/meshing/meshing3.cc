@@ -280,31 +280,39 @@ void Meshing3 :: Mesh (double ah)
       qualclass =
         adfront -> GetLocals (locpoints, locfaces, pindex, findex, 3 * h);
     else
+    {
       qualclass =
         adfront -> GetLocals (locpoints, locfaces, pindex, findex, -3 * h);
 
-    bemp1.X() = locpoints[locfaces[1].PNum(1)].X();
-    bemp1.Y() = locpoints[locfaces[1].PNum(1)].Y();
-    bemp1.Z() = locpoints[locfaces[1].PNum(1)].Z();
-    bemp2.X() = locpoints[locfaces[1].PNum(2)].X();
-    bemp2.Y() = locpoints[locfaces[1].PNum(2)].Y();
-    bemp2.Z() = locpoints[locfaces[1].PNum(2)].Z();
-    bemp3.X() = locpoints[locfaces[1].PNum(3)].X();
-    bemp3.Y() = locpoints[locfaces[1].PNum(3)].Y();
-    bemp3.Z() = locpoints[locfaces[1].PNum(3)].Z();
 
-    bemp.X() = ( bemp1.X() + bemp2.X() + bemp3.X() ) / 3;
-    bemp.Y() = ( bemp1.Y() + bemp2.Y() + bemp3.Y() ) / 3;
-    bemp.Z() = ( bemp1.Z() + bemp2.Z() + bemp3.Z() ) / 3;
+      bemp1.X() = locpoints[locfaces[1].PNum(1)].X();
+      bemp1.Y() = locpoints[locfaces[1].PNum(1)].Y();
+      bemp1.Z() = locpoints[locfaces[1].PNum(1)].Z();
+      bemp2.X() = locpoints[locfaces[1].PNum(2)].X();
+      bemp2.Y() = locpoints[locfaces[1].PNum(2)].Y();
+      bemp2.Z() = locpoints[locfaces[1].PNum(2)].Z();
+      bemp3.X() = locpoints[locfaces[1].PNum(3)].X();
+      bemp3.Y() = locpoints[locfaces[1].PNum(3)].Y();
+      bemp3.Z() = locpoints[locfaces[1].PNum(3)].Z();
 
-    if(h<=0.0)
-    {
+      bemp.X() = ( bemp1.X() + bemp2.X() + bemp3.X() ) / 3;
+      bemp.Y() = ( bemp1.Y() + bemp2.Y() + bemp3.Y() ) / 3;
+      bemp.Z() = ( bemp1.Z() + bemp2.Z() + bemp3.Z() ) / 3;
+
+      locpoints.SetSize(0);
+      locfaces.SetSize(0);
+      pindex.SetSize(0);
+      findex.SetSize(0);
+
       in[0] = bemp.X();
       in[1] = bemp.Y();
       in[2] = bemp.Z();
       in[3] = ah;
       Get_Local_h_3d(in,&h);
+      qualclass =
+        adfront -> GetLocals (locpoints, locfaces, pindex, findex, 3 * h);
     }
+
     oldnp = locpoints.Size();
     oldnf = locfaces.Size();
 

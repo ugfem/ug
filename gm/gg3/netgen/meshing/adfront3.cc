@@ -159,9 +159,6 @@ void ADFRONT3 :: ResetClass (INDEX fi)
 
 
 
-
-
-
 int ADFRONT3 :: GetLocals (ARRAY<Point3d> & locpoints,
                            ARRAY<Element> & locfaces,       // local index
                            ARRAY<INDEX> & pindex,
