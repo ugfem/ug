@@ -883,11 +883,23 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"component \"data\" value %d", blocks+2);
+    sprintf(it,"component \"data\" value %d\n", blocks+2);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
     blocks++;
+  }
+
+  /* put all data blocks into a group for select module */
+  if (blocks > 1) {
+    sprintf(it,"\nobject \"default\" class group\n");
+    strcpy(item+ic,it); ic+=strlen(it);
+    pfile_master_puts(pf,item); ic=0;
+    for (i = 1; i < blocks; i++) {
+      sprintf(it,"member \"data%d\" value \"data%d\"\n", i, i);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
   }
 
   pfile_close(pf);
