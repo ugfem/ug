@@ -1,0 +1,900 @@
+%!PS-Adobe-3.0
+%%Creator: A2ps version 4.3
+%%CreationDate: Sat May 23 14:17:50 1998
+%%Pages: (atend)
+%%DocumentFonts: Courier Courier-Bold Helvetica Helvetica-Bold
+%%EndComments
+% Copyright (c) 1993, 1994, Miguel Santana, M.Santana@frgu.bull.fr
+
+/$a2psdict 100 dict def
+$a2psdict begin
+
+% General macros.
+/xdef {exch def} bind def
+/getfont {exch findfont exch scalefont} bind def
+
+% Create Courier backspace font
+/backspacefont {
+    /Courier findfont dup length dict begin
+	{ % forall
+	    1 index /FID eq { pop pop } { def } ifelse
+	} forall
+	currentdict /UniqueID known { % if
+	    /UniqueID UniqueID 16#800000 xor def
+	} if
+	CharStrings length 1 add dict begin
+	    CharStrings { def } forall
+	    /backspace { -600 0 0 0 0 0 setcachedevice } bind def
+	    currentdict
+	end
+	/CharStrings exch def
+	/Encoding Encoding 256 array copy def
+	Encoding 8 /backspace put
+	currentdict
+    end
+    definefont pop
+} bind def
+
+% FUNCTIONS
+
+% Function filename: Initialize file printing.
+/fn
+{ /filenm xdef
+  /filenmwidth filenm stringwidth pop def
+  /filenmfont
+       filenmwidth fns gt
+       {
+	       filenmfontname
+	       fnfs fns mul filenmwidth div
+	     getfont
+       }
+       { sfnf }
+     ifelse
+  def
+} bind def
+
+% Function header: prints page header. no page
+% is passed as argument.
+/hp
+  { x sd get  y sd get hs sub 1 add  moveto
+    df setfont
+    gsave
+      x sd get y sd get moveto
+      0 hs 2 div neg rmoveto 
+      hs setlinewidth
+      0.95 setgray
+      pw 0 rlineto stroke
+    grestore
+    gsave
+      dfs hm rmoveto
+      d show				% date/hour
+    grestore
+    gsave
+      pnum cvs pop				% page pop up
+        pw (Page 999) stringwidth pop sub
+        hm
+	  rmoveto
+      (Page ) show pnum show		% page number
+    grestore
+    empty pnum copy pop
+    gsave
+      filenmfont setfont
+         fns filenm stringwidth pop sub 2 div dw add
+          bm 2 mul 
+        add 
+        hm
+      rmoveto
+        filenm show			% file name
+      grestore
+    } bind def
+
+% Function border: prints border page
+/border 
+{ x sd get y sd get moveto
+  gsave				% print four sides
+    0.7 setlinewidth		% of the square
+    pw 0 rlineto
+    0 ph neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+} bind def
+
+% Function hborder: completes border of the header.
+/hborder 
+{ gsave
+	0.7 setlinewidth
+	0 hs neg rmoveto
+	pw 0 rlineto
+	stroke
+  grestore
+} bind def
+
+% Function sheetnumber: prints the sheet number.
+/sn
+    { snx sny moveto
+      df setfont
+      pnum cvs
+	  dup stringwidth pop (0) stringwidth pop sub neg 0 rmoveto show
+      empty pnum copy pop
+    } bind def
+
+% Function loginprint: prints the login id of the requestor.
+/lgp
+    { lx ly moveto
+      df setfont
+      dup stringwidth pop neg 0 rmoveto show
+    } bind def
+
+% Function currentdate: prints the current date.
+/cd
+    { dx dy moveto
+      df setfont
+      (Printed: ) show
+      td show
+    } bind def
+
+% Function filename_footer: prints the file name at bottom of page.
+/fnf
+    { fnx fny moveto
+      df setfont
+      filenm center show
+    } bind def
+
+% Function center: centers text.
+/center
+    { dup stringwidth pop
+      2 div neg 0 rmoveto
+    } bind def
+
+% Function s: print a source line
+/s  { show
+      /y0 y0 bfs sub def
+      x0 y0 moveto
+    } bind def
+
+% Functions b and st: change to bold or standard font
+/b  { show
+      bdf setfont
+    } bind def
+/st { show
+      bf setfont
+    } bind def
+
+% Strings used to make easy printing numbers
+/pnum 12 string def
+/empty 12 string def
+
+% Global initializations
+
+/CourierBack backspacefont
+/filenmfontname /Helvetica-Bold def
+/inch {72 mul} bind def
+
+%
+% Meaning of some variables and functions (coded names)
+%
+%	twp:		twinpages?
+%	sd:		sheet side
+%	l:		line counter
+%	c:		column counter
+%	d:		date
+%	td:		current date (for today)
+%	lg:		login name
+%	fn:		filename printing function
+%	sn:		sheetnumber printing function
+%	cd:		current date printing function
+%	fnf:		filename footer printing function
+%	lgp:		login printing function
+%	hp:		header printing function
+%	y:		y coordinate for the logical page
+%	x:		x coordinate for the logical page
+%	sny:		y coordinate for the sheet number
+%	snx:		x coordinate for the sheet number
+%	dy:		y coordinate for the date
+%	dx:		x coordinate for the date
+%	ly:		y coordinate for the login
+%	lx:		x coordinate for the login
+%	scx:		x coordinate for the sheet center
+%	fny:		y coordinate for the filename (footer)
+%	fnx:		x coordinate for the filename (footer)
+%	fnfs:		filename font size
+%	bfs:		body font size
+%	dfs:		date font size
+%	bfs:		body font size
+%	df:		date font
+%	bf:		body font
+%	bdf:		bold font
+%	sfnf:		standard filename font
+%	dw:		date width
+%	pw:		page width
+%	sw:		sheet width
+%	ph:		page height
+%	sh:		sheet height
+%	hm:		header margin
+%	tm:		top margin
+%	bm:		body margin
+%	rm:		right margin
+%	lm:		left margin
+%	hs:		header size
+%	fns:		filename size
+
+% Initialize page description variables.
+/x0 0 def
+/y0 0 def
+/sh 11.64 inch def
+/sw 8.27 inch def
+/margin 1.4 inch def
+/rm margin 2 div def
+/lm margin 2 div def
+/d () def
+/td (May 23 1998 14:17) def
+%%EndProlog
+
+/docsave save def
+%%Page: 1 1
+/pagesave save def
+/twp true def
+/fnfs 11 def
+/dfs fnfs 0.8 mul def
+/df /Helvetica dfs getfont def
+/dw df setfont td stringwidth pop def
+/sfnf filenmfontname fnfs getfont def
+/hm fnfs 0.25 mul def
+/hs 0.22 inch def
+/bfs 6 def
+/bdf /Courier-Bold bfs getfont def
+/bm bfs 0.7 mul def
+/bf /CourierBack bfs getfont def
+/l 78 def
+/c 101 def
+/pw
+   bf setfont (0) stringwidth pop c mul bm dup add add
+   def
+/ph
+   bfs l mul bm dup add add hs add
+   def
+/fns
+      pw
+      fnfs 4 mul dw add (Page 999) stringwidth pop add
+    sub
+  def
+/tm margin twp {3} {2} ifelse div def
+/sd 0 def
+/y [ rm ph add bm add
+          dup ] def
+/sny dfs dfs add def
+/snx sh tm dfs add sub def
+/dy sny def
+/dx tm dfs add def
+/x [ tm			% left page
+          dup 2 mul pw add	% right page
+        ] def
+/scx sh 2 div def
+/fny dy def
+/fnx scx def
+/ly fnfs 2 div y sd get add def
+/lx snx def
+/d (Feb 26 1998 15:24) def
+( mail.joe ) fn
+sw 0 translate
+90 rotate
+1 hp
+border
+hborder
+/x0 x 0 get bm add def
+/y0 y 0 get bm bfs add hs add sub def
+x0 y0 moveto
+bf setfont
+( Hallo Joachim,) s
+( ) s
+( das File-format ist in etwa fertig. Ganz kleine Aenderungen) s
+( sind vielleich moeglich.) s
+( ) s
+( 1.\) Die Struktur ist folgenderma'sen: Das ng-file \(so nenne ich es\)) s
+(     besteht aus 3 Teilen:) s
+(         a.\) Abschnitt der Randknoten beschreibt.) s
+(         b.\) Abschnitt der Innere Knoten beschreibt \(kann leer sein\).) s
+(         c.\) Abschnitt der die Elemente beschreibt.) s
+(         Die Abschnitte muessen in dieser Reihenfolge kommen. Abschnitt) s
+(     a.\) und c.\) muessen existieren.) s
+( ) s
+( 2.\) In den ng-file koennen beliebig viele Leerzeichen, Tabulatoren) s
+(     und Zeilentrenner an beliebigen Stellen vorkommen, sie sind nicht signifikant.) s
+(     Es koennen beliebige viele Kommentare vorkommen, sie beginnen mit einem '#', also) s
+(         ein Kommentar ist:) s
+( ) s
+(                 # Kommentar) s
+( ) s
+(         Sie muessen nicht am zeilen-anfag stehen, sondern koennen auch nach gueltigen) s
+(     Items stehen. Ein Kommentarzeichenkommentiert den =Rest der Zeile aus.) s
+(         Alle Id's sind integer, muessen also ganzzahlig sein. '10' oder '123' sind) s
+(         akzeptabel, '10.0' oder '1e3' nicht. Koordinaten sind floating-point Zahlen,) s
+(         sie koennen die Form '10', '10.0', '1e1', '1.1E1', '1e+1' oder z.B. '100E-1') s
+(         haben.) s
+( ) s
+( 3.\) Abschnitt a.\): Randknoten) s
+(         Ein Randknoten wird durch seine globale Position undseine Positionen auf allen Lines ) s
+(         und allen Surfaces auf die er liegt, angegeben. Eine Position auf einer Surface wird durch) s
+( ) s
+(                 S <surf_id> <triangle_id> <local_x> <local_y>) s
+( ) s
+(         angegeben. <surf_id> ist die ID der Surface \(aus dem .lgm-file\), <triangle_id>) s
+(     Ist die ID des Dreiecks auf dieser Surface \(im .lgm-file wird eine Surface) s
+(     durch die Angabe von Dreiecken beschrieben. Auf die Reihenfolge dieser Dreiecke ) s
+(     beginnend mit 0 bezieht sich die <triangle_id>\). Die lokalen Koordinaten beschreiben) s
+(     einen Punkt in diesem Dreieck durch konvexe Linearkombination:) s
+( ) s
+(                 x = local_x*p0 + local_y*p1 + \(1-local_x-local_y\)*p2) s
+( ) s
+(         wenn das Dreieck bei der Surface-definition im .lgm-file durch 'p0 p1 p2;' beschreiben) s
+(     wurde. Selbstverstaendlich muessen local_x, local_y, \(1-local_x-local_y\) >=0 sein.) s
+(     Die Beschreibung einer Surface-Position ist nicht eindeutig. Genau eine pro Surface ) s
+(     muss es geben.) s
+( ) s
+(         Eine Position auf einer Line wird angegeben durch:) s
+( ) s
+(                 L <line_id> <local>) s
+( ) s
+(         Die <line_id> ist die ID der Line im .lgm-file. Die lokale Koordinate) s
+(     auf der Line startet bei 0 fuer den ersten Punkt der \(Poly\)-Line , ist 1 fuer) s
+(         den zweiten, usw. Zwischen den Punkten wird linear interpoliert. Ein Knoten) s
+(     auf einer Line \(mit mehr als 5 Punkten\), der genau in der Mitte zwiechen dem zweiten) s
+(     und dem Dritten Punkt liegt wird also beschrieben durch 'L <id> 1.5.) s
+( ) s
+(         Ein Randknoten wird nun beschrieben durch Angabe seiner Position, seiner Position auf jeder ) s
+(         Surface und jeder Line, wobei die Surface und Line-Positionen in beliebiger Reihenfolge ) s
+(         kommen koennen:) s
+( ) s
+(                 B <global_x> <global_y> <global_z> S ... S ... L ... S ... L ... L ... ;) s
+( ) s
+(         Der Key fuer Randknoten ist 'B'.) s
+(         Eine vollstaendige Beschreibung eines Randknotens wird mit einem ';' abgeschlossen \(sonst ) s
+(     ist das ein Syntax error\).) s
+( ) s
+( 4.\) Innere Knoten) s
+(         Innere Knoten werden durch ihre Position beschrieben. Das Key-Word ist 'I':) s
+( ) s
+(                 I <global_x> <global_y> <global_z> ;) s
+( ) s
+(         Eine vollstaendige Beschreibung eines inneren Knotens wird mit einem ';' abgeschlossen \(sons) s
+( t ) s
+(     ist das ein Syntax error\).) s
+( ) s
+( 5.\) Elemente werden durch Angabe der knoten-ids festgelegt. Die Knoten-Ids sind exakt die Reihen) s
+(     folge in der die Knoten angegeben sind: zuerst alle Randknoten dann alle Inneren Knoten ) s
+(     von 0 startend durchnummeriert. Das Key-Word ist 'E'. Wenn eine Seite eines Elements auf den ) s
+/sd 1 def
+2 hp
+border
+hborder
+/x0 x 1 get bm add def
+/y0 y 1 get bm bfs add hs add sub def
+x0 y0 moveto
+bf setfont
+(     Rand liegt werden die Knotern-Id's dieser Fleache nach dem Key-Word 'F' \(fuer face\) angegeben.) s
+(     Ausserdem ist die subdomain-Id eines jeden Elements mitangegeben. Subdomain-Id's sind die einzig) s
+( en) s
+(     Id's die von 1 ab starten \(O ist das aeussere Domain, das nicht trianguliert wird\). Das Format) s
+(     fuer eine Element ist:) s
+( ) s
+(         TETRAEDER) s
+(     ---------) s
+( ) s
+(                 E <subdom_id> <node_id_1> <node_id_2> <node_id_3> <node_id_4> ; ) s
+( ) s
+(                         fuer einen Tetraeder ohne Face auf dem Rand) s
+( ) s
+( ) s
+(                 E <s_id> <n_1> <n_2> <n_3> <n_4> F <face_node_id_1> <face_node_id_2> <face_node_id_3) s
+( > ;) s
+( ) s
+(             fuer einen Tetraeder mit einer Face auf dem Rand \( die {surf_node_id's} sind eine ) s
+(                         Teilmenge von {n_1,n_2,n_3,n_4} \).) s
+( ) s
+(                 E <s_id> <n_1> <n_2> <n_3> <n_4> F <f_1> <f_2> <f_3> F <f_4> <f_5> <f_6> ;) s
+( ) s
+(                         fuer einen Tetraeder mit zwei faces auf dem Rand.) s
+( ) s
+(         Fuer Tetraeder ist die Reihenfolge der Knoten egal. ) s
+( ) s
+( ) s
+( ) s
+(         PYRAMIDEN) s
+(     ---------) s
+(         Fuer Pyramiden ist die Reihenfolge der Knoten signifikant: Die ersten 4 Knoten-Id's) s
+(     beschriben die Vierecksfl"ache UMLAUFEND. Das heisst) s
+( ) s
+(                                 1 ---- 2                                   1 ---- 2 ) s
+(                                 |      |                                   |      |) s
+(        so:              |      |                 nicht:            |      |) s
+(                                 |      |                                   |      |) s
+(                                 4 ---- 3                                   3 ---- 4) s
+( ) s
+(         Als fuenfte Knote-Id kommt die Spitze.) s
+( ) s
+(                 E <s_id> <n_1> <n_2> <n_3> <n_4> <n_5> ;) s
+( ) s
+(                         bezeichnet eine Pyramide mit Spitze in <n_5> im Subdomain <s_id>) s
+( ) s
+(         Prismen koennen auch Seitenflaechen auf dem Rand haben:) s
+( ) s
+(                 E <s_id> <n_1> <n_2> <n_3> <n_4> <n_5> F <f_1> <f_2> <f_3> ;) s
+( ) s
+(                         die Face-Knoten muessen den Knoten <n_5> enthalten, da wir hier keine Faces) s
+(             mit vier Ecken koennen.) s
+( ) s
+(         Auch mehrere Faces sind erlaubt.) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ) s
+(         PRISMEN) s
+(     -------) s
+(         Fuer Prismen ist die Reihenfolge der Knoten ebenfalls nicht beliebig, die zwei Dreiecke sind) s
+(     UMLAUFEND numeriert \(wie auch anders\), allerdings in die gleiche Richtung:) s
+( ) s
+(             1 ------------------------ 2) s
+(               .                      .  ) s
+(              .  .                  .    .) s
+(                   .              .        ) s
+(               .     .                    .) s
+(                       .      .            ) s
+(                .        .  .              .) s
+(                           3 ) s
+(                 .                          .) s
+(                            .) s
+(                  4 ------------------------ 5) s
+(                    .        .             .) s
+(                      .                  .) s
+(                        .     .        .) s
+(                          .          .) s
+/sd 0 def
+1 sn
+fnf
+pagesave restore
+showpage
+%%Page: 2 2
+/pagesave save def
+/twp true def
+/fnfs 11 def
+/dfs fnfs 0.8 mul def
+/df /Helvetica dfs getfont def
+/dw df setfont td stringwidth pop def
+/sfnf filenmfontname fnfs getfont def
+/hm fnfs 0.25 mul def
+/hs 0.22 inch def
+/bfs 6 def
+/bdf /Courier-Bold bfs getfont def
+/bm bfs 0.7 mul def
+/bf /CourierBack bfs getfont def
+/l 78 def
+/c 101 def
+/pw
+   bf setfont (0) stringwidth pop c mul bm dup add add
+   def
+/ph
+   bfs l mul bm dup add add hs add
+   def
+/fns
+      pw
+      fnfs 4 mul dw add (Page 999) stringwidth pop add
+    sub
+  def
+/tm margin twp {3} {2} ifelse div def
+/sd 0 def
+/y [ rm ph add bm add
+          dup ] def
+/sny dfs dfs add def
+/snx sh tm dfs add sub def
+/dy sny def
+/dx tm dfs add def
+/x [ tm			% left page
+          dup 2 mul pw add	% right page
+        ] def
+/scx sh 2 div def
+/fny dy def
+/fnx scx def
+/ly fnfs 2 div y sd get add def
+/lx snx def
+/d (Feb 26 1998 15:24) def
+( mail.joe ) fn
+sw 0 translate
+90 rotate
+3 hp
+border
+hborder
+/x0 x 0 get bm add def
+/y0 y 0 get bm bfs add hs add sub def
+x0 y0 moveto
+bf setfont
+(                            .  .   .) s
+(                              .  .) s
+(                                6 ) s
+( ) s
+( ) s
+(         und Knoten 4 liegt 'ueber' 1.) s
+(         Also das ist flasch:) s
+( ) s
+( ) s
+(             1 ------------------------ 2) s
+(               .                      .  ) s
+(              .  .                  .    .) s
+(                   .              .        ) s
+(               .     .                    .) s
+(                       .      .            ) s
+(                .        .  .              .) s
+(                           3 ) s
+(                 .                          .) s
+(                            .) s
+(                  5 ------------------------ 6) s
+(                    .        .             .) s
+(                      .                  .) s
+(                        .     .        .) s
+(                          .          .) s
+(                            .  .   .) s
+(                              .  .) s
+(                                4 ) s
+( ) s
+( ) s
+( ) s
+(  ) s
+(         und das auch:) s
+( ) s
+( ) s
+(             1 ------------------------ 2) s
+(               .                      .  ) s
+(              .  .                  .    .) s
+(                   .              .        ) s
+(               .     .                    .) s
+(                       .      .            ) s
+(                .        .  .              .) s
+(                           3 ) s
+(                 .                          .) s
+(                            .) s
+(                  4 ------------------------ 6) s
+(                    .        .             .) s
+(                      .                  .) s
+(                        .     .        .) s
+(                          .          .) s
+(                            .  .   .) s
+(                              .  .) s
+(                                5 ) s
+( ) s
+( ) s
+(         Als Face kommen natuerlich nur Dreiecke in Frange.) s
+(         Eine vollstaendige Beschreibung eines Elementes wird mit einem ';' abgeschlossen \(sonst ) s
+(     ist das ein Syntax error\).) s
+(         ) s
+(         Die Reihenfolge der Elemente oder der Element-typen \(Tets, Prismen, Pyramiden\) ) s
+(     ist wurscht \(egal\).) s
+( ) s
+( ) s
+( ) s
+( BEISPIEL) s
+(         Als Beispiel schicke ich Dir das .lgm -file eines Einheitswuerfels) s
+(     und ein Gitter-file mit 12 Tetraedern:) s
+( ) s
+( .lgm-file:) s
+( ) s
+( ---------------------- Anfang ---------------------------------) s
+( ) s
+( # Domain-Info) s
+( name = boxelder) s
+( problemname = elder_problem) s
+( convex = 1) s
+( ) s
+( # Unit-Info) s
+( unit 1 SAND) s
+/sd 1 def
+4 hp
+border
+hborder
+/x0 x 1 get bm add def
+/y0 y 1 get bm bfs add hs add sub def
+x0 y0 moveto
+bf setfont
+( ) s
+( #Line-Info) s
+( line 0: points: 0 1;) s
+( line 1: points: 1 2;) s
+( line 2: points: 2 3;) s
+( line 3: points: 3 0;) s
+( line 4: points: 4 5;) s
+( line 5: points: 5 6;) s
+( line 6: points: 6 7;) s
+( line 7: points: 7 4;) s
+( line 8: points: 0 4;) s
+( line 9: points: 1 5;) s
+( line 10: points: 2 6;) s
+( line 11: points: 3 7;) s
+( ) s
+( #Surface-Info) s
+( surface 0: left=1; right=0; points: 0 1 2 3; lines: 0 1 2 3; triangles: 0 1 2; 0 2 3;) s
+( surface 1: left=1; right=0; points: 1 0 4 5; lines: 0 8 4 9; triangles: 0 4 5; 1 0 5;) s
+( surface 2: left=1; right=0; points: 0 3 7 4; lines: 3 11 7 8; triangles: 0 3 4; 3 7 4;) s
+( surface 3: left=1; right=0; points: 7 6 5 4; lines: 5 4 7 6; triangles: 6 5 4; 7 6 4;) s
+( surface 4: left=1; right=0; points: 3 2 6 7; lines: 10 6 11 2; triangles: 2 6 7; 3 2 7;) s
+( surface 5: left=1; right=0; points: 2 1 5 6; lines: 1 9 5 10; triangles: 2 1 5; 2 5 6;) s
+( ) s
+( #Point-Info) s
+( 0 0 0;) s
+( 1 0 0;) s
+( 1 1 0;) s
+( 0 1 0;) s
+( 0 0 1;) s
+( 1 0 1;) s
+( 1 1 1;) s
+( 0 1 1;) s
+(         ) s
+( ) s
+( ---------------------- Ende ---------------------------------) s
+( ) s
+( ) s
+( ) s
+( Das gitter-file dazu ist:) s
+( ) s
+( ) s
+( ) s
+( ---------------------- Anfang ---------------------------------) s
+( ) s
+( # boundary nodes) s
+( B 0 0 0) s
+(   S 0 0 0 0 L 0 0) s
+(   S 1 0 0 0 L 3 1) s
+(   S 2 0 0 0 L 8 0;) s
+( B 1 0 0) s
+(   S 0 0 1 0 L 0 1) s
+(   S 1 1 0 0 L 1 0) s
+(   S 5 0 1 0 L 9 0;) s
+( B 1 1 0) s
+(   S 0 1 1 0 L 1 1) s
+(   S 4 0 0 0 L 2 0) s
+(   S 5 0 0 0 L 10 0;) s
+( B 0 1 0) s
+(   S 0 1 0 1 L 2 1) s
+(   S 2 1 0 0 L 3 0) s
+(   S 4 1 0 0 L 11 0;) s
+( B 0 0 1) s
+(   S 1 0 1 0 L 8 1) s
+(   S 2 0 0 1 L 4 0) s
+(   S 3 0 0 1 L 7 1;) s
+( B 1 0 1) s
+(   S 1 0 0 1 L 4 1) s
+(   S 3 0 1 0 L 9 1) s
+(   S 5 0 0 1 L 5 0;) s
+( B 1 1 1) s
+(   S 3 0 0 0 L 5 1) s
+(   S 4 0 1 0 L 10 1) s
+(   S 5 1 0 1 L 6 0;) s
+( B 0 1 1) s
+(   S 2 1 1 0 L 6 1) s
+(   S 3 1 0 0 L 7 0) s
+(   S 4 0 0 1 L 11 1;) s
+( ) s
+/sd 0 def
+2 sn
+fnf
+pagesave restore
+showpage
+%%Page: 3 3
+/pagesave save def
+/twp true def
+/fnfs 11 def
+/dfs fnfs 0.8 mul def
+/df /Helvetica dfs getfont def
+/dw df setfont td stringwidth pop def
+/sfnf filenmfontname fnfs getfont def
+/hm fnfs 0.25 mul def
+/hs 0.22 inch def
+/bfs 6 def
+/bdf /Courier-Bold bfs getfont def
+/bm bfs 0.7 mul def
+/bf /CourierBack bfs getfont def
+/l 78 def
+/c 101 def
+/pw
+   bf setfont (0) stringwidth pop c mul bm dup add add
+   def
+/ph
+   bfs l mul bm dup add add hs add
+   def
+/fns
+      pw
+      fnfs 4 mul dw add (Page 999) stringwidth pop add
+    sub
+  def
+/tm margin twp {3} {2} ifelse div def
+/sd 0 def
+/y [ rm ph add bm add
+          dup ] def
+/sny dfs dfs add def
+/snx sh tm dfs add sub def
+/dy sny def
+/dx tm dfs add def
+/x [ tm			% left page
+          dup 2 mul pw add	% right page
+        ] def
+/scx sh 2 div def
+/fny dy def
+/fnx scx def
+/ly fnfs 2 div y sd get add def
+/lx snx def
+/d (Feb 26 1998 15:24) def
+( mail.joe ) fn
+sw 0 translate
+90 rotate
+5 hp
+border
+hborder
+/x0 x 0 get bm add def
+/y0 y 0 get bm bfs add hs add sub def
+x0 y0 moveto
+bf setfont
+( # inner nodes) s
+( I 0.5 0.5 0.5;) s
+( ) s
+( # elements) s
+( E 1 0 4 5 8 F 0 4 5;) s
+( E 1 0 1 5 8 F 0 1 5;) s
+( E 1 1 2 5 8 F 1 2 5;) s
+( E 1 2 6 5 8 F 2 6 5;) s
+( E 1 2 6 3 8 F 2 6 3;) s
+( E 1 3 6 7 8 F 3 6 7;) s
+( E 1 0 3 4 8 F 0 3 4;) s
+( E 1 3 4 7 8 F 3 4 7;) s
+( E 1 0 1 2 8 F 0 1 2;) s
+( E 1 0 2 3 8 F 0 2 3;) s
+( E 1 4 5 6 8 F 4 5 6;) s
+( E 1 4 6 7 8 F 4 6 7;) s
+( ) s
+( ) s
+( ---------------------- Ende ---------------------------------) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ) s
+( NOCH EIN BEISPIEL) s
+( -----------------) s
+( ) s
+( Ein Gitter fuer obigen Einheitswuerfel mit 4 Prismen, 4 Pyramiden und 4 Tetraeder:) s
+( ) s
+( ) s
+( ---------------------- Anfang ---------------------------------) s
+( ) s
+( ) s
+( # boundary nodes) s
+( B 0 0 0              # Knoten 0) s
+(   S 0 0 0 0 L 0 0) s
+(   S 1 0 0 0 L 3 1) s
+(   S 2 0 0 0 L 8 0;) s
+( B 1 0 0              # Knoten 1) s
+(   S 0 0 1 0 L 0 1) s
+(   S 1 1 0 0 L 1 0) s
+(   S 5 0 1 0 L 9 0;) s
+( B 1 1 0              # Knoten 2) s
+(   S 0 1 1 0 L 1 1) s
+(   S 4 0 0 0 L 2 0) s
+(   S 5 0 0 0 L 10 0;) s
+( B 0 1 0              # Knoten 3) s
+(   S 0 1 0 1 L 2 1) s
+(   S 2 1 0 0 L 3 0) s
+(   S 4 1 0 0 L 11 0;) s
+( B 0 0 1              # Knoten 4) s
+(   S 1 0 1 0 L 8 1) s
+(   S 2 0 0 1 L 4 0) s
+(   S 3 0 0 1 L 7 1;) s
+( B 1 0 1              # Knoten 5) s
+(   S 1 0 0 1 L 4 1) s
+(   S 3 0 1 0 L 9 1) s
+(   S 5 0 0 1 L 5 0;) s
+( B 1 1 1              # Knoten 6) s
+(   S 3 0 0 0 L 5 1) s
+(   S 4 0 1 0 L 10 1) s
+(   S 5 1 0 1 L 6 0;) s
+( B 0 1 1              # Knoten 7) s
+(   S 2 1 1 0 L 6 1) s
+(   S 3 1 0 0 L 7 0) s
+(   S 4 0 0 1 L 11 1;) s
+( B 0.5 0 0            # Knoten 8) s
+(   S 0 0 0.5 0) s
+(   S 1 1 0.5 0) s
+(   L 0 0.5;) s
+( B 1 0.5 0            # Knoten 9) s
+(   S 0 0 0.5 0.5) s
+(   S 5 0 0.5 0) s
+(   L 1 0.5;) s
+( B 0.5 1 0            # Knoten 10) s
+(   S 0 1 0.5 0.5) s
+(   S 4 1 0.5 0) s
+(   L 2 0.5;) s
+/sd 1 def
+6 hp
+border
+hborder
+/x0 x 1 get bm add def
+/y0 y 1 get bm bfs add hs add sub def
+x0 y0 moveto
+bf setfont
+( B 0 0.5 0            # Knoten 11) s
+(   S 0 1 0 0.5) s
+(   S 2 0 0.5 0) s
+(   L 3 0.5;) s
+( B 0.5 0 1            # Knoten 12) s
+(   S 1 0 0.5 0.5) s
+(   S 3 0 0.5 0.5) s
+(   L 4 0.5;) s
+( B 1 0.5 1            # Knoten 13) s
+(   S 3 0 0.5 0) s
+(   S 5 1 0.5 0.5) s
+(   L 5 0.5;) s
+( B 0.5 1 1            # Knoten 14) s
+(   S 3 1 0.5 0) s
+(   S 4 0 0.5 0.5) s
+(   L 6 0.5;) s
+( B 0 0.5 1            # Knoten 15) s
+(   S 2 1 0.5 0.5) s
+(   S 3 1 0 0.5) s
+(   L 7 0.5;) s
+( B 0.5 0.5 0          # Knoten 16) s
+(   S 0 1 0.5 0;) s
+( B 0.5 0.5 1          # Knoten 17) s
+(   S 3 1 0.5 0.5;) s
+( ) s
+( # no inner nodes) s
+( ) s
+( # elements \(prisms\)) s
+( E 1 8 9 16 12 13 17 F 8 9 16 F 12 13 17;) s
+( E 1 9 10 16 13 14 17 F 9 10 16 F 13 14 17;) s
+( E 1 10 11 16 14 15 17 F 10 11 16 F 14 15 17;) s
+( E 1 11 8 16 15 12 17 F 11 8 16 F 15 12 17;) s
+( ) s
+( # elements \(pyramids\)) s
+( E 1 8 9 13 12 1 F 1 8 9 F 1 9 13 F 1 8 12;) s
+( E 1 9 10 14 13 2 F 2 9 10 F 2 9 13 F 2 10 14;) s
+( E 1 10 11 15 14 3 F 3 10 11 F 3 10 14 F 3 11 15;) s
+( E 1 8 11 15 12 0 F 0 8 11 F 0 11 15 F 0 8 12;) s
+( ) s
+( # elements \(tets\)) s
+( E 1 1 5 12 13 F 1 5 12 F 1 5 13 F 5 12 13;) s
+( E 1 2 6 13 14 F 2 6 13 F 2 6 14 F 6 13 14;) s
+( E 1 3 7 14 15 F 3 7 14 F 3 7 15 F 7 14 15;) s
+( E 1 0 4 12 15 F 0 4 12 F 0 4 15 F 4 12 15;) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ---------------------- Ende ---------------------------------) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ) s
+(       @@@@@@@@@@@@@@@@@@@@@@@) s
+(       @                     @) s
+(       @   VIEL SPASS        @) s
+(       @                     @) s
+(       @         Gruss Klaus     @) s
+(       @                     @) s
+(       @@@@@@@@@@@@@@@@@@@@@@@) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ) s
+( ) s
+/sd 0 def
+3 sn
+fnf
+pagesave restore
+showpage
+
+%%Trailer
+%%Pages: 3
+docsave restore end
