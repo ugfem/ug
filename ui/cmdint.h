@@ -56,8 +56,7 @@
 /* return values for InterpretCommand */
 #define NOTFOUNDCODE    2               /* command not found						*/
 #define NOSPACECODE     3               /* not enough space to execute properly         */
-#define MAXCMDSIZE  4096
-
+#define CMDINTBUFSIZE   32000
 
 
 /****************************************************************************/
@@ -66,7 +65,7 @@
 /*																			*/
 /****************************************************************************/
 
-
+extern INT cmdintbufsize;
 
 /****************************************************************************/
 /*																			*/

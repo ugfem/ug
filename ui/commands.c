@@ -1158,13 +1158,16 @@ static INT SetCommand (INT argc, char **argv)
   char name[LONGSTRSIZE], *namePtr;
   INT flag,ropt,i,res,rv;
         #ifdef ModelP
-  /* allocate a bigger buffer for definition of long string variables */
-  char buffer[MAXCMDSIZE];
-        #ifdef Debug
-  char *p;
+  /* allocate buffer for definition of long string variables */
+  char *buffer;
 
-  p = expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[\n -~]"));
-        #endif
+  /* alloc command buffer */
+  if ((buffer=(char *)malloc(cmdintbufsize))==NULL)
+  {
+    PrintErrorMessage('F',"SetCommand","could not allocate buffer");
+    return(__LINE__);
+  }
+
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %4096[\t\n -~]")),name,buffer);
         #else
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[ -~]")),name,buffer);
@@ -1615,6 +1618,10 @@ static INT ProtocolCommand (INT argc, char **argv)
 {
   INT i,from;
 
+        #ifdef ModelP
+  if (me != master) return(OKCODE);
+        #endif
+
   if (protocolFile==NULL)
   {
     PrintErrorMessage('E',"protocol","no protocol file open!");
@@ -1820,6 +1827,10 @@ static INT ProtoOnCommand (INT argc, char **argv)
   static char protoFileName[NAMESIZE];
   INT res,i,RenameMode;
 
+        #ifdef ModelP
+  if (me != master) return(OKCODE);
+        #endif
+
   /* get document name */
   protoFileName[0] = '\0';
   res = sscanf(argv[0],expandfmt(CONCAT3(" protoOn %",NAMELENSTR,"[ -~]")),protoFileName);
@@ -1908,6 +1919,10 @@ static INT ProtoOnCommand (INT argc, char **argv)
 
 static INT ProtoOffCommand (INT argc, char **argv)
 {
+        #ifdef ModelP
+  if (me != master) return(OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   if (protocolFile==NULL)

@@ -76,7 +76,6 @@
 #define MAXREPEAT                       16
 #define MAXTOKENLENGTH          64
 #define MAXSTRINGSIZE           256
-#define EXECUTEBUFSIZE          32000
 #define PROGRAMBUFSIZE          8000
 #define FILEBUFSIZE                     1000
 
@@ -139,6 +138,14 @@ union Operand {
 typedef union Operand OPERAND;
 
 /****************************************************************************/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
+
+INT cmdintbufsize=CMDINTBUFSIZE;
+
+/****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
@@ -148,8 +155,8 @@ static int doneFlag;
 
 /* variables for command interpreter */
 static char *cmdPtr,*cmdStart;
-static long executebufsize=EXECUTEBUFSIZE;
 static long executePos=0;
+static char *cmdBuffer;
 static char *executeBuffer;
 static INT programFlag=FALSE;
 static long programbufsize=PROGRAMBUFSIZE;
@@ -161,7 +168,7 @@ static char stringBuffer[MAXSTRINGSIZE];
 static int mutelevel=0;
 
 #ifdef ModelP
-static char execCmdBuffer[MAXCMDSIZE];
+static char *execCmdBuffer;
 #endif
 
 /* RCS string */
@@ -1758,7 +1765,6 @@ static INT InterpretString (void)
   int StatusStack[BUFSIZE];
   int RepeatStatusPos[MAXREPEAT];
   char *RepeatPtr[MAXREPEAT];
-  char cmdBuffer[MAXCMDSIZE];
   char buffer[MAXTOKENLENGTH];
   char valueStr[32];
   char *sptr;
@@ -2173,7 +2179,7 @@ static INT InterpretString (void)
       executePos0=executePos;
       while ((error=getc(filePtr))!=EOF)
       {
-        if (executePos==executebufsize-1)
+        if (executePos==cmdintbufsize-1)
         {
           fclose(filePtr);
           executePos=executePos0;                                       /* reset execute position */
@@ -2254,7 +2260,7 @@ static INT InterpretString (void)
           }
           while ((c1=*(sptr++))!=(char) 0)
           {
-            if (k==MAXCMDSIZE)
+            if (k==cmdintbufsize)
             {
               PrintErrorMessage('E',"InterpretString","command too long");
               return(8509);                                             /* command too long */
@@ -2265,7 +2271,7 @@ static INT InterpretString (void)
         }
         else
         {
-          if (k==MAXCMDSIZE)
+          if (k==cmdintbufsize)
           {
             PrintErrorMessage('E',"InterpretString","command too long");
             return(8509);                                       /* command too long */
@@ -2321,7 +2327,7 @@ static INT InterpretString (void)
       case NUMBERID :
         sprintf(valueStr,"%-.14lg",(double)result.ro.value);
                                         #ifdef ModelP
-        PRINTDEBUG(ui,1,("%2d: set NUMBERID=%s\n",me,valueStr))
+        PRINTDEBUG(ui,2,("%2d: set NUMBERID=%s\n",me,valueStr))
         sprintf(execCmdBuffer,"set %s %s",buffer,valueStr);
         error = ParExecCommand(execCmdBuffer);
                                         #else
@@ -2331,7 +2337,7 @@ static INT InterpretString (void)
 
       case ALPHAID :
                                         #ifdef ModelP
-        PRINTDEBUG(ui,1,("%2d: set ALPHAID=%s\n",me,result.so.sptr))
+        PRINTDEBUG(ui,2,("%2d: set ALPHAID=%s\n",me,result.so.sptr))
         sprintf(execCmdBuffer,"set %s %s",buffer,result.so.sptr);
         error = ParExecCommand(execCmdBuffer);
                                         #else
@@ -2343,7 +2349,7 @@ static INT InterpretString (void)
                                         #ifdef ModelP
         sprintf(execCmdBuffer,"set %s ",buffer);
         strncat(execCmdBuffer,result.lo.sptr,result.lo.length);
-        PRINTDEBUG(ui,1,("%2d: set LSTRINGID=%s\n",me,result.lo.sptr))
+        PRINTDEBUG(ui,2,("%2d: set LSTRINGID=%s\n",me,result.lo.sptr))
         error = ParExecCommand(execCmdBuffer);
                                         #else
         error = SetnStringVar(buffer,result.lo.sptr,result.lo.length);
@@ -2387,9 +2393,17 @@ void CommandLoop (int argc, char **argv)
 {
   INT error;
   int i,j,k,kerr;
-  char c,inpLine[MAXCMDSIZE],errLine[256],spcLine[256], ver[128];
-  char buffer[MAXCMDSIZE];
+  char c,errLine[256],spcLine[256],ver[128],buffer[256];
+  char *inpLine;
   char *strStart;
+
+  /* alloc input line buffer */
+  if ((inpLine=(char *)malloc(cmdintbufsize))==NULL)
+  {
+    PrintErrorMessage('F',"CommandLoop()","could not allocate inpLine buffer");
+    return;
+  }
+  inpLine[0] = (char) 0;
 
         #ifdef ModelP
   if (me==master)
@@ -2659,13 +2673,39 @@ void SetDoneFlag (void)
 
 INT InitCommandInterpreter (void)
 {
-  /* alloc execute buffer */
-  if ((executeBuffer=(char *)malloc(executebufsize))==NULL)
+  char size[256];
+
+  /* get cmdintbufsize from defaults file */
+  if (GetDefaultValue(DEFAULTSFILENAME,"cmdintbufsize",size)==0)
   {
-    PrintErrorMessage('F',"InitCommandInterpreter","could not allocate execute buffer");
+    sscanf(size," %d ",&cmdintbufsize);
+  }
+
+  /* alloc command buffer */
+  if ((cmdBuffer=(char *)malloc(cmdintbufsize))==NULL)
+  {
+    PrintErrorMessage('F',"InitCommandInterpreter","could not allocate cmdBuffer buffer");
+    return(__LINE__);
+  }
+  cmdBuffer[0] = (char) 0;
+
+  /* alloc execute buffer */
+  if ((executeBuffer=(char *)malloc(cmdintbufsize))==NULL)
+  {
+    PrintErrorMessage('F',"InitCommandInterpreter","could not allocate executeBuffer buffer");
     return(__LINE__);
   }
   executeBuffer[0] = (char) 0;
+
+        #ifdef ModelP
+  /* alloc buffer to broadcast command sequences */
+  if ((execCmdBuffer=(char *)malloc(cmdintbufsize))==NULL)
+  {
+    PrintErrorMessage('F',"InitCommandInterpreter","could not allocate execCmdBuffer buffer");
+    return(__LINE__);
+  }
+  execCmdBuffer[0] = (char) 0;
+        #endif
 
   /* alloc program buffer */
   if ((programBuffer=(char *)malloc(programbufsize))==NULL)
