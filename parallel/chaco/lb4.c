@@ -132,6 +132,7 @@ static int total_cnt;                     /* total number of clusters stored*/
 static int startid;						  /* startid for unique clusternumb */
 static INT *load;                         /* total load on all levels&proc!!*/
 static INT MarkKeyTop, MarkKeyBottom;     /* mark-keys for mem management   */
+static INT quiet;
 
 /****************************************************************************/
 /*                                                                          */
@@ -355,18 +356,18 @@ static int check_condition_from_refinement (ELEMENT *e)
 
 	/* if one of the sons is copy or irregular, it must be       */
 	/* with its father.                                          */
-	{
-		ELEMENT *SonList[MAX_SONS];
+    {
+        ELEMENT *SonList[MAX_SONS];
 
-		if (GetSons(e,SonList)!= GM_OK) assert(0);
-		for (i=0; i<NSONS(e); i++)
-		{
+        if (GetSons(e,SonList)!= GM_OK) assert(0);
+        for (i=0; i<NSONS(e); i++)
+        {
 			if (SonList[i]!=NULL)
 				if (ECLASS(SonList[i])!=RED_CLASS) return(1);
 			else
 				break;
-		}
-	}
+        }
+    }
 
 	return(0);
 } 
@@ -435,6 +436,9 @@ static int Clustering (MULTIGRID *mg, int minlevel, int cluster_depth, int thres
 				c->depth = MAX(c->depth,LEVEL(e)+1-c->minlevel);
 				if (c->depth>=MAXDEPTH) return(2);
 /* TODO: j must be estimated for new green closure in 3D */
+#ifdef __THREEDIM__
+if (TAG(e)!=TETRAHEDRON && MARKCLASS(e)==GREEN_CLASS) assert(0);
+#endif
 				j = NSONS_OF_RULE(MARK2RULEADR(e,MARK(e)));
 				c->size += j;
 				c->level_size[LEVEL(e)+1-c->minlevel] += j;
@@ -941,6 +945,7 @@ static void check_assign (CLUSTER **clusters, double *goal, int dimx, int dimy,
 	{
 		g = floor(goal[i]);	
 		a = assigned[i];
+if (!quiet)
 		if (g+1<a || g>assigned[i])
 		{
 			sprintf(buffer,"goal for processor %d failed: goal=%f, assigned=%d\n",i,
@@ -1550,10 +1555,13 @@ int Balance_CCPTM (MULTIGRID *mg,                                 /* data    */
 	int error,l;
 	ELEMENT **elements;
 	INT ne,nc,i;
-	float Begin,End;
+	DOUBLE Begin,End;
 	char buf[60];
 
-	Begin = CurrentTime();
+	/* quiet */
+	quiet = (mode==512);
+
+	Begin = CURRENT_TIME;
 	
 	/* mark heap, clusters are allocated from bottom, */
 	/* element array for load transfer is allocated   */
@@ -1639,8 +1647,8 @@ stage1: /* compute total number of clusters or error */
 	/* release memory for clusters */
 	Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
 
-	End = CurrentTime();
-	sprintf(buf,"BALAN: T=%gs\n",End-Begin);
+	End = CURRENT_TIME;
+	sprintf(buf,"BALAN: T=%.2f\n",End-Begin);
 	UserWrite(buf);
 
 	/* transfer load */
