@@ -201,8 +201,6 @@ INT NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
 INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_LINEAR_SOLVER *np;
-  VECDATA_DESC *x,*b;
-  MATDATA_DESC *A;
   LRESULT lresult;
   INT result,level,bl;
 
@@ -359,6 +357,7 @@ static INT LinearDefect (NP_LINEAR_SOLVER *theNP, INT level,
     result[0] = __LINE__;
     return(1);
   }
+  return (0);
 }
 
 static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
@@ -644,7 +643,7 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
   NP_CG *np;
   MULTIGRID *theMG;
   VEC_SCALAR scal;
-  DOUBLE lambda,rho;
+  DOUBLE lambda;
   INT ncomp,j;
 
   np = (NP_CG *) theNP;

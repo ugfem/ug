@@ -325,7 +325,6 @@ static INT EU_Execute (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_EUNORM_VEC *theEU;
   VEC_SCALAR eunorm;
-  INT i;
 
   theEU   = (NP_EUNORM_VEC*)theNP;
 

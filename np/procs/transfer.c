@@ -176,7 +176,7 @@ INT NPTransferDisplay (NP_TRANSFER *np)
 INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_TRANSFER *np;
-  INT result,level,bl;
+  INT result,level;
 
   np = (NP_TRANSFER *) theNP;
   level = CURRENTLEVEL(theNP->mg);
