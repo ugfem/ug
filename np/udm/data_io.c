@@ -427,13 +427,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
 INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec)
 {
-  INT i,j,k,l,ncomp,s,t,*e_per_n,*entry,nNode,store_from_eval,id,tag,coe,q,mode,nparfiles,error;
-  int ftype;
-  unsigned long m;
+  INT i,j,k,l,ncomp,s,t,*entry,nNode,store_from_eval,id,tag,coe,q,mode,nparfiles;
   DIO_GENERAL dio_general;
   HEAP *theHeap;
-  double *data;
-  VECTOR *theV;
   GRID *theGrid;
   NODE *theNode;
   ELEMENT *theElement;
@@ -441,10 +437,14 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   DOUBLE value,fnblock;
   DOUBLE_VECTOR vector;
   char FileName[NAMESIZE],NumberString[6];
-  char buf[64];
   SHORT *cp[DIO_VDMAX];
   INT ncmp[DIO_VDMAX],blocksize,free,fb,lb,nblock,saved;
   DTIO_BLOCK *block,*bptr;
+#ifdef ModelP
+  INT error;
+  int ftype;
+  char buf[64];
+#endif
 
   /* init */
   if (theMG==NULL) return (1);

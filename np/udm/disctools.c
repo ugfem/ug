@@ -2060,7 +2060,7 @@ INT PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
   DOUBLE_VECTOR pos;
   INT info=FALSE;
   MATRIX *m;
-  INT Mcomp,rcomp,ccomp,i,j,rtype,ctype;
+  INT Mcomp,ccomp,i,j,rtype;
 
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
   {

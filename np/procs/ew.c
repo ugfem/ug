@@ -388,8 +388,7 @@ static INT RayleighQuotient (MULTIGRID *theMG,
                              MATDATA_DESC *M, VECDATA_DESC *x,
                              VECDATA_DESC *r, VECDATA_DESC *t, DOUBLE *a)
 {
-  VEC_SCALAR scal1,scal2;
-  INT i,bl,tl;
+  INT bl,tl;
 
   bl = 0;
   tl = CURRENTLEVEL(theMG);
@@ -419,8 +418,6 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
                               VECDATA_DESC *r, VECDATA_DESC *t,
                               VECDATA_DESC *q, DOUBLE *a)
 {
-  GRID *theGrid;
-  VEC_SCALAR scal1,scal2;
   INT i,bl,tl;
 
   bl = 0;
@@ -457,7 +454,7 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
 static INT RayleighDefect (MULTIGRID *theMG, VECDATA_DESC *r,
                            VECDATA_DESC *t, DOUBLE rq, DOUBLE *defect)
 {
-  INT i,bl,tl;
+  INT bl,tl;
 
   bl = 0;
   tl = CURRENTLEVEL(theMG);
@@ -473,9 +470,8 @@ static INT RayleighDefect (MULTIGRID *theMG, VECDATA_DESC *r,
 static INT Orthogonalize (MULTIGRID *theMG, INT level, INT m,
                           VECDATA_DESC **ev, VECDATA_DESC *b, INT display)
 {
-  VEC_SCALAR scal;
   DOUBLE scalP;
-  INT i,j;
+  INT i;
 
   for (i=0; i<m; i++) {
     if (display == PCR_FULL_DISPLAY)
@@ -669,9 +665,9 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
 {
   NP_EW *np;
   MULTIGRID *theMG;
-  INT i,PrintID,j,bl,iter;
+  INT i,PrintID,bl,iter;
   char text[DISPLAY_WIDTH+4];
-  VEC_SCALAR defect, defect2reach,scal;
+  VEC_SCALAR defect, defect2reach;
   DOUBLE a[2],rq,s;
 
   np = (NP_EW *) theNP;

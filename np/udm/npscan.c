@@ -758,6 +758,27 @@ INT sc_cmp (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD)
 {
   INT i;
 
+  if (VD_NID(theVD)!=NO_IDENT)
+  {
+    DOUBLE sx,sy;
+    INT j;
+
+    for (i=0; i<VD_NCOMP(theVD); i++)
+      if (VD_IDENT(theVD,i)==i)
+      {
+        sx = sy = 0;
+        for (j=0; j<VD_NCOMP(theVD); j++)
+          if (VD_IDENT(theVD,j)==i)
+          {
+            sx += x[j]*x[j];
+            sy += y[j]*y[j];
+          }
+        if (sx>=sy)
+          return (0);
+      }
+    return (1);
+  }
+
   for (i=0; i<VD_NCOMP(theVD); i++)
     if (ABS(x[i])>=ABS(y[i]))
       return (0);
@@ -950,7 +971,7 @@ INT sc_disp (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name)
 
   for (i=0; i<k; i++)
   {
-    if (i) UserWrite("|");
+    if (i) UserWrite(TYPESEP);
     c = FMT_T2N(fmt,i);
     UserWriteF("%c  ",c);
     for (j=0; j<offset[i+1]-offset[i]; j++)
