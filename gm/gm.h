@@ -102,6 +102,7 @@
 #define MAX_EDGES_OF_ELEM               12                      /* max number of edges of an element*/
 #define MAX_CORNERS_OF_ELEM             8                       /* max number of corners of an eleme*/
 #define MAX_EDGES_OF_SIDE               4           /* max number of edges of a side	*/
+#define MAX_EDGES_OF_CORNER             4                       /* max number of edges meeting in co*/
 #define MAX_CORNERS_OF_SIDE     4           /* max number of corners of a side  */
 #define MAX_CORNERS_OF_EDGE             2                       /* an edge has always two corners.. */
 #define MAX_SIDES_OF_EDGE               2                       /* two sides have one edge in common*/
