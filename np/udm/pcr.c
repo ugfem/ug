@@ -342,6 +342,7 @@ INT PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
     PCR_nComp[*ID] = PCR_nComp[*ID-1];
     memcpy(PCR_compNames[*ID],PCR_compNames[*ID-1],MAX_VEC_COMP);
     PCR_nid[*ID] = PCR_nid[*ID-1];
+    PCR_ident[*ID] = PCR_ident[*ID-1];
   }
   else {
     PCR_nComp[*ID] = MAX_VEC_COMP;
@@ -350,7 +351,14 @@ INT PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
   }
   PCR_allComp[*ID] = PCR_nComp[*ID];
   if (PCR_nid[*ID]!=NO_IDENT)
+  {
+    /* change compnames according to identification */
+    for (j=0, i=0; i<PCR_nComp[*ID]; i++)
+      if (PCR_ident[*ID][i]==i)
+        PCR_compNames[*ID][j++] = PCR_compNames[*ID][i];
+
     PCR_nComp[*ID] = PCR_nid[*ID];
+  }
 
   return (0);
 }
