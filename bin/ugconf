@@ -24,6 +24,8 @@ then
 	echo "         MKLINUX (set ARCH = MKLINUX)";
 	echo "         POWERGC (set ARCH = POWERGC)";
 	echo "         CC (set ARCH = CC)";
+	echo "         C90 (set ARCH = C90)";
+	echo "         YMP (set ARCH = YMP)";
 	echo "         AIX (set ARCH = AIX)";
 	echo "         AIXGCC (set ARCH = AIXGCC)";
 	echo "         SOLARIS (set ARCH = SOLARIS)";
@@ -274,6 +276,12 @@ edit_ugconf()
 		;;
 	CC)
 		sed 's/^ARCH.*$/ARCH = CC/' $1 > $1.tmp
+		;;
+	C90)
+		sed 's/^ARCH.*$/ARCH = C90/' $1 > $1.tmp
+		;;
+	YMP)
+		sed 's/^ARCH.*$/ARCH = YMP/' $1 > $1.tmp
 		;;
 	SOLARIS)
 		sed 's/^ARCH.*$/ARCH = SOLARIS/' $1 > $1.tmp
