@@ -1049,12 +1049,13 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
    l_matrix_consistent - builds the sum of the matrix values on all copies
 
    SYNOPSIS:
-   INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT offdiag);
+   INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode);
 
    PARAMETERS:
 .  g - pointer to grid 
 .  M - matrix data descriptor
-.  offdiag - the complete row (TRUE) or the diagonal only (FALSE)
+.  mode - consistence of the diagonal (MAT_DIAG_CONS), the complete row for 
+          all master vectors (MAT_MASTER_CONS) or all (MAT_CONS)
 
    DESCRIPTION:
    This function builds the sum of the matrix values for 
@@ -1271,7 +1272,6 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 	return (NUM_OK);
 }
 
-
 static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 									  DDD_PROC proc, DDD_PRIO prio)
 {
@@ -1391,7 +1391,6 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	return (NUM_OK);
 }
 
-
 static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
 {
 	VECTOR *v;
@@ -1443,8 +1442,6 @@ static int sort_MatArray (const void *e1, const void *e2)
 	if (g1>g2) return(1);
 	return (NUM_OK);
 }
-
-
 
 static int CountAndSortInconsMatrices (DDD_OBJ obj)
 {
@@ -3813,6 +3810,7 @@ D*/
 INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA_DESC *y, DOUBLE *sp)
 {
 	DOUBLE *value;
+	DOUBLE sp1[MAXVECTORS+1];
 	VECTOR *v;
 	register SHORT i;
 	register SHORT ncomp;
@@ -3881,7 +3879,19 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 		}
 
 	#ifdef ModelP
+	#ifdef Debug
+	ncomp = VD_NCOMP(x);
+	for (i=0; i<ncomp; i++)
+	    sp1[i] = sp[i];
+	sp1[ncomp] = (DOUBLE) rep_err_count;
+	UG_GlobalSumNDOUBLE(ncomp+1, sp1);
+	if (sp1[ncomp] > 0.0)
+	    return(NUM_ERROR);
+	for (i=0; i<ncomp; i++)
+	    sp[i] = sp1[i];
+	#else
 	UG_GlobalSumNDOUBLE(VD_NCOMP(x), sp);
+	#endif
 	#endif
 
 	return (NUM_OK);
