@@ -623,10 +623,11 @@ INT     ConnectVerticalOverlap (MULTIGRID *theMG)
 
 INT     ConnectOverlapVerticalGrid (GRID *theGrid)
 {
-  INT i,j,k,found,edgenode0,edgenode1;
+  INT i,j,k,found,edgenode0,edgenode1,edgenum;
   ELEMENT *theElement,*theSon,*SonList[MAX_SONS];
   NODE    *theNode,*SonNode,*FatherNode,*EdgeNode0,*EdgeNode1;
   EDGE    *theEdge,*FatherEdge;
+  VERTEX  *theVertex;
   DOUBLE  *songlobal,diff;
   DOUBLE_VECTOR global;
 
@@ -700,8 +701,9 @@ INT     ConnectOverlapVerticalGrid (GRID *theGrid)
                                                                 #ifdef __TWODIM__
               printf(PFMT "ConnectOverlapVerticalGrid(): new "
                      " midnode relation between theEdge=%08x"
-                     " SonNode=" ID_FMTX "\n",
-                     me,theEdge,ID_PRTX(SonNode));
+                     " SonNode=" ID_FMTX "Vertex=" VID_FMTX "\n",
+                     me,theEdge,ID_PRTX(SonNode),
+                     VID_PRTX(MYVERTEX(SonNode)));
                                                                 #endif
                                                                 #ifdef __THREEDIM__
               printf(PFMT "ConnectOverlapVerticalGrid(): new "
@@ -712,6 +714,15 @@ INT     ConnectOverlapVerticalGrid (GRID *theGrid)
               SETNFATHER(SonNode,(GEOM_OBJECT *)theEdge);
               MIDNODE(theEdge) = SonNode;
               found ++;
+              edgenum = k;
+
+              /* reconstruct vertex information */
+              theVertex = MYVERTEX(SonNode);
+              V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,edgenode0),
+                            0.5, LOCAL_COORD_OF_ELEM(theElement,edgenode1),
+                            LCVECT(theVertex));
+              SETONEDGE(theVertex,k);
+              VFATHER(theVertex) = theElement;
             }
           }
           break;
