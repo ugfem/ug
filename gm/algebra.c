@@ -115,14 +115,6 @@ static INT ce_VCSTRONG;
 #define VCSTRONG(p)                                             CW_READ(p,ce_VCSTRONG)
 #define SETVCSTRONG(p,n)                                CW_WRITE(p,ce_VCSTRONG,n)
 
-/* define this to determine copy element using the node/link relations */
-/* otherwise the vector/matric relation is used                        */
-/* in DYNAMIC_MEMORY_ALLOCMODEL mode this is forces otherwise          */
-/* it optional (s.l. 980826)                                           */
-#ifdef DYNAMIC_MEMORY_ALLOCMODEL
-#define COMPUTE_COPIES_GEOMETRIC
-#endif
-
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -1038,6 +1030,7 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
   SETMOFFSET(pm,0);
   SETMSIZE(pm,Size);
   SETMNEW(pm,1);
+  SETCEXTRA(pc,0);
   MDEST(pm) = to;
   if (!Diag)
   {
@@ -3041,17 +3034,84 @@ static int Scatter_GhostVectorVNew (DDD_OBJ obj, void *data)
 
 INT SetSurfaceClasses (MULTIGRID *theMG)
 {
-  VECTOR *v;
+  GRID *theGrid;
+  ELEMENT *theElement;        VECTOR *v;
   INT level,fullrefine;
 
+    #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  level = TOPLEVEL(theMG);
+  if (level > 0) {
+    theGrid = GRID_ON_LEVEL(theMG,TOPLEVEL(theMG));
+    ClearVectorClasses(theGrid);
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
+         theElement=SUCCE(theElement))
+      if (MinNodeClass(theElement)==3)
+        SeedVectorClasses(theGrid,theElement);
+    PropagateVectorClasses(theGrid);
+    theGrid = GRID_ON_LEVEL(theMG,0);
+    ClearNextVectorClasses(theGrid);
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
+         theElement=SUCCE(theElement))
+      if (MinNextNodeClass(theElement)==3)
+        SeedNextVectorClasses(theGrid,theElement);
+    PropagateNextVectorClasses(theGrid);
+  }
+  for (level--; level>0; level--)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,level);
+    ClearVectorClasses(theGrid);
+    ClearNextVectorClasses(theGrid);
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
+         theElement=SUCCE(theElement)) {
+      if (MinNodeClass(theElement)==3)
+        SeedVectorClasses(theGrid,theElement);
+      if (MinNextNodeClass(theElement)==3)
+        SeedNextVectorClasses(theGrid,theElement);
+    }
+    PropagateVectorClasses(theGrid);
+    PropagateNextVectorClasses(theGrid);
+  }
+    #endif
   fullrefine = TOPLEVEL(theMG);
   for (level=TOPLEVEL(theMG); level>=BOTTOMLEVEL(theMG); level--)
-    for (v=PFIRSTVECTOR(GRID_ON_LEVEL(theMG,level)); v!= NULL; v=SUCCVC(v)) {
+  {
+    theGrid = GRID_ON_LEVEL(theMG,level);
+    for (v=PFIRSTVECTOR(theGrid); v!= NULL; v=SUCCVC(v)) {
+            #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+                    #ifdef Debug
+      if (VOTYPE(v) == NODEVEC)
+      {
+        NODE *theNode = (NODE *) VOBJECT(v);
+
+        if (NCLASS(theNode) > VCLASS(v))
+          UserWriteF(PFMT " node=" ID_FMTX " c %d ncl %d vector="
+                     VINDEX_FMTX
+                     " c %d vc %d \n",
+                     me,
+                     ID_PRTX(theNode),NCOPIES(theNode),NCLASS(theNode),
+                     VINDEX_PRTX(v),NCOPIES(v),VCLASS(v));
+
+        assert(NCLASS(theNode) <= VCLASS(v));
+
+
+        if (NNCLASS(theNode) > VNCLASS(v))
+          UserWriteF(PFMT " node=" ID_FMTX " c %d ncl %d vector="
+                     VINDEX_FMTX
+                     " c %d vc %d \n",
+                     me,
+                     ID_PRTX(theNode),NCOPIES(theNode),NNCLASS(theNode),
+                     VINDEX_PRTX(v),NCOPIES(v),VNCLASS(v));
+
+        assert(NNCLASS(theNode) <= VNCLASS(v));
+      }
+                        #endif
+                        #endif
       SETNEW_DEFECT(v,(VCLASS(v)>=2));
       SETFINE_GRID_DOF(v,((VCLASS(v)>=2)&&(VNCLASS(v)<=1)));
       if (FINE_GRID_DOF(v))
         fullrefine = level;
     }
+  }
         #ifdef ModelP
   fullrefine = UG_GlobalMinINT(fullrefine);
         #endif
@@ -3144,7 +3204,7 @@ INT CreateAlgebra (MULTIGRID *theMG)
   /* update VNEW-flags */
   DDD_IFExchange(BorderVectorSymmIF,sizeof(INT),
                  Gather_VectorVNew,Scatter_VectorVNew);
-  DDD_IFOneway(VectorAllIF,IF_FORWARD,sizeof(INT),
+  DDD_IFOneway(VectorIF,IF_FORWARD,sizeof(INT),
                Gather_VectorVNew,Scatter_GhostVectorVNew);
     #else
         #ifdef DYNAMIC_MEMORY_ALLOCMODEL
@@ -4164,14 +4224,21 @@ static int Scatter_GhostVectorVClass (DDD_OBJ obj, void *data)
 }
 #endif
 
-#define COMPUTE_COPIES_GEOMETRIC
-
-INT PropagateVectorClass (GRID *theGrid, INT vclass)
+static INT PropagateVectorClass (GRID *theGrid, INT vclass)
 {
   VECTOR *theVector;
-
-        #ifndef COMPUTE_COPIES_GEOMETRIC
   MATRIX *theMatrix;
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+    if ((VCLASS(theVector)==vclass)&&(VSTART(theVector)!=NULL))
+      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
+           theMatrix=MNEXT(theMatrix))
+        if ((VCLASS(MDEST(theMatrix))<vclass)
+            &&(CEXTRA(MMYCON(theMatrix))!=1))
+          SETVCLASS(MDEST(theMatrix),vclass-1);
+
+
 
   /* set vector classes in the algebraic neighborhood to vclass-1 */
   /* use matrices to determine next vectors!!!!!                   */
@@ -4183,33 +4250,9 @@ INT PropagateVectorClass (GRID *theGrid, INT vclass)
         if ((VCLASS(MDEST(theMatrix))<vclass)
             &&(CEXTRA(MMYCON(theMatrix))!=1))
           SETVCLASS(MDEST(theMatrix),vclass-1);
-        #else
-  VECTOR  *NbVector;
-  NODE    *theNode;
-  LINK    *theLink;
-
-  /* set vector classes in the algebraic neighborhood to vclass-1 */
-  /* use links to determine next vectors!!!!!                      */
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL;
-       theNode=SUCCN(theNode))
-  {
-    theVector = NVECTOR(theNode);
-    if (theVector == NULL) continue;
-    if ((VCLASS(theVector)==vclass)&&(START(theNode)!=NULL))
-      for (theLink=START(theNode); theLink!=NULL;
-           theLink=NEXT(theLink))
-      {
-        NbVector = NVECTOR(NBNODE(theLink));
-        assert(NbVector!=NULL);
-
-        if (VCLASS(NbVector)<vclass)
-          SETVCLASS(NbVector,vclass-1);
-      }
-  }
-        #endif
 
   /* only for this values valid */
-  assert(vclass==3 || vclass==2);
+  ASSERT(vclass==3 || vclass==2);
 
   return(0);
 }
@@ -4248,7 +4291,7 @@ INT PropagateVectorClasses (GRID *theGrid)
   DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
                   Gather_VectorVClass, Scatter_VectorVClass);
   /* send VCLASS to ghosts */
-  DDD_IFAOneway(VectorAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+  DDD_IFAOneway(VectorIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_VectorVClass, Scatter_GhostVectorVClass);
     #endif
 
@@ -4401,12 +4444,9 @@ static int Scatter_GhostVectorVNClass (DDD_OBJ obj, void *data)
 }
 #endif
 
-
-INT PropagateNextVectorClass (GRID *theGrid, INT vnclass)
+static INT PropagateNextVectorClass (GRID *theGrid, INT vnclass)
 {
   VECTOR *theVector;
-
-        #ifndef COMPUTE_COPIES_GEOMETRIC
   MATRIX *theMatrix;
 
   /* set vector classes in the algebraic neighborhood to vnclass-1 */
@@ -4419,33 +4459,9 @@ INT PropagateNextVectorClass (GRID *theGrid, INT vnclass)
         if ((VNCLASS(MDEST(theMatrix))<vnclass)
             &&(CEXTRA(MMYCON(theMatrix))!=1))
           SETVNCLASS(MDEST(theMatrix),vnclass-1);
-        #else
-  VECTOR  *NbVector;
-  NODE    *theNode;
-  LINK    *theLink;
-
-  /* set vector classes in the algebraic neighborhood to vnclass-1 */
-  /* use links to determine next vectors!!!!!                      */
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL;
-       theNode=SUCCN(theNode))
-  {
-    theVector = NVECTOR(theNode);
-    if (theVector == NULL) continue;
-    if ((VNCLASS(theVector)==vnclass)&&(START(theNode)!=NULL))
-      for (theLink=START(theNode); theLink!=NULL;
-           theLink=NEXT(theLink))
-      {
-        NbVector = NVECTOR(NBNODE(theLink));
-        assert(NbVector!=NULL);
-
-        if (VNCLASS(NbVector)<vnclass)
-          SETVNCLASS(NbVector,vnclass-1);
-      }
-  }
-        #endif
 
   /* only for this values valid */
-  assert(vnclass==3 || vnclass==2);
+  ASSERT(vnclass==3 || vnclass==2);
 
   return(0);
 }
@@ -4479,7 +4495,7 @@ INT PropagateNextVectorClasses (GRID *theGrid)
   DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
                   Gather_VectorVNClass, Scatter_VectorVNClass);
   /* send VCLASS to ghosts */
-  DDD_IFAOneway(VectorAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+  DDD_IFAOneway(VectorIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_VectorVNClass, Scatter_GhostVectorVNClass);
     #endif
 
