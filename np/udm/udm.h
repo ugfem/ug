@@ -213,6 +213,10 @@ typedef struct {
 
 typedef DOUBLE VEC_SCALAR[MAX_VEC_COMP];
 
+/* special const pointers */
+typedef const VECDATA_DESC *CONST_VECDATA_DESC_PTR;
+typedef const MATDATA_DESC *CONST_MATDATA_DESC_PTR;
+
 typedef struct {
 
   INT nvd;                                                      /* number of vec data descriptors		*/
@@ -292,14 +296,16 @@ INT DisposeMD     (MATDATA_DESC *md);
 
 /* constructing part interface descriptors */
 INT VDinterfaceDesc                                             (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
+INT VDinterfaceCoDesc                                   (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
 INT MDinterfaceDesc                                             (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi);
 
-INT ConstructVecOffsets (const SHORT *NCmpInType, SHORT *offset);
-INT ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset);
-INT ConstructMatOffsetsAlt (const SHORT *CmpsInType, SHORT *offset);
+INT ConstructVecOffsets         (const SHORT *NCmpInType, SHORT *offset);
+INT ConstructMatOffsets         (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset);
+INT ConstructMatOffsetsAlt      (const SHORT *CmpsInType, SHORT *offset);
 
 /* swapping data on part interfaces */
-INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction);
+INT SwapPartInterfaceData       (INT fl, INT tl, SPID_DESC *spid, INT direction);
+INT SwapPartSkipflags           (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DESC *vdi, INT direction);
 
 /****************************************************************************/
 /*	getting object type specific information from XXXDATA_DESCs
@@ -315,6 +321,7 @@ INT             VD_ncmps_in_otype                       (const VECDATA_DESC *vd,
 INT             VD_cmp_of_otype                         (const VECDATA_DESC *vd, INT otype, INT i);
 #define VD_cmpptr_of_otype(vd,ot)       VD_ncmp_cmpptr_of_otype(vd,ot,NULL)
 SHORT   *VD_ncmp_cmpptr_of_otype        (const VECDATA_DESC *vd, INT otype, INT *ncmp);
+INT             VDusesVOTypeOnly                        (const VECDATA_DESC *vd, INT votype);
 
 /* MATDATA_DESCs and object type */
 INT             MD_rows_in_ro_co                        (const MATDATA_DESC *md, INT rowobj, INT colobj);
@@ -323,6 +330,7 @@ INT             MD_rows_cols_in_ro_co           (const MATDATA_DESC *md, INT row
 INT             MD_mcmp_of_ro_co                        (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i);
 #define MD_mcmpptr_of_ro_co(md,ro,co)   MD_nr_nc_mcmpptr_of_ro_co(md,ro,co,NULL,NULL)
 SHORT   *MD_nr_nc_mcmpptr_of_ro_co      (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nrow, INT *ncol);
+INT             MDusesVOTypeOnly                        (const MATDATA_DESC *md, INT votype);
 
 /* init user data manager */
 INT InitUserDataManager (void);

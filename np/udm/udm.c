@@ -273,8 +273,8 @@ INT ConstructVecOffsets (const SHORT *NCmpInType, SHORT *offset)
   INT type;
 
   offset[0] = 0;
-  for (type=1; type<NVECOFFSETS; type++)
-    offset[type] = offset[type-1] + NCmpInType[type-1];
+  for (type=0; type<NVECTYPES; type++)
+    offset[type+1] = offset[type] + NCmpInType[type];
 
   return (NUM_OK);
 }
@@ -1123,8 +1123,84 @@ INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DE
         {
           ASSERT(k<MAX_MAT_COMP);
 
-          SubComp[k] = VD_CMP_OF_TYPE(vds,tp,i);;
+          SubComp[k] = VD_CMP_OF_TYPE(vds,tp,i);
           SubName[k] = VM_COMP_NAME(vds,VD_OFFSET(vds,tp)+i);
+          k++;
+        }
+        SubNCmp[tp] = ns;
+      }
+      else if (ns==n)
+      {
+        /* no components here */
+        SubNCmp[tp] = 0;
+      }
+      else
+        /* vd does not contain vds */
+        REP_ERR_RETURN (1);
+    }
+
+  *vdi = CreateSubVecDesc(VD_MG(vd),NULL,SubNCmp,SubComp,SubName);
+  if (*vdi == NULL)
+    REP_ERR_RETURN (1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+        VDinterfaceCoDesc - an interface co-VECDATA_DESC is created
+
+        SYNOPSIS:
+        INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
+
+    PARAMETERS:
+   .   vd			- make a sub desc of this VECDATA_DESC
+   .   vds			- an existing sub desc of vd
+   .   vdi			- handle to new interface desc
+
+        DESCRIPTION:
+        This function creates a sub descriptor to a given VECDATA_DESC such that all components
+        from vd are taken of types in which vds is defined but where vds is a true subset of vd.
+        Only components of vd are taken that are not in vds.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+   .n      n: if an error occured
+   D*/
+/****************************************************************************/
+
+INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
+{
+  SHORT SubComp[MAX_VEC_COMP],SubNCmp[NVECTYPES];
+  INT i,j,k,n,ns,tp,cmp;
+  char SubName[MAX_VEC_COMP];
+
+  k = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vds,tp))
+    {
+      if (!VD_ISDEF_IN_TYPE(vd,tp))
+        REP_ERR_RETURN (1);
+
+      n  = VD_NCMPS_IN_TYPE(vd,tp);
+      ns = VD_NCMPS_IN_TYPE(vds,tp);
+      if (ns<n)
+      {
+        /* copy all components from vd not in vds */
+        for (i=0; i<n; i++)
+        {
+          ASSERT(k<MAX_MAT_COMP);
+
+          cmp = VD_CMP_OF_TYPE(vd,tp,i);
+          for (j=0; j<ns; j++)
+            if (VD_CMP_OF_TYPE(vds,tp,i)==cmp)
+              break;
+          if (j<ns)
+            /* cmp contained in vds */
+            continue;
+          SubComp[k] = cmp;
+          SubName[k] = VM_COMP_NAME(vd,VD_OFFSET(vd,tp)+i);
           k++;
         }
         SubNCmp[tp] = ns;
@@ -1339,6 +1415,45 @@ SHORT *VD_ncmp_cmpptr_of_otype (const VECDATA_DESC *vd, INT otype, INT *ncomp)
 }
 
 /****************************************************************************/
+/*D
+   VDusesVOTypeOnly - check whether only one vector object type is used
+
+   SYNOPSIS:
+   INT VDusesVOTypeOnly (const VECDATA_DESC *vd, INT votype)
+
+   PARAMETERS:
+   .  vd - data decsriptor
+   .  votype - vector object type
+
+   DESCRIPTION:
+   This function checks whether only one vector object type is used by the
+   VECDATA_DESC.
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'votype'
+   are not defined at all!
+
+   RETURN VALUE:
+   SHORT *
+   .n      number of components in objects of 'otype'
+   .n      NULL if not unique
+   D*/
+/****************************************************************************/
+
+INT VDusesVOTypeOnly (const VECDATA_DESC *vd, INT votype)
+{
+  FORMAT *fmt;
+  INT tp,otp;
+
+  fmt = MGFORMAT(VD_MG(vd));
+  otp = 1<<votype;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vd,tp))
+      if (otp!=FMT_T2O(fmt,tp))
+        return(NO);
+  return (YES);
+}
+
+/****************************************************************************/
 /****************************************************************************/
 /*			here follows matrix stuff										*/
 /****************************************************************************/
@@ -1370,8 +1485,8 @@ INT ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT
   INT type;
 
   offset[0] = 0;
-  for (type=1; type<NMATOFFSETS; type++)
-    offset[type] = offset[type-1] + RowsInType[type-1]*ColsInType[type-1];
+  for (type=0; type<NMATTYPES; type++)
+    offset[type+1] = offset[type] + RowsInType[type]*ColsInType[type];
 
   return (NUM_OK);
 }
@@ -2317,7 +2432,7 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
         {
           ASSERT(k<MAX_MAT_COMP);
 
-          SubComp[k] = MD_MCMP_OF_MTYPE(mds,tp,i);;
+          SubComp[k] = MD_MCMP_OF_MTYPE(mds,tp,i);
           l = MD_MTYPE_OFFSET(mds,tp)+i;
           SubName[2*k]   = VM_COMP_NAME(mds,2*l);
           SubName[2*k+1] = VM_COMP_NAME(mds,2*l+1);
@@ -2705,6 +2820,50 @@ SHORT *MD_nr_nc_mcmpptr_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj
 
 /****************************************************************************/
 /*D
+   MDusesVOTypeOnly - check whether only one vector object type is used
+
+   SYNOPSIS:
+   INT MDusesVOTypeOnly (const MATDATA_DESC *md, INT votype)
+
+   PARAMETERS:
+   .  md - data decsriptor
+   .  votype - vector object type
+
+   DESCRIPTION:
+   This function checks whether only one vector object type is used by the
+   MATDATA_DESC (root and dest type).
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'votype'
+   are not defined at all!
+
+   RETURN VALUE:
+   SHORT *
+   .n      number of components in objects of 'otype'
+   .n      NULL if not unique
+   D*/
+/****************************************************************************/
+
+INT MDusesVOTypeOnly (const MATDATA_DESC *md, INT votype)
+{
+  FORMAT *fmt;
+  INT rt,ct,otp;
+
+  fmt = MGFORMAT(VD_MG(md));
+  otp = 1<<votype;
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+      {
+        if (otp!=FMT_T2O(fmt,rt))
+          return(NO);
+        if (otp!=FMT_T2O(fmt,ct))
+          return(NO);
+      }
+  return (YES);
+}
+
+/****************************************************************************/
+/*D
    SwapPartInterfaceData - swap data at domain part interface
 
    SYNOPSIS:
@@ -2983,6 +3142,136 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
           }
         }
     }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   SwapPartSkipflags - swap the skip bits of vectors
+
+   SYNOPSIS:
+   INT SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DESC *vdi, INT direction)
+
+   PARAMETERS:
+   .  fl - from level
+   .  tl - to   level
+   .  vdg - descriptor for global data
+   .  vdi - descriptor for part data restricted to interface
+   .  direction - forth or back
+
+   DESCRIPTION:
+   Similar to 'SwapPartInterfaceData' this function swaps the skip bits of vectors
+   such that the bits of the part descriptor ly at the lowest bits of the vectors
+   skip component.
+
+   NOTE:
+   Even if several data descriptors are swapped by 'SwapPartInterfaceData' swap skip bits
+   only once!
+
+   IMPORTANT:
+   To restore the original state call 'SwapPartSkipflags' again (now with SPID_BACK)!
+
+   RETURN VALUE:
+   INT
+   .n      0: ok
+   .n      n: else
+   D*/
+/****************************************************************************/
+
+INT SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DESC *vdi, INT direction)
+{
+  MULTIGRID *mg;
+  VECTOR *vec;
+  struct {
+    INT len;                                            /* number of bits		*/
+    INT shift;                                          /* shift in global desc	*/
+    INT bits;                                           /* mask for bits		*/
+    INT rest;                                           /* mask for rest		*/
+  } sps[NVECTYPES],*p;
+  INT i,j,n,tp,shift,cmpi,lev,skip,bits,rest;
+
+  mg = VD_MG(vdg);
+
+  /* first compute mask, len and offset of vdi skipbits on interface */
+  for (tp=0; tp<NVECTYPES; tp++)
+  {
+    sps[tp].len = 0;
+    if (VD_ISDEF_IN_TYPE(vdi,tp))
+    {
+      ASSERT(VD_ISDEF_IN_TYPE(vdg,tp));
+
+      n = VD_NCMPS_IN_TYPE(vdi,tp);
+
+      /* compute position of first vdi comp rel to vdg */
+      cmpi = VD_CMP_OF_TYPE(vdi,tp,0);
+      for (j=0; j<VD_NCMPS_IN_TYPE(vdg,tp); j++)
+        if (VD_CMP_OF_TYPE(vdg,tp,0)==cmpi)
+          break;
+      ASSERT(j<VD_NCMPS_IN_TYPE(vdg,tp));
+      shift = j;
+
+      /* are the components of vdi subsequent in vdg? */
+      if (shift+n>VD_NCMPS_IN_TYPE(vdg,tp))
+        REP_ERR_RETURN(1);
+      for (i=1; i<n; i++)
+        if (VD_CMP_OF_TYPE(vdi,tp,i)!=VD_CMP_OF_TYPE(vdg,tp,shift+i))
+          REP_ERR_RETURN(1);
+
+      if (shift==0)
+        /* there will be nothing to swap */
+        continue;
+
+      /* fill sps */
+      sps[tp].len             = n;
+      sps[tp].shift   = shift;
+
+      sps[tp].bits    = POW2(n)-1;
+      sps[tp].rest    = ~sps[tp].bits;
+
+      if (direction==SPID_FORTH)
+      {
+        sps[tp].bits    = sps[tp].bits << shift;
+        sps[tp].rest    = sps[tp].rest << shift;
+      }
+    }
+  }
+
+  /* now loop vectors */
+  if (direction==SPID_FORTH)
+  {
+    for (lev=fl; lev<=tl; lev++)
+      for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!=NULL; vec=SUCCVC(vec))
+        if (sps[tp].len)
+        {
+          p = sps+tp;
+
+          skip = VECSKIP(vec);
+          if (skip==0)
+            continue;
+          bits = skip & p->bits;
+          rest = skip & p->rest;
+          VECSKIP(vec) = (bits >> p->shift) | (rest << p->shift);
+        }
+  }
+  else if (direction==SPID_BACK)
+  {
+    for (lev=fl; lev<=tl; lev++)
+      for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!=NULL; vec=SUCCVC(vec))
+        if (sps[tp].len)
+        {
+          p = sps+tp;
+
+          skip = VECSKIP(vec);
+          if (skip==0)
+            continue;
+          bits = skip & p->bits;
+          rest = skip & p->rest;
+          VECSKIP(vec) = (bits << p->shift) | (rest >> p->shift);
+        }
+  }
+  else
+    REP_ERR_RETURN(1);
 
   return (0);
 }
