@@ -179,7 +179,7 @@ INT NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
   if (sc_read(np->reduction,np->ev[0],"red",argc,argv))
     return(NP_ACTIVE);
   np->Assemble = (NP_NL_ASSEMBLE *)
-                 ReadArgvNumProc(np->base.mg,"A",ASSEMBLE_CLASS_NAME,argc,argv);
+                 ReadArgvNumProc(np->base.mg,"A",NL_ASSEMBLE_CLASS_NAME,argc,argv);
 
   if ((np->Assemble == NULL) || (np->nev == 0))
     return(NP_ACTIVE);
@@ -484,14 +484,14 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
         return(1);
       }
   if (np->interpolate) {
-    if (np->Transfer->PreProcessProject != NULL)
-      if ((*np->Transfer->PreProcessProject)(np->Transfer,level,&bl,
-                                             result))
+    if (np->Transfer->PreProcessSolution != NULL)
+      if ((*np->Transfer->PreProcessSolution)
+            (np->Transfer,bl,level,ev[0],result))
         return(1);
     for (l=bl; l<=level; l++)
       for (i=0; i<nev; i++)
         if ((*np->Transfer->InterpolateNewVectors)
-              (np->Transfer,level,ev[0],result))
+              (np->Transfer,level,ev[i],result))
           return(1);
   }
 
@@ -832,7 +832,7 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
   np->r = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
   if (sc_read(np->damp,np->r,"damp",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
-      np->damp[i] = ABS_LIMIT;
+      np->damp[i] = 1.0;
   if (ReadArgvINT("m",&(np->maxiter),argc,argv))
     return(NP_NOT_ACTIVE);
   np->display = ReadArgvDisplay(argc,argv);
