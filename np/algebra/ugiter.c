@@ -5924,6 +5924,25 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
    D*/
 /****************************************************************************/
 
+static VECDATA_DESC *t;
+
+static DOUBLE CheckNorm (MULTIGRID *theMG, INT level,
+                         const VECDATA_DESC *x, const VECDATA_DESC *b,
+                         const MATDATA_DESC *A)
+{
+  DOUBLE nrm;
+
+  if (AllocVDFromVD(theMG,0,level,x,&t)) return(1);
+
+  dcopy(theMG,0,level,ALL_VECTORS,t,b);
+  dmatmul_minus(theMG,0,level,ALL_VECTORS,t,A,x);
+  dnrm2(theMG,0,level,ON_SURFACE,t,&nrm);
+
+  FreeVD(theMG,0,level,t);
+
+  return (nrm);
+}
+
 INT l_pgs (GRID *g, const VECDATA_DESC *v,
            const MATDATA_DESC *M, const VECDATA_DESC *d,
            INT depth, INT mode)
@@ -5932,9 +5951,11 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
   VECTOR *vec,*vlist[MAX_DEPTH],*w;
   MATRIX *mat;
   DOUBLE Mval[LOCAL_DIM*LOCAL_DIM],vval[LOCAL_DIM],dval[LOCAL_DIM];
+  DOUBLE check,nrm;
   INT cnt,m,i,j,k,l,ncomp,vcnt,vtype,wtype,wncomp;
   const SHORT *Comp,*VComp;
 
+  t = NULL;
   if (depth > MAX_DEPTH) {
     UserWriteF("l_pgs: MAX_DEPTH too small\n");
     REP_ERR_RETURN (__LINE__);
@@ -5975,6 +5996,13 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
         REP_ERR_RETURN (__LINE__);
       }
       AddVlistVValues(cnt,vlist,v,vval);
+      IFDEBUG(np,0)
+      nrm = 0.0;
+      for (i=0; i<m; i++) nrm += ABS(vval[i]);
+      check = CheckNorm(MYMG(g),GLEVEL(g),v,d,M);
+      UserWriteF("nrm[%d] = %-12.7e  m = %d v = %-12.7e\n",
+                 ID(theElement),check,m,nrm);
+      ENDDEBUG
     }
     if (mode == 5) return (NUM_OK);
     for (theElement=LASTELEMENT(g); theElement!= NULL;
@@ -6053,6 +6081,13 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
         REP_ERR_RETURN (__LINE__);
       }
       AddVlistVValues(cnt,vlist,v,vval);
+      IFDEBUG(np,0)
+      nrm = 0.0;
+      for (i=0; i<m; i++) nrm += ABS(vval[i]);
+      check = CheckNorm(MYMG(g),GLEVEL(g),v,d,M);
+      UserWriteF("nrm[%d] = %-12.7e  m = %d v = %-12.7e\n",
+                 VINDEX(vec),check,m,nrm);
+      ENDDEBUG
     }
     if (mode == 1) return (NUM_OK);
     for (vec=LASTVECTOR(g); vec!= NULL; vec=PREDVC(vec)) {
