@@ -1421,50 +1421,100 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
         E[i][j] = E[j][i] = 0.0;
     for (i=0; i<New; i++)
       E[i][i] = 1.0;
-    if (Choleskydecomposition(New,B,L))
-      NP_RETURN(1,ewresult->error_code);
 
-    /* Inverse of L */
-    for (i=1; i<New; i++) {
-      for (j=0; j<i; j++)
-      {
-        DOUBLE sum = L[i*New+j] * L[j*New+j];
+    if (np->Orthogonalize) {
+      if (Choleskydecomposition(New,B,L))
+        NP_RETURN(1,ewresult->error_code);
 
-        for (k=j+1; k<i; k++)
-          sum += L[i*New+k] * L[k*New+j];
-        L[i*New+j] = - sum * L[i*New+i];
+      /* inverse of L */
+      for (i=1; i<New; i++) {
+        for (j=0; j<i; j++)
+        {
+          DOUBLE sum = L[i*New+j] * L[j*New+j];
+
+          for (k=j+1; k<i; k++)
+            sum += L[i*New+k] * L[k*New+j];
+          L[i*New+j] = - sum * L[i*New+i];
+        }
+      }
+
+      /* Left hand side for special Eigenvalue problem */
+      for (i=0; i<New; i++) {
+        for (j=0; j<=i; j++)
+        {
+          DOUBLE sum = 0.0;
+
+          for (k=0; k<=i; k++)
+            for (l=0; l<=j; l++)
+              sum += L[i*New+k] * A[k*New+l] * L[j*New+l];
+          G[i][j] = G[j][i]  = sum;
+        }
+      }
+
+      /* Special Eigenvalue problem  G E_i = lambda E_i */
+
+      SmallEWSolver(New,G,ew,E);
+
+      /* transform back the Eigenvectors */
+      for (i=0; i<New; i++) {
+        for (j=0; j<New; j++)
+        {
+          DOUBLE sum = L[i*New+i]*E[i][j];
+
+          for (k=i+1; k<New; k++)
+            sum += L[k*New+i]*E[k][j];
+          E[i][j]= sum;
+        }
       }
     }
+    else {
+      if (Choleskydecomposition(New,A,L))
+        NP_RETURN(1,ewresult->error_code);
 
-    /* Left hand side for special Eigenvalue problem */
-    for (i=0; i<New; i++) {
-      for (j=0; j<=i; j++)
-      {
-        DOUBLE sum = 0.0;
+      /* inverse of L */
+      for (i=1; i<New; i++) {
+        for (j=0; j<i; j++)
+        {
+          DOUBLE sum = L[i*New+j] * L[j*New+j];
 
-        for (k=0; k<=i; k++)
-          for (l=0; l<=j; l++)
-            sum += L[i*New+k] * A[k*New+l] * L[j*New+l];
-        G[i][j] = G[j][i]  = sum;
+          for (k=j+1; k<i; k++)
+            sum += L[i*New+k] * L[k*New+j];
+          L[i*New+j] = - sum * L[i*New+i];
+        }
+      }
+
+      /* Left hand side for special Eigenvalue problem */
+      for (i=0; i<New; i++) {
+        for (j=0; j<=i; j++)
+        {
+          DOUBLE sum = 0.0;
+
+          for (k=0; k<=i; k++)
+            for (l=0; l<=j; l++)
+              sum += L[i*New+k] * B[k*New+l] * L[j*New+l];
+          G[i][j] = G[j][i]  = sum;
+        }
+      }
+
+      /* Special Eigenvalue problem  G E_i = lambda E_i */
+
+      SmallEWSolver(New,G,ew,E);
+
+      /* transform back the Eigenvectors */
+      for (i=0; i<New; i++) {
+        /* if (ABS(ew[i]) < SMALL_D)
+                ew[i] = 1.0 / ew[i]; */
+        /* TODO: reorder E[i] ? */
+        for (j=0; j<New; j++)
+        {
+          DOUBLE sum = L[i*New+i]*E[i][j];
+
+          for (k=i+1; k<New; k++)
+            sum += L[k*New+i]*E[k][j];
+          E[i][j]= sum;
+        }
       }
     }
-
-    /* Special Eigenvalue problem  G E_i = lambda E_i */
-
-    SmallEWSolver(New,G,ew,E);
-
-    /* transform back the Eigenvectors */
-    for (i=0; i<New; i++) {
-      for (j=0; j<New; j++)
-      {
-        DOUBLE sum = L[i*New+i]*E[i][j];
-
-        for (k=i+1; k<New; k++)
-          sum += L[k*New+i]*E[k][j];
-        E[i][j]= sum;
-      }
-    }
-
     for (i=0; i<New; i++) {
       if (AllocVDFromVD(theMG,bl,level,ev[0],&np->e[i]))
         NP_RETURN(1,ewresult->error_code);
