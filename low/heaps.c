@@ -62,6 +62,7 @@
 
 #define CALC_B_OFFSET(bhm,i)    (((i)==0) ? 0 : (B_OFFSET(theVHM,(i)-1)+B_SIZE(theVHM,(i)-1)))
 
+
 /****************************************************************************/
 /*                                                                          */
 /* definition of variables global to this source file only (static!)        */
@@ -72,6 +73,17 @@ REP_ERR_FILE;
 
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
+
+#if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
+INT check_of_getcallstack = 0;
+INT check_of_putcallstack = 0;
+#endif
 
 /****************************************************************************/
 /*D
@@ -280,10 +292,23 @@ HEAP *NewHeap (INT type, MEM size, void *buffer)
    D*/
 /****************************************************************************/
 
+#if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
+extern INT usefreelistmemory;
+#include "gm.h"
+#include "commands.h"
+MULTIGRID *GetCurrentMultigrid (void);
+#endif
+
 void *GetMem (HEAP *theHeap, MEM n, INT mode)
 {
   BLOCK *theBlock,*newBlock;
   long newsize,allocated;
+
+        #if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
+  if (GetCurrentMultigrid() != NULL)
+    if (MGHEAP(GetCurrentMultigrid())==theHeap && mode==FROM_BOTTOM)
+      assert(check_of_getcallstack==1 || usefreelistmemory==1);
+        #endif
 
   if (theHeap==NULL) return(NULL);              /* there is no heap         */
   if (theHeap->heapptr==NULL) return(NULL);      /* heap is full             */
@@ -609,10 +634,23 @@ void DisposeMem (HEAP *theHeap, void *buffer)
    D*/
 /****************************************************************************/
 
+#if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
+extern INT usefreelistmemory;
+#include "gm.h"
+#include "commands.h"
+MULTIGRID *GetCurrentMultigrid (void);
+#endif
+
 void *GetFreelistMemory (HEAP *theHeap, INT size)
 {
   void **ptr, *obj;
   INT i,j,k,l;
+
+        #if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
+  if (GetCurrentMultigrid() != NULL)
+    if (MGHEAP(GetCurrentMultigrid())==theHeap)
+      assert(check_of_getcallstack==1 || usefreelistmemory==1);
+        #endif
 
   if (size == 0)
     return(NULL);
@@ -686,6 +724,12 @@ INT PutFreelistMemory (HEAP *theHeap, void *object, INT size)
 {
   void **ptr;
   INT i,j,k,l;
+
+        #if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
+  if (GetCurrentMultigrid() != NULL)
+    if (MGHEAP(GetCurrentMultigrid())==theHeap)
+      assert(check_of_putcallstack==1 || usefreelistmemory==1);
+        #endif
 
   memset(object,0,size);
 #ifdef Debug

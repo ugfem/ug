@@ -51,6 +51,12 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* define this to use DYNAMIC_MEMORY_ALLOCMODEL */
+/* matrices and vectors (for amg) are allocated */
+/* using Mark/Release                           */
+#define DYNAMIC_MEMORY_ALLOCMODEL
+
+
 /****************************************************************************/
 /* defines for the simple and general heap management                       */
 /****************************************************************************/
@@ -166,6 +172,17 @@ typedef struct {
 
 typedef INT BLOCK_ID;
 typedef struct block BLOCK;
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
+
+#if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
+extern INT check_of_getcallstack;
+extern INT check_of_putcallstack;
+#endif
 
 /****************************************************************************/
 /*                                                                          */
