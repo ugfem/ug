@@ -34,6 +34,10 @@
 #include "heaps.h"
 #endif
 
+#ifndef __GM__
+#include "gm.h"
+#endif
+
 #ifdef ModelP
 #ifndef __PPIF__
 #include "ppif.h"
@@ -178,7 +182,7 @@ void ddd_test ();
 
 /* from handler.c */
 void ddd_handlerInit (void);
-void InitCurrMG ();
+void InitCurrMG(MULTIGRID *MG)
 #endif /* ModelP */
 
 #endif /* PARALLEL */

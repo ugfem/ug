@@ -71,14 +71,19 @@
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
-MULTIGRID *DDD_currMG;
 
+MULTIGRID *DDD_currMG;
 
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+static int nodedata;
+static int edgedata;
+static int sidedata;
+static int elementdata;
 
 /* data for CVS */
 static char rcsid[] = "$Header$";
@@ -106,6 +111,11 @@ static char rcsid[] = "$Header$";
 void InitCurrMG(MULTIGRID *MG)
 {
 	DDD_currMG = MG;
+
+	nodedata = TYPE_DEF_IN_MG(theMG,NODEVECTOR);
+	edgedata = TYPE_DEF_IN_MG(theMG,EDGEVECTOR);
+	sidedata = TYPE_DEF_IN_MG(theMG,SIDEVECTOR);
+	elementdata = TYPE_DEF_IN_MG(theMG,ELEMVECTOR);
 }
 
 
@@ -576,7 +586,7 @@ void NodeObjMkCons(OBJECT obj)
 
 /****************************************************************************/
 /*																			*/
-/* Function:  NodeUpdate     										*/
+/* Function:  NodeUpdate     										        */
 /*																			*/
 /* Purpose:   update information related to a node.    						*/
 /*			  current implementation only for level 0 grids					*/
@@ -626,7 +636,7 @@ void NodeUpdate (OBJECT obj)
 
 /****************************************************************************/
 /*																			*/
-/* Function:  NodeXferCopy											*/
+/* Function:  NodeXferCopy											        */
 /*																			*/
 /* Purpose:   initiate dependent copy of data related to a node.	 		*/
 /*																			*/
@@ -669,19 +679,22 @@ void NodeXferCopy (OBJECT obj, int proc, int prio)
 			/* increment counter for links to copy for this node */
 			nlink++;
 
-			#ifdef __EDGEDATA__
-			/* send vector of this edge */
-			vec = EDVECTOR(MYEDGE(link));
+			/* send vector of this edge */	 
+			if (edgedata)
+			  {
+				vec = EDVECTOR(MYEDGE(link));
 
-			PRINTDEBUG(dddif,3,("%2d: NodeXferCopy():  n=%x EDGEVEC=%x size=%d\n",me,node,vec,theMG->theFormat->VectorSizes[VTYPE(vec)]))
+				PRINTDEBUG(dddif,3,("%2d: NodeXferCopy():  n=%x EDGEVEC=%x size=%d\n",me,node,vec,theMG->theFormat->VectorSizes[VTYPE(vec)]))
 
-			/* TODO: */
-			/* CAUTION: must be called after XferAddData because of reference */
-			/*			to primary element, which is here node				  */
+				  /* TODO: */
+				  /* CAUTION: must be called after XferAddData because */
+                  /* of reference                                      */
+				  /* to primary element, which is here node			   */
 /*
-			DDD_XferCopyObjX(DDD_OBJ(vec), proc, prio, DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]);
+   DDD_XferCopyObjX(DDD_OBJ(vec), proc, prio, DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]);
 */
-			#endif /* __EDGEDATA__ */
+
+			  }
 		}
 		else
 		{
@@ -706,14 +719,15 @@ void NodeXferCopy (OBJECT obj, int proc, int prio)
 	DDD_XferCopyObj(DDD_OBJ(MYVERTEX(node)), proc, prio);
 
 	/* copy vector if defined */
-	#ifdef __NODEDATA__
-	vec = NVECTOR(node);
-	Size = sizeof(VECTOR)-sizeof(DOUBLE)+DDD_currMG->theFormat->VectorSizes[VTYPE(vec)];
+	if (nodedata)
+	  {
+		vec = NVECTOR(node);
+		Size = sizeof(VECTOR)-sizeof(DOUBLE)+DDD_currMG->theFormat->VectorSizes[VTYPE(vec)];
 
-	PRINTDEBUG(dddif,2,("%2d: NodeXferCopy(): n=%x Xfer NODEVEC=%x size=%d\n",me,node,vec,Size))
+		PRINTDEBUG(dddif,2,("%2d: NodeXferCopy(): n=%x Xfer NODEVEC=%x size=%d\n",me,node,vec,Size))
 
-	DDD_XferCopyObjX(DDD_OBJ(vec), proc, prio, Size);
-	#endif /* __NODEDATA__ */
+		  DDD_XferCopyObjX(DDD_OBJ(vec), proc, prio, Size);
+	  }
 }
 
 void NodeGatherEdge (OBJECT n, int cnt, DDD_TYPE type_id, void *Data)
@@ -927,28 +941,30 @@ void ElementXferCopy (OBJECT obj, int proc, int prio)
 	}
 
 	/* copy element vector */
-	#ifdef __ELEMDATA__
-	vec = EVECTOR(pe);
+	if (elemdata)
+	  {
+		vec = EVECTOR(pe);
+		
+		PRINTDEBUG(dddif,2,("%2d:ElementXferCopy(): e=%x ELEMVEC=%x size=%d\n",me,pe,vec,DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]))
 
-	PRINTDEBUG(dddif,2,("%2d:ElementXferCopy(): e=%x ELEMVEC=%x size=%d\n",me,pe,vec,DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]))
-
-	DDD_XferCopyObjX(DDD_OBJ(vec), proc, prio, DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]);
-	#endif /* __ELEMDATA__ */
+		  DDD_XferCopyObjX(DDD_OBJ(vec), proc, prio, DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]);
+	  }
 
 	/* copy sidevectors */
-	#ifdef __SIDEDATA__
-	for (i=0; i<SIDES_OF_ELEM(pe); i++)
-	{
-		vec = SVECTOR(pe,i);
-		if (XFERVECTOR(vec) == 0)
-		{
-			PRINTDEBUG(dddif,2,("%2d:ElementXferCopy(): e=%x SIDEVEC=%x size=%d\n",me,pe,vec,DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]))
-
-			DDD_XferCopyObjX(DDD_OBJ(vec), proc, prio, DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]);
-			SETXFERVECTOR(vec,1);
-		}
-	}
-	#endif /* __SIDEDATA__ */
+	if (sidedata)
+	  {
+		for (i=0; i<SIDES_OF_ELEM(pe); i++)
+		  {
+			vec = SVECTOR(pe,i);
+			if (XFERVECTOR(vec) == 0)
+			  {
+				PRINTDEBUG(dddif,2,("%2d:ElementXferCopy(): e=%x SIDEVEC=%x size=%d\n",me,pe,vec,DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]))
+				  
+				  DDD_XferCopyObjX(DDD_OBJ(vec), proc, prio, DDD_currMG->theFormat->VectorSizes[VTYPE(vec)]);
+				SETXFERVECTOR(vec,1);
+			  }
+		  }
+	  }
 }
 
 void ElemGatherElemSide (OBJECT obj, int cnt, DDD_TYPE type_id, void *Data)
@@ -1037,7 +1053,6 @@ void EdgeUpdate (OBJECT obj)
 	/* increment counter */
 	theGrid->nEdge++;
 }	
-
 
 void ddd_HandlerInit (void)
 {
