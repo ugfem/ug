@@ -220,6 +220,11 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
 
     arrayNewOwners =
       (XICopyObj **)AllocTmp(sizeof(XICopyObj *)* nNewOwners);
+    if (arrayNewOwners==NULL)
+    {
+      DDD_PrintError('E', 6102, STR_NOMEM " in XferEnd()");
+      return NULL;
+    }
 
     /* fill pointer array XICopyObj-items marked new_owner */
     for(j=0, k=0; j<n; j++)
@@ -700,7 +705,11 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
 
   /* reconstruct original order of DelObj commands */
   origD = (XIDelCmd **) AllocTmp(sizeof(XIDelCmd *) * nD);
-  /* TODO error checking */
+  if (origD==NULL)
+  {
+    DDD_PrintError('E', 6101, STR_NOMEM " in XferEnd()");
+    HARD_EXIT;
+  }
 
   /* copy pointer array and resort it */
   memcpy(origD, itemsD, sizeof(XIDelCmd *) * nD);

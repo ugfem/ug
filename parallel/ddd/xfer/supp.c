@@ -156,7 +156,6 @@ static AddDataSegm *NewAddDataSegm (void)
   AddDataSegm *segm;
 
   segm = (AddDataSegm *) AllocTmp(sizeof(AddDataSegm));
-
   if (segm==NULL)
   {
     DDD_PrintError('F', 9999, STR_NOMEM " during XferEnd()");
@@ -196,7 +195,6 @@ static SizesSegm *NewSizesSegm (void)
   SizesSegm *segm;
 
   segm = (SizesSegm *) AllocTmp(sizeof(SizesSegm));
-
   if (segm==NULL)
   {
     DDD_PrintError('F', 9999, STR_NOMEM " during XferEnd()");

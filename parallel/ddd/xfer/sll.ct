@@ -70,7 +70,7 @@ static Segm(T) *NewSegm(T) (void)
 
 	if (segm==NULL)
 	{
-		DDD_PrintError('F', 9999, STR_NOMEM " during XferEnd()");
+		DDD_PrintError('F', 6060, STR_NOMEM " during XferEnd()");
 		HARD_EXIT;
 	}
 
@@ -146,6 +146,12 @@ T **SortedArray(T) (int (*compar) (const void *, const void *))
 	{
 		/* alloc array */
 		array = (T **) AllocTmp(sizeof(T *) * n(T));
+
+		if (array==NULL)
+		{
+			DDD_PrintError('F', 6061, STR_NOMEM " during XferEnd()");
+			HARD_EXIT;
+		}
 
 		/* fill array with pointer */
 		for(item=list(T), i=0; i<n(T); item=item->sll_next, i++)

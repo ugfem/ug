@@ -1615,7 +1615,6 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	if (nNewCpl>0)
 	{
 		allNewCpl = (TENewCpl *) AllocTmp(sizeof(TENewCpl)*nNewCpl);
-
 		if (allNewCpl==NULL) {
 			DDD_PrintError('E', 6560, STR_NOMEM " in XferUnpack");
 			return;
