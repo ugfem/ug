@@ -195,9 +195,12 @@ struct lgm_point_info {
 struct lgm_mesh_info {
 
   int nBndP;                         /* nb. of boundary points              */
-  DOUBLE **BndPosition;                          /* list of boundary points	            */
+  int *BndP_nSurf;                   /* nb. of surfaces per bound. point    */
+  int **BndP_SurfID;                 /* id of each surface                  */
+  float ***BndP_lcoord;              /* local coord of BndP on each surface */
+  float **BndPosition;                           /* list of boundary points	            */
   int nInnP;                         /* nb. of inner nodes                  */
-  DOUBLE **InnPosition;              /* positions of inner nodes            */
+  float **InnPosition;               /* positions of inner nodes            */
   int nSubDomains;                   /* nb. of subdomains                   */
   int *nSides;                       /* nb. of boundary sides per subdomain */
   int **Side_corners;                /* nb. of side corners                 */

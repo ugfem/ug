@@ -158,7 +158,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
 
   /* set transfer functions */
   p = filename + strlen(filename) - 4;
-  if (strcmp(p,".lgm")==0)
+  if (strcmp(p,".lgm")==0 || 1)
   {
     ReadDomain              = LGM_ReadDomain;
     ReadSizes               = LGM_ReadSizes;
