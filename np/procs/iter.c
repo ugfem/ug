@@ -366,6 +366,7 @@ typedef struct
   INT gamma;
   INT nu1;
   INT nu2;
+  INT basenu;
   INT baselevel;
 
   NP_TRANSFER *Transfer;
@@ -1558,6 +1559,8 @@ static INT II_Init (NP_BASE *theNP, INT argc , char **argv)
     np->nu1 = 1;
   if (ReadArgvINT("n2",&(np->nu2),argc,argv))
     np->nu2 = 1;
+  if (ReadArgvINT("basen",&(np->basenu),argc,argv))
+    np->basenu = 1;
   if (ReadArgvINT("b",&(np->baselevel),argc,argv))
     np->baselevel = 0;
 
@@ -1584,6 +1587,7 @@ static INT II_Display (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"g",(int)np->gamma);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"n1",(int)np->nu1);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"n2",(int)np->nu2);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"basen",(int)np->basenu);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
 
   if (np->Transfer != NULL)
@@ -1675,35 +1679,28 @@ static INT II_Iter (NP_ITER *theNP, INT level,
   LRESULT lresult;
   INT i;
   DOUBLE eunorm;
+  INT iter = np->nu1;
 
   if (AllocVDFromVD(theMG,level,level,c,&np->t)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(theMG,level,level,c,&np->d)) NP_RETURN(1,result[0]);
   if (dcopy(theMG,level,level,ALL_VECTORS,np->d,b) != NUM_OK)
     NP_RETURN(1,result[0]);
-  for (i=0; i<np->nu1; i++) {
+  if (level == np->baselevel)
+    iter = np->basenu - np->nu2;
+  for (i=0; i<iter; i++) {
     if ((*np->PreSmooth->Iter)(np->PreSmooth,level,np->t,b,A,result))
       REP_ERR_RETURN(1);
     if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
       NP_RETURN(1,result[0]);
-    if (i<np->nu1-1) {
-      if (II_MultiplySchurComplement(theMG,level,c,np->t,result))
-        NP_RETURN(1,result[0]);
-      if (dcopy(theMG,level,level,ALL_VECTORS,b,np->d) != NUM_OK)
-        NP_RETURN(1,result[0]);
-      if (dadd(theMG,level,level,ALL_VECTORS,b,np->t) != NUM_OK)
-        NP_RETURN(1,result[0]);
-    }
+    if (II_MultiplySchurComplement(theMG,level,c,np->t,result))
+      NP_RETURN(1,result[0]);
+    if (dcopy(theMG,level,level,ALL_VECTORS,b,np->d) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (dadd(theMG,level,level,ALL_VECTORS,b,np->t) != NUM_OK)
+      NP_RETURN(1,result[0]);
   }
   if (level > np->baselevel)
   {
-    if (np->nu1 > 0) {
-      if (II_MultiplySchurComplement(theMG,level,c,np->t,result))
-        NP_RETURN(1,result[0]);
-      if (dcopy(theMG,level,level,ALL_VECTORS,b,np->d) != NUM_OK)
-        NP_RETURN(1,result[0]);
-      if (dadd(theMG,level,level,ALL_VECTORS,b,np->t) != NUM_OK)
-        NP_RETURN(1,result[0]);
-    }
     if ((*np->Transfer->RestrictDefect)
           (np->Transfer,level,b,b,A,Factor_One,result))
       REP_ERR_RETURN(1);
@@ -1988,7 +1985,7 @@ static INT ConstructSchurComplement (GRID *theGrid,
       w = FIRSTVECTOR(theGrid);
     }
     else {
-      m = START(v);
+      m = VSTART(v);
       if (m != NULL)
         w = MDEST(m);
       else
@@ -2006,12 +2003,12 @@ static INT ConstructSchurComplement (GRID *theGrid,
         }
         s = MD_MCMPPTR_OF_RT_CT(S,vtype,wtype);
         sval = MVALUEPTR(m,0);
-        for (m0=START(v); m0!=NULL; m0=NEXT(m0)) {
+        for (m0=VSTART(v); m0!=NULL; m0=NEXT(m0)) {
           z = MDEST(m0);
           ztype = VTYPE(z);
           zncomp = MD_COLS_IN_RT_CT(puA,vtype,ztype);
           if (zncomp == 0) continue;
-          for (m1=START(w); m1!=NULL; m1=NEXT(m1))
+          for (m1=VSTART(w); m1!=NULL; m1=NEXT(m1))
             if (MDEST(m1) == z) break;
           if (m1 == NULL) continue;
           ASSERT(zncomp == MD_COLS_IN_RT_CT(uuA,ztype,ztype));
@@ -2058,7 +2055,7 @@ static INT ConstructDiagSchurComplement (GRID *theGrid,
                                          MATDATA_DESC *upA,
                                          MATDATA_DESC *puA,
                                          MATDATA_DESC *ppA,
-                                         MATDATA_DESC *S, INT extra)
+                                         MATDATA_DESC *S)
 {
   VECTOR *v;
 
@@ -2077,7 +2074,7 @@ static INT ConstructDiagSchurComplement (GRID *theGrid,
       DOUBLE *sval = MVALUEPTR(VSTART(v),0);
       MATRIX *m;
 
-      for (m=START(v); m!=NULL; m=NEXT(m))
+      for (m=VSTART(v); m!=NULL; m=NEXT(m))
       {
         INT wtype = MDESTTYPE(m);
         INT wncomp = MD_COLS_IN_RT_CT(puA,vtype,wtype);
@@ -2109,9 +2106,87 @@ static INT ConstructDiagSchurComplement (GRID *theGrid,
                          * InvMat[k*wncomp+l]
                          * upval[up[l*vncomp+j]];
                 }
-              sval[s[i*wncomp+j]] -= sum;
+              sval[s[i*vncomp+j]] -= sum;
             }
         }
+      }
+    }
+  }
+
+  return (0);
+}
+
+static INT ConstructExtraDiagSchurComplement (GRID *theGrid,
+                                              MATDATA_DESC *uuA,
+                                              MATDATA_DESC *upA,
+                                              MATDATA_DESC *puA,
+                                              MATDATA_DESC *ppA,
+                                              MATDATA_DESC *S)
+{
+  VECTOR *w;
+
+  if (dmatcopy(MYMG(theGrid),GLEVEL(theGrid),GLEVEL(theGrid),
+               ALL_VECTORS,S,ppA) != NUM_OK)
+    REP_ERR_RETURN (1);
+
+  for (w=FIRSTVECTOR(theGrid); w!=NULL; w=SUCCVC(w))
+  {
+    INT wtype = VTYPE(w);
+    INT wncomp = MD_ROWS_IN_RT_CT(uuA,wtype,wtype);
+    DOUBLE InvMat[MAX_SINGLE_MAT_COMP];
+    INT i,j,k,l;
+    MATRIX *m0;
+
+    if (wncomp == 0) continue;
+
+    if (InvertSmallBlock(wncomp,
+                         MD_MCMPPTR_OF_RT_CT(uuA,wtype,wtype),
+                         MVALUEPTR(VSTART(w),0),InvMat)) {
+      for (i=0; i<wncomp*wncomp; i++) InvMat[i] = 0.0;
+      for (i=0; i<wncomp; i++) InvMat[i*wncomp+i] = 1.0;
+    }
+    for (m0=VSTART(w); m0!=NULL; m0=NEXT(m0))
+    {
+      VECTOR *v = MDEST(m0);
+      INT vtype = VTYPE(v);
+      INT vncomp = MD_ROWS_IN_RT_CT(puA,vtype,wtype);
+      SHORT *pu = MD_MCMPPTR_OF_RT_CT(puA,vtype,wtype);
+      DOUBLE *puval = MVALUEPTR(MADJ(m0),0);
+      MATRIX *m1;
+
+      if (vncomp == 0) continue;
+
+      for (m1=VSTART(w); m1!=NULL; m1=NEXT(m1))
+      {
+        VECTOR *z = MDEST(m1);
+        INT ztype = VTYPE(z);
+        INT zncomp = MD_COLS_IN_RT_CT(upA,wtype,ztype);
+        SHORT *up = MD_MCMPPTR_OF_RT_CT(upA,wtype,ztype);
+        DOUBLE *upval = MVALUEPTR(m1,0);
+        SHORT *s = MD_MCMPPTR_OF_RT_CT(S,vtype,ztype);
+        DOUBLE *sval;
+        MATRIX *m = GetMatrix(v,z);
+
+        if (zncomp == 0) continue;
+        if (m == NULL) {
+          m = CreateExtraConnection(theGrid,v,z);
+          ASSERT(m != NULL);
+        }
+        sval = MVALUEPTR(m,0);
+
+        for (i=0; i<vncomp; i++)
+          for (j=0; j<zncomp; j++)
+          {
+            DOUBLE sum = 0.0;
+
+            for (k=0; k<wncomp; k++)
+              for (l=0; l<wncomp; l++) {
+                sum += puval[pu[i*wncomp+k]]
+                       * InvMat[k*wncomp+l]
+                       * upval[up[l*zncomp+j]];
+              }
+            sval[s[i*zncomp+j]] -= sum;
+          }
       }
     }
   }
@@ -2161,9 +2236,18 @@ static INT TSPreProcess  (NP_ITER *theNP, INT level,
       NP_RETURN(1,result[0]); */
 
   if (np->diag) {
-    if (ConstructDiagSchurComplement(theGrid,np->L,np->upA,np->puA,np->ppA,
-                                     np->S,np->extra))
-      NP_RETURN(1,result[0]);
+    if (np->extra) {
+      if (ConstructExtraDiagSchurComplement(theGrid,np->L,
+                                            np->upA,np->puA,np->ppA,
+                                            np->S))
+        NP_RETURN(1,result[0]);
+    }
+    else {
+      if (ConstructDiagSchurComplement(theGrid,np->L,
+                                       np->upA,np->puA,np->ppA,
+                                       np->S))
+        NP_RETURN(1,result[0]);
+    }
   }
   else {
     if (ConstructSchurComplement(theGrid,np->L,np->upA,np->puA,np->ppA,
