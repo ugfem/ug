@@ -18385,7 +18385,7 @@ static INT EW_PreProcess_EScalar3D (PICTURE *thePicture, WORK *theWork)
 		}
 	
 	/* do not plot if cut plane is on the back */
-	if (!CUT_CutAtFront) return (1);
+	if (!CUT_CutAtFront || !CUT_CutExisting) return (1);
 	
 	EScalar3D_EvalFct	 = theEspo->EvalFct->EvalProc;
 	EScalar3D_V2C_factor = (theOD->spectrumEnd - theOD->spectrumStart)/(theEspo->max - theEspo->min);

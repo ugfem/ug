@@ -1990,6 +1990,7 @@ INT DisplayViewOfViewedObject (const PICTURE *thePicture)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"Dim","TYPE_3D");
     UserWriteF(DISPLAY_PO_FORMAT_SFFF,"Observer",(float)(VO_VP(PIC_VO(thePicture))[0]),(float)(VO_VP(PIC_VO(thePicture))[1]),(float)(VO_VP(PIC_VO(thePicture))[2]));
     UserWriteF(DISPLAY_PO_FORMAT_SFFF,"Target",(float)(VO_VT(PIC_VO(thePicture))[0]),(float)(VO_VT(PIC_VO(thePicture))[1]),(float)(VO_VT(PIC_VO(thePicture))[2]));
+    UserWriteF(DISPLAY_PO_FORMAT_SFFF,"PlaneXDir",(float)(VO_PXD(PIC_VO(thePicture))[0]),(float)(VO_PXD(PIC_VO(thePicture))[1]),(float)(VO_PXD(PIC_VO(thePicture))[2]));
     V3_EUKLIDNORM(VO_PXD(PIC_VO(thePicture)),width)
     width *= 2.0;
     UserWriteF(DISPLAY_PO_FORMAT_SF,"WinWidth",(float)width);
