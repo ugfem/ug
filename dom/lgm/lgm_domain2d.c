@@ -977,6 +977,27 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   return(0);
 }
 
+INT BNDP_SaveBndP_Ext (BNDP *aBndP)
+{
+  INT i;
+  LGM_BNDP *theBndP;
+  int n;
+  double d;
+
+  theBndP = BNDP2LGM(aBndP);
+  n = LGM_BNDP_N(theBndP);
+  if (Bio_Write_mint(1,&n)) return (1);
+  for (i=0; i<LGM_BNDP_N(theBndP); i++)
+  {
+    n = (int)LGM_BNDP_LINE(theBndP,i);
+    if (Bio_Write_mint(1,&n)) return (1);
+    d = LGM_BNDP_LOCAL(theBndP,i);
+    if (Bio_Write_mdouble(1,&d)) return (1);
+  }
+
+  return(0);
+}
+
 /* domain interface function: for description see domain.h */
 BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
@@ -998,6 +1019,27 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
     if (theLine==NULL) return (NULL);
     if (Bio_Read_mdouble(1,&local)) return (NULL);
     LGM_BNDP_LINE(theBndP,i) = theLine;
+    LGM_BNDP_LOCAL(theBndP,i) = local;
+  }
+
+  return((BNDP *)theBndP);
+}
+
+BNDP *BNDP_LoadBndP_Ext (void)
+{
+  LGM_LINE *theLine;
+  int i,n,id;
+  double local;
+  LGM_BNDP *theBndP;
+
+  if (Bio_Read_mint(1,&n)) return (NULL);
+  theBndP = (LGM_BNDP *)malloc(sizeof(LGM_BNDP)+(n-1)*sizeof(LGM_BNDP_PLINE));
+  LGM_BNDP_N(theBndP) = n;
+  for (i=0; i<n; i++)
+  {
+    if (Bio_Read_mint(1,&id)) return (NULL);
+    if (Bio_Read_mdouble(1,&local)) return (NULL);
+    LGM_BNDP_LINE(theBndP,i) = (LGM_LINE*)id;
     LGM_BNDP_LOCAL(theBndP,i) = local;
   }
 

@@ -6010,6 +6010,57 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   return(0);
 }
 
+INT BNDP_SaveBndP_Ext (BNDP *aBndP)
+{
+  INT i;
+  LGM_BNDP *theBndP;
+  int n;
+  double d[3], e, *global;
+
+  theBndP = BNDP2LGM(aBndP);
+  /* the lines */
+  n = LGM_BNDP_NLINE(theBndP);
+  if (Bio_Write_mint(1,&n)) return (1);
+  n = LGM_BNDP_N(theBndP);
+  if (Bio_Write_mint(1,&n)) return (1);
+
+  /* the lines */
+  for (i=0; i<LGM_BNDP_NLINE(theBndP); i++)
+  {
+    n = (int)LGM_BNDP_LINE(theBndP,i);
+    if (Bio_Write_mint(1,&n)) return (1);
+                #ifdef NO_PROJECT
+    global =  LGM_BNDP_LINE_GLOBALLEFT(theBndP,i);
+    if (Bio_Write_mdouble(3,global)) return (1);
+    global =  LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i);
+    if (Bio_Write_mdouble(3,global)) return (1);
+                #else
+    e = LGM_BNDP_LINE_LEFT(theBndP,i);
+    if (Bio_Write_mdouble(1,&e)) return (1);
+    e = LGM_BNDP_LINE_RIGHT(theBndP,i);
+    if (Bio_Write_mdouble(1,&e)) return (1);
+                #endif
+  }
+
+  /* the surfaces */
+  for (i=0; i<LGM_BNDP_N(theBndP); i++)
+  {
+    n = (int)LGM_BNDP_SURFACE(theBndP,i);
+    if (Bio_Write_mint(1,&n)) return (1);
+                #ifdef NO_PROJECT
+    d[0] = LGM_BNDP_GLOBAL(theBndP,i)[0];
+    d[1] = LGM_BNDP_GLOBAL(theBndP,i)[1];
+    d[2] = LGM_BNDP_GLOBAL(theBndP,i)[2];
+    if (Bio_Write_mdouble(3,d)) return (1);
+                #else
+    d[0] = LGM_BNDP_LOCAL(theBndP,i)[0];
+    d[1] = LGM_BNDP_LOCAL(theBndP,i)[1];
+    if (Bio_Write_mdouble(2,d)) return (1);
+                #endif
+  }
+  return(0);
+}
+
 /* domain interface function: for description see domain.h */
 BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
@@ -6076,6 +6127,67 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
                 #else
     if (Bio_Read_mdouble(2,local)) return (NULL);
     LGM_BNDP_SURFACE(theBndP,i) = theSurface;
+    LGM_BNDP_LOCAL(theBndP,i)[0] = local[0];
+    LGM_BNDP_LOCAL(theBndP,i)[1] = local[1];
+                #endif
+  }
+
+  return((BNDP *)theBndP);
+}
+
+BNDP *BNDP_LoadBndP_Ext (void)
+{
+  int i,id, nline, nsurf;
+  double local[2], global[3], left, right;
+  LGM_BNDP *theBndP;
+
+  if (Bio_Read_mint(1,&nline)) return (NULL);
+  if (Bio_Read_mint(1,&nsurf)) return (NULL);
+
+  theBndP = (LGM_BNDP*)malloc(sizeof(LGM_BNDP));
+  if(nline>0)
+    theBndP->Line = (LGM_BNDP_PLINE*)malloc(nline*sizeof(LGM_BNDP_PLINE));
+  else
+    theBndP->Line = NULL;
+  LGM_BNDP_NLINE(theBndP) = nline;
+
+  theBndP->Surf = (LGM_BNDP_PSURFACE*)malloc(nsurf*sizeof(LGM_BNDP_PSURFACE));
+  LGM_BNDP_N(theBndP) = nsurf;
+
+  for (i=0; i<nline; i++)
+  {
+    if (Bio_Read_mint(1,&id)) return (NULL);
+                #ifdef NO_PROJECT
+    if (Bio_Read_mdouble(3,global)) return (NULL);
+    LGM_BNDP_LINE_GLOBALLEFT(theBndP,i)[0] = global[0];
+    LGM_BNDP_LINE_GLOBALLEFT(theBndP,i)[1] = global[1];
+    LGM_BNDP_LINE_GLOBALLEFT(theBndP,i)[2] = global[2];
+    if (Bio_Read_mdouble(3,global)) return (NULL);
+    LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i)[0] = global[0];
+    LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i)[1] = global[1];
+    LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i)[2] = global[2];
+    LGM_BNDP_LINE(theBndP,i) = (LGM_LINE*)id;
+                #else
+    if (Bio_Read_mdouble(1,&left)) return (NULL);
+    if (Bio_Read_mdouble(1,&right)) return (NULL);
+    LGM_BNDP_LINE(theBndP,i) = (LGM_LINE*)id;
+    LGM_BNDP_LINE_LEFT(theBndP,i) = left;
+    LGM_BNDP_LINE_RIGHT(theBndP,i) = right;
+                #endif
+  }
+
+  for (i=0; i<nsurf; i++)
+  {
+    if (Bio_Read_mint(1,&id)) return (NULL);
+                #ifdef NO_PROJECT
+    if (Bio_Read_mdouble(3,global)) return (NULL);
+    LGM_BNDP_SURFACE(theBndP,i) = (LGM_SURFACE*)id;
+    LGM_BNDP_GLOBAL(theBndP,i)[0] = global[0];
+    LGM_BNDP_GLOBAL(theBndP,i)[1] = global[1];
+    LGM_BNDP_GLOBAL(theBndP,i)[2] = global[2];
+                #else
+    if (Bio_Read_mdouble(2,local)) return (NULL);
+    LGM_BNDP_SURFACE(theBndP,i) = (LGM_SURFACE*)id;
     LGM_BNDP_LOCAL(theBndP,i)[0] = local[0];
     LGM_BNDP_LOCAL(theBndP,i)[1] = local[1];
                 #endif
