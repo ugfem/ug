@@ -3433,8 +3433,9 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE global[DIM],*local;
+  DOUBLE global[DOM_PARAM_OFFSET],*local;
   INT ilocal=0;
+  INT id1, id2;
 
   /* general */
   theBndP = BNDP2LGM(aBndP);
@@ -3450,18 +3451,25 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   local = LGM_BNDP_LOCAL(theBndP,i);
   Surface_Local2Global (theSurface,global,local);
 
+  id1 = LGM_SURFACE_LEFT(theSurface);
+  id2 = LGM_SURFACE_RIGHT(theSurface);
+
   /* get values */
   if (in!=NULL)
   {
     in[0] = global[0];
     in[1] = global[1];
     in[2] = global[2];
+    in[DIM] = MAX(id1,id2);
     if ((*LGM_SURFACE_BNDCOND (theSurface))(in,value,type))
       return (1);
   }
   else
-  if ((*LGM_SURFACE_BNDCOND (theSurface))(global,value,type))
-    return (1);
+  {
+    global[DIM] = MAX(id1,id2);
+    if ((*LGM_SURFACE_BNDCOND (theSurface))(global,value,type))
+      return (1);
+  }
 
   return (0);
 }
@@ -3786,10 +3794,11 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
 {
   LGM_BNDS *theBndS;
   LGM_SURFACE *theSurface;
-  DOUBLE global[DIM+1];
+  DOUBLE global[DOM_PARAM_OFFSET];
   DOUBLE global0[3],global1[3],global2[3],new_global[3];
   DOUBLE bnds_local[2],new_local[2];
   DOUBLE loc0[2],loc1[2],loc2[2],loc[2];
+  INT id1, id2;
 
   theBndS = BNDS2LGM(aBndS);
   theSurface = LGM_BNDS_SURFACE(theBndS);
@@ -3816,17 +3825,24 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   if (BNDS_Global(aBndS,loc,new_global))
     return (1);
 
+  id1 = LGM_SURFACE_LEFT(theSurface);
+  id2 = LGM_SURFACE_RIGHT(theSurface);
+
   if (in!=NULL)
   {
     in[0] = new_global[0];
     in[1] = new_global[1];
     in[2] = new_global[2];
+    in[DIM] = MAX(id1,id2);
     if ((*LGM_SURFACE_BNDCOND (theSurface))(in,value,type))
       return (1);
   }
   else
-  if ((*LGM_SURFACE_BNDCOND (theSurface))(new_global,value,type))
-    return (1);
+  {
+    global[DIM] = MAX(id1,id2);
+    if ((*LGM_SURFACE_BNDCOND (theSurface))(new_global,value,type))
+      return (1);
+  }
 
   return (0);
 }

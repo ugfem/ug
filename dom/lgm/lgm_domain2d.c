@@ -821,13 +821,12 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   LGM_BNDP *theBndP;
   DOUBLE slocal;
   INT ilocal=0;
-  DOUBLE global[DIM];
+  DOUBLE global[DOM_PARAM_OFFSET];
+  INT id1, id2;
 
   /* general */
   theBndP = BNDP2LGM(aBndP);
   *n = LGM_BNDP_N(theBndP);
-  if (i<0 || i>=LGM_BNDP_N(theBndP))
-    ilocal = ilocal;
   assert(i>=0 && i<LGM_BNDP_N(theBndP));
   theLine = LGM_BNDP_LINE(theBndP,i);
   if (LGM_LINE_BNDCOND(theLine)==NULL) return (2);
@@ -835,8 +834,6 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   /* global coordinates */
   ilocal = floor(LGM_BNDP_LOCAL(theBndP,i));
   slocal = LGM_BNDP_LOCAL(theBndP,i)-ilocal;
-  if (ilocal>=LGM_LINE_NPOINT(theLine) || ilocal<0)
-    ilocal = ilocal;
   assert(slocal>=0.0);
   assert(ilocal<LGM_LINE_NPOINT(theLine) && ilocal>=0);
   if (ilocal<LGM_LINE_NPOINT(theLine)-1)
@@ -851,15 +848,22 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
     global[1] = LGM_POINT_POS(LGM_LINE_POINT(theLine,ilocal))[1];
   }
 
+  id1 = LGM_LINE_LEFT(theLine);
+  id2 = LGM_LINE_RIGHT(theLine);
+
   /* get values */
   if (in!=NULL)
   {
     in[0] = global[0];
     in[1] = global[1];
+    in[DIM] = MAX(id1,id2);
     if ((*LGM_LINE_BNDCOND (theLine))(in,value,type)) return (1);
   }
   else
-  if ((*LGM_LINE_BNDCOND (theLine))(global,value,type)) return (1);
+  {
+    global[DIM] = MAX(id1,id2);
+    if ((*LGM_LINE_BNDCOND (theLine))(global,value,type)) return (1);
+  }
 
   return (0);
 }
@@ -1066,20 +1070,29 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
 {
   LGM_BNDS *theBndS;
   LGM_LINE *theLine;
-  DOUBLE global[DIM+1];
+  DOUBLE global[DOM_PARAM_OFFSET+1];
+  INT id1, id2;
 
   theBndS = BNDS2LGM(aBndS);
   theLine = LGM_BNDS_LINE(theBndS);
   if (LGM_LINE_BNDCOND(theLine)==NULL) return (2);
   if (BNDS_Global(aBndS,local,global)) return (1);
+
+  id1 = LGM_LINE_LEFT(theLine);
+  id2 = LGM_LINE_RIGHT(theLine);
+
   if (in!=NULL)
   {
     in[0] = global[0];
     in[1] = global[1];
+    in[DIM] = MAX(id1,id2);
     if ((*LGM_LINE_BNDCOND (theLine))(in,value,type)) return (1);
   }
   else
-  if ((*LGM_LINE_BNDCOND (theLine))(global,value,type)) return (1);
+  {
+    global[DIM] = MAX(id1,id2);
+    if ((*LGM_LINE_BNDCOND (theLine))(global,value,type)) return (1);
+  }
 
   return (0);
 }
