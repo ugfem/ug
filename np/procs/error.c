@@ -555,7 +555,7 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
   else {
     if (VDsubDescFromVT(x,np->vt,np->sub,&y))
       NP_RETURN(1,eresult->error_code);
-    if (VD_NCOMP_IN_TYPE(y,NODEVEC) < 1)
+    if (VD_NCMPS_IN_TYPE(y,NODEVEC) < 1)
       NP_RETURN(1,eresult->error_code);
     ElementIndicator = ElementIndicator_minmax;
   }
