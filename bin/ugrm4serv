@@ -1,5 +1,5 @@
 #!/bin/sh
-if test $# -ge 1 -o "$1" = "-help"
+if test "$1" = "-help"
 then
     echo "usage: `basename $0` -help";
     echo "purpose: remove all files and directories not";
@@ -48,4 +48,27 @@ fi
 
 cd ${UGROOT}/bin;
 rm -f ugmakeref ugrm4serv ugmaketrees ugmakelatex ugtex ugmakelatexrefs;
-rm -f ugprep4serv ugmakeman ugrecurse;
+rm -f ugprep4serv ugmakeman ugrecurse ugsetcvsaccess;
+
+if test $# -ge 1 -o "$1" = "-help"
+then
+	cd ${UGROOT}/doc
+	gzip applmanual.ps
+	gzip progmanual.ps
+	gzip refmanual.ps
+	cd ${UGROOT}
+	cd ..
+	cd ..
+	mkdir $1
+	cd $1
+	mv ../ug31/ug/gm/gm.h .
+	mv ../ug31/ug/gm/gg3/netgen/meshing/ruler3.cc .
+	cp ../ug31/ug/doc/applmanual.ps.gz .
+	cp ../ug31/ug/doc/progmanual.ps.gz .
+	cp ../ug31/ug/doc/refmanual.ps.gz .
+	mv ../ug31 $1
+	tar cf $1.tar $1
+	gzip $1.tar
+	mv $1 ../ug31
+    cd ..
+fi
