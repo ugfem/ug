@@ -113,9 +113,8 @@
 
 /* TODO: delete next line */
 /* #define GET_PATTERN(e)				((SIDEPATTERN(e)<<EDGEPATTERN_LEN) | EDGEPATTERN(e)) */
-#define EDGEPATTERN_LEN                 6
 #define EDGE_IN_PATTERN(p,i)            (((p)[(i)]) & 0x1)
-#define SIDE_IN_PATTERN(p,i)            (((p)[EDGEPATTERN_LEN+(i)]) & 0x1)
+#define SIDE_IN_PATTERN(e,p,i)          (((p)[EDGES_OF_ELEM(e)+(i)]) & 0x1)
 #define EDGE_IN_PAT(p,i)                        (((p)>>(i)) & 0x1)
 #define SIDE_IN_PAT(p,i)                        (((p)>>(i)) & 0x1)
 
@@ -125,7 +124,7 @@
 #define IS_REFINED(e)                   (REFINE(theElement)!=NO_REFINEMENT)
 #define IS_TO_REFINE(e)                 (MARK(theElement)!=NO_REFINEMENT)
 
-#define NEWGREEN(e)                             (TAG(e)==HEXAHEDRON || TAG(e)==PYRAMID)
+#define NEWGREEN(e)                             (TAG(e)==HEXAHEDRON || TAG(e)== PRISM || TAG(e)==PYRAMID)
 
 /* TODO: delete special debug */
 static ELEMENT *debugelem=NULL;
@@ -415,7 +414,7 @@ static int CloseGrid (GRID *theGrid)
         if (CORNERS_OF_SIDE(theElement,i)==4)
         {
           /* set SIDEPATTERN if side has node */
-          if(SIDE_IN_PATTERN(myPattern,i))
+          if(SIDE_IN_PATTERN(theElement,myPattern,i))
             SETSIDEPATTERN(theElement,SIDEPATTERN(theElement) | 1<<i);
         }
       }
@@ -481,7 +480,9 @@ FIFOSTART:
       switch (CORNERS_OF_SIDE(theElement,i))
       {
       case 3 :
-        if (TAG(theElement) == PYRAMID) continue;
+        if (TAG(theElement) == PYRAMID ||
+            TAG(theElement) == PRISM )
+          continue;
 
         /* because SIDEPATTERN is set to zero, I choose TriSectionEdgeŠŠ[0] */
         MyEdgeNum = TriSectionEdge[MyEdgePattern&CondensedEdgeOfSide[i]][0];
@@ -521,7 +522,9 @@ FIFOSTART:
             SETSIDEPATTERN(NbElement,NbSidePattern);
           }
           break;
-        case PYRAMID : {
+        case PYRAMID :
+        case PRISM :
+        {
           NODE *edgenode=NULL;
           INT trisectionedge=-1;
 
@@ -980,11 +983,13 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
     for (SonID=0; SonID<NSONS(theElement); SonID++)
       SonList[SonID] = SON(theElement,SonID);
     break;
+
   case (QUADRILATERAL) :
     for (SonID=0; SonID<NSONS(theElement); SonID++)
       SonList[SonID] = SON(theElement,SonID);
     break;
                 #endif
+
                 #ifdef __THREEDIM__
   case (TETRAHEDRON) :
     SonList[0] = SON(theElement,0);
@@ -1003,15 +1008,9 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
       SonList[SonID] = theSon;
     }
     break;
+
   case (PYRAMID) :
-  /* TODO: delete this
-     IFDEBUG(gm,0)
-     if (REFINECLASS(theElement)==GREEN_CLASS || REFINECLASS(theElement)==RED_CLASS)
-          UserWriteF("GetSons(): ERROR PYRAMID has REFINECLASS=%d and MARK=%d\n",REFINECLASS(theElement),MARK(theElement));
-     ENDDEBUG
-     SonList[0] = SON(theElement,0);
-     break;
-   */
+  case (PRISM) :
   case (HEXAHEDRON) :
     SonList[0] = SON(theElement,0);
 
@@ -1047,6 +1046,7 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
     }
     break;
                 #endif
+
   default :
     UserWriteF("GetSons(): ERROR TAG(e=%x)=%d !\n",theElement,tag=TAG(theElement));
     RETURN(GM_ERROR);
@@ -1122,6 +1122,9 @@ static INT RestrictMarks (GRID *theGrid)
               case PYRAMID :
                 SETMARK(theElement,PYR_RED);
                 break;
+              case PRISM :
+                SETMARK(theElement,PRI_RED);
+                break;
               case HEXAHEDRON :
                 SETMARK(theElement,HEXA_RED);
                 break;
@@ -1175,6 +1178,9 @@ static INT RestrictMarks (GRID *theGrid)
                 break;
               case PYRAMID :
                 SETMARK(theElement,PYR_RED);
+                break;
+              case PRISM :
+                SETMARK(theElement,PRI_RED);
                 break;
               case HEXAHEDRON :
                 SETMARK(theElement,HEXA_RED);
@@ -1519,7 +1525,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 
       theNeighbor = NBELEM(theElement,i);
 
-      IFDEBUG(gm,0)
+      IFDEBUG(gm,1)
       if (theNeighbor != NULL) {
         IFDEBUG(gm,3)
         UserWriteF("    ID(theNeighbor)=%d nbadr=%x:\n",ID(theNeighbor),
