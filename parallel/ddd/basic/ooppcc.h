@@ -637,7 +637,7 @@ static ClassPtr Method(Split)  (ParamThis,
 }
 
 
-static Method(FreeIndex)  (ParamThis, int idx)
+static void Method(FreeIndex)  (ParamThis, int idx)
 {
   int j, n=This->nSons;
 
