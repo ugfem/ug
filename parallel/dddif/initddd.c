@@ -868,14 +868,14 @@ void InitCurrMG (MULTIGRID *MG)
 /****************************************************************************/
 
 
-int InitParallel (int *argc, char ***argv)
+int InitParallel (void)
 {
   int i;
 
   memmgr_Init();
 
   /* init DDD and set options */
-  DDD_Init(argc, argv);
+  DDD_Init(NULL,NULL);
 
   /* we are using varsized DDD objects, turn warnings off */
   DDD_SetOption(OPT_WARNING_VARSIZE_OBJ, OPT_OFF);
