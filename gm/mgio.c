@@ -486,8 +486,13 @@ int     Write_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
 
 int     Read_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 {
-  if (Bio_Read_mint(1,intList)) return (1);
-  mgio_rr_general->nRules = intList[0];
+  int i,s;
+
+  if (Bio_Read_mint(1+MGIO_TAGS,intList)) return (1);
+  s=0;
+  mgio_rr_general->nRules = intList[s++];
+  for (i=0; i<MGIO_TAGS; i++)
+    mgio_rr_general->RefRuleOffset[i] = intList[s++];
 
   return (0);
 }
@@ -516,8 +521,13 @@ int     Read_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 
 int     Write_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 {
-  intList[0] = mgio_rr_general->nRules;
-  if (Bio_Write_mint(1,intList)) return (1);
+  int i,s;
+
+  s=0;
+  intList[s++] = mgio_rr_general->nRules;
+  for (i=0; i<MGIO_TAGS; i++)
+    intList[s++] = mgio_rr_general->RefRuleOffset[i];
+  if (Bio_Write_mint(s,intList)) return (1);
 
   return (0);
 }

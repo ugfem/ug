@@ -156,6 +156,7 @@ struct mgio_ge_element {
 struct mgio_rr_general {
 
   int nRules;                                                                           /* nb of rules used							*/
+  int RefRuleOffset[MGIO_TAGS];                                 /* offsets used in ug						*/
 };
 
 struct mgio_sondata {
