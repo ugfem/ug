@@ -75,6 +75,12 @@
 #define COUNTVERTEX             NV
 #define COUNTVECTOR             NVEC
 
+/* define Object COUNTER macros for priorities */
+#define PRIOCOUNTELEMENT        NT_PRIO
+#define PRIOCOUNTNODE           NN_PRIO
+#define PRIOCOUNTVERTEX         NV_PRIO
+#define PRIOCOUNTVECTOR         NVEC_PRIO
+
 /* define header prototypes */
 #define UNLINK(OTYPE)    void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
 #define LINK(OTYPE)      void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
