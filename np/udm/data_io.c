@@ -314,11 +314,10 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   /* read general information */
   if (strcmp(dio_general.version,DIO_VERSION)!=0)                 {CloseDTFile(); UserWrite("ERROR: wrong version\n"); return (1);}
   if (dio_general.magic_cookie != MG_MAGIC_COOKIE(theMG)) {CloseDTFile(); UserWrite("m-c-error"); return (1);}
-  if (dio_general.nVD != n)                                                               {CloseDTFile(); UserWrite("ERROR: wrong nb of VectorData\n"); return (1);}
   ncomp = 0;
-  for (i=0; i<n; i++)
+  for (i=0; i<dio_general.nVD; i++)
   {
-    if (theVDList[i]!=NULL)
+    if (i<n && theVDList[i]!=NULL)
       if (dio_general.VDncomp[i] != ncmp[i]) {CloseDTFile(); UserWrite("vd-comp do not match\n"); return (1);}
     ncomp += dio_general.VDncomp[i];
   }
@@ -349,9 +348,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   entry = (INT *)GetTmpMem(theHeap,ncomp*sizeof(INT),MarkKey);
   if (entry==NULL)                                                                                {CloseDTFile(); return (1);}
   s=0;
-  for (i=0; i<n; i++)
+  for (i=0; i<dio_general.nVD; i++)
   {
-    if (theVDList[i]!=NULL)
+    if (i<n && theVDList[i]!=NULL)
     {
       for (j=0; j<dio_general.VDncomp[i]; j++)
         entry[s++] = cp[i][j];
