@@ -1115,7 +1115,6 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
 
   if (vd==NULL) return (NUM_OK);
   if (VM_LOCKED(vd)) return (NUM_OK);
-  dset(theMG,fl,tl,ALL_VECTORS,vd,0.0);
   PRINTDEBUG(np,2,(" FreeVD %s from %d to %d\n",
                    ENVITEM_NAME(vd),fl,tl));
   for (i=fl; i<=tl; i++) {

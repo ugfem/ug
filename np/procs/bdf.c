@@ -127,6 +127,7 @@ INT BDFAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VEC
   {
   case 1 : s_m = 1.0; s_a = -dt_p1; break;
   case 2 : s_m = 1.0; s_a = -dt_p1/g_p1; break;
+  case 3 : s_m = 1.0; s_a = -dt_p1*0.5; break;
   default :
     UserWrite("BDFAssembleDefect: invalid order\n");
     return(1);
@@ -162,6 +163,7 @@ INT BDFAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VEC
   {
   case 1 : s_a = -dt_p1; break;
   case 2 : s_a = -dt_p1/g_p1; break;
+  case 3 : s_a = -dt_p1*0.5; break;
   default :
     UserWrite("BDFAssembleMatrix: invalid order\n");
     return(1);
@@ -194,6 +196,7 @@ INT BDFNAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DE
   {
   case 1 : s_a = -dt_p1; break;
   case 2 : s_a = -dt_p1/g_p1; break;
+  case 3 : s_a = -dt_p1*0.5; break;
   default :
     UserWrite("BDFNAssembleMatrix: invalid order\n");
     return(1);
@@ -472,11 +475,16 @@ static INT BDFTimeStep (NP_T_SOLVER *ts, INT level, INT *res)
           if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,-1.0,0.0,bdf->y_0,bdf->b,NULL,res) )
             REP_ERR_RETURN(1);
         }
-        else
+        if (bdf->order==2)
         {
           if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,g_0/g_p1,0.0,bdf->y_0,bdf->b,NULL,res) )
             REP_ERR_RETURN(1);
           if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_m1,g_m1/g_p1,0.0,bdf->y_m1,bdf->b,NULL,res) )
+            REP_ERR_RETURN(1);
+        }
+        if (bdf->order==3)
+        {
+          if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,-1.0,-0.5*dt_p1,bdf->y_0,bdf->b,NULL,res) )
             REP_ERR_RETURN(1);
         }
 
@@ -488,10 +496,12 @@ static INT BDFTimeStep (NP_T_SOLVER *ts, INT level, INT *res)
           REP_ERR_RETURN(1);
 
         /* update statisitics */
-        bdf->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
-        bdf->total_linear_iterations += nlresult.total_linear_iterations;
-        bdf->max_linear_iterations = MAX(bdf->max_linear_iterations,nlresult.max_linear_iterations);
-        bdf->exec_time += nlresult.exec_time;
+        if (k==level) {
+          bdf->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
+          bdf->total_linear_iterations += nlresult.total_linear_iterations;
+          bdf->max_linear_iterations = MAX(bdf->max_linear_iterations,nlresult.max_linear_iterations);
+          bdf->exec_time += nlresult.exec_time;
+        }
 
         if (nlsolve->PostProcess!=NULL)
           if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
@@ -783,6 +793,7 @@ Continue:
     else if ((!bad) && bdf->dt*bdf->dtscale<=bdf->dtmax && bdf->dt*bdf->dtscale>=bdf->dtmin)
     {
       bdf->dt *= bdf->dtscale;
+      UserWrite("scaling time step\n");
       *res=0;
     }
     if (eresult.step != 0.)
@@ -961,7 +972,7 @@ INT BDFInit (NP_BASE *base, INT argc, char **argv)
     UserWrite("default: order=1\n");
     bdf->order=1;
   }
-  if ((bdf->order<1)||(bdf->order>2)) return(NP_NOT_ACTIVE);
+  if ((bdf->order<1)||(bdf->order>3)) return(NP_NOT_ACTIVE);
 
   if (ReadArgvINT("predictorder",&(bdf->predictorder),argc,argv))
   {
@@ -1217,6 +1228,18 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
       }
   }
 
+  /* execute cn, nonnested */
+  if (ReadArgvOption("cn",argc,argv)) {
+    bdf->order = 3;
+    bdf->nested = 0;
+    if (np->TimeStep != NULL)
+      if ((*np->TimeStep)(np,level,&result)) {
+        UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
+                   result);
+        return (1);
+      }
+  }
+
   /* execute bdf1, nested */
   if (ReadArgvOption("bdf1n",argc,argv)) {
     bdf->order = 1;
@@ -1232,6 +1255,18 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
   /* execute bdf2, nested */
   if (ReadArgvOption("bdf2n",argc,argv)) {
     bdf->order = 2;
+    bdf->nested = 1;
+    if (np->TimeStep != NULL)
+      if ((*np->TimeStep)(np,level,&result)) {
+        UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
+                   result);
+        return (1);
+      }
+  }
+
+  /* execute cn, nested */
+  if (ReadArgvOption("cnn",argc,argv)) {
+    bdf->order = 3;
     bdf->nested = 1;
     if (np->TimeStep != NULL)
       if ((*np->TimeStep)(np,level,&result)) {
