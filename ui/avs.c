@@ -229,6 +229,11 @@ static INT AVS_GlobalSumINT (INT i)
    D*/
 /****************************************************************************/
 
+#ifdef __MWCW__
+#pragma global_optimizer on
+#pragma optimization_level 1
+#endif
+
 static INT AVSCommand (INT argc, char **argv)
 {
   INT i,j,k,v;                                  /* counters etc.							*/
@@ -919,7 +924,9 @@ static INT AVSCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-
+#ifdef __MWCW__
+#pragma global_optimizer off
+#endif
 
 /****************************************************************************/
 /*																			*/
