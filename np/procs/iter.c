@@ -1606,7 +1606,7 @@ static INT SSORPreProcess  (NP_ITER *theNP, INT level,
   {
     if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
     if (SetAutoDamp(theNP,theGrid,np->AutoDamp,myMat,ssor->omega,np->DampVector)) NP_RETURN(1,result[0]);
-    DPrintVector(MYMG(theGrid),np->DampVector);
+    //DPrintVector(MYMG(theGrid),np->DampVector);
   }
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,myMat,result)) NP_RETURN(1,result[0]);
