@@ -272,10 +272,10 @@ INT SaveData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList,
   ELEMENT *theElement;
   const DOUBLE *x[MAX_CORNERS_OF_ELEM];
   DOUBLE value;
-  DOUBLE_VECTOR LocalCoord[MAX_CORNERS_OF_ELEM],vector;
+  DOUBLE_VECTOR vector;
+  char *p;
 #       ifndef __MWCW__
   char sysCom[NAMESIZE];
-  char *p;
   INT zip;
 #       endif
 
