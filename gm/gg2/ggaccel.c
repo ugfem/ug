@@ -1940,29 +1940,22 @@ void AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_suc
 int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 {
   int l;
-  DOMAIN *ilDomeno;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
   INDEPFRONTLIST *edge_theIFL;
   FRONTLIST *edge_theFL;
   FRONTCOMP *edge_theFC;
-
-
 
   myPars = params;
 
   /* Adaption to the Multigrid: */
   MG = MYMG(the_Grid);
   if (MG == NULL) PrintErrorMessage('E',"bnodes","no multigrid received");
+  theBVP = MG_BVP(MG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
 
   InitAccelObjs(MG);
-
-
-  ilDomeno = MG->theDomain;
-
-
   del_edg_fnd = 0;
-
-
-
   startpointer = GetFreeObject( MG, QuObj);
   if ( startpointer == NULL )
   {
@@ -1986,13 +1979,12 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
     {PrintErrorMessage('E',"bnodes","ERROR: No memory !!!");return(1);}
   }
   SETOBJT(source,ScObj);
-  source->x = ilDomeno->MidPoint[0] - ilDomeno->radius;
-  source->y = ilDomeno->MidPoint[1] - ilDomeno->radius;
+  source->x = BVPD_MIDPOINT(theBVPDesc)[0] - BVPD_RADIUS(theBVPDesc);
+  source->y = BVPD_MIDPOINT(theBVPDesc)[1] - BVPD_RADIUS(theBVPDesc);
 
-  startwidth = ilDomeno->radius + ilDomeno->radius;
+  startwidth = 2.0*BVPD_RADIUS(theBVPDesc);
 
   /* for the edge_tree_initialzation */
-
   btree_rootpointer = NULL;
 
   myMGdata = GetMGdataPointer(MYMG(the_Grid));

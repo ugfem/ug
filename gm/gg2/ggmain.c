@@ -87,7 +87,7 @@
 /****************************************************************************/
 
 typedef struct {
-  BNDSEGDESC *theSegdesc;
+  PATCH *thePatch;
   INT used;
   INT mySubdomain;
 } SEGMENTINFO;
@@ -206,7 +206,7 @@ static INT IsPointLeftOfFC (COORD xP,COORD yP, FRONTCOMP *theFC)
   }
 }
 
-static INT CreateBNodeAndVertex (COORD lambda, BNDSEGDESC *theSegdesc, GRID *theGrid)
+static INT CreateBNodeAndVertex (COORD lambda, PATCH *thePatch, GRID *theGrid)
 {
   VERTEX *theVertex;
   NODE *theNode;
@@ -237,8 +237,8 @@ static INT CreateBNodeAndVertex (COORD lambda, BNDSEGDESC *theSegdesc, GRID *the
 
   /* ------- fill data into node/vertex/vseg --------- */
   FIRSTLAMBDA(theVertex)  = lambda;
-  BNDSEGFUNC(theSegdesc) (theSegdesc->theSegment->data,&lambda,CVECT(theVertex));
-  BSEGDESC(theVSeg)       = theSegdesc;
+  Patch_local2global(thePatch,&lambda,CVECT(theVertex));
+  VS_PATCH(theVSeg)       = thePatch;
   INDEX(theNode)          = 0;
   MYVERTEX(theNode)       = theVertex;
   TOPNODE(theVertex)      = theNode;
@@ -287,13 +287,16 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
   GRID *theGrid;
   NODE *theNode;
   VERTEX *theVertex;
-  BNDSEGDESC *theSegdesc;
   CoeffProcPtr nominal_h;
   DOUBLE meshsize,meshsize0,meshsize1;
   COORD pos0[2];
   COORD dist,mindist,arclength;
   COORD myLambda,lambda,bestlambda,maxl,lambda0,lambda1,pt0[2],pt1[2],**lambda_incr,delta;
   COORD x,y;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
   INT i,segid,*npoints,nraster,part,oldpart;
 
   if (    (VIDCNT(theMG) != MGNOOFCORNERS(theMG))
@@ -310,6 +313,8 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
   /**************************************************/
 
   theGrid = GRID_ON_LEVEL(theMG,0);
+  theBVP = MG_BVP(MYMG(theGrid));
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
 
   if (meshsizecoeffno == -1)
   {
@@ -318,42 +323,43 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
   }
   else
   {
-    if (NUMCOEFF(MGPROBLEM(theMG)) < meshsizecoeffno)
+    if (BVPD_NCOEFFF(theBVPDesc) < meshsizecoeffno)
     {
       PrintErrorMessage('E',"GenerateBnodes",
                         "Number of coefficient functions is zero.");
       return(2);
     }
-    nominal_h = COEFFFUNC(MGPROBLEM(theMG),meshsizecoeffno);
+    if (BVP_GetCoeffFct(theBVP,meshsizecoeffno,&nominal_h)) return (1);
   }
 
   /* rasterize boundary segments */
-
-  lambda_incr = (COORD **) GetMem(theMG->theHeap,theMG->numOfSegments*sizeof(COORD*),FROM_TOP);
-  npoints     = (INT *)    GetMem(theMG->theHeap,theMG->numOfSegments*sizeof(INT),FROM_TOP);
+  lambda_incr = (COORD **) GetMem(theMG->theHeap,BVPD_NPATCHES(theBVPDesc)*sizeof(COORD*),FROM_TOP);
+  npoints     = (INT *)    GetMem(theMG->theHeap,BVPD_NPATCHES(theBVPDesc)*sizeof(INT),FROM_TOP);
 
   /* get storage for lambda_incr */
-  for (segid=0; segid<theMG->numOfSegments; segid++)
+  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
   {
-    npoints[segid] = theMG->segments[segid].theSegment->resolution;
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
+    segid = PATCH_ID(thePatchDesc);
+    npoints[segid] = PATCH_RES(thePatchDesc);
     lambda_incr[segid] = (COORD *) GetMem(theMG->theHeap,npoints[segid]*sizeof(COORD),FROM_TOP);
   }
 
   /* calculate lambda_incr */
-  for (segid=0; segid<theMG->numOfSegments; segid++)
+  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
   {
-    theSegdesc = &(theMG->segments[segid]);
-    delta = (BETA(theSegdesc,0) - ALPHA(theSegdesc,0))/((double) npoints[segid]);
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
+    delta = (PATCH_LCVECT(thePatchDesc,1)[0] - PATCH_LCVECT(thePatchDesc,0)[0])/((double) npoints[segid]);
 
     for (i=0; i<npoints[segid]; i++)
     {
-      lambda0 = ALPHA(theSegdesc,0) + i*delta;
-      lambda1 = ALPHA(theSegdesc,0) + (i+1)*delta;
+      lambda0 = PATCH_LCVECT(thePatchDesc,0)[0] + i*delta;
+      lambda1 = PATCH_LCVECT(thePatchDesc,0)[0] + (i+1)*delta;
 
       /* euklidian distance of point i and i+1 */
-      BNDSEGFUNC(theSegdesc) (theSegdesc->theSegment->data,&lambda0,pt0);
+      if (Patch_local2global(thePatch,&lambda0,pt0)) return(1);
       (*nominal_h)(pt0,&meshsize0);
-      BNDSEGFUNC(theSegdesc) (theSegdesc->theSegment->data,&lambda1,pt1);
+      if (Patch_local2global(thePatch,&lambda1,pt1)) return(1);
       (*nominal_h)(pt1,&meshsize1);
       pt1[0] -= pt0[0];
       pt1[1] -= pt0[1];
@@ -368,33 +374,33 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
   }
 
   /* create points with approx. distance nominal_h on the boundary */
-  for (segid=0; segid<theMG->numOfSegments; segid++)
+  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
   {
-    theSegdesc = &(theMG->segments[segid]);
-    delta = (BETA(theSegdesc,0) - ALPHA(theSegdesc,0))/((double) npoints[segid]);
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
+    delta = (PATCH_LCVECT(thePatchDesc,1)[0] - PATCH_LCVECT(thePatchDesc,0)[0])/((double) npoints[segid]);
 
-    theNode = TOPNODE(theMG->corners[POINT(theSegdesc,0)]);
+    theNode = TOPNODE(theMG->corners[PATCH_CID(thePatchDesc,0)]);
     theVertex = MYVERTEX(theNode);
 
     while (TRUE)
     {
       if (MOVE(theVertex) == 0)
-        myLambda = ALPHA(theSegdesc,0);
+        myLambda = PATCH_LCVECT(thePatchDesc,0)[0];
       else
         myLambda = FIRSTLAMBDA(theVertex);
 
       (*nominal_h)(CVECT(theVertex),&meshsize);
 
       /* scan raster for best fitting point */
-      oldpart = part = floor((myLambda-ALPHA(theSegdesc,0))/delta);
-      maxl = BETA(theSegdesc,0);
+      oldpart = part = floor((myLambda-PATCH_LCVECT(thePatchDesc,0)[0])/delta);
+      maxl = PATCH_LCVECT(thePatchDesc,1)[0];
       mindist = MAX_C;
       pt0[0] = pos0[0] = XC(theVertex);
       pt0[1] = pos0[1] = YC(theVertex);
       arclength = 0.0;
       for (i=0, lambda=myLambda+lambda_incr[segid][part]; lambda<maxl; i++, lambda += lambda_incr[segid][part])
       {
-        BNDSEGFUNC(theSegdesc) (theSegdesc->theSegment->data,&lambda,pt1);
+        if (Patch_local2global(thePatch,&lambda,pt1)) return(1);
         x = pt1[0]-pt0[0]; y = pt1[1]-pt0[1];
         arclength += sqrt(x*x+y*y);
         dist = fabs(arclength-meshsize);
@@ -420,11 +426,11 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
         }
         pt0[0] = pt1[0];
         pt0[1] = pt1[1];
-        part = floor((lambda-ALPHA(theSegdesc,0))/delta);
+        part = floor((lambda-PATCH_LCVECT(thePatchDesc,0)[0])/delta);
       }
 
       /* are we done with this segment? */
-      if (bestlambda+1.01*lambda_incr[segid][part] >= BETA(theSegdesc,0))
+      if (bestlambda+1.01*lambda_incr[segid][part] >= PATCH_LCVECT(thePatchDesc,1)[0])
       {
         if (arclength<0.5*meshsize)
           if (MOVE(theVertex))
@@ -435,25 +441,25 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
         break;
       }
 
-      part = floor((bestlambda-ALPHA(theSegdesc,0))/delta);
+      part = floor((bestlambda-PATCH_LCVECT(thePatchDesc,0)[0])/delta);
       if (part>oldpart)
         if (delta*(RelRasterSize)/lambda_incr[segid][oldpart]>2)
         {
           /* place a node at the begin of oldpart+1 */
-          bestlambda = ALPHA(theSegdesc,0) + (oldpart+1)*delta;
-          BNDSEGFUNC(theSegdesc) (theSegdesc->theSegment->data,&bestlambda,pt1);
+          bestlambda = PATCH_LCVECT(thePatchDesc,0)[0] + (oldpart+1)*delta;
+          if (Patch_local2global(thePatch,&bestlambda,pt1)) return(1);
           x = pt1[0]-pos0[0]; y = pt1[1]-pos0[1];
 
           if (sqrt(x*x+y*y)<0.5*meshsize)
           {
             /* just shift last node */
             FIRSTLAMBDA(theVertex) = (COORD) bestlambda;
-            BNDSEGFUNC(theSegdesc) (theSegdesc->theSegment->data,FIRSTPVECT(theVertex),CVECT(theVertex));
+            if (Patch_local2global(thePatch,FIRSTPVECT(theVertex),CVECT(theVertex))) return(1);
             continue;
           }
         }
 
-      if (CreateBNodeAndVertex (bestlambda,theSegdesc,theGrid))
+      if (CreateBNodeAndVertex (bestlambda,thePatch,theGrid))
       {
         return (3);
       }
@@ -562,11 +568,11 @@ static INT TreatSmallHoles (FRONTLIST *theFL, FRONTCOMP *lastFC, SEGMENTINFO *cl
 {
   MULTIGRID *theMG;
   GRID *theGrid;
-  BNDSEGDESC *theSegdesc;
   VERTEX *theVertex;
   FRONTCOMP *theFC;
   COORD lambda;
   INT segnum;
+  PATCH_DESC thePatchDesc[2];
 
   theGrid = MYGRID(theFL);
   theMG   = MYMG(theGrid);
@@ -586,26 +592,26 @@ static INT TreatSmallHoles (FRONTLIST *theFL, FRONTCOMP *lastFC, SEGMENTINFO *cl
   {
     /* this closed subboundary consists of 2 segments and has therefore 2 CornerVertices
        add a node in the middle of the segment with the higher resolution */
-    if (closedbInfo[0].theSegdesc->theSegment->resolution >
-        closedbInfo[1].theSegdesc->theSegment->resolution)
+    if (Patch_GetPatchDesc(closedbInfo[0].thePatch,thePatchDesc)) return(1);
+    if (Patch_GetPatchDesc(closedbInfo[1].thePatch,thePatchDesc+1)) return(1);
+
+    if (PATCH_RES(thePatchDesc[0]) > PATCH_RES(thePatchDesc[1]))
       segnum = 0;
     else
       segnum = 1;
 
-    theSegdesc = closedbInfo[segnum].theSegdesc;
-
-    if (CreateBNodeAndVertex (0.5*(ALPHA(theSegdesc,0)+BETA(theSegdesc,0)),theSegdesc,theGrid))
+    if (CreateBNodeAndVertex (0.5*(PATCH_LCVECT(thePatchDesc[segnum],0)[0]+PATCH_LCVECT(thePatchDesc[segnum],1)[0]),closedbInfo[segnum].thePatch,theGrid))
       return (3);
-    if (LEFT(theSegdesc)==closedbInfo[segnum].mySubdomain)
+    if (PATCH_LEFT(thePatchDesc[segnum])==closedbInfo[segnum].mySubdomain)
     {
-      if (FRONTN(lastFC)==TOPNODE(theMG->corners[POINT(theSegdesc,0)]))
+      if (FRONTN(lastFC)==TOPNODE(theMG->corners[PATCH_CID(thePatchDesc[segnum],0)]))
         theFC = lastFC;
       else
         theFC = SUCCFC(lastFC);
     }
     else
     {
-      if (FRONTN(lastFC)==TOPNODE(theMG->corners[POINT(theSegdesc,1)]))
+      if (FRONTN(lastFC)==TOPNODE(theMG->corners[PATCH_CID(thePatchDesc[segnum],1)]))
         theFC = lastFC;
       else
         theFC = SUCCFC(lastFC);
@@ -620,21 +626,21 @@ static INT TreatSmallHoles (FRONTLIST *theFL, FRONTCOMP *lastFC, SEGMENTINFO *cl
   {
     /* this closed subboundary consists of 1 segment and has therefore 1 CornerVertex */
 
-    theSegdesc = closedbInfo[0].theSegdesc;
+    if (Patch_GetPatchDesc(closedbInfo[0].thePatch,thePatchDesc)) return(1);
 
     if (NFC(theFL)==1)
     {
       /* create nodes at 1/3 and 2/3 */
-      lambda = (2.0*ALPHA(theSegdesc,0) + BETA(theSegdesc,0))/3.0;
-      if (CreateBNodeAndVertex (lambda,theSegdesc,theGrid))
+      lambda = (2.0*PATCH_LCVECT(thePatchDesc[0],0)[0] + PATCH_LCVECT(thePatchDesc[0],1)[0])/3.0;
+      if (CreateBNodeAndVertex (lambda,closedbInfo[0].thePatch,theGrid))
         return (3);
       if ((lastFC=CreateFrontComp (theFL, lastFC, 1, &FIRSTNODE(theGrid)))==NULL)
         return (3);
-      lambda = (ALPHA(theSegdesc,0) + 2.0*BETA(theSegdesc,0))/3.0;
-      if (CreateBNodeAndVertex (lambda,theSegdesc,theGrid))
+      lambda = (PATCH_LCVECT(thePatchDesc[0],0)[0] + 2.0*PATCH_LCVECT(thePatchDesc[0],1)[0])/3.0;
+      if (CreateBNodeAndVertex (lambda,closedbInfo[0].thePatch,theGrid))
         return (3);
 
-      if (LEFT(theSegdesc)==closedbInfo[0].mySubdomain)
+      if (PATCH_LEFT(thePatchDesc[0])==closedbInfo[0].mySubdomain)
         theFC = lastFC;
       else
         theFC = SUCCFC(lastFC);
@@ -652,15 +658,14 @@ static INT TreatSmallHoles (FRONTLIST *theFL, FRONTCOMP *lastFC, SEGMENTINFO *cl
 
 
       theVertex = MYVERTEX(FRONTN(theFC));
-      FIRSTLAMBDA(theVertex) = (2.0*ALPHA(theSegdesc,0) + BETA(theSegdesc,0))/3.0;
-      BNDSEGFUNC(theSegdesc) (theSegdesc->theSegment->data,FIRSTPVECT(theVertex),CVECT(theVertex));
+      FIRSTLAMBDA(theVertex) = (2.0*PATCH_LCVECT(thePatchDesc[0],0)[0] + PATCH_LCVECT(thePatchDesc[0],1)[0])/3.0;
+      if (Patch_local2global(closedbInfo[0].thePatch,FIRSTPVECT(theVertex),CVECT(theVertex))) return(1);
 
-
-      lambda = (ALPHA(theSegdesc,0) + 2.0*BETA(theSegdesc,0))/3.0;
-      if (CreateBNodeAndVertex (lambda,theSegdesc,theGrid))
+      lambda = (PATCH_LCVECT(thePatchDesc[0],0)[0] + 2.0*PATCH_LCVECT(thePatchDesc[0],1)[0])/3.0;
+      if (CreateBNodeAndVertex (lambda,closedbInfo[0].thePatch,theGrid))
         return (3);
 
-      if (LEFT(theSegdesc)!=closedbInfo[0].mySubdomain)
+      if (PATCH_LEFT(thePatchDesc[0])!=closedbInfo[0].mySubdomain)
         theFC = SUCCFC(theFC);
 
       if (CreateFrontComp (theFL, theFC, 1, &FIRSTNODE(theGrid))==NULL)
@@ -721,6 +726,7 @@ static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT
   GRID *theGrid;
   NODE *theNode,**NodeHandle;
   INT i,segnum,nNodes,segID,cornerscomp;
+  PATCH_DESC thePatchDesc;
 
   theGrid = MYGRID(theFL);
   theMG = MYMG(theGrid);
@@ -730,9 +736,10 @@ static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT
   /* find all nodes belonging to this closed boundary */
   for (segnum=0; segnum<nparts; segnum++)
   {
-    segID = SEGID(closedbInfo[segnum].theSegdesc);
+    if (Patch_GetPatchDesc(closedbInfo[segnum].thePatch,&thePatchDesc)) return(1);
+    segID = PATCH_ID(thePatchDesc);
 
-    if (LEFT(closedbInfo[segnum].theSegdesc)==closedbInfo[segnum].mySubdomain)
+    if (PATCH_LEFT(thePatchDesc)==closedbInfo[segnum].mySubdomain)
       myOrientation =  1;
     else
       myOrientation = -1;
@@ -740,7 +747,7 @@ static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT
     /* count nodes on this seg */
     nNodes = 0;
     for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-      if (SEGID(FIRSTSEG(MYVERTEX(theNode)))==segID && MOVE(MYVERTEX(theNode)) != 0)
+      if (Patch_GetPatchID(FIRSTPATCH(MYVERTEX(theNode)))==segID && MOVE(MYVERTEX(theNode)) != 0)
         nNodes++;
 
     if (nNodes>0)
@@ -754,7 +761,7 @@ static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT
       }
 
       for (i=0, theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-        if (SEGID(FIRSTSEG(MYVERTEX(theNode)))==segID && MOVE(MYVERTEX(theNode)) != 0)
+        if (Patch_GetPatchID(FIRSTPATCH(MYVERTEX(theNode)))==segID && MOVE(MYVERTEX(theNode)) != 0)
           NodeHandle[i++] = theNode;
 
       qsort(NodeHandle,nNodes,sizeof(NODE *),(INT (*)(const void *, const void *))LambdaCompare);
@@ -769,9 +776,9 @@ static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT
 
     /* append last node of this segment (corner vertex) to the list */
     if (myOrientation == 1)
-      cornerscomp = POINT(closedbInfo[segnum].theSegdesc,1);
+      cornerscomp = PATCH_CID(thePatchDesc,1);
     else
-      cornerscomp = POINT(closedbInfo[segnum].theSegdesc,0);
+      cornerscomp = PATCH_CID(thePatchDesc,0);
 
     theNode = TOPNODE(theMG->corners[cornerscomp]);
 
@@ -817,6 +824,7 @@ static INT HandleSubdomain (INDEPFRONTLIST *theIFL, SEGMENTINFO *segInfo, INT nS
   SEGMENTINFO *closedbInfo;
   FRONTLIST *theFL;
   INT i,SegLeft,old,start,nparts;
+  PATCH_DESC thePatchDesc;
 
   theMG = MYMG(MYGRID(theIFL));
 
@@ -846,35 +854,39 @@ static INT HandleSubdomain (INDEPFRONTLIST *theIFL, SEGMENTINFO *segInfo, INT nS
     nparts = 1;
 
     /* find subsequent segments (in the correct sense) until the boundary closes */
-    if (LEFT(segInfo[i].theSegdesc)==segInfo[i].mySubdomain)
+    if (Patch_GetPatchDesc(segInfo[i].thePatch,&thePatchDesc)) return(1);
+    if (PATCH_LEFT(thePatchDesc)==segInfo[i].mySubdomain)
     {
-      start = POINT(segInfo[i].theSegdesc,0);
-      old   = POINT(segInfo[i].theSegdesc,1);
+      start = PATCH_CID(thePatchDesc,0);
+      old   = PATCH_CID(thePatchDesc,1);
     }
     else
     {
-      start = POINT(segInfo[i].theSegdesc,1);
-      old   = POINT(segInfo[i].theSegdesc,0);
+      start = PATCH_CID(thePatchDesc,1);
+      old   = PATCH_CID(thePatchDesc,0);
     }
     while (old!=start)
       for (i=0; i<nSeg; i++)
         if (!segInfo[i].used)
-          if (POINT(segInfo[i].theSegdesc,0)==old)
+        {
+          if (Patch_GetPatchDesc(segInfo[i].thePatch,&thePatchDesc)) return(1);
+          if (PATCH_CID(thePatchDesc,0)==old)
           {
             SegLeft--;
             segInfo[i].used = TRUE;
-            old = POINT(segInfo[i].theSegdesc,1);
+            old = PATCH_CID(thePatchDesc,1);
             closedbInfo[nparts++] = segInfo[i];
             break;
           }
-          else if (POINT(segInfo[i].theSegdesc,1)==old)
+          else if (PATCH_CID(thePatchDesc,1)==old)
           {
             SegLeft--;
             segInfo[i].used = TRUE;
-            old = POINT(segInfo[i].theSegdesc,0);
+            old =PATCH_CID(thePatchDesc,0);
             closedbInfo[nparts++] = segInfo[i];
             break;
           }
+        }
 
     /* the info for the current closed boundary is now complete */
     theFL = CreateFrontList(theIFL);
@@ -905,14 +917,21 @@ static INT AssembleFrontLists (MULTIGRID *theMG)
   GRID *theGrid;
   INDEPFRONTLIST *theIFL;
   SEGMENTINFO *segInfo;
-  INT numOfSubdomains,numOfSegments,nSeg,SubdomainID,i;
+  INT numOfSubdomains,numOfPatches,nSeg,SubdomainID,i;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
+
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
 
   theGrid = GRID_ON_LEVEL(theMG,0);
 
-  numOfSubdomains = theMG->numOfSubdomains;
-  numOfSegments   = theMG->numOfSegments;
+  numOfSubdomains = BVPD_NSUBDOM(theBVPDesc);
+  numOfPatches   = BVPD_NPATCHES(theBVPDesc);
 
-  segInfo = (SEGMENTINFO *) GetMem(theMG->theHeap,numOfSegments*sizeof(SEGMENTINFO),FROM_TOP);
+  segInfo = (SEGMENTINFO *) GetMem(theMG->theHeap,numOfPatches*sizeof(SEGMENTINFO),FROM_TOP);
 
   if (segInfo==NULL)
   {
@@ -924,14 +943,17 @@ static INT AssembleFrontLists (MULTIGRID *theMG)
   {
     /* find all segments that form the boundary of our subdomain */
     nSeg = 0;
-    for (i=0; i<numOfSegments; i++)
-      if (    (LEFT(theMG->segments+i)==SubdomainID)
-              ||      (RIGHT(theMG->segments+i)==SubdomainID))
+    for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
+    {
+      if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
+      if (    (PATCH_LEFT(thePatchDesc)==SubdomainID)
+              ||      (PATCH_RIGHT(thePatchDesc)==SubdomainID))
       {
         segInfo[nSeg].mySubdomain = SubdomainID;
-        segInfo[nSeg].theSegdesc  = theMG->segments+i;
+        segInfo[nSeg].thePatch  = thePatch;
         nSeg++;
       }
+    }
 
     /* the info for the current subdomain boundary is now complete */
     theIFL = CreateIndepFrontList(theGrid);
@@ -965,10 +987,15 @@ static INT CreateAllElementSides  (MULTIGRID *theMG)
   EDGE *theEdge;
   ELEMENTSIDE *theSide;
   ELEMENT *theElement;
-  BNDSEGDESC *aSeg,*bSeg,*theSeg;
+  PATCH *aPatch,*bPatch,*thePatch;
   COORD aLambda,bLambda;
   INT aID,bID,j;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH_DESC aPatchDesc, bPatchDesc, thePatchDesc;
 
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
   theGrid = GRID_ON_LEVEL(theMG,0);
 
   /* for each FC create an element side struct and fill data */
@@ -982,19 +1009,22 @@ static INT CreateAllElementSides  (MULTIGRID *theMG)
         aVertex = MYVERTEX(aNode);
         bVertex = MYVERTEX(bNode);
 
-        aSeg = FIRSTSEG(aVertex);
-        bSeg = FIRSTSEG(bVertex);
+        aPatch = FIRSTPATCH(aVertex);
+        bPatch = FIRSTPATCH(bVertex);
 
-        if ((aSeg==bSeg) && !((MOVE(aVertex)==0) || (MOVE(bVertex)==0)))
+        if(Patch_GetPatchDesc(aPatch,&aPatchDesc)) return(1);
+        if(Patch_GetPatchDesc(bPatch,&bPatchDesc)) return(1);
+
+        if ((aPatch==bPatch) && !((MOVE(aVertex)==0) || (MOVE(bVertex)==0)))
         {
           /* periodic boundary excluded */
-          theSeg = aSeg;
+          thePatch = aPatch;
           if (MOVE(aVertex)==0)
-            aLambda = ALPHA(aSeg,0);
+            aLambda = PATCH_LCVECT(aPatchDesc,0)[0];
           else
             aLambda = FIRSTLAMBDA(aVertex);
           if (MOVE(bVertex)==0)
-            bLambda = BETA(bSeg,0);
+            bLambda = PATCH_LCVECT(aPatchDesc,1)[0];
           else
             bLambda = FIRSTLAMBDA(bVertex);
         }
@@ -1012,63 +1042,63 @@ static INT CreateAllElementSides  (MULTIGRID *theMG)
           bID = j;
 
           /* find segment */
-          for (j=0; j<theMG->numOfSegments ; j++)
+          for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
           {
-            theSeg = &(theMG->segments[j]);
-            if ((aID==POINT(theSeg,0)) && (bID==POINT(theSeg,1)))
+            if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
+            if (PATCH_CID(thePatchDesc,0)==aID && PATCH_CID(thePatchDesc,1)==bID)
             {
-              aLambda = ALPHA(theSeg,0);
-              bLambda = BETA(theSeg,0);
+              aLambda = PATCH_LCVECT(thePatchDesc,0)[0];
+              bLambda = PATCH_LCVECT(thePatchDesc,1)[0];
               break;
             }
-            else if ((aID==POINT(theSeg,1)) && (bID==POINT(theSeg,0)))
+            else if (PATCH_CID(thePatchDesc,1)==aID && PATCH_CID(thePatchDesc,0)==bID)
             {
-              aLambda = BETA(theSeg,0);
-              bLambda = ALPHA(theSeg,0);
+              aLambda = PATCH_LCVECT(thePatchDesc,1)[0];
+              bLambda = PATCH_LCVECT(thePatchDesc,0)[0];
               break;
             }
           }
         }
         else if (MOVE(aVertex)==0)
         {
-          if (POINT(bSeg,0)!=POINT(bSeg,1))
+          if (PATCH_CID(bPatchDesc,0)!=PATCH_CID(bPatchDesc,1))
           {
-            if (theMG->corners[POINT(bSeg,0)]==aVertex)
-              aLambda = ALPHA(bSeg,0);
+            if (theMG->corners[PATCH_CID(bPatchDesc,0)]==aVertex)
+              aLambda = PATCH_LCVECT(bPatchDesc,0)[0];
             else
-              aLambda = BETA(bSeg,0);
+              aLambda = PATCH_LCVECT(bPatchDesc,1)[0];
           }
           else
           {
             /* periodic boundary: take succ of b for decision */
             if (FIRSTLAMBDA(MYVERTEX(FRONTN(SUCCFC(SUCCFC(theFC)))))>FIRSTLAMBDA(bVertex))
-              aLambda = ALPHA(bSeg,0);
+              aLambda = PATCH_LCVECT(bPatchDesc,0)[0];
             else
-              aLambda = BETA(bSeg,0);
+              aLambda = PATCH_LCVECT(bPatchDesc,1)[0];
           }
 
-          theSeg = bSeg;
+          thePatch = bPatch;
           bLambda = FIRSTLAMBDA(bVertex);
         }
         else
         {
-          if (POINT(aSeg,0)!=POINT(aSeg,1))
+          if (PATCH_CID(aPatchDesc,0)!=PATCH_CID(aPatchDesc,1))
           {
-            if (theMG->corners[POINT(aSeg,0)]==bVertex)
-              bLambda = ALPHA(aSeg,0);
+            if (theMG->corners[PATCH_CID(aPatchDesc,0)]==bVertex)
+              bLambda = PATCH_LCVECT(aPatchDesc,0)[0];
             else
-              bLambda = BETA(aSeg,0);
+              bLambda = PATCH_LCVECT(aPatchDesc,1)[0];
           }
           else
           {
             /* periodic boundary: take pred of a for decision */
             if (FIRSTLAMBDA(MYVERTEX(FRONTN(PREDFC(theFC))))>FIRSTLAMBDA(aVertex))
-              bLambda = ALPHA(aSeg,0);
+              bLambda = PATCH_LCVECT(aPatchDesc,0)[0];
             else
-              bLambda = BETA(aSeg,0);
+              bLambda = PATCH_LCVECT(aPatchDesc,1)[0];
           }
 
-          theSeg = aSeg;
+          thePatch = aPatch;
           aLambda = FIRSTLAMBDA(aVertex);
         }
 
@@ -1080,7 +1110,7 @@ static INT CreateAllElementSides  (MULTIGRID *theMG)
           DisposeElement(theGrid,theElement);
           return(5);
         }
-        SEGDESC(theSide)   = theSeg;
+        ES_PATCH(theSide)   = thePatch;
         PARAM(theSide,0,0) = aLambda;
         PARAM(theSide,1,0) = bLambda;
 
@@ -3149,8 +3179,12 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   INT printelem,FlgForAccel;
   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS];
   ELEMENT_CONTEXT theElementContext;
+  BVP             *theBVP;
+  BVP_DESC theBVPDesc;
 
   InitGGObjs(theMG);
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
 
   SetFlagsfortemporaryGGObjects(IflObj, FlObj, FcObj);
 
@@ -3166,13 +3200,13 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   }
   else
   {
-    if (NUMCOEFF(MGPROBLEM(theMG)) < param->msizecoeffno)
+    if (BVPD_NCOEFFF(theBVPDesc) < param->msizecoeffno)
     {
       PrintErrorMessage('E',"GenerateBnodes",
                         "Number of coefficient functions is zero.");
       return(2);
     }
-    nominal_h = COEFFFUNC(MGPROBLEM(theMG),param->msizecoeffno);
+    if (BVP_GetCoeffFct(theBVP,param->msizecoeffno,&nominal_h)) return (1);
   }
 
   /* check options */
