@@ -49,8 +49,9 @@
 #include "ugstruct.h"
 
 #include "devices.h"
-
+#ifdef ModelP
 #include "parallel.h"
+#endif
 #include "gm.h"
 #include "algebra.h"
 #include "misc.h"
@@ -1965,7 +1966,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     for (i=1; i<mg_general.nLevel; i++)
     {
       if (CreateNewLevel(theMG,0)==NULL)      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+#ifdef ModelP
       ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
+#endif
     }
     return(theMG);
   }
@@ -2209,9 +2212,12 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   /* read hierarchical elements */
   refinement = (MGIO_REFINEMENT*)malloc(MGIO_REFINEMENT_SIZE);
   if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refinement\n",(int)MGIO_REFINEMENT_SIZE); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-  ProcList = (unsigned short*)malloc(PROCLISTSIZE*sizeof(unsigned short));
-  if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(int)); return (NULL);}
-  for (i=0; i<MAX_SONS; i++) refinement->pinfo[i].proclist = ProcList+i*ELEMPROCLISTSIZE;
+  if (MGIO_PARFILE)
+  {
+    ProcList = (unsigned short*)malloc(PROCLISTSIZE*sizeof(unsigned short));
+    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(int)); return (NULL);}
+    for (i=0; i<MAX_SONS; i++) refinement->pinfo[i].proclist = ProcList+i*ELEMPROCLISTSIZE;
+  }
   for (j=0; j<cg_general.nElement; j++)
   {
     theElement = eid_e[j];
