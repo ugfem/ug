@@ -1767,7 +1767,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     if (heapSize==0) heapSize = mg_general.heapsize * 1024;
 
     /* create a virginenal multigrid on the BVP */
-    theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,FALSE);
+    theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,TRUE);
     if (theMG==NULL)                                                                                                        {UserWrite("ERROR(ugio): cannot create multigrid\n"); CloseMGFile (); return (NULL);}
     MG_MAGIC_COOKIE(theMG) = mg_general.magic_cookie;
     if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
@@ -1793,7 +1793,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (heapSize==0) heapSize = mg_general.heapsize * 1024;
 
   /* create a virginenal multigrid on the BVP */
-  theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,FALSE);
+  theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,TRUE);
   if (theMG==NULL)                                                                                                        {UserWrite("ERROR(ugio): cannot create multigrid\n"); CloseMGFile (); return (NULL);}
   MG_MAGIC_COOKIE(theMG) = mg_general.magic_cookie;
   theHeap = MGHEAP(theMG);
