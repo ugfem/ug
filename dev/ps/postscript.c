@@ -523,6 +523,7 @@ static void InitPSPort (OUTPUTDEVICE *thePort)
   /* init pointers to miscellaneous functions */
   thePort->GetPaletteEntry        = PSGetPaletteEntry;
   thePort->Flush                          = PSFlush;
+  thePort->PlotPixelBuffer    = NULL;
 
   /* fill port */
   thePort->black = 255;

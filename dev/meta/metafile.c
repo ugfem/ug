@@ -522,6 +522,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
   /* init pointers to miscellaneous functions */
   thePort->GetPaletteEntry        = MetaGetPaletteEntry;
   thePort->Flush                          = MetaFlush;
+  thePort->PlotPixelBuffer    = NULL;
 
   /* fill port */
   thePort->black = 255;
