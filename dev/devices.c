@@ -615,7 +615,7 @@ INT InitDevices (int argc, char **argv)
     return (error);
   }
   theOutputDevDirID = GetNewEnvDirID();
-  if (MakeEnvItem("Output Devices",theOutputDevDirID,sizeof(ENVDIR))==NULL)
+  if ((DevDir=(ENVDIR*)MakeEnvItem("Output Devices",theOutputDevDirID,sizeof(ENVDIR)))==NULL)
   {
     SetHiWrd(error,__LINE__);
     return (error);
