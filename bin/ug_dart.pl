@@ -561,7 +561,14 @@ sub read_testdirs
                 # save the whole directory in @testdirs
                 push(@TestDirs, join('/',$TestRootDir,$Line[1]));
                 push(@DirIds, $Line[0]);
-		push(@TestCaseFiles, $Line[2]);
+		if($Line[2] eq "")
+		{
+		    push(@TestCaseFiles, "TestCases");
+		}
+		else
+		{
+		    push(@TestCaseFiles, $Line[2]);
+		}
             }
         }
         else
@@ -571,7 +578,14 @@ sub read_testdirs
                 # save the whole directory in @testdirs
                 push(@TestDirs, join('/',$TestRootDir,$Line[1]));
                 push(@DirIds, $Line[0]);
-		push(@TestCaseFiles, $Line[2]);
+		if($Line[2] eq "")
+		{
+		    push(@TestCaseFiles, "TestCases");
+		}
+		else
+		{
+		    push(@TestCaseFiles, $Line[2]);
+		}
             }
         }
     }
