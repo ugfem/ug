@@ -1,0 +1,48 @@
+#!/usr/bin/perl -w #-d
+# $Header$
+# usage: ugexo2ng_bss <cubit_logfile> <cubit_sscmd_file>
+#
+# author: Stefan Lang, INF 368, IWR, University of Heidelberg
+#         Stefan.Lang@iwr.uni-heidelberg.de
+# history: start 030907
+
+# basic data types
+#$num = '\d';
+$int = '\d+';
+#$sint = '[+-]?\d+';
+#$real = '[+-]?\d+(?:\.\d+)?';   # (?:\.\d+)? means: optional .nnnn part
+#$exp = '[+-]?\d+(?:\.\d+(?:e[+-]?\d+)?)?';
+#$string = '[a-z"_]\w*';
+
+
+if ($#ARGV != 1)
+{
+	print "usage: ugexo2ng_bss <cubit_logfile> <cubit_sscmd>\n";
+ 	exit;
+}
+
+$log = "$ARGV[0]";
+$sss = "$ARGV[1]";
+
+
+sub main()
+{
+	open(LOG, "<$log") || die "can't open $log\n";
+	open(SSS, ">$sss") || die "can't open $sss\n";
+
+	while(<LOG>)
+	{
+		if ( /^\s*SideSet\s*3($int)/ )
+		{
+			$surf = sprintf "%d",$1;
+ 			printf SSS "sideset 3$1 surface $surf both\n"
+		}
+	}
+	close(LOG);
+	close(SSS);
+}
+
+main();
+
+exit;
+

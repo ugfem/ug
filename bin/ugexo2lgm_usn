@@ -1,0 +1,63 @@
+#!/usr/bin/perl -w #-d
+# $Header$
+# usage: ugexo2lgm_usn <cubit_logfile> <cubit_sncmd_file>
+#
+# author: Stefan Lang, INF 368, IWR, University of Heidelberg
+#         Stefan.Lang@iwr.uni-heidelberg.de
+# history: start 031124
+
+# basic data types
+#$num = '\d';
+$int = '\d+';
+#$sint = '[+-]?\d+';
+#$real = '[+-]?\d+(?:\.\d+)?';   # (?:\.\d+)? means: optional .nnnn part
+#$exp = '[+-]?\d+(?:\.\d+(?:e[+-]?\d+)?)?';
+#$string = '[a-z"_]\w*';
+
+
+if ($#ARGV != 1)
+{
+	print "usage: ugexo2lgm_usn <cubit_logfile> <cubit_sncmd>\n";
+ 	exit;
+}
+
+$log = "$ARGV[0]";
+$usn = "$ARGV[1]";
+
+
+sub main()
+{
+	open(LOG, "<$log") || die "can't open $log\n";
+	open(USN, ">$usn") || die "can't open $usn\n";
+
+	while(<LOG>)
+	{
+		if ( /Surface\sEntity\s*\(Id\s=\s($int)\)/ )
+		{
+			$surf = sprintf "%d",$1;
+			LOOP: while(<LOG>)
+			{
+				if ( /In\sVolume\s*($int)\./ )
+				{
+					$vol = $1;
+					printf USN "surface %d normal volume %d\n",$surf,$vol;
+					last LOOP;
+				}
+				elsif ( /In\sVolume\s*($int),\s*Volume\s*($int)\./ )
+				{
+					if ($1 < $2) { $vol = $1;} 
+					else { $vol = $2;}
+					printf USN "surface %d normal volume %d\n",$surf,$vol;
+					last LOOP;
+				}
+			}
+		}
+	}
+	close(LOG);
+	close(USN);
+}
+
+main();
+
+exit;
+
