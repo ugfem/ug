@@ -142,6 +142,8 @@ static int HistLastPos=0;
 static int HistInsertPos=0;
 static int HistReadPos=0;
 static char HistBuf[HISTLEN*INPUTBUFFERLEN];
+static int MaxTextBuffer=5000;                  /* number of stored characters */
+static int ReplaceTextBuffer=500;                       /* number of characters to remove */
 #endif
 
 /* data for CVS */
@@ -555,6 +557,46 @@ void ShellInsertChar (ShellWindow *sh, char c)
         #endif /* USE_XAW */
 }
 
+/************************************************************************/
+/*									*/
+/* Function:	ShellUpdateTextBuffer					*/
+/*									*/
+/* Purpose:     Update the buffer of a shell window			*/
+/*									*/
+/* Input:	ShellWindow *sh						*/
+/*		number of characters to remove   int i                  */
+/*									*/
+/* Output:	   none                                                 */
+/*									*/
+/************************************************************************/
+
+void ShellUpdateTextBuffer(ShellWindow *sh, int i)
+{
+  XawTextPosition appendPos, endPos;
+  XawTextBlock textInsert, textSearch;
+  char *s="\n";
+
+  textSearch.firstPos     = 0;
+  textSearch.length       = 1;
+  textSearch.ptr          = (char*)s;
+  textSearch.format       = FMT8BIT;
+
+  textInsert.firstPos     = 0;
+  textInsert.length       = 0;
+  textInsert.ptr          = NULL;
+  textInsert.format       = FMT8BIT;
+
+  XawTextDisableRedisplay(sh->wid);
+
+  appendPos=XawTextGetInsertionPoint(sh->wid);
+  XawTextSetInsertionPoint(sh->wid,i);
+  endPos=XawTextSearch(sh->wid,XawsdRight,&textSearch);
+  XawTextReplace(sh->wid,0,endPos+1,&textInsert);
+  /*XawTextSetInsertionPoint(sh->wid,appendPos);*/
+
+  XawTextEnableRedisplay(sh->wid);
+}
+
 
 /****************************************************************************/
 /*																			*/
@@ -582,6 +624,9 @@ void ShellInsertString (ShellWindow *sh, const char *s)
   text.format = FMT8BIT;
 
   appendPos = XawTextGetInsertionPoint(sh->wid);
+
+  if(appendPos>MaxTextBuffer) ShellUpdateTextBuffer(sh, ReplaceTextBuffer);
+
   XawTextReplace(sh->wid,appendPos,appendPos+text.length,&text);
   XawTextSetInsertionPoint(sh->wid,appendPos+text.length);
         #else
