@@ -412,7 +412,7 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
   nel = 0;
   for (k=0; k<=toplevel; k++)
     for (t=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); t!=NULL; t=SUCCE(t))
-      if (EstimateHere(t) && ECLASS(t) != YELLOW_CLASS)
+      if (EstimateHere(t))
       {
         nel++;
         if (clear)
@@ -431,7 +431,7 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
   mfc = 0;
   for (k=0; k<=toplevel; k++)
     for (t=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); t!=NULL; t=SUCCE(t))
-      if (EstimateHere(t) && ECLASS(t) != YELLOW_CLASS)
+      if (EstimateHere(t))
       {
         est = ElementIndicator(t,ncomp,theVD);
         min = MIN(min,est);
@@ -444,18 +444,40 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
   nel = 0;
   for (k=0; k<=toplevel; k++)
     for (t=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); t!=NULL; t=SUCCE(t))
-      if (EstimateHere(t) && ECLASS(t) != YELLOW_CLASS)
+      if (EstimateHere(t))
       {
         est = List[nel++];
-        if (est > rf)
+        /*
+                    if (est > rf)
+                      {
+                        if (MarkForRefinementX(t,from,to,RED,0) == GM_OK)
+                            mfr++;
+                      }
+                    if (est < cr)
+                      {
+                        if (MarkForRefinementX(t,from,to,COARSE,0) == GM_OK)
+                            mfc++;
+                      }
+         */
+        if ((ECLASS(t)==RED_CLASS) && (est > rf) && (k < to))
         {
-          if (MarkForRefinementX(t,from,to,RED,0) == GM_OK)
-            mfr++;
+          MarkForRefinement(t,RED,0);
+          mfr++;
         }
-        if (est < cr)
+        if ((ECLASS(t)==GREEN_CLASS) && (est > rf) && (k < to+1))
         {
-          if (MarkForRefinementX(t,from,to,COARSE,0) == GM_OK)
-            mfc++;
+          MarkForRefinement(t,RED,0);
+          mfr++;
+        }
+        if ((ECLASS(t)==YELLOW_CLASS) && (est > rf) && (k < to+1))
+        {
+          MarkForRefinement(t,RED,0);
+          mfr++;
+        }
+        if ((ECLASS(t)==RED_CLASS) && (est < cr) && (k > from))
+        {
+          MarkForRefinement(t,COARSE,0);
+          mfc++;
         }
       }
   Release(MGHEAP(theMG),FROM_TOP);
@@ -558,6 +580,7 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
     if (VD_NCMPS_IN_TYPE(y,NODEVEC) < 1)
       NP_RETURN(1,eresult->error_code);
     ElementIndicator = ElementIndicator_minmax;
+    UserWrite("Using minmax indicator\n");
   }
 
   if (SurfaceIndicator(theMG,y,np->refine,np->coarse,
