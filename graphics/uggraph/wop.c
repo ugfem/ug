@@ -643,6 +643,7 @@ static INT MAT_rel;				/* scale values by inverse diagonal entry	*/
 static INT MAT_maxrow;			/* last row									*/
 static DOUBLE MAT_factor;		/* color spectrum factor					*/
 static long MAT_black;			/* black for frames and values				*/
+static long MAT_red;			/* red for point block frames				*/
 static long MAT_white;			/* white for frames and values				*/
 static long MAT_dark;			/* indicate dark colors (color>MAT_dark)	*/
 static INT MAT_frame;			/* frame colored squares					*/
@@ -4956,6 +4957,7 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 	MAT_dash			= theMpo->dash;
 	MAT_space			= theMpo->space;
 	MAT_black			= theOD->black;
+	MAT_red				= theOD->red;
 	MAT_white			= theOD->white;
 	
 	/* set globals for eval function */
@@ -4990,7 +4992,14 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 	/* smallest square needed */
 	n = 0;
 	for (mtp=0; mtp<NMATTYPES; mtp++)
-		n = MAX(n,MAX(MD_ROWS_IN_MTYPE(MAT_md,mtp),MD_COLS_IN_MTYPE(MAT_md,mtp)));
+		if (MD_ISDEF_IN_MTYPE(MAT_md,mtp))
+			n = MAX(n,MAX(MD_ROWS_IN_MTYPE(MAT_md,mtp),MD_COLS_IN_MTYPE(MAT_md,mtp)));
+	
+	if (n==0)
+	{
+		UserWrite("matrix contains no components\n");
+		return (1);
+	}
 	
 	/* compute size of squares in pixel coordinates */
 	x0[0] = 0.0;			x0[1] = 0.0;
@@ -5112,14 +5121,14 @@ static PlotPointBlockMatrixEntry (
 		{
 			printvalue = value = values[i*nc+j];
 			
+			/* store range */
+			*max = MAX(*max,value);
+			*min = MIN(*min,value);
+			
 			if (fabs(value)<=MAT_thresh)
 				continue;
 			if (MAT_log)
 				value = log(fabs(value));
-			
-			/* store range */
-			*max = MAX(*max,value);
-			*min = MIN(*min,value);
 			
 			PlotMatrixEntry(rowi,coli,row+1-(i+1)*h,col+j*w,w,h,value,printvalue,DOhandle);
 		}
@@ -5129,7 +5138,7 @@ static PlotPointBlockMatrixEntry (
 	/* frame whole block */
 	DO_2c(*DOhandle) = DO_POLYLINE; DO_inc(*DOhandle) 
 	DO_2c(*DOhandle) = 5; DO_inc(*DOhandle) 
-	DO_2l(*DOhandle) = MAT_black; DO_inc(*DOhandle);
+	DO_2l(*DOhandle) = MAT_red; DO_inc(*DOhandle);
 	DO_2C(*DOhandle) = col;   DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
 	DO_2C(*DOhandle) = col+1; DO_inc(*DOhandle); DO_2C(*DOhandle) = row;   DO_inc(*DOhandle);
 	DO_2C(*DOhandle) = col+1; DO_inc(*DOhandle); DO_2C(*DOhandle) = row+1; DO_inc(*DOhandle);
@@ -7555,6 +7564,13 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
 		nlines = MD_ROWS_IN_RT_CT(VM_tmd,rt,rt);
 	else
 		nlines = VD_NCMPS_IN_TYPE(VM_tvd,rt);
+	
+	if (nlines==0)
+	{
+		UgCenteredText(a,"---",TEXT_REGULAR);
+		return (0);
+	}
+	
 	a.y += PIC_SIGN_Y(thePicture) * 0.5*nlines * line_height;
 	
 	for (line=0; line<nlines; line++)
@@ -7582,6 +7598,13 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
 	if (VM_MatData)
 		for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
 		{
+			if (CEXTRA(MMYCON(mat)))
+			{
+				if (!VM_MExtra) continue;
+			}
+			else
+				if (!VM_Connections) continue;
+			
 			nbvec = MDEST(mat);
 			ct = VTYPE(nbvec);
 			if (!VM_Type[ct]) continue;
