@@ -2,6 +2,8 @@
 #
 #       for MacOS X
 #
+#		change the last lines if you want to use Quartz instead of X11
+#
 
 ARCH_TYPE     = __MACOSX__
 
@@ -43,4 +45,3 @@ ARCH_XLIBS     = -framework Cocoa
 # use these settings if you want to use X11
 ARCH_XINCLUDES = -I/usr/X11R6/include/
 ARCH_XLIBS     = -L/usr/X11R6/lib  -lXaw -lXt -lXpm -lXmu -lX11 -lXext -lSM -lICE
-
