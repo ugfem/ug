@@ -83,7 +83,7 @@ INT              ReleaseOBJT                    (INT type);
 
 /* create basic objects */
 #ifdef ModelP
-EDGE        *CreateEdge             (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
+EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector, INT subdom_id);
 #endif
 ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,
                                      NODE **nodes, ELEMENT *Father);

@@ -1484,13 +1484,15 @@ static INT SetEdgeSubdomain (EDGE *ed, INT s_id)
    CreateEdge - Return pointer to a new edge structure
 
    SYNOPSIS:
-   EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
+   EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to,
+   INT with_vector, INT subdom_id);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
    .  from - starting node of new edge
    .  to - end node of new edge
    .  with_vector - also create vector for edge (TRUE/FALSE)
+   .  subdom_id - id for corresponding subdomain
 
    DESCRIPTION:
    This function returns a pointer to a new edge structure.
