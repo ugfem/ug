@@ -1513,13 +1513,9 @@ INT InitFAMG ()
 	if (CreateClass(TRANSFER_CLASS_NAME ".famgTransfer",sizeof(NP_FAMG_TRANSFER),FAMGConstructTransferNP))
 		REP_ERR_RETURN (__LINE__);
 
-#ifdef UG_DRAW
 	if (InitFAMGGraph())
 		REP_ERR_RETURN (__LINE__);
-#endif
 
 	return(0);
 }
     
-
-
