@@ -23,6 +23,6 @@ ARCH_C++FLAGS =
 ARCH_LFLAGS   =
 ARCH_ARFLAGS  = rus
 
-ARCH_XINCLUDES = 
-ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lX11 -lXmu -lXext -lICE -lSM
+ARCH_XINCLUDES = -I/usr/X11R6/include
+ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lXmu -lX11 -lXext -lSM -lICE
 
