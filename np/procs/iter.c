@@ -490,6 +490,18 @@ typedef struct
 
 } NP_EXPRJ;
 
+#define MI_MAXITER                                              10
+
+typedef struct
+{
+  NP_ITER iter;
+
+  VECDATA_DESC *t;                                              /* temporary field					*/
+  INT n;                                                                /* number of sub iterations			*/
+  NP_ITER *si[MI_MAXITER];                              /* sub iterations					*/
+
+} NP_MI;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -9335,6 +9347,129 @@ static INT CalibrateConstruct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   mi - numproc for multiple iterations
+
+   DESCRIPTION:
+   This numproc executes a sequence of iterations
+
+   .vb
+   npinit <name>
+   .ve
+
+   .  $d~<dummy> - correction vector
+
+   SEE ALSO:
+   ls
+   D*/
+/****************************************************************************/
+
+static INT MIInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_MI *np = (NP_MI *) theNP;
+  INT i;
+  char option[16],buffer[256];
+
+  if (ReadArgvINT("n",&(np->n),argc,argv)) np->n = 0;
+  if (np->n<1 || np->n>MI_MAXITER) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  for (i=0; i<np->n; i++)
+  {
+    sprintf(option,"i%d",i);
+    if (ReadArgvChar(option,buffer,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+    np->si[i]=(NP_ITER *)GetNumProcByName(theNP->mg,buffer,ITER_CLASS_NAME);
+    if (np->si[i]==NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+
+  return (NPIterInit(&np->iter,argc,argv));
+}
+
+static INT MIDisplay (NP_BASE *theNP)
+{
+  INT i;
+  char option[16];
+  NP_MI *np = (NP_MI *) theNP;
+
+  NPIterDisplay(&np->iter);
+
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)np->n);
+  for (i=0; i<np->n; i++)
+  {
+    sprintf(option,"i%d",i);
+    if (np->si[i] != NULL)
+      UserWriteF(DISPLAY_NP_FORMAT_SS,option,ENVITEM_NAME(np->si[i]));
+    else
+      UserWriteF(DISPLAY_NP_FORMAT_SS,option,"---");
+  }
+
+  return (0);
+}
+
+static INT MIPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  INT i,j;
+  NP_MI *np = (NP_MI *) theNP;
+
+  for (i=0; i<np->n; i++)
+  {
+    for (j=0; j<i; j++)
+      if (np->si[j]==np->si[i]) break;
+    if (j!=i) continue;
+    if (np->si[i]->PreProcess!=NULL)
+      if ((*np->si[i]->PreProcess)(np->si[i],level,x,b,A,baselevel,result)) REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT MI (NP_ITER *theNP, INT level, VECDATA_DESC *c, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  INT i;
+  NP_MI *np = (NP_MI *) theNP;
+
+  if (AllocVDFromVD(NP_MG(theNP),level,level,c,&np->t)) NP_RETURN(1,result[0]);
+  if (dset(NP_MG(theNP),level,level,ALL_VECTORS,c,0.0)!= NUM_OK) NP_RETURN(1,result[0]);
+  for (i=0; i<np->n; i++)
+  {
+    if ((*np->si[i]->Iter)(np->si[i],level,np->t,b,A,result)) NP_RETURN(1,result[0]);
+    if (dadd(NP_MG(theNP),level,level,ALL_VECTORS,c,np->t) != NUM_OK) NP_RETURN(1,result[0]);
+  }
+  if (FreeVD(NP_MG(theNP),level,level,np->t)) NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT MIPostProcess (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  INT i,j;
+  NP_MI *np = (NP_MI *) theNP;
+
+  for (i=0; i<np->n; i++)
+  {
+    for (j=0; j<i; j++)
+      if (np->si[j]==np->si[i]) break;
+    if (j!=i) continue;
+    if (np->si[i]->PostProcess!=NULL)
+      if ((*np->si[i]->PostProcess)(np->si[i],level,x,b,A,result)) REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT MIConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np = (NP_ITER *) theNP;
+
+  theNP->Init = MIInit;
+  theNP->Display = MIDisplay;
+  theNP->Execute = NPIterExecute;
+  np->PreProcess = MIPreProcess;
+  np->Iter = MI;
+  np->PostProcess = MIPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitIter	- Init this file
 
@@ -9424,6 +9559,8 @@ INT InitIter ()
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".calibrate",sizeof(NP_CALIBRATE),
                   CalibrateConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".mi",sizeof(NP_MI),MIConstruct))
     REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
