@@ -31,10 +31,10 @@
 
 #include "devices.h"
 
-#include "scan.h"
 #include "numproc.h"
 #include "np.h"
 #include "general.h"
+#include "scan.h"
 
 #include "basics.h"
 
