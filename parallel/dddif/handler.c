@@ -1067,7 +1067,7 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 
 
 
-	/* send edge vectors */
+	/* send edge and edge vectors */
 	if (dddctrl.edgeData || DIM==3) {
 		for (i=0; i<EDGES_OF_ELEM(pe); i++)
 		{
