@@ -23,6 +23,8 @@
 #pragma segment ugio
 #endif
 
+#define EXTRACT_RULES           1       /* 1: use er.c, 0: use old version			*/
+
 /****************************************************************************/
 /*																			*/
 /* include files															*/
@@ -66,6 +68,8 @@
 /* include refine because of macros accessed  */
 #include "refine.h"
 #include "rm.h"
+
+#include "er.h"
 
 /****************************************************************************/
 /*																			*/
@@ -121,6 +125,7 @@
 REP_ERR_FILE;
 static INT gridpaths_set=FALSE;
 static MGIO_RR_RULE *rr_rules;
+INT rr_rule_offsets[TAGS];
 static unsigned short *ProcList, *ActProcListPos;
 static int foid,non;
 static NODE **nid_n;                                            /* mapping: orphan-node-id  -->  orphan node */
@@ -763,19 +768,20 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset, INT MarkKey)
 
 static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **SonList, INT *nmax)
 {
-  INT i,j,k,l,nfound,found;
-  REFRULE *theRule;
+  INT i,j,k,l,nfound,found,refine;
+  MGIO_RR_RULE *theRule;
   ELEMENT *NonorderedSonList[MAX_SONS];
   NODE *theNode;
 
   nfound = *nmax = 0;
-  theRule = RefRules[TAG(theElement)] + REFINE(theElement);
+  refine = REFINE(theElement);
+  theRule = rr_rules + rr_rule_offsets[TAG(theElement)] + refine;
   if (GetAllSons(theElement,NonorderedSonList)) REP_ERR_RETURN(1);
-  for (i=0; i<NSONS_OF_RULE(theRule); i++)
+  for (i=0; i<theRule->nsons; i++)
   {
     found=1;
-    for (j=0; j<CORNERS_OF_TAG(SON_TAG_OF_RULE(theRule,i)); j++)
-      if (NodeContext[SON_CORNER_OF_RULE(theRule,i,j)] == NULL)
+    for (j=0; j<CORNERS_OF_TAG(theRule->sons[i].tag); j++)
+      if (NodeContext[theRule->sons[i].corners[j]] == NULL)
       {
         found=0;
         break;
@@ -790,9 +796,9 @@ static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **So
     for (j=0; NonorderedSonList[j]!=NULL; j++)
     {
       found=0;
-      for (l=0; l<CORNERS_OF_TAG(SON_TAG_OF_RULE(theRule,i)); l++)
+      for (l=0; l<CORNERS_OF_TAG(theRule->sons[i].tag); l++)
       {
-        theNode = NodeContext[SON_CORNER_OF_RULE(theRule,i,l)];
+        theNode = NodeContext[theRule->sons[i].corners[l]];
         for (k=0; k<CORNERS_OF_ELEM(NonorderedSonList[j]); k++)
           if (theNode==CORNER(NonorderedSonList[j],k))
           {
@@ -800,7 +806,7 @@ static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **So
             break;
           }
       }
-      if (found==CORNERS_OF_TAG(SON_TAG_OF_RULE(theRule,i)))
+      if (found==CORNERS_OF_TAG(theRule->sons[i].tag))
       {
         SonList[i] = NonorderedSonList[j];
         *nmax = i+1;
@@ -819,13 +825,13 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
                           INT nmax, MGIO_REFINEMENT *refinement,
                           INT *RefRuleOffset)
 {
-  REFRULE *theRule;
+  MGIO_RR_RULE *theRule;
   INT i,j,n,sonRefined,sonex,nex,refined;
   ELEMENT *SonSonList[MAX_SONS];
 
   refinement->refclass = REFINECLASS(theElement);
   refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
-  theRule = RefRules[TAG(theElement)] + REFINE(theElement);
+  theRule = rr_rules + rr_rule_offsets[TAG(theElement)] + REFINE(theElement);
 
   if (MGIO_PARFILE)
   {
@@ -1213,7 +1219,6 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   MGIO_BD_GENERAL bd_general;
   MGIO_PARINFO cg_pinfo;
   INT i,j,k,niv,nbv,nie,nbe,n,nref,hr_max,mode,level,id,foid,non,tl,saved;
-  INT RefRuleOffset[TAGS];
   int *vidlist;
   char *p,*f,*s,*l;
   BNDP **BndPList;
@@ -1375,7 +1380,12 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   if (Write_GE_Elements(TAGS,ge_element)) REP_ERR_RETURN(1);
 
   /* write information about refrules used */
-  if (Write_RefRules(theMG,RefRuleOffset,MarkKey)) REP_ERR_RETURN(1);
+  /* TODO (HRR 971209): drop old call of Write_RefRules */
+    #if EXTRACT_RULES
+  if (NEW_Write_RefRules(theMG,rr_rule_offsets,MarkKey,&rr_rules)) REP_ERR_RETURN(1);
+        #else
+  if (Write_RefRules(theMG,rr_rule_offsets,MarkKey)) REP_ERR_RETURN(1);
+        #endif
 
   i = OrphanCons(theMG);
   if (i)
@@ -1556,7 +1566,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       assert(id==ID(theElement));
       if (REFINE(theElement)!=NO_REFINEMENT)
         /* write refinement only if it is neccessary */
-        if(SetHierRefinement(theGrid,theElement,refinement,RefRuleOffset))
+        if(SetHierRefinement(theGrid,theElement,refinement,rr_rule_offsets))
           REP_ERR_RETURN(1);
       id++;
     }
@@ -1571,6 +1581,10 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   /* saved */
   MG_SAVED(theMG) = 1;
   strcpy(MG_FILENAME(theMG),filename);
+
+        #if EXTRACT_RULES
+  ResetRefineTagsBeyondRuleManager(theMG);
+        #endif
 
   return (0);
 }
@@ -2009,7 +2023,7 @@ static INT CheckLocalElementKeys (ELEMENT *theElement, MGIO_REFINEMENT *ref, INT
     if (GetOrderedSons(theElement,NodeContext,SonList,&nmax)) REP_ERR_RETURN(1);
 
     /* check the sons */
-    for (i; i<nmax; i++)
+    for (i=0; i<nmax; i++)
     {
       if ( SonList[i]==NULL )
       {
@@ -2525,7 +2539,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   BVP_DESC theBVPDesc;
   MESH theMesh;
   char FormatName[NAMESIZE], BndValName[NAMESIZE], MGName[NAMESIZE], filename[NAMESIZE];
-  INT i,j,k,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
+  INT i,j,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
   **Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,
   *Element_nb_ids,id,level;
   INT *Element_SideOnBnd_uniq_subdom,*ESoBusdp[2];
@@ -2534,6 +2548,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   INT MarkKey;
 #ifdef __THREEDIM__
   ELEMENT *theNeighbor;
+  INT k;
 #endif
 
   if (autosave)
@@ -3129,6 +3144,10 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   /* saved */
   MG_SAVED(theMG) = 1;
   strcpy(MG_FILENAME(theMG),filename);
+
+        #if EXTRACT_RULES
+  ResetRefineTagsBeyondRuleManager(theMG);
+        #endif
 
   return (theMG);
 }
