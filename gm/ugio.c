@@ -43,6 +43,7 @@
 #include "heaps.h"
 #include "defaults.h"
 #include "general.h"
+#include "debug.h"
 
 #include "devices.h"
 
@@ -190,15 +191,12 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   NODE *theNode;
   ELEMENT *theElement;
   VERTEX *theVertex;
-  VSEGMENT *vs;
   COORD *lambda,*global;
   time_t Time;
   char *fmt;
   char buffer[BUFFERSIZE];
   BVP_DESC theBVPDesc;
-  PATCH_DESC thePatchDesc;
-  PATCH *thePatch;
-  INT i,k,id;
+  INT i,k,id,move;
 
   if (gridpaths_set)
     /* this way grids are stored to path[0] */
@@ -208,7 +206,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   if (stream==NULL)
   {
     PrintErrorMessage('E',"SaveMultiGrid","cannot open file");
-    return(GM_FILEOPEN_ERROR);
+    RETURN(GM_FILEOPEN_ERROR);
   }
 
   if (TOPLEVEL(theMG) > 0)
@@ -217,7 +215,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
 
   /* get BVPDesc */
   if (BVP_SetBVPDesc(MG_BVP(theMG),&theBVPDesc))
-    return (GM_ERROR);
+    RETURN (GM_ERROR);
 
   /* get time */
   fmt = "%a %b %d %H:%M:%S %Y";
@@ -231,58 +229,51 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
 
   /* find all boundary nodes witch are no corner nodes */
   fprintf(stream,BN_HEADER_FMT);
-  id = theMG->numOfCorners;
-  for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
+  id = 0;
+  for (theNode=LASTNODE(theGrid); theNode!= NULL; theNode=PREDN(theNode))
   {
     theVertex = MYVERTEX(theNode);
     if (OBJT(theVertex) == IVOBJ)
       continue;
-    vs = VSEG(theVertex);
-    thePatch = VS_PATCH(vs);
-    lambda = PVECT(vs);
-    if (Patch_GetPatchDesc(thePatch,&thePatchDesc))
-      return (GM_ERROR);
-    for(k=0; k<PATCH_N(thePatchDesc); k++)
-    {
-                        #ifdef __TWODIM__
-      if (lambda[0] == PATCH_LCVECT(thePatchDesc,k)[0])
-        break;
-            #endif
-                        #ifdef __THREEDIM__
-      if ((lambda[0] == PATCH_LCVECT(thePatchDesc,k)[0])&&
-          (lambda[1] == PATCH_LCVECT(thePatchDesc,k)[1]))
-        break;
-            #endif
-
-    }
-    if (k<PATCH_N(thePatchDesc))
-    {
-      ID(theNode) = PATCH_CID(thePatchDesc,k);
-      continue;
-    }
-    else
-    {
+    if (BNDP_BndPDesc(V_BNDP(theVertex),&move))
+      RETURN(1);
+    if (move == 0)
       ID(theNode) = id++;
-      fprintf(stream,BN_FMT,PATCH_ID(thePatchDesc));
-      for (i=0; i<DIM-1; i++)
-        fprintf(stream," %f",lambda[i]);
-      fprintf(stream,EOL_FMT);
-    }
+
+    PRINTDEBUG(dom,0,(" save id %d\n",id-1));
+  }
+  for (theNode=LASTNODE(theGrid); theNode!= NULL; theNode=PREDN(theNode))
+  {
+    theVertex = MYVERTEX(theNode);
+    if (OBJT(theVertex) == IVOBJ)
+      continue;
+    /* skip corner points */
+    if (BNDP_BndPDesc(V_BNDP(theVertex),&move))
+      RETURN(1);
+    if (move == 0)
+      continue;
+    if (BNDP_SaveInsertedBndP(V_BNDP(theVertex),buffer,BUFFERSIZE))
+      RETURN(1);
+    fprintf(stream,"%s",buffer);
+    fprintf(stream,EOL_FMT);
+    ID(theNode) = id++;
   }
   /* find all inner nodes */
   fprintf(stream,IN_HEADER_FMT);
-  for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
+  for (theNode=LASTNODE(theGrid); theNode!= NULL; theNode=PREDN(theNode))
   {
     theVertex = MYVERTEX(theNode);
     if (OBJT(theVertex) == BVOBJ)
       continue;
     global = CVECT(theVertex);
-    ID(theNode) = id++;
     fprintf(stream,IN_FMT);
     for (i=0; i<DIM; i++)
       fprintf(stream," %f",global[i]);
     fprintf(stream,EOL_FMT);
+    ID(theNode) = id++;
   }
+  if (id != theGrid->nNode)
+    RETURN(1);
 
   /* elements */
   fprintf(stream,IE_HEADER_FMT);

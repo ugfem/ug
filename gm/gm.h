@@ -354,16 +354,6 @@ struct ivertex {                                        /* inner vertex structur
   struct node *topnode;                         /* highest node where defect is valid	*/
 } ;
 
-
-struct vsegment {
-
-  unsigned INT control;                         /* object identification, various flags */
-  PATCH *thePatch;                                      /* pointer to patch						*/
-  COORD lambda[DIM_OF_BND];                     /* position of vertex on boundary segmen*/
-  struct vsegment *next;                /* pointer to next vsegment of the vertex*/
-};
-
-
 struct bvertex {                                        /* boundary vertex structure			*/
 
   /* variables */
@@ -382,7 +372,7 @@ struct bvertex {                                        /* boundary vertex struc
   union element *father;                        /* father element						*/
   struct node *topnode;                         /* highest node where defect is valid	*/
 
-  struct vsegment *vseg;                        /* pointer to chain of segments                 */
+  BNDP *bndp;                                       /* pointer boundary point decriptor		*/
 } ;
 
 union vertex {                                          /* only used to define pointer to vertex*/
@@ -492,7 +482,7 @@ struct triangle {
   /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
-  struct elementside *side[3];          /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[3];                        /* only on bnd, NULL if interior side	*/
 } ;
 
 struct quadrilateral {
@@ -523,7 +513,7 @@ struct quadrilateral {
   /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
-  struct elementside *side[4];          /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[4];                        /* only on bnd, NULL if interior side	*/
 } ;
 
 struct tetrahedron {
@@ -557,7 +547,7 @@ struct tetrahedron {
   /* associated vector */
   VECTOR *sidevector[4];                        /* associated vectors for sides			*/
 
-  struct elementside *side[4];          /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[4];                        /* only on bnd, NULL if interior side	*/
 } ;
 
 struct pyramid {
@@ -591,7 +581,7 @@ struct pyramid {
   /* associated vector */
   VECTOR *sidevector[5];                        /* associated vectors for sides			*/
 
-  struct elementside *side[5];          /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[5];                        /* only on bnd, NULL if interior side	*/
 } ;
 
 struct hexahedron {
@@ -625,7 +615,7 @@ struct hexahedron {
   /* associated vector */
   VECTOR *sidevector[6];                        /* associated vectors for sides			*/
 
-  struct elementside *side[6];          /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[6];                        /* only on bnd, NULL if interior side	*/
 } ;
 
 union element {
@@ -639,17 +629,6 @@ union element {
   struct pyramid py;
   struct hexahedron he;
         #endif
-} ;
-
-struct elementside {
-
-  /* variables */
-  unsigned INT control;                                         /* object identification, various flags */
-  PATCH *thePatch;                                                      /* pointer to patch						*/
-  COORD lambda[MAX_CORNERS_OF_SIDE][DIM_OF_BND];
-  /* parameter of side corners			*/
-  /* pointers */
-  struct elementside *pred,*succ;                       /* double linked list					*/
 } ;
 
 union geom_object {                                             /* objects that can hold a vector		*/
@@ -679,14 +658,12 @@ struct grid {
 #ifdef __INTERPOLATION_MATRIX__
   INT nIMat;                        /* number of interpolation matrices     */
 #endif
-  INT nSide;                                                    /* number of element sides				*/
 
   /* pointers */
   union  element *elements;                     /* pointer to first element                     */
   union  element *lastelement;          /* pointer to last element				*/
   union  vertex *vertices;                      /* pointer to first vertex				*/
   union  vertex *lastvertex;                    /* pointer to last vertex				*/
-  struct elementside *sides;                    /* pointer to first boundary side		*/
   struct node *firstNode;                       /* pointer to first node				*/
   struct node *lastNode;                        /* pointer to last node                                 */
   VECTOR *firstVector;                          /* pointer to first vector				*/
@@ -711,8 +688,6 @@ struct multigrid {
   INT currentLevel;                                     /* level we are working on				*/
   BVP *theBVP;                                          /* pointer to BndValProblem				*/
   struct format *theFormat;                     /* pointer to format definition                 */
-  union vertex **corners;                       /* pointer to array of pointers to corne*/
-  INT numOfCorners;                                     /* number of entries in the array above */
   HEAP *theHeap;                                        /* associated heap structure			*/
 
   /* pointers */
@@ -738,11 +713,9 @@ struct multigrid {
 typedef struct format FORMAT;
 
 typedef union  vertex VERTEX;
-typedef struct vsegment VSEGMENT;
 typedef struct elementlist ELEMENTLIST;
 typedef struct node NODE;
 typedef union  element ELEMENT;
-typedef struct elementside ELEMENTSIDE;
 typedef struct link LINK;
 typedef struct edge EDGE;
 typedef union  geom_object GEOM_OBJECT;
@@ -1290,10 +1263,9 @@ extern CONTROL_ENTRY
 #define BEOBJ 3                                                 /* boundary element                             */
 #define EDOBJ 4                                                 /* edge object						*/
 #define NDOBJ 5                                                 /* node object						*/
-#define ESOBJ 6                                                 /* element side object				*/
-#define GROBJ 7                                                 /* grid object						*/
-#define MGOBJ 8                                                 /* multigrid object                             */
-#define VSOBJ 9                                                 /* vertex segment object			*/
+#define GROBJ 6                                                 /* grid object						*/
+#define MGOBJ 7                                                 /* multigrid object                             */
+/* 8 and 9 reserved for domain      */
 
 /* object numbers for algebra */
 #define VEOBJ 10                                                /* vector object					*/
@@ -1403,28 +1375,12 @@ extern CONTROL_ENTRY
 #define TOPNODE(p)              (p)->iv.topnode
 
 /* for boundary vertices */
-#define VSEG(p)                 (p)->bv.vseg
-#define FIRSTPATCH(p)   (VS_PATCH(VSEG(p)))
-#define BVLAMBDA(p)     (VSEG(p)->lambda[0])
-#define FIRSTLAMBDA(p)  (VSEG(p)->lambda[0])
-#define FIRSTPVECT(p)   (VSEG(p)->lambda)
+#define V_BNDP(p)               (p)->bv.bndp
 
 /* parallel macros */
 #ifdef ModelP
 #define PARHDRV(p)                      (&((p)->iv.ddd))
 #endif
-
-
-/****************************************************************************/
-/*																			*/
-/* macros for vertex segments												*/
-/*																			*/
-/****************************************************************************/
-
-#define NEXTSEG(p)              (p)->next
-#define VS_PATCH(p)             (p)->thePatch
-#define PVECT(p)                (p)->lambda
-#define LAMBDA(p,i)     (p)->lambda[i]
 
 /****************************************************************************/
 /*																			*/
@@ -1724,17 +1680,26 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define EFATHER(p)              ((ELEMENT *) (p)->ge.refs[father_offset[TAG(p)]])
 #define SON(p,i)                ((ELEMENT *) (p)->ge.refs[sons_offset[TAG(p)]+(i)])
 #define NBELEM(p,i)     ((ELEMENT *) (p)->ge.refs[nb_offset[TAG(p)]+(i)])
+#define ELEM_BNDS(p,i)  ((BNDS *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
 #define EVECTOR(p)              ((VECTOR *) (p)->ge.refs[evector_offset[TAG(p)]])
 #define SVECTOR(p,i)    ((VECTOR *) (p)->ge.refs[svector_offset[TAG(p)]+(i)])
 #define ELEMENT_TO_MARK(e)  ((NSONS(e)>1) ? NULL :                           \
                              (ECLASS(e) == RED_CLASS) ? e :                    \
                              (ECLASS(EFATHER(e)) == RED_CLASS) ?               \
                              EFATHER(e) : EFATHER(EFATHER(e)))
-#define SIDE_ON_BND(p,i) (((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)]) != NULL)
-#define INNER_SIDE(p,i)  (((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)]) == NULL)
-#define INNER_BOUNDARY(p,i) (0)
-/* TODO: replacind by function call */
+#define SIDE_ON_BND(p,i) (ELEM_BNDS(p,i) != NULL)
+#define INNER_SIDE(p,i)  (ELEM_BNDS(p,i) == NULL)
+#define INNER_BOUNDARY(p,i) (InnerBoundary(p,i))
+/* TODO: replace by function call */
 
+#ifdef __TWODIM__
+#define EDGE_ON_BND(p,i) (ELEM_BNDS(p,i) != NULL)
+#endif
+
+#ifdef __THREEDIM__
+#define EDGE_ON_BND(p,i) (SIDE_ON_BND(p,SIDE_WITH_EDGE(p,i,0)) || \
+                          SIDE_ON_BND(p,SIDE_WITH_EDGE(p,i,1)))
+#endif
 
 /* use the following macros to assign values, since definition  */
 /* above is no proper lvalue.									*/
@@ -1743,8 +1708,12 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define SET_SON(p,i,q)          (p)->ge.refs[sons_offset[TAG(p)]+(i)] = q
 #define SET_NBELEM(p,i,q)       (p)->ge.refs[nb_offset[TAG(p)]+(i)] = q
 #define VOID_NBELEM(p,i)        (p)->ge.refs[nb_offset[TAG(p)]+(i)]
+#define SET_BNDS(p,i,q)         (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
 #define SET_EVECTOR(p,q)        (p)->ge.refs[evector_offset[TAG(p)]] = q
 #define SET_SVECTOR(p,i,q)      (p)->ge.refs[svector_offset[TAG(p)]+(i)] = q
+
+#define SideBndCond(t,side,l,v,type)  BNDS_BndCond(ELEM_BNDS(t,side),l,NULL,v,type)
+#define Vertex_BndCond(p,w,i,v,t)     BNDP_BndCond(V_BNDP(p),w,i,NULL,v,t)
 
 
 /* macros to access element descriptors by element tags	*/
@@ -1951,6 +1920,7 @@ FORMAT                  *Ugly_CreateFormat (char *name,INT sVertex, INT sMultiGr
 MULTIGRID   *CreateMultiGrid        (char *MultigridName, char *BndValProblem, char *format, unsigned long heapSize);
 MULTIGRID       *LoadMultiGrid                  (char *MultigridName, char *FileName, char *BndValProblem, char *format, unsigned long heapSize);
 INT             SaveMultiGrid                   (MULTIGRID *theMG, char *FileName, char *comment);
+INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
 #ifdef __TWODIM__
 INT                     SaveCnomGridAndValues (MULTIGRID *theMG, char *FileName, char *plotprocName, char *tagName);
@@ -1958,12 +1928,13 @@ INT                     SaveCnomGridAndValues (MULTIGRID *theMG, char *FileName,
 
 /* coarse grid manipulations */
 INT             InsertInnerNode                 (MULTIGRID *theMG, COORD *pos);
-INT             InsertBoundaryNode              (MULTIGRID *theMG, INT bnd_seg_id, COORD *pos);
-INT         InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos);
+INT         InsertBoundaryNode      (MULTIGRID *theMG, BNDP *bndp);
+
 INT             DeleteNodeWithID                (MULTIGRID *theMG, INT id);
 INT             DeleteNode                              (MULTIGRID *theMG, NODE *theNode);
 INT             InsertElementFromIDs    (MULTIGRID *theMG, INT n, INT  *idList);
 INT             InsertElement                   (MULTIGRID *theMG, INT n, NODE **NodeList, ELEMENT **ElemList, INT *NbgSdList);
+INT         InsertMesh              (MULTIGRID *theMG, MESH *theMesh);
 INT             DeleteElementWithID     (MULTIGRID *theMG, INT id);
 INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theElement);
 
@@ -2017,6 +1988,8 @@ VECTOR          *FindVectorFromPosition (GRID *theGrid, COORD *pos, COORD *tol);
 ELEMENT         *FindElementFromId              (GRID *theGrid, INT id);
 ELEMENT         *FindElementFromPosition(GRID *theGrid, COORD *pos);
 ELEMENT     *FindElementOnSurface   (MULTIGRID *theMG, COORD *global);
+ELEMENT     *NeighbourElement       (ELEMENT *t, INT side);
+INT          InnerBoundary          (ELEMENT *t, INT side);
 BLOCKVECTOR *FindBV                                     (const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf );
 
 /* list */
@@ -2094,124 +2067,5 @@ INT             RenumberMultiGrid               (MULTIGRID *theMG);
 INT                     OrderNodesInGrid                (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
 INT             PutAtStartOfList                (GRID *theGrid, INT cnt, ELEMENT **elemList);
 INT         MGSetVectorClasses      (MULTIGRID *theMG);
-
-
-
-/* will disappear next week */
-
-
-#define SIDE(p,i)               ((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
-#define SET_SIDE(p,i,q)         (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
-#define SUCCS(p)                (p)->succ
-#define PREDS(p)                (p)->pred
-#define ES_PATCH(p)             (p)->thePatch
-#define PARAM(p,i,j)    (p)->lambda[i][j]
-#define PARAMPTR(p,i)   (p)->lambda[i]
-
-#define _SIDE(p,i)              ((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
-#define _SET_SIDE(p,i,q)        (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
-#define _SUCCS(p)               (p)->succ
-#define _PREDS(p)               (p)->pred
-#define _ES_PATCH(p)            (p)->thePatch
-#define _PARAM(p,i,j)   (p)->lambda[i][j]
-#define _PARAMPTR(p,i)  (p)->lambda[i]
-
-
-#ifdef __TWODIM__
-
-#define SideBndCond(t,side,l,v,type)     {      ELEMENTSIDE *theSide;\
-                                                PATCH *thePatch;  \
-                                                COORD mu[DIM-1];\
-                                                theSide = _SIDE((t),(side)); \
-                                                thePatch = _ES_PATCH(theSide);\
-                                                mu[0] = (1.0-(l)[0])*_PARAM(theSide,0,0)+(l)[0]*_PARAM(theSide,1,0);\
-                                                if (Patch_local2bndcond(thePatch,mu,(v),(type)))\
-                                                  return (1);}
-
-#define Vertex_BndCond(p,w,i,v,t)       { \
-    VSEGMENT *s; \
-    INT j,k; \
-    PATCH *q; \
-    k=0; \
-    for (s=(p)->bv.vseg,j=0; j<(i); s=s->next,j++) k++; \
-    q = s->thePatch; \
-    Patch_local2bndcond(q,s->lambda,(v),(t)); \
-    for (; s!=NULL; s=s->next) k++; \
-    (*(w)) = k; \
-}
-
-#else
-
-#define SideBndCond(t,side,l,v,type)   {        ELEMENTSIDE *theSide;   \
-                                                PATCH *thePatch;          \
-                                                COORD mu[DIM-1];\
-                                                theSide = _SIDE((t),(side)); \
-                                                thePatch = _ES_PATCH(theSide);\
-                                                if (CORNERS_OF_SIDE((t),(side)) == 3)\
-                                                {\
-                                                  mu[0] = (1.0-(l)[0]-(l)[1])*_PARAM(theSide,0,0) \
-                                                          + (l)[0]*_PARAM(theSide,1,0) + (l)[1]*_PARAM(theSide,2,0);\
-                                                  mu[1] = (1.0-(l)[0]-(l)[1])*_PARAM(theSide,0,1)\
-                                                          + (l)[0]*_PARAM(theSide,1,1) + (l)[1]*_PARAM(theSide,2,1);\
-                                                }\
-                                                else if (CORNERS_OF_SIDE((t),(side)) == 4)\
-                                                {\
-                                                  mu[0] = (1.0-(l)[0])*(1.0-(l)[1])*_PARAM(theSide,0,0) \
-                                                          + (l)[0]*(1.0-(l)[1])*_PARAM(theSide,1,0) \
-                                                          + (l)[0]*(l)[1]*_PARAM(theSide,2,0)\
-                                                          + (1.0-(l)[0])*(l)[1]*_PARAM(theSide,3,0);\
-                                                  mu[1] = (1.0-(l)[0])*(1.0-(l)[1])*_PARAM(theSide,0,1) \
-                                                          + (l)[0]*(1.0-(l)[1])*_PARAM(theSide,1,1) \
-                                                          + (l)[0]*(l)[1]*_PARAM(theSide,2,1)\
-                                                          + (1.0-(l)[0])*(l)[1]*_PARAM(theSide,3,1);\
-                                                }\
-                                                if (Patch_local2bndcond(thePatch,mu,(v),(type)))\
-                                                  return (1);}
-
-
-#define Vertex_BndCond(p,w,i,v,t)       { \
-    VSEGMENT *s; \
-    INT j,k; \
-    PATCH *q; \
-    k=0; \
-    for (s=p->bv.vseg,j=0; j<(i); s=s->next,j++) k++; \
-    q = s->thePatch; \
-    Patch_local2bndcond(q,s->lambda,(v),(t)); \
-    for (; s!=NULL; s=s->next) k++; \
-    (*(w)) = k; \
-}
-
-#endif
-
-/*  only for checks
-
-   #undef SIDE
-   #undef SET_SIDE
-   #undef SUCCS
-   #undef PREDS
-   #undef ES_PATCH
-   #undef PARAM
-   #undef PARAMPTR
-
-   #define SIDE(p,i)            please change
-   #define SET_SIDE(p,i,q) please change
-   #define SUCCS(p)		please change
-   #define PREDS(p)		please change
-   #define ES_PATCH(p)		please change
-   #define PARAM(p,i,j)	please change
-   #define PARAMPTR(p,i)	please change
-
-
-   #define BVP_GetCoeffFct please change
-   #define BVP_GetUserFct please change
- #define BVP_GetBVPDesc please change */
-
-
-
-#define BVP_GetCoeffFct BVP_SetCoeffFct
-#define BVP_GetUserFct BVP_SetUserFct
-#define BVP_GetBVPDesc BVP_SetBVPDesc
-
-
 
 #endif
