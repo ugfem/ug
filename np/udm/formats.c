@@ -685,6 +685,7 @@ static VEC_TEMPLATE *CreateVecTemplate (const char *name)
   vt = (VEC_TEMPLATE *) MakeEnvItem (name,theVecVarID,sizeof(VEC_TEMPLATE));
   if (vt==NULL) REP_ERR_RETURN (NULL);
   VT_NSUB(vt) = 0;
+  VT_NID(vt) = NO_IDENT;
   token = DEFAULT_NAMES;
   for (j=0; j<MAX(MAX_VEC_COMP,strlen(DEFAULT_NAMES)); j++)
     VT_COMPNAME(vt,j) = token[j];
@@ -1176,7 +1177,6 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
       }
 
       /* check next arg for ident */
-      VT_NID(vt) = NO_IDENT;
       if (opt+1 < argc)
         if (strncmp(argv[opt+1],"ident",5)==0)
         {
