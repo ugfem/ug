@@ -2151,20 +2151,28 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
                                     const VECDATA_DESC *Rhs)
 {
   VECTOR *theVector;
-  MATRIX *theMatrix;
-  INT i,j,comp1,comp2,ncomp,dcomp,type,dtype;
+  INT i,j;
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL;
-       theVector=SUCCVC(theVector)) {
-    type = VTYPE(theVector);
-    ncomp = VD_NCMPS_IN_TYPE (Sol,type);
+       theVector=SUCCVC(theVector))
+  {
+    INT type = VTYPE(theVector);
+    INT ncomp = VD_NCMPS_IN_TYPE (Sol,type);
+
     if (ncomp == 0) continue;
     for (j=0; j<ncomp; j++)
-      if (VECSKIP(theVector) & (1<<j)) {
-        comp1 = VD_CMP_OF_TYPE(Sol,type,j);
-        comp2 = VD_CMP_OF_TYPE(Rhs,type,j);
-        VVALUE(theVector,comp2) =       VVALUE(theVector,comp1);
-        theMatrix = VSTART(theVector);
+      if (VECSKIP(theVector) & (1<<j))
+      {
+        MATRIX *theMatrix = VSTART(theVector);
+        INT comp1 = VD_CMP_OF_TYPE(Sol,type,j);
+        DOUBLE s = VVALUE(theVector,comp1);
+
+        VVALUE(theVector,VD_CMP_OF_TYPE(Rhs,type,j)) = 0.0;
+        for (i=0; i<ncomp; i++)
+          if ((i != j) && (!(VECSKIP(theVector) & (1<<i))))
+            VVALUE(theVector,VD_CMP_OF_TYPE(Rhs,type,i)) -=
+              s * MVALUE(theMatrix,
+                         MD_MCMP_OF_RT_CT(Mat,type,type,i*ncomp+j));
         for (i=0; i<ncomp; i++) {
           MVALUE(theMatrix,
                  MD_MCMP_OF_RT_CT(Mat,type,type,i*ncomp+j)) = 0.0;
@@ -2174,11 +2182,18 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
         MVALUE(theMatrix,
                MD_MCMP_OF_RT_CT(Mat,type,type,j+j*ncomp)) = 1.0;
         for (theMatrix=MNEXT(theMatrix); theMatrix!=NULL;
-             theMatrix=MNEXT(theMatrix)) {
-          dtype = MDESTTYPE(theMatrix);
-          dcomp = VD_NCMPS_IN_TYPE (Sol,dtype);
+             theMatrix=MNEXT(theMatrix))
+        {
+          VECTOR *dest = MDEST(theMatrix);
+          INT dtype = MDESTTYPE(theMatrix);
+          INT dcomp = VD_NCMPS_IN_TYPE (Sol,dtype);
+
           if (dcomp == 0) continue;
           for (i=0; i<dcomp; i++) {
+            if (!(VECSKIP(dest) & (1<<i)))
+              VVALUE(dest,VD_CMP_OF_TYPE(Rhs,dtype,i)) -=
+                s * MVALUE(MADJ(theMatrix),
+                           MD_MCMP_OF_RT_CT(Mat,dtype,type,i*ncomp+j));
             MVALUE(theMatrix,
                    MD_MCMP_OF_RT_CT(Mat,type,dtype,j*dcomp+i))
               = 0.0;
