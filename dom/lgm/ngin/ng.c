@@ -138,7 +138,7 @@ static int CheckElem (NG_ELEMENT *Elem)
 
   /* check faces */
   for (i=0; i<Elem->n_f; i++)
-    if (Elem->face[i].n_c!=3)
+    if ((Elem->face[i].n_c != 4) && (Elem->face[i].n_c != 3))
       return (1);
   switch (Elem->n_c)
   {
@@ -149,10 +149,10 @@ static int CheckElem (NG_ELEMENT *Elem)
     if (Elem->n_f>5) return (1);
     break;
   case 6 :
-    if (Elem->n_f>5) return (1);
+    if (Elem->n_f>6) return (1);
     break;
   case 8 :
-    if (Elem->n_f>6) return (1);
+    if (Elem->n_f>8) return (1);
     break;
   default :
     return (1);
@@ -180,8 +180,8 @@ int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
   esob=0;
   for (i=0; i<Elem->n_f; i++)
   {
-    if (Elem->face[i].n_c!=3) continue;
-    for (j=0; j<3; j++)
+    if ((Elem->face[i].n_c != 3) && (Elem->face[i].n_c != 4)) continue;
+    for (j=0; j<Elem->face[i].n_c; j++)
     {
       for (n=0; n<Elem->n_c; n++)
         if (Elem->face[i].c_id[j]==Elem->c_id[n])
@@ -191,7 +191,7 @@ int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
         }
       if (n==Elem->n_c) ngbreak();
     }
-    qsort((void*)cof,3,sizeof(int),cmp_int);
+    qsort((void*)cof,Elem->face[i].n_c,sizeof(int),cmp_int);
     switch (Elem->n_c)
     {
     case 4 :
@@ -201,6 +201,7 @@ int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
       if (cof[0]==0 && cof[1]==1 && cof[2]==3) esob |= 8;
       break;
     case 5 :
+      if (cof[0]==0 && cof[1]==1 && cof[2]==2 && cof[3]==3) esob |= 1;
       if (cof[0]==0 && cof[1]==1 && cof[2]==4) esob |= 2;
       if (cof[0]==1 && cof[1]==2 && cof[2]==4) esob |= 4;
       if (cof[0]==2 && cof[1]==3 && cof[2]==4) esob |= 8;
@@ -208,7 +209,18 @@ int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
       break;
     case 6 :
       if (cof[0]==0 && cof[1]==1 && cof[2]==2) esob |= 1;
+      if (cof[0]==0 && cof[1]==1 && cof[2]==3 && cof[3]==4) esob |= 2;
+      if (cof[0]==1 && cof[1]==2 && cof[2]==4 && cof[3]==5) esob |= 4;
+      if (cof[0]==0 && cof[1]==2 && cof[2]==3 && cof[3]==5) esob |= 8;
       if (cof[0]==3 && cof[1]==4 && cof[2]==5) esob |= 16;
+      break;
+    case 8 :                     /* Reihenfolge von2,4,8,16 beliebig? */
+      if (cof[0]==0 && cof[1]==1 && cof[2]==2 && cof[3]==3) esob |= 1;
+      if (cof[0]==0 && cof[1]==1 && cof[2]==4 && cof[3]==5) esob |= 2;
+      if (cof[0]==1 && cof[1]==2 && cof[2]==5 && cof[3]==6) esob |= 4;
+      if (cof[0]==2 && cof[1]==3 && cof[2]==6 && cof[3]==7) esob |= 8;
+      if (cof[0]==0 && cof[1]==3 && cof[2]==4 && cof[3]==7) esob |= 16;
+      if (cof[0]==4 && cof[1]==5 && cof[2]==6 && cof[3]==7) esob |= 32;
       break;
     }
   }
