@@ -6316,7 +6316,7 @@ INT dsetBS (const BLOCKVECTOR *bv, INT xcomp, DOUBLE a)
 {
 	register VECTOR *v, *first_v, *end_v;
 	
-	assert( xcomp >= 0 );
+	ASSERT( xcomp >= 0 );
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -6361,7 +6361,7 @@ INT dsetGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, IN
 	register VECTOR *v, *first_v, *end_v;
 	register BLOCKVECTOR *bv;
 
-	assert( xcomp >= 0 );
+	ASSERT( xcomp >= 0 );
 	
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
@@ -6423,7 +6423,7 @@ INT dsetfuncB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, SetFunc
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
 
-#ifndef NDEBUG
+IFDEBUG(np,0)
 	/* check maximal block size */
 	maxsmallblock = 0;
 	for (vtype=0; vtype<NVECTYPES; vtype++)
@@ -6432,7 +6432,7 @@ INT dsetfuncB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, SetFunc
 	
 	/* check size of the largest small block */
 	assert (maxsmallblock <= MAX_SINGLE_VEC_COMP);	/* if too little: increase MAX_SINGLE_VEC_COMP and recompile */
-#endif
+ENDDEBUG
 
 	for (vtype=0; vtype<NVECTYPES; vtype++)
 		if (VD_ISDEF_IN_TYPE(x,vtype))
@@ -6531,7 +6531,7 @@ INT dsetfuncG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf,
 	BLOCKVECTOR *bv;
 	VECTOR *first_v;
 
-#ifndef NDEBUG
+IFDEBUG(np,0)
 	/* check maximal block size */
 	maxsmallblock = 0;
 	for (vtype=0; vtype<NVECTYPES; vtype++)
@@ -6540,7 +6540,7 @@ INT dsetfuncG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf,
 	
 	/* check size of the largest small block */
 	assert (maxsmallblock <= MAX_SINGLE_VEC_COMP);	/* if too little: increase MAX_SINGLE_VEC_COMP and recompile */
-#endif
+ENDDEBUG
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
@@ -6634,7 +6634,7 @@ INT dsetfuncBS (const BLOCKVECTOR *bv, INT xcomp, SetFuncProcPtr SetFunc)
 	DOUBLE_VECTOR Point;
 	register VECTOR *v, *first_v, *end_v;
 	
-	assert( xcomp >= 0 );
+	ASSERT( xcomp >= 0 );
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -6692,7 +6692,7 @@ INT dsetfuncGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf
 	register VECTOR *v, *first_v, *end_v;
 	register BLOCKVECTOR *bv;
 
-	assert( xcomp >= 0 );
+	ASSERT( xcomp >= 0 );
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
@@ -6918,7 +6918,7 @@ INT dcopyBS (const BLOCKVECTOR *bv, INT xcomp, INT ycomp)
 {
 	register VECTOR *v, *first_v, *end_v;
 
-	assert( (xcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (ycomp >= 0) );
 	
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -6963,7 +6963,7 @@ INT dcopyGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, I
 	register VECTOR *v, *first_v, *end_v;
 	BLOCKVECTOR *bv;
 
-	assert( (xcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (ycomp >= 0) );
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
@@ -7175,7 +7175,7 @@ INT dscaleBS (const BLOCKVECTOR *bv, INT xcomp, DOUBLE a)
 {
 	register VECTOR *v, *first_v, *end_v;
 
-	assert( xcomp >= 0 );
+	ASSERT( xcomp >= 0 );
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7221,7 +7221,7 @@ INT dscaleGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, 
 	register VECTOR *v, *first_v, *end_v;
 	BLOCKVECTOR *bv;
 	
-	assert( xcomp >= 0 );
+	ASSERT( xcomp >= 0 );
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
@@ -7266,7 +7266,7 @@ INT daddBS (const BLOCKVECTOR *bv, INT xcomp, INT ycomp)
 {
 	register VECTOR *v, *first_v, *end_v;
 	
-	assert( (xcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (ycomp >= 0) );
 	
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7307,7 +7307,7 @@ INT dsubBS (const BLOCKVECTOR *bv, INT xcomp, INT ycomp)
 {
 	register VECTOR *v, *first_v, *end_v;
 	
-	assert( (xcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (ycomp >= 0) );
 	
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7347,7 +7347,7 @@ INT dminusaddBS (const BLOCKVECTOR *bv, INT xcomp, INT ycomp)
 {
 	register VECTOR *v, *first_v, *end_v;
 	
-	assert( (xcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (ycomp >= 0) );
 	
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7581,7 +7581,7 @@ INT daxpyBS (const BLOCKVECTOR *bv, INT xcomp, DOUBLE a, INT ycomp)
 {
 	register VECTOR *v, *first_v, *end_v;
 	
-	assert( (xcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (ycomp >= 0) );
 	
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7628,7 +7628,7 @@ INT daxpyGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, I
 	register VECTOR *v, *first_v, *end_v;
 	register BLOCKVECTOR *bv;
 
-	assert( (xcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (ycomp >= 0) );
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
@@ -7873,7 +7873,7 @@ INT dxdyBS (const BLOCKVECTOR *bv, INT xcomp, DOUBLE a, INT ycomp)
 {
 	register VECTOR *v, *first_v, *end_v;
 	
-	assert( xcomp >= 0 );
+	ASSERT( xcomp >= 0 );
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7919,7 +7919,7 @@ INT dxdyGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, IN
 	register VECTOR *v, *first_v, *end_v;
 	BLOCKVECTOR *bv;
 	
-	assert( xcomp >= 0 );
+	ASSERT( xcomp >= 0 );
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
@@ -8178,7 +8178,7 @@ INT ddotBS (const BLOCKVECTOR *bv, INT xcomp, INT ycomp, DOUBLE *sp)
 	register VECTOR *v, *first_v, *end_v;
 	register DOUBLE val = 0.0;
 	
-	assert( (xcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (ycomp >= 0) );
 		
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -8228,7 +8228,7 @@ INT ddotGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, IN
 	VECTOR *v, *first_v, *end_v;
 	BLOCKVECTOR *bv;
 
-	assert( (xcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (ycomp >= 0) );
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
@@ -8700,7 +8700,7 @@ INT dmatsetBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_
 	register VECTOR *v, *end_v, *first_v;
 	register MATRIX *m;
 
-	assert( mcomp >= 0 );
+	ASSERT( mcomp >= 0 );
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -8748,7 +8748,7 @@ INT dmatsetGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col,
 	register MATRIX *m;
 	BLOCKVECTOR *bv_row;
 
-	assert( mcomp >= 0 );
+	ASSERT( mcomp >= 0 );
 
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
@@ -9102,7 +9102,7 @@ INT dmatcopyBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC
 	register VECTOR *v, *end_v, *first_v;
 	register MATRIX *m;
 	
-	assert( (m1comp >= 0) && (m2comp >= 0) );
+	ASSERT( (m1comp >= 0) && (m2comp >= 0) );
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -9151,7 +9151,7 @@ INT dmatcopyGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col
 	register MATRIX *m;
 	BLOCKVECTOR *bv_row;
 	
-	assert( (m1comp >= 0) && (m2comp >= 0) );
+	ASSERT( (m1comp >= 0) && (m2comp >= 0) );
 	
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
@@ -9202,7 +9202,7 @@ INT dmatcopyTransBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 	register VECTOR *v, *end_v, *first_v;
 	register MATRIX *m;
 	
-	assert( (dest_comp >= 0) && (source_comp >= 0) );
+	ASSERT( (dest_comp >= 0) && (source_comp >= 0) );
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -9800,7 +9800,7 @@ INT dmatmulBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_
 	register MATRIX *mat;
 	register DOUBLE sum;
 	
-	assert( (xcomp >= 0) && (mcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (mcomp >= 0) && (ycomp >= 0) );
 	
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -9864,7 +9864,7 @@ INT dmatmulGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col,
 	register DOUBLE sum;
 	BLOCKVECTOR *bv_row;
 	
-	assert( (xcomp >= 0) && (mcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (mcomp >= 0) && (ycomp >= 0) );
 	
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
@@ -10473,7 +10473,7 @@ INT dmatmul_minusBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 	register MATRIX *mat;
 	register DOUBLE sum;
 	
-	assert( (xcomp >= 0) && (mcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (mcomp >= 0) && (ycomp >= 0) );
 	
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -10535,7 +10535,7 @@ INT dmatmul_minusGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 	register DOUBLE sum;
 	BLOCKVECTOR *bv_row;
 	
-	assert( (xcomp >= 0) && (mcomp >= 0) && (ycomp >= 0) );
+	ASSERT( (xcomp >= 0) && (mcomp >= 0) && (ycomp >= 0) );
 	
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
@@ -10560,94 +10560,42 @@ INT dmatmul_minusGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 }
 
 
-
-/****************************************************************************/
-/*D
-   CalculateDefectAndNormBS - calculates the defect of a blockmatrix d := f - K * u
-
-   SYNOPSIS:
-    DOUBLE CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, 
-	    const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, 
-		INT f_comp, INT K_comp, INT u_comp );
-
-   PARAMETERS:
-.  bv_row - row-blockvector of the matrix
-.  bvd_col - description of the column-blockvector
-.  bvdf - format to interpret the 'bvd_col'
-.  d_comp - position of the resultant defect in the VECTORs of the blockvector
-.  f_comp - position of the right hand side in the VECTORs of the blockvector
-.  K_comp - position of the matrix in the MATRIXs of the blockvector
-.  u_comp - position of the solution in the VECTORs of the blockvector
-
-   DESCRIPTION:
-   This function subtracts scalar matrix times scalar vector
-   `d := f - K * u` for all
-   VECTORs d, f and u of the blockvectors, given by pointer 'bv_row'
-   resp. description 'bvd_col', and MATRIXs K coupling between d(f) and u.
-
-   d_comp == f_comp is allowed; then this function is equivalent to 
-   'dmatmul_minusBS' and then 'eunormBS'.
-   
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-
-   SEE ALSO:
-   BLOCKVECTOR, blas_routines, dmatmul_minusBS 
-D*/
-/****************************************************************************/
-
-DOUBLE CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, INT f_comp, INT K_comp, INT u_comp )
-{
-	register VECTOR *v, *end_v;
-	register MATRIX *m;
-	register DOUBLE sum, result;
-	
-	assert( (d_comp >= 0) && (f_comp >= 0) && (K_comp >= 0) && (u_comp >= 0) );
-
-	result = 0.0;
-	end_v = BVENDVECTOR( bv_row );
-	for ( v = BVFIRSTVECTOR( bv_row ); v != end_v; v = SUCCVC( v ) )
-	{
-		sum = VVALUE( v, f_comp );
-		for ( m = VSTART( v ); m != NULL; m = MNEXT( m ) )
-			if ( VMATCH( MDEST(m), bvd_col, bvdf ) )
-				sum -= MVALUE( m, K_comp ) * VVALUE( MDEST( m ), u_comp );
-		VVALUE( v, d_comp ) = sum;
-		result += sum * sum;
-	}
-
-	return sqrt( result );
-}
 /****************************************************************************/
 /*
-   d2matmulBS - product of two matrixes
+   d2matmulBS - add the product of two scalar matrices
 
    SYNOPSIS:
    INT d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1,
    const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp,
-   INT M1comp, INT M2comp, GRID *grid )
+   INT M1comp, INT M2comp, GRID *grid );
 
    PARAMETERS:
 .  bv_row1 - row-blockvector of the result matrix and matrix M1
 .  bvd_col1 - description of the column-blockvector of M1 (identical to row-blockvector of M2)
 .  bvd_col2 - description of the column-blockvector of M2 (identical to column-blockvector of the result matrix)
 .  bvdf - format to interpret the 'bvd_col's
-.  M_res_comp - position of the scalar in the MATRIXs of the blockmatrix
-
+.  M_res_comp - position of the scalar result in the MATRIXs of the blockmatrix bv_row1 times bvd_col2
+.  M1comp - 1. operand; position of the scalar in the MATRIXs of the blockmatrix bv_row1 times bvd_col1
+.  M2comp - 2. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col1 times bvd_col2
+.  grid - grid to allocate new matrix-entries from
 
    DESCRIPTION:
-   This function substracts matrix times vector `x := x - M*y`
+   This function adds the product of 2 matrices `Mres += M1 * M2` 
    on one grid level.
+   
+   New matrix entries are allocated if 'grid' != 'NULL'; otherwise the product
+   is treated as incomplete. Prints out the 
+   number of additionaly allocated matrix entries if 'mute' >= 100.
 
+   The result matrix must be different to the input matrices.
+   
    RETURN VALUE:
    INT
 .n    NUM_OK if ok
+.n    GM_OUT_OF_MEM if no memory for additional matrix entries available
 */
 /****************************************************************************/
 
-/*Achtung: die ergmatrix muss zu beiden eingangsmatrizen verschieden sein!*/
-/* grid != NULL, dann extraconn */
 INT d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid )
 {
 	register VECTOR *vi, *vj, *vk, *end_v;
@@ -10655,8 +10603,8 @@ INT d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_D
     register CONNECTION *con;
 	INT extra_cons = 0;
 
-	assert( (M_res_comp >= 0) && (M1comp >= 0) && (M2comp >= 0) );
-
+	ASSERT( (M_res_comp >= 0) && (M1comp >= 0) && (M2comp >= 0) );
+	
 	end_v = BVENDVECTOR( bv_row1 );
 	for ( vi = BVFIRSTVECTOR( bv_row1 ); vi != end_v; vi = SUCCVC( vi ) )
 		for ( mik = VSTART( vi ); mik != NULL; mik = MNEXT( mik ) )
@@ -10694,6 +10642,42 @@ INT d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_D
 	return (NUM_OK);
 }
 
+/****************************************************************************/
+/*
+   d2matmul_minusBS - subtract the product of two scalar matrices
+
+   SYNOPSIS:
+   INT d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1,
+   const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp,
+   INT M1comp, INT M2comp, GRID *grid );
+
+   PARAMETERS:
+.  bv_row1 - row-blockvector of the result matrix and matrix M1
+.  bvd_col1 - description of the column-blockvector of M1 (identical to row-blockvector of M2)
+.  bvd_col2 - description of the column-blockvector of M2 (identical to column-blockvector of the result matrix)
+.  bvdf - format to interpret the 'bvd_col's
+.  M_res_comp - position of the scalar result in the MATRIXs of the blockmatrix bv_row1 times bvd_col2
+.  M1comp - 1. operand; position of the scalar in the MATRIXs of the blockmatrix bv_row1 times bvd_col1
+.  M2comp - 2. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col1 times bvd_col2
+.  grid - grid to allocate new matrix-entries from
+
+   DESCRIPTION:
+   This function subtracts the product of 2 matrices `Mres -= M1 * M2` 
+   on one grid level.
+   
+   New matrix entries are allocated if 'grid' != 'NULL'; otherwise the product
+   is treated as incomplete. Prints out the 
+   number of additionaly allocated matrix entries if 'mute' >= 100.
+
+   The result matrix must be different to the input matrices.
+   
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    GM_OUT_OF_MEM if no memory for additional matrix entries available
+*/
+/****************************************************************************/
+
 INT d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid )
 {
 	register VECTOR *vi, *vj, *vk, *end_v;
@@ -10701,7 +10685,7 @@ INT d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, cons
     register CONNECTION *con;
 	INT extra_cons = 0;
 
-	assert( (M_res_comp >= 0) && (M1comp >= 0) && (M2comp >= 0) );
+	ASSERT( (M_res_comp >= 0) && (M1comp >= 0) && (M2comp >= 0) );
 
 	end_v = BVENDVECTOR( bv_row1 );
 	for ( vi = BVFIRSTVECTOR( bv_row1 ); vi != end_v; vi = SUCCVC( vi ) )
@@ -10742,6 +10726,45 @@ INT d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, cons
 }
 
 
+/****************************************************************************/
+/*
+   d3matmulBS - add the product of three scalar matrices
+
+   SYNOPSIS:
+   INT d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, 
+   const BV_DESC *bvd_col2, const BV_DESC *bvd_col3, const BV_DESC_FORMAT *bvdf, 
+   INT M_res_comp, INT M1comp, INT M2comp, INT M3comp, GRID *grid );
+
+
+   PARAMETERS:
+.  bv_row1 - row-blockvector of the result matrix and matrix M1
+.  bvd_col1 - description of the column-blockvector of M1 (identical to row-blockvector of M2)
+.  bvd_col2 - description of the column-blockvector of M2 (identical to row-blockvector of M3)
+.  bvd_col3 - description of the column-blockvector of M3 (identical to column-blockvector of the result matrix)
+.  bvdf - format to interpret the 'bvd_col's
+.  M_res_comp - position of the scalar result in the MATRIXs of the blockmatrix bv_row1 times bvd_col2
+.  M1comp - 1. operand; position of the scalar in the MATRIXs of the blockmatrix bv_row1 times bvd_col1
+.  M2comp - 2. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col1 times bvd_col2
+.  M2comp - 3. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col2 times bvd_col3
+.  grid - grid to allocate new matrix-entries from
+
+   DESCRIPTION:
+   This function adds the product of 3 matrices `Mres += M1 * M2 * M3` 
+   on one grid level.
+   
+   New matrix entries are allocated if 'grid' != 'NULL'; otherwise the product
+   is treated as incomplete. Prints out the 
+   number of additionaly allocated matrix entries if 'mute' >= 100.
+
+   The result matrix must be different to the input matrices.
+   
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    GM_OUT_OF_MEM if no memory for additional matrix entries available
+*/
+/****************************************************************************/
+
 INT d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC *bvd_col3, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, INT M3comp, GRID *grid )
 {
 	register VECTOR *vi, *vj, *vk, *vl, *end_v;
@@ -10749,7 +10772,7 @@ INT d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_D
 	register CONNECTION *con;
 	INT extra_cons = 0;
 
-	assert( (M_res_comp >= 0) && (M1comp >= 0) && (M2comp >= 0) && (M3comp >= 0) );
+	ASSERT( (M_res_comp >= 0) && (M1comp >= 0) && (M2comp >= 0) && (M3comp >= 0) );
 
 	end_v = BVENDVECTOR( bv_row1 );
 	for ( vi = BVFIRSTVECTOR( bv_row1 ); vi != end_v; vi = SUCCVC( vi ) )
@@ -10796,6 +10819,66 @@ INT d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_D
 		UserWriteF( "%d extra connection(s) allocated in d3matmulBS.\n", extra_cons );
 
 	return (NUM_OK);
+}
+
+
+/****************************************************************************/
+/*D
+   CalculateDefectAndNormBS - calculates the defect of a blockmatrix d := f - K * u
+
+   SYNOPSIS:
+    DOUBLE CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, 
+	    const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, 
+		INT f_comp, INT K_comp, INT u_comp );
+
+   PARAMETERS:
+.  bv_row - row-blockvector of the matrix
+.  bvd_col - description of the column-blockvector
+.  bvdf - format to interpret the 'bvd_col'
+.  d_comp - position of the resultant defect in the VECTORs of the blockvector
+.  f_comp - position of the right hand side in the VECTORs of the blockvector
+.  K_comp - position of the matrix in the MATRIXs of the blockvector
+.  u_comp - position of the solution in the VECTORs of the blockvector
+
+   DESCRIPTION:
+   This function subtracts scalar matrix times scalar vector
+   `d := f - K * u` for all
+   VECTORs d, f and u of the blockvectors, given by pointer 'bv_row'
+   resp. description 'bvd_col', and MATRIXs K coupling between d(f) and u.
+
+   d_comp == f_comp is allowed; then this function is equivalent to 
+   'dmatmul_minusBS' and then 'eunormBS'.
+   
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+
+   SEE ALSO:
+   BLOCKVECTOR, blas_routines, dmatmul_minusBS 
+D*/
+/****************************************************************************/
+
+DOUBLE CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, INT f_comp, INT K_comp, INT u_comp )
+{
+	register VECTOR *v, *end_v;
+	register MATRIX *m;
+	register DOUBLE sum, result;
+	
+	ASSERT( (d_comp >= 0) && (f_comp >= 0) && (K_comp >= 0) && (u_comp >= 0) );
+
+	result = 0.0;
+	end_v = BVENDVECTOR( bv_row );
+	for ( v = BVFIRSTVECTOR( bv_row ); v != end_v; v = SUCCVC( v ) )
+	{
+		sum = VVALUE( v, f_comp );
+		for ( m = VSTART( v ); m != NULL; m = MNEXT( m ) )
+			if ( VMATCH( MDEST(m), bvd_col, bvdf ) )
+				sum -= MVALUE( m, K_comp ) * VVALUE( MDEST( m ), u_comp );
+		VVALUE( v, d_comp ) = sum;
+		result += sum * sum;
+	}
+
+	return sqrt( result );
 }
 #endif /* __BLOCK_VECTOR_DESC__ */
 
