@@ -107,6 +107,9 @@ typedef struct
   /* <0: enls in sequence            */
   EVECDATA_DESC *sol_t;                      /* tangential                      */
   DOUBLE scale;
+  DOUBLE raster;                         /* if >0, std newton is forced to  */
+                                         /* raster                          */
+  DOUBLE raster_size[EXTENSION_MAX];     /* raster sizes                    */
 
 } NP_SPS;                                /* simple pstep                    */
 
@@ -371,7 +374,7 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
   NLRESULT nlresult;
   ENLRESULT enlresult;
   DOUBLE Factor[MAX_VEC_COMP];
-  INT do_nls;
+  INT do_nls,n0,n1;
   char buffer[128],text[128];
   DOUBLE s,nt,diff;
 
@@ -437,10 +440,26 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
         if (sps->n_step>0)
         {
           for (i=0; i<sps->pstep.sol_p0->n; i++)
+          {
             if (sps->sol_t->e[i]*sps->last_nls_dp[i]>=0.0)
               sol_p1->e[i]=sps->pstep.sol_p0->e[i]+sps->last_nls_dp[i];
             else
               sol_p1->e[i]=sps->pstep.sol_p0->e[i]-sps->last_nls_dp[i];
+            if (sps->raster>0.0 && sol_p1->e[i]>sps->pstep.sol_p0->e[i])
+            {
+              n0=floor(sps->pstep.sol_p0->e[i]/sps->raster_size[i]);
+              n1=floor(sol_p1->e[i]/sps->raster_size[i]+0.5);
+              if (n0>=n1) n1=n0+1;
+              sol_p1->e[i]=n1*sps->raster_size[i];
+            }
+            else if (sps->raster>0.0 && sol_p1->e[i]<sps->pstep.sol_p0->e[i])
+            {
+              n0=ceil(sps->pstep.sol_p0->e[i]/sps->raster_size[i]);
+              n1=ceil(sol_p1->e[i]/sps->raster_size[i]+0.5);
+              if (n0<=n1) n1=n0-1;
+              sol_p1->e[i]=n1*sps->raster_size[i];
+            }
+          }
         }
       }
 
@@ -636,6 +655,10 @@ INT SPS_Init (NP_BASE *base, INT argc, char **argv)
   if ((sps->baselevel<0)||(sps->baselevel>32)) return(NP_NOT_ACTIVE);
   if (ReadArgvINT("nested",&(sps->nested),argc,argv)) sps->nested=0;
   if ((sps->nested<0)||(sps->nested>1)) return(NP_NOT_ACTIVE);
+  if (ReadArgvDOUBLE("r",&(sps->raster),argc,argv)) sps->raster=0.0;
+  if (sps->raster>0.0)
+    for (i=0; i<EXTENSION_MAX; i++)
+      sps->raster_size[i]=sps->raster;
   sps->displayMode=ReadArgvDisplay(argc,argv);
   ret=NP_EXECUTABLE;
 
