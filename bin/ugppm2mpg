@@ -2,16 +2,15 @@
 #
 # ugppm2mpg: converts a series of ppm-files to an mpeg-clip
 # (adapted from ugm2mpeg)
-# =
+#
 
 # Michael Lampe, Oct 1998
-# =
+#
 
 
-set help =3D "usage: ugppm2mpg <basename> -f <first> <last> [-fi <increme=
-nt>]"
+set help = "usage: ugppm2mpg <basename> -f <first> <last> [-fi <increment>]"
 
-if ( $#argv !=3D 4 && $#argv !=3D 6 ) then
+if ( $#argv != 4 && $#argv != 6 ) then
 	echo "$help"
 	exit
 endif
@@ -20,25 +19,25 @@ endif
 # defaults
 #
 
-@ fi =3D 1		# frame increment
+@ fi = 1		# frame increment
 
 #
 # parse commandline
 #
 
-set base =3D $argv[1]
+set base = $argv[1]
 
-if ( "$argv[2]" =3D=3D "-f" ) then
-	@ fs =3D $argv[3]
-	@ fe =3D $argv[4]
+if ( "$argv[2]" == "-f" ) then
+	@ fs = $argv[3]
+	@ fe = $argv[4]
 else
 	echo "$help"
 	exit
 endif
 
 if ( $#argv > 4 ) then
-	if ( "$argv[5]" =3D=3D "-fi" )  then
-		@ fi =3D $argv[6]
+	if ( "$argv[5]" == "-fi" )  then
+		@ fi = $argv[6]
 	else
 		echo "$help"
 		exit
@@ -51,18 +50,18 @@ endif
 
 echo ""
 
-set up =3D "=1B[A=1B[A"
-set bell =3D "=07"
+set up = ""
+set bell = ""
 
-@ i =3D $fs
-@ j =3D 1
-while ( $i <=3D $fe )
-	set infile =3D `echo $base $i | awk '{printf "%s.%04d",$1,$2}'`
-	set outfile =3D $base.$j
+@ i = $fs
+@ j = 1
+while ( $i <= $fe )
+	set infile = `echo $base $i | awk '{printf "%s.%04d",$1,$2}'`
+	set outfile = $base.$j
 	echo "Converting PPM to YUV: $infile"
 	ppmtoyuvsplit $outfile $infile >& /dev/null
 	echo "$up"
-	@ i +=3D $fi
+	@ i += $fi
 	@ j++
 end
 echo "Converting PPM to YUV: done                                 "
@@ -77,11 +76,11 @@ echo "Converting YUV to MPG: wait..."
 # get image size
 #
 
-set file =3D `echo $base $fs | awk '{printf "%s.%04d",$1,$2}'` =
+set file = `echo $base $fs | awk '{printf "%s.%04d",$1,$2}'`
 
-set header =3D `head -3 $file`
-@ width  =3D $header[7]
-@ height =3D $header[8]
+set header = `head -3 $file`
+@ width  = $header[7]
+@ height = $header[8]
 
 #
 #  ppmtoyuvsplit chops off an odd row/column
@@ -94,16 +93,16 @@ if ( $height % 2 ) @ height--
 #  mpeg needs an option if width/height is not divisible by 16
 #
 
-set PF =3D ""
-if ( $width % 16 || $height % 16 ) set PF =3D "-PF"
+set PF = ""
+if ( $width % 16 || $height % 16 ) set PF = "-PF"
 
 #
 # make MPG
 #
 
-set MPEGNAME =3D "$base".mpg
+set MPEGNAME = "$base".mpg
 @ j--
-mpeg -a 1 -b $j -h $width -v $height $PF $base. -s $MPEGNAME >& /dev/null=
+mpeg -a 1 -b $j -h $width -v $height $PF $base. -s $MPEGNAME >& /dev/null
 
 
 #
@@ -115,9 +114,7 @@ rm -f $base.*.[YUV]
 echo "$up"
 echo "Converting YUV to MPG: done   "
 echo "$bell"
-echo "$base.mpg created." =
+echo "$base.mpg created."
 
 echo ""
-
---------------07BF12DF29231874E09FA6D4--
 
