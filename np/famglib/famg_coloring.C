@@ -308,14 +308,16 @@ int ConstructColoring( int OrderingFunctionType )
 	//
 	// determine the smallest unused color for me
 	//
+	FAMGMyColor = -1;		// start guess
 	for( i = 0; i < NrWait; i++ )
-		if( NbColor[i] != i )
+		if( NbColor[i] != FAMGMyColor )
 		{
-			FAMGMyColor = i;	// use the first gap in the color sequence
-			break;
+			FAMGMyColor++;	// next guess
+			if( NbColor[i] != FAMGMyColor )
+				break;		// use the first gap in the color sequence
 		}
-	if( i == NrWait )
-		FAMGMyColor = NrWait;	// introduce a new color
+	if( i == NrWait )		// no gap found
+		FAMGMyColor++;		// introduce a new color
 	
 	PRINTDEBUG(np,2,(PFMT " my color %d\n", me, FAMGMyColor));
 	
