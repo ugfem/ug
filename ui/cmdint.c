@@ -48,6 +48,7 @@
 
 /* dev module */
 #include "devices.h"
+#include "debug.h"
 
 /* ui module */
 #include "ugstruct.h"
@@ -2364,6 +2365,7 @@ static INT InterpretString()
       case NUMBERID :
         sprintf(valueStr,"%-.14lg",(double)result.ro.value);
                                         #ifdef ModelP
+        PRINTDEBUG(ui,1,("%2d: set NUMBERID=%s\n",me,valueStr))
         sprintf(execCmdBuffer,"set %s %s",buffer,valueStr);
         error = ParExecCommand(execCmdBuffer);
                                         #else
@@ -2373,6 +2375,7 @@ static INT InterpretString()
 
       case ALPHAID :
                                         #ifdef ModelP
+        PRINTDEBUG(ui,1,("%2d: set ALPHAID=%s\n",me,result.so.sptr))
         sprintf(execCmdBuffer,"set %s %s",buffer,result.so.sptr);
         error = ParExecCommand(execCmdBuffer);
                                         #else
@@ -2384,6 +2387,7 @@ static INT InterpretString()
                                         #ifdef ModelP
         sprintf(execCmdBuffer,"set %s ",buffer);
         strncat(execCmdBuffer,result.lo.sptr,result.lo.length);
+        PRINTDEBUG(ui,1,("%2d: set LSTRINGID=%s\n",me,result.lo.sptr))
         error = ParExecCommand(execCmdBuffer);
                                         #else
         error = SetnStringVar(buffer,result.lo.sptr,result.lo.length);
@@ -2453,7 +2457,9 @@ void CommandLoop (int argc, char **argv)
 
   UserWrite(ver);
 
-  if (argc<2 || argv[1][1] == 's')
+  /* TODO: delete this old code
+     if (argc<2 || argv[1][1] == 's') */
+  if (argc<2 || strcmp(argv[1],"-sz")==0)
   {
     doneFlag = 0;
     while (!doneFlag)
@@ -2569,7 +2575,9 @@ void CommandLoop (int argc, char **argv)
 }
 else
 {
-  if (TRUE /***argc<2 || argv[1][1] == 's'***/)         /* TODO quick fix */
+  /* TODO: delete this old code
+     if (argc<2 || argv[1][1] == 's')  */
+  if (argc<2 || strcmp(argv[1],"-sz")==0)
   {
     doneFlag = FALSE;
     while (!doneFlag)

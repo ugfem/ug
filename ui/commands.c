@@ -1154,8 +1154,18 @@ static INT SetCommand (INT argc, char **argv)
 {
   char name[LONGSTRSIZE], *namePtr;
   INT flag,ropt,i,res,rv;
+        #ifdef ModelP
+  /* allocate a bigger buffer for definition of long string variables */
+  char buffer[MAXCMDSIZE];
+        #ifdef Debug
+  char *p;
 
+  p = expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[\n -~]"));
+        #endif
+  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %4096[\n -~]")),name,buffer);
+        #else
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[ -~]")),name,buffer);
+        #endif /* ModelP */
 
   /* check options */
   ropt = FALSE;
@@ -1990,6 +2000,9 @@ static INT LogOnCommand (INT argc, char **argv)
     PrintErrorMessage('E',"logon","could not read name of logfile");
     return(PARAMERRORCODE);
   }
+        #ifdef ModelP
+  sprintf(logfile,"%s.%03d",logfile,me);
+        #endif
 
   rv = OpenLogFile(logfile);
   switch (rv)
@@ -2940,7 +2953,10 @@ static INT GListCommand (INT argc, char **argv)
   MULTIGRID *theMG;
 
         #ifdef ModelP
-  if (!CONTEXT(me)) return(OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: GListCommand(): me not in Context, no listing of grid\n",me))
+    return(OKCODE);
+  }
         #endif
 
   NO_OPTION_CHECK(argc,argv);
@@ -3019,7 +3035,10 @@ static INT NListCommand (INT argc, char **argv)
   long f,t;
 
         #ifdef ModelP
-  if (!CONTEXT(me)) return(OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: NListCommand(): me not in Context, no listing of nodes\n",me))
+    return(OKCODE);
+  }
         #endif
 
   theMG = currMG;
@@ -3187,7 +3206,10 @@ static INT EListCommand (INT argc, char **argv)
   long f,t;
 
         #ifdef ModelP
-  if (!CONTEXT(me)) return(OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: EListCommand(): me not in Context, no listing of elements\n",me))
+    return(OKCODE);
+  }
         #endif
 
   theMG = currMG;
@@ -3346,7 +3368,10 @@ static INT SelectionListCommand (INT argc, char **argv)
   INT i,dataopt,boundaryopt,neighbouropt,verboseopt;
 
         #ifdef ModelP
-  if (!CONTEXT(me)) return(OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: SelectionListCommand(): me not in Context, no listing of selection\n",me))
+    return(OKCODE);
+  }
         #endif
 
   theMG = currMG;
@@ -3403,6 +3428,84 @@ static INT SelectionListCommand (INT argc, char **argv)
     PrintErrorMessage('W',"slist","selectionmode ???");
     return (PARAMERRORCODE);
   }
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*
+   RuleListCommand - List rule records of element type for refinement
+
+   DESCRIPTION:
+   This command lists the rule record of a refinement rule for an element type,
+   if an integer is given or all records for this element type, if all-option is set.
+
+   'rlist [tri|qua|tet|hex] [rulenumber] | [$a]'
+
+   .  $a                      - list all rules for element type
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT RuleListCommand (INT argc, char **argv)
+{
+  INT i,allopt,rn,rv,tag;
+  char etype[32];
+
+  rn = -1;
+  allopt = FALSE;
+
+  /* check options */
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      allopt = TRUE;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("rlist",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  /* scan parameters */
+  if (allopt == FALSE)
+    rv = sscanf(argv[0],"rlist %31[triquatethexa] %d",etype,&rn);
+  else
+    rv = sscanf(argv[0],"rlist %31[triaquadtetrahexa]",etype);
+
+  tag = -1;
+        #ifdef __TWODIM__
+  if (strcmp("tri",etype)==0) tag = TRIANGLE;
+  if (strcmp("qua",etype)==0) tag = QUADRILATERAL;
+        #endif
+        #ifdef __THREEDIM__
+  if (strcmp("tet",etype)==0) tag = TETRAHEDRON;
+  if (strcmp("hex",etype)==0) tag = HEXAHEDRON;
+        #endif
+
+  if (tag==-1)
+  {
+    PrintErrorMessage('E',"rlist","wrong element type");
+    return (CMDERRORCODE);
+  }
+
+  if (rn==-1 && allopt==FALSE || rn>=0 && allopt==TRUE)
+  {
+    PrintErrorMessage('E',"rlist","specify rulenumber OR $a option!");
+    return (CMDERRORCODE);
+  }
+
+  if (allopt == TRUE)
+    for (i=0; i<MaxRules[tag]; i++)
+      ShowRefRule(tag,i);
+  else
+    ShowRefRule(tag,rn);
 
   return(OKCODE);
 }
@@ -3471,7 +3574,10 @@ static INT VMListCommand (INT argc, char **argv)
   long f,t;
 
         #ifdef ModelP
-  if (!CONTEXT(me)) return(OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: VMListCommand(): me not in Context, no listing of VM\n",me))
+    return(OKCODE);
+  }
         #endif
 
   theMG = currMG;
@@ -4361,7 +4467,10 @@ static INT RefineCommand (INT argc, char **argv)
   EVECTOR *theElemEvalDirection;
 
         #ifdef ModelP
-  if (me!=master) return (OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: RefineCommand(): me not in Context, grid not refined\n",me))
+    return (OKCODE);
+  }
         #endif
 
   theMG = currMG;
@@ -4499,7 +4608,10 @@ static INT MarkCommand (INT argc, char **argv)
   float x,y,z;
 
         #ifdef ModelP
-  if (me!=master) return (OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%d: MarkCommand() me not in Context, nothing marked\n",me))
+    return (OKCODE);
+  }
         #endif
 
   theMG = currMG;
@@ -8597,6 +8709,10 @@ static INT FindRangeCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   float zoom;
 
+        #ifdef ModelP
+  if (me!=master) return(OKCODE);
+        #endif
+
   theWork = &myWork;
 
   /* current picture */
@@ -10627,6 +10743,7 @@ INT InitCommands ()
   if (CreateCommand("nlist",                      NListCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("elist",                      EListCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("slist",                      SelectionListCommand                    )==NULL) return (__LINE__);
+  if (CreateCommand("rlist",                      RuleListCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("gridscript",         GridScriptCommand                               )==NULL) return(__LINE__);
