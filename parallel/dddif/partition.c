@@ -79,6 +79,7 @@
 /* define for load balancing which allows for refinement only */
 #define COARSEN_MARKS(mg)       CoarseMarks(mg)
 
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -215,7 +216,7 @@ INT CheckPartitioning (MULTIGRID *theMG)
         if (COARSEN(theFather))
         {
           /* level 0 elements can not be coarsened */
-          if (LEVEL(theFather)==0) continue;
+          if (LEVEL(theFather)<=1) continue;
           if (!EMASTER(EFATHER(theFather)))
           {
             UserWriteF(PFMT "elem=" EID_FMTX " cannot be coarsened\n",
@@ -446,7 +447,7 @@ INT RestrictPartitioning (MULTIGRID *theMG)
         if (COARSEN(theFather))
         {
           /* level 0 elements are not coarsened */
-          if (LEVEL(theFather)==0) continue;
+          if (LEVEL(theFather)<=1) continue;
           if (!EMASTER(EFATHER(theFather)))
             SETUSED(EFATHER(theFather),1);
         }
