@@ -545,13 +545,13 @@ static INT Matrix_Loop_MN(GRID *grid, unsigned int _vroot_mask_, unsigned int _v
             switch (operation)
             {
             case BLAS_M_COPY :
-              Block_Loop_MN(*M_ptr = *N_ptr; , );
+              Block_Loop_MN(*M_ptr = *N_ptr; ,; );
               break;
             case BLAS_M_ADD1 :
-              Block_Loop_MN(*M_ptr += *N_ptr; , );
+              Block_Loop_MN(*M_ptr += *N_ptr; ,; );
               break;
             case BLAS_M_MINUS1 :
-              Block_Loop_MN(*M_ptr -= *N_ptr; , );
+              Block_Loop_MN(*M_ptr -= *N_ptr; ,; );
               break;
             case BLAS_M_SCALMUL :
               v_ptr = v_start_ptr;
