@@ -164,7 +164,9 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
     v = NVECTOR(theNode);
     if (VCLASS(v)<NEWDEF_CLASS) continue;
     if (!V_IN_DATATYPE(v,dt)) continue;
-
+#ifdef __PERIODIC_BOUNDARY__
+    if (VOBJECT(v)!=theNode) continue;
+#endif
     if (CORNERTYPE(theNode))
     {
       vc = NVECTOR((NODE *)NFATHER(theNode));
@@ -284,6 +286,9 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
   {
     v = NVECTOR(theNode);
     if (!V_IN_DATATYPE(v,dt)) continue;
+#ifdef __PERIODIC_BOUNDARY__
+    if (VOBJECT(v)!=theNode) continue;
+#endif
     vecskip = VECSKIP(v);
     skip = TRUE;
     for (i=0; i<ncomp; i++)
@@ -399,6 +404,9 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     v = NVECTOR(theNode);
+#ifdef __PERIODIC_BOUNDARY__
+    if (VOBJECT(v)!=theNode) continue;
+#endif
     if (!VNEW(v)) continue;
     if (!V_IN_DATATYPE(v,dt)) continue;
 
