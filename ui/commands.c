@@ -3909,7 +3909,7 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
     xc[i] = x[i];
 
   /* NB: toplevel=0 is checked by InsertInnerNode() */
-  if (InsertInnerNode(theMG,xc)!=GM_OK)
+  if (InsertInnerNode(theMG,xc)==NULL)
   {
     PrintErrorMessage('E',"in","inserting an inner node failed");
     return (CMDERRORCODE);
@@ -3989,7 +3989,7 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (InsertBoundaryNode(theMG,bndp)!=GM_OK)
+  if (InsertBoundaryNode(theMG,bndp)==NULL)
   {
     PrintErrorMessage('E',"bn","inserting a boundary node failed");
     return (CMDERRORCODE);
@@ -4384,7 +4384,7 @@ static INT InsertElementCommand (INT argc, char **argv)
   /* got the nodes via s option? */
   if (nNodes>0)
   {
-    if (InsertElement(theMG,nNodes,theNodes,NULL,NULL)!=GM_OK)
+    if (InsertElement(theMG,nNodes,theNodes,NULL,NULL)==NULL)
     {
       PrintErrorMessage('E',"ie","inserting the element failed");
       return (CMDERRORCODE);
@@ -4425,7 +4425,7 @@ static INT InsertElementCommand (INT argc, char **argv)
   }
 
   /* NB: toplevel=0 is checked by InsertElementFromIDs() */
-  if (InsertElementFromIDs(theMG,nNodes,Id)!=GM_OK)
+  if (InsertElementFromIDs(theMG,nNodes,Id)==NULL)
   {
     PrintErrorMessage('E',"ie","inserting the element failed");
     return (CMDERRORCODE);
