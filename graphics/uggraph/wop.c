@@ -6789,7 +6789,7 @@ static INT EW_PreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
   theMG  = PO_MG(PIC_PO(thePicture));
 
   /* set value->color fct, eval fct */
-  if (theEspo->max - theEspo->min < SMALL_D)
+  if (theEspo->max - theEspo->min < SMALL_D*(ABS(theEspo->max) + ABS(theEspo->min)))
     if (W_ID(theWork) != FINDRANGE_WORK)
     {
       UserWrite("maxValue has to be larger than minValue\n");
