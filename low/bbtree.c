@@ -336,7 +336,7 @@ static void TreePointDistanceCallback(void *obj, void *bypass)
    .  pointer to new bounding box tree
    D*/
 /*---------------------------------------------------------------------------*/
-BBT_TREE NS_PREFIX *BBT_NewTree(HEAP *theHeap, BBT_BBOX **bboxes, INT n, INT dim)
+BBT_TREE* NS_PREFIX BBT_NewTree(HEAP *theHeap, BBT_BBOX **bboxes, INT n, INT dim)
 {
   BBT_TREE *newTree;
 
