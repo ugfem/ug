@@ -8530,6 +8530,8 @@ static INT TextFacCommand (INT argc, char **argv)
 
   SetTextFactor(fValue);
 
+  InvalidatePicturesOfMG(currMG);
+
   return (OKCODE);
 }
 
