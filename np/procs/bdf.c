@@ -660,14 +660,14 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
 
   if (ReadArgvDOUBLE("dtmin",&(bdf->dtmin),argc,argv))
   {
-    UserWrite("dtmin must be specified\n");
+    bdf->dtmin = bdf->dtstart;
     return(NP_NOT_ACTIVE);
   }
   if ((bdf->dtmin<0.0)) return(NP_NOT_ACTIVE);
 
   if (ReadArgvDOUBLE("dtmax",&(bdf->dtmax),argc,argv))
   {
-    UserWrite("dtmax must be specified\n");
+    bdf->dtmax = bdf->dtstart;
     return(NP_NOT_ACTIVE);
   }
   if ((bdf->dtmax<0.0)) return(NP_NOT_ACTIVE);
@@ -725,6 +725,8 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SF,"t_0",(float)bdf->t_0);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"t_p1",(float)bdf->t_p1);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"dt",(float)bdf->dt);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"dtmin",(float)bdf->dtmin);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"dtmax",(float)bdf->dtmax);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nested",(int)bdf->nested);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nlinterpolate",(int)bdf->nlinterpolate);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"optnlsteps",(int)bdf->optnlsteps);
