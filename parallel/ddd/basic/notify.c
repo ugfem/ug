@@ -52,7 +52,9 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define MAX_INFOS    ((procs)*(MAX((1+procs)/2,10)))
+
+#define MAX_INFOS    ((procs)*(MAX((1+procs),10)))
+
 
 
 /****************************************************************************/
@@ -62,14 +64,15 @@
 /****************************************************************************/
 
 
+enum NotifyTypes {MYSELF,KNOWN,DUMMY,UNKNOWN};
+
+
 typedef struct {
-  int from, to;                 /* source, destination */
-  int size;                 /* message size */
-  int flag;
+  DDD_PROC from, to;               /* source and destination processors */
+  size_t size;                     /* message size */
+  unsigned short flag;             /* one of NotifyTypes */
 } NOTIFY_INFO;
 
-
-enum NotifyTypes {MYSELF,KNOWN,DUMMY,UNKNOWN};
 
 
 /****************************************************************************/
@@ -116,7 +119,8 @@ void NotifyInit (void)
   }
 
 
-  maxInfos = MAX_INFOS;                 /* TODO random value, just for testing */
+  maxInfos = MAX_INFOS;                 /* TODO maximum value, just for testing */
+
 
   /* init local array for all Info records */
   allInfoBuffer = (NOTIFY_INFO *) AllocFix(maxInfos*sizeof(NOTIFY_INFO));
@@ -147,8 +151,15 @@ static int sort_XferInfos (const void *e1, const void *e2)
   ci1 = (NOTIFY_INFO *)e1;
   ci2 = (NOTIFY_INFO *)e2;
 
-  if (ci1->to < ci2->to) return(-1);
-  if (ci1->to > ci2->to) return(1);
+  /* PROC_INVALID is less than all 'real' processor numbers */
+  if (ci1->to==PROC_INVALID && ci2->to!=PROC_INVALID) return(-1);
+  if (ci1->to!=PROC_INVALID && ci2->to==PROC_INVALID) return(1);
+
+  if (ci1->to!=PROC_INVALID && ci2->to!=PROC_INVALID)
+  {
+    if (ci1->to < ci2->to) return(-1);
+    if (ci1->to > ci2->to) return(1);
+  }
 
   if (ci1->from < ci2->from) return(-1);
   if (ci1->from == ci2->from) return(0);
@@ -202,7 +213,7 @@ NOTIFY_INFO *NotifyPrepare (void)
 
   /* dummy Info if there is no message to be send */
   allInfos[0].from = me;
-  allInfos[0].to   = -1;
+  allInfos[0].to   = PROC_INVALID;
   allInfos[0].size = 0;
   allInfos[0].flag = DUMMY;
   lastInfo = 1;
@@ -252,7 +263,7 @@ int NotifyTwoWave (NOTIFY_INFO *allInfos, int lastInfo)
   i = j = 0;
   unknownInfos = lastInfo;
   myInfos = 0;
-  while (i<lastInfo && allInfos[j].to==-1)
+  while (i<lastInfo && allInfos[j].to==PROC_INVALID)
   {
     if (allInfos[j].from==allInfos[i].to)
     {
@@ -354,7 +365,14 @@ int NotifyTwoWave (NOTIFY_INFO *allInfos, int lastInfo)
 NOTIFY_DESC *DDD_NotifyBegin (int n)
 {
   nSendDescs = n;
-  theDescs = (NOTIFY_DESC *) AllocTmp(sizeof(NOTIFY_DESC)*(procs-1));
+  if (procs>1)
+  {
+    theDescs = (NOTIFY_DESC *) AllocTmp(sizeof(NOTIFY_DESC)*(procs-1));
+  }
+  else
+  {
+    theDescs = NULL;
+  }
 
   if (n>procs-1)
   {
@@ -369,7 +387,10 @@ NOTIFY_DESC *DDD_NotifyBegin (int n)
 
 void DDD_NotifyEnd (void)
 {
-  FreeTmp(theDescs);
+  if (theDescs!=NULL)
+  {
+    FreeTmp(theDescs);
+  }
 }
 
 
