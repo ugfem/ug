@@ -32,6 +32,7 @@ then
 	echo "         PVM (set MODEL = PVM)";
 	echo "         SHMEMT3D (set MODEL = SHMEMT3D)";
 	echo "         STD_DOMAIN (set DOM_MODUL = STD_DOMAIN)";
+	echo "         GSF_DOMAIN (set DOM_MODUL = GSF_DOMAIN)";
 	echo "         DEBUG (set DEBUG_MODE = ON)";
 	echo "         NODEBUG (set DEBUG_MODE = OFF)";
 	exit 1;
@@ -262,6 +263,13 @@ fi
 if test "$1" = "STD_DOMAIN"
 then
 sed 's/^DOM_MODULE.*$/DOM_MODULE = STD_DOMAIN/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
+fi			
+
+if test "$1" = "GSF_DOMAIN"
+then
+sed 's/^DOM_MODULE.*$/DOM_MODULE = GSF_DOMAIN/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
 exit 0;
 fi			

@@ -2202,6 +2202,62 @@ static INT CnomCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   configure - configure a BVP
+
+   DESCRIPTION:
+   This command configures the BPV, calling BVP_Configure.
+   The arguments depend on the domain mudule.
+
+   'configure <BVP name> ...'
+
+   EXAMPLE:
+   'configure test $d Quadrilateral $P 2 1.1 1.3'
+
+   In the standard domain module, the BVP test will be coupled with
+   a quadrilateral with corners (0,0), (1,0), (1.1,1.3) and (0,1).
+   D*/
+/****************************************************************************/
+
+static INT ConfigureCommand (INT argc, char **argv)
+{
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+  char BVPName[NAMESIZE];
+
+  /* get BVP name */
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" configure %",NAMELENSTR,"[ -~]")),BVPName)!=1) || (strlen(BVPName)==0))
+  {
+    PrintHelp("configure",HELPITEM," (cannot read BndValProblem specification)");
+    return(PARAMERRORCODE);
+  }
+
+  theBVP = BVP_GetByName(BVPName);
+  if (theBVP == NULL)
+  {
+    PrintHelp("configure",HELPITEM," (cannot read BndValProblem specification)");
+    return(PARAMERRORCODE);
+  }
+
+  if (BVP_SetBVPDesc(theBVP,&theBVPDesc))
+    return (CMDERRORCODE);
+
+  if (BVPD_CONFIG(theBVPDesc)==NULL)
+  {
+    PrintErrorMessage('E',"reinit","the problem has no reinit\n");
+    return(CMDERRORCODE);
+  }
+
+  if ((*BVPD_CONFIG (theBVPDesc))(argc,argv))
+  {
+    PrintErrorMessage('E',"configure"," (could not configure BVP)");
+    return(CMDERRORCODE);
+  }
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
    new - allocate a new multigrid
 
    DESCRIPTION:
@@ -3873,12 +3929,7 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
 static INT InsertBoundaryNodeCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  COORD xc[DIM_OF_BND];
-  INT i;
-
-  /* following variables: keep type for sscanf */
-  float x[DIM_OF_BND_MAX];
-  int patch_id;
+  BNDP *bndp;
 
         #ifdef ModelP
   if (me!=master) return (OKCODE);
@@ -3893,17 +3944,14 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (sscanf(argv[0],"bn %d %f %f",&patch_id,x,x+1)!=1+DIM_OF_BND)
+  bndp = BVP_InsertBndP (MGHEAP(theMG),MG_BVP(theMG),argc,argv);
+  if (bndp == NULL)
   {
-    sprintf(buffer,"specify %d coordinates for a boundary node",(int)DIM);
-    PrintErrorMessage('E',"bn",buffer);
-    return (PARAMERRORCODE);
+    PrintErrorMessage('E',"bn","inserting a boundary point failed");
+    return (CMDERRORCODE);
   }
-  for (i=0; i<DIM_OF_BND; i++)
-    xc[i] = x[i];
 
-  /* NB: toplevel=0 is checked by InsertBoundaryNode() */
-  if (InsertBoundaryNode(theMG,patch_id,xc)!=GM_OK)
+  if (InsertBoundaryNode(theMG,bndp)!=GM_OK)
   {
     PrintErrorMessage('E',"bn","inserting a boundary node failed");
     return (CMDERRORCODE);
@@ -6505,131 +6553,6 @@ static INT QualityCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   bnodes - generate boundary nodes
-
-   DESCRIPTION:
-   This command generates boundary nodes.
-   It reads the environment variables ':gg:RelRasterSize', ':gg:h_global',
-   ':gg:searchconst', ':gg:angle', ':gg:epsi'.
-
-   'bnodes'
-
-   SEE ALSO:
-   'makegrid'
-   D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*                                                                          */
-/* Function:  BnodesCommand                                                             */
-/*                                                                          */
-/* Purpose:   allocate a new document record with bndry node generation		*/
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name             */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
-/****************************************************************************/
-
-#ifdef __TWODIM__
-
-static INT BnodesCommand  (INT argc, char **argv)
-{
-  MULTIGRID *theMG;
-  DOUBLE RelRasterSize,h_global;
-  INT i,msizecoeffno;
-
-  /* get current multigrid */
-  theMG = currMG;
-  if (theMG==NULL)
-  {
-    PrintErrorMessage('E',"bnodes","no open multigrid");
-    return (CMDERRORCODE);
-  }
-  /* check options (no option up to now) */
-  for (i=1; i<argc; i++)
-    switch (argv[i][0])
-    {
-    default :
-      sprintf(buffer,"(invalid option '%s')",argv[i]);
-      PrintHelp("bnodes",HELPITEM,buffer);
-      return (PARAMERRORCODE);
-    }
-
-  /* read RelRasterSize */
-  if(GetStringDOUBLEInRange(":gg:RelRasterSize",
-                            10e-10, 10e+10, &RelRasterSize) != 0)
-    return(PARAMERRORCODE);
-
-  h_global = 1.0;
-  if(GetStringINTInRange   (":gg:meshsizecoeffno",
-                            -1     , 100    , &msizecoeffno) != 0)
-    msizecoeffno = -1;
-
-  if (msizecoeffno == -1)
-    if(GetStringDOUBLEInRange(":gg:h_global",
-                              10e-10, 10e+10, &h_global) != 0)
-      return(PARAMERRORCODE);
-
-  if (GenerateBnodes(theMG,RelRasterSize,h_global,msizecoeffno) != 0)
-  {
-    PrintErrorMessage('E',"bnodes","execution failed");
-    return (CMDERRORCODE);
-  }
-
-  return (OKCODE);
-}
-#endif
-
-#ifdef __THREEDIM__
-#ifdef NETGENT
-static INT BnodesCommand  (INT argc, char **argv)
-{
-  MULTIGRID *theMG;
-  float val;
-  DOUBLE h;
-  SYMBOL *sym;
-  FILE *inp;
-  INT i,debug;
-  char datafile[NAMESIZE];
-
-  h = -1.0;
-  theMG = GetCurrentMultigrid();
-  if (theMG==NULL)
-  {
-    PrintErrorMessage('E',"bnodes","no current multigrid");
-    return(CMDERRORCODE);
-  }
-  for (i=1; i<argc; i++)
-    switch (argv[i][0])
-    {
-    case 'h' :
-      if (sscanf(argv[i],"h %f",&val)!=1)
-      {
-        PrintErrorMessage('E',"bnodes","specify h");
-        return (PARAMERRORCODE);
-      }
-      h = val;
-      break;
-    }
-
-  if (h < 0.0)
-  {
-    PrintErrorMessage('E',"bnodes","specify h");
-    return (PARAMERRORCODE);
-  }
-
-  if (GenerateBoundaryNodes3d (theMG,h))
-    return(CMDERRORCODE);
-
-  return(OKCODE);
-}
-#endif
-#endif
-
-/****************************************************************************/
-/*D
    makegrid - generate grid
 
    DESCRIPTION:
@@ -6637,51 +6560,34 @@ static INT BnodesCommand  (INT argc, char **argv)
    It reads the environ variables ':gg:RelRasterSize', ':gg:h_global',
    ':gg:searchconst', ':gg:angle', ':gg:epsi'.
 
-   'makegrid ${W|w|K|k} [$E]'
+   'makegrid ${W|w|K|k} [$E] [$h <val>] [$m <no>]'
 
-   .  ${W|w|K|k} - W resp. K are using the accellerator,
+   .  {W|w|K|k} - W resp. K are using the accellerator,
    W resp. w use the angle criterion,
    K resp. k use the edge criterion
-   .  $E - grid generator tries to create eqilateral triangles
+   .  E - grid generator tries to create eqilateral triangles
+   .  h - mesh size
+   .  m - id of mesh size coefficient function
 
    .n default: isosceles triangles
 
    EXAMPLE:
-   .vb
-   :gg:RelRasterSize	= 0.005;
-   :gg:h_global		= 0.005;
-   :gg:searchconst		= 0.002;
-   :gg:angle			= 15;
-   :gg:epsi			= 0.000625;
-
-   bnodes;
-   makegrid $E $W;
-   .ve
+   'makegrid $k $h 1.0;'
    D*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*                                                                          */
-/* Function:  MakeGridCommand                                                   */
-/*                                                                          */
-/* Purpose:   create the advancing frontlists and generates the grid		*/
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name             */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
-/****************************************************************************/
-
-#ifdef __TWODIM__
 static INT MakeGridCommand  (INT argc, char **argv)
 {
-  long ElemID;
   MULTIGRID *theMG;
-  DOUBLE angle;
   INT i;
   GG_ARG args;
   GG_PARAM params;
+  MESH *mesh;
+  CoeffProcPtr coeff;
+  INT smooth;
+  DOUBLE h;
+  long ElemID,m;
+  float tmp;
 
   /* get current multigrid */
   theMG = currMG;
@@ -6690,111 +6596,169 @@ static INT MakeGridCommand  (INT argc, char **argv)
     PrintErrorMessage('E',"makegrid","no open multigrid");
     return (CMDERRORCODE);
   }
+  if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
+  {
+    PrintErrorMessage('E',"InsertBoundaryNode",
+                      "only a multigrid with exactly one level can be edited");
+    RETURN(GM_ERROR);
+  }
 
   /* check options */
-  args.doanimate = args.doupdate = args.dostep = args.equilateral = args.plotfront
-                                                                      = args.printelem = args.doedge = args.doangle = args.doEdge = args.doAngle =  NO;
+  args.doanimate =
+    args.doupdate =
+      args.dostep =
+        args.equilateral =
+          args.plotfront =
+            args.printelem =
+              args.doangle =
+                args.doEdge =
+                  args.doAngle =  NO;
+  args.doedge = YES;
   ElemID = -1;
 
+  if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))
+  {
+    PRINTDEBUG(dom,0,("  lev ret  %d\n",i));
+    DisposeMultiGrid(theMG);
+    return (CMDERRORCODE);
+  }
 
-  for (i=1; i<argc; i++)
-    switch (argv[i][0])
-    {
-    case 'a' :
-      args.doanimate = YES; break;
+  if (CreateNewLevel(theMG)==NULL)
+  {
+    DisposeMultiGrid(theMG);
+    return (CMDERRORCODE);
+  }
 
-    case 'u' :
-      args.doupdate = YES; break;
+  Mark(MGHEAP(theMG),FROM_TOP);
+  mesh = BVP_GenerateMesh (MGHEAP(theMG),MG_BVP(theMG),argc,argv);
+  if (mesh == NULL)
+  {
+    Release(MGHEAP(theMG),FROM_TOP);
+    return (CMDERRORCODE);
+  }
+  else
+    InsertMesh(theMG,mesh);
 
-    case 's' :
-      args.dostep = YES; break;
-
-    case 'f' :
-      args.plotfront = YES; break;
-
-    case 'p' :
-      args.printelem = YES; break;
-
-    case 'E' :
-      args.equilateral = YES; break;
-
-    case 'e' :
-      if (sscanf(argv[i],"e %ld",&ElemID)!=1)
+  if (mesh->nElements == NULL)
+  {
+        #ifdef __TWODIM__
+    coeff = NULL;
+    params.h_global = .0;
+    params.CheckCos = cos(PI/18.0);
+    params.searchconst = 0.2;
+    for (i=1; i<argc; i++)
+      switch (argv[i][0])
       {
-        PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
+      case 'a' :
+        args.doanimate = YES; break;
+      case 'u' :
+        args.doupdate = YES; break;
+      case 's' :
+        args.dostep = YES; break;
+      case 'f' :
+        args.plotfront = YES; break;
+      case 'p' :
+        args.printelem = YES; break;
+      case 'E' :
+        args.equilateral = YES; break;
+      case 'e' :
+        if (sscanf(argv[i],"e %ld",&ElemID)!=1)
+        {
+          PrintHelp("makegrid",HELPITEM,
+                    " (could not read <element id>)");
+          return (PARAMERRORCODE);
+        }
+        break;
+      case 'k' :
+        args.doedge = YES;
+        break;
+      case 'w' :
+        args.doangle = YES;
+        break;
+      case 'K' :
+        args.doEdge = YES;
+        break;
+      case 'W' :
+        args.doAngle = YES;
+        break;
+      case 'm' :
+        if (sscanf(argv[i],"m %ld",&m)!=1)
+        {
+          PrintHelp("makegrid",HELPITEM,
+                    " (could not read <element id>)");
+          return (PARAMERRORCODE);
+        }
+        coeff = MG_GetCoeffFct(theMG,m);
+        break;
+      case 'h' :
+        if (sscanf(argv[i],"h %f",&tmp)!=1)
+        {
+          PrintHelp("makegrid",HELPITEM,
+                    " (could not read <element id>)");
+          return (PARAMERRORCODE);
+        }
+        if (tmp > 0)
+          params.h_global = tmp;
+        break;
+      case 'A' :
+        if (sscanf(argv[i],"A %f",&tmp)!=1)
+        {
+          PrintHelp("makegrid",HELPITEM,
+                    " (could not read <element id>)");
+          return (PARAMERRORCODE);
+        }
+        if ((tmp > 0) && (tmp < 90))
+          params.CheckCos = cos(tmp*PI/180.0);
+        break;
+      case 'S' :
+        if (sscanf(argv[i],"S %f",&tmp)!=1)
+        {
+          PrintHelp("makegrid",HELPITEM,
+                    " (could not read <element id>)");
+          return (PARAMERRORCODE);
+        }
+        if ((tmp > 0) && (tmp < 1.0))
+          params.searchconst = tmp;
+        break;
+      default :
+        sprintf(buffer," (unknown option '%s')",argv[i]);
+        PrintHelp("makegrid",HELPITEM,buffer);
         return (PARAMERRORCODE);
       }
-      break;
+    params.epsi = params.h_global * 0.125;
 
-    case 'k' :
-      args.doedge = YES;
-      break;
-
-    case 'w' :
-      args.doangle = YES;
-      break;
-
-    case 'K' :
-      args.doEdge = YES;
-      break;
-
-    case 'W' :
-      args.doAngle = YES;
-      break;
-
-    default :
-      sprintf(buffer," (unknown option '%s')",argv[i]);
-      PrintHelp("makegrid",HELPITEM,buffer);
-      return (PARAMERRORCODE);
+    if (GenerateGrid(theMG, &args, &params, mesh, coeff) != 0)
+    {
+      PrintErrorMessage('E',"makegrid","execution failed");
+      Release(MGHEAP(theMG),FROM_TOP);
+      return (CMDERRORCODE);
     }
+        #endif
 
-  if(GetStringDOUBLEInRange(":gg:angle", 10e-10, 10e+10, &angle) != 0)
-    return(PARAMERRORCODE);
-  if(GetStringDOUBLEInRange(":gg:epsi", 10e-10, 10e+10, &(params.epsi))!= 0)
-    return(PARAMERRORCODE);
-  if(GetStringDOUBLEInRange(":gg:searchconst", 10e-10, 10e+10,
-                            &(params.searchconst)) != 0)
-    return(PARAMERRORCODE);
-  if(GetStringINTInRange   (":gg:meshsizecoeffno",
-                            -1      , 100   , &(params.msizecoeffno)) != 0)
-    params.msizecoeffno = -1;
+        #ifdef __THREEDIM__
+        #ifdef NETGENT
+    if (ReadArgvINT("s",&smooth,argc,argv))
+      smooth = 0;
+    if (ReadArgvDOUBLE("h",&h,argc,argv))
+      h = 1.0;
 
-  if (params.msizecoeffno == -1)
-    if(GetStringDOUBLEInRange(":gg:h_global",
-                              10e-10, 10e+10, &(params.h_global)) != 0)
-      return(PARAMERRORCODE);
-
-  params.CheckCos = cos(angle*PI/180.0);
-
-  if (GenerateGrid(theMG, &args, &params) != 0)
-  {
-    PrintErrorMessage('E',"makegrid","execution failed");
-    return (CMDERRORCODE);
+    if (GenerateGrid3d(theMG,mesh,h,smooth))
+    {
+      PrintErrorMessage('E',"makegrid","execution failed");
+      Release(MGHEAP(theMG),FROM_TOP);
+      return (CMDERRORCODE);
+    }
+             #endif
+             #endif
   }
+
+  Release(MGHEAP(theMG),FROM_TOP);
+
+  InvalidatePicturesOfMG(theMG);
+  InvalidateUgWindowsOfMG(theMG);
 
   return (OKCODE);
 }
-#endif
-
-#ifdef __THREEDIM__
-#ifdef NETGENT
-static INT MakeGridCommand  (INT argc, char **argv)
-{
-  INT smooth;
-
-  if (ReadArgvINT("s",&smooth,argc,argv))
-    smooth = 0;
-
-  if (GenerateGrid3d(smooth))
-  {
-    PrintErrorMessage('E',"makegrid","execution failed");
-    return (CMDERRORCODE);
-  }
-
-  return (OKCODE);
-}
-#endif
-#endif
 
 /****************************************************************************/
 /*D
@@ -9407,7 +9371,7 @@ static INT InterpolateCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*
-   reinit -
+   reinit - configure a problem
 
    SYNOPSIS:
    static INT ReInitCommand (INT argc, char **argv);
@@ -9460,7 +9424,7 @@ static INT ReInitCommand (INT argc, char **argv)
   /* set the document */
   if (bopt)
   {
-    theBVP = GetBVP(BVPName);
+    theBVP = BVP_GetByName(BVPName);
     if(theBVP==NULL)
     {
       sprintf(buffer,"could not interpret '%s' as a BVP name",BVPName);
@@ -9480,7 +9444,6 @@ static INT ReInitCommand (INT argc, char **argv)
   }
   if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (CMDERRORCODE);
 
-  /* reconfigure the problem */
   if (BVPD_CONFIG(theBVPDesc)==NULL)
   {
     PrintErrorMessage('E',"reinit","the problem has no reinit\n");
@@ -11876,6 +11839,7 @@ INT InitCommands ()
         #endif
 
   /* commands for grid management */
+  if (CreateCommand("configure",          ConfigureCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("setcurrmg",          SetCurrentMultigridCommand              )==NULL) return (__LINE__);
   if (CreateCommand("new",                        NewCommand                                              )==NULL) return (__LINE__);
   if (CreateCommand("open",                       OpenCommand                                     )==NULL) return (__LINE__);
@@ -11912,10 +11876,7 @@ INT InitCommands ()
   if (CreateCommand("rlist",                      RuleListCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
-        #if (! (defined(__THREEDIM__) && defined(NETGENF)))
-  if (CreateCommand("bnodes",                 BnodesCommand                                       )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
-        #endif
 
   /* commands for grape */
         #ifdef __GRAPE_TRUE__

@@ -42,7 +42,6 @@
 /*                                                                          */
 /****************************************************************************/
 
-INT GenerateBoundaryNodes3d (MULTIGRID *theMG, DOUBLE h);
-INT GenerateGrid3d (INT smooth);
+INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth);
 
 #endif

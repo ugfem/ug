@@ -47,18 +47,16 @@
 #include "disctools.h"
 #include "evm.h"
 #include "general.h"
-
-#include "memory.h"
+#include "debug.h"
 
 #ifdef __MPW32__
 #include "MacGui.h"
 #endif
 
-#include "ggmain.h"
-
 #include "ggm.h"
-
 #include "ggaccel.h" /* header file for accelerator */
+
+#include "ggmain.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -88,12 +86,6 @@
 /*        in the corresponding include file!)                               */
 /*                                                                          */
 /****************************************************************************/
-
-typedef struct {
-  PATCH *thePatch;
-  INT used;
-  INT mySubdomain;
-} SEGMENTINFO;
 
 typedef struct {
   INT n;
@@ -152,171 +144,6 @@ static INT FcObj;
 /* forward declarations of functions used before they are defined           */
 /*                                                                          */
 /*****************************************************************************/
-
-
-/****************************************************************************/
-/*D
-   GenerateBnodes - Generates boundary nodes for the grid generator
-
-   SYNOPSIS:
-   INT GenerateBnodes (MULTIGRID *theMG,COORD RelRasterSize,DOUBLE h_global,
-   INT meshsizecoeffno);
-
-    PARAMETERS:
-   .   theMG - pointer to the multigrid
-   .   RelRasterSize - approximation resolution of the boundary
-   .   h_global - global meshsize
-   .   meshsizecoeffno - defines the adress of the CoeffProcPtr as input for
-   .   the grid generator using a mesh control function
-
-    DESCRIPTION:
-        This function creates boundary nodes for the automatical grid generating.
-
-    RETURN VALUE:
-    INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
-/****************************************************************************/
-
-INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
-                     DOUBLE h_global, INT meshsizecoeffno)
-{
-  GRID *theGrid;
-  NODE *theNode;
-  VERTEX **Vertex;
-  VSEGMENT *vs0,*vs1;
-  PATCH *thePatch;
-  COORD *global,*global0,*global1,*lambda0,*lambda1,lambda[DIM-1];
-  COORD_VECTOR global2;
-  DOUBLE diff,step,gstep0,gstep1;
-  INT i,j,k,m,ncorners,found;
-  CoeffProcPtr MeshSize;
-
-  ncorners = MGNOOFCORNERS(theMG);
-  if (    (VIDCNT(theMG) != ncorners)
-          ||      (NIDCNT(theMG) != ncorners)
-          ||      (EIDCNT(theMG) != 0)
-          ||      (TOPLEVEL(theMG) != 0))
-  {
-    PrintErrorMessage('E',"GenerateBnodes",
-                      "command not executable: mg has been edited");
-    return(1);
-  }
-
-  /**************************************************/
-  /* automatically generation of the boundary nodes */
-  /**************************************************/
-
-  theGrid = GRID_ON_LEVEL(theMG,0);
-  MeshSize = MG_GetCoeffFct (theMG,meshsizecoeffno);
-
-
-
-
-
-  Mark(MGHEAP(theMG),FROM_TOP);
-  Vertex = (VERTEX**) GetMem(MGHEAP(theMG),
-                             ncorners*sizeof(VERTEX*),FROM_TOP);
-
-  i = 0;
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-    Vertex[i++] = MYVERTEX(theNode);
-
-  for (i=0; i<ncorners; i++)
-    for (j=0; j<i; j++)
-      for (vs0=VSEG(Vertex[i]); vs0!=NULL; vs0=NEXTSEG(vs0))
-      {
-        thePatch = VS_PATCH(vs0);
-        global0 = CVECT(Vertex[i]);
-        lambda0 = PVECT(vs0);
-        found = 0;
-        for (vs1=VSEG(Vertex[j]); vs1!=NULL; vs1=NEXTSEG(vs1))
-          if (VS_PATCH(vs1) == thePatch)
-          {
-            found++;
-            global1 = CVECT(Vertex[j]);
-            lambda1 = PVECT(vs1);
-            lambda[0] = 0.5 * lambda0[0] + 0.5 * lambda1[0];
-            Patch_local2global(thePatch,lambda,global2);
-            V_DIM_EUKLIDNORM_OF_DIFF(global0,global2,diff);
-            diff *= 2;
-            if (MeshSize == NULL)
-            {
-              m = (INT) diff / h_global;
-              if (Vertex[i] == Vertex[j])
-                if (m < 3)
-                  m = 3;
-              if (m>0)
-                step = (lambda1[0] - lambda0[0]) / m;
-              lambda[0] = lambda0[0];
-              for (k=1; k<m; k++)
-              {
-                lambda[0] += step;
-                if (InsertBoundaryNodeFromPatch (theMG,
-                                                 thePatch,lambda))
-                  return(1);
-              }
-            }
-            else
-            {
-              m = 1;
-              global = global0;
-              lambda[0] = lambda0[0];
-              MeshSize(global,&gstep0);
-              if (Vertex[i] == Vertex[j])
-              {
-                if (gstep0*3 > diff)
-                {
-                  step = (lambda1 - lambda0) / 3.0;
-                  lambda[0] = lambda0[0];
-                  for (k=1; k<m; k++)
-                  {
-                    lambda0[0] += step;
-                    if (InsertBoundaryNodeFromPatch (theMG,
-                                                     thePatch,lambda))
-                      return(1);
-                  }
-                }
-              }
-              else
-              {
-                MeshSize(global1,&gstep1);
-                while (gstep0 < diff)
-                {
-                  m++;
-                  if (gstep0 + gstep1 > diff)
-                    lambda[0] = (lambda1[0]*gstep1
-                                 +lambda[0]*gstep0) /
-                                (gstep0 + gstep1);
-                  else
-                    lambda[0] += (lambda1[0]-lambda[0])
-                                 * gstep0 / diff;
-                  if (InsertBoundaryNodeFromPatch (theMG,
-                                                   thePatch,lambda))
-                    return(1);
-                  global = CVECT(MYVERTEX(FIRSTNODE(theGrid)));
-                  V_DIM_EUKLIDNORM_OF_DIFF(global,global1,diff);
-                  MeshSize(global,&gstep0);
-                }
-              }
-            }
-          }
-        if (found == 2)
-          if (m<2)
-          {
-            lambda[0] = 0.5*(lambda0[0]+lambda1[0]);
-            if (InsertBoundaryNodeFromPatch (theMG,
-                                             thePatch,lambda))
-              return(1);
-          }
-
-      }
-
-  Release(MGHEAP(theMG),FROM_TOP);
-
-  return (0);
-}
 
 static DOUBLE H_global;
 
@@ -440,123 +267,6 @@ static INT DetermineOrientation (FRONTLIST *theFL)
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  LambdaCompare                                                             */
-/*                                                                          */
-/* Purpose:   auxilliary function for qsort									*/
-/*                                                                          */
-/* Input:     front components for ordering						            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
-/****************************************************************************/
-
-static INT myOrientation;
-
-static INT LambdaCompare (NODE **pn1, NODE **pn2)
-{
-  if (FIRSTLAMBDA(MYVERTEX(*pn1))>FIRSTLAMBDA(MYVERTEX(*pn2)))
-    return (myOrientation);
-  else
-    return (-myOrientation);
-}
-
-/****************************************************************************/
-/*                                                                          */
-/* Function:  HandleClosedBoundary                                                      */
-/*                                                                          */
-/* Purpose:   find and order of the front components of the closed boundary	*/
-/*                                                                          */
-/* Input:     front lists of the subdomain						            */
-/*                                                                          */
-/* Output:    ordered front lists				                            */
-/*                                                                          */
-/****************************************************************************/
-
-static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT nparts)
-{
-  MULTIGRID *theMG;
-  FRONTCOMP *lastFC;
-  GRID *theGrid;
-  NODE *theNode,**NodeHandle;
-  INT i,segnum,nNodes,segID,cornerscomp;
-  PATCH_DESC thePatchDesc;
-
-  theGrid = MYGRID(theFL);
-  theMG = MYMG(theGrid);
-
-  lastFC = NULL;
-
-  /* find all nodes belonging to this closed boundary */
-  for (segnum=0; segnum<nparts; segnum++)
-  {
-    if (Patch_GetPatchDesc(closedbInfo[segnum].thePatch,&thePatchDesc)) return(1);
-    segID = PATCH_ID(thePatchDesc);
-
-    if (PATCH_LEFT(thePatchDesc)==closedbInfo[segnum].mySubdomain)
-      myOrientation =  1;
-    else
-      myOrientation = -1;
-
-    /* count nodes on this seg */
-    nNodes = 0;
-    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-      if (Patch_GetPatchID(FIRSTPATCH(MYVERTEX(theNode)))==segID && MOVE(MYVERTEX(theNode)) != 0)
-        nNodes++;
-
-    if (nNodes>0)
-    {
-      NodeHandle = (NODE **) GetMem(theMG->theHeap,nNodes*sizeof(NODE*),FROM_TOP);
-
-      if (NodeHandle==NULL)
-      {
-        PrintErrorMessage('E',"HandleClosedBoundary","no storage for node list");
-        return (1);
-      }
-
-      for (i=0, theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-        if (Patch_GetPatchID(FIRSTPATCH(MYVERTEX(theNode)))==segID && MOVE(MYVERTEX(theNode)) != 0)
-          NodeHandle[i++] = theNode;
-
-      qsort(NodeHandle,nNodes,sizeof(NODE *),(INT (*)(const void *, const void *))LambdaCompare);
-
-      if ((lastFC = CreateFrontComp (theFL, lastFC, nNodes, NodeHandle))==NULL)
-      {
-        PrintErrorMessage('E',"HandleClosedBoundary","no storage for FC list");
-        return (1);
-      }
-
-    }
-
-    /* append last node of this segment (corner vertex) to the list */
-    if (myOrientation == 1)
-      cornerscomp = PATCH_CID(thePatchDesc,1);
-    else
-      cornerscomp = PATCH_CID(thePatchDesc,0);
-
-    theNode = TOPNODE(theMG->corners[cornerscomp]);
-
-    if (nNodes<=0)
-    {
-      if (lastFC==NULL)
-        lastFC = CreateFrontComp (theFL, NULL, 1, &theNode);
-      else
-        lastFC = CreateFrontComp (theFL, lastFC, 1, &theNode);
-    }
-    else
-      lastFC = CreateFrontComp (theFL, lastFC, 1, &theNode);
-
-    if (lastFC==NULL)
-    {
-      PrintErrorMessage('E',"HandleClosedBoundary","no storage for FC");
-      return (1);
-    }
-  }
-
-  return (0);
-}
-
-/****************************************************************************/
-/*                                                                          */
 /* Function:  HandleSubdomain                                                           */
 /*                                                                          */
 /* Purpose:   find associated segments of the subdomain						*/
@@ -567,86 +277,79 @@ static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT
 /*                                                                          */
 /****************************************************************************/
 
-static INT HandleSubdomain (INDEPFRONTLIST *theIFL, SEGMENTINFO *segInfo, INT nSeg)
+static INT HandleSubdomain (INDEPFRONTLIST *theIFL, NODE **Nodes,
+                            INT SubdomainID, INT n, INT **node_id)
 {
   MULTIGRID *theMG;
-  SEGMENTINFO *closedbInfo;
+  NODE **NodeHandle;
   FRONTLIST *theFL;
-  INT i,SegLeft,old,start,nparts;
-  PATCH_DESC thePatchDesc;
+  INT i,j,id,id1,cnt;
 
   theMG = MYMG(MYGRID(theIFL));
 
-  closedbInfo = (SEGMENTINFO *) GetMem(theMG->theHeap,nSeg*sizeof(SEGMENTINFO),FROM_TOP);
+  NodeHandle = (NODE **) GetMem(theMG->theHeap,n*sizeof(NODE*),FROM_TOP);
+  if (NodeHandle==NULL) return (1);
 
-  if (closedbInfo==NULL)
+  for (i=0; i<n; i++)
+    PRINTDEBUG(dom,1,(" side %d %d    nid %ld pos %f %f\n",
+                      node_id[i][0],node_id[i][1],ID(Nodes[i]),
+                      XC(MYVERTEX(Nodes[i])),
+                      YC(MYVERTEX(Nodes[i]))));
+
+  cnt = 0;
+  id = node_id[0][0];
+  NodeHandle[0] = Nodes[id];
+  for (i=0; i<n; i++)
   {
-    PrintErrorMessage('E',"HandleSubdomain","no storage for front components");
-    return (1);
-  }
-
-  /* init segInfo */
-  for (i=0; i<nSeg; i++)
-    segInfo[i].used = FALSE;
-
-  /* loop over unused segments */
-  SegLeft = nSeg;
-  while (SegLeft)
-  {
-    for (i=0; i<nSeg; i++)
-      if (!segInfo[i].used)
-        break;
-
-    SegLeft--;
-    segInfo[i].used = TRUE;
-    closedbInfo[0] = segInfo[i];
-    nparts = 1;
-
-    /* find subsequent segments (in the correct sense) until the boundary closes */
-    if (Patch_GetPatchDesc(segInfo[i].thePatch,&thePatchDesc)) return(1);
-    if (PATCH_LEFT(thePatchDesc)==segInfo[i].mySubdomain)
+    PRINTDEBUG(dom,1,("  cnt %d n %d nid %ld pos %f %f\n",
+                      cnt,n,ID(NodeHandle[cnt]),
+                      XC(MYVERTEX(NodeHandle[cnt])),
+                      YC(MYVERTEX(NodeHandle[cnt]))));
+    id1 = i;
+    if (NodeHandle[cnt] != Nodes[node_id[id1][0]])
     {
-      start = PATCH_CID(thePatchDesc,0);
-      old   = PATCH_CID(thePatchDesc,1);
+      for (j=0; j<n; j++)
+        if (NodeHandle[cnt] == Nodes[node_id[j][0]])
+          break;
+      if (j == n)
+        RETURN(1);
+      id1 = j;
+    }
+    cnt++;
+    if (node_id[id1][1] == id)
+    {
+      /* the info for the current closed boundary is now complete */
+      theFL = CreateFrontList(theIFL);
+      if (CreateFrontComp (theFL, NULL, cnt, NodeHandle)==NULL)
+      {
+        PrintErrorMessage('E',"HandleSubdomain",
+                          "no storage for FC list");
+        return (1);
+      }
+      if (DetermineOrientation (theFL))
+        return (2);
+      if (i<n-2)
+      {
+        cnt = 0;
+        for (id1=0; id1<n; j++)
+        {
+          for (j=0; j<cnt; j++)
+            if (NodeHandle[j] == Nodes[node_id[id1][0]])
+              break;
+          if (j == cnt)
+            break;
+        }
+        id = node_id[id1][0];
+        NodeHandle[0] = Nodes[id];
+      }
+      else
+        return(0);
     }
     else
-    {
-      start = PATCH_CID(thePatchDesc,1);
-      old   = PATCH_CID(thePatchDesc,0);
-    }
-    while (old!=start)
-      for (i=0; i<nSeg; i++)
-        if (!segInfo[i].used)
-        {
-          if (Patch_GetPatchDesc(segInfo[i].thePatch,&thePatchDesc)) return(1);
-          if (PATCH_CID(thePatchDesc,0)==old)
-          {
-            SegLeft--;
-            segInfo[i].used = TRUE;
-            old = PATCH_CID(thePatchDesc,1);
-            closedbInfo[nparts++] = segInfo[i];
-            break;
-          }
-          else if (PATCH_CID(thePatchDesc,1)==old)
-          {
-            SegLeft--;
-            segInfo[i].used = TRUE;
-            old =PATCH_CID(thePatchDesc,0);
-            closedbInfo[nparts++] = segInfo[i];
-            break;
-          }
-        }
-
-    /* the info for the current closed boundary is now complete */
-    theFL = CreateFrontList(theIFL);
-    if (HandleClosedBoundary (theFL,closedbInfo,nparts)!=0)
-      return (1);
-
-    if (DetermineOrientation (theFL))
-      return (2);
+      NodeHandle[cnt] = Nodes[node_id[id1][1]];
   }
 
-  return (0);
+  RETURN (1);
 }
 
 /****************************************************************************/
@@ -661,80 +364,39 @@ static INT HandleSubdomain (INDEPFRONTLIST *theIFL, SEGMENTINFO *segInfo, INT nS
 /*                                                                          */
 /****************************************************************************/
 
-static INT AssembleFrontLists (MULTIGRID *theMG)
+static INT AssembleFrontLists (MULTIGRID *theMG, MESH *mesh)
 {
   GRID *theGrid;
+  NODE *theNode,**Nodes;
   INDEPFRONTLIST *theIFL;
-  SEGMENTINFO *segInfo;
-  INT numOfSubdomains,numOfPatches,nSeg,SubdomainID;
-  BVP *theBVP;
-  BVP_DESC theBVPDesc;
-  PATCH *thePatch;
-  PATCH_DESC thePatchDesc;
-
-  theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  INT numOfSubdomains,SubdomainID,numOfBndP,numOfBndS,i,n;
 
   theGrid = GRID_ON_LEVEL(theMG,0);
+  numOfSubdomains = mesh->nSubDomains;
+  numOfBndP = mesh->nBndP;
 
-  numOfSubdomains = BVPD_NSUBDOM(theBVPDesc);
-  numOfPatches   = BVPD_NPATCHES(theBVPDesc);
-
-  segInfo = (SEGMENTINFO *) GetMem(theMG->theHeap,numOfPatches*sizeof(SEGMENTINFO),FROM_TOP);
-
-  if (segInfo==NULL)
+  Nodes = (NODE **) GetTmpMem(MGHEAP(theMG),numOfBndP*sizeof(NODE *));
+  if (Nodes == NULL)
+    return(1);
+  for (i=0, theNode=LASTNODE(theGrid); theNode!=NULL; theNode=PREDN(theNode))
   {
-    PrintErrorMessage('E',"AssembleFrontLists","no storage for front components");
-    return (1);
+    PRINTDEBUG(dom,1,("  nid %ld \n",ID(theNode)));
+    if (V_BNDP(MYVERTEX(theNode)) != mesh->theBndPs[i])
+      return(1);
+    Nodes[i++] = theNode;
   }
+  if (i != mesh->nBndP)
+    return(1);
 
-  for (SubdomainID=1; SubdomainID<numOfSubdomains+1; SubdomainID++)
-  {
-    /* find all segments that form the boundary of our subdomain */
-    nSeg = 0;
-    for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
-    {
-      if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
-      if (    (PATCH_LEFT(thePatchDesc)==SubdomainID)
-              ||      (PATCH_RIGHT(thePatchDesc)==SubdomainID))
-      {
-        segInfo[nSeg].mySubdomain = SubdomainID;
-        segInfo[nSeg].thePatch  = thePatch;
-        nSeg++;
-      }
-    }
-
-    /* the info for the current subdomain boundary is now complete */
-    theIFL = CreateIndepFrontList(theGrid);
-    if (HandleSubdomain (theIFL,segInfo,nSeg)!=0)
+  theIFL = CreateIndepFrontList(theGrid);
+  for (SubdomainID=1; SubdomainID<=numOfSubdomains; SubdomainID++)
+    if (HandleSubdomain (theIFL,Nodes,SubdomainID,
+                         mesh->nSides[SubdomainID],
+                         mesh->Side_corner_ids[SubdomainID]))
       return (1);
-  }
 
   return (0);
 }
-
-/*
-   static INT AssembleFrontLists (MULTIGRID *theMG)
-   {
-        GRID *theGrid;
-        INDEPFRONTLIST *theIFL;
-        INT numOfSubdomains,numOfPatches,nSeg,SubdomainID;
-        BVP *theBVP;
-        BVP_DESC theBVPDesc;
-
-        theBVP = MG_BVP(theMG);
-        if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
-
-        theGrid = GRID_ON_LEVEL(theMG,0);
-
-        numOfSubdomains = BVPD_NSUBDOM(theBVPDesc);
-
-        for (SubdomainID=0; SubdomainID<numOfSubdomains; SubdomainID++)
-          theIFL = CreateIndepFrontList(theGrid);
-
-        return (0);
-   }
- */
 
 /****************************************************************************/
 /*                                                                          */
@@ -2219,6 +1881,7 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
 
     /* indicate that myfoundFL is empty now and dispose it */
     STARTFC(myfoundFL) = NULL;
+    LASTFC(myfoundFL) = NULL;
 
     *disp_FL = myfoundFL;
     /*no more here: DisposeFrontList (myfoundFL);*/
@@ -2427,7 +2090,7 @@ static FRONTCOMP *CreateOrSelectFC (
   VERTEX *theVertex;
   COORD_VECTOR pos;
 
-  if (recursiondepth > 10)
+  if (recursiondepth > 20)
   {
     PrintErrorMessage('E',"CreateOrSelectFC","recursiondepth > 10 in CreateOrSelectFC");
     sprintf(buffer,"constructing element over %ld %ld\n",ID(FRONTN(theFC)),ID(FRONTN(SUCCFC(theFC))));
@@ -2498,49 +2161,6 @@ static FRONTCOMP *CreateOrSelectFC (
   }
 
   return (thenewFC);
-}
-
-/****************************************************************************/
-/*                                                                          */
-/* Function:  GetGGObjIDs		                                                */
-/*                                                                          */
-/* Purpose:   necessary for dynamic object data in ug 3.0					*/
-/*            the different data structures for the grid generator get their*/
-/*			  id´s															*/
-/*                                                                          */
-/*                                                                          */
-/****************************************************************************/
-
-static INT InitGGObjs (MULTIGRID *theMG)
-{
-
-  Mark(MGHEAP(theMG),FROM_TOP);
-
-  IflObj = GetFreeOBJT();
-  FlObj  = GetFreeOBJT();
-  FcObj  = GetFreeOBJT();
-
-  return (0);
-}
-
-/****************************************************************************/
-/*                                                                          */
-/* Function:  TerminateGG		                                                */
-/*                                                                          */
-/* Purpose:    releases the object types not needed anymore					*/
-/*                                                                          */
-/*                                                                          */
-/****************************************************************************/
-
-static INT TerminateGG (MULTIGRID *theMG, INT flag)
-{
-  ReleaseOBJT(IflObj);
-  ReleaseOBJT(FlObj);
-  ReleaseOBJT(FcObj);
-
-  Release(MGHEAP(theMG),FROM_TOP);
-
-  return (0);
 }
 
 /****************************************************************************/
@@ -2699,7 +2319,9 @@ static int FL_FC_Disposer(FRONTCOMP *disp_FC, FRONTLIST *disp_FL)
    D*/
 /****************************************************************************/
 
-INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
+static INT debug;
+
+INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff)
 {
   GRID *theGrid;
   NODE *theNode;
@@ -2711,16 +2333,9 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   INT printelem,FlgForAccel;
   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS];
   ELEMENT_CONTEXT theElementContext;
-  BVP             *theBVP;
-  BVP_DESC theBVPDesc;
 
   FRONTCOMP *disp_FC;
   FRONTLIST *disp_FL;
-
-
-  InitGGObjs(theMG);
-  theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
 
   SetFlagsfortemporaryGGObjects(IflObj, FlObj, FcObj);
 
@@ -2729,25 +2344,18 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
 
   theGrid = GRID_ON_LEVEL(theMG,0);
 
-  if (param->msizecoeffno == -1)
+  if (coeff == NULL)
   {
     nominal_h = GlobalMeshsize;
     H_global = param->h_global;
   }
   else
-  {
-    if (BVPD_NCOEFFF(theBVPDesc) < param->msizecoeffno)
-    {
-      PrintErrorMessage('E',"GenerateBnodes",
-                        "Number of coefficient functions is zero.");
-      return(2);
-    }
-    if (BVP_GetCoeffFct(theBVP,param->msizecoeffno,&nominal_h)) return (1);
-  }
+    nominal_h = coeff;
 
   /* check options */
   ElemID = -1;
 
+  PRINTDEBUG(dom,1,("  h %f \n",H_global));
 
   doanimate       = MyArgs->doanimate;
   doupdate        = MyArgs->doupdate;
@@ -2788,7 +2396,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
 
   SmallHoleCompleted = NO;
 
-  if (AssembleFrontLists (theMG)!=0)
+  if (AssembleFrontLists (theMG,mesh)!=0)
   {
     return (5);
   }
@@ -2922,6 +2530,11 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
 
+        debug++;
+        if (debug==18)
+          debug=debug;
+        if (debug==19)
+          debug=debug;
         if(FL_FC_Disposer(disp_FC, disp_FL))
           return (1);
 
@@ -3005,10 +2618,9 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   {
     UserWrite("could not create connection in multigrid\n");
     DisposeMultiGrid(theMG);
-    return(0);
+    return(NULL);
   }
 
-  TerminateGG(theMG,0);
   TerminateAccel(theMG, 0);
   return (0);
 }

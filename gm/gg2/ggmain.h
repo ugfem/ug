@@ -49,7 +49,7 @@
 
 INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
                      DOUBLE h_global, INT meshsizecoeffno);
-INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param);
+INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff);
 INT InitGG (void);
 
 #endif

@@ -124,7 +124,8 @@ INDEPFRONTLIST *CreateIndepFrontList (GRID *theGrid)
 {
   INDEPFRONTLIST *ipfl;
 
-  ipfl = GetMemoryForObject(theGrid->mg,sizeof(INDEPFRONTLIST),IflObj);
+  ipfl = (INDEPFRONTLIST *)GetMemoryForObject(theGrid->mg,
+                                              sizeof(INDEPFRONTLIST),IflObj);
   if (ipfl==NULL) return(NULL);
 
   /* initialize data */
@@ -167,7 +168,8 @@ FRONTLIST *CreateFrontList (INDEPFRONTLIST *myIFL)
 {
   FRONTLIST *pfl;
 
-  pfl = GetMemoryForObject(MYGRID(myIFL)->mg,sizeof(FRONTLIST),FlObj);
+  pfl = (FRONTLIST *)GetMemoryForObject(MYGRID(myIFL)->mg,
+                                        sizeof(FRONTLIST),FlObj);
   if (pfl==NULL) return(NULL);
 
   /* initialize data */
@@ -222,7 +224,7 @@ FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE
 
   if  ( ncomp == 1 )
   {
-    pfc = GetMemoryForObject(theMG,sizeof(FRONTCOMP),FcObj);
+    pfc = (FRONTCOMP *)GetMemoryForObject(theMG,sizeof(FRONTCOMP),FcObj);
     if (pfc==NULL) return(NULL);
 
     /* initialize data */
@@ -279,7 +281,7 @@ FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE
     FRONTN(&(FChandle[i])) = NodeHandle[i];
     MYFL(&(FChandle[i])) = mylist;
     FCNGB(&(FChandle[i])) = NULL;
-    FCNGBS(&(FChandle[i])) = 0;
+    FCNGBS(&(FChandle[i])) = NULL;
   }
 
   /* create pointer connections */
@@ -465,8 +467,11 @@ INT DisposeFrontList (FRONTLIST *theFL)
   while (STARTFC(theFL) != LASTFC(theFL))
     DisposeFrontComp(theFL,STARTFC(theFL));
 
-  HEAPFAULT(STARTFC(theFL));
-  PutFreeObject(theMG,STARTFC(theFL),sizeof(FRONTCOMP),FcObj);
+  if (STARTFC(theFL)!=NULL)
+  {
+    HEAPFAULT(STARTFC(theFL));
+    PutFreeObject(theMG,STARTFC(theFL),sizeof(FRONTCOMP),FcObj);
+  }
 
   /* remove front list from list */
   if (PREDFL(theFL)!=NULL)

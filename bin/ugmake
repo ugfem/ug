@@ -8,7 +8,7 @@ then
 	echo "             where <ugmodule> is one of ug, dev, meta, xif, gm";
 	echo "             graph, low, numerics, ui, gg2, gg3, dom, std, netgen";
 	echo "             diff2d, diff2da,cd, cda, fem, fema, ns2d, ns2da, simple";
-	echo "             tools";
+	echo "             scalar, scalar2d, scalar3d, tools";
 	echo " <makeoptions>: the options which you want to pass to \"make\"";
 	exit 1;
 fi
@@ -87,6 +87,15 @@ then
 		;;
 	fema)
 		cd $UGROOT/../fem/appl;
+		;;
+	scalar)
+		cd $UGROOT/../scalar/pclib;
+		;;
+	scalar2d)
+		cd $UGROOT/../scalar/appl2d;
+		;;
+	scalar3d)
+		cd $UGROOT/../scalar/appl3d;
 		;;
 	tools)
 		cd $UGROOT/tools;

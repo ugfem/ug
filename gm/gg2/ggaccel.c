@@ -818,7 +818,8 @@ static void insert(QFCLISTTYP *p_new, QUADTREETYP *q_place,
   else
   {
     /* there is already (!)another node(!) */
-    q_pointer = GetMemoryForObject( MG, sizeof(QUADTREETYP), QuObj);
+    q_pointer = (QUADTREETYP *)GetMemoryForObject( MG, sizeof(QUADTREETYP),
+                                                   QuObj);
     if ( q_pointer == NULL )
     {
       PrintErrorMessage('E',"bnodes"," ERROR: No memory !!! error in quadtreefunction <insert>");
@@ -1165,7 +1166,7 @@ static void InsertQuadtree(FRONTCOMP *pon, int ncomp)
   QUADTREETYP *qz_s;
   COORD actual_width;
 
-  srce = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
+  srce = (SOURCETYP *)GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( srce == NULL )
   {
     PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
@@ -1182,7 +1183,8 @@ static void InsertQuadtree(FRONTCOMP *pon, int ncomp)
     actual_width = startwidth/2;
     qz_s = search( startpointer, srce, &actual_width, &pon[i]);
 
-    p_new = GetMemoryForObject( MG, sizeof(QFCLISTTYP), QfclObj);
+    p_new = (QFCLISTTYP *)GetMemoryForObject( MG, sizeof(QFCLISTTYP),
+                                              QfclObj);
 
     if ( p_new == NULL )
     {
@@ -1222,7 +1224,7 @@ static void DELETE_ND ( FRONTCOMP *delete_p )
   SOURCETYP *srce;
   QFCLISTTYP *nd_mem;
 
-  srce = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
+  srce = (SOURCETYP *)GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( srce == NULL )
   {
     PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
@@ -1262,7 +1264,7 @@ static void btree_ins(FRONTCOMP *basefc, float x, BALTREETYP **p, int *h)
 
   if ( *p == NULL )
   {
-    *p = GetMemoryForObject( MG, sizeof(BALTREETYP), EttObj);
+    *p = ( BALTREETYP *)GetMemoryForObject( MG,sizeof(BALTREETYP), EttObj);
     if ( *p == NULL )
     {
       PrintErrorMessage('E',"bnodes"," ERROR: No memory !!! in btree_ins");
@@ -1891,11 +1893,12 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
   MG = MYMG(the_Grid);
   if (MG == NULL) PrintErrorMessage('E',"bnodes","no multigrid received");
   theBVP = MG_BVP(MG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
 
   InitAccelObjs(MG);
   del_edg_fnd = 0;
-  startpointer = GetMemoryForObject( MG, sizeof(QUADTREETYP), QuObj);
+  startpointer = (QUADTREETYP *)GetMemoryForObject( MG, sizeof(QUADTREETYP),
+                                                    QuObj);
   if ( startpointer == NULL )
   {
     PrintErrorMessage('E',"bnodes","ERROR: No memory !!!");
@@ -1909,7 +1912,7 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
     startpointer->q_array[l] = NULL;
   }
 
-  source = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
+  source = (SOURCETYP *)GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( source == NULL )
   {
     PrintErrorMessage('E',"bnodes","ERROR: No memory !!!");return(1);
@@ -1998,7 +2001,7 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
   float maxsidelength;
   int foundpoints, ii;
 
-  srce = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
+  srce = (SOURCETYP *)GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( srce == NULL )
   {
     PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
@@ -2008,7 +2011,8 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
   SETOBJT(srce, ScObj);
   srce->x = source->x; srce->y = source->y;
 
-  search_sq_ru = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
+  search_sq_ru = (SOURCETYP *)GetMemoryForObject( MG, sizeof(SOURCETYP),
+                                                  ScObj);
   if ( search_sq_ru == NULL )
   {
     PrintErrorMessage('E',"bnodes","No memory !!! in InsertQuadtree");
@@ -2016,7 +2020,8 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
   }
   SETOBJT(search_sq_ru, ScObj);
 
-  search_sq_ld = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
+  search_sq_ld = (SOURCETYP *)GetMemoryForObject( MG, sizeof(SOURCETYP),
+                                                  ScObj);
   if ( search_sq_ld == NULL )
   {
     PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
@@ -2025,7 +2030,8 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
   SETOBJT(search_sq_ld, ScObj);
 
 
-  big_search_sq_ru = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
+  big_search_sq_ru = (SOURCETYP *)GetMemoryForObject( MG, sizeof(SOURCETYP),
+                                                      ScObj);
   if ( big_search_sq_ru == NULL )
   {
     PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
@@ -2033,7 +2039,7 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
   }
   SETOBJT(big_search_sq_ru, ScObj);
 
-  big_search_sq_ld = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
+  big_search_sq_ld = (SOURCETYP *)GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( big_search_sq_ld == NULL )
   {
     PrintErrorMessage('E',"bnodes"," ERROR: No memory !!! in InsertQuadtree");

@@ -39,6 +39,8 @@
 #include "enrol.h"
 #include "compiler.h"
 #include "misc.h"
+#include "general.h"
+
 #include "gm.h"
 #include "ugenv.h"
 #include "ugm.h"

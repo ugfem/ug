@@ -22,6 +22,9 @@ ugmake cda -i clean
 ugmake fema -i clean
 ugmake ns2d -i clean
 ugmake ns2da -i clean
+ugmake scalar -i clean
+ugmake scalar2d -i clean
+ugmake scalar3d -i clean
 ugmake tools -i clean
 
 if test "$1" = "all"
