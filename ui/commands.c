@@ -643,13 +643,18 @@ static INT CreateMetafileNameCommand (INT argc, char **argv)
   int frame;
   char name[LONGSTRSIZE];
   char fullname[LONGSTRSIZE];
+  char *ext;
 
   res = sscanf(argv[0],expandfmt(CONCAT3(" cmfn %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[0-9:.a-zA-Z_]")),name,buffer);
   if (res!=2) return(CMDERRORCODE);
 
   if (GetStringValueInt(buffer,&frame)) return(CMDERRORCODE);
+  ext = GetStringVar("EXT");
 
-  sprintf(fullname,"%s.%04d",name,frame);
+  if (ext==NULL)
+    sprintf(fullname,"%s.%04d",name,frame);
+  else
+    sprintf(fullname,"%s.%04d.%s",name,frame,ext);
 
   if (SetStringVar(name,fullname)) return(CMDERRORCODE);
 
