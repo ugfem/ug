@@ -662,6 +662,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
     fclose(stream);
     return (NULL);
   }
+  for (i=0; i<BVPD_NPATCHES(theBVPDesc); i++)
+    PatchList[i] = NULL;
   for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
   {
     if (Patch_GetPatchDesc(thePatch,&thePatchDesc))

@@ -1416,13 +1416,18 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
 
   /* create a ID-orientated list of patches */
   Mark(theHeap,FROM_TOP);
-  if ((PatchList=(PATCH**)GetMem(theHeap,BVPD_NPATCHES(theBVPDesc)*sizeof(PATCH*),FROM_TOP))==NULL)
+  if ((PatchList=(PATCH**)GetMem(theHeap,
+                                 BVPD_NPATCHES(theBVPDesc)*sizeof(PATCH*),
+                                 FROM_TOP))==NULL)
   {
     Release(theHeap,FROM_TOP);
     UserWrite("ERROR: could not allocate memory for PatchList\n");
     return (NULL);
   }
-  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
+  for (i=0; i<BVPD_NPATCHES(theBVPDesc); i++)
+    PatchList[i] = NULL;
+  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL;
+       thePatch=BVP_GetNextPatch(theBVP,thePatch))
   {
     if (Patch_GetPatchDesc(thePatch,&thePatchDesc))
     {
