@@ -3242,9 +3242,9 @@ INT CreateAlgebra (MULTIGRID *theMG)
               SET_SVECTOR(elem,side,vec);
             }
       }
-      MG_COARSE_FIXED(theMG) = TRUE;
-
     }
+    MG_COARSE_FIXED(theMG) = TRUE;
+
     /* now connections */
     if (MGCreateConnection(theMG))
       REP_ERR_RETURN (1);
