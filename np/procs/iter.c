@@ -647,14 +647,13 @@ static INT SmootherInit (NP_BASE *theNP, INT argc , char **argv)
   np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
   np->Order = (NP_ORDER*)ReadArgvNumProc(theNP->mg,"O",ORDER_CLASS_NAME,argc,argv);
     #ifdef ModelP
+  np->diag = ReadArgvVecDesc(theNP->mg,"diag",argc,argv);
   if (ReadArgvOption("M",argc,argv))
     np->cons_mode = MAT_CONS;
   else if (ReadArgvOption("D",argc,argv))
     np->cons_mode = MAT_DIAG_CONS;
-  else if (ReadArgvOption("V",argc,argv)) {
+  else if (np->diag != NULL)
     np->cons_mode = MAT_DIAG_VEC_CONS;
-    np->diag = ReadArgvVecDesc(theNP->mg,"diag",argc,argv);
-  }
   else
     np->cons_mode = MAT_MASTER_CONS;
         #endif
@@ -875,8 +874,6 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
 
         #ifdef ModelP
   if (np->cons_mode == MAT_DIAG_VEC_CONS) {
-    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->diag))
-      NP_RETURN(1,result[0]);
     CopyDiagMatrix(theGrid,A,np->diag);
     if (l_vector_consistent(theGrid,np->diag) != NUM_OK)
       NP_RETURN(1,result[0]);
@@ -1428,12 +1425,21 @@ static INT SSORPreProcess  (NP_ITER *theNP, INT level,
       NP_RETURN(1,result[0]);
   }
         #ifdef ModelP
-  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
-    NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
-    NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (np->cons_mode == MAT_DIAG_VEC_CONS) {
+    CopyDiagMatrix(theGrid,A,np->diag);
+    if (l_vector_consistent(theGrid,np->diag) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    np->L = A;
+  }
+  else {
+    if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
+      NP_RETURN(1,result[0]);
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    np->diag = NULL;
+  }
         #endif
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
@@ -1472,22 +1478,24 @@ static INT SSORSmoother (NP_ITER *theNP, INT level,
   }
   if (np->smoother.AutoDamp) {
     if (l_lsor_ld(theGrid,np->t,np->smoother.L,b,
-                  np->smoother.DampVector) != NUM_OK)
+                  np->smoother.DampVector,
+                  np->smoother.diag) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
   else {
-    if (l_lsor(theGrid,np->t,np->smoother.L,b,np->omega) != NUM_OK)
+    if (l_lsor(theGrid,np->t,np->smoother.L,b,
+               np->omega,np->smoother.diag) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
   if (l_vector_consistent(theGrid,np->t) != NUM_OK)
     NP_RETURN(1,result[0]);
     #else
   if (np->smoother.AutoDamp) {
-    if (l_lsor_ld(theGrid,np->t,A,b,np->smoother.DampVector) != NUM_OK)
+    if (l_lsor_ld(theGrid,np->t,A,b,np->smoother.DampVector,NULL) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
   else {
-    if (l_lsor(theGrid,np->t,A,b,np->omega) != NUM_OK)
+    if (l_lsor(theGrid,np->t,A,b,np->omega,NULL) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
     #endif
@@ -1513,22 +1521,24 @@ static INT SSORSmoother (NP_ITER *theNP, INT level,
   }
   if (np->smoother.AutoDamp) {
     if (l_usor_ld(theGrid,x,np->smoother.L,b,
-                  np->smoother.DampVector) != NUM_OK)
+                  np->smoother.DampVector,
+                  np->smoother.diag) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
   else {
-    if (l_usor(theGrid,x,np->smoother.L,b,np->omega) != NUM_OK)
+    if (l_usor(theGrid,x,np->smoother.L,b,np->omega,np->smoother.diag)
+        != NUM_OK)
       NP_RETURN(1,result[0]);
   }
   if (l_vector_consistent(theGrid,x) != NUM_OK)
     NP_RETURN(1,result[0]);
     #else
   if (np->smoother.AutoDamp) {
-    if (l_usor_ld(theGrid,x,A,b,np->smoother.DampVector) != NUM_OK)
+    if (l_usor_ld(theGrid,x,A,b,np->smoother.DampVector,NULL) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
   else {
-    if (l_usor(theGrid,x,A,b,np->omega) != NUM_OK)
+    if (l_usor(theGrid,x,A,b,np->omega,NULL) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
     #endif
@@ -3153,9 +3163,21 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
     if (SetAutoDamp(theGrid,A,np->damp,np->DampVector)) NP_RETURN(1,result[0]);
   }
         #ifdef ModelP
-  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK) NP_RETURN(1,result[0]);
+  if (np->cons_mode == MAT_DIAG_VEC_CONS) {
+    CopyDiagMatrix(theGrid,A,np->diag);
+    if (l_vector_consistent(theGrid,np->diag) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    np->L = A;
+  }
+  else {
+    if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
+      NP_RETURN(1,result[0]);
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    np->diag = NULL;
+  }
         #endif
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
@@ -3185,22 +3207,23 @@ static INT SORStep (NP_SMOOTHER *theNP, INT level,
   }
   if (np->AutoDamp)
   {
-    if (l_lsor_ld(NP_GRID(theNP,level),x,L,b,np->DampVector) != NUM_OK)
+    if (l_lsor_ld(NP_GRID(theNP,level),x,L,b,np->DampVector,
+                  np->diag) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
   else
   {
-    if (l_lsor(NP_GRID(theNP,level),x,L,b,theNP->damp) != NUM_OK)
+    if (l_lsor(NP_GRID(theNP,level),x,L,b,theNP->damp,np->diag) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
     #else
   if (np->AutoDamp)
   {
-    if (l_lsor_ld(NP_GRID(theNP,level),x,A,b,np->DampVector) != NUM_OK) NP_RETURN(1,result[0]);
+    if (l_lsor_ld(NP_GRID(theNP,level),x,A,b,np->DampVector,NULL) != NUM_OK) NP_RETURN(1,result[0]);
   }
   else
   {
-    if (l_lsor(NP_GRID(theNP,level),x,A,b,theNP->damp) != NUM_OK) NP_RETURN(1,result[0]);
+    if (l_lsor(NP_GRID(theNP,level),x,A,b,theNP->damp,NULL) != NUM_OK) NP_RETURN(1,result[0]);
   }
     #endif
 
