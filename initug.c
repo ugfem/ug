@@ -56,8 +56,8 @@
 /* numerics module */
 #include "initnumerics.h"
 
-/* graph module */
-#include "initgraph.h"
+/* graphics module */
+#include "graphics.h"
 
 /* user interface module */
 #include "initui.h"
@@ -238,10 +238,10 @@ INT InitUg (int *argcp, char ***argvp)
     return (1);
   }
 
-  /* init the graph module */
-  if ((err=InitGraph())!=0)
+  /* init the graphics module */
+  if ((err=InitGraphics())!=0)
   {
-    printf("ERROR in InitUg while InitGraph (line %d): called routine line %d\n",
+    printf("ERROR in InitUg while InitGraphics (line %d): called routine line %d\n",
            (int) HiWrd(err), (int) LoWrd(err));
     printf ("aborting ug\n");
 
@@ -287,6 +287,17 @@ INT InitUg (int *argcp, char ***argvp)
 INT ExitUg (void)
 {
   INT err;
+
+
+  /* exit graphics module */
+  PRINTDEBUG(init,1,("%d:     ExitGraphics()...\n",me))
+  if ((err=ExitGraphics())!=0)
+  {
+    printf("ERROR in ExitUg while ExitGraphics (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
 
 
   /* exit devices module */
