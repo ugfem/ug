@@ -116,6 +116,8 @@ enum HandlerSets
                                                                  DDD_InfoPriority(PARHDR(e))==PrioBorder)
 #define GHOST(e)                                                (DDD_InfoPriority(PARHDR(e))==PrioGhost || \
                                                                  DDD_InfoPriority(PARHDR(e))==PrioVGhost)
+#define VGHOST(e)                                               (DDD_InfoPriority(PARHDR(e))==PrioVGhost)
+#define HGHOST(e)                                               (DDD_InfoPriority(PARHDR(e))==PrioGhost)
 #define GID(e)                                                  DDD_InfoGlobalId(PARHDR(e))
 #define PROCLIST(e)                                             DDD_InfoProcList(PARHDR(e))
 #define ATTR(e)                                                 DDD_InfoAttr(PARHDR(e))
@@ -124,18 +126,34 @@ enum HandlerSets
 #define XFERCOPYX(e,dest,prio,size)             DDD_XferCopyObjX(PARHDR(e),dest,prio,size)
 
 /* for vertices */
-#define VPRIO(e)                                                DDD_InfoPriority(PARHDRV(e))
-#define SETVPRIO(e,p)                                   DDD_PrioritySet(PARHDRV(e),p)
-#define VMASTER(e)                                              (DDD_InfoPriority(PARHDRV(e))==PrioMaster || \
+#define VXPRIO(e)                                               DDD_InfoPriority(PARHDRV(e))
+#define SETVXPRIO(e,p)                                  DDD_PrioritySet(PARHDRV(e),p)
+#define VXMASTER(e)                                             (DDD_InfoPriority(PARHDRV(e))==PrioMaster || \
                                                                  DDD_InfoPriority(PARHDRV(e))==PrioBorder)
-#define VGHOST(e)                                               (DDD_InfoPriority(PARHDRV(e))==PrioGhost || \
+#define VXGHOST(e)                                              (DDD_InfoPriority(PARHDRV(e))==PrioGhost || \
                                                                  DDD_InfoPriority(PARHDRV(e))==PrioVGhost)
-#define VGID(e)                                                 DDD_InfoGlobalId(PARHDRV(e))
-#define VPROCLIST(e)                                    DDD_InfoProcList(PARHDRV(e))
-#define VATTR(e)                                                DDD_InfoAttr(PARHDRV(e))
-#define XFERVDELETE(e)                                  DDD_XferDeleteObj(PARHDRV(e))
-#define XFERVCOPY(e,dest,prio)                  DDD_XferCopyObj(PARHDRV(e),dest,prio,size)
-#define XFERVCOPYX(e,dest,prio,size)    DDD_XferCopyObjX(PARHDRV(e),dest,prio,size)
+#define VXVGHOST(e)                                             (DDD_InfoPriority(PARHDRV(e))==PrioVGhost)
+#define VXHGHOST(e)                                             (DDD_InfoPriority(PARHDRV(e))==PrioGhost)
+#define VXGID(e)                                                DDD_InfoGlobalId(PARHDRV(e))
+#define VXPROCLIST(e)                                   DDD_InfoProcList(PARHDRV(e))
+#define VXATTR(e)                                               DDD_InfoAttr(PARHDRV(e))
+#define XFERVXDELETE(e)                                 DDD_XferDeleteObj(PARHDRV(e))
+#define XFERVXCOPY(e,dest,prio)                 DDD_XferCopyObj(PARHDRV(e),dest,prio,size)
+#define XFERVXCOPYX(e,dest,prio,size)   DDD_XferCopyObjX(PARHDRV(e),dest,prio,size)
+
+/* macros for priorities */
+/* for elements */
+#define EMASTERPRIO(p)                                  (p==PrioMaster)
+#define EGHOSTPRIO(p)                                   (p==PrioGhost || p==PrioVGhost)
+#define EVGHOSTPRIO(p)                                  (p==PrioVGhost)
+#define EHGHOSTPRIO(p)                                  (p==PrioGhost)
+
+/* for nodes, vertices, vectors, edges (edges only 3D) */
+#define MASTERPRIO(p)                                   (p==PrioMaster || p==PrioBorder)
+#define GHOSTPRIO(p)                                    (p==PrioGhost || p==PrioVGhost)
+#define VGHOSTPRIO(p)                                   (p==PrioVGhost)
+#define HGHOSTPRIO(p)                                   (p==PrioGhost)
+
 
 #define GIDFMT                                                  "%08x"
 
