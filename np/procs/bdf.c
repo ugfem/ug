@@ -102,6 +102,8 @@ typedef struct
   DOUBLE rhogood;                                                /* threshold for step doubling		*/
   NP_TRANSFER *trans;                                            /* uses transgrid for nested iter  */
   NP_ERROR *error;                       /* error indicator                 */
+  INT err_toplevel;                                              /* toplevel for error estimation	*/
+  INT err_baselevel;                                             /* baselevel for error estimation	*/
 
   /* statistics */
   INT number_of_nonlinear_iterations;       /* number of iterations             */
@@ -376,7 +378,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
         return(__LINE__);
     for (k=low; k<=level; k++)
     {
-      if (bdf->nested) UserWriteF("Nested Iteration on level %d\n",k);
+      if (bdf->nested) UserWriteF("Nested Iteration on level %d (%d)\n",k,level);
 
       /* prepare constant part of defect */
       dset(mg,0,k,ALL_VECTORS,bdf->b,0.0);
@@ -456,14 +458,24 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
         if (bdf->Break) return(0);
 Continue:
         if (eresult.refine + eresult.coarse > 0)
-          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,
-                              GM_REFINE_PARALLEL,GM_REFINE_NOHEAPTEST) != GM_OK)
-            NP_RETURN(1,res[0]);
-        if (level != TOPLEVEL(mg)) {
+        {
+          if (bdf->err_toplevel>=0)
+            for (i=bdf->err_toplevel; i<=TOPLEVEL(mg); i++)
+              if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),1)!=GM_OK)
+                return(__LINE__);
+          if (bdf->err_baselevel>=0)
+            for (i=0; i<=bdf->err_baselevel; i++)
+              if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),-1)!=GM_OK)
+                return(__LINE__);
+          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,GM_REFINE_PARALLEL,GM_REFINE_NOHEAPTEST) != GM_OK) NP_RETURN(1,res[0]);
+        }
+        if (level != TOPLEVEL(mg))
+        {
           level = TOPLEVEL(mg);
           mg_changed = 1;
         }
-        else {
+        else
+        {
           mg_changed = 0;
           for (i=0; i<=level; i++)
             if (GSTATUS(GRID_ON_LEVEL(mg,i)) & GRID_CHANGED)
@@ -656,7 +668,7 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   bdf->error = (NP_ERROR *) ReadArgvNumProc(base->mg,"E",ERROR_CLASS_NAME,argc,argv);
   if (bdf->error == NULL)
   {
-    UserWrite("no indicator active");
+    UserWrite("no indicator active\n");
   }
 
   /* set configuration parameters */
@@ -733,6 +745,18 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   }
   if ((bdf->rhogood<0.0) || (bdf->rhogood>1)) return(NP_NOT_ACTIVE);
 
+  if (bdf->error==NULL || ReadArgvINT("etl",&(bdf->err_toplevel),argc,argv))
+  {
+    bdf->err_toplevel = -1;
+  }
+
+  if (bdf->error==NULL || ReadArgvINT("ebl",&(bdf->err_baselevel),argc,argv))
+  {
+    bdf->err_baselevel = -1;
+  }
+  if (bdf->err_toplevel>=0 && bdf->err_baselevel>=0 && bdf->err_baselevel>bdf->err_toplevel) return(NP_NOT_ACTIVE);
+
+
   return (r);
 }
 
@@ -765,7 +789,10 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"T","---");
   if (bdf->error != NULL)
+  {
     UserWriteF(DISPLAY_NP_FORMAT_SS,"E",ENVITEM_NAME(bdf->error));
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"err_toplevel",(int)bdf->err_toplevel);
+  }
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"E","---");
   UserWriteF(DISPLAY_NP_FORMAT_SF,"t_m1",(float)bdf->t_m1);
@@ -790,7 +817,6 @@ static INT BDFDisplay (NP_BASE *theNumProc)
 
   return (0);
 }
-
 
 /****************************************************************************/
 /*																			*/
