@@ -92,4 +92,6 @@ INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname);
 
 NP_BASE *GetNumProcByName (MULTIGRID *theMG, char *objectname, char *classname);
 
+INT InitNumProcManager (void);
+
 #endif

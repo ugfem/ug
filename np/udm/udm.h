@@ -185,11 +185,11 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *md,
 VECDATA_DESC *GetVecDataDescByName (MULTIGRID *theMG, char *name);
 MATDATA_DESC *GetMatDataDescByName (MULTIGRID *theMG, char *name);
 
-INT AllocVDfromVD (MULTIGRID *theMG, INT fl, INT tl,
+INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    VECDATA_DESC *template_desc, VECDATA_DESC **new_desc);
-INT AllocMDfromVD (MULTIGRID *theMG, INT fl, INT tl,
+INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    VECDATA_DESC *x, VECDATA_DESC *y, MATDATA_DESC **new_desc);
-INT AllocMDfromMD (MULTIGRID *theMG, INT fl, INT tl,
+INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
                    MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
 INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
 INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);

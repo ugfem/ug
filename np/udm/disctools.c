@@ -37,6 +37,7 @@
 #include "gm.h"       /* for data structure               */
 #include "evm.h"      /* for data structure               */
 #include "general.h"
+#include "devices.h"
 
 #include "disctools.h"
 

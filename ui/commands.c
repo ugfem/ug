@@ -71,6 +71,7 @@
 #include "rm.h"
 #include "evm.h"
 #include "ugm.h"
+#include "algebra.h"
 
 /* numerics module */
 #include "num.h"

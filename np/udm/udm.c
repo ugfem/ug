@@ -28,6 +28,8 @@
 /*																			*/
 /****************************************************************************/
 
+#include <string.h>
+
 #include "general.h"
 #include "debug.h"
 #include "gm.h"

@@ -250,9 +250,9 @@ INT ReadArgvDisplay (INT argc, char **argv)
   char value[VALUELEN];
 
   for (i=0; i<argc; i++)
-    if (argv[i][0]=='d')
+    if (strncmp(argv[i],"display",7)==0)
     {
-      if (sscanf(argv[i],"d %s",value) != 1)
+      if (sscanf(argv[i],"display %s",value) != 1)
         continue;
       if (strcmp(value,"no") == 0)
         return(PCR_NO_DISPLAY);
