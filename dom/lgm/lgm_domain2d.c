@@ -168,7 +168,7 @@ LGM_LINE *NextLine (LGM_DOMAIN *theDomain)
   return (theLine);
 }
 
-INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond)
+INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond)
 {
   INT i,k;
   LGM_SUBDOMAIN *theSubdom;
@@ -181,7 +181,7 @@ INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond)
     {
       theLine = LGM_SUBDOMAIN_LINE(theSubdom,k);
       if (LGM_LINE_LEFT(theLine)*LGM_LINE_RIGHT(theLine)!=0)
-        LGM_LINE_BNDCOND(theLine) = NULL;
+        LGM_LINE_BNDCOND(theLine) = InnerBndCond;
       else
         LGM_LINE_BNDCOND(theLine) = BndCond;
     }
@@ -1375,4 +1375,15 @@ INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
   }
 
   return(maxLineId);
+}
+
+/* dummys OS_CHANGED */
+INT OuterBndSurfaceIDs (LGM_DOMAIN *theDomain, INT *sf)
+{
+  return 1;
+}
+
+INT SurfaceIDsOfSubdomain (LGM_DOMAIN *theDomain, INT *sf, INT i)
+{
+  return 0;
 }
