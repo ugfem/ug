@@ -2,47 +2,28 @@
 # ugproject
 # set -e to stop after the first error; otherwise you may miss errors.
 set -e
-cp $UGROOT/ug.conf $UGROOT/ug.conf.orig
-# build 2TFFF lib
-cp $UGROOT/configs/2TFFF.conf $UGROOT/ug.conf
-ugmake ug -i clean
+ugclean
+ugconf save
+ugconf 2TFFF
 ugmake ug uglib
 ugmake dev
 ugmake dom
-cd $UGROOT/../diff2d/pclib
-make
-cd $UGROOT/../diff2d/appl
-make
-cd $UGROOT/../simple
-make
-# rely on uglib2TFFF
-cd $UGROOT/../ns2d/pclib
-make
-cd $UGROOT/../ns2d/appl
-make
-# build 3TFFF lib
-cp $UGROOT/configs/3TFFF.conf $UGROOT/ug.conf
+ugconf 3TFFF
 ugmake ug -i ifdef
 ugmake ug uglib
 ugmake dom
-cd $UGROOT/../cd/appl
-make -i ifdef
-make 2d
-make -i ifdef
-make 3d
-# build 2FTFF lib
-cp $UGROOT/configs/2FTFF.conf $UGROOT/ug.conf
+
+ugmake simple
+ugmake diff2d 
+ugmake diff2da
+ugmake ns2d 
+ugmake ns2da 
+ugmake fema nd
+ugmake cda 2d
+ugmake cda ifdef
+ugmake cda 3d
+ugmake fema ifdef
+ugmake fema ed
+ugconf restore
 ugmake ug -i ifdef
-ugmake ug uglib
-cd $UGROOT/../fem/appl
-make -i ifdef
-make nd
-make ed
-# Test is ready
-# restore original state
-cp $UGROOT/configs/2TTFF.conf $UGROOT/ug.conf
-ugmake ug -i ifdef
-ugmake ug uglib
-mv $UGROOT/ug.conf.orig $UGROOT/ug.conf 
-ugmake ug -i ifdef
-echo "diff2da, ns2da, cda, cd2d, fema, femn created"
+echo "simple, diff2da, ns2da, cda, cd2d, fema, femn created"

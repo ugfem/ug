@@ -1,0 +1,83 @@
+#!/bin/sh
+if test "$1" = "-help"
+then
+	echo "usage: $0 [<conf>]";
+	echo "purpose: copy a config file to ug.conf";
+	echo "Options are";
+	echo " <conf>: save (copy ug.conf to ug.conf.orig)";
+	echo "         restore (copy ug.conf to ug.conf.orig)"; 
+	echo "         2TFFF, 2TTFF, 2FTFF, 2TTFT, 3TFFF, 3FFTF, 3TTTT";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+if test "$1" = "save"
+then
+	if test -d $UGROOT/ug.conf
+	then
+		cp $UGROOT/ug.conf $UGROOT/ug.conf.orig
+	fi				
+fi			
+
+if test "$1" = "restore"
+then
+	if test -r $UGROOT/ug.conf.orig
+	then
+		mv $UGROOT/ug.conf.orig $UGROOT/ug.conf
+	fi				
+fi			
+
+if test "$1" = "2TFFF"
+then
+	if test -r $UGROOT/configs/2TFFF.conf
+	then
+  	    cp $UGROOT/configs/2TFFF.conf $UGROOT/ug.conf
+	fi				
+fi			
+
+if test "$1" = "2TTFF"
+then
+	if test -r $UGROOT/configs/2TTFF.conf
+	then
+  	    cp $UGROOT/configs/2TTFF.conf $UGROOT/ug.conf
+	fi				
+fi			
+
+if test "$1" = "2FTFF"
+then
+	if test -r $UGROOT/configs/2FTFF.conf
+	then
+  	    cp $UGROOT/configs/2FTFF.conf $UGROOT/ug.conf
+	fi				
+fi			
+
+if test "$1" = "3TFFF"
+then
+	if test -r $UGROOT/configs/3TFFF.conf
+	then
+  	    cp $UGROOT/configs/3TFFF.conf $UGROOT/ug.conf
+	fi				
+fi			
+
+if test "$1" = "3FFTF"
+then
+	if test -r $UGROOT/configs/3FFTF.conf
+	then
+  	    cp $UGROOT/configs/3FFTF.conf $UGROOT/ug.conf
+	fi				
+fi			
+
+if test "$1" = "3TTTT"
+then
+	if test -r $UGROOT/configs/3TTTT.conf
+	then
+  	    cp $UGROOT/configs/3TTTT.conf $UGROOT/ug.conf
+	fi				
+fi			
+
+exit 0;

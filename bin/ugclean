@@ -19,7 +19,6 @@ ugmake -i clean
 ugmake netgen -i clean
 ugmake diff2d -i clean
 ugmake diff2da -i clean
-ugmake simple -i clean
 ugmake cda -i clean
 ugmake fema -i clean
 ugmake ns2d -i clean

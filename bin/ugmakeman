@@ -79,6 +79,16 @@ then
 	doctext -quotefmt -mpath $UGROOT/man/man7 -ext 7 -heading ug/low *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/low *.doc
 
+	# generate dom man pages
+	cd $UGROOT/dom;
+	doctext -quotefmt -mpath $UGROOT/man/man7 -ext 5 -heading ug/dom *.c *.h
+	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/dom *.doc
+
+	# generate dom/std man pages
+	cd $UGROOT/dom/std;
+	doctext -quotefmt -mpath $UGROOT/man/man7 -ext 5 -heading ug/dom/std *.c *.h
+	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/dom/std *.doc
+
 	# generate numerics man pages
 	cd $UGROOT/numerics;
 	for i in *.c *.h
@@ -126,10 +136,6 @@ then
 	doctext -quotefmt -mpath $UGROOT/man/man2 -ext 2 -heading admin *.doc
 	cd $UGROOT/doc
 	doctext -quotefmt -mpath $UGROOT/man/man2 -ext 2 -heading admin *.doc
-
-	#generate man pages for simple
-	cd $UGROOT/../simple
-	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading simple *.doc
 
 	#generate man pages for diff2d
 	cd $UGROOT/../diff2d
