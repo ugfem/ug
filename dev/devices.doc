@@ -49,7 +49,7 @@
 .n      - printing of error messages
 .n      - log file mechanism (shell output can be protocoled)
 .n      - defining a mutelevel which controls how verbose output of functions is
-.n      - opening the shell window at initialšization time
+.n      - opening the shell window at initialization time
     
     Then there are some subdirectories that contain different output devices for
     graphics output':'
