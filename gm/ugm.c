@@ -6969,7 +6969,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
 
    DESCRIPTION:
    This function calculates an (hopefully) unique key for VERTEX,
-   ELEMENT, NODE and VECTOR typed objects.
+   ELEMENT, NODE, EDGE and VECTOR typed objects.
 
    The heuristic is: calculate a 2D/3D position for the geometric object and
    transform this position to a single number by a weighted summation of the
@@ -6982,7 +6982,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
                 KeyForObject((KEY_OBJECT *)theNode);
 
    SEE ALSO:
-   VERTEX, ELEMENT, NODE, VECTOR
+   VERTEX, ELEMENT, NODE, EDGE, VECTOR
 
    RETURN VALUE:
    INT - the resulting key
@@ -7016,8 +7016,14 @@ INT KeyForObject( KEY_OBJECT *obj )
     return LEVEL(obj)+COORDINATE_TO_KEY(coord,&dummy);
 
   /* edge */
-  case EDOBJ :     if (MIDNODE((EDGE*)obj)!=NULL) return LEVEL(obj)+COORDINATE_TO_KEY(CVECT(MYVERTEX(MIDNODE((EDGE*)obj))),&dummy);
-    else return (0);
+  case EDOBJ :     V_DIM_CLEAR(coord);
+    /* sum of the coordinates of the 2 edge corners */
+    V_DIM_ADD(coord,CVECT(MYVERTEX(NBNODE(LINK0((EDGE*)obj)))),coord);
+    V_DIM_ADD(coord,CVECT(MYVERTEX(NBNODE(LINK1((EDGE*)obj)))),coord);
+    /* the midpoint of the line is half of the sum */
+    V_DIM_SCALE(0.5,coord);
+    /* return the key of the midpoint as the key for the edge */
+    return LEVEL(obj)+COORDINATE_TO_KEY(coord,&dummy);
 
   default :        sprintf( buffer, "unrecognized object type %d", OBJT(obj) );
     PrintErrorMessage('E',"KeyForObject",buffer);
