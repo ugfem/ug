@@ -378,7 +378,9 @@ static INT GenerateNewGrid(GRID *theGrid)
   }
   m = noc * nof;
     #ifdef ModelP
+  PRINTDEBUG(np,1,("%d: noc * nof %d\n",me,m));
   m = UG_GlobalMinINT(m);
+  PRINTDEBUG(np,1,("%d: noc * nof %d\n",me,m));
         #endif
   if (m == 0)
     return(DONE);
@@ -675,12 +677,7 @@ static int Gather_VectorFlags (DDD_OBJ obj, void *data)
   VECTOR *pv = (VECTOR *)obj;
   INT *flag = (INT *)data;
 
-  flag[0] = me;
-  flag[1] = VCCOARSE(pv);
-  flag[2] = VCUSED(pv);
-
-  PRINTDEBUG(np,1,("%d:gather  ind %d fl %d %d %d\n",
-                   me,VINDEX(pv),flag[0],flag[1],flag[2]));
+  flag[0] = VCCOARSE(pv);
 
   return (0);
 }
@@ -690,25 +687,198 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   VECTOR *pv = (VECTOR *)obj;
   INT *flag = (INT *)data;
 
-  PRINTDEBUG(np,1,("%d:scatter ind %d fl %d %d %d\n",
-                   me,VINDEX(pv),flag[0],flag[1],flag[2]));
+  if (flag[0])
+    SETVCCOARSE(pv,1);
 
-  if (me > flag[0]) {
-    SETVCCOARSE(pv,flag[1]);
-    SETVCUSED(pv,flag[2]);
-  }
   return (0);
 }
 
 static INT l_vectorflag_consistent (GRID *g)
 {
-  DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), 3 * sizeof(INT),
+  DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), sizeof(INT),
                   Gather_VectorFlags, Scatter_VectorFlags);
   return (NUM_OK);
 }
 #endif
 
 INT CoarsenAverage (GRID *theGrid)
+{
+  INT error;
+  FIFO myfifo;
+  void *buffer;
+  VECTOR *theV,*theW;
+  MATRIX *theM;
+  HEAP *theHeap;
+  INT n,m,d,dmin,p;
+
+  m = 0;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
+    VINDEX(theV) = m++;
+    SETVCUSED(theV,0);
+  }
+  n = m;
+  dmin = n;
+  PRINTDEBUG(np,1,("d "));
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
+    if (VECSKIP(theV) == 0) continue;
+    d = 0;
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
+    PRINTDEBUG(np,1,("%d:%d ",VINDEX(theV),d));
+    dmin = MIN(d,dmin);
+  }
+  PRINTDEBUG(np,1,("\ndmin %d\n",dmin));
+  theHeap = MGHEAP(MYMG(theGrid));
+  MarkTmpMem(theHeap);
+  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+  if (buffer == NULL) {
+    ReleaseTmpMem(theHeap);
+        #ifdef ModelP
+    for (p=me+1; p<procs; p++) {
+      l_vectorflag_consistent(theGrid);
+      PRINTDEBUG(np,1,("%d: l_vectorflag_consistent %d\n",me,p));
+    }
+        #endif
+    return(1);
+  }
+  fifo_init(&myfifo,buffer,sizeof(void *) * n);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
+    if (VECSKIP(theV) == 0) continue;
+    d = 0;
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
+    if (d == dmin)
+      fifo_in(&myfifo,(void *)theV);
+  }
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
+    if (VECSKIP(theV) == 0) continue;
+    d = 0;
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
+    if (d > dmin)
+      fifo_in(&myfifo,(void *)theV);
+  }
+  m = n;
+  while(!fifo_empty(&myfifo)) {
+    theV = (VECTOR *)fifo_out(&myfifo);
+    if (VCUSED(theV)) {
+      if (VCCOARSE(theV) == 0) {
+        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
+          theW = MDEST(theM);
+          if (!VCUSED(theW)) break;
+        }
+        if (theM != NULL) {
+          m--;
+          SETVCCOARSE(theW,1);
+          SETVCUSED(theW,1);
+          fifo_in(&myfifo,(void *)theW);
+          PRINTDEBUG(np,1,("out %d inc %d\n",
+                           VINDEX(theV),VINDEX(theW)));
+        }
+      }
+      else {
+        PRINTDEBUG(np,1,("outc %d",VINDEX(theV)));
+        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
+          theW = MDEST(theM);
+          if (VCUSED(theW)) continue;
+          m--;
+          SETVCUSED(theW,1);
+          SETVCCOARSE(theW,0);
+          fifo_in(&myfifo,(void *)theW);
+          PRINTDEBUG(np,1,(" f %d",VINDEX(theW)));
+        }
+        PRINTDEBUG(np,1,("\n"));
+      }
+    }
+    else {
+      m--;
+      SETVCCOARSE(theV,1);
+      SETVCUSED(theV,1);
+      PRINTDEBUG(np,1,("c %d",VINDEX(theV)));
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
+        theW = MDEST(theM);
+        if (VCUSED(theW)) continue;
+        m--;
+        SETVCUSED(theW,1);
+        SETVCCOARSE(theW,0);
+        fifo_in(&myfifo,(void *)theW);
+        PRINTDEBUG(np,1,(" f %d",VINDEX(theW)));
+      }
+      PRINTDEBUG(np,1,("\n"));
+    }
+  }
+  ReleaseTmpMem(theHeap);
+        #ifdef ModelP
+  l_vectorflag_consistent(theGrid);
+  PRINTDEBUG(np,1,("%d: m %d\n",me,m));
+  m = UG_GlobalMaxINT(m) - UG_GlobalMinINT(m);
+  PRINTDEBUG(np,1,("%d: m %d\n",me,m));
+        #endif
+  if (m != 0)
+    return(1);
+  error = GenerateNewGrid(theGrid);
+  REP_ERR_RETURN(error);
+}
+
+/****************************************************************************/
+/*D
+   l_vectorflags_consistent1 - make flags consistent
+
+   SYNOPSIS:
+   static INT l_vectorflags_consistent (GRID *g);
+
+   PARAMETERS:
+   .  g - pointer to grid
+
+   DESCRIPTION:
+   This function makes the coarsening flags consistent.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+   D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static int Gather_VectorFlags1 (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT *flag = (INT *)data;
+
+  flag[0] = me;
+  flag[1] = VCCOARSE(pv);
+  flag[2] = VCUSED(pv);
+
+  PRINTDEBUG(np,1,("%d:gather  ind %d fl %d %d %d ncopies %d\n",
+                   me,VINDEX(pv),flag[0],flag[1],flag[2],
+                   DDD_InfoNCopies(PARHDR(pv))));
+
+  return (0);
+}
+
+static int Scatter_VectorFlags1 (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT *flag = (INT *)data;
+
+  if (me > flag[0]) {
+    SETVCCOARSE(pv,flag[1]);
+    SETVCUSED(pv,flag[2]);
+    PRINTDEBUG(np,1,("%d:scatter  ind %d fl %d %d %d ncopies %d\n",
+                     me,VINDEX(pv),flag[0],flag[1],flag[2],
+                     DDD_InfoNCopies(PARHDR(pv))));
+  }
+
+  return (0);
+}
+
+static INT l_vectorflag_consistent1 (GRID *g)
+{
+  DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), 3 * sizeof(INT),
+                  Gather_VectorFlags1, Scatter_VectorFlags1);
+  return (NUM_OK);
+}
+#endif
+
+INT CoarsenAverage1 (GRID *theGrid)
 {
   INT error;
   FIFO myfifo;
@@ -768,9 +938,11 @@ INT CoarsenAverage (GRID *theGrid)
     if (d > dmin)
       fifo_in(&myfifo,(void *)theV);
   }
+  m = n;
         #ifdef ModelP
   PRINTDEBUG(np,1,("boundary"));
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
+    if (VCUSED(theV)) m--;
     if (VECSKIP(theV)) continue;
     if (DDD_InfoNCopies(PARHDR(theV)) > 0) {
       fifo_in(&myfifo,(void *)theV);
@@ -779,7 +951,6 @@ INT CoarsenAverage (GRID *theGrid)
   }
   PRINTDEBUG(np,1,("\n"));
         #endif
-  m = 0;
   while(!fifo_empty(&myfifo)) {
     theV = (VECTOR *)fifo_out(&myfifo);
     if (VCUSED(theV)) {
@@ -789,8 +960,11 @@ INT CoarsenAverage (GRID *theGrid)
           if (!VCUSED(theW)) break;
         }
         if (theM != NULL) {
+          m--;
+          SETVCCOARSE(theW,1);
+          SETVCUSED(theW,1);
           fifo_in(&myfifo,(void *)theW);
-          PRINTDEBUG(np,1,("out %d in %d\n",
+          PRINTDEBUG(np,1,("out %d inc %d\n",
                            VINDEX(theV),VINDEX(theW)));
         }
       }
@@ -799,7 +973,7 @@ INT CoarsenAverage (GRID *theGrid)
         for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
           theW = MDEST(theM);
           if (VCUSED(theW)) continue;
-          m++;
+          m--;
           SETVCUSED(theW,1);
           SETVCCOARSE(theW,0);
           fifo_in(&myfifo,(void *)theW);
@@ -809,14 +983,14 @@ INT CoarsenAverage (GRID *theGrid)
       }
     }
     else {
-      m++;
+      m--;
       SETVCCOARSE(theV,1);
       SETVCUSED(theV,1);
       PRINTDEBUG(np,1,("c %d",VINDEX(theV)));
       for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
         theW = MDEST(theM);
         if (VCUSED(theW)) continue;
-        m++;
+        m--;
         SETVCUSED(theW,1);
         SETVCCOARSE(theW,0);
         fifo_in(&myfifo,(void *)theW);
@@ -826,13 +1000,14 @@ INT CoarsenAverage (GRID *theGrid)
     }
   }
   ReleaseTmpMem(theHeap);
-  m = n - m;
         #ifdef ModelP
   for (p=me+1; p<procs; p++) {
     l_vectorflag_consistent(theGrid);
     PRINTDEBUG(np,1,("%d: l_vectorflag_consistent %d\n",me,p));
   }
+  PRINTDEBUG(np,1,("%d: m %d\n",me,m));
   m = UG_GlobalMaxINT(m) - UG_GlobalMinINT(m);
+  PRINTDEBUG(np,1,("%d: m %d\n",me,m));
         #endif
   if (m != 0)
     return(1);
