@@ -688,7 +688,9 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after)
     for (i=1; i<RESOLUTION; i++)
     {
       lambda += dlambda;
-      if (Patch_local2global(thePatch,&lambda,r)) return (NULL);
+      /* TODO: quick fix */
+      if (lambda>lambda1) break;
+      if (Patch_local2global(thePatch,&lambda,r)) return(NULL);
       s = (r[0]-x)*(r[0]-x)+(r[1]-y)*(r[1]-y);
       if (s<smin)
       {
@@ -708,7 +710,7 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after)
       return(NULL);
     }
     LAMBDA(vsnew,0) = lambdaopt;
-    if (Patch_local2global(thePatch,PVECT(vsnew),CVECT(theVertex))) return (NULL);
+    if (Patch_local2global(thePatch,PVECT(vsnew),CVECT(theVertex))) return(NULL);
     z = (lambdaopt-lambda0)/(lambda1-lambda0);
     SETONEDGE(theVertex,side);
     VS_PATCH(vsnew) = thePatch;
