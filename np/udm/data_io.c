@@ -221,6 +221,9 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,nvec,id,nparfiles;
   unsigned long m;
   DIO_GENERAL dio_general;
+#ifdef ModelP
+  DIO_GENERAL temp_dio_general;
+#endif
   HEAP *theHeap;
   double *data;
   VECTOR *theV, **VectorList;
@@ -300,12 +303,19 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 #endif
   if (nparfiles == -1) return(1);
 
+#ifdef ModelP
   if (procs>nparfiles)
   {
-    Broadcast(&dio_general,sizeof(DIO_GENERAL));
-    if (me < nparfiles)
-      dio_general.me = me;
+    /* for me >nparfiles do: dio_general{me}:=dio_general{master} */
+
+    if (me==master)
+      temp_dio_general = dio_general;
+    Broadcast(&temp_dio_general,sizeof(DIO_GENERAL));                   /* for ease of communication use Broadcast and avoid overwriting of dio_general for me<nparfiles */
+    if (me >= nparfiles)
+      dio_general = temp_dio_general;
   }
+#endif
+
   if (SetStringValue(":IO:TIME",dio_general.time))                {CloseDTFile(); return (1);}
   if (SetStringValue(":IO:DT",dio_general.dt))                    {CloseDTFile(); return (1);}
   if (SetStringValue(":IO:NDT",dio_general.ndt))                  {CloseDTFile(); return (1);}
