@@ -3269,7 +3269,7 @@ static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
    D*/
 /****************************************************************************/
 
-INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT SpecSkipVecs, INT AlsoOrderMatrices)
+INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices)
 {
   MULTIGRID *theMG;
   VECTOR **table,*theVec;
