@@ -321,7 +321,7 @@ INT ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv)
         case 0 : return(0);
         case 1 : return(1);
         case 2 : return(1);
-        default : assert(0);
+        default : ASSERT(0);
         }
       }
     }
