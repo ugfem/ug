@@ -68,6 +68,9 @@
 #ifdef MAX
 #undef MAX
 #endif
+#ifdef ABS
+#undef ABS
+#endif
 
 #define ABS(i)                   (((i)<0) ? (-(i)) : (i))
 #define MIN(x,y)                 (((x)<(y)) ? (x) : (y))
