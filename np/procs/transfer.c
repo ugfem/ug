@@ -431,7 +431,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPTransferExecute","no vector x");
       return (1);
     }
-    if ((*np->InterpolateNewVectors)(np,level-1,level,np->x,&result)) {
+    if ((*np->InterpolateNewVectors)(np,0,level,np->x,&result)) {
       UserWriteF("NPTransferExecute: InterpolateNewVectors failed, error code %d\n",
                  result);
       return (1);
