@@ -1327,6 +1327,9 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	int     i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
 	const SHORT *Comp;	
 
+	PRINTDEBUG(np,0,("%d: Scatter_OffDiagMatrixComp %d: maxgid %d\n",
+					 me,GID(pv),*maxgid));
+
 	if (VSTART(pv) == NULL) return (NUM_OK);
 	if (MD_IS_SCALAR(ConsMatrix)) {
 		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv))
@@ -1391,7 +1394,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 			    	mtype = MTP(vtype,MDESTTYPE(m));
 					Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
 					for (j=0; j<MD_COLS_IN_MTYPE(ConsMatrix,mtype)*rcomp; j++)
-				    	msgbuf[j] += MVALUE(m,Comp[j]);
+				    	MVALUE(m,Comp[j]) += msgbuf[j];
 					msgbuf+=MaxBlockSize;
 					igid++;
 				}
@@ -1422,12 +1425,48 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 					for (k=0; k<rcomp; k++)
 				  		if (!(vecskip & (1<<k)))				
 				      		for (j=k*ncomp; j<(k+1)*ncomp; j++)
-						  		msgbuf[j] += MVALUE(m,Comp[j]);
+							    MVALUE(m,Comp[j]) += msgbuf[j];
 					msgbuf+=MaxBlockSize;
 					igid++;
 				}
 			}
 		}
+
+	IFDEBUG(np,1)	
+	igid = 0;
+	msgbuf = (DOUBLE *)data;
+	for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+	    if (XFERMATX(m)==0) break;
+		proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
+		for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
+		  ;
+		if (((DDD_PROC)proclist[i])==proc &&
+			(!GHOSTPRIO(proclist[i+1])))
+		  {
+			DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+			
+			while (igid<*maxgid && (gidbuf[igid]<dest))
+			  {
+				msgbuf+=MaxBlockSize;
+				igid++;
+			  }
+			
+			if (igid<*maxgid && (gidbuf[igid]==dest))
+			  {
+				printf("%d: %d->%d:",me,GID(pv),GID(MDEST(m)));
+				mtype = MTP(vtype,MDESTTYPE(m));
+				ncomp = MD_COLS_IN_MTYPE(ConsMatrix,mtype);
+				Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+				for (k=0; k<rcomp; k++)
+					for (j=k*ncomp; j<(k+1)*ncomp; j++)
+					  printf(" %f",MVALUE(m,Comp[j]));
+				msgbuf+=MaxBlockSize;
+				igid++;
+				printf("\n");
+			  }
+		  }
+	}
+    ENDDEBUG
 
 	return (NUM_OK);
 }
@@ -1598,9 +1637,11 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 		sizeof(INT) + MaximumInconsMatrices*sizeof(DDD_GID);
 	sizePerVector = CEIL(sizePerVector);
 
-    if (mode == MAT_CONS) 
+    if (mode == MAT_CONS) {
+	    PRINTDEBUG(np,0,("%d: MAT_CONS\n",me));
 		DDD_IFAExchangeX(BorderVectorSymmIF, GRID_ATTR(g), sizePerVector,
 						 Gather_OffDiagMatrixComp, Scatter_OffDiagMatrixComp);
+	}
     else if (mode == MAT_MASTER_CONS) 
 	{
 		DDD_IFAOnewayX(BorderVectorIF, GRID_ATTR(g),IF_FORWARD, sizePerVector,
