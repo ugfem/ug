@@ -183,7 +183,7 @@ if (0) {
         PREDVC(pv) = NULL;
         if (SUCCVC(pv)!=NULL)
             PREDVC(SUCCVC(pv)) = pv;
-        FIRSTVECTOR(theGrid) = (void*)pv;
+        SFIRSTVECTOR(theGrid) = (void*)pv;
         if (LASTVECTOR(theGrid)==NULL)
             LASTVECTOR(theGrid) = (void*)pv;
     }
@@ -211,18 +211,21 @@ void VectorXferCopy (DDD_OBJ obj, int proc, int prio)
 {
 	int 	nmat=0;
 	MATRIX	*mat;
-	VECTOR  *vec = (VECTOR *)obj;
+	VECTOR  *pv = (VECTOR *)obj;
 	size_t  sizeArray[30]; /* TODO: define this static global TODO: take size as
  maximum of possible connections */
 
-	for(mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+    PRINTDEBUG(dddif,1,("%2d: VectorXferCopy(): v=%08x/%x proc=%d prio=%d\n",
+		me,DDD_InfoGlobalId(PARHDR(pv)),pv,proc,prio))
+
+	for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat))
 	{
 		sizeArray[nmat++] = MSIZE(mat);
 	}
 
 
 	PRINTDEBUG(dddif,2,("%2d:  VectorXferCopy(): v=%08x/%x AddData nmat=%d\n",\
-		me,DDD_InfoGlobalId(PARHDR(vec)),vec,nmat))
+		me,DDD_InfoGlobalId(PARHDR(pv)),pv,nmat))
 
 	DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
 }
@@ -485,6 +488,9 @@ void VectorPriorityUpdate (DDD_OBJ obj, int new)
 	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 	INT		old = DDD_InfoPriority(PARHDR(pv));
 
+	PRINTDEBUG(dddif,0,("%2d: VectorPriorityUpdate(): v=%08x/%x old=%d new=%d level=%d\n",me,\
+		DDD_InfoGlobalId(PARHDR(pv)),pv,old,new,level))
+
 	if (pv == NULL) return;
 	if (old == new) return;
 
@@ -501,7 +507,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, int new)
 		return;
 	}
 
-	GRID_UNLINK_VECTOR(theGrid,pv,old)
+	GRID_UNLINK_VECTOR(theGrid,pv)
 
 	GRID_LINK_VECTOR(theGrid,pv,new)
 	
@@ -700,7 +706,7 @@ if (0) {
                 SUCCN(node) = FIRSTNODE(theGrid);
                 PREDN(node) = NULL;
                 if (SUCCN(node)!=NULL) PREDN(SUCCN(node)) = node;
-                FIRSTNODE(theGrid) = node;
+                /*FIRSTNODE(theGrid) = node;*/
                 if (LASTNODE(theGrid)==NULL) LASTNODE(theGrid) = node;
         }
         else
@@ -752,7 +758,7 @@ void NodeXferCopy (DDD_OBJ obj, int proc, int prio)
 	DDD_XferCopyObj(PARHDRV(MYVERTEX(node)), proc, prio);
 
 	/* copy vector if defined */
-	if (dddctrl.nodeData && prio==PrioMaster)
+	if (dddctrl.nodeData)
 	  {
 		vec = NVECTOR(node);
 		Size = sizeof(VECTOR)-sizeof(DOUBLE)+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
@@ -866,6 +872,9 @@ void NodePriorityUpdate (DDD_OBJ obj, int new)
 	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 	INT		old = DDD_InfoPriority(PARHDR(pn));
 
+	PRINTDEBUG(dddif,0,("%2d: NodePriorityUpdate(): n=%08x/%x old=%d new=%d level=%d\n",me,\
+		DDD_InfoGlobalId(PARHDR(pn)),pn,old,new,level))
+
 	if (pn == NULL) return;
 	if (old == new) return;
 
@@ -882,7 +891,7 @@ void NodePriorityUpdate (DDD_OBJ obj, int new)
 		return;
 	}
 
-	GRID_UNLINK_NODE(theGrid,pn,old)
+	GRID_UNLINK_NODE(theGrid,pn)
 
 	GRID_LINK_NODE(theGrid,pn,new)
 	
@@ -1273,6 +1282,9 @@ void ElementPriorityUpdate (DDD_OBJ obj, int new)
 	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 	INT		old = DDD_InfoPriority(PARHDRE(pe));
 
+	PRINTDEBUG(dddif,0,("%2d: ElementPriorityUpdate(): e=%08x/%x old=%d new=%d level=%d\n",me,\
+		DDD_InfoGlobalId(PARHDRE(pe)),pe,old,new,level))
+
 	if (pe == NULL) return;
 	if (old == new) return;
 
@@ -1289,7 +1301,7 @@ void ElementPriorityUpdate (DDD_OBJ obj, int new)
 		return;
 	}
 
-	GRID_UNLINK_ELEMENT(theGrid,pe,old)
+	GRID_UNLINK_ELEMENT(theGrid,pe)
 
 	GRID_LINK_ELEMENT(theGrid,pe,new)
 	
