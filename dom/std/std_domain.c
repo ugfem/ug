@@ -2765,8 +2765,8 @@ static INT SideIsCooriented (BND_PS *ps)
 
   /* check whether an (arbitrary) angle of the side is > 180 degree */
   V2_SUBTRACT(BND_LOCAL(ps,1), BND_LOCAL(ps,0), x0);
-  V2_SUBTRACT(BND_LOCAL(ps,2), BND_LOCAL(ps,1), x1);
-  V2_VECTOR_PRODUCT(x0, x1, vp);
+  V2_SUBTRACT(BND_LOCAL(ps,2), BND_LOCAL(ps,0), x1);
+  V2_VECTOR_PRODUCT(x1, x0, vp);
 
   ASSERT(fabs(vp)>SMALL_C);
 
@@ -2774,9 +2774,6 @@ static INT SideIsCooriented (BND_PS *ps)
     return (YES);
   else
     return (NO);
-
-  return (2);
-
 #       endif
 }
 
