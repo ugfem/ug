@@ -439,7 +439,6 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
 
 int DirCreateUsingSearchPaths (const char *fname, const char *paths)
 {
-  /* HRR_TODO: get this straight */
   PATHS *thePaths;
 
   char fullname[MAXPATHLENGTH];
