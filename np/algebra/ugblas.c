@@ -1673,6 +1673,113 @@ INT l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 	return (NUM_OK);
 }
 
+INT l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE from, DOUBLE to, INT skip)
+{
+	VECTOR *first_v;
+	register VECTOR *v;
+	register SHORT i;
+	register SHORT ncomp;
+	register INT vtype;
+	DOUBLE scale;
+	DEFINE_VD_CMPS(cx);
+	INT vskip;
+
+	if (from>=to) REP_ERR_RETURN (NUM_ERROR);
+	scale = (to -from)/(DOUBLE)RAND_MAX;
+		
+	first_v = FIRSTVECTOR(g);
+	
+	for (vtype=0; vtype<NVECTYPES; vtype++)
+		if (VD_ISDEF_IN_TYPE(x,vtype))
+			switch (VD_NCMPS_IN_TYPE(x,vtype))
+			{
+				case 1:
+					SET_VD_CMP_1(cx,x,vtype);
+					if (skip)
+					{
+						L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
+						{
+							vskip = VECSKIP(v);
+							if (!(vskip&(1<<0)))	VVALUE(v,cx0) = from + scale*(DOUBLE)rand();
+							else					VVALUE(v,cx0) = 0.0;
+						}
+					}
+					else
+					{
+						L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
+							VVALUE(v,cx0) = from + scale*(DOUBLE)rand();
+					}
+					break;
+				
+				case 2:
+					SET_VD_CMP_2(cx,x,vtype);
+					if (skip)
+					{
+						L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
+						{
+							vskip = VECSKIP(v);
+							if (!(vskip&(1<<0)))	VVALUE(v,cx0) = from + scale*(DOUBLE)rand();
+							else					VVALUE(v,cx0) = 0.0;
+							if (!(vskip&(1<<1)))	VVALUE(v,cx1) = from + scale*(DOUBLE)rand();
+							else					VVALUE(v,cx1) = 0.0;
+						}
+					}
+					else
+					{
+						L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
+							{VVALUE(v,cx0) = from + scale*(DOUBLE)rand(); VVALUE(v,cx1) = from + scale*(DOUBLE)rand();}
+					}
+					break;
+				
+				case 3:
+					SET_VD_CMP_3(cx,x,vtype);
+					if (skip)
+					{
+						L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
+						{
+							vskip = VECSKIP(v);
+							if (!(vskip&(1<<0)))	VVALUE(v,cx0) = from + scale*(DOUBLE)rand();
+							else					VVALUE(v,cx0) = 0.0;
+							if (!(vskip&(1<<1)))	VVALUE(v,cx1) = from + scale*(DOUBLE)rand();
+							else					VVALUE(v,cx1) = 0.0;
+							if (!(vskip&(1<<2)))	VVALUE(v,cx2) = from + scale*(DOUBLE)rand();
+							else					VVALUE(v,cx2) = 0.0;
+						}
+					}
+					else
+					{
+						L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
+							{VVALUE(v,cx0) = from + scale*(DOUBLE)rand(); VVALUE(v,cx1) = from + scale*(DOUBLE)rand(); VVALUE(v,cx2) = from + scale*(DOUBLE)rand();}
+					}
+					break;
+				
+				default:
+					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
+					if (skip)
+					{
+						L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
+						{
+							vskip = VECSKIP(v);
+							for (i=0; i<ncomp; i++)
+							{
+								if (!(vskip&(1<<i)))
+									VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = from + scale*(DOUBLE)rand();
+								else			
+									VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = 0.0;
+							}
+						}
+					}
+					else
+					{
+						L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
+							for (i=0; i<ncomp; i++)
+								VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = from + scale*(DOUBLE)rand();
+					}
+			}
+	
+	return (NUM_OK);
+}
+
 /****************************************************************************/
 /*D
    l_dsetnonskip - set all !skip components of a vector to a given value
