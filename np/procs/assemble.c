@@ -54,8 +54,12 @@
 
 #define MAX_PA                          2
 
+#define PA_VT(pa)                       ((pa)->vt)
+#define PA_VD_g(pa)                     ((pa)->gridvel)
 #define PA_NASS(pa)                     ((pa)->nass)
+#define PA_SUB(pa,i)            ((pa)->sub[i])
 #define PA_ASS(pa,i)            ((pa)->ass[i])
+#define PA_DT(pa)                       ((pa)->dt)
 
 /****************************************************************************/
 /*																			*/
@@ -69,10 +73,41 @@ typedef struct
   NP_NL_ASSEMBLE pa;                                    /* class for nonlinear ass routines		*/
 
   /* additional data */
+  VEC_TEMPLATE *vt;                                     /* vector template for part decomp		*/
+  VECDATA_DESC *gridvel;                        /* velocity of moving grid (iff)		*/
+
+  INT nass;                                                     /* number of part assembling numprocs	*/
+  INT sub[MAX_PA];                                      /* sub vector of vt for part decomp		*/
+  NP_NL_PARTASS *ass[MAX_PA];                   /* pointers to part assembling numprocs	*/
+
+} NP_PA_NL;
+
+typedef struct
+{
+  NP_T_ASSEMBLE pa;                                     /* class for nonlinear ass routines		*/
+
+  /* additional data */
+  VEC_TEMPLATE *vt;                                     /* vector template for part decomp		*/
+  VECDATA_DESC *gridvel;                        /* velocity of moving grid (iff)		*/
+
+  INT nass;                                                     /* number of part assembling numprocs	*/
+  INT sub[MAX_PA];                                      /* sub vector of vt for part decomp		*/
+  NP_T_PARTASS *ass[MAX_PA];                    /* pointers to part assembling numprocs	*/
+
+  DOUBLE dt;                                                    /* time step							*/
+
+} NP_PA_T;
+
+/* TODO (HRR 971118): remove old part assemble structs (2 items) */
+typedef struct
+{
+  NP_NL_ASSEMBLE pa;                                    /* class for nonlinear ass routines		*/
+
+  /* additional data */
   INT nass;                                                     /* number of part assembling numprocs	*/
   NP_NL_ASSEMBLE *ass[MAX_PA];          /* pointers to part assembling numprocs	*/
 
-} NP_NL_PARTASS;
+} OLD_NP_NL_PARTASS;
 
 typedef struct
 {
@@ -82,7 +117,7 @@ typedef struct
   INT nass;                                                     /* number of part assembling numprocs	*/
   NP_T_ASSEMBLE *ass[MAX_PA];                   /* pointers to part assembling numprocs	*/
 
-} NP_T_PARTASS;
+} OLD_NP_T_PARTASS;
 
 /****************************************************************************/
 /*																			*/
@@ -719,16 +754,16 @@ INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
    D*/
 /****************************************************************************/
 
-static INT NLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+static INT OldNLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
 {
-  NP_NL_PARTASS *thePA;
+  OLD_NP_NL_PARTASS *thePA;
   NP_NL_ASSEMBLE *ass;
   INT r,i,nass;
   char name[NAMESIZE];
 
   r = NPNLAssembleInit(theNP,argc,argv);
 
-  thePA = (NP_NL_PARTASS*)theNP;
+  thePA = (OLD_NP_NL_PARTASS*)theNP;
 
   PA_NASS(thePA) = nass = 0;
   for (i=1; i<argc; i++)
@@ -737,18 +772,18 @@ static INT NLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
     case 'a' :
       if (nass>=MAX_PA)
       {
-        PrintErrorMessage('E',"NLPartAssInit","max number of part assembling numprocs exceeded");
+        PrintErrorMessage('E',"OldNLPartAssInit","max number of part assembling numprocs exceeded");
         REP_ERR_RETURN (NP_NOT_ACTIVE);
       }
       if (sscanf(argv[i],expandfmt(CONCAT3("ass %",NAMELENSTR,"[ -~]")),name)!=1)
       {
-        PrintErrorMessage('E',"NLPartAssInit","specify a nonlinear assembling numproc with $ass");
+        PrintErrorMessage('E',"OldNLPartAssInit","specify a nonlinear assembling numproc with $ass");
         REP_ERR_RETURN (NP_NOT_ACTIVE);
       }
       ass = (NP_NL_ASSEMBLE*) GetNumProcByName (NP_MG(theNP),name,NL_ASSEMBLE_CLASS_NAME);
       if (ass == NULL)
       {
-        PrintErrorMessage('E',"NLPartAssInit",
+        PrintErrorMessage('E',"OldNLPartAssInit",
                           "cannot find specified numerical procedure");
         REP_ERR_RETURN (NP_NOT_ACTIVE);
       }
@@ -757,7 +792,7 @@ static INT NLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
     }
   if (nass==0)
   {
-    PrintErrorMessage('E',"NLPartAssInit","specify at least one nonlinear assembling numproc with $ass");
+    PrintErrorMessage('E',"OldNLPartAssInit","specify at least one nonlinear assembling numproc with $ass");
     REP_ERR_RETURN (NP_NOT_ACTIVE);
   }
   PA_NASS(thePA) = nass;
@@ -776,15 +811,15 @@ static INT NLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
  */
 /****************************************************************************/
 
-static INT NLPartAssDisplay (NP_BASE *theNP)
+static INT OldNLPartAssDisplay (NP_BASE *theNP)
 {
-  NP_NL_PARTASS *thePA;
+  OLD_NP_NL_PARTASS *thePA;
   INT i;
   char text[8];
 
   NPNLAssembleDisplay(theNP);
 
-  thePA   = (NP_NL_PARTASS*)theNP;
+  thePA   = (OLD_NP_NL_PARTASS*)theNP;
 
   UserWrite("\npart assembling numprocs:\n");
   for (i=0; i<PA_NASS(thePA); i++)
@@ -796,12 +831,12 @@ static INT NLPartAssDisplay (NP_BASE *theNP)
   return (0);
 }
 
-static INT NLPartAssPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
+static INT OldNLPartAssPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
 {
-  NP_NL_PARTASS *thePA;
+  OLD_NP_NL_PARTASS *thePA;
   INT i;
 
-  thePA   = (NP_NL_PARTASS*)ass;
+  thePA   = (OLD_NP_NL_PARTASS*)ass;
 
   /* call prep routines */
   for (i=0; i<PA_NASS(thePA); i++)
@@ -812,13 +847,13 @@ static INT NLPartAssPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DES
   return(0);
 }
 
-static INT NLPartAssPostProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x,
-                                 VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+static INT OldNLPartAssPostProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x,
+                                    VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
-  NP_NL_PARTASS *thePA;
+  OLD_NP_NL_PARTASS *thePA;
   INT i;
 
-  thePA   = (NP_NL_PARTASS*)ass;
+  thePA   = (OLD_NP_NL_PARTASS*)ass;
 
   /* call post routines */
   for (i=0; i<PA_NASS(thePA); i++)
@@ -829,12 +864,12 @@ static INT NLPartAssPostProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DE
   return(0);
 }
 
-static INT NLPartAssAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
+static INT OldNLPartAssAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
 {
-  NP_NL_PARTASS *thePA;
+  OLD_NP_NL_PARTASS *thePA;
   INT i;
 
-  thePA   = (NP_NL_PARTASS*)ass;
+  thePA   = (OLD_NP_NL_PARTASS*)ass;
 
   /* call assemble solution routines */
   for (i=0; i<PA_NASS(thePA); i++)
@@ -844,13 +879,13 @@ static INT NLPartAssAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDA
   return(0);
 }
 
-static INT NLPartAssAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *s,
-                                    VECDATA_DESC *r, MATDATA_DESC *A, INT *res)
+static INT OldNLPartAssAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *s,
+                                       VECDATA_DESC *r, MATDATA_DESC *A, INT *res)
 {
-  NP_NL_PARTASS *thePA;
+  OLD_NP_NL_PARTASS *thePA;
   INT i,l;
 
-  thePA   = (NP_NL_PARTASS*)ass;
+  thePA   = (OLD_NP_NL_PARTASS*)ass;
 
   /* first clear skip flags of global problem */
   for (l=fl; l<=tl; l++)
@@ -864,13 +899,13 @@ static INT NLPartAssAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA
   return(0);
 }
 
-static INT NLPartAssAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *s,
-                                    VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *A, INT *res)
+static INT OldNLPartAssAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *s,
+                                       VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *A, INT *res)
 {
-  NP_NL_PARTASS *thePA;
+  OLD_NP_NL_PARTASS *thePA;
   INT i;
 
-  thePA   = (NP_NL_PARTASS*)ass;
+  thePA   = (OLD_NP_NL_PARTASS*)ass;
 
   /* clear global matrix */
   if (dmatset(NP_MG(ass),fl,tl,ALL_VECTORS,A,0.0)!=NUM_OK) REP_ERR_RETURN (__LINE__);
@@ -889,14 +924,14 @@ static INT NLPartAssembleConstruct (NP_BASE *theNP)
 
   np = (NP_NL_ASSEMBLE *) theNP;
 
-  np->base.Init                       = NLPartAssInit;
-  np->base.Display            = NLPartAssDisplay;
+  np->base.Init                       = OldNLPartAssInit;
+  np->base.Display            = OldNLPartAssDisplay;
   np->base.Execute            = NPNLAssembleExecute;
-  np->PreProcess                      = NLPartAssPreProcess;
-  np->PostProcess             = NLPartAssPostProcess;
-  np->NLAssembleSolution      = NLPartAssAssembleSolution;
-  np->NLAssembleDefect        = NLPartAssAssembleDefect;
-  np->NLAssembleMatrix        = NLPartAssAssembleMatrix;
+  np->PreProcess                      = OldNLPartAssPreProcess;
+  np->PostProcess             = OldNLPartAssPostProcess;
+  np->NLAssembleSolution      = OldNLPartAssAssembleSolution;
+  np->NLAssembleDefect        = OldNLPartAssAssembleDefect;
+  np->NLAssembleMatrix        = OldNLPartAssAssembleMatrix;
 
   return(0);
 }
@@ -936,16 +971,16 @@ static INT NLPartAssembleConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-static INT TPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+static INT OldTPartAssInit (NP_BASE *theNP, INT argc, char **argv)
 {
-  NP_T_PARTASS *thePA;
+  OLD_NP_T_PARTASS *thePA;
   NP_T_ASSEMBLE *ass;
   INT r,i,nass;
   char name[NAMESIZE];
 
   r = NPTAssembleInit(theNP,argc,argv);
 
-  thePA = (NP_T_PARTASS*)theNP;
+  thePA = (OLD_NP_T_PARTASS*)theNP;
 
   PA_NASS(thePA) = nass = 0;
   for (i=1; i<argc; i++)
@@ -993,15 +1028,15 @@ static INT TPartAssInit (NP_BASE *theNP, INT argc, char **argv)
  */
 /****************************************************************************/
 
-static INT TPartAssDisplay (NP_BASE *theNP)
+static INT OldTPartAssDisplay (NP_BASE *theNP)
 {
-  NP_T_PARTASS *thePA;
+  OLD_NP_T_PARTASS *thePA;
   INT i;
   char text[8];
 
   NPTAssembleDisplay(theNP);
 
-  thePA   = (NP_T_PARTASS*)theNP;
+  thePA   = (OLD_NP_T_PARTASS*)theNP;
 
   UserWrite("\npart assembling numprocs:\n");
   for (i=0; i<PA_NASS(thePA); i++)
@@ -1013,14 +1048,14 @@ static INT TPartAssDisplay (NP_BASE *theNP)
   return (0);
 }
 
-static INT TPartAssPreProcess (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t_p1, DOUBLE t_0,
-                               DOUBLE t_m1, VECDATA_DESC *u_p1, VECDATA_DESC *u_0,
-                               VECDATA_DESC *u_m1, INT *res)
+static INT OldTPartAssPreProcess (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t_p1, DOUBLE t_0,
+                                  DOUBLE t_m1, VECDATA_DESC *u_p1, VECDATA_DESC *u_0,
+                                  VECDATA_DESC *u_m1, INT *res)
 {
-  NP_T_PARTASS *thePA;
+  OLD_NP_T_PARTASS *thePA;
   INT i;
 
-  thePA   = (NP_T_PARTASS*)ass;
+  thePA   = (OLD_NP_T_PARTASS*)ass;
 
   /* call prep routines */
   for (i=0; i<PA_NASS(thePA); i++)
@@ -1031,14 +1066,14 @@ static INT TPartAssPreProcess (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t_p1, 
   return(0);
 }
 
-static INT TPartAssPostProcess (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t_p1, DOUBLE t_0,
-                                DOUBLE t_m1, VECDATA_DESC *u_p1, VECDATA_DESC *u_0,
-                                VECDATA_DESC *u_m1, INT *res)
+static INT OldTPartAssPostProcess (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t_p1, DOUBLE t_0,
+                                   DOUBLE t_m1, VECDATA_DESC *u_p1, VECDATA_DESC *u_0,
+                                   VECDATA_DESC *u_m1, INT *res)
 {
-  NP_T_PARTASS *thePA;
+  OLD_NP_T_PARTASS *thePA;
   INT i;
 
-  thePA   = (NP_T_PARTASS*)ass;
+  thePA   = (OLD_NP_T_PARTASS*)ass;
 
   /* call post routines */
   for (i=0; i<PA_NASS(thePA); i++)
@@ -1049,12 +1084,12 @@ static INT TPartAssPostProcess (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t_p1,
   return(0);
 }
 
-static INT TPartAssAssembleInitial (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, VECDATA_DESC *u, INT *res)
+static INT OldTPartAssAssembleInitial (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, VECDATA_DESC *u, INT *res)
 {
-  NP_T_PARTASS *thePA;
+  OLD_NP_T_PARTASS *thePA;
   INT i;
 
-  thePA   = (NP_T_PARTASS*)ass;
+  thePA   = (OLD_NP_T_PARTASS*)ass;
 
   /* call assemble solution routines */
   for (i=0; i<PA_NASS(thePA); i++)
@@ -1064,12 +1099,12 @@ static INT TPartAssAssembleInitial (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t
   return(0);
 }
 
-static INT TPartAssAssembleSolution (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, VECDATA_DESC *u, INT *res)
+static INT OldTPartAssAssembleSolution (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, VECDATA_DESC *u, INT *res)
 {
-  NP_T_PARTASS *thePA;
+  OLD_NP_T_PARTASS *thePA;
   INT i;
 
-  thePA   = (NP_T_PARTASS*)ass;
+  thePA   = (OLD_NP_T_PARTASS*)ass;
 
   /* call assemble solution routines */
   for (i=0; i<PA_NASS(thePA); i++)
@@ -1079,14 +1114,14 @@ static INT TPartAssAssembleSolution (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE 
   return(0);
 }
 
-static INT TPartAssAssembleDefect (NP_T_ASSEMBLE *ass, INT fl, INT tl,
-                                   DOUBLE time, DOUBLE s_m, DOUBLE s_a, VECDATA_DESC *s,
-                                   VECDATA_DESC *r, MATDATA_DESC *A, INT *res)
+static INT OldTPartAssAssembleDefect (NP_T_ASSEMBLE *ass, INT fl, INT tl,
+                                      DOUBLE time, DOUBLE s_m, DOUBLE s_a, VECDATA_DESC *s,
+                                      VECDATA_DESC *r, MATDATA_DESC *A, INT *res)
 {
-  NP_T_PARTASS *thePA;
+  OLD_NP_T_PARTASS *thePA;
   INT i,l;
 
-  thePA   = (NP_T_PARTASS*)ass;
+  thePA   = (OLD_NP_T_PARTASS*)ass;
 
   /* first clear skip flags of global problem */
   for (l=fl; l<=tl; l++)
@@ -1100,13 +1135,13 @@ static INT TPartAssAssembleDefect (NP_T_ASSEMBLE *ass, INT fl, INT tl,
   return(0);
 }
 
-static INT TPartAssAssembleMatrix (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, DOUBLE s_a,
-                                   VECDATA_DESC *s, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *A, INT *res)
+static INT OldTPartAssAssembleMatrix (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, DOUBLE s_a,
+                                      VECDATA_DESC *s, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *A, INT *res)
 {
-  NP_T_PARTASS *thePA;
+  OLD_NP_T_PARTASS *thePA;
   INT i;
 
-  thePA   = (NP_T_PARTASS*)ass;
+  thePA   = (OLD_NP_T_PARTASS*)ass;
 
   /* clear global matrix */
   if (dmatset(NP_MG(ass),fl,tl,ALL_VECTORS,A,0.0)!=NUM_OK) REP_ERR_RETURN (__LINE__);
@@ -1125,15 +1160,15 @@ static INT TPartAssembleConstruct (NP_BASE *theNP)
 
   np = (NP_T_ASSEMBLE *) theNP;
 
-  np->base.Init                               = TPartAssInit;
-  np->base.Display                    = TPartAssDisplay;
+  np->base.Init                               = OldTPartAssInit;
+  np->base.Display                    = OldTPartAssDisplay;
   np->base.Execute                    = NPTAssembleExecute;
-  np->TAssemblePreProcess     = TPartAssPreProcess;
-  np->TAssemblePostProcess    = TPartAssPostProcess;
-  np->TAssembleInitial                = TPartAssAssembleInitial;
-  np->TAssembleSolution               = TPartAssAssembleSolution;
-  np->TAssembleDefect                 = TPartAssAssembleDefect;
-  np->TAssembleMatrix                 = TPartAssAssembleMatrix;
+  np->TAssemblePreProcess     = OldTPartAssPreProcess;
+  np->TAssemblePostProcess    = OldTPartAssPostProcess;
+  np->TAssembleInitial                = OldTPartAssAssembleInitial;
+  np->TAssembleSolution               = OldTPartAssAssembleSolution;
+  np->TAssembleDefect                 = OldTPartAssAssembleDefect;
+  np->TAssembleMatrix                 = OldTPartAssAssembleMatrix;
 
   return(0);
 }
@@ -1232,7 +1267,836 @@ INT NPTAssembleDisplay (NP_BASE *theNP)
 
 INT NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 {
-  return(1);   /* never executable */
+  REP_ERR_RETURN(1);   /* never executable */
+}
+
+/****************************************************************************/
+/*D
+   name - short_description
+
+   SYNOPSIS:
+
+   PARAMETERS:
+   .  par - meaning
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+void DefaultPartassParams (PARTASS_PARAMS *pp)
+{
+  memset(pp,0.0,sizeof(PARTASS_PARAMS));
+
+  PP_ACTION(pp)           = PARTASS_UNKNOWN;
+  PP_SCALE_A(pp)          = 1.0;
+  PP_SCALE_M(pp)          = 0.0;
+  PP_TIME(pp)             = 0.0;
+  PP_DELTA_T(pp)          = 0.0;
+  PP_ASS_PART(pp)         = NO;
+  PP_SKIP(pp)             = NULL;
+  PP_CO_SKIP(pp)          = NULL;
+  PP_MD_A(pp)             = NULL;
+  PP_MD_A_glob(pp)        = NULL;
+  PP_VD_s(pp)             = NULL;
+  PP_VD_s_glob(pp)        = NULL;
+  PP_VD_s_i(pp)           = NULL;
+  PP_VD_s_co(pp)          = NULL;
+  PP_VD_o(pp)             = NULL;
+  PP_VD_o_glob(pp)        = NULL;
+  PP_VD_c(pp)             = NULL;
+  PP_VD_c_glob(pp)        = NULL;
+  PP_VD_r(pp)             = NULL;
+  PP_VD_r_glob(pp)        = NULL;
+  PP_VD_gridvel(pp)       = NULL;
+
+  return;
+}
+
+/****************************************************************************/
+/*D
+   name - short_description
+
+   SYNOPSIS:
+
+   PARAMETERS:
+   .  par - meaning
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+INT SetPartassParams (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt, INT sub,
+                      DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt,
+                      VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
+                      VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A)
+{
+  /* checks */
+  if (s==NULL)
+    REP_ERR_RETURN (1);
+  if (vt==NULL)
+    REP_ERR_RETURN (1);
+  if (sub<0 || sub>=VT_NSUB(vt))
+    REP_ERR_RETURN (1);
+
+  /* clear */
+  memset(pp,0.0,sizeof(PARTASS_PARAMS));
+
+  /* general */
+  PP_ASS_PART(pp)         = TRUE;
+  PP_ACTION(pp)           = PARTASS_UNKNOWN;
+  PP_SCALE_A(pp)          = s_a;
+  PP_SCALE_M(pp)          = s_m;
+  PP_TIME(pp)                     = t;
+  PP_DELTA_T(pp)          = dt;
+  PP_MD_A_glob(pp)        = A;
+  PP_VD_s_glob(pp)        = s;
+  PP_VD_o_glob(pp)        = o;
+  PP_VD_c_glob(pp)        = c;
+  PP_VD_r_glob(pp)        = r;
+  PP_VD_gridvel(pp)       = g;
+
+  /* decompose descriptors */
+  if (!VDmatchesVT(s,vt))
+    REP_ERR_RETURN(1);
+  if (VDsubDescFromVT(s,vt,sub,&PP_VD_s(pp)))
+    REP_ERR_RETURN(1)
+    if (VDinterfaceDesc(s,PP_VD_s(pp),&PP_VD_s_i(pp)))
+      REP_ERR_RETURN(1)
+      if (VDinterfaceCoDesc(s,PP_VD_s(pp),&PP_VD_s_co(pp)))
+        REP_ERR_RETURN(1)
+        if (ComputePartVecskip(s,PP_VD_s(pp),PP_SKIP(pp),PP_CO_SKIP(pp)))
+          REP_ERR_RETURN(1)
+
+          if (o!=NULL)
+          {
+            if (!VDmatchesVT(o,vt))
+              REP_ERR_RETURN(1);
+            if (VDsubDescFromVT(o,vt,sub,&PP_VD_o(pp)))
+              REP_ERR_RETURN(1);
+          }
+  if (c!=NULL)
+  {
+    if (!VDmatchesVT(c,vt))
+      REP_ERR_RETURN(1);
+    if (VDsubDescFromVT(c,vt,sub,&PP_VD_c(pp)))
+      REP_ERR_RETURN(1);
+  }
+  if (r!=NULL)
+  {
+    if (!VDmatchesVT(r,vt))
+      REP_ERR_RETURN(1);
+    if (VDsubDescFromVT(r,vt,sub,&PP_VD_r(pp)))
+      REP_ERR_RETURN(1);
+  }
+  if (A!=NULL)
+  {
+    if (!MDmatchesVT(A,vt))
+      REP_ERR_RETURN(1);
+    if (MDsubDescFromVT(A,vt,sub,&PP_MD_A(pp)))
+      REP_ERR_RETURN(1);
+  }
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   name - short_description
+
+   SYNOPSIS:
+
+   PARAMETERS:
+   .  par - meaning
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+static INT NLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_PA_NL *pa = (NP_PA_NL*) theNP;
+  VEC_TEMPLATE *mvt;
+  INT r,i,j,nass;
+  char name[NAMESIZE],buffer[VALUELEN];
+
+  r = NPNLAssembleInit(theNP,argc,argv);
+
+  /* get name of main vector template */
+  if (ReadArgvChar("m",buffer,argc,argv)!=NULL)
+  {
+    PrintErrorMessage('E',"NLPartAssInit","m option with main vector template not found");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  mvt = GetVectorTemplate(MGFORMAT(NP_MG(theNP)),buffer);
+  if (mvt == NULL)
+  {
+    PrintErrorMessageF('E',"NLPartAssInit",
+                       "cannot find specified vector template '%s'",buffer);
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  PA_VT(pa) = mvt;
+
+  PA_VD_g(pa) = ReadArgvVecDesc(NP_MG(theNP),"g",argc,argv);
+
+  PA_NASS(pa) = nass = 0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      if (nass>=MAX_PA)
+      {
+        PrintErrorMessage('E',"NLPartAssInit","max number of part assembling numprocs exceeded");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      if (sscanf(argv[i],expandfmt(CONCAT3("ass %",NAMELENSTR,"[ -~]")),name)!=1)
+      {
+        PrintErrorMessage('E',"NLPartAssInit","specify a nonlinear part assembling numproc with $ass");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      PA_ASS(pa,nass) = (NP_NL_PARTASS*) GetNumProcByName (NP_MG(theNP),name,NL_PARTASS_CLASS_NAME);
+      if (PA_ASS(pa,nass) == NULL)
+      {
+        PrintErrorMessage('E',"NLPartAssInit",
+                          "cannot find specified numerical procedure");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+
+      /* next arg has to specify a valid sub vector */
+      if (++i>=argc)
+      {
+        PrintErrorMessage('E',"NLPartAssInit",
+                          "last ass option has no sub option");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      /* scan name of subvector of main vector template */
+      if (sscanf(argv[i],expandfmt(CONCAT3("sub %",NAMELENSTR,"[ -~]")),name)!=1)
+      {
+        PrintErrorMessage('E',"NLPartAssInit","s option expected after ass option");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      for (j=0; j<VT_NSUB(mvt); j++)
+        if (strcmp(SUBV_NAME(VT_SUB(mvt,j)),name)==0)
+          break;
+      if (j>=VT_NSUB(mvt))
+      {
+        PrintErrorMessageF('E',"NLPartAssInit","name '%s' of sub template not found",name);
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      PA_SUB(pa,nass) = j;
+      nass++;
+      break;
+    }
+  if (nass==0)
+  {
+    PrintErrorMessage('E',"NLPartAssInit","specify at least one nonlinear assembling numproc with $ass");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  PA_NASS(pa) = nass;
+
+  if ((r==NP_ACTIVE) || (r==NP_EXECUTABLE))
+    return (r);
+  else
+    REP_ERR_RETURN (r);
+}
+
+static INT NLPartAssDisplay (NP_BASE *theNP)
+{
+  NP_PA_NL *pa = (NP_PA_NL*) theNP;
+  INT i;
+  char text[8];
+
+  NPNLAssembleDisplay(theNP);
+
+  if (PA_VD_g(pa)!=NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"g",ENVITEM_NAME(PA_VD_g(pa)));
+
+  UserWriteF(DISPLAY_NP_FORMAT_SS,"vec tmplt",ENVITEM_NAME(PA_VT(pa)));
+
+  UserWrite("\npart assembling numprocs:\n");
+  for (i=0; i<PA_NASS(pa); i++)
+  {
+    sprintf(text,"ass%d",i);
+    UserWriteF(DISPLAY_NP_FORMAT_SSS,text,ENVITEM_NAME(PA_ASS(pa,i)),SUBV_NAME(VT_SUB(PA_VT(pa),PA_SUB(pa,i))));
+  }
+
+  return (0);
+}
+
+static INT NLPartAssPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
+{
+  NP_PA_NL *pa = (NP_PA_NL*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  /* call prep routines */
+  for (i=0; i<PA_NASS(pa); i++)
+    if (NPPNL_PRE(PA_ASS(pa,i))!=NULL)
+    {
+      if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),1.,0.,0.,0.,x,NULL,NULL,NULL,PA_VD_g(pa),NULL))
+        REP_ERR_RETURN (1);
+      if (NPPNL_PRE(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+        REP_ERR_RETURN(1);
+    }
+
+  return(0);
+}
+
+static INT NLPartAssPostProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x,
+                                 VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+{
+  NP_PA_NL *pa = (NP_PA_NL*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  /* call post routines */
+  for (i=0; i<PA_NASS(pa); i++)
+    if (NPANL_POST(PA_ASS(pa,i))!=NULL)
+    {
+      if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),1.,0.,0.,0.,x,d,NULL,NULL,PA_VD_g(pa),J))
+        REP_ERR_RETURN (1);
+      if (NPPNL_POST(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+        REP_ERR_RETURN(1);
+    }
+
+  return(0);
+}
+
+static INT NLPartAssSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
+{
+  NP_PA_NL *pa = (NP_PA_NL*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  /* call assemble solution routines */
+  for (i=0; i<PA_NASS(pa); i++)
+    if (NPPNL_ASSSOL(PA_ASS(pa,i))!=NULL)
+    {
+      if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),1.,0.,0.,0.,u,NULL,NULL,NULL,PA_VD_g(pa),NULL))
+        REP_ERR_RETURN(1);
+      if (NPPNL_ASSSOL(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+        REP_ERR_RETURN(1);
+    }
+
+  return(0);
+}
+
+static INT NLPartAssDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *s,
+                            VECDATA_DESC *r, MATDATA_DESC *A, INT *res)
+{
+  NP_PA_NL *pa = (NP_PA_NL*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i,l;
+
+  /* first clear skip flags of global problem */
+  for (l=fl; l<=tl; l++)
+    ClearVecskipFlags(GRID_ON_LEVEL(NP_MG(ass),l),s);
+
+  /* call assemble defect routines */
+  for (i=0; i<PA_NASS(pa); i++)
+  {
+    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),1.,0.,0.,0.,s,r,NULL,NULL,PA_VD_g(pa),A))
+      REP_ERR_RETURN(1);
+    PP_ACTION(pp) = PARTASS_DEFECT;
+    if (NPPNL_ASS(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+      REP_ERR_RETURN(1);
+  }
+
+  return(0);
+}
+
+static INT NLPartAssMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *s,
+                            VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *A, INT *res)
+{
+  NP_PA_NL *pa = (NP_PA_NL*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  /* clear global matrix */
+  if (dmatset(NP_MG(ass),fl,tl,ALL_VECTORS,A,0.0)!=NUM_OK) REP_ERR_RETURN (__LINE__);
+
+  /* call assemble defect routines */
+  for (i=0; i<PA_NASS(pa); i++)
+  {
+    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),1.,0.,0.,0.,s,d,NULL,v,PA_VD_g(pa),A))
+      REP_ERR_RETURN(1);
+    PP_ACTION(pp) = PARTASS_MATRIX;
+    if (NPPNL_ASS(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+      REP_ERR_RETURN(1);
+  }
+
+  return(0);
+}
+
+static INT NLPartAssConstruct (NP_BASE *theNP)
+{
+  NP_NL_ASSEMBLE *np = (NP_NL_ASSEMBLE *) theNP;
+
+  NP_INIT(np)             = NLPartAssInit;
+  NP_EXECUTE(np)          = NPNLAssembleExecute;
+  NP_DISPLAY(np)          = NLPartAssDisplay;
+
+  NPANL_PRE(np)           = NLPartAssPreProcess;
+  NPANL_POST(np)          = NLPartAssPostProcess;
+  NPANL_ASSSOL(np)        = NLPartAssSolution;
+  NPANL_ASSDEF(np)        = NLPartAssDefect;
+  NPANL_ASSMAT(np)        = NLPartAssMatrix;
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   name - short_description
+
+   SYNOPSIS:
+
+   PARAMETERS:
+   .  par - meaning
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+static INT TPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_PA_T *pa = (NP_PA_T*) theNP;
+  VEC_TEMPLATE *mvt;
+  INT r,i,j,nass;
+  char name[NAMESIZE],buffer[VALUELEN];
+
+  r = NPTAssembleInit(theNP,argc,argv);
+
+  /* get name of main vector template */
+  if (ReadArgvChar("m",buffer,argc,argv)!=NULL)
+  {
+    PrintErrorMessage('E',"NLPartAssInit","m option with main vector template not found");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  mvt = GetVectorTemplate(MGFORMAT(NP_MG(theNP)),buffer);
+  if (mvt == NULL)
+  {
+    PrintErrorMessageF('E',"NLPartAssInit",
+                       "cannot find specified vector template '%s'",buffer);
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  PA_VT(pa) = mvt;
+
+  PA_VD_g(pa) = ReadArgvVecDesc(NP_MG(theNP),"g",argc,argv);
+
+  PA_NASS(pa) = nass = 0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      if (nass>=MAX_PA)
+      {
+        PrintErrorMessage('E',"NLPartAssInit","max number of part assembling numprocs exceeded");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      if (sscanf(argv[i],expandfmt(CONCAT3("ass %",NAMELENSTR,"[ -~]")),name)!=1)
+      {
+        PrintErrorMessage('E',"NLPartAssInit","specify a nonlinear part assembling numproc with $ass");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      PA_ASS(pa,nass) = (NP_T_PARTASS*) GetNumProcByName (NP_MG(theNP),name,T_PARTASS_CLASS_NAME);
+      if (PA_ASS(pa,nass) == NULL)
+      {
+        PrintErrorMessage('E',"NLPartAssInit",
+                          "cannot find specified numerical procedure");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+
+      /* next arg has to specify a valid sub vector */
+      if (++i>=argc)
+      {
+        PrintErrorMessage('E',"NLPartAssInit",
+                          "last ass option has no sub option");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      /* scan name of subvector of main vector template */
+      if (sscanf(argv[i],expandfmt(CONCAT3("sub %",NAMELENSTR,"[ -~]")),name)!=1)
+      {
+        PrintErrorMessage('E',"NLPartAssInit","s option expected after ass option");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      for (j=0; j<VT_NSUB(mvt); j++)
+        if (strcmp(SUBV_NAME(VT_SUB(mvt,j)),name)==0)
+          break;
+      if (j>=VT_NSUB(mvt))
+      {
+        PrintErrorMessageF('E',"NLPartAssInit","name '%s' of sub template not found",name);
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      PA_SUB(pa,nass) = j;
+      nass++;
+      break;
+    }
+  if (nass==0)
+  {
+    PrintErrorMessage('E',"NLPartAssInit","specify at least one nonlinear assembling numproc with $ass");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  PA_NASS(pa) = nass;
+
+  if ((r==NP_ACTIVE) || (r==NP_EXECUTABLE))
+    return (r);
+  else
+    REP_ERR_RETURN (r);
+}
+
+static INT TPartAssDisplay (NP_BASE *theNP)
+{
+  NP_PA_T *pa = (NP_PA_T*) theNP;
+  INT i;
+  char text[8];
+
+  NPTAssembleDisplay(theNP);
+
+  if (PA_VD_g(pa)!=NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"g",ENVITEM_NAME(PA_VD_g(pa)));
+
+  UserWriteF(DISPLAY_NP_FORMAT_SS,"vec tmplt",ENVITEM_NAME(PA_VT(pa)));
+
+  UserWrite("\npart assembling numprocs:\n");
+  for (i=0; i<PA_NASS(pa); i++)
+  {
+    sprintf(text,"ass%d",i);
+    UserWriteF(DISPLAY_NP_FORMAT_SSS,text,ENVITEM_NAME(PA_ASS(pa,i)),SUBV_NAME(VT_SUB(PA_VT(pa),PA_SUB(pa,i))));
+  }
+
+  return (0);
+}
+
+static INT TPartAssPreProcess (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t_p1, DOUBLE t_0,
+                               DOUBLE t_m1, VECDATA_DESC *u_p1, VECDATA_DESC *u_0,
+                               VECDATA_DESC *u_m1, INT *res)
+{
+  NP_PA_T *pa = (NP_PA_T*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  PA_DT(pa) = t_p1-t_0;
+
+  /* call prep routines */
+  for (i=0; i<PA_NASS(pa); i++)
+    if (NPPT_PRE(PA_ASS(pa,i))!=NULL)
+    {
+      if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),1.,0.,t_p1,PA_DT(pa),u_p1,NULL,u_0,NULL,PA_VD_g(pa),NULL))
+        REP_ERR_RETURN(1);
+      if (NPPT_PRE(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+        REP_ERR_RETURN(1);
+    }
+
+  return(0);
+}
+
+static INT TPartAssPostProcess (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t_p1, DOUBLE t_0,
+                                DOUBLE t_m1, VECDATA_DESC *u_p1, VECDATA_DESC *u_0,
+                                VECDATA_DESC *u_m1, INT *res)
+{
+  NP_PA_T *pa = (NP_PA_T*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  /* call post routines */
+  for (i=0; i<PA_NASS(pa); i++)
+    if (NPPT_POST(PA_ASS(pa,i))!=NULL)
+    {
+      if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),1.,0.,t_p1,t_p1-t_0,u_p1,NULL,u_0,NULL,PA_VD_g(pa),NULL))
+        REP_ERR_RETURN(1);
+      if (NPPT_POST(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+        REP_ERR_RETURN(1);
+    }
+
+  return(0);
+}
+
+static INT TPartAssInitial (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, VECDATA_DESC *u, INT *res)
+{
+  NP_PA_T *pa = (NP_PA_T*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  /* call assemble solution routines */
+  for (i=0; i<PA_NASS(pa); i++)
+  {
+    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),1.,0.,time,PA_DT(pa),u,NULL,NULL,NULL,PA_VD_g(pa),NULL))
+      REP_ERR_RETURN(1);
+    if (NPPT_INITIAL(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+      REP_ERR_RETURN(1);
+  }
+
+  return(0);
+}
+
+static INT TPartAssSolution (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, VECDATA_DESC *u, INT *res)
+{
+  NP_PA_T *pa = (NP_PA_T*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  /* call assemble solution routines */
+  for (i=0; i<PA_NASS(pa); i++)
+  {
+    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),0.,1.,time,PA_DT(pa),u,NULL,NULL,NULL,PA_VD_g(pa),NULL))
+      REP_ERR_RETURN(1);
+    if (NPPT_ASSSOL(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+      REP_ERR_RETURN(1);
+  }
+
+  return(0);
+}
+
+static INT TPartAssDefect (NP_T_ASSEMBLE *ass, INT fl, INT tl,
+                           DOUBLE time, DOUBLE s_m, DOUBLE s_a, VECDATA_DESC *s,
+                           VECDATA_DESC *r, MATDATA_DESC *A, INT *res)
+{
+  NP_PA_T *pa = (NP_PA_T*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i,l;
+
+  /* first clear skip flags of global problem */
+  for (l=fl; l<=tl; l++)
+    ClearVecskipFlags(GRID_ON_LEVEL(NP_MG(ass),l),s);
+
+  /* call assemble defect routines */
+  for (i=0; i<PA_NASS(pa); i++)
+  {
+    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),s_a,s_m,time,PA_DT(pa),s,r,NULL,NULL,PA_VD_g(pa),A))
+      REP_ERR_RETURN(1);
+    PP_ACTION(pp) = PARTASS_DEFECT;
+    if (NPPT_ASS(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+      REP_ERR_RETURN(1);
+  }
+
+  return(0);
+}
+
+static INT TPartAssMatrix (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, DOUBLE s_a,
+                           VECDATA_DESC *s, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *A, INT *res)
+{
+  NP_PA_T *pa = (NP_PA_T*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  /* clear global matrix */
+  if (dmatset(NP_MG(ass),fl,tl,ALL_VECTORS,A,0.0)!=NUM_OK) REP_ERR_RETURN (__LINE__);
+
+  /* call assemble matrix routines */
+  for (i=0; i<PA_NASS(pa); i++)
+  {
+    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),s_a,1.,time,PA_DT(pa),s,d,NULL,v,PA_VD_g(pa),A))
+      REP_ERR_RETURN(1);
+    PP_ACTION(pp) = PARTASS_DEFECT;
+    if (NPPT_ASS(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+      REP_ERR_RETURN(1);
+  }
+
+  return(0);
+}
+
+static INT TPartAssConstruct (NP_BASE *theNP)
+{
+  NP_T_ASSEMBLE *np = (NP_T_ASSEMBLE *) theNP;
+
+  NP_INIT(np)             = TPartAssInit;
+  NP_DISPLAY(np)          = TPartAssDisplay;
+  NP_EXECUTE(np)          = NPTAssembleExecute;
+
+  NPAT_PRE(np)            = TPartAssPreProcess;
+  NPAT_POST(np)           = TPartAssPostProcess;
+  NPAT_INITIAL(np)        = TPartAssInitial;
+  NPAT_ASSSOL(np)         = TPartAssSolution;
+  NPAT_ASSDEF(np)         = TPartAssDefect;
+  NPAT_ASSMAT(np)         = TPartAssMatrix;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   name - short_description
+
+   SYNOPSIS:
+
+   PARAMETERS:
+   .  par - meaning
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+INT NPNLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
+  MULTIGRID *mg           = NP_MG(theNP);
+
+  NPPNL_A(np) = ReadArgvMatDesc(mg,"A",argc,argv);
+  NPPNL_x(np) = ReadArgvVecDesc(mg,"x",argc,argv);
+  NPPNL_c(np) = ReadArgvVecDesc(mg,"c",argc,argv);
+  NPPNL_b(np) = ReadArgvVecDesc(mg,"b",argc,argv);
+  NPPNL_g(np) = ReadArgvVecDesc(mg,"g",argc,argv);
+  NPPNL_t(np) = ReadArgvVecTemplateSub(MGFORMAT(mg),"part",argc,argv,&NPPNL_s(np));
+
+  if ((NPPNL_A(np) == NULL) || (NPPNL_b(np) == NULL) || (NPPNL_x(np) == NULL) || (NPPNL_t(np) == NULL))
+    return(NP_ACTIVE);
+
+  return(NP_EXECUTABLE);
+}
+
+INT NPNLPartAssDisplay (NP_BASE *theNP)
+{
+  NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
+
+  UserWrite("part description:\n");
+  UserWriteF(DISPLAY_NP_FORMAT_SSS,"vt+sub",ENVITEM_NAME(NPPNL_t(np)),SUBV_NAME(VT_SUB(NPPNL_t(np),NPPNL_s(np))));
+
+  UserWrite("\nsymbolic user data:\n");
+  if (NPPNL_A(np)!=NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"A",ENVITEM_NAME(NPPNL_A(np)));
+  if (NPPNL_x(np)!=NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(NPPNL_x(np)));
+  if (NPPNL_c(np)!=NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(NPPNL_c(np)));
+  if (NPPNL_b(np)!=NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(NPPNL_b(np)));
+  if (NPPNL_g(np)!=NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"g",ENVITEM_NAME(NPPNL_g(np)));
+  UserWrite("\n");
+
+  return (0);
+}
+
+INT NPNLPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
+  INT result                  = NUM_OK;
+  int level                   = CURRENTLEVEL(NP_MG(theNP));
+  PARTASS_PARAMS papa,*pp=&papa;
+
+  if (NPPNL_x(np) == NULL) {
+    PrintErrorMessage('E',"NPNLAssembleExecute","no vector x");
+    REP_ERR_RETURN (1);
+  }
+  if (NPPNL_b(np) == NULL) {
+    PrintErrorMessage('E',"NPNLAssembleExecute","no vector b");
+    REP_ERR_RETURN (1);
+  }
+  if (NPPNL_A(np) == NULL) {
+    PrintErrorMessage('E',"NPNLAssembleExecute","no matrix A");
+    REP_ERR_RETURN (1);
+  }
+
+  if (NPPNL_t(np)!=NULL)
+  {
+    if (SetPartassParams(pp,NPPNL_t(np),NPPNL_s(np),1.,0.,0.,0.,NPPNL_x(np),NPPNL_b(np),NULL,NULL,NPPNL_g(np),NPPNL_A(np)))
+      REP_ERR_RETURN (1);
+  }
+  else
+  {
+    DefaultPartassParams(pp);
+    PP_MD_A(pp)                     = NPPNL_A(np);
+    PP_VD_s(pp)                     = NPPNL_x(np);
+    PP_VD_r(pp)                     = NPPNL_b(np);
+    PP_VD_gridvel(pp)       = NPPNL_g(np);
+  }
+
+  if (ReadArgvOption("i",argc,argv)) {
+    if (NPPNL_PRE(np) == NULL) {
+      PrintErrorMessage('E',"NPNLAssembleExecute","no PreProcess");
+      REP_ERR_RETURN (1);
+    }
+    if (NPPNL_PRE(np) (np,0,level,pp,&result)) {
+      PrintErrorMessageF('E',"NPNLAssembleExecute","PreProcess failed, error code %d\n",result);
+      REP_ERR_RETURN (1);
+    }
+  }
+
+  if (ReadArgvOption("s",argc,argv)) {
+    if (NPPNL_ASSSOL(np) == NULL) {
+      PrintErrorMessage('E',"NPNLAssembleExecute","no NLAssembleSolution");
+      REP_ERR_RETURN (1);
+    }
+    if (NPPNL_ASSSOL(np) (np,0,level,pp,&result)) {
+      PrintErrorMessageF('E',"NPNLAssembleExecute","NLAssembleSolution failed, error code %d\n",result);
+      REP_ERR_RETURN (1);
+    }
+  }
+
+  if (ReadArgvOption("a",argc,argv)) {
+    if (NPPNL_ASS(np) == NULL) {
+      PrintErrorMessage('E',"NPNLAssembleExecute","no NLAssembleDefect");
+      REP_ERR_RETURN (1);
+    }
+    if (NPPNL_ASS(np) (np,0,level,pp,&result)) {
+      PrintErrorMessageF('E',"NPNLAssembleExecute","NLPassemble failed, error code %d\n",result);
+      REP_ERR_RETURN (1);
+    }
+  }
+
+  if (ReadArgvOption("p",argc,argv)) {
+    if (NPPNL_POST(np) == NULL) {
+      PrintErrorMessage('E',"NPNLAssembleExecute","no PostProcess");
+      REP_ERR_RETURN (1);
+    }
+    if (NPPNL_POST(np) (np,0,level,pp,&result)) {
+      PrintErrorMessageF('E',"NPNLAssembleExecute","PostProcess failed, error code %d\n",result);
+      REP_ERR_RETURN (1);
+    }
+  }
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   name - short_description
+
+   SYNOPSIS:
+
+   PARAMETERS:
+   .  par - meaning
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+INT NPTPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+{
+  return(NP_ACTIVE);
+}
+
+INT NPTPartAssDisplay (NP_BASE *theNP)
+{
+  return(0);
+}
+
+INT NPTPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
+{
+  /* never executable */
+  REP_ERR_RETURN(1);
 }
 
 /****************************************************************************/
@@ -1260,13 +2124,24 @@ INT NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 INT InitAssemble (void)
 {
   /* create partass class */
+  if (CreateClass(NL_ASSEMBLE_CLASS_NAME ".nlpass",
+                  sizeof(NP_NL_PARTASS), NLPartAssConstruct))
+    REP_ERR_RETURN (__LINE__);
+
+  /* create time partass class */
+  if (CreateClass(T_ASSEMBLE_CLASS_NAME ".tpass",
+                  sizeof(NP_T_PARTASS), TPartAssConstruct))
+    REP_ERR_RETURN (__LINE__);
+
+  /* TODO (HRR 971118): remove old part assemble num proc (2 items) */
+  /* create partass class */
   if (CreateClass(NL_ASSEMBLE_CLASS_NAME ".partass",
-                  sizeof(NP_NL_PARTASS), NLPartAssembleConstruct))
+                  sizeof(OLD_NP_NL_PARTASS), NLPartAssembleConstruct))
     REP_ERR_RETURN (__LINE__);
 
   /* create time partass class */
   if (CreateClass(T_ASSEMBLE_CLASS_NAME ".parttass",
-                  sizeof(NP_T_PARTASS), TPartAssembleConstruct))
+                  sizeof(OLD_NP_T_PARTASS), TPartAssembleConstruct))
     REP_ERR_RETURN (__LINE__);
 
   return(0);
