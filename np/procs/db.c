@@ -355,12 +355,12 @@ static INT Table_GetListEntry_NextHigherEntry (NP_ORDERED_LIST *theNP,
   NP_LIST *np = (NP_LIST *)theNP;
   INT i;
 
-  *result = 0;
+  *result = 1;
   for (i=0; i<np->n; i++) {
     *Entry = np->list[i];
     if (*Entry > value) return(0);
   }
-  *result = 1;
+  *result = 0;
 
   return(0);
 }
