@@ -48,8 +48,9 @@
 #define NPINL_x(p)                      (((NP_NL_ITER*)(p))->x)
 #define NPINL_b(p)                      (((NP_NL_ITER*)(p))->b)
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
+/* RCS string
+   $Header$
+ */
 
 /****************************************************************************/
 /*																			*/
