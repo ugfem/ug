@@ -19,7 +19,7 @@ OBJECTS3 = lgm_domain3d.o ansys2lgm.o
 # local C compiler flags
 LCFLAGS = -I../../include
 
-2 :  $(OBJECTS) $(OBJECTS2) Makefile.lgm $(MODULES)
+2 :  $(OBJECTS) $(OBJECTS2) Makefile.lgm $(MODULES) NGIN2D
 	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) $(OBJECTS2)
 
 3 :  $(OBJECTS) $(OBJECTS3) Makefile.lgm $(MODULES) NGIN
@@ -30,6 +30,9 @@ LCFLAGS = -I../../include
 
 SURFACE:
 	cd netgen; make -f lgm_makefile.netgen $(DIM); cd ..;
+	
+NGIN2D:
+	cd ngin2d; make -f Makefile.ngin; cd ..;
 	
 NGIN:
 	cd ngin; make -f Makefile.ngin; cd ..;
