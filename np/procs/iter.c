@@ -5257,40 +5257,55 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   NPIT_b(theNP) = b;
 
   np = (NP_LMGC *) theNP;
+  theMG = NP_MG(theNP);
+  theGrid = GRID_ON_LEVEL(theMG,level);
 
   if (level <= np->baselevel) {
     if ((*np->BaseSolver->Residuum)
           (np->BaseSolver,MIN(level,np->baselevel),level,c,b,A,&lresult))
       REP_ERR_RETURN(1);
+
     IFDEBUG(np,4)
-    dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
+                #ifdef ModelP
+    if (l_vector_collect(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
+                #endif
+    dnrm2(theMG,level,level,ALL_VECTORS,b,&eunorm);
     UserWriteF("defect before base solver : %f\n",eunorm);
-    dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,c,&eunorm);
+    dnrm2(theMG,level,level,ALL_VECTORS,c,&eunorm);
     UserWriteF("norm before base solver : %f\n",eunorm);
+    ddot(theMG,level,level,ALL_VECTORS,b,c,&eunorm);
+    UserWriteF("c*b before base solver : %f\n",eunorm);
     ENDDEBUG
 
     if ((*np->BaseSolver->Solver)(np->BaseSolver,level,c,b,A,
                                   np->BaseSolver->abslimit,
                                   np->BaseSolver->reduction,&lresult))
       NP_RETURN(1,result[0]);
+
     IFDEBUG(np,4)
-    dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
+                #ifdef ModelP
+    if (l_vector_collect(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
+                #endif
+    dnrm2(theMG,level,level,ALL_VECTORS,b,&eunorm);
     UserWriteF("defect after base solver : %f\n",eunorm);
-    dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,c,&eunorm);
+    dnrm2(theMG,level,level,ALL_VECTORS,c,&eunorm);
     UserWriteF("norm after base solver : %f\n",eunorm);
+    ddot(theMG,level,level,ALL_VECTORS,b,c,&eunorm);
+    UserWriteF("c*b after base solver : %f\n",eunorm);
     ENDDEBUG
 
     /*
        if (!lresult.converged)
-          PrintErrorMessage('W',"Lmgc","no convergence of BaseSolver");
+            PrintErrorMessage('W',"Lmgc","no convergence of BaseSolver");
      */
     return(0);
   }
-  theMG = NP_MG(theNP);
-  theGrid = GRID_ON_LEVEL(theMG,level);
 
   IFDEBUG(np,4)
-  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
+        #ifdef ModelP
+  if (l_vector_collect(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
+  dnrm2(theMG,level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("defect before smoothing : %f\n",eunorm);
   ENDDEBUG
 
@@ -5301,11 +5316,21 @@ static INT Lmgc (NP_ITER *theNP, INT level,
     if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
-  IFDEBUG(np,1)
+
+  IFDEBUG(np,4)
+        #ifdef ModelP
+  if (l_vector_collect(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
-  UserWriteF("after presmoothing : %f\n",eunorm);
-  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
+  UserWriteF("defect after presmoothing : %f\n",eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,c,&eunorm);
   UserWriteF("correction of presmoothing : %f\n",eunorm);
+  ddot(theMG,level,level,ALL_VECTORS,b,c,&eunorm);
+  UserWriteF("c*b after presmoothing : %f\n",eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
+  UserWriteF("last correction update of presmoothing : %f\n",eunorm);
+  ddot(theMG,level,level,ALL_VECTORS,b,np->t,&eunorm);
+  UserWriteF("last t*b of presmoothing : %f\n",eunorm);
   ENDDEBUG
 
 #ifdef USE_FAMG
@@ -5327,7 +5352,30 @@ static INT Lmgc (NP_ITER *theNP, INT level,
     if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
+  IFDEBUG(np,4)
+        #ifdef ModelP
+  if (l_vector_collect(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
+  dnrm2(theMG,level,level,ALL_VECTORS,b,&eunorm);
+  UserWriteF("defect on fine grid after restriction : %f\n",eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
+  UserWriteF("correction update on fine grid after restriction : %f\n",eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,c,&eunorm);
+  UserWriteF("correction on fine grid after restriction : %f\n",eunorm);
+  ddot(theMG,level,level,ALL_VECTORS,b,c,&eunorm);
+  UserWriteF("c*b on fine grid after restriction : %f\n",eunorm);
+  ddot(theMG,level,level,ALL_VECTORS,b,np->t,&eunorm);
+  UserWriteF("t*b on fine grid after restriction : %f\n",eunorm);
+  ENDDEBUG
 #endif
+
+  IFDEBUG(np,4)
+        #ifdef ModelP
+  if (l_vector_collect(DOWNGRID(theGrid),b) != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
+  dnrm2(theMG,level-1,level-1,ALL_VECTORS,b,&eunorm);
+  UserWriteF("defect on coarse grid after restriction : %f\n",eunorm);
+  ENDDEBUG
 
   if (dset(theMG,level-1,level-1,ALL_VECTORS,c,0.0) != NUM_OK)
     NP_RETURN(1,result[0]);
@@ -5348,27 +5396,58 @@ static INT Lmgc (NP_ITER *theNP, INT level,
         (np->Transfer,level,np->t,c,A,np->damp,result))
     REP_ERR_RETURN(1);
   IFDEBUG(np,4)
+        #ifdef ModelP
+  if (l_vector_collect(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
+  dnrm2(theMG,level,level,ALL_VECTORS,b,&eunorm);
+  UserWriteF("defect after prolongation : %f\n",eunorm);
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
-  UserWriteF("norm of interpolated correction : %f\n",eunorm);
+  UserWriteF("norm of interpolated correction update: %f\n",eunorm);
+  ddot(theMG,level,level,ALL_VECTORS,b,c,&eunorm);
+  UserWriteF("c*b after prolongation : %f\n",eunorm);
+  ddot(theMG,level,level,ALL_VECTORS,b,np->t,&eunorm);
+  UserWriteF("t*b after prolongation : %f\n",eunorm);
   ENDDEBUG
+
   if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
     NP_RETURN(1,result[0]);
   if (dmatmul_minus(theMG,level,level,ALL_VECTORS,b,A,np->t) != NUM_OK)
     NP_RETURN(1,result[0]);
 
   IFDEBUG(np,4)
-  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
+        #ifdef ModelP
+  if (l_vector_collect(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
+  dnrm2(theMG,level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("defect after CG correction : %f\n",eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,c,&eunorm);
+  UserWriteF("correction after CG correction : %f\n",eunorm);
+  ddot(theMG,level,level,ALL_VECTORS,b,c,&eunorm);
+  UserWriteF("c*b after CG correction : %f\n",eunorm);
   ENDDEBUG
+
   for (i=0; i<np->nu2; i++) {
     if ((*np->PostSmooth->Iter)(np->PostSmooth,level,np->t,b,A,result))
       REP_ERR_RETURN(1);
     if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   }
+
   IFDEBUG(np,4)
+        #ifdef ModelP
+  if (l_vector_collect(theGrid,b) != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
-  UserWriteF("defect after post smoothing : %f\n",eunorm);
+  UserWriteF("defect after postsmoothing : %f\n",eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,c,&eunorm);
+  UserWriteF("correction after postsmoothing : %f\n",eunorm);
+  ddot(theMG,level,level,ALL_VECTORS,b,c,&eunorm);
+  UserWriteF("c*b after postsmoothing : %f\n",eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
+  UserWriteF("last correction update of postsmoothing : %f\n",eunorm);
+  ddot(theMG,level,level,ALL_VECTORS,b,np->t,&eunorm);
+  UserWriteF("last t*b of presmoothing : %f\n",eunorm);
   ENDDEBUG
+
   if (FreeVD(NP_MG(theNP),level,level,np->t)) REP_ERR_RETURN(1);
   if (np->Transfer->AdaptCorrection != NULL)
     if ((*np->Transfer->AdaptCorrection)(np->Transfer,level,c,b,A,result))
