@@ -2637,8 +2637,8 @@ static INT kreisBoundaryLower3 (void *data, DOUBLE *param, DOUBLE *result)
 }
 
 static const INT ring1_sd2p[3] = {0,0,3};
-static const INT ring1_sg2p[8] = {0,0,1,1,2,2,0,0};
-static const INT ring1_pt2p[8] = {0,0,1,1,2,2,0,0};
+static const INT ring1_sg2p[8] = {0,0,1,1,2,2,3,3};
+static const INT ring1_pt2p[8] = {0,0,1,1,2,2,3,3};
 static const DOMAIN_PART_INFO ring1_dpi = {ring1_sd2p,ring1_sg2p,ring1_pt2p};
 
 static INT InitRings1 (void)
@@ -2676,11 +2676,11 @@ static INT InitRings1 (void)
                               kreisBoundaryLower2,NULL)==NULL)
     return(1);
   if (CreateBoundarySegment2D("ring2 inner3 bnd upper",
-                              0,1,6,6,7,20,0.0,1.0,
+                              0,2,6,6,7,20,0.0,1.0,
                               kreisBoundaryUpper3,NULL)==NULL)
     return(1);
   if (CreateBoundarySegment2D("ring2 inner3 bnd lower",
-                              0,1,7,7,6,20,0.0,1.0,
+                              0,2,7,7,6,20,0.0,1.0,
                               kreisBoundaryLower3,NULL)==NULL)
     return(1);
 
