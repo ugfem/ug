@@ -331,7 +331,15 @@
 
 #define TETRA_RED_HEX           5
 
-#define PRISM_QUADSECT          6
+#define PRISM_BISECT_1_2    6
+#define PRISM_QUADSECT          7
+
+#define HEX_BISECT_0_1          5
+#define HEX_BISECT_0_2          6
+#define HEX_BISECT_0_3          7
+#define HEX_TRISECT_0           8
+#define HEX_TRISECT_5           9
+
 #endif
 
 /* values for element class */

@@ -215,10 +215,18 @@
 #define PRI_COPY                        1
 #define PRI_RED                         2
 #define PRI_QUADSECT            3
+#define PRI_BISECT_1_2      7
 #define PRI_RED_HEX                     9
 
 #define HEXA_COPY                       1
 #define HEXA_RED                        2
+#define HEXA_RED                        2
+#define HEXA_BISECT_0_1     3
+#define HEXA_BISECT_0_2     4
+#define HEXA_BISECT_0_3     5
+#define HEXA_TRISECT_0      9
+#define HEXA_TRISECT_5      10
+
 
 /****************************************************************************/
 /*																			*/
