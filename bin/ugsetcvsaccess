@@ -30,8 +30,11 @@ echo "cvs admin -a$DEFAULT `basename $UG` ...";
 cvs admin -a$DEFAULT `basename $UG` 2>> $ERRORFILE;
 
 cd $UGROOT;
-echo "cvs admin -abirken arch";
-cvs admin -abirken arch 2>> $ERRORFILE;
+echo "cvs admin -abirken,wieners arch";
+cvs admin -abirken,wieners arch 2>> $ERRORFILE;
+
+echo "cvs admin -awieners configs";
+cvs admin -awieners configs 2>> $ERRORFILE;
 
 echo "cvs admin -abirken parallel/ddd";
 cvs admin -abirken parallel/ddd 2>> $ERRORFILE;
