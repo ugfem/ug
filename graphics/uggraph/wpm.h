@@ -210,7 +210,7 @@ struct MatrixPlotObj {
   INT conn;                                                                     /* plot connections								*/
   INT extra;                                                                    /* plot extra connections						*/
   DOUBLE min, max;                                                      /* range										*/
-  SYMBOL *Matrix;                                                       /* matrix symbol iff							*/
+  MATDATA_DESC *Matrix;                                         /* matrix                                                               */
   DOUBLE dash;                                                          /* length of the line segments in dashed lines */
   DOUBLE space;                                                         /* gap between line segments in dashed lines*/
 };
@@ -286,8 +286,8 @@ struct VecMatPlotObj2D {
   INT Dependency;                                                       /* YES or NO									*/
   INT ConnectVectors;                                                   /* YES or NO									*/
   INT Boundary;                                                         /* YES or NO									*/
-  SYMBOL *vs;                                                                   /* NULL or vector symbol						*/
-  SYMBOL *ms;                                                                   /* NULL or matrix symbol						*/
+  VECDATA_DESC *vd;                                                     /* NULL or vector                                                       */
+  MATDATA_DESC *md;                                                     /* NULL or matrix                                                       */
 };
 
 struct LinePlotObj2D {

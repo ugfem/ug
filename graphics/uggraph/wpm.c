@@ -2338,7 +2338,7 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
     case 'M' :
       if (sscanf(argv[i],"M %s",buffer)!=1)
         break;
-      theMpo->Matrix = GetMatSymbol(ENVITEM_NAME(MGFORMAT(PO_MG(thePlotObj))),buffer);
+      theMpo->Matrix=GetMatDataDescByName(PO_MG(thePlotObj),buffer);
       if (theMpo->Matrix == NULL)
       {
         UserWrite("cannot find matrix symbol\n");
@@ -2387,8 +2387,10 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
   if (theMpo->EvalFct!=NULL)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc",((ENVVAR*)theMpo->EvalFct)->name);
 
+#ifdef __NP__
   if (theMpo->Matrix!=NULL)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"Matrix",ENVITEM_NAME(theMpo->Matrix));
+#endif
 
   return (0);
 }
@@ -2874,8 +2876,8 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theVmo->Dependency                      = NO;
     theVmo->ConnectVectors          = NO;
     theVmo->Boundary                        = YES;
-    theVmo->vs                                      = NULL;
-    theVmo->ms                                      = NULL;
+    theVmo->vd                                      = NULL;
+    theVmo->md                                      = NULL;
   }
 
   /* color mode */
@@ -2949,18 +2951,22 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
 
     case 'V' :
-      if ((sscanf(argv[i],"V %s",name)!=1) || ((theVmo->vs=GetVecSymbol(ENVITEM_NAME(theFormat),name))==NULL))
+      if ((sscanf(argv[i],"V %s",name)!=1) ||
+          ((theVmo->vd =
+              GetVecDataDescByName(PO_MG(thePlotObj),name))==NULL))
       {
-        UserWrite("no vector symbol specified, vec data switched off\n");
-        theVmo->vs = NULL;
+        UserWrite("no vector specified, vec data switched off\n");
+        theVmo->vd = NULL;
       }
       break;
 
     case 'M' :
-      if ((sscanf(argv[i],"M %s",name)!=1) || ((theVmo->ms=GetMatSymbol(ENVITEM_NAME(theFormat),name))==NULL))
+      if ((sscanf(argv[i],"M %s",name)!=1) ||
+          ((theVmo->md =
+              GetMatDataDescByName(PO_MG(thePlotObj),name))==NULL))
       {
-        UserWrite("no matrix symbol specified, mat data switched off\n");
-        theVmo->ms = NULL;
+        UserWrite("no matrix specified, mat data switched off\n");
+        theVmo->md = NULL;
       }
       break;
     }
@@ -2972,27 +2978,27 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   }
 
   /* check compatibility of vec and mat desc */
-  if (theVmo->vs || theVmo->ms)
+  if (theVmo->vd || theVmo->md)
     for (rt=0; rt<NVECTYPES; rt++)
       if (theVmo->Type[rt])
       {
-        if (theVmo->vs)
-          if (!VD_ISDEF_IN_TYPE(SYM_VEC_DESC(theVmo->vs),rt))
+        if (theVmo->vd)
+          if (!VD_ISDEF_IN_TYPE(theVmo->vd,rt))
           {
             UserWrite("vec desc does not include types of specified types\n");
             return (NOT_ACTIVE);
           }
-        if (theVmo->ms)
+        if (theVmo->md)
           for (ct=0; ct<NVECTYPES; ct++)
             if (theVmo->Type[ct])
             {
-              if (!MD_ISDEF_IN_RT_CT(SYM_MAT_DESC(theVmo->ms),rt,ct))
+              if (!MD_ISDEF_IN_RT_CT(theVmo->md,rt,ct))
               {
                 UserWrite("mat desc does not include column types of specified types\n");
                 return (NOT_ACTIVE);
               }
-              if (theVmo->vs)
-                if (VD_NCMPS_IN_TYPE(SYM_VEC_DESC(theVmo->vs),ct)!=MD_ROWS_IN_RT_CT(SYM_MAT_DESC(theVmo->ms),rt,ct))
+              if (theVmo->vd)
+                if (VD_NCMPS_IN_TYPE(theVmo->vd,ct)!=MD_ROWS_IN_RT_CT(theVmo->md,rt,ct))
                 {
                   UserWrite("vec desc and mat desc incompatible\n");
                   return (NOT_ACTIVE);
@@ -3087,15 +3093,16 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
   else
     UserWriteF(DISPLAY_PO_FORMAT_SS,"boundary","NO");
 
-  if (theVmo->vs!=NULL)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"vec data",SYM_NAME(theVmo->vs));
+#ifdef __NP__
+  if (theVmo->vd!=NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"vec data",ENVITEM_NAME(theVmo->vd));
   else
     UserWriteF(DISPLAY_PO_FORMAT_SS,"vec data","NO");
-
-  if (theVmo->ms!=NULL)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"mat data",SYM_NAME(theVmo->ms));
+  if (theVmo->md!=NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"mat data",ENVITEM_NAME(theVmo->md));
   else
     UserWriteF(DISPLAY_PO_FORMAT_SS,"mat data","NO");
+#endif
 
   return (0);
 }

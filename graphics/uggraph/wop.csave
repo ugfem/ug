@@ -4427,7 +4427,7 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 	if (theMpo->Matrix!=NULL)
 	{
 		MAT_eval		= NULL;
-		MAT_md			= SYM_MAT_DESC(theMpo->Matrix);
+		MAT_md			= theMpo->Matrix;
 	}
 	else
 	{
@@ -5661,10 +5661,10 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
 	VM_ConnectVectors			= theVmo->ConnectVectors;
 	VM_ConnectColor				= theOD->red;
 	VM_CutColor					= theOD->black;
-	VM_VecData					= (theVmo->vs!=NULL);
-	VM_MatData					= (theVmo->ms!=NULL);
-	VM_tvd						= SYM_VEC_DESC(theVmo->vs);
-	VM_tmd						= SYM_MAT_DESC(theVmo->ms);
+	VM_VecData					= (theVmo->vd!=NULL);
+	VM_MatData					= (theVmo->md!=NULL);
+	VM_tvd						= theVmo->vd;
+	VM_tmd						= theVmo->md;
 	VM_VecMatColor				= theOD->black;
 	
 	VM_LastVector				= NULL;
