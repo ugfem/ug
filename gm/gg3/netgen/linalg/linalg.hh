@@ -1,5 +1,18 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/************************************************************************/
+/*                                                                      */
+/* This file is a part of NETGEN                                        */
+/*                                                                      */
+/* File:   linalg.hh                                                    */
+/* Author: Joachim Schoeberl                                            */
+/*                                                                      */
+/************************************************************************/
+
+#ifndef FILE_LINALG
+#define FILE_LINALG
+
+
 class TEMP_VECTOR;
 
 class VECTOR;
@@ -821,3 +834,5 @@ extern void Lanczos (const BASE_MATRIX & a);
 extern void GeneralLanczos (const BASE_MATRIX & a, const BASE_MATRIX & b);
 
 extern void PrecondLanczos (const BASE_MATRIX & a, const BASE_MATRIX & b);
+
+#endif

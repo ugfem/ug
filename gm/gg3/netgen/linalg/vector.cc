@@ -1,5 +1,16 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/************************************************************************/
+/*                                                                      */
+/* This file is a part of NETGEN                                        */
+/*                                                                      */
+/* File:   vector.cc                                                    */
+/* Author: Joachim Schoeberl                                            */
+/*                                                                      */
+/************************************************************************/
+
+
+
 #include <stdlib.h>
 
 #include <fstream.h>
