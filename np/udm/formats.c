@@ -691,7 +691,7 @@ INT CreateFormatCmd (INT argc, char **argv)
                               "max number of main matrix symbols exceeded");
             return (1);
           }
-          vv = CreateVecTemplate(buffer,nvec++);
+          vv = CreateVecTemplate(token,nvec++);
           if (vv == NULL) {
             PrintErrorMessage('E',"newformat",
                               "could not allocate environment storage");
@@ -870,7 +870,7 @@ INT CreateFormatCmd (INT argc, char **argv)
                               "max number of main matrix symbols exceeded");
             return (1);
           }
-          mm = CreateMatTemplate(buffer,nmat++);
+          mm = CreateMatTemplate(token,nmat++);
           if (mm == NULL) {
             PrintErrorMessage('E',"newformat",
                               "could not allocate environment storage");
