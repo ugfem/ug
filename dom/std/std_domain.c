@@ -134,7 +134,9 @@ static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global);
 /* Marc specials */
 
 #define MAX_LEN         200
+#ifdef __THREEDIM__
 #define PRISM_MOD
+#endif
 
 static char theLine[MAX_LEN+1];
 static INT nCorners,nBndP,nElem,nPPatch,nLPatch,nTPatch,nPri,nFound;
