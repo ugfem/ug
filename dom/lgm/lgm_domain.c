@@ -384,7 +384,7 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *aBndS)
   return (PutFreelistMemory(Heap,theBndS,sizeof(theBndS)));
 }
 /* domain interface function: for description see domain.h */
-INT BNDP_Move (BNDP *aBndP, DOUBLE global[])
+INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 {
   UserWrite("ERROR: lgm domain does not permit moving boundary points\n");
   return (1);
