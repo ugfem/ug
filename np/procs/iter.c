@@ -6584,7 +6584,7 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   MATRIX *theM;
   HEAP *theHeap = MGHEAP(NP_MG(theNP));
   GRID *theGrid = NP_GRID(theNP,level);
-  INT bw,i,k,index,max;
+  INT bw,i,k,index,max, outOfMem, globalOutOfMem;
   INT MarkKey;
   INT optimizeBand = np->optimizeBand;
   INT n = 0;
@@ -6594,7 +6594,29 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   np->nv = n;
   np->pp_failed=0;
   if (n == 0)
+  {
+    /* exit premature; but nevertheless participate all communications in this function */
+    outOfMem = 0;
+
+    /* i counts the number of communications */
+    i = 1;                      /* mem for matrix copy */
+    if( (np->count+1)==0 )
+      i++;
+    if (np->optimizeBand)
+      i++;
+    for( ; i>0; i-- )
+    {
+#ifdef ModelP
+      globalOutOfMem = UG_GlobalMaxINT( outOfMem );
+#else
+      globalOutOfMem = outOfMem;
+#endif
+      if( globalOutOfMem )
+        REP_ERR_RETURN(1);
+    }
     return(0);
+  }
+
   *baselevel = level;
   if (np->count >= 0)
     optimizeBand = 0;
@@ -6619,6 +6641,26 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     MarkTmpMem(theHeap,&MarkKey);
     buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
     vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
+
+    outOfMem = ( buffer==NULL || vlist==NULL );
+#ifdef ModelP
+    globalOutOfMem = UG_GlobalMaxINT( outOfMem );
+#else
+    globalOutOfMem = outOfMem;
+#endif
+    if( globalOutOfMem )
+    {
+#ifdef ModelP
+      if( outOfMem )
+      {
+        PrintErrorMessageF('W',"EXPreProcess","cannot allocate mem for %d vectors on processor %d for reorder vector-list\n", n, (int)me);
+      }
+#else
+      PrintErrorMessageF('W',"EXPreProcess","cannot allocate mem for %d vectors for reorder vector-list\n", n);
+#endif
+      REP_ERR_RETURN(1);
+    }
+
     fifo_init(&myfifo,buffer,sizeof(VECTOR*)*n);
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
       SETVCUSED(theV,0);
@@ -6717,16 +6759,52 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   if (MarkTmpMem(theHeap,&(np->MarkKey[np->count])))
     REP_ERR_RETURN(1);
   if (np->count == 0)
+  {
     np->Vec = (DOUBLE*)GetTmpMem(theHeap,np->nv*sizeof(DOUBLE),np->MarkKey[np->count]);
+    outOfMem = ( np->Vec==NULL );
+#ifdef ModelP
+    globalOutOfMem = UG_GlobalMaxINT( outOfMem );
+#else
+    globalOutOfMem = outOfMem;
+#endif
+    if( globalOutOfMem )
+    {
+#ifdef ModelP
+      if( outOfMem )
+      {
+        PrintErrorMessageF('W',"EXPreProcess","cannot allocate mem for %d vectors on processor %d for np->Vec\n", np->nv, (int)me);
+      }
+#else
+      PrintErrorMessageF('W',"EXPreProcess","cannot allocate mem for %d vectors for np->Vec\n", np->nv);
+#endif
+      REP_ERR_RETURN(1);
+    }
+  }
+
 
   if (np->fmode == 1)
   {
     np->mem = np->nv*(2*bw+1)*sizeof(FLOAT);
     np->FMat[np->count] = (FLOAT*)GetTmpMem(theHeap,np->mem,np->MarkKey[np->count]);
-    if (np->FMat[np->count]==NULL) {
-      UserWriteF("EX: cannot allocate %d bytes\n",np->mem);
+    outOfMem = ( np->FMat[np->count]==NULL );
+#ifdef ModelP
+    globalOutOfMem = UG_GlobalMaxINT( outOfMem );
+#else
+    globalOutOfMem = outOfMem;
+#endif
+    if( globalOutOfMem )
+    {
+#ifdef ModelP
+      if( outOfMem )
+      {
+        PrintErrorMessageF('W',"EXPreProcess","cannot allocate %d bytes on processor %d for FMat\n", np->mem, (int)me);
+      }
+#else
+      PrintErrorMessageF('W',"EXPreProcess","cannot allocate %d bytes for FMat\n", np->mem, (int)me);
+#endif
       REP_ERR_RETURN(1);
     }
+
     memset((void*)(np->FMat[np->count]),0,np->mem);
     if (EXCopyMatrixFLOAT (theGrid,x,A,np->bw,np->FMat[np->count]))
       REP_ERR_RETURN(1);
@@ -6740,10 +6818,24 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   {
     np->mem = np->nv*(2*bw+1)*sizeof(DOUBLE);
     np->DMat[np->count] = (DOUBLE*)GetTmpMem(theHeap,np->mem,np->MarkKey[np->count]);
-    if (np->DMat[np->count]==NULL) {
-      UserWriteF("EX: cannot allocate %d bytes\n",np->mem);
+#ifdef ModelP
+    globalOutOfMem = UG_GlobalMaxINT( outOfMem );
+#else
+    globalOutOfMem = outOfMem;
+#endif
+    if( globalOutOfMem )
+    {
+#ifdef ModelP
+      if( outOfMem )
+      {
+        PrintErrorMessageF('W',"EXPreProcess","cannot allocate %d bytes on processor %d for DMat\n", np->mem, (int)me);
+      }
+#else
+      PrintErrorMessageF('W',"EXPreProcess","cannot allocate %d bytes for DMat\n", np->mem, (int)me);
+#endif
       REP_ERR_RETURN(1);
     }
+
     memset((void*)(np->DMat[np->count]),0,np->mem);
     if (EXCopyMatrixDOUBLE (theGrid,x,A,np->bw,np->DMat[np->count]))
       REP_ERR_RETURN(1);
