@@ -6,7 +6,7 @@ use Exporter;
 $VERSION = 1.0;
 @ISA = qw(Exporter);
 
-@EXPORT = qw(ug float tmpfile);
+@EXPORT = qw(ug float tmpfile time_start time_stop time_eval);
 @EXPORT_OK = qw();
 %EXPORT_TAGS = qw();
 
@@ -18,10 +18,67 @@ use IPC::Open2;
 use IO::Handle;
 use IO::File;
 use POSIX qw(tmpnam);
+
+
 BEGIN
 {
 	my $debug=0;
 	my $end='';
+	my $TimeHiRes;
+	my %time;
+
+	sub module
+	{
+		my $i;
+		for ($i=0; $i<@INC; $i++) 
+		{
+			-e "$INC[$i]/$_[0]" and return 1;
+		}
+		return 0;
+	}
+
+	# time
+	$TimeHiRes=0; if (module('Time')) { require Time::HiRes; $TimeHiRes=1; };
+	sub gettimeofday
+	{
+		if (!$TimeHiRes) { return -1; }
+		return Time::HiRes::gettimeofday();
+	}
+	sub time_start
+	{
+		my $name=shift;
+		
+		$time{$name}=gettimeofday();
+		if (!(defined $time{"$name"})) { $time{"total $name"}=$time{"diff $name"}=0; } 
+		$time{"running $name"}=1;
+	}
+	sub time_stop
+	{
+		my $dt;
+		my $name=shift;
+
+		defined $time{$name} or return;
+		$dt=gettimeofday()-$time{$name};
+		$time{"total $name"}+=$dt;
+		$time{"diff $name"}+=$dt;
+		$time{"running $name"}=0;
+	}
+	sub time_eval
+	{
+		my $diff;
+		my $name=shift;
+
+		defined $time{$name} or return (-1,-1);
+		if ($time{"running $name"})
+		{
+			time_stop($name);
+			time_start($name);
+		}
+		$TimeHiRes or return (-1,-1);
+		$diff=$time{"diff $name"}; $time{"diff $name"}=0;
+		return ($time{"total $name"},$diff);
+	}
+
 	STDOUT->autoflush(1);
 	sub debug
 	{
@@ -72,16 +129,6 @@ BEGIN
 		if ($error) {die "ug aborted due to ERROR\n";}
 		return $ret;
 	}
-}
-
-sub module
-{
-	my $i;
-	for ($i=0; $i<@INC; $i++) 
-	{
-		-e "$INC[$i]/$_[0].pm" and return 1;
-	}
-	return 0;
 }
 
 sub usage_error
@@ -190,7 +237,7 @@ sub ug
 			$a_mode='s'; if ($model=~/parallel/) { $a_mode='p'; }
 
 			# determine module_mode
-			$m_mode='s'; if (module('ugp')) { require ugp; $m_mode='p'; $ui="-ui cn"; } 
+			$m_mode='s'; if (module('ugp.pm')) { require ugp; $m_mode='p'; $ui="-ui cn"; } 
 
 			# determin procs-mode
 			$p_mode='s'; if ($argv{'n'}>1) { $p_mode='p'; }
