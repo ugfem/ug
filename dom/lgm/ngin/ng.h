@@ -72,6 +72,7 @@ typedef struct {
   LINE_POSITION lp[NG_LPMAX];
   int n_sp;
   SURFACE_POSITION sp[NG_LPMAX];
+  double global[3];
 } BND_NODE;
 
 typedef struct {

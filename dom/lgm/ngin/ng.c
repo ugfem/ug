@@ -49,6 +49,8 @@
 /*																			*/
 /****************************************************************************/
 
+#undef NP_Debug
+
 #define NG_NOLEFT_COORD                 -1.0
 #define NG_NORIGHT_COORD                12345677890.0
 #define NG_HEAPFAULT                    {NG_Print(ERROR_PREFIX "heap-fault\n"); return (1);}
@@ -98,6 +100,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+void ngbreak (void);
 
 /****************************************************************************/
 /*D
@@ -158,6 +161,139 @@ static int CheckElem (ELEMENT *Elem)
   return (0);
 }
 
+static int cmp_int (const void *p, const void *q)
+{
+  int i1,i2;
+
+  i1 = *((int*)p);
+  i2 = *((int*)q);
+  if (i1<i2) return (-1);
+  if (i2<i1) return (1);
+  return (0);
+}
+
+int NP_ElemSideOnBnd (ELEMENT *Elem)
+{
+  int i,j,n,esob;
+  int cof[4];
+
+  esob=0;
+  for (i=0; i<Elem->n_f; i++)
+  {
+    if (Elem->face[i].n_c!=3) continue;
+    for (j=0; j<3; j++)
+    {
+      for (n=0; n<Elem->n_c; n++)
+        if (Elem->face[i].c_id[j]==Elem->c_id[n])
+        {
+          cof[j]=n;
+          break;
+        }
+      if (n==Elem->n_c) ngbreak();
+    }
+    qsort((void*)cof,3,sizeof(int),cmp_int);
+    switch (Elem->n_c)
+    {
+    case 4 :
+      if (cof[0]==0 && cof[1]==1 && cof[2]==2) esob |= 1;
+      if (cof[0]==1 && cof[1]==2 && cof[2]==3) esob |= 2;
+      if (cof[0]==0 && cof[1]==2 && cof[2]==3) esob |= 4;
+      if (cof[0]==0 && cof[1]==1 && cof[2]==3) esob |= 8;
+      break;
+    case 5 :
+      if (cof[0]==0 && cof[1]==1 && cof[2]==4) esob |= 2;
+      if (cof[0]==1 && cof[1]==2 && cof[2]==4) esob |= 4;
+      if (cof[0]==2 && cof[1]==3 && cof[2]==4) esob |= 8;
+      if (cof[0]==0 && cof[1]==3 && cof[2]==4) esob |= 16;
+      break;
+    case 6 :
+      if (cof[0]==0 && cof[1]==1 && cof[2]==2) esob |= 1;
+      if (cof[0]==3 && cof[1]==4 && cof[2]==5) esob |= 16;
+      break;
+    }
+  }
+
+  return (esob);
+}
+
+#define NP_SPAT(x,y,z)                  ((x[1])*(y[2])-(x[2])*(y[1]))*z[0] + \
+  ((x[2])*(y[0])-(x[0])*(y[2]))*z[1] + \
+  ((x[0])*(y[1])-(x[1])*(y[0]))*z[2]
+
+int OrientateElem (ELEMENT *Elem)
+{
+  int i;
+  double sp;
+  double p[8][3];
+
+  for (i=0; i<Elem->n_c; i++)
+    if (Elem->c_id[i]<Global_Mesh->nBndP)
+    {
+      p[i][0]=Global_Mesh->BndPosition[Elem->c_id[i]][0];
+      p[i][1]=Global_Mesh->BndPosition[Elem->c_id[i]][1];
+      p[i][2]=Global_Mesh->BndPosition[Elem->c_id[i]][2];
+    }
+    else
+    {
+      p[i][0]=Global_Mesh->InnPosition[Elem->c_id[i]-Global_Mesh->nBndP][0];
+      p[i][1]=Global_Mesh->InnPosition[Elem->c_id[i]-Global_Mesh->nBndP][1];
+      p[i][2]=Global_Mesh->InnPosition[Elem->c_id[i]-Global_Mesh->nBndP][2];
+    }
+  for (i=1; i<Elem->n_c; i++)
+  {
+    p[i][0]-=p[0][0];
+    p[i][1]-=p[0][1];
+    p[i][2]-=p[0][2];
+  }
+  switch (Elem->n_c)
+  {
+  case 4 :
+    sp=NP_SPAT(p[1],p[2],p[3]);
+    if (sp<0.0)
+    {
+      i=Elem->c_id[0]; Elem->c_id[0]=Elem->c_id[1]; Elem->c_id[1]=i;
+#ifdef NP_Debug
+      printf("\nSWITCH TET %d %d %d %d\n",Elem->c_id[0],Elem->c_id[1],Elem->c_id[2],Elem->c_id[3]);
+#endif
+    }
+    break;
+  case 5 :
+    sp=NP_SPAT(p[1],p[2],p[4]);
+    if (sp<0.0)
+    {
+      i=Elem->c_id[1]; Elem->c_id[1]=Elem->c_id[3]; Elem->c_id[3]=i;
+#ifdef NP_Debug
+      printf("\nSWITCH PYR %d %d %d %d %d\n",Elem->c_id[0],Elem->c_id[1],Elem->c_id[2],Elem->c_id[3],Elem->c_id[4]);
+#endif
+    }
+    break;
+  case 6 :
+    sp=NP_SPAT(p[1],p[2],p[3]);
+    if (sp<0.0)
+    {
+      i=Elem->c_id[0]; Elem->c_id[0]=Elem->c_id[1]; Elem->c_id[1]=i;
+      i=Elem->c_id[3]; Elem->c_id[3]=Elem->c_id[4]; Elem->c_id[4]=i;
+#ifdef NP_Debug
+      printf("\nSWITCH PRI %d %d %d %d %d %d\n",Elem->c_id[0],Elem->c_id[1],Elem->c_id[2],Elem->c_id[3],Elem->c_id[4],Elem->c_id[5]);
+#endif
+    }
+    break;
+  case 8 :
+    sp=NP_SPAT(p[1],p[2],p[4]);
+    if (sp<0.0)
+    {
+      i=Elem->c_id[0]; Elem->c_id[0]=Elem->c_id[2]; Elem->c_id[2]=i;
+      i=Elem->c_id[4]; Elem->c_id[4]=Elem->c_id[6]; Elem->c_id[6]=i;
+#ifdef NP_Debug
+      printf("\nSWITCH HEX %d %d %d %d %d %d %d %d\n",Elem->c_id[0],Elem->c_id[1],Elem->c_id[2],Elem->c_id[3],Elem->c_id[4],Elem->c_id[5],Elem->c_id[6],Elem->c_id[7]);
+#endif
+    }
+    break;
+  }
+
+  return (0);
+}
+
 /****************************************************************************/
 /*
 
@@ -182,12 +318,21 @@ int PutBndNode (BND_NODE *BndNode)
   case 1 :
     Global_Mesh->BndP_nLine[n_bn]=BndNode->n_lp;
     Global_Mesh->BndP_nSurf[n_bn]=BndNode->n_sp;
-    Global_Mesh->BndP_LineID[n_bn]=(int*)NG_MALLOC(Global_Heap,BndNode->n_lp*sizeof(int),Global_MarkKey);
-    if (Global_Mesh->BndP_LineID[n_bn]==NULL) return (1);
-    Global_Mesh->BndP_lcoord_left[n_bn]=(float*)NG_MALLOC(Global_Heap,BndNode->n_lp*sizeof(float),Global_MarkKey);
-    if (Global_Mesh->BndP_lcoord_left[n_bn]==NULL) return (1);
-    Global_Mesh->BndP_lcoord_right[n_bn]=(float*)NG_MALLOC(Global_Heap,BndNode->n_lp*sizeof(float),Global_MarkKey);
-    if (Global_Mesh->BndP_lcoord_right[n_bn]==NULL) return (1);
+    if (Global_Mesh->BndP_nLine[n_bn])
+    {
+      Global_Mesh->BndP_LineID[n_bn]=(int*)NG_MALLOC(Global_Heap,BndNode->n_lp*sizeof(int),Global_MarkKey);
+      if (Global_Mesh->BndP_LineID[n_bn]==NULL) return (1);
+      Global_Mesh->BndP_lcoord_left[n_bn]=(float*)NG_MALLOC(Global_Heap,BndNode->n_lp*sizeof(float),Global_MarkKey);
+      if (Global_Mesh->BndP_lcoord_left[n_bn]==NULL) return (1);
+      Global_Mesh->BndP_lcoord_right[n_bn]=(float*)NG_MALLOC(Global_Heap,BndNode->n_lp*sizeof(float),Global_MarkKey);
+      if (Global_Mesh->BndP_lcoord_right[n_bn]==NULL) return (1);
+    }
+    else
+    {
+      Global_Mesh->BndP_LineID[n_bn]=NULL;
+      Global_Mesh->BndP_lcoord_left[n_bn]=NULL;
+      Global_Mesh->BndP_lcoord_right[n_bn]=NULL;
+    }
     for (i=0; i<BndNode->n_lp; i++)
     {
       Global_Mesh->BndP_LineID[n_bn][i]=BndNode->lp[i].line_id;
@@ -212,6 +357,11 @@ int PutBndNode (BND_NODE *BndNode)
       Global_Mesh->BndP_lcoord[n_bn][i][1]=BndNode->sp[i].local[0];
       fp+=2;
     }
+    Global_Mesh->BndPosition[n_bn]=(float*)NG_MALLOC(Global_Heap,3*sizeof(float),Global_MarkKey);
+    if (Global_Mesh->BndPosition[n_bn]==NULL) return (1);
+    Global_Mesh->BndPosition[n_bn][0]=BndNode->global[0];
+    Global_Mesh->BndPosition[n_bn][1]=BndNode->global[1];
+    Global_Mesh->BndPosition[n_bn][2]=BndNode->global[2];
     n_bn++;
     break;
   case 2 :
@@ -278,15 +428,18 @@ int PutElement (ELEMENT *Elem)
     Global_Mesh->nElements[Elem->subdom]++;
     break;
   case 2 :
+    if (OrientateElem(Elem)) return (1);
     Global_Mesh->Element_corners[Elem->subdom][Global_Mesh->nElements[Elem->subdom]]=Elem->n_c;
     for (i=0; i<Elem->n_f; i++)
     {
       Global_Mesh->Side_corners[Elem->subdom][Global_Mesh->nSides[Elem->subdom]]=Elem->face[i].n_c;
       Global_Mesh->nSides[Elem->subdom]++;
     }
+    Global_Mesh->Element_SideOnBnd[Elem->subdom][Global_Mesh->nElements[Elem->subdom]]=NP_ElemSideOnBnd(Elem);
     Global_Mesh->nElements[Elem->subdom]++;
     break;
   case 3 :
+    if (OrientateElem(Elem)) return (1);
     for (i=0; i<Elem->n_f; i++)
     {
       side=Global_Mesh->nSides[Elem->subdom];
@@ -354,7 +507,8 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   if (theMesh->BndP_lcoord_left==NULL) NG_HEAPFAULT;
   theMesh->BndP_lcoord_right=(float**)NG_MALLOC(Heap,n_bn*sizeof(float*),MarkKey);
   if (theMesh->BndP_lcoord_right==NULL) NG_HEAPFAULT;
-  theMesh->BndPosition=NULL;
+  theMesh->BndPosition=(float**)NG_MALLOC(Heap,n_bn*sizeof(float*),MarkKey);
+  if (theMesh->BndPosition==NULL) NG_HEAPFAULT;
   theMesh->nbElements=NULL;
   theMesh->Element_SideOnBnd=NULL;
   Line_npoints=(int*)NG_MALLOC(Heap,(lineid_max+1)*sizeof(int),MarkKey);
@@ -365,8 +519,13 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
 
   /* inner points */
   theMesh->nInnP=n_in;
-  theMesh->InnPosition=(double**)NG_MALLOC(Heap,n_in*sizeof(double*),MarkKey);
-  if (theMesh->InnPosition==NULL) NG_HEAPFAULT;
+  if (theMesh->nInnP>0)
+  {
+    theMesh->InnPosition=(double**)NG_MALLOC(Heap,n_in*sizeof(double*),MarkKey);
+    if (theMesh->InnPosition==NULL) NG_HEAPFAULT;
+  }
+  else
+    theMesh->InnPosition=NULL;
 
   /* elements */
   if (subdom_max<=0) {NG_Print(ERROR_PREFIX "nb of subdomains is 0\n"); return (1);}
@@ -383,8 +542,8 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   for (i=0; i<=subdom_max; i++) theMesh->nElements[i]=0;
   theMesh->Element_corners=(int**)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int*),MarkKey);
   if (theMesh->Element_corners==NULL) NG_HEAPFAULT;
-  /*theMesh->Element_SideOnBnd=(int**)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int*),MarkKey);
-     if (theMesh->Element_SideOnBnd==NULL) NG_HEAPFAULT;*/
+  theMesh->Element_SideOnBnd=(int**)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int*),MarkKey);
+  if (theMesh->Element_SideOnBnd==NULL) NG_HEAPFAULT;
   theMesh->Element_corner_ids=(int***)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int**),MarkKey);
   if (theMesh->Element_corner_ids==NULL) NG_HEAPFAULT;
 
@@ -425,8 +584,8 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
     theMesh->nSides[i]=0;
     theMesh->Element_corners[i]=(int*)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(int),MarkKey);
     if (theMesh->Element_corners[i]==NULL) NG_HEAPFAULT;
-    /*theMesh->Element_SideOnBnd[i]=(int*)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(int),MarkKey);
-       if (theMesh->Element_SideOnBnd[i]==NULL) NG_HEAPFAULT;*/
+    theMesh->Element_SideOnBnd[i]=(int*)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(int),MarkKey);
+    if (theMesh->Element_SideOnBnd[i]==NULL) NG_HEAPFAULT;
     theMesh->Element_corner_ids[i]=(int**)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(int*),MarkKey);
     if (theMesh->Element_corner_ids[i]==NULL) NG_HEAPFAULT;
     theMesh->nElements[i]=0;
