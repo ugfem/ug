@@ -50,7 +50,6 @@
 /*																			*/
 /****************************************************************************/
 
-#define OPTIONBUFFERLEN 1024    /* length of option buffer					*/
 #define OPTIONSEP               "$"     /* option character                                             */
 
 #define WHITESPACE              " \t\n" /* for skipping of blanks					*/
