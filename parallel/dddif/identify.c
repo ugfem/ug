@@ -29,6 +29,8 @@
 /*																			*/
 /****************************************************************************/
 
+#include <stdio.h>
+
 #include "general.h"
 #include "compiler.h"
 #include "debug.h"
