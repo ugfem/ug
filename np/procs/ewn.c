@@ -77,6 +77,7 @@
 #define MD_UNDEF        0
 #define MD_STD          1
 #define MD_0            2
+#define MD_ID       3
 
 /****************************************************************************/
 /*																			*/
@@ -187,6 +188,8 @@ static INT dmassadd (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC
 {
   switch(type)
   {
+  case MD_ID :
+    return (dm0add(mg,fl,tl,mode,x,A));
   case MD_0 :
     return (dm0add(mg,fl,tl,mode,x,A));
   default :
@@ -313,6 +316,7 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
   if (ReadArgvChar("type",buffer,argc,argv)) return(NP_ACTIVE);
   if (strcmp(buffer,"std")==0) np->type=MD_STD;
   else if (strcmp(buffer,"0")==0) np->type=MD_0;
+  else if (strcmp(buffer,"id")==0) np->type=MD_ID;
   else np->type=MD_UNDEF;
   if (ReadArgvDOUBLE("scale",&np->scale,argc,argv)) np->scale=1.0;
   if (np->scale<=0.0) return(NP_ACTIVE);
@@ -487,6 +491,8 @@ static INT dmassdot (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC
     return (dpdot(mg,fl,tl,mode,x,y));
   case MD_0 :
     return (dm0dot(mg,fl,tl,mode,x,y));
+  case MD_ID :
+    return (0);
   default :
     return(1);
   }
@@ -572,7 +578,6 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
       if (ddot(theMG,0,level,ON_SURFACE,ev[i],ev[i],&B[i][i])) NP_RETURN(1,ewresult->error_code);
       if (dscal(theMG,0,level,ALL_VECTORS,ev[i],1/sqrt(B[i][i])) != NUM_OK) NP_RETURN(1,ewresult->error_code);
     }
-    /*if (dscal(theMG,0,level,ALL_VECTORS,np->r,1/sqrt(B[0][0])) != NUM_OK) NP_RETURN(1,ewresult->error_code);*/
     for (i=0; i<New; i++)
     {
       if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i]) != NUM_OK) NP_RETURN(1,ewresult->error_code);
