@@ -156,7 +156,7 @@ static INT max_vectors_of_type[NVECTYPES] =
 #endif
 
 /* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
+const static char RCS_ID("$Header$",UG_RCS_STRING);
 
 REP_ERR_FILE;
 
@@ -1925,7 +1925,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 /****************************************************************************/
 /*D
-   dset - set all components of a vector to a given value
+   dset - set the given components of a vector to a given value
 
    SYNOPSIS:
    INT dset (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, DOUBLE a);
@@ -1939,12 +1939,42 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    .  a - the DOUBLE value
 
    DESCRIPTION:
+   This function sets the given components of a vector to a given value.
+
+   It runs from level fl to tl.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dsetBS
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dsetBS - set one component of a vector to a given value
+
+   SYNOPSIS:
+   INT dsetBS (const BLOCKVECTOR *bv, INT xc, DOUBLE a);
+
+   PARAMETERS:
+   .  bv - BLOCKVECTOR specifying the vector list
+   .  xc - component in the VECTOR
+   .  a - the DOUBLE value
+
+   DESCRIPTION:
    This function sets all components of a vector to a given value.
 
    RETURN VALUE:
    INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dset
    D*/
 /****************************************************************************/
 
@@ -1978,10 +2008,40 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    DESCRIPTION:
    This function copies a vector to another: `x := y`.
 
+   It runs from level fl to tl.
+
    RETURN VALUE:
    INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dcopyBS
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dcopyBS - copy a vector
+
+   SYNOPSIS:
+   INT dcopyBS (const BLOCKVECTOR *bv, INT xc, INT yc);
+
+   PARAMETERS:
+   .  bv - BLOCKVECTOR specifying the vector list
+   .  xc - component in the destination VECTOR
+   .  yc - component in the source VECTOR
+
+   DESCRIPTION:
+   This function copies a vector to another: `x := y`.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dcopy
    D*/
 /****************************************************************************/
 
@@ -2013,7 +2073,34 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    .  tl - to level
    .  mode - ALL_VECTORS or ON_SURFACE
    .  x - destination vector data descriptor
-   .  a - DOUBLE value
+   .  a - the scaling factor
+
+   DESCRIPTION:
+   This function calculates `x := a * x`.
+
+   It runs from level fl to tl.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dscalx, dscalBS
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dscalBS - scaling x with a
+
+   SYNOPSIS:
+   INT dscalBS (const BLOCKVECTOR *bv, INT xc, DOUBLE a);
+
+   PARAMETERS:
+   .  bv - BLOCKVECTOR specifying the vector list
+   .  xc - component in the VECTOR
+   .  a - the scaling factor
 
    DESCRIPTION:
    This function calculates `x := a * x`.
@@ -2022,6 +2109,9 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dscal
    D*/
 /****************************************************************************/
 
@@ -2061,6 +2151,9 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dscal, dscalBS
    D*/
 /****************************************************************************/
 
@@ -2077,6 +2170,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #define T_PREP_N        value = a+aoff[vtype];
 #define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                              \
     VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *= value[i];
+#define T_NO_BV_FUNC
 
 #include "vecfunc.ct"
 
@@ -2088,7 +2182,6 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    INT dadd (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    VECDATA_DESC *y);
 
-
    PARAMETERS:
    .  mg - pointer to multigrid
    .  fl - from level
@@ -2098,12 +2191,42 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    .  y - vector data descriptor
 
    DESCRIPTION:
-   This function calculates `x := x + y` on one grid level.
+   This function calculates `x := x + y`.
+
+   It runs from level fl to tl.
 
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   daddBS, dsub, dminusadd
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   daddBS - x plus y
+
+   SYNOPSIS:
+   INT daddBS (const BLOCKVECTOR *bv, INT xc, INT yc);
+
+   PARAMETERS:
+   .  bv - BLOCKVECTOR specifying the vector list
+   .  xc - component in the destination VECTOR
+   .  yc - component in the source VECTOR
+
+   DESCRIPTION:
+   This function calculates `x := x + y`.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dadd, dsubBS, dminusaddBS
    D*/
 /****************************************************************************/
 
@@ -2129,7 +2252,6 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    INT dsub (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    VECDATA_DESC *y);
 
-
    PARAMETERS:
    .  mg - pointer to multigrid
    .  fl - from level
@@ -2139,12 +2261,42 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    .  y - vector data descriptor
 
    DESCRIPTION:
-   This function calculates `x := x - y` on one grid level.
+   This function calculates `x := x - y`.
+
+   It runs from level fl to tl.
 
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dsubBS, dadd, dminusadd
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dsubBS - x minus y
+
+   SYNOPSIS:
+   INT dsubBS (const BLOCKVECTOR *bv, INT xc, INT yc);
+
+   PARAMETERS:
+   .  bv - BLOCKVECTOR specifying the vector list
+   .  xc - component in the destination VECTOR
+   .  yc - component in the source VECTOR
+
+   DESCRIPTION:
+   This function calculates `x := x - y`.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dsub, daddBS, dminusaddBS
    D*/
 /****************************************************************************/
 
@@ -2170,7 +2322,6 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    INT dminusadd (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    VECDATA_DESC *y);
 
-
    PARAMETERS:
    .  mg - pointer to multigrid
    .  fl - from level
@@ -2180,17 +2331,47 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    .  y - vector data descriptor
 
    DESCRIPTION:
-   This function calculates `x := -x + y` on one grid level.
+   This function calculates `x := -x + y`.
+
+   It runs from level fl to tl.
 
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dminusaddBS, dadd, dsub
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dminusaddBS - x := -x + y
+
+   SYNOPSIS:
+   INT dminusaddBS (const BLOCKVECTOR *bv, INT xc, INT yc);
+
+   PARAMETERS:
+   .  bv - BLOCKVECTOR specifying the vector list
+   .  xc - component in the destination VECTOR
+   .  yc - component in the source VECTOR
+
+   DESCRIPTION:
+   This function calculates `x := -x + y`.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dminusadd, daddBS, dsubBS
    D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      dminusadd
-#define T_ARGS          ,VECDATA_DESC *y
+#define T_ARGS          ,const VECDATA_DESC *y
 #define T_ARGS_BV       ,INT yc
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) = VVALUE(v,yc) - VVALUE(v,xc);
@@ -2211,7 +2392,6 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    INT daxpyx (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    const VEC_SCALAR a, VECDATA_DESC *y);
 
-
    PARAMETERS:
    .  mg - pointer to multigrid
    .  fl - from level
@@ -2222,12 +2402,17 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    .  y - vector data descriptor
 
    DESCRIPTION:
-   This function calculates `x := x + ay` on one grid level.
+   This function calculates `x := x + ay`.
+
+   It runs from level fl to tl.
 
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   daxpyBS, daxpy
    D*/
 /****************************************************************************/
 
@@ -2255,23 +2440,53 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    INT daxpy (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    DOUBLE a, VECDATA_DESC *y);
 
-
    PARAMETERS:
    .  mg - pointer to multigrid
    .  fl - from level
    .  tl - to level
    .  mode - ALL_VECTORS or ON_SURFACE
    .  x - vector data descriptor
-   .  a - DOUBLE value
+   .  a - scaling factor
    .  y - vector data descriptor
 
    DESCRIPTION:
-   This function calculates `x := x + ay` on one grid level.
+   This function calculates `x := x + ay`.
+
+   It runs from level fl to tl.
 
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   daxpyBS, daxpyx
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   daxpyBS - x plus a times y
+
+   SYNOPSIS:
+   INT daxpyBS (const BLOCKVECTOR *bv, INT xc, DOUBLE a, INT yc);
+
+   PARAMETERS:
+   .  bv - BLOCKVECTOR specifying the vector list
+   .  xc - component in the destination VECTOR
+   .  a - scaling factor
+   .  yc - component in the source VECTOR
+
+   DESCRIPTION:
+   This function calculates `x := x + ay`.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   daxpy
    D*/
 /****************************************************************************/
 
@@ -2297,7 +2512,6 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    INT ddotx (MULTIGRID *mg, INT fl, INT tl, INT mode,
    VECDATA_DESC *x, VECDATA_DESC *y, VEC_SCALAR a);
 
-
    PARAMETERS:
    .  mg - pointer to multigrid
    .  fl - from level
@@ -2310,10 +2524,15 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
    DESCRIPTION:
    This function computes the scalar product of two vectors.
 
+   It runs from level fl to tl.
+
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   ddotBS, dnrm2, ddot, ddotw
    D*/
 /****************************************************************************/
 
@@ -2366,7 +2585,6 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    INT ddotw (MULTIGRID *mg, INT fl, INT tl, INT mode,
    VECDATA_DESC *x, VECDATA_DESC *y, const VEC_SCALAR w, DOUBLE *s);
 
-
    PARAMETERS:
    .  mg - pointer to multigrid
    .  fl - from level
@@ -2380,10 +2598,15 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    DESCRIPTION:
    This function computes the weighted scalar product of two vectors.
 
+   It runs from level fl to tl.
+
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   ddotBS, dnrm2, ddot, ddotx
    D*/
 /****************************************************************************/
 
@@ -2416,7 +2639,6 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    INT ddot (MULTIGRID *mg, INT fl, INT tl, INT mode,
    const VECDATA_DESC *x, const VECDATA_DESC *y, DOUBLE *a);
 
-
    PARAMETERS:
    .  mg - pointer to multigrid
    .  fl - from level
@@ -2424,7 +2646,35 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    .  mode - ALL_VECTORS or ON_SURFACE
    .  x - vector data descriptor
    .  y - vector data descriptor
-   .  a - DOUBLE value
+   .  a - pointer to result
+
+   DESCRIPTION:
+   This function computes the scalar product of two vectors.
+
+   It runs from level fl to tl.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   ddotBS, dnrm2, ddotx, ddotw
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   ddotBS - scalar product of two vectors
+
+   SYNOPSIS:
+   INT ddotBS (const BLOCKVECTOR *bv, INT xc, INT yc, DOUBLE *a);
+
+   PARAMETERS:
+   .  bv - BLOCKVECTOR specifying the vector list
+   .  xc - component in the destination VECTOR
+   .  yc - component in the source VECTOR
+   .  a - pointer to result
 
    DESCRIPTION:
    This function computes the scalar product of two vectors.
@@ -2433,6 +2683,9 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   ddot, dnrm2BS
    D*/
 /****************************************************************************/
 
@@ -2440,16 +2693,17 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #define T_ARGS          ,const VECDATA_DESC *y,DOUBLE *a
 #define T_ARGS_BV       ,INT yc,DOUBLE *a
 #define T_USE_Y
-#define T_CONFIG        *a = 0.0;
-#define T_MOD_SCAL      *a += VVALUE(v,xc) * VVALUE(v,yc);
-#define T_MOD_VECTOR_1  *a += VVALUE(v,cx0) * VVALUE(v,cy0);
-#define T_MOD_VECTOR_2  *a += VVALUE(v,cx1) * VVALUE(v,cy1);
-#define T_MOD_VECTOR_3  *a += VVALUE(v,cx2) * VVALUE(v,cy2);
-#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
-    *a += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *       \
-          VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-#define T_POST_PAR      if (UG_GlobalSumNDOUBLE_X(1,a))                       \
-    REP_ERR_RETURN(NUM_ERROR);
+#define T_CONFIG        register DOUBLE sum = 0.0;
+#define T_MOD_SCAL      sum += VVALUE(v,xc) * VVALUE(v,yc);
+#define T_MOD_VECTOR_1  sum += VVALUE(v,cx0) * VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  sum += VVALUE(v,cx1) * VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  sum += VVALUE(v,cx2) * VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                              \
+    sum += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *     \
+           VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+#define T_POST_PAR      *a=sum;if (UG_GlobalSumNDOUBLE_X(1,a))               \
+    REP_ERR_RETURN(NUM_ERROR);sum=*a;
+#define T_POST                  *a=sum;
 
 #include "vecfunc.ct"
 
@@ -2460,7 +2714,6 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    SYNOPSIS:
    INT dnrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
    VEC_SCALAR a);
-
 
    PARAMETERS:
    .  mg - pointer to multigrid
@@ -2474,17 +2727,22 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    This function computes the euclidian norm of a vector and stores it to a
    VEC_SCALAR.
 
+   It runs from level fl to tl.
+
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dnrm2
    D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      dnrm2x
 #define T_ARGS          ,VEC_SCALAR a
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
-  DOUBLE s;                                                                                         \
+  register DOUBLE s;                                                                        \
   for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
 #define T_MOD_SCAL      s = VVALUE(v,xc); a[aoff[VTYPE(v)]] += s*s;
 #define T_PREP_SWITCH   value = a+aoff[vtype];
@@ -2509,14 +2767,41 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    INT dnrm2 (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
    DOUBLE *a);
 
-
    PARAMETERS:
    .  mg - pointer to multigrid
    .  fl - from level
    .  tl - to level
    .  mode - ALL_VECTORS or ON_SURFACE
    .  x - vector data descriptor
-   .  a - DOUBLE value
+   .  a - pointer to result
+
+   DESCRIPTION:
+   This function computes the euclidian norm of a vector and stores it to
+   a DOUBLE.
+
+   It runs from level fl to tl.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dnrm2BS, ddot
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dnrm2BS - euclidian norm of a vector
+
+   SYNOPSIS:
+   INT dnrm2BS (const BLOCKVECTOR *bv, INT xc, DOUBLE *a);
+
+   PARAMETERS:
+   .  bv - BLOCKVECTOR specifying the vector list
+   .  xc - component in the destination VECTOR
+   .  a - pointer to result
 
    DESCRIPTION:
    This function computes the euclidian norm of a vector and stores it to
@@ -2526,22 +2811,25 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dnrm2, ddotBS
    D*/
 /****************************************************************************/
 
 #define T_FUNCNAME      dnrm2
 #define T_ARGS          ,DOUBLE *a
-#define T_CONFIG        DOUBLE s; *a = 0.0;
-#define T_MOD_SCAL      s = VVALUE(v,xc); *a += s*s;
-#define T_MOD_VECTOR_1  s = VVALUE(v,cx0); *a += s*s;
-#define T_MOD_VECTOR_2  s = VVALUE(v,cx1); *a += s*s;
-#define T_MOD_VECTOR_3  s = VVALUE(v,cx2); *a += s*s;
+#define T_CONFIG        register DOUBLE s, sum;
+#define T_MOD_SCAL      s = VVALUE(v,xc); sum += s*s;
+#define T_MOD_VECTOR_1  s = VVALUE(v,cx0); sum += s*s;
+#define T_MOD_VECTOR_2  s = VVALUE(v,cx1); sum += s*s;
+#define T_MOD_VECTOR_3  s = VVALUE(v,cx2); sum += s*s;
 #define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++) {                             \
     s = VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));           \
-    *a += s*s; }
-#define T_POST_PAR      if (UG_GlobalSumNDOUBLE_X(1,a))                       \
-    REP_ERR_RETURN(NUM_ERROR);
-#define T_POST          *a = SQRT(*a);
+    sum += s*s; }
+#define T_POST_PAR      *a=sum;if (UG_GlobalSumNDOUBLE_X(1,a))                \
+    REP_ERR_RETURN(NUM_ERROR);sum=*a;
+#define T_POST                  *a = SQRT(sum);
 
 #include "vecfunc.ct"
 
@@ -2557,12 +2845,11 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 /****************************************************************************/
 /*D
-   dmatset - initialize a matrix
+   dmatset - initialize a matrix with a given value
 
    SYNOPSIS:
    INT dmatset (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M,
    DOUBLE a);
-
 
    PARAMETERS:
    .  mg - pointer to multigrid
@@ -2573,12 +2860,45 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    .  a - DOUBLE value
 
    DESCRIPTION:
-   This function set all matrix values to  `a`.
+   This function sets all matrix entries to `a`.
+
+   It runs from level fl to tl.
 
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatsetBS
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dmatsetBS - initialize a matrix with a given value
+
+   SYNOPSIS:
+   INT dmatsetBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
+   const BV_DESC_FORMAT *bvdf, INT mc, DOUBLE a);
+
+   PARAMETERS:
+   .  bv_row - BLOCKVECTOR specifying the row vector list
+   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+   .  bvdf - format to interpret bvd_col
+   .  mc - component in the MATRIX
+   .  a - DOUBLE value
+
+   DESCRIPTION:
+   This function sets all matrix entries to `a`.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatset
    D*/
 /****************************************************************************/
 
@@ -2624,16 +2944,49 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    .  fl - from level
    .  tl - to level
    .  mode - ALL_VECTORS or ON_SURFACE
-   .  M - source matrix data descriptor
-   .  N - destnation matrix data descriptor
+   .  M - destination matrix data descriptor
+   .  N - source matrix data descriptor
 
    DESCRIPTION:
-   This function set all 'N := M'.
+   This function set all 'M := N'.
+
+   It runs from level fl to tl.
 
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatcopyBS
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dmatcopyBS - copy a matrix
+
+   SYNOPSIS:
+   INT dmatcopyBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
+   const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
+
+   PARAMETERS:
+   .  bv_row - BLOCKVECTOR specifying the row vector list
+   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+   .  bvdf - format to interpret bvd_col
+   .  mc - component in the destination MATRIX
+   .  nc - component in the source MATRIX
+
+   DESCRIPTION:
+   This function set all 'M := N'.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatcopy
    D*/
 /****************************************************************************/
 
@@ -2708,8 +3061,39 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    .  fl - from level
    .  tl - to level
    .  mode - ALL_VECTORS or ON_SURFACE
-   .  M - source matrix data descriptor
-   .  N - destnation matrix data descriptor
+   .  M - destination matrix data descriptor
+   .  N - source matrix data descriptor
+
+   DESCRIPTION:
+   This function sets 'M := M + N'.
+
+   It runs from level fl to tl.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmataddBS, dmatmul
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dmataddBS - add a matrix
+
+   SYNOPSIS:
+   INT dmataddBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
+   const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
+
+   PARAMETERS:
+   .  bv_row - BLOCKVECTOR specifying the row vector list
+   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+   .  bvdf - format to interpret bvd_col
+   .  mc - component in the destination MATRIX
+   .  nc - component in the source MATRIX
+
 
    DESCRIPTION:
    This function sets 'M := M + N'.
@@ -2718,6 +3102,9 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatadd, dmatmulBS
    D*/
 /****************************************************************************/
 
@@ -2800,10 +3187,44 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    DESCRIPTION:
    This function computes `x = M * y`.
 
+   It runs from level fl to tl.
+
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatmulBS, dmatmul_add, dmatmul_minus
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dmatmulBS - matrix vector product
+
+   SYNOPSIS:
+   INT dmatmulBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
+   const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
+
+   PARAMETERS:
+   .  bv_row - BLOCKVECTOR specifying the row vector list
+   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+   .  bvdf - format to interpret bvd_col
+   .  xc - component in the result VECTOR
+   .  mc - component in the MATRIX
+   .  yc - component in the source VECTOR
+
+   DESCRIPTION:
+   This function computes `x = M * y`.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatmul, dmatmul_addBS, dmatmul_minusBS, d2matmulBS, d3matmulBS
    D*/
 /****************************************************************************/
 
@@ -2866,10 +3287,44 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    DESCRIPTION:
    This function computes `x = x + M * y`.
 
+   It runs from level fl to tl.
+
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatmul_addBS, dmatmul_minus, dmatmul
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dmatmul_addBS - add matrix vector product
+
+   SYNOPSIS:
+   INT dmatmul_addBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
+   const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
+
+   PARAMETERS:
+   .  bv_row - BLOCKVECTOR specifying the row vector list
+   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+   .  bvdf - format to interpret bvd_col
+   .  xc - component in the result VECTOR
+   .  mc - component in the MATRIX
+   .  yc - component in the source VECTOR
+
+   DESCRIPTION:
+   This function computes `x = x + M * y`.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatmul_add, dmatmul_minusBS, dmatmulBS, d2matmulBS, d3matmulBS
    D*/
 /****************************************************************************/
 
@@ -2932,10 +3387,44 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    DESCRIPTION:
    This function computes `x = x - M * y`.
 
+   It runs from level fl to tl.
+
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatmul_minusBS, dmatmul_add, dmatmul
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   dmatmul_minusBS - subtract matrix vector product
+
+   SYNOPSIS:
+   INT dmatmul_minusBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
+   const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
+
+   PARAMETERS:
+   .  bv_row - BLOCKVECTOR specifying the row vector list
+   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+   .  bvdf - format to interpret bvd_col
+   .  xc - component in the result VECTOR
+   .  mc - component in the MATRIX
+   .  yc - component in the source VECTOR
+
+   DESCRIPTION:
+   This function computes `x = x - M * y`.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+
+   SEE ALSO:
+   dmatmul_minus, dmatmul_addBS, dmatmulBS, d2matmulBS, d3matmulBS
    D*/
 /****************************************************************************/
 
