@@ -2112,7 +2112,7 @@ INT Walk (PICTURE *thePicture, const DOUBLE *vrsDelta)
   case TYPE_2D :
     V2_COPY(VO_PXD(theViewedObj),XD)
     if (V2_Normalize(XD)) return (1);
-    V2_COPY(VO_PYD(theViewedObj),XD)
+    V2_COPY(VO_PYD(theViewedObj),YD)
     if (V2_Normalize(YD)) return (1);
     V2_LINCOMB(vrsDelta[0],XD,vrsDelta[1],YD,VP)
     V2_ADD(VO_VP(theViewedObj),vrsDelta,VP)
@@ -3804,11 +3804,14 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEspo->min                    = 0.0;
     theEspo->max                    = 1.0;
     theEspo->mode                   = PO_COLOR;
+    theEspo->PlotBoundary   = YES;
     theEspo->PlotGrid               = NO;
     theEspo->depth                  = 0;
     theEspo->numOfContours  = 10;
     theEspo->EvalFct = NULL;
   }
+
+  ReadArgvINT ("b", &theEspo->PlotBoundary, argc, argv);
 
   /* set plot grid option */
   for (i=1; i<argc; i++)

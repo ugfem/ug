@@ -6432,13 +6432,19 @@ static INT EW_PreProcess_PlotBndOfElem2D (PICTURE *thePicture, WORK *theWork)
 
 static INT EW_PreProcess_PlotBlackBnd2D (PICTURE *thePicture, WORK *theWork)
 {
+	struct ElemScalarPlotObj2D *theEspo;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
-
+	
+	theEspo = &(PIC_PO(thePicture)->theEspo);
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
-	EE2D_NoColor[COLOR_BND] 		= 0;	
+	/* see if boundary has to be plotted */
+	if (theEspo->PlotBoundary == NO)
+		return (1); 
+	
+	EE2D_NoColor[COLOR_BND] 		= 1;	
 	EE2D_Color[COLOR_BND]			= theOD->black;
 	EE2D_Elem2Plot[PLOT_ALL]		= 1;
 	EE2D_Elem2Plot[PLOT_COPY]		= 1;
@@ -11881,7 +11887,7 @@ static INT GetPolyElemISCutPlaneHEX (DOUBLE **CornerDC, DOUBLE *CutZCoord, INT N
 		case (1):
 		case (2):
 		case (3):
-			RETURN(1);
+			return(0);/* RETURN(1); */
 		case (4):
 			V3_COPY(x[1], Poly[0])
 				V3_COPY(x[2], Poly[1])

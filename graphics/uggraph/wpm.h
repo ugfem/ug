@@ -283,6 +283,7 @@ struct ElemScalarPlotObj2D {
   DOUBLE min, max;                                                      /* range										*/
   INT mode;                                                                     /* COLOR or CONTOURS							*/
   INT PlotGrid;                                                         /* plot grid together with scalar field			*/
+  INT PlotBoundary;                                                     /* YES or NO									*/
   INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
   INT numOfContours;                                                    /* nb of contourlines if used					*/
   DOUBLE contValues[PO_MAXCONTOURS];                    /* contour values if used						*/
