@@ -102,6 +102,29 @@ INT CheckSymmetryOfMatrix (GRID *theGrid, MATDATA_DESC *A)
   return(0);
 }
 
+INT CheckVector(theGrid,theVector)
+{
+  INT nerr = 0;
+
+  /* get format */
+
+  /* check flags locally */
+
+  return(nerr);
+}
+
+INT CheckVectors (GRID *theGrid)
+{
+  INT nerr = 0;
+  VECTOR *theVector;
+
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    nerr += CheckVector(theGrid,theVector);
+  }
+  return(nerr);
+}
+
 INT CheckNP (MULTIGRID *theMG, INT argc, char **argv)
 {
   MATDATA_DESC *A;
@@ -117,5 +140,8 @@ INT CheckNP (MULTIGRID *theMG, INT argc, char **argv)
                      ENVITEM_NAME(A),level);
   }
 
+  for (level=theMG->bottomLevel; level<=TOPLEVEL(theMG); level++)
+    if (CheckVectors(GRID_ON_LEVEL(theMG,level)))
+      UserWriteF("ERROR: vector flags not correctly set");
   return(0);
 }
