@@ -168,30 +168,6 @@ static LGM_LINE *NextLine (LGM_DOMAIN *theDomain)
   return (theLine);
 }
 
-/****************************************************************************/
-/*D
-   BVP_Init - create a lgm-domain and return a mesh
-
-   SYNOPSIS:
-   INT BVP_Init (char *name, HEAP *Heap, MESH *Mesh);
-
-   PARAMETERS:
-   .  filename - name of file
-   .  theHeap - heap
-
-   DESCRIPTION:
-   function creates a lgm-domain representaion reading the file <filename>.lgm
-   and returns a mesh
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-
-   SEE ALSO:
-   D*/
-/****************************************************************************/
-
 INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond)
 {
   INT i,k;

@@ -233,6 +233,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   /* set mesh with nothing */
   if (Mesh!=NULL && LGM_LoadMesh(name, Heap,Mesh,theDomain,MarkKey))
   {
+    Mesh->mesh_status   = MESHSTAT_EMPTY;
     Mesh->nBndP             = 0;
     Mesh->nInnP             = 0;
     Mesh->nSubDomains       = 0;

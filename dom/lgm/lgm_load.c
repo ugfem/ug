@@ -616,6 +616,7 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
   if ((*ReadMesh)(name,theHeap,&lgm_mesh_info,MarkKey)) return (1);
 
   /* copy mesh_info to mesh and create BNDPs */
+  theMesh->mesh_status              = MESHSTAT_MESH;
   theMesh->nBndP                    = lgm_mesh_info.nBndP;
   theMesh->nInnP                     = lgm_mesh_info.nInnP;
   theMesh->Position                 = lgm_mesh_info.InnPosition;
