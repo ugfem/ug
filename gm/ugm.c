@@ -68,6 +68,9 @@
 #include "domain.h"
 #include "pargm.h"
 #include "ugstruct.h"
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
+#include "mgheapmgr.h"
+#endif
 
 #ifdef ModelP
 #include "identify.h"
@@ -109,6 +112,7 @@
 #if defined ModelP && defined __OVERLAP2__
 INT ce_NO_DELETE_OVERLAP2 = -1;
 #endif
+
 
 /****************************************************************************/
 /*																			*/
@@ -244,10 +248,8 @@ INT ReleaseOBJT (INT type)
 /****************************************************************************/
 
 #ifdef ModelP
-void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type)
+void ConstructDDDObject (void *obj, INT size, INT type)
 {
-  void *obj = GetFreelistMemory(theHeap, size);
-
   if (obj!=NULL && type!=NOOBJ)
   {
     memset(obj,0,size);
@@ -259,6 +261,53 @@ void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type)
       DDD_HdrConstructor(dddhdr, dddtype, PrioMaster, 0);
     }
   }
+  return;
+}
+#endif
+
+#ifndef DYNAMIC_MEMORY_ALLOCMODEL
+void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type)
+{
+  void *obj = GetFreelistMemory(theHeap, size);
+
+        #ifdef ModelP
+  ConstructDDDObject(obj,size,type);
+        #endif
+
+  return obj;
+}
+#else
+void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
+{
+  void                    *obj;
+
+        #ifdef Debug
+  check_of_getcallstack = 1;
+        #endif
+
+  if (usefreelistmemory == 1)
+    obj = GetFreelistMemory(theHeap, size);
+  else
+  {
+                #ifdef Debug
+    switch (type)
+    {
+    case MAOBJ :
+    case VEOBJ :
+      break;
+    default : assert(0);
+    }
+                #endif
+    obj = GetMem(theHeap,size,FROM_BOTTOM);
+  }
+
+        #ifdef Debug
+  check_of_getcallstack = 0;
+        #endif
+
+        #ifdef ModelP
+  ConstructDDDObject(obj,size,type);
+        #endif
 
   return obj;
 }
@@ -288,7 +337,7 @@ void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type)
 /****************************************************************************/
 
 #ifdef ModelP
-INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type)
+void DestructDDDObject(void *object, INT type)
 {
   if (type!=NOOBJ)
   {
@@ -300,8 +349,57 @@ INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type)
       DDD_HdrDestructor(dddhdr);
     }
   }
+  return;
+}
+#endif
+
+#ifndef DYNAMIC_MEMORY_ALLOCMODEL
+INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type)
+{
+        #ifdef ModelP
+  DestructDDDObject(object,type);
+        #endif
 
   return (PutFreelistMemory(theHeap, object, size));
+}
+#else
+INT PutFreeObjectNew (HEAP *theHeap, void *object, INT size, INT type)
+{
+  INT err;
+
+        #ifdef ModelP
+  DestructDDDObject(object,type);
+        #endif
+
+        #ifdef Debug
+  check_of_putcallstack = 1;
+        #endif
+
+  if (usefreelistmemory == 1)
+  {
+    err = PutFreelistMemory(theHeap, object, size);
+                #ifdef Debug
+    check_of_putcallstack = 0;
+                #endif
+    return (err);
+  }
+
+        #ifdef Debug
+  switch (type)
+  {
+  case MAOBJ :
+  case VEOBJ :
+    break;
+  default : assert(0);
+  }
+        #endif
+
+        #ifdef Debug
+  check_of_putcallstack = 0;
+        #endif
+
+  /* memory is freed by release */
+  return(0);
 }
 #endif
 
@@ -2924,6 +3022,9 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   /* fill multigrid structure */
   theMG->status = 0;
   MG_COARSE_FIXED(theMG) = 0;
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  theMG->bottomtmpmem = 0;
+        #endif
   theMG->vertIdCounter = 0;
   theMG->nodeIdCounter = 0;
   theMG->elemIdCounter = 0;

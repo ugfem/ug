@@ -51,12 +51,17 @@
 
 #define MAX_PAR_DIST    1.0E-5          /* max.dist between different parameter */
 
-#ifdef ModelP
-#define PutFreeObject(theMG,object,size,type) PutFreeObject_par(MGHEAP(theMG),(object),(size),(type))
-#define GetMemoryForObject(theMG,size,type) GetMemoryForObject_par(MGHEAP(theMG),(size),(type))
+#ifndef DYNAMIC_MEMORY_ALLOCMODEL
+        #ifdef ModelP
+        #define PutFreeObject(theMG,object,size,type) PutFreeObject_par(MGHEAP(theMG),(object),(size),(type))
+        #define GetMemoryForObject(theMG,size,type) GetMemoryForObject_par(MGHEAP(theMG),(size),(type))
+        #else
+        #define GetMemoryForObject(theMG,size,type) GetFreelistMemory(MGHEAP(theMG),(size))
+        #define PutFreeObject(theMG,object,size,type) PutFreelistMemory(MGHEAP(theMG),(object),(size))
+        #endif
 #else
-#define GetMemoryForObject(theMG,size,type) GetFreelistMemory(MGHEAP(theMG),(size))
-#define PutFreeObject(theMG,object,size,type) PutFreelistMemory(MGHEAP(theMG),(object),(size))
+        #define GetMemoryForObject(theMG,size,type) GetMemoryForObjectNew(MGHEAP(theMG),(size),(type))
+        #define PutFreeObject(theMG,object,size,type) PutFreeObjectNew(MGHEAP(theMG),(object),(size),(type))
 #endif
 
 /****************************************************************************/
@@ -71,7 +76,6 @@
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
-
 
 /****************************************************************************/
 /*																			*/
@@ -125,9 +129,13 @@ INT                     GetNodeContext                  (ELEMENT *theElement, NO
 void            GetNbSideByNodes                (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, INT side);
 
 
-#ifdef ModelP
+#if defined(ModelP) && !defined(DYNAMIC_MEMORY_ALLOCMODEL)
 void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type);
 INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type);
+#endif
+
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
+void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type);
 #endif
 
 #endif
