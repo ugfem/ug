@@ -17,7 +17,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70550 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
 /* History:   24.06.92 begin, ug3 version 1.0								*/
 /*																			*/

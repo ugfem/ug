@@ -486,7 +486,6 @@ VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
   return(pv);
 }
 
-
 /****************************************************************************/
 /*D
    CreateNode - Return pointer to a new node structure
@@ -547,14 +546,19 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
 
   /* create vector */
         #ifdef __NODEDATA__
-  if (CreateVector (theGrid,NULL,NODEVECTOR,&pv))
+  if (MYMG(theGrid)->theFormat->VectorSizes[NODEVECTOR] > 0)
   {
-    DisposeNode (theGrid,pn);
-    return (NULL);
+    if (CreateVector (theGrid,NULL,NODEVECTOR,&pv))
+    {
+      DisposeNode (theGrid,pn);
+      return (NULL);
+    }
+    assert (pv != NULL);
+    VOBJECT(pv) = (void*)pn;
+    NVECTOR(pn) = (void*)pv;
   }
-  assert (pv != NULL);
-  VOBJECT(pv) = (void*)pn;
-  NVECTOR(pn) = (void*)pv;
+  else
+    NVECTOR(pn) = NULL;
         #endif
 
   /* initialize data */
@@ -726,14 +730,19 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to)
 
   /* create vector if */
         #ifdef __EDGEDATA__
-  if (CreateVector (theGrid,NULL,EDGEVECTOR,&pv))
+  if (MYMG(theGrid)->theFormat->VectorSizes[EDGEVECTOR] > 0)
   {
-    DisposeEdge (theGrid,pe);
-    return (NULL);
+    if (CreateVector (theGrid,NULL,EDGEVECTOR,&pv))
+    {
+      DisposeEdge (theGrid,pe);
+      return (NULL);
+    }
+    assert (pv != NULL);
+    VOBJECT(pv) = (void*)pe;
+    EDVECTOR(pe) = (void*)pv;
   }
-  assert (pv != NULL);
-  VOBJECT(pv) = (void*)pe;
-  EDVECTOR(pe) = (void*)pv;
+  else
+    EDVECTOR(pe) = NULL;
         #endif
 
   /* put in neighbor lists */
@@ -869,31 +878,40 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
 
   /* create element vector if */
         #ifdef __ELEMDATA__
-  if (CreateVector (theGrid,NULL,ELEMVECTOR,&pv))
+  if (MYMG(theGrid)->theFormat->VectorSizes[ELEMVECTOR] > 0)
   {
-    DisposeElement (theGrid,pe);
-    return (NULL);
-  }
-  assert (pv != NULL);
-  VOBJECT(pv) = (void*)pe;
-  SET_EVECTOR(pe,(void*)pv);
-        #endif
-
-  /* create side vectors if */
-        #ifdef __SIDEDATA__
-  for (i=0; i<SIDES_OF_ELEM(pe); i++)
-  {
-    if (CreateVector (theGrid,NULL,SIDEVECTOR,&pv))
+    if (CreateVector (theGrid,NULL,ELEMVECTOR,&pv))
     {
       DisposeElement (theGrid,pe);
       return (NULL);
     }
     assert (pv != NULL);
     VOBJECT(pv) = (void*)pe;
-    SET_SVECTOR(pe,i,(void*)pv);
-    SETVECTORSIDE(pv,i);
-    SETVCOUNT(pv,1);
+    SET_EVECTOR(pe,(void*)pv);
   }
+  else
+    SET_EVECTOR(pe,NULL);
+        #endif
+
+  /* create side vectors if */
+        #ifdef __SIDEDATA__
+  if (MYMG(theGrid)->theFormat->VectorSizes[SIDEVECTOR] > 0)
+    for (i=0; i<SIDES_OF_ELEM(pe); i++)
+    {
+      if (CreateVector (theGrid,NULL,SIDEVECTOR,&pv))
+      {
+        DisposeElement (theGrid,pe);
+        return (NULL);
+      }
+      assert (pv != NULL);
+      VOBJECT(pv) = (void*)pe;
+      SET_SVECTOR(pe,i,(void*)pv);
+      SETVECTORSIDE(pv,i);
+      SETVCOUNT(pv,1);
+    }
+  else
+    for (i=0; i<SIDES_OF_ELEM(pe); i++)
+      SET_SVECTOR(pe,i,NULL);
         #endif
 
   /* insert in element list */
@@ -924,7 +942,6 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
   /* return ok */
   return(pe);
 }
-
 
 /****************************************************************************/
 /*D
@@ -1007,31 +1024,40 @@ ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
 
   /* create element vector if */
         #ifdef __ELEMDATA__
-  if (CreateVector (theGrid,NULL,ELEMVECTOR,&pv))
+  if (MYMG(theGrid)->theFormat->VectorSizes[ELEMVECTOR] > 0)
   {
-    DisposeElement (theGrid,pe);
-    return (NULL);
-  }
-  assert (pv != NULL);
-  VOBJECT(pv) = (void*)pe;
-  SET_EVECTOR(pe,(void*)pv);
-        #endif
-
-  /* create side vectors if */
-        #ifdef __SIDEDATA__
-  for (i=0; i<SIDES_OF_ELEM(pe); i++)
-  {
-    if (CreateVector (theGrid,NULL,SIDEVECTOR,&pv))
+    if (CreateVector (theGrid,NULL,ELEMVECTOR,&pv))
     {
       DisposeElement (theGrid,pe);
       return (NULL);
     }
     assert (pv != NULL);
     VOBJECT(pv) = (void*)pe;
-    SET_SVECTOR(pe,i,(void*)pv);
-    SETVECTORSIDE(pv,i);
-    SETVCOUNT(pv,1);
+    SET_EVECTOR(pe,(void*)pv);
   }
+  else
+    SET_EVECTOR(pe,NULL);
+        #endif
+
+  /* create side vectors if */
+        #ifdef __SIDEDATA__
+  if (MYMG(theGrid)->theFormat->VectorSizes[SIDEVECTOR] > 0)
+    for (i=0; i<SIDES_OF_ELEM(pe); i++)
+    {
+      if (CreateVector (theGrid,NULL,SIDEVECTOR,&pv))
+      {
+        DisposeElement (theGrid,pe);
+        return (NULL);
+      }
+      assert (pv != NULL);
+      VOBJECT(pv) = (void*)pe;
+      SET_SVECTOR(pe,i,(void*)pv);
+      SETVECTORSIDE(pv,i);
+      SETVCOUNT(pv,1);
+    }
+  else
+    for (i=0; i<SIDES_OF_ELEM(pe); i++)
+      SET_SVECTOR(pe,i,NULL);
         #endif
 
   /* insert in element list */
