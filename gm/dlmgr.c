@@ -46,7 +46,7 @@
 #define OTYPE  ELEMENT
 #define PRED   PREDE
 #define SUCC   SUCCE
-#include "dlmgrproto.h"
+#include "dlmgr.t"
 #undef OTYPE
 #undef PRED
 #undef SUCC
@@ -55,7 +55,7 @@
 #define OTYPE  NODE
 #define PRED   PREDN
 #define SUCC   SUCCN
-#include "dlmgrproto.h"
+#include "dlmgr.t"
 #undef OTYPE
 #undef PRED
 #undef SUCC
@@ -64,7 +64,7 @@
 #define OTYPE  VERTEX
 #define PRED   PREDV
 #define SUCC   SUCCV
-#include "dlmgrproto.h"
+#include "dlmgr.t"
 #undef OTYPE
 #undef PRED
 #undef SUCC
@@ -73,4 +73,4 @@
 #define OTYPE  VECTOR
 #define PRED   PREDVC
 #define SUCC   SUCCVC
-#include "dlmgrproto.h"
+#include "dlmgr.t"
