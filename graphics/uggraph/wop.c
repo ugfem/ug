@@ -9315,7 +9315,7 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	DOUBLE norm;
 	long Color;
 	DOUBLE min, max;
-	DOUBLE_VECTOR Arrow,SArrow;
+	DOUBLE_VECTOR Arrow,TArrow;
 	
 	/* get coordinates of corners of the element and their z coordinates in cut system */
 	found = FALSE;
@@ -9361,9 +9361,10 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		/* get arrow and store range */
 		if (UG_GlobalToLocal(CORNERS_OF_ELEM(theElement),x,RasterPoint[i],LocalCoord)) return (1);
 		(*EVector_EvalFct)(theElement,x,LocalCoord,Arrow);
-		V2_TRAFOM3_V2_NT(Arrow,ScaleTrafo,SArrow);
 		V2_EUKLIDNORM(Arrow,norm);
 		max = MAX(max,norm); min = MIN(min,norm);
+        V2_TRAFOM3_V2_NT(Arrow,ObsTrafo,TArrow);
+        V2_EUKLIDNORM(TArrow,norm);
 		V2_SCALE(EVector_V2L_factor,Arrow)
 				
 		if ((norm*EVector_V2L_factor>EVector_rastersize*EVector_CutLenFactor) && EVector_cutvector)
