@@ -46,6 +46,7 @@
 #include "ugio.h"
 #include "elements.h"
 #include "refine.h"
+#include "rm.h"
 
 /* own header */
 #include "initgm.h"

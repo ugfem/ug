@@ -108,6 +108,8 @@ INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, EL
 INT              PointInElement                 (const COORD*, const ELEMENT *theElement);
 VIRT_HEAP_MGMT *GetGenMGUDM             ();
 
+NODE            *CreateMidNode                  (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after);
+
 #ifdef __TWODIM__
 EDGE            *CreateAuxEdge                  (GRID *theGrid, NODE *from, NODE *to);
 INT              DisposeAuxEdges                (GRID *theGrid);
@@ -116,6 +118,7 @@ INT              DisposeAuxEdges                (GRID *theGrid);
 #ifdef __THREEDIM__
 INT          DisposeEdgesFromElement(GRID *theGrid, ELEMENT *theElement);
 INT          CheckParityOfElements      (MULTIGRID* theMG);
+NODE            *CreateSideNode                 (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1,NODE *after);
 #endif
 
 #endif

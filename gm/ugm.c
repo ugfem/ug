@@ -57,6 +57,8 @@
 #include "misc.h"
 #include "algebra.h"
 #include "ugm.h"
+#include "elements.h"
+#include "shapes.h"
 
 /* include refine because of macros accessed in list functions */
 #include "refine.h"

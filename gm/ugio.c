@@ -49,6 +49,7 @@
 #include "misc.h"
 #include "ugm.h"
 #include "ugio.h"
+#include "elements.h"
 
 /* include refine because of macros accessed  */
 #include "refine.h"

@@ -30,7 +30,11 @@
 #include <assert.h>
 #include <stdio.h>
 
+/* low module */
 #include "fileopen.h"
+
+/* dev module */
+#include "devices.h"
 
 /* gm module */
 #include "evm.h"
@@ -2111,7 +2115,7 @@ INT InitRuleManager3D (void)
 
   /* get storage for Pattern2Rule */
   Pattern2Rule[TETRAHEDRON] = (SHORT *) malloc(nPatterns*sizeof(SHORT));
-  if (Pattern2Rule==NULL)
+  if (Pattern2Rule[TETRAHEDRON]==NULL)
   {
     UserWrite("ERROR: no storage for Pattern2Rule\n");
     fclose(stream);
@@ -2286,7 +2290,7 @@ INT InitRuleManager2D (void)
   nPatterns = 17;       /* there are 2^3 different patterns */
   /* TODO: delete all concerning Pattern2Rule */
   Pattern2Rule[TRIANGLE] = (SHORT *) malloc(nPatterns*sizeof(SHORT));
-  if (Pattern2Rule==NULL)
+  if (Pattern2Rule[TRIANGLE]==NULL)
   {
     UserWrite("ERROR: no storage for Pattern2Rule\n");
     return (__LINE__);
@@ -2320,7 +2324,7 @@ INT InitRuleManager2D (void)
   nPatterns = 32;       /* there are 2^5 different patterns */
   /* TODO: delete all concerning Pattern2Rule */
   Pattern2Rule[QUADRILATERAL] = (SHORT *) malloc(nPatterns*sizeof(SHORT));
-  if (Pattern2Rule==NULL)
+  if (Pattern2Rule[QUADRILATERAL]==NULL)
   {
     UserWrite("ERROR: no storage for Pattern2Rule\n");
     return (__LINE__);

@@ -69,7 +69,11 @@
 #include "heaps.h"
 #include "misc.h"
 
+/* dev module */
+#include "devices.h"
+
 /* gm module */
+#include "algebra.h"
 #include "evm.h"
 #include "gm.h"
 #include "GenerateRules.h"
