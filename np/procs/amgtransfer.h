@@ -97,6 +97,7 @@ typedef struct
   INT levelLimit;                            /* stop if -level>levelLimit       */
 
   INT explicitFlag;                          /* clear only by npexecute         */
+  INT hold;                                  /* no clear in postprocess         */
 
 } NP_AMG_TRANSFER;
 

@@ -222,6 +222,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
 {
   INT i;
   NP_AMG_TRANSFER *np;
+  char buffer[32];
 
   np = (NP_AMG_TRANSFER *) theNP;
 
@@ -232,7 +233,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
   np->thetaS = 0.0;
   if (ReadArgvOption("strongAll",argc,argv)==1)
   {
-    np->MarkStrong=MarkAll;
+    np->MarkStrong=MarkOffDiagWithoutDirichlet;
     np->thetaS=0.0;
   }
   if (ReadArgvDOUBLE("strongAbs",&(np->thetaS),argc,argv)==0)
@@ -290,7 +291,16 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
     if (ReadArgvOption("lump",argc,argv)==1)
       np->sparsenFlag=1;
   }
-
+  if (ReadArgvOption("hold",argc,argv)==1)
+    np->hold=1;
+  if (ReadArgvChar("I",buffer,argc,argv) == 0) {
+    if (strcmp(buffer,"Average") == 0)
+      np->SetupIR = IpAverage;
+    if (strcmp(buffer,"RugeStueben") == 0)
+      np->SetupIR = IpRugeStueben;
+    if (strcmp(buffer,"Vanek") == 0)
+      np->SetupIR = IpVanek;
+  }
   np->reorderFlag=0;
   if (ReadArgvOption("coarsefine",argc,argv)==1)
     np->reorderFlag=COARSEFINE;
@@ -395,6 +405,8 @@ INT AMGTransferDisplay (NP_BASE *theNP)
 
   if (np->SetupIR==IpRugeStueben)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","RugeStueben");
+  else if (np->SetupIR==IpAverage)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","Average");
   else if (np->SetupIR==IpVanek)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","Vanek");
   else
@@ -435,6 +447,7 @@ INT AMGTransferDisplay (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SF,"vRedLimit",(float)np->vRedLimit);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"mRedLimit",(float)np->mRedLimit);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"levelLimit",(int)np->levelLimit);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"hold",(int)np->hold);
 
   return (0);
 }
@@ -451,7 +464,8 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   char text[DISPLAY_WIDTH+4];
 
   if (tl!=0) {
-    PrintErrorMessage('E',"AMGTransferPreProcess","AMG can only be used on level 0!");
+    PrintErrorMessage('E',"AMGTransferPreProcess",
+                      "AMG can only be used on level 0!");
     result[0]=1;
     REP_ERR_RETURN(result[0]);
   }
@@ -467,9 +481,9 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   }
 
   /* clear AMG levels */
-  if (DisposeAMGLevels(theMG)!=0)
-  {
-    PrintErrorMessage('E',"AMGTransferPreProcess","could not dispose AMG levels");
+  if (DisposeAMGLevels(theMG)!=0) {
+    PrintErrorMessage('E',"AMGTransferPreProcess",
+                      "could not dispose AMG levels");
     result[0]=1;
     REP_ERR_RETURN(result[0]);
   }
@@ -479,8 +493,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   SetStringValue(":amg:blevel",0);
   SetStringValue(":amg:vect0",(double)theGrid->nVector);
   SetStringValue(":amg:con0",(double)theGrid->nCon);
-  if (np->display == PCR_FULL_DISPLAY)
-  {
+  if (np->display == PCR_FULL_DISPLAY) {
     CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
     UserWrite(text);
     UserWrite(DISPLAY_NP_AMG_STRING);
@@ -490,8 +503,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
 
   /* coarsen until criteria are fulfilled */
-  while (theMG->bottomLevel>np->levelLimit)
-  {
+  while (theMG->bottomLevel>np->levelLimit) {
     level=theMG->bottomLevel;
     theGrid=GRID_ON_LEVEL(theMG,level);
     nVect=theGrid->nVector;
@@ -544,11 +556,13 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       l_setindex(theGrid);
     }
 
-    /* set the index field on the new grid (even if the ordering might be changed again) */
+    /* set the index field on the new grid
+       (even if the ordering might be changed again) */
     l_setindex(newGrid);
 
     if (np->display == PCR_FULL_DISPLAY)
-      UserWriteF(DISPLAY_NP_AMG_FORMAT,(int)theMG->bottomLevel,(int)newGrid->nVector,
+      UserWriteF(DISPLAY_NP_AMG_FORMAT,
+                 (int)theMG->bottomLevel,(int)newGrid->nVector,
                  (int)newGrid->nCon,(int)theGrid->nIMat);
 
     sprintf(varname,":amg:vect%d",-theMG->bottomLevel);
@@ -583,7 +597,8 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
   NP_AMG_TRANSFER *np;
 
   np = (NP_AMG_TRANSFER *) theNP;
-  result[0] = RestrictByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),to,from,damp);
+  result[0] = RestrictByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),
+                               to,from,damp);
 
   return(result[0]);
 }
@@ -596,7 +611,9 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
   NP_AMG_TRANSFER *np;
 
   np = (NP_AMG_TRANSFER *) theNP;
-  result[0] = InterpolateCorrectionByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),to,from,damp);
+  result[0] =
+    InterpolateCorrectionByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),
+                                  to,from,damp);
 
   return(result[0]);
 }
@@ -612,16 +629,18 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   np = (NP_AMG_TRANSFER *) theNP;
   theMG = theNP->base.mg;
 
-  /* are levels to be built up and destroyed only by explicit calls of 'npexecute'? */
+  /* are levels to be built up and destroyed only
+     by explicit calls of 'npexecute'? */
   if (np->explicitFlag!=0)
     return(0);
+  if (np->hold!=0)
+    return(0);
 
-  if (DisposeAMGLevels(theMG)!=0)
-  {
-    PrintErrorMessage('E',"AMGTransferPostProcess","could not dispose AMG levels");
+  if (DisposeAMGLevels(theMG) != 0) {
+    PrintErrorMessage('E',"AMGTransferPostProcess",
+                      "could not dispose AMG levels");
     REP_ERR_RETURN(1);
   }
-
   *fl=0;
 
   return(0);
@@ -635,7 +654,8 @@ INT AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
 
   if ((level = CURRENTLEVEL(theNP->mg))!=0)
   {
-    PrintErrorMessage('E',"AMGTransferExecute","AMG can only be used on level 0!");
+    PrintErrorMessage('E',"AMGTransferExecute",
+                      "AMG can only be used on level 0!");
     REP_ERR_RETURN(1);
   }
 
@@ -644,7 +664,8 @@ INT AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
 
   if (npa->explicitFlag==0)
   {
-    PrintErrorMessage('E',"AMGTransferExecute","you must set the $explicit-option in npinit!");
+    PrintErrorMessage('E',"AMGTransferExecute",
+                      "you must set the $explicit-option in npinit!");
     REP_ERR_RETURN(1);
   }
 
