@@ -3,27 +3,27 @@
 /****************************************************************************/
 /*	                                                                        */
 /* File:      fifo.c                                                        */
-/*                                                                            */
-/* Purpose:   general purpose first in first out queue                        */
-/*                                                                            */
-/* Author:      Peter Bastian                                                 */
-/*              Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen    */
-/*              Universitaet Heidelberg                                        */
-/*              Im Neuenheimer Feld 368                                        */
-/*              6900 Heidelberg                                                */
-/*                                                                            */
+/*                                                                          */
+/* Purpose:   general purpose first in first out queue                      */
+/*                                                                          */
+/* Author:      Peter Bastian                                               */
+/*              Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen */
+/*              Universitaet Heidelberg                                     */
+/*              Im Neuenheimer Feld 368                                     */
+/*              6900 Heidelberg                                             */
+/*                                                                          */
 /* History:   30.01.92 begin, ug version 2.0                                */
-/*                                                                            */
+/*                                                                          */
 /* Revision:  07.09.95                                                      */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                            */
+/*                                                                          */
 /* include files                                                            */
-/*              system include files                                            */
-/*              application include files                                     */
-/*                                                                            */
+/*              system include files                                        */
+/*              application include files                                   */
+/*                                                                          */
 /****************************************************************************/
 
 #include <stdio.h>
