@@ -102,7 +102,7 @@
 
 #define M1_INVERT(M,IM,det)				{det = (IM)[0];							\
 										 if (ABS((det))<SMALL_D*SMALL_D)		\
-										 	RETURN(1);							\
+										 	return(1);							\
 										 (M)[0] = 1./det;}
 #define MT1_TIMES_V1(M,A,B)			   {(B)[0] = (M)[0][0]*(A)[0];}
 
@@ -187,7 +187,7 @@
 { DOUBLE invdet;                                  \
   det = (M)[0][0]*(M)[1][1]-(M)[1][0]*(M)[0][1];  \
 	if (ABS((det))<SMALL_D*SMALL_D)                 \
-		RETURN(1);                                    \
+		return(1);                                    \
 	invdet = 1.0 / (det);                       \
 	(IM)[0][0] =  (M)[1][1]*invdet;             \
 	(IM)[1][0] = -(M)[1][0]*invdet;             \
@@ -331,7 +331,7 @@
 		  - (M)[0][0]*(M)[1][2]*(M)[2][1]         \
 			- (M)[0][1]*(M)[1][0]*(M)[2][2];      \
 	if (ABS((det))<SMALL_D*SMALL_D)                 \
-		RETURN(1);                                    \
+		return(1);                                    \
 	invdet = 1.0 / (det);                           \
 	(IM)[0][0] = ( (M)[1][1]*(M)[2][2] - (M)[1][2]*(M)[2][1]) * invdet;  \
 	(IM)[0][1] = (-(M)[0][1]*(M)[2][2] + (M)[0][2]*(M)[2][1]) * invdet;  \
