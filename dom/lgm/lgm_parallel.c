@@ -51,6 +51,11 @@
 
 #include "lgm_domain.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
