@@ -40,9 +40,14 @@
 // This is true for level 0 grid from UG or if FAMG_FULL_OVERLAP is active.
 // The geometric info is used to force the same elimination sequence independent
 // of the number of processors (incl. 1 PE).
+// FAMG_INNER_FIRST must be undefined
 //#define FAMG_SINGLESTEP
 //#define FAMG_SINGLESTEP_FULL_OUTPUT
 //#define FAMG_FULL_OVERLAP
+
+#if defined FAMG_INNER_FIRST && defined FAMG_SINGLESTEP
+#error either FAMG_INNER_FIRST or FAMG_SINGLESTEP can be active
+#endif
 
 #endif
 
