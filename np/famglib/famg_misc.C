@@ -22,23 +22,58 @@
 #include <math.h>
 #include "famg_misc.h"
 
+#ifdef UG_DRAW
+extern "C"
+{
+#include <assert.h>
+#include "ugdevices.h"
+}
+
+#define FAMG_IOBUFFFER_LEN 10000
+static char testf[FAMG_IOBUFFFER_LEN];
+#endif
+
 /* RCS_ID
 $Header$
 */
 
 void FAMGError(ostrstream &OutputString)
 {
+#ifdef UG_DRAW
+	ostrstream ostr(testf,FAMG_IOBUFFFER_LEN);
+	
+	assert(OutputString.pcount()<FAMG_IOBUFFFER_LEN-20);
+	ostr << "Error !" << OutputString.rdbuf() << '\0';
+	UserWrite( ostr.str() );
+#else	
     cerr << "Error ! " << OutputString.rdbuf() << flush;
+#endif
 }
 
 void FAMGWarning(ostrstream &OutputString)
 {
+#ifdef UG_DRAW
+	ostrstream ostr(testf,FAMG_IOBUFFFER_LEN);
+	
+	assert(OutputString.pcount()<FAMG_IOBUFFFER_LEN-20);
+	ostr << "Warning !" << OutputString.rdbuf() << '\0';
+	UserWrite( ostr.str() );
+#else	
     cerr  << "Warning !" << OutputString.rdbuf() << flush;
+#endif
 }
 
 void FAMGWrite(ostrstream &OutputString)
 {
-    cout << OutputString.rdbuf() << flush;
+#ifdef UG_DRAW
+	ostrstream ostr(testf,FAMG_IOBUFFFER_LEN);
+	
+	assert(OutputString.pcount()<FAMG_IOBUFFFER_LEN);
+	ostr << OutputString.rdbuf() << '\0';
+	UserWrite( ostr.str() );
+#else	
+	cout << OutputString.rdbuf() << flush;
+#endif
 }
 
 double FAMGNorm(const int n, const double *v)

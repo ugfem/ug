@@ -820,6 +820,8 @@ INT InitFAMG ()
   if (CreateClass(ITER_CLASS_NAME ".famg",sizeof(NP_FAMG),FAMGConstruct))
     REP_ERR_RETURN (__LINE__);
 
-  return(0);
+  if (InitFAMGGraph())
+    REP_ERR_RETURN (__LINE__);
 
+  return(0);
 }

@@ -137,32 +137,9 @@ int FAMGSolveSystem(FAMG_Interface *interface, FAMG_Parameter *in_parameter)
 
     status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
-    FAMGDeconstructSimple();
+	FAMGDeconstruct();
 
-    FAMGConstructSimple(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->extra);
-
-    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
-
-    FAMGDeconstruct();
-    FAMGConstruct(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->vector[FAMG_TVA],interface->vector[FAMG_TVB],interface->extra);
-
-    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
-
-    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
-
-    FAMGDeconstructSimple();
-
-    FAMGConstructSimple(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->extra);
-
-    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
-
-    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
-
-     status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
-
-   FAMGDeconstruct();
-
-   FAMGDeconstructParameter();
+	FAMGDeconstructParameter();
  
     return status;
 }
