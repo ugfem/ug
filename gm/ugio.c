@@ -159,28 +159,28 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
-    if (ClearVectorClasses(theGrid)) return (1);
+    if (ClearVectorClasses(theGrid)) REP_ERR_RETURN(1);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     {
       if (ECLASS(theElement)!=RED_CLASS && ECLASS(theElement)!=GREEN_CLASS) continue;
-      if (SeedVectorClasses(theGrid,theElement)) return (1);
+      if (SeedVectorClasses(theGrid,theElement)) REP_ERR_RETURN(1);
     }
-    if (PropagateVectorClasses(theGrid)) return (1);
+    if (PropagateVectorClasses(theGrid)) REP_ERR_RETURN(1);
   }
 
   /* set NextVectorClasses */
-  if (ClearNextVectorClasses(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)))) return (1);
+  if (ClearNextVectorClasses(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)))) REP_ERR_RETURN(1);
   for (i=0; i<TOPLEVEL(theMG); i++)
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
-    if (ClearNextVectorClasses(theGrid)) return (1);
+    if (ClearNextVectorClasses(theGrid)) REP_ERR_RETURN(1);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     {
       if (NSONS(theElement)==0) continue;
       if (ECLASS(SON(theElement,0))!=RED_CLASS && ECLASS(SON(theElement,0))!=GREEN_CLASS) continue;
-      if (SeedNextVectorClasses(theGrid,theElement)) return (1);
+      if (SeedNextVectorClasses(theGrid,theElement)) REP_ERR_RETURN(1);
     }
-    if (PropagateNextVectorClasses(theGrid)) return (1);
+    if (PropagateNextVectorClasses(theGrid)) REP_ERR_RETURN(1);
   }
 
   return (0);
@@ -513,7 +513,7 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset)
   struct mgio_sondata *sonData;
 
   /* init */
-  if (theMG==NULL) return (1);
+  if (theMG==NULL) REP_ERR_RETURN(1);
   theHeap = MGHEAP(theMG);
 
   /* write refrules general */
@@ -525,11 +525,11 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset)
     rr_general.RefRuleOffset[i] = RefRuleOffset[i];
   }
   rr_general.nRules = nRules;
-  if (Write_RR_General(&rr_general)) return (1);
+  if (Write_RR_General(&rr_general)) REP_ERR_RETURN(1);
 
   /* write refrules */
   rr_rules = Refrule = (MGIO_RR_RULE *)GetTmpMem(theHeap,nRules*sizeof(MGIO_RR_RULE));
-  if (Refrule==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refrules\n",(int)nRules*sizeof(MGIO_RR_RULE)); return (1);}
+  if (Refrule==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refrules\n",(int)nRules*sizeof(MGIO_RR_RULE)); REP_ERR_RETURN(1);}
   for (t=0; t<TAGS; t++)
   {
     ug_refrule = RefRules[t];
@@ -558,7 +558,7 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset)
       ug_refrule++;
     }
   }
-  if (Write_RR_Rules(nRules,rr_rules)) return (1);
+  if (Write_RR_Rules(nRules,rr_rules)) REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -572,7 +572,7 @@ static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **So
 
   nfound = nmax[0] = 0;
   theRule = RefRules[TAG(theElement)] + REFINE(theElement);
-  if (GetAllSons(theElement,NonorderedSonList)) return (1);
+  if (GetAllSons(theElement,NonorderedSonList)) REP_ERR_RETURN(1);
   for (i=0; i<NSONS_OF_RULE(theRule); i++)
   {
     found=1;
@@ -658,7 +658,7 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
     {
       sonex |= (1<<i);
       if (WriteElementParInfo(theGrid,SonList[i],&refinement->pinfo[i]))
-        return (1);
+        REP_ERR_RETURN(1);
       for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++)
         if (NBELEM(SonList[i],j)!=NULL && EORPHAN(NBELEM(SonList[i],j)))
         {
@@ -694,11 +694,11 @@ static INT CheckNodeContext (ELEMENT *theElement, NODE ** NodeContext)
     if(NodeContext[i]!=NULL) noc = 1;
     else noc = 0;
     if(nor!=noc)
-      if (GetNodeContext(theElement,NodeContext)) return (1);
+      if (GetNodeContext(theElement,NodeContext)) REP_ERR_RETURN(1);
   }
   for (; i<CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement)+SIDES_OF_ELEM(theElement); i++)
     if (NodeContext[i]!=NULL)
-      if (GetNodeContext(theElement,NodeContext)) return (1);
+      if (GetNodeContext(theElement,NodeContext)) REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -743,12 +743,12 @@ static INT SetHierRefinement (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMEN
 
   /* sequential part */
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
-  if (GetNodeContext(theElement,NodeContext)) return (1);
-  if (GetOrderedSons(theElement,NodeContext,SonList,&nmax)) return (1);
-  if (RemoveOrphanSons(SonList,&nmax)) return(1);
+  if (GetNodeContext(theElement,NodeContext)) REP_ERR_RETURN(1);
+  if (GetOrderedSons(theElement,NodeContext,SonList,&nmax)) REP_ERR_RETURN(1);
+  if (RemoveOrphanSons(SonList,&nmax)) REP_ERR_RETURN(1);
   if (nmax==0) return (0);
-  if (SetRefinement (theGrid,theElement,NodeContext,SonList,nmax,refinement,RefRuleOffset)) return (1);
-  if (Write_Refinement (refinement,rr_rules)) return (1);
+  if (SetRefinement (theGrid,theElement,NodeContext,SonList,nmax,refinement,RefRuleOffset)) REP_ERR_RETURN(1);
+  if (Write_Refinement (refinement,rr_rules)) REP_ERR_RETURN(1);
 
   /* recursive call */
   for (i=0; i<nmax; i++)
@@ -757,7 +757,7 @@ static INT SetHierRefinement (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMEN
     if (theSon==NULL) continue;
     if (REFINE(theSon)!=NO_REFINEMENT)
       if (SetHierRefinement(theGrid,theSon,refinement,RefRuleOffset))
-        return (1);
+        REP_ERR_RETURN(1);
   }
 
   return (0);
@@ -769,12 +769,12 @@ static INT nHierElements (ELEMENT *theElement, INT *n)
   ELEMENT *SonList[MAX_SONS];
 
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
-  if (GetAllSons(theElement,SonList)) return (1);
-  if (RemoveOrphanSons(SonList,NULL)) return(1);
+  if (GetAllSons(theElement,SonList)) REP_ERR_RETURN(1);
+  if (RemoveOrphanSons(SonList,NULL)) REP_ERR_RETURN(1);
   if (SonList[0]==NULL) return (0);
   (*n)++;
   for (i=0; SonList[i]!=NULL; i++)
-    if (nHierElements(SonList[i],n)) return (1);
+    if (nHierElements(SonList[i],n)) REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -789,7 +789,7 @@ static INT WriteCG_Vertices (MULTIGRID *theMG, INT nov)
   theHeap = MGHEAP(theMG);
   n = nov*(MGIO_CG_POINT_SIZE);
   cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,n);
-  if (cg_point==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for cg_points\n",(int)n); return (1);}
+  if (cg_point==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for cg_points\n",(int)n); REP_ERR_RETURN(1);}
   for (i=0; i<=TOPLEVEL(theMG); i++)
     for (theVertex=PFIRSTVERTEX(GRID_ON_LEVEL(theMG,i)); theVertex!=NULL; theVertex=SUCCV(theVertex))
       if (ID(theVertex)<nov)
@@ -805,7 +805,7 @@ static INT WriteCG_Vertices (MULTIGRID *theMG, INT nov)
         }
       }
 
-  if (Write_CG_Points((int)nov,cg_point)) return (1);
+  if (Write_CG_Points((int)nov,cg_point)) REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -827,7 +827,7 @@ static INT WriteElementParInfo (GRID *theGrid,
   s=0;
   pinfo->prio_elem = EPRIO(theElement);
   pinfo->ncopies_elem = ENCOPIES(theElement);
-  if (n_max<pinfo->ncopies_elem) RETURN (1);
+  if (n_max<pinfo->ncopies_elem) REP_ERR_RETURN(1);
   if (pinfo->ncopies_elem>0)
   {
     pl = EPROCLIST(theElement);
@@ -840,7 +840,7 @@ static INT WriteElementParInfo (GRID *theGrid,
     theNode = CORNER(theElement,k);
     pinfo->prio_node[k] = PRIO(theNode);
     pinfo->ncopies_node[k] = NCOPIES(theNode);
-    if (n_max<pinfo->ncopies_node[k]+s) RETURN (1);
+    if (n_max<pinfo->ncopies_node[k]+s) REP_ERR_RETURN(1);
     if (pinfo->ncopies_node[k]>0)
     {
       pl = PROCLIST(theNode);
@@ -854,7 +854,7 @@ static INT WriteElementParInfo (GRID *theGrid,
     theVertex = MYVERTEX(CORNER(theElement,k));
     pinfo->prio_vertex[k] = VXPRIO(theVertex);
     pinfo->ncopies_vertex[k] = VXNCOPIES(theVertex);
-    if (n_max<pinfo->ncopies_vertex[k]+s) RETURN (1);
+    if (n_max<pinfo->ncopies_vertex[k]+s) REP_ERR_RETURN(1);
     if (pinfo->ncopies_vertex[k]>0)
     {
       pl = VXPROCLIST(theVertex);
@@ -874,7 +874,7 @@ static INT WriteElementParInfo (GRID *theGrid,
       v = EDVECTOR(theEdge);
       pinfo->prio_edge[k] = PRIO(v);
       pinfo->ncopies_edge[k] = NCOPIES(v);
-      if (n_max<pinfo->ncopies_edge[k]+s) RETURN (1);
+      if (n_max<pinfo->ncopies_edge[k]+s) REP_ERR_RETURN(1);
       pinfo->ed_ident[k] = GID(v);
       if (pinfo->ncopies_edge[k]>0) {
         pl = PROCLIST(v);
@@ -892,7 +892,7 @@ static INT WriteElementParInfo (GRID *theGrid,
                       CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
     pinfo->prio_edge[k] = PRIO(theEdge);
     pinfo->ncopies_edge[k] = NCOPIES(theEdge);
-    if (n_max<pinfo->ncopies_edge[k]+s) RETURN (1);
+    if (n_max<pinfo->ncopies_edge[k]+s) REP_ERR_RETURN(1);
     if (pinfo->ncopies_edge[k]>0) {
       pl = PROCLIST(theEdge);
       for (i=0,j=2; i<pinfo->ncopies_edge[k]; i++,j+=2)
@@ -911,7 +911,7 @@ static INT WriteElementParInfo (GRID *theGrid,
 #else
 static INT WriteElementParInfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pinfo)
 {
-  return (1);
+  REP_ERR_RETURN(1);
 }
 #endif
 
@@ -945,7 +945,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 #endif
 
   /* check */
-  if (theMG==NULL) return (1);
+  if (theMG==NULL) REP_ERR_RETURN(1);
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap);
 
@@ -958,46 +958,45 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   {
     UserWriteF("WARNING: multigrid already saved as %s\n",MG_FILENAME(theMG));
   }
-
   /* open file */
   nparfiles = procs;
   if (autosave)
   {
     if (name==NULL)
     {
-      if (type!=NULL) return (1);
+      if (type!=NULL) REP_ERR_RETURN(1);
       strcpy(filename,MG_FILENAME(theMG));
-      f = strtok(filename,".");       if (f==NULL) return (1);
-      s = strtok(NULL,".");           if (s==NULL) return (1);
-      l = strtok(NULL,".");           if (l==NULL) return (1);
-      l = strtok(NULL,".");           if (l==NULL) return (1);
-      l = strtok(NULL,".");           if (l==NULL) return (1);
+      f = strtok(filename,".");       if (f==NULL) REP_ERR_RETURN(1);
+      s = strtok(NULL,".");           if (s==NULL) REP_ERR_RETURN(1);
+      l = strtok(NULL,".");           if (l==NULL) REP_ERR_RETURN(1);
+      l = strtok(NULL,".");           if (l==NULL) REP_ERR_RETURN(1);
+      l = strtok(NULL,".");           if (l==NULL) REP_ERR_RETURN(1);
       strtok(l,"/");
-      if (sscanf(s,"%d",&lastnumber)!=1) return (1);if (lastnumber<0) return (1);lastnumber++;
+      if (sscanf(s,"%d",&lastnumber)!=1) REP_ERR_RETURN(1);if (lastnumber<0) REP_ERR_RETURN(1);lastnumber++;
       strcpy(itype,l);
       sprintf(buf,".%04d",lastnumber);
       strcat(filename,buf);
     }
     else
     {
-      if (type==NULL) return (1);
+      if (type==NULL) REP_ERR_RETURN(1);
       strcpy(itype,type);
-      if (name==NULL) return (1);
+      if (name==NULL) REP_ERR_RETURN(1);
       strcpy(filename,name);
       strcat(filename,".0000");
     }
   }
   else
   {
-    if (type==NULL) return (1);
+    if (type==NULL) REP_ERR_RETURN(1);
     strcpy(itype,type);
-    if (name==NULL) return (1);
+    if (name==NULL) REP_ERR_RETURN(1);
     strcpy(filename,name);
   }
   if (strcmp(itype,"dbg")==0) mode = BIO_DEBUG;
   else if (strcmp(itype,"asc")==0) mode = BIO_ASCII;
   else if (strcmp(itype,"bin")==0) mode = BIO_BIN;
-  else return (1);
+  else REP_ERR_RETURN(1);
   sprintf(buf,".ug.mg.");
   strcat(filename,buf);
   strcat(filename,itype);
@@ -1022,7 +1021,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   if (error == -1)
   {
     UserWriteF("SaveMultiGrid_SPF(): error during file/directory creation\n");
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (MGIO_PARFILE)
   {
@@ -1030,11 +1029,11 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
     strcat(filename,buf);
   }
 #endif
-  if (Write_OpenMGFile (filename)) return (1);
+  if (Write_OpenMGFile (filename)) REP_ERR_RETURN(1);
 
   /* write general information */
   theBVP = MG_BVP(theMG);
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) REP_ERR_RETURN(1);
   mg_general.mode                 = mode;
   mg_general.dim                  = DIM;
   Broadcast(&MG_MAGIC_COOKIE(theMG),sizeof(INT));
@@ -1062,11 +1061,11 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   mg_general.nparfiles = nparfiles;
   mg_general.me = me;
 
-  if (Write_MG_General(&mg_general)) return (1);
+  if (Write_MG_General(&mg_general)) REP_ERR_RETURN(1);
 
   /* write information about general elements */
   ge_general.nGenElement = TAGS;
-  if (Write_GE_General(&ge_general)) return (1);
+  if (Write_GE_General(&ge_general)) REP_ERR_RETURN(1);
   for (i=0; i<TAGS; i++)
   {
     ge_element[i].tag = i;
@@ -1091,10 +1090,10 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       ge_element[i].nSide = 0;
     }
   }
-  if (Write_GE_Elements(TAGS,ge_element)) return (1);
+  if (Write_GE_Elements(TAGS,ge_element)) REP_ERR_RETURN(1);
 
   /* write information about refrules used */
-  if (Write_RefRules(theMG,RefRuleOffset)) return (1);
+  if (Write_RefRules(theMG,RefRuleOffset)) REP_ERR_RETURN(1);
 
   i = OrphanCons(theMG);
   if (i)
@@ -1105,7 +1104,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   }
 
   /* renumber objects */
-  if (RenumberMultiGrid (theMG,&nbe,&nie,&nbv,&niv,&foid,&non)) {UserWriteF("ERROR: cannot renumber multigrid\n"); return (1);}
+  if (RenumberMultiGrid (theMG,&nbe,&nie,&nbv,&niv,&foid,&non)) {UserWriteF("ERROR: cannot renumber multigrid\n"); REP_ERR_RETURN(1);}
 
   /* write general information about coarse grid */
   theGrid = GRID_ON_LEVEL(theMG,0);
@@ -1115,7 +1114,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   cg_general.nElement = nbe+nie;
   cg_general.nBndElement = nbe;
   cg_general.nInnerElement = nie;
-  if (Write_CG_General(&cg_general)) return (1);
+  if (Write_CG_General(&cg_general)) REP_ERR_RETURN(1);
 
 #ifdef ModelP
   /* this proc has no elements */
@@ -1125,14 +1124,14 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
     ReleaseTmpMem(theHeap);
 
     /* close file */
-    if (CloseMGFile ()) return (1);
+    if (CloseMGFile ()) REP_ERR_RETURN(1);
 
     return(0);
   }
 #endif
 
   /* write coarse grid points */
-  if (WriteCG_Vertices(theMG,nbv+niv)) return (1);
+  if (WriteCG_Vertices(theMG,nbv+niv)) REP_ERR_RETURN(1);
 
   /* write mapping: node-id --> vertex-id for orphan-nodes, if(MGIO_PARFILE) */
   if (MGIO_PARFILE)
@@ -1144,17 +1143,17 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
         if (USED(theNode))
           vidlist[ID(theNode)+2-foid] = ID(MYVERTEX(theNode));
-    if (Bio_Write_mint((int)(2+non),vidlist)) return(1);
+    if (Bio_Write_mint((int)(2+non),vidlist)) REP_ERR_RETURN(1);
   }
 
   /* write orphan elements */
   n = cg_general.nElement; hr_max=0;
   cg_element = (MGIO_CG_ELEMENT*)GetTmpMem(theHeap,n*MGIO_CG_ELEMENT_SIZE);
-  if (cg_element==NULL)   {UserWriteF("ERROR: cannot allocate %d bytes for cg_elements\n",(int)n*MGIO_CG_ELEMENT_SIZE); return (1);}
+  if (cg_element==NULL)   {UserWriteF("ERROR: cannot allocate %d bytes for cg_elements\n",(int)n*MGIO_CG_ELEMENT_SIZE); REP_ERR_RETURN(1);}
   if (MGIO_PARFILE)
   {
     ActProcListPos = ProcList = (unsigned short*)GetTmpMem(theHeap,PROCLISTSIZE*sizeof(unsigned short));
-    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(int)); return (1);}
+    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(int)); REP_ERR_RETURN(1);}
   }
   else
     ActProcListPos = ProcList = NULL;
@@ -1179,7 +1178,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       /* --- */
       cge->ge = TAG(theElement);
       nhe=0;
-      if (nHierElements (theElement,&nhe)) return (1);
+      if (nHierElements (theElement,&nhe)) REP_ERR_RETURN(1);
       hr_max = MAX(hr_max,nhe);
       cge->nhe = nhe;
       for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
@@ -1194,29 +1193,36 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       /* increment counters */
       i++; id++;                                                                                                        /* id this is the id of theElement, according to RenumberEments (ugm.c) */
     }
-  if (Write_CG_Elements((int)i,cg_element)) return (1);
+  if (Write_CG_Elements((int)i,cg_element)) REP_ERR_RETURN(1);
 
   /* write general bnd information */
-  if (Bio_Jump_From ()) return (1);
+  if (Bio_Jump_From ()) REP_ERR_RETURN(1);
   bd_general.nBndP = nbv;
-  if (Write_BD_General (&bd_general)) return (1);
+  if (Write_BD_General (&bd_general)) REP_ERR_RETURN(1);
 
   /* write bnd information */
-  BndPList = (BNDP**)GetTmpMem(theHeap,nbv*sizeof(BNDP*));
-  if (BndPList==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for BndPList\n",(int)nbv*sizeof(BNDP*)); return (1);}
-  if (procs>1) i=TOPLEVEL(theMG);
-  else i=0;
-  for (level=0; level<=i; level++)
-    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,level)); theNode!=NULL; theNode=SUCCN(theNode))
-      if (USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==BVOBJ)                            /* see ugm.c: RenumberVertices */
-      {
-        id = ID(MYVERTEX(theNode));
-        if (id<0 || id>=nbv) return (1);
-        BndPList[id] = V_BNDP(MYVERTEX(theNode));
-        SETUSED(MYVERTEX(theNode),0);
-      }
-  if (Write_PBndDesc (nbv,BndPList)) return (1);
-  if (Bio_Jump_To ()) return (1);
+  if (nbv > 0) {
+    BndPList = (BNDP**)GetTmpMem(theHeap,nbv*sizeof(BNDP*));
+    if (BndPList==NULL) {
+      UserWriteF("ERROR: cannot allocate %d bytes for BndPList\n",
+                 (int)nbv*sizeof(BNDP*));
+      REP_ERR_RETURN(1);
+    }
+    if (procs>1) i=TOPLEVEL(theMG);
+    else i=0;
+    for (level=0; level<=i; level++)
+      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,level));
+           theNode!=NULL; theNode=SUCCN(theNode))
+        if (USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==BVOBJ) {
+          /* see ugm.c: RenumberVertices */
+          id = ID(MYVERTEX(theNode));
+          if (id<0 || id>=nbv) REP_ERR_RETURN(1);
+          BndPList[id] = V_BNDP(MYVERTEX(theNode));
+          SETUSED(MYVERTEX(theNode),0);
+        }
+    if (Write_PBndDesc (nbv,BndPList)) REP_ERR_RETURN(1);
+  }
+  if (Bio_Jump_To ()) REP_ERR_RETURN(1);
 
   /* write parinfo of coarse-grid */
   if (MGIO_PARFILE)
@@ -1226,14 +1232,14 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
         if (EORPHAN(theElement))
         {
-          if (WriteElementParInfo(theGrid, theElement,&cg_pinfo)) RETURN (1);
-          if (Write_pinfo (TAG(theElement),&cg_pinfo)) RETURN (1);
+          if (WriteElementParInfo(theGrid, theElement,&cg_pinfo)) REP_ERR_RETURN(1);
+          if (Write_pinfo (TAG(theElement),&cg_pinfo)) REP_ERR_RETURN(1);
         }
   }
 
   /* save refinement */
   refinement = (MGIO_REFINEMENT *)GetTmpMem(theHeap,(hr_max+1)*MGIO_REFINEMENT_SIZE);                   /* size according to procs==1 or procs>1 (see mgio.h) */
-  if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refinement\n",(int)hr_max*sizeof(MGIO_REFINEMENT)); return (1);}
+  if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refinement\n",(int)hr_max*sizeof(MGIO_REFINEMENT)); REP_ERR_RETURN(1);}
   if (procs>1) tl=TOPLEVEL(theMG);
   else tl=0;
   id=0;
@@ -1244,7 +1250,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       if (!EORPHAN(theElement)) continue;
       assert(id==ID(theElement));
       if (SetHierRefinement(theGrid,theElement,refinement,RefRuleOffset))
-        return (1);
+        REP_ERR_RETURN(1);
       id++;
     }
   }
@@ -1253,7 +1259,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   ReleaseTmpMem(theHeap);
 
   /* close file */
-  if (CloseMGFile ()) return (1);
+  if (CloseMGFile ()) REP_ERR_RETURN(1);
 
   /* saved */
   MG_SAVED(theMG) = 1;
@@ -1267,11 +1273,11 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT 
   /* check name convention */
   if (name==NULL || strcmp(name+strlen(name)-4,".scr")!=0)
   {
-    if (SaveMultiGrid_SPF (theMG,name,type,comment,autosave)) return (1);
+    if (SaveMultiGrid_SPF (theMG,name,type,comment,autosave)) REP_ERR_RETURN(1);
   }
   else
   {
-    if (SaveMultiGrid_SCR (theMG,name,comment)) return (1);
+    if (SaveMultiGrid_SCR (theMG,name,comment)) REP_ERR_RETURN(1);
   }
   return (0);
 }
@@ -1594,10 +1600,10 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   /*PRINTDEBUG(gm,0,(PFMT "InsertLocalTree(): level=%d elem=" EID_FMTX "\n",me,LEVEL(theGrid),EID_PRTX(theElement)));*/
 
   /* read refinement */
-  if (Read_Refinement(ref,rr_rules)) RETURN (1);
+  if (Read_Refinement(ref,rr_rules)) REP_ERR_RETURN(1);
 
   /* init */
-  if (ref->refrule==-1) RETURN (1);
+  if (ref->refrule==-1) REP_ERR_RETURN(1);
   SETREFINE(theElement,ref->refrule-RefRuleOffset[TAG(theElement)]);
   SETREFINECLASS(theElement,ref->refclass);
   SETMARK(theElement,ref->refrule-RefRuleOffset[TAG(theElement)]);
@@ -1636,7 +1642,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       else
       {
         NodeList[i] = CreateSonNode(upGrid,CORNER(theElement,i));
-        if (NodeList[i]==NULL) RETURN (1);
+        if (NodeList[i]==NULL) REP_ERR_RETURN(1);
         ID(NodeList[i]) = ref->newcornerid[r_index];
       }
     }
@@ -1665,7 +1671,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     n0 = CORNER_OF_EDGE(theElement,i-offset,0);
     n1 = CORNER_OF_EDGE(theElement,i-offset,1);
     theEdge = GetEdge(CORNER(theElement,n0),CORNER(theElement,n1));
-    if (theEdge==NULL) RETURN (1);
+    if (theEdge==NULL) REP_ERR_RETURN(1);
     NodeList[i] = MIDNODE(theEdge);
     if (NodeList[i]==NULL)
     {
@@ -1680,7 +1686,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       else
       {
         NodeList[i] = CreateMidNode(upGrid,theElement,i-offset);
-        if (NodeList[i]==NULL) RETURN (1);
+        if (NodeList[i]==NULL) REP_ERR_RETURN(1);
         ID(NodeList[i]) = ref->newcornerid[r_index];
         HEAPFAULT(NodeList[i]);
       }
@@ -1720,7 +1726,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     if (NodeList[i]==NULL)
     {
       NodeList[i] = CreateSideNode(upGrid,theElement,i-offset);
-      if (NodeList[i]==NULL) RETURN (1);
+      if (NodeList[i]==NULL) REP_ERR_RETURN(1);
       ID(NodeList[i]) = ref->newcornerid[r_index];
     }
     else
@@ -1741,7 +1747,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     }
     else
       NodeList[i] = CreateCenterNode(upGrid,theElement);
-    if (NodeList[i]==NULL) RETURN (1);
+    if (NodeList[i]==NULL) REP_ERR_RETURN(1);
     SETNTYPE(NodeList[i],CENTER_NODE);
     ID(NodeList[i]) = ref->newcornerid[r_index++];
   }
@@ -1768,7 +1774,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     for (j=0; j<CORNERS_OF_TAG(SonData->tag); j++)
       SonNodeList[j] = NodeList[SonData->corners[j]];
     theSonList[i] = CreateElement(upGrid,SonData->tag,type,SonNodeList,theElement,1);
-    if (theSonList[i]==NULL) RETURN (1);
+    if (theSonList[i]==NULL) REP_ERR_RETURN(1);
     SETECLASS(theSonList[i],ref->refclass);
     SETSUBDOMAIN(theSonList[i],SUBDOMAIN(theElement));
   }
@@ -1801,8 +1807,8 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
         theSonElem[k++] = theSonList[j];
     }
     theSonElem[k] = NULL;
-    if (Get_Sons_of_ElementSide (theElement,i,&Sons_of_Side,theSonElem,SonSides,0,1)) RETURN (1);
-    if (Connect_Sons_of_ElementSide(UPGRID(theGrid),theElement,i,Sons_of_Side,theSonElem,SonSides,0,1)) RETURN (1);
+    if (Get_Sons_of_ElementSide (theElement,i,&Sons_of_Side,theSonElem,SonSides,0,1)) REP_ERR_RETURN(1);
+    if (Connect_Sons_of_ElementSide(UPGRID(theGrid),theElement,i,Sons_of_Side,theSonElem,SonSides,0,1)) REP_ERR_RETURN(1);
   }
 
   /* connect to orphan-neighbors */
@@ -1827,7 +1833,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   for (i=0; i<theRule->nsons; i++)
     if (sonRefined & (1<<i))
     {
-      if (InsertLocalTree (upGrid,theSonList[i],ref,RefRuleOffset)) RETURN (1);
+      if (InsertLocalTree (upGrid,theSonList[i],ref,RefRuleOffset)) REP_ERR_RETURN(1);
     }
     else if (theSonList[i] != NULL)
     {
@@ -2065,9 +2071,21 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (Read_BD_General (&bd_general))                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read bnd points */
-  BndPList = (BNDP**)GetTmpMem(theHeap,bd_general.nBndP*sizeof(BNDP*));
-  if (BndPList==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for BndPList\n",(int)bd_general.nBndP*sizeof(BNDP*)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (Read_PBndDesc (theBVP,theHeap,bd_general.nBndP,BndPList))           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (bd_general.nBndP > 0) {
+    BndPList = (BNDP**)GetTmpMem(theHeap,bd_general.nBndP*sizeof(BNDP*));
+    if (BndPList==NULL) {
+      UserWriteF("ERROR: cannot allocate %d bytes for BndPList\n",
+                 (int)bd_general.nBndP*sizeof(BNDP*));
+      CloseMGFile ();
+      DisposeMultiGrid(theMG);
+      return (NULL);
+    }
+    if (Read_PBndDesc (theBVP,theHeap,bd_general.nBndP,BndPList)) {
+      CloseMGFile ();
+      DisposeMultiGrid(theMG);
+      return (NULL);
+    }
+  }
 
   /* create and insert coarse mesh: prepare */
   theMesh.nBndP = cg_general.nBndPoint;
@@ -2403,19 +2421,19 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
   if ((PlotProcInfo=GetElementValueEvalProc(plotprocName))==NULL)
   {
     PrintErrorMessage('E',"SaveCnomGridAndValues","can't find ElementValueEvalProc");
-    return(1);
+    REP_ERR_RETURN(1);
   }
 
   stream = fopen(docName,"w");
   if (stream==NULL)
   {
     PrintErrorMessage('E',"SaveCnomGridAndValues","can't open file");
-    return(1);
+    REP_ERR_RETURN(1);
   }
 
   if (PlotProcInfo->PreprocessProc!=NULL)
     if ((*PlotProcInfo->PreprocessProc)(NULL,theMG)!=0)
-      return(1);
+      REP_ERR_RETURN(1);
 
   j=TOPLEVEL(theMG);
 
@@ -2560,7 +2578,7 @@ INT InitUgio ()
   if (ReadSearchingPaths(DEFAULTSFILENAME,"gridpaths")==0)
     gridpaths_set = TRUE;
 
-  if (MGIO_Init ()) return (1);
+  if (MGIO_Init ()) return(1);
 
   return (0);
 }
