@@ -75,13 +75,20 @@ enum Priorities
    ((prio == PrioGhost) ? 0 : (prio == PrioBorder) ? 1 : \
       (prio == PrioMaster) ? 2 : -1))
 
-#else
+
+/* map pointer to structure onto a pointer to its DDD_HDR */
+#define PARHDR(obj)    (&((obj)->ddd))
+
+
+#else   /* not ModelP */
 
 /* define the number of prioities for objects */
 #define ELEMENTPRIOS            1
 #define NODEPRIOS                       1
 #define VECTORPRIOS                     1
 #define VERTEXPRIOS                     1
+
+
 
 #endif
 
@@ -105,6 +112,7 @@ extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
 /*                                                                          */
 /****************************************************************************/
 
-DOUBLE UG_GlobalSumDOUBLE (DOUBLE x);
+DOUBLE UG_GlobalSumDOUBLE (DOUBLE);
+INT UG_GlobalMaxINT (INT);
 
 #endif /* __PARGM_H__ */
