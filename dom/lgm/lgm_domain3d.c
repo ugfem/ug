@@ -32,6 +32,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <float.h>
 
 #include "compiler.h"
 #include "heaps.h"
@@ -46,7 +48,6 @@
 #include "lgm_gginterface.h"
 
 #include "ugdevices.h"
-#include "values.h"
 
 /****************************************************************************/
 /*																			*/
@@ -2785,9 +2786,9 @@ static INT CASE1(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam, DOUBLE *d
    * Falls der Punkt genau auf einer Kante zwischen 2 Dreiecken liegt,
    * ist es egal welches genommen wird
    */
-  dist = MAXDOUBLE;
+  dist = DBL_MAX;
   mi = -1;
-  d[0] = MAXDOUBLE;
+  d[0] = DBL_MAX;
   for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
   {
     NormalVector(LGM_SURFACE_TRIANGLE(theSurface,i), ne);
@@ -2834,7 +2835,7 @@ static INT CASE2(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam, DOUBLE *n
    */
 
   /* kuerzeste Abstand zur einem Dreieck */
-  min = MAXDOUBLE;
+  min = DBL_MAX;
   mi1 = -1;
   for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
   {
@@ -2869,7 +2870,7 @@ static INT CASE2(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam, DOUBLE *n
   /* kuerzeste Abstand zur eine Kante */
   /*	mi1 = -1;*/
   mi2 = -1;
-  min = MAXDOUBLE;
+  min = DBL_MAX;
   for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
   {
     NormalVector(LGM_SURFACE_TRIANGLE(theSurface,i), ne);
@@ -2998,8 +2999,8 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE
   DOUBLE aa[4],bb[2],cc[2];
   DOUBLE lam[3], dist, min_dist, new_lam[3], A, B, m, point[3], dist_vec[3],pp0[3], pp1[3], new_global[3];
 
-  min = MAXINT;
-  min_dist = MAXDOUBLE;
+  min = INT_MAX;
+  min_dist = DBL_MAX;
   dist_i = -1;
   mi = -1;
 
@@ -3031,7 +3032,7 @@ INT Project2Surface(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUB
   DOUBLE *p0,*p1,*p2;
   DOUBLE lam[3], dist, min_dist;
 
-  dist = MAXDOUBLE;
+  dist = DBL_MAX;
   mi = -1;
   for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
   {
@@ -3067,9 +3068,9 @@ DOUBLE Check_Surface(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
   INT i, mi;
   DOUBLE *p0,*p1,*p2, lam[3], lam1[3];
 
-  dist = MAXDOUBLE;
+  dist = DBL_MAX;
   mi = -1;
-  d = MAXDOUBLE;
+  d = DBL_MAX;
 
   lam[0] = -1.0;
   lam[1] = -1.0;
@@ -5383,7 +5384,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   d =  1000000.0;
 
   count = 0;
-  min_d = MAXDOUBLE;
+  min_d = DBL_MAX;
   if (n==3)
     for (i=0; i<LGM_BNDP_N(theBndP1); i++)
       for (j=0; j<LGM_BNDP_N(theBndP2); j++)
@@ -5425,7 +5426,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   if(count>1)
   {
     count = 0;
-    min_d = MAXDOUBLE;
+    min_d = DBL_MAX;
     for (i=0; i<LGM_BNDP_N(theBndP1); i++)
       for (j=0; j<LGM_BNDP_N(theBndP2); j++)
         for (k=0; k<LGM_BNDP_N(theBndP3); k++)
@@ -5443,7 +5444,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
               d = E_Distance(global, globalnew);
             }
             else
-              d = MAXDOUBLE;
+              d = DBL_MAX;
             if(d<min_d)
             {
               if( Check_Local_Coord(theSurface, local) )
@@ -5676,7 +5677,7 @@ static DOUBLE Nearest_Surface(LGM_SURFACE **Surfaces, LGM_SURFACE **theNewSurfac
   INT i, j, mi;
   LGM_SURFACE *theSurface;
 
-  min_d = MAXDOUBLE;
+  min_d = DBL_MAX;
   for(i=0; i<count; i++)
   {
     theSurface = Surfaces[i];
