@@ -1147,6 +1147,7 @@ INT DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT 
 
   if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
   {
+    assert(NBELEM(Elem0,Side0)==Elem1 && NBELEM(Elem1,Side1)==Elem0);
     Vector0 = SVECTOR(Elem0,Side0);
     Vector1 = SVECTOR(Elem1,Side1);
     if (Vector0 == Vector1)
@@ -1505,35 +1506,19 @@ INT GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
   EDGE *theEdge;
-  INT i,j,n;
+  INT i;
 
   *cnt = 0;
-  if (DIM==3)
+  for (i=0; i<EDGES__OF_ELEM(theElement); i++)
   {
-    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-      for (j=i+1; j<CORNERS_OF_ELEM(theElement); j++)
-      {
-        theEdge = GetEdge(CORNER(theElement,i),CORNER(theElement,j));
-        if (theEdge==NULL) continue;
-        if (EDVECTOR(theEdge) != NULL)
-          vList[(*cnt)++] = EDVECTOR(theEdge);
-      }
-    return(GM_OK);
-  }
-  if (DIM==2)
-  {
-    n = CORNERS_OF_ELEM(theElement);
-    for (i=0; i<n; i++)
-    {
-      theEdge = GetEdge(CORNER(theElement,i),CORNER(theElement,(i+1)%n));
-      if (theEdge==NULL) continue;
-      if (EDVECTOR(theEdge) != NULL)
-        vList[(*cnt)++] = EDVECTOR(theEdge);
-    }
-    return(GM_OK);
+    theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
+                      CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+    if (theEdge==NULL) continue;
+    if (EDVECTOR(theEdge) != NULL)
+      vList[(*cnt)++] = EDVECTOR(theEdge);
   }
 
-  return (0);
+  return(GM_OK);
 }
 
 /****************************************************************************/
