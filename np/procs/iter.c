@@ -5344,7 +5344,7 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     }
     assert(i==n);
     for (i=0; i<n; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
-    for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PrioMaster);
+    for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PRIO(vlist[i]));
     ReleaseTmpMem(theHeap,MarkKey);
   }
   if (MD_IS_SCALAR(A))
