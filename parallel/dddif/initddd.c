@@ -113,7 +113,7 @@ DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
        NodeIF, NodeAllIF;
 DDD_IF BorderVectorIF, BorderVectorSymmIF,
        OuterVectorIF, OuterVectorSymmIF,
-       VectorVIF, VectorVAllIF, VectorAllIF;
+       VectorVIF, VectorVAllIF, VectorIF;
 DDD_IF VertexIF;
 #ifdef __THREEDIM__
 DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeVHIF,
@@ -781,10 +781,9 @@ static void ddd_IfInit (void)
   DDD_IFSetName(VectorVAllIF, "VectorVAllIF: Master/Border/VGhost/VHGhost->Master/Border");
 
   A[0] = PrioMaster;
-  B[0] = PrioBorder; B[1] = PrioVGhost;
-  B[2] = PrioVHGhost; B[3] = PrioHGhost;
-  VectorAllIF = DDD_IFDefine(1,O,1,A,4,B);
-  DDD_IFSetName(VectorAllIF, "VectorAllIF: Master->Border/VGhost/VHGhost/HGhost");
+  B[0] = PrioVGhost; B[1] = PrioVHGhost; B[2] = PrioHGhost;
+  VectorIF = DDD_IFDefine(1,O,1,A,3,B);
+  DDD_IFSetName(VectorIF, "VectorIF: Master->VGhost/VHGhost/HGhost");
 
   /* define vertex interfaces */
   O[0] = TypeIVertex; O[1] = TypeBVertex;
@@ -1030,6 +1029,9 @@ int InitDDD (void)
   /* we are using varsized DDD objects, turn warnings off */
   DDD_SetOption(OPT_WARNING_VARSIZE_OBJ, OPT_OFF);
   DDD_SetOption(OPT_WARNING_SMALLSIZE, OPT_OFF);
+
+  /* no internal free list */
+  DDD_SetOption(OPT_CPLMGR_USE_FREELIST, OPT_OFF);
 
   /* show messages during transfer, for debugging */
   DDD_SetOption(OPT_DEBUG_XFERMESGS, OPT_OFF);
