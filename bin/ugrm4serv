@@ -52,6 +52,7 @@ rm -f ugprep4serv ugmakeman ugrecurse ugsetcvsaccess ugmakealiases;
 if test $# -ge 1 -o "$1" != "-help"
 then
 	rm -r -f  ${UGROOT}/include
+	rm -r -f  $UGROOT/parallel/chaco
 	cd ${UGROOT}/doc
 	gzip applmanual.ps
 	gzip progmanual.ps
