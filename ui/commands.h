@@ -91,6 +91,7 @@
 INT              InitCommands                   (void);
 
 FILE            *GetProtocolFile                (void);
+INT                      QualityElement                 (MULTIGRID *theMG, ELEMENT *theElement);
 
 MULTIGRID       *GetCurrentMultigrid    (void);
 INT              SetCurrentMultigrid    (MULTIGRID *theMG);
