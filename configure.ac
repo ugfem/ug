@@ -202,6 +202,7 @@ AC_CONFIG_FILES([Makefile
 		 graphics/uggraph/Makefile
 		 graphics/grape/Makefile
 		 lib/Makefile
+		 lib/ugdata/Makefile
 		 low/Makefile
 		 np/Makefile
 		 np/algebra/Makefile

@@ -1,5 +1,7 @@
 # $Id$
 
+SUBDIRS = ugdata
+
 if BUILD2D
   LIB_2D = libug2.la
 else
