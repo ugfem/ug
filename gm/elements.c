@@ -1,8 +1,8 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  elements.c													*/
+/*                                                                          */
+/* File:      elements.c                                                    */
 /*																			*/
 /* Purpose:   implements a general element concept							*/
 /*																			*/
@@ -38,7 +38,7 @@ USING_UG_NAMESPACE
 USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
-/*																			*/
+/*													*/
 /* defines in the following order											*/
 /*																			*/
 /*		  compile time constants defining static data size (i.e. arrays)	*/
@@ -197,17 +197,12 @@ static GENERAL_ELEMENT def_hexahedron = {
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*D
-   PreProcessElementDescription - compute index fields for a given element type
+/** \brief Compute index fields for a given element type
 
-   SYNOPSIS:
-   static INT PreProcessElementDescription (GENERAL_ELEMENT *el);
-
-   PARAMETERS:
-   .  el - pointer to an element description
+   \param el pointer to an element description
 
    STRUCTURES:
-   .vb
+   \verbatim
    typedef struct {
     INT tag;                                // element type to be defined
 
@@ -239,17 +234,17 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
     INT side_with_edge[MAX_EDGES_OF_ELEM][MAX_SIDES_OF_EDGE];
     INT corner_of_side_inv[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_ELEM];
     INT edges_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
-        INT corner_of_oppedge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
-        INT corner_opp_to_side[MAX_SIDES_OF_ELEM];
-        INT opposite_edge[MAX_EDGES_OF_ELEM];
-        INT side_opp_to_corner[MAX_CORNERS_OF_ELEM];
-        INT edge_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
-        INT edge_of_two_sides[MAX_SIDES_OF_ELEM][MAX_SIDES_OF_ELEM];
+    INT corner_of_oppedge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
+    INT corner_opp_to_side[MAX_SIDES_OF_ELEM];
+    INT opposite_edge[MAX_EDGES_OF_ELEM];
+    INT side_opp_to_corner[MAX_CORNERS_OF_ELEM];
+    INT edge_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
+    INT edge_of_two_sides[MAX_SIDES_OF_ELEM][MAX_SIDES_OF_ELEM];
 
    } GENERAL_ELEMENT;
-   .ve
+   \endverbatim
 
-   DESCRIPTION:
+
    This function processes a topology description of an element type and computes
    index mappings. Currently descriptions for triangles,
    quadrilaterals and tetrahedra are included. Hexahedral elements have been implemented
@@ -259,8 +254,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    as well as offsets in the 'refs' array of the 'generic_element'! For complete filling
    you will have to call 'ProcessElementDescription'
 
-   `Only the following components of the 'GENERAL_ELEMENT' structure must be provided.
-   All other components are derived from the given information.`
+   Only the following components of the GENERAL_ELEMENT structure must be provided.
+   All other components are derived from the given information.
 
    . tag - New tag for the elememt which will be delivered by the 'TAG' macro.
    . max_sons_of_elem - Max number of sons allowed for that element type.
@@ -283,11 +278,11 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
    'ELEMENT', 'ProcessElementDescription'.
 
-   RETURN VALUE:
-   INT
-   .n    GM_OK if ok
-   .n    GM_ERROR if error occured.
-   D*/
+   \return <ul>
+   <li> GM_OK if ok </li>
+   <li> GM_ERROR if error occured </li>
+   <ul>
+ */
 /****************************************************************************/
 
 static INT PreProcessElementDescription (GENERAL_ELEMENT *el)
@@ -743,18 +738,13 @@ static INT PreProcessElementDescription (GENERAL_ELEMENT *el)
 }
 
 /****************************************************************************/
-/*D
-   ProcessElementDescription - compute offsets and size for a given element type
+/** \brief Compute offsets and size for a given element type
 
-   SYNOPSIS:
-   static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el);
-
-   PARAMETERS:
-   .  theMG - multigrid for format dependent pointer offsets in elements
-   .  el - pointer to an element description
+   \param theMG multigrid for format dependent pointer offsets in elements
+   \param el    pointer to an element description
 
    STRUCTURES:
-   .vb
+   \verbatim
    typedef struct {
     INT tag;                                // element type to be defined
 
@@ -794,9 +784,8 @@ static INT PreProcessElementDescription (GENERAL_ELEMENT *el)
         INT edge_of_two_sides[MAX_SIDES_OF_ELEM][MAX_SIDES_OF_ELEM];
 
    } GENERAL_ELEMENT;
-   .ve
+   \endverbatim
 
-   DESCRIPTION:
    This function processes a topology description of an element type and computes
    the appropriate sizes for memory allocation and offsets in the 'refs' array of the
    'generic_element'. All other data are fixed and do not depend on the multigrid or format.
@@ -807,11 +796,11 @@ static INT PreProcessElementDescription (GENERAL_ELEMENT *el)
 
    'ELEMENT', 'PreProcessElementDescription'.
 
-   RETURN VALUE:
-   INT
-   .n    GM_OK if ok
-   .n    GM_ERROR if error occured.
-   D*/
+   \return <ul>
+   <li> GM_OK if ok </li>
+   <li> GM_ERROR if error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
@@ -882,7 +871,7 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
   el->bnd_size = sizeof(struct generic_element) + (p_count-1)*sizeof(void *);
 
   /* get a free object id for free list */
-  /* TODO: OBJT is always allocated when this functions is called but never released
+  /** \todo OBJT is always allocated when this functions is called but never released
                    this will probably cause problems when several mgs are open: switching between
                    them will lead to an overflow of the UsedOBJT variable in ugm.c
                    possible remedy: store element OBJT in mg and release when it is closed. Also
@@ -907,23 +896,15 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
 }
 
 /****************************************************************************/
-/*D
-   PreInitElementTypes - pre-initialize general element data up to multigrid dependent stuff
+/** \brief Pre-initialize general element data up to multigrid dependent stuff
 
-   SYNOPSIS:
-   INT PreInitElementTypes (void)
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
    This function pre-initializes the general element data up to multigrid dependent stuff.
 
-   RETURN VALUE:
-   INT
-   .n   GM_OK if ok
-   .n   GM_ERROR if error occured.
-   D*/
+   \return <ul>
+   <li> GM_OK if ok </li>
+   <li> GM_ERROR if error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX PreInitElementTypes (void)
@@ -952,25 +933,17 @@ INT NS_DIM_PREFIX PreInitElementTypes (void)
 }
 
 /****************************************************************************/
-/*D
-   InitElementTypes - Initialize topological information for element types
+/** \brief Initialize topological information for element types
 
-   SYNOPSIS:
-   INT InitElementTypes (void);
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
    This function initializes topological information for element types and
    is called once during startup. Add your initialization of a new element
    type here.
 
-   RETURN VALUE:
-   INT
-   .n   GM_OK if ok
-   .n   GM_ERROR if error occured.
-   D*/
+   \return <ul>
+   <li> GM_OK if ok </li>
+   <li> GM_ERROR if error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX InitElementTypes (MULTIGRID *theMG)
