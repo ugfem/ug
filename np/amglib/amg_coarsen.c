@@ -741,7 +741,7 @@ static int PopMajor (AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int i,umin,isoumin,majisoumin,majumin;
   int n = AMG_GRAPH_N(g);
   int iso,con;
-  int isomaj,conmaj,comp,sas=AMG_GRAPH_SAS(g),major=cc->major;
+  int isomaj,conmaj,sas=AMG_GRAPH_SAS(g),major=cc->major;
 
   if (major<0) return(-1);
 
@@ -853,7 +853,7 @@ static int Pop (AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int i,umin,isoumin,majisoumin,majumin;
   int n = AMG_GRAPH_N(g);
   int iso,con;
-  int isomaj,conmaj,comp,sas=AMG_GRAPH_SAS(g),major=cc->major;
+  int isomaj,conmaj,sas=AMG_GRAPH_SAS(g),major=cc->major;
 
   /* get from stack */
   while (stacksize>0)
@@ -1037,11 +1037,10 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int m,s,f,i,n=g->n;
   int *ca=g->ca;
   char *na=g->na;
-  int C,D,T,O,W,N,Cmax,Nmax,Tmax,Omax,Wmax,candidate,c;
+  int C,D,T,O,W,Cmax,Tmax,Omax,Wmax,candidate,c;
   int clusternumber,conclusters,isoclusters;
   char buffer[128];
   int comp,sas=AMG_GRAPH_SAS(g),major=cc->major;
-  int noniso,iso;
 
   /* inits */
   for (i=0; i<n; i++) {

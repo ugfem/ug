@@ -65,6 +65,8 @@
 #include "amg_coarsen.h"
 #include "amg_solve.h"
 
+#include "amg_ug.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -192,14 +194,11 @@ static INT AMGSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
 {
   MULTIGRID *theMG;
   GRID *theGrid;
-  void *buffer;
   int n,nonzeros,blocksize;
   int Acomp;
-  MATRIX *theMatrix,*theNeighbor;
+  MATRIX *theMatrix;
   VECTOR *theVector;
-  int index;
-  int rv,i,j,k,block_i,block_j;
-  char buf[128];
+  int i,j,block_i,block_j;
   int nRows_A,nCols_A,nComp_x,nComp_b;
   NP_AMG *theAMGC;
   double ti;
@@ -850,7 +849,6 @@ static INT AMGSolverInit (NP_BASE *theNP, INT argc , char **argv)
 static INT AMGSolverDisplay (NP_BASE *theNP)
 {
   NP_AMG *theAMGC;
-  char buffer[128];
 
   theAMGC = (NP_AMG *)theNP;
 
@@ -890,8 +888,6 @@ static INT AMGSolverDisplay (NP_BASE *theNP)
 static INT AMGSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_LINEAR_SOLVER *np;
-  VECDATA_DESC *x,*b;
-  MATDATA_DESC *A;
   LRESULT lresult;
   INT result,level,bl=0;
 

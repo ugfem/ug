@@ -233,7 +233,7 @@ static int ex (AMG_SolverContext *sc, int k, int depth,                         
 
 static AMG_MATRIX *prepare_ex (AMG_MATRIX *A)
 {
-  int bw,rl;
+  int bw;
   int i,n=A->n,k,start,end;
   int *ra=A->ra, *ja=A->ja;
   double *a=A->a,*lu;
@@ -348,7 +348,6 @@ static AMG_SolverContext *global_sc;
 static int ls_build (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *A_in)
 {
   int k;
-  char buf[128];
 
   /* set up coarse grid matrices */
   switch (sc->preconditioner)
@@ -452,7 +451,6 @@ static int ls_solve (AMG_VECTOR *x_in, AMG_VECTOR *b_in)
   int i;
   double dnorm, dnorm0, dnormlast;
   char buf[128];
-  AMG_VECTOR *vlist[10];
   AMG_SolverContext *sc=global_sc;
 
   x[0] = x_in;
@@ -497,7 +495,6 @@ static int ls_solve (AMG_VECTOR *x_in, AMG_VECTOR *b_in)
 static int cg_build (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *A_in)
 {
   int k;
-  char buf[128];
 
   /* set up coarse grid matrices */
   switch (sc->preconditioner)
@@ -607,7 +604,6 @@ static int cg_solve (AMG_VECTOR *x, AMG_VECTOR *b)
   double dnorm, dnorm0, dnormlast;
   double rho,rho_last,alpha;
   char buf[128];
-  AMG_VECTOR *vlist[10];
   AMG_SolverContext *sc=global_sc;
 
   /* iterate */
@@ -659,7 +655,6 @@ static int cg_solve (AMG_VECTOR *x, AMG_VECTOR *b)
 static int bcgs_build (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *A_in)
 {
   int k;
-  char buf[128];
 
   /* set up coarse grid matrices */
   switch (sc->preconditioner)
@@ -767,7 +762,6 @@ static int bcgs_solve (AMG_VECTOR *x, AMG_VECTOR *b)
   double dnorm, dnorm0, dnormlast;
   double rho,rho_last,alpha,beta,omega,delta;
   char buf[128];
-  AMG_VECTOR *vlist[10];
   AMG_SolverContext *sc=global_sc;
 
   /* iterate */

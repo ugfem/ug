@@ -11416,11 +11416,14 @@ static INT LBCommand (INT argc, char **argv)
                 #endif
 
                 #ifdef ModelP
-  INT res,cmd_error,error,maxlevel,i;
+  INT res,cmd_error,maxlevel,i;
   int minlevel,cluster_depth,threshold,Const,n,c,
       strategy,eigen,loc,dims,weights,coarse,mode,iopt;
   char levelarg[32];
   MULTIGRID *theMG;
+                #ifdef CHACOT
+  INT error;
+                #endif
 
   theMG = currMG;
 

@@ -673,7 +673,7 @@ static INT NLGS_Display (NP_BASE *theNumProc)
   nlgs = (NP_NLGS*) theNumProc;
 
   /* general nl_iter display */
-  NLSmootherDisplay(&nlgs->smoother);
+  NLSmootherDisplay(theNumProc);
 
   if (nlgs->displayMode == PCR_NO_DISPLAY)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");

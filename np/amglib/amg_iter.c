@@ -106,8 +106,8 @@
 
 int AMG_jac (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
-  register int n,i,k,start,end;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register int n,i;
+  register double *v, *d, *a;
   register int *ra;
   register int b,bb;
   double om;
@@ -174,8 +174,8 @@ int AMG_jac (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 
 int AMG_sorf (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
-  register int n,i,k,start,end;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register int n,i,k,end,start;
+  register double *v, *d, *a;
   register int *ra, *ja;
   register int b,bb;
   register double s,om;
@@ -223,7 +223,7 @@ int AMG_sorf (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 int AMG_sorb (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 {
   register int n,i,k,start,end;
-  register double *v, *d, *a, *xx, *aa, *yy;
+  register double *v, *d, *a;
   register int *ra, *ja;
   register int b,bb;
   register double s,om;
