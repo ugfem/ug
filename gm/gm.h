@@ -1008,6 +1008,9 @@ struct multigrid {
   /* variables */
   INT status;                                           /* possible values, see above			*/
   INT magic_cookie;                                     /* used for identification			    */
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  INT bottomtmpmem;                             /* is bottom memory temp allocated?     */
+        #endif
   INT vertIdCounter;                                    /* count objects in that multigrid		*/
   INT nodeIdCounter;                                    /* count objects in that multigrid		*/
   INT elemIdCounter;                                    /* count objects in that multigrid		*/
@@ -2732,6 +2735,7 @@ MATRIX      *GetIMatrix             (VECTOR *FineVector, VECTOR *CoarseVector);
 MATRIX      *CreateIMatrix          (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
 INT                     DisposeIMatrixList              (GRID *theGrid, VECTOR *theVector);
 INT             DisposeIMatricesInGrid  (GRID *theGrid);
+INT                     DisposeIMatricesInMultiGrid (MULTIGRID *theMG);
 #endif
 INT         GetAllVectorsOfElement  (GRID *theGrid, ELEMENT *theElement,
                                      VECTOR **vec);
