@@ -50,6 +50,11 @@
 /*																			*/
 /****************************************************************************/
 
+#define INDEXCHAR               '/'
+#define MOVECHAR                '|'
+#define REL_CHARWIDTH   0.7
+#define REL_INDEXSIZE   0.7
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -71,6 +76,7 @@
 
 static OUTPUTDEVICE *CurrentOutputDevice;               /* current output device	*/
 static COORD_POINT CurrCursor;                                  /* current cursor position	*/
+static SHORT CurrTextSize;                                              /* current text size		*/
 
 static COORD currClipRegionMaxX;                /* corner of ViewPort having the	*/
 static COORD currClipRegionMaxY;                /*largest values for each component */
@@ -78,6 +84,8 @@ static COORD currClipRegionMinX;                /* corner of ViewPort having the
 static COORD currClipRegionMinY;                /*smallest values for each component*/
 
 static COORD_POINT currClipRegionCorner[4];     /* corners of the view port */
+
+static char buffer[256];                                                /* general purpose text buff*/
 
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
@@ -989,10 +997,69 @@ void UgText (const char *s, INT mode)
 {
   INT reject;
   SHORT_POINT out;
+  char *p,*next,*move;
+  short baseline;
+  short TextSize;
 
   ClipPoint(CurrCursor,&out,&reject);
-  if (!reject)
+  if (reject)
+    return;
+
+  switch (mode)
   {
+  case TEXT_INDEXED :
+    strcpy(buffer,s);
+    p = buffer;
+    baseline = out.y;
+    TextSize = CurrTextSize;
+
+    next = strchr(p,INDEXCHAR);
+    if (next!=NULL)
+      *next = '\0';
+    move = strchr(p,MOVECHAR);
+    if (move!=NULL)
+      *move = '\0';
+
+    (*CurrentOutputDevice->Move)(out);
+    (*CurrentOutputDevice->Text)(p,TEXT_REGULAR);
+
+    while (next!=NULL)
+    {
+      /* shift cursor to end of last string */
+      if (move!=NULL)
+        out.x += REL_CHARWIDTH * CurrTextSize * strlen(p) * CurrentOutputDevice->signx;
+
+      p = next;
+      next = strchr(++p,INDEXCHAR);
+      if (next!=NULL)
+        *next = '\0';
+      move = strchr(p,MOVECHAR);
+      if (move!=NULL)
+        *move = '\0';
+
+      switch (*p)
+      {
+      case 'N' :
+        UgSetTextSize(TextSize);
+        out.y  = baseline;
+        break;
+      case 'H' :
+        UgSetTextSize(REL_INDEXSIZE*TextSize);
+        out.y  = baseline + 0.5*TextSize*CurrentOutputDevice->signy;
+        break;
+      case 'T' :
+        UgSetTextSize(REL_INDEXSIZE*TextSize);
+        out.y  = baseline - 0.5*TextSize*CurrentOutputDevice->signy;
+        break;
+      }
+      p++;
+      (*CurrentOutputDevice->Move)(out);
+      (*CurrentOutputDevice->Text)(p,TEXT_REGULAR);
+    }
+    return;
+
+  case TEXT_REGULAR :
+  case TEXT_INVERSE :
     (*CurrentOutputDevice->Move)(out);
     (*CurrentOutputDevice->Text)(s,mode);
   }
@@ -1119,6 +1186,7 @@ void UgSetMarkerSize (short Index)
 
 void UgSetTextSize (short size)
 {
+  CurrTextSize = size;
   (*CurrentOutputDevice->SetTextSize)(size);
 }
 
