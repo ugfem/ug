@@ -1162,7 +1162,7 @@ extern CONTROL_ENTRY
 /* general query macros */
 
 /* dynamic control words */
-#undefine _DEBUG_CW_
+#define _DEBUG_CW_
 #if (defined _DEBUG_CW_) && !(defined __COMPILE_CW__)
 /* map cw read/write to functions */
         #define CW_READ(p,ce)                                   ReadCW(p,ce)
@@ -1265,6 +1265,8 @@ enum GM_CE {
   MOVE_CE,
   MOVED_CE,
   ONEDGE_CE,
+  ONSIDE_CE,
+  ONNBSIDE_CE,
   NOOFNODE_CE,
   NSUBDOM_CE,
   MODIFIED_CE,
@@ -1806,16 +1808,20 @@ enum GM_OBJECTS {
 #define SETMOVED(p,n)                           CW_WRITE_STATIC(p,MOVED_,VERTEX_,n)
 
 #define ONEDGE_SHIFT                            3
-#define ONEDGE_LEN                                      6
+#define ONEDGE_LEN                                      4
 #define ONEDGE(p)                                       CW_READ_STATIC(p,ONEDGE_,VERTEX_)
 #define SETONEDGE(p,n)                          CW_WRITE_STATIC(p,ONEDGE_,VERTEX_,n)
 
-/* the following two overlap with ONEDGE and use ONEDGE */
-#define ONSIDE(p)                                       (ONEDGE(p) & 7)
-#define SETONSIDE(p,n)                          SETONEDGE(p,n)
+/* the following two overlap with ONEDGE */
+#define ONSIDE_SHIFT                            3
+#define ONSIDE_LEN                                      3
+#define ONSIDE(p)                                       CW_READ_STATIC(p,ONSIDE_,VERTEX_)
+#define SETONSIDE(p,n)                          CW_WRITE_STATIC(p,ONSIDE_,VERTEX_,n)
 
-#define ONNBSIDE(p)                                     ((ONEDGE(p) & 7)>>3)
-#define SETONNBSIDE(p,n)                        SETONEDGE(p,n<<3)
+#define ONNBSIDE_SHIFT                          6
+#define ONNBSIDE_LEN                            3
+#define ONNBSIDE(p)                                     CW_READ_STATIC(p,ONNBSIDE_,VERTEX_)
+#define SETONNBSIDE(p,n)                        CW_WRITE_STATIC(p,ONNBSIDE_,VERTEX_,n)
 
 #define NOOFNODE_SHIFT                          9
 #define NOOFNODEMAX                                     32
