@@ -3983,30 +3983,30 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
     fifo_init(&myfifo,buffer,sizeof(VECTOR*)*n);
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-      SETUSED(theV,0);
+      SETVCUSED(theV,0);
     fifo_in(&myfifo,(void *)FIRSTVECTOR(theGrid));
-    SETUSED(FIRSTVECTOR(theGrid),1);
+    SETVCUSED(FIRSTVECTOR(theGrid),1);
     while(!fifo_empty(&myfifo))
     {
       theV = (VECTOR *)fifo_out(&myfifo);
       for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-        if (!USED(MDEST(theM)))
+        if (!VCUSED(MDEST(theM)))
         {
           fifo_in(&myfifo,(void *)MDEST(theM));
-          SETUSED(MDEST(theM),1);
+          SETVCUSED(MDEST(theM),1);
         }
     }
     fifo_in(&myfifo,(void *)theV);
-    SETUSED(theV,0); i=0;
+    SETVCUSED(theV,0); i=0;
     while(!fifo_empty(&myfifo))
     {
       theV = (VECTOR *)fifo_out(&myfifo);
       vlist[i++] = theV;
       for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-        if (USED(MDEST(theM)))
+        if (VCUSED(MDEST(theM)))
         {
           fifo_in(&myfifo,(void *)MDEST(theM));
-          SETUSED(MDEST(theM),0);
+          SETVCUSED(MDEST(theM),0);
         }
     }
     assert(i==n);
