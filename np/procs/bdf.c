@@ -90,6 +90,7 @@ typedef struct
   INT predictorder;                                              /* 0,1 are allowed					*/
   INT nested;                                                            /* use nested iteration                        */
   INT nlinterpolate;                                             /* nonlinear interpolation			*/
+  INT optnlsteps;                                            /* optimal number of nonlin. steps */
   INT Break;                                                     /* break after error estimator         */
   INT Continue;                                              /* continue after error estimator  */
   DOUBLE tstart;                                                 /* start time                          */
@@ -303,7 +304,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   DOUBLE Factor[MAX_VEC_COMP];
   INT n_unk;
   INT i,k;
-  INT low,nlinterpolate;
+  INT low,nlinterpolate,last_number_of_nonlinear_iterations;
   INT verygood,bad;
   NLRESULT nlresult;
   ERESULT eresult;
@@ -322,7 +323,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   /* initialize strategy flags */
   verygood = bad = 0;
 
-  /* compute solution at new time step ON CURRENT GRID */
+  /* compute solution at new time step */
   while (1)
   {
     /* advance time level with current time step */
@@ -334,6 +335,8 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     g_p1  = (dt_0+2*dt_p1)/(dt_0+dt_p1);
     g_0   = -(dt_0+dt_p1)/dt_0;
     g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
+    last_number_of_nonlinear_iterations =
+      bdf->number_of_nonlinear_iterations;
 
     if (bdf->Continue) {
       nlinterpolate = bdf->nlinterpolate - 1;
@@ -511,6 +514,24 @@ Continue:
              bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
              bdf->total_linear_iterations,bdf->max_linear_iterations);
 
+  if ((bdf->optnlsteps) && (nlresult.converged)) {
+    k = bdf->number_of_nonlinear_iterations -
+        last_number_of_nonlinear_iterations;
+    if (k <= 0)
+      bdf->dt *= 2.0;
+    else
+      bdf->dt *= bdf->optnlsteps / ((DOUBLE) k);
+    if (bdf->dt < bdf->dtmin)
+      bdf->dt = bdf->dtmin;
+    else if (bdf->dt > bdf->dtmax)
+      bdf->dt = bdf->dtmax;
+    PRINTDEBUG(np,1,("new time step %f k %d n %d l %d\n",
+                     bdf->dt,k,bdf->number_of_nonlinear_iterations,
+                     last_number_of_nonlinear_iterations));
+    *res = 0;
+    return(0);
+  }
+
   /* chose new dt for next time step */
   if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
   {
@@ -523,7 +544,6 @@ Continue:
     bdf->dt *= bdf->dtscale;
     *res=0; return(*res);
   }
-
 
   return(0);
 }
@@ -611,6 +631,9 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
     bdf->nested=0;
   }
   if ((bdf->nested<0)||(bdf->nested>1)) return(NP_NOT_ACTIVE);
+  if (ReadArgvINT("optnlsteps",&(bdf->optnlsteps),argc,argv))
+    bdf->optnlsteps = 0;
+  if (bdf->optnlsteps < 0) return(NP_NOT_ACTIVE);
   if (ReadArgvINT("nlinterpolate",&(bdf->nlinterpolate),argc,argv))
     bdf->nlinterpolate=0;
   if (bdf->nlinterpolate<0) return(NP_NOT_ACTIVE);
@@ -693,10 +716,17 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SF,"dt",(float)bdf->dt);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nested",(int)bdf->nested);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nlinterpolate",(int)bdf->nlinterpolate);
-  if (bdf->y_p1 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"y_p1",ENVITEM_NAME(bdf->y_p1));
-  if (bdf->y_0  != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"y_0 ",ENVITEM_NAME(bdf->y_0 ));
-  if (bdf->y_m1 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"y_m1",ENVITEM_NAME(bdf->y_m1));
-  if (bdf->b    != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"b   ",ENVITEM_NAME(bdf->b   ));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"optnlsteps",(int)bdf->optnlsteps);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"dtscale",(float)bdf->dtscale);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"rhogood",(float)bdf->rhogood);
+  if (bdf->y_p1 != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"y_p1",ENVITEM_NAME(bdf->y_p1));
+  if (bdf->y_0  != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"y_0 ",ENVITEM_NAME(bdf->y_0 ));
+  if (bdf->y_m1 != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"y_m1",ENVITEM_NAME(bdf->y_m1));
+  if (bdf->b    != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"b   ",ENVITEM_NAME(bdf->b   ));
 
   return (0);
 }
