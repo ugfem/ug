@@ -5296,7 +5296,7 @@ static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	BNDS *theSide;
 	INT i,j,left,right;
 
-	if (!BND_PlotBoundary)
+	if (!BND_PlotBoundary || OBJT(theElement)==IEOBJ)
 	{
 		DO_2c(theDO) = DO_NO_INST;
 		return (0);
