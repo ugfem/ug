@@ -1,7 +1,7 @@
 #
 #	PPIF MAKEFILE OPTIONS
 #
-#   for MPI (Message Passing Interface)
+#   for SHMEM (Cray T3D)
 #
 
 
@@ -17,7 +17,7 @@ PPIF_CC       = $(ARCH_CC)
 PPIF_LIBS     = $(ENV_LIBS) $(ARCH_PLIBS) -lc -lsma -lu
 PPIF_INCLUDES = $(ENV_INCLUDES) -I/usr/include/mpp
 
-PPIF_CFLAGS   =
-PPIF_LFLAGS   =
+PPIF_CFLAGS   = $(ENV_CFLAGS)
+PPIF_LFLAGS   = $(ENV_LFLAGS)
 
 

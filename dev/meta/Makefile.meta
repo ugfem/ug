@@ -6,23 +6,22 @@
 #																			 #
 ##############################################################################
 
-# ARCHDIR has to be one of: INDIGO, HP
-include ../../ug.arch
 
-# architecture-dependent makefile entries
-include ../../machines/mk.$(ARCHDIR)
-
-LCFLAGS = -I.. -I../../low
+# include configuration and all makefile macro definitions
+include ../../ug.conf
 
 OBJECTS = metafile.o
 
+# local C compiler flags
+LCFLAGS = -I../../include
+
 all : $(OBJECTS) Makefile.meta
-	ar $(ARFLAGS) ../../lib/libdev.a $(OBJECTS) 
+	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdev.a $(OBJECTS) 
 
 .c.o:
-	$(CC) $(LCFLAGS) $(CFLAGS) $<
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
 clean:
-	rm *.o
+	rm -f $(OBJECTS)
 
 

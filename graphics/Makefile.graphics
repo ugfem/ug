@@ -2,7 +2,7 @@
 #																			 #
 #	Makefile for all modules of ug version 3								 #
 #																			 #
-#	created 16 December 1994												 #
+#	created 18 March 1996    												 #
 #																			 #
 ##############################################################################
 
@@ -10,18 +10,24 @@
 # include configuration and all makefile macro definitions
 include ../ug.conf
 
-OBJECTS = uginterface.o initui.o cmdint.o cmdline.o commands.o helpmsg.o
 
-# local C compiler flags
-LCFLAGS = -I../include
+# $(GRAPE) is set to ON or OFF in ug.conf
 
-all: $(OBJECTS) Makefile.ui
-	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libug$(UG_LIBSUFFIX).a $(OBJECTS) 
+all: $(GRAPE) UGGRAPH
 
-.c.o:
-	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+
+UGGRAPH:
+	cd uggraph; make -f Makefile.uggraph; cd ..;
+
+ON:
+	echo "creating grape"
+	cd grape; make -f Makefile.grape; cd ..;
+
+OFF:
+	echo "no grape"
+
 
 clean:
-	rm -f $(OBJECTS)
-
+	cd uggraph; make -f Makefile.uggraph clean; cd ..;
+	cd grape; make -f Makefile.grape clean; cd ..;
 

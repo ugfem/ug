@@ -1,0 +1,56 @@
+##############################################################################
+#																			 #
+#	Makefile for all modules of ug version 3								 #
+#																			 #
+#	created 18 March 1996    												 #
+#																			 #
+##############################################################################
+
+
+# include configuration and all makefile macro definitions
+include ../ug.conf
+
+
+# path for the arch-module and the ppif/ddd-sources
+ARCH_DIR = ../arch
+PPIF_DIR = ppif
+PPIF = $(MODEL)
+
+
+# path for the ppif and ddd libraries
+LIBDIR = ../lib
+
+
+
+
+####################################################################
+
+
+all: include DDDIF DDDOBJ ppif_all
+
+include:
+	ln -s ../include include
+
+DDDIF:
+	cd dddif; make -f Makefile.dddif; cd ..;
+
+DDDOBJ:
+	cd dddobj; make -f Makefile.dddobj; cd ..;
+
+
+####################################################################
+
+
+clean: ppif_clean
+	cd dddif; make -f Makefile.dddif clean; cd ..;
+	cd dddobj; make -f Makefile.dddobj clean; cd ..;
+
+
+####################################################################
+
+### include ppif-makefile
+include ppif/Makefile.ppif
+
+
+####################################################################
+

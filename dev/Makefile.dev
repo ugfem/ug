@@ -6,23 +6,24 @@
 #																			 #
 ##############################################################################
 
-# load architecture dependent makefile	
-include ../ug.arch
 
-# architecture-dependent makefile entries
-include ../machines/mk.$(ARCHDIR)
+# include configuration and all makefile macro definitions
+include ../ug.conf
 
-LCFLAGS = -I../low
 
-# select your devices: one of XIF or SIF, META, PS is optional
+# select your devices: one of XIF or SIF. META and PS are optional
 DEVICES = XIF META PS
 OBJECTS = devices.o
 
+
+# local C compiler flags
+LCFLAGS = -I../include
+
 all : $(OBJECTS) $(DEVICES) Makefile.dev
-	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
+	$(ARCH_AR)  $(ARCH_ARFLAGS) ../lib/libdev.a $(OBJECTS) 
 
 .c.o:
-	$(CC) $(CFLAGS) $(LCFLAGS) $<
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
 XIF:
 	cd xif; make -f Makefile.xif; cd ..;
@@ -38,20 +39,21 @@ PS:
 
 XLIB: 
 	rm -f ../lib/libdev.a
-	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdev.a $(OBJECTS)
 	cd meta; make -f Makefile.meta; cd ..;
 	cd xif; make -f Makefile.xif; cd ..;
 	cd ps; make -f Makefile.ps; cd ..;
 
 SLIB: 
 	rm -f ../lib/libdev.a
-	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdev.a $(OBJECTS)
 	cd meta; make -f Makefile.meta; cd ..;
 	cd sif; make -f Makefile.sif; cd ..;
 	cd ps; make -f Makefile.ps; cd ..;
 
+
 clean:
-	rm $(OBJECTS)
+	rm -f $(OBJECTS)
 	cd xif;  make -f Makefile.xif  clean; cd ..;
 	cd sif;  make -f Makefile.sif  clean; cd ..;
 	cd meta; make -f Makefile.meta clean; cd ..;

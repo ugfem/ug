@@ -7,23 +7,17 @@
 ##############################################################################
 
 # load architecture dependent makefile	
-include ../../../ug.arch
-
-# architecture-dependent makefile entries
-include ../../../machines/mk.$(ARCHDIR)
-
-# load configuration switches
-include ../../../ug.conf
+include ../../../../ug.conf
 
 default: $(objects) 
-	ar r ../../../lib/libnetgen.a $(objects)
+	$(ARCH_AR) r  ../../../../lib/libnetgen.a $(objects)
 
 .PRECIOUS:   .cc
 # default rule
 .cc.o:
-	$(C++) $(C++FLAGS) -I../general -I.. $<
+	$(ARCH_C++) $(C++FLAGS) -I../general -I.. $<
 
 # clean up
 clean:
-	rm *.o
+	rm -f *.o
 

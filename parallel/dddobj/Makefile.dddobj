@@ -1,0 +1,40 @@
+##############################################################################
+#																			 #
+#	Makefile for all modules of ug version 3								 #
+#																			 #
+#	created 18 March 1996    												 #
+#																			 #
+##############################################################################
+
+
+# include configuration and all makefile macro definitions
+include ../../ug.conf
+
+
+# path for the arch-module and the ddd-sources
+ARCH_DIR = ../../arch
+DDD_DIR  = ../ddd
+
+# path for the ppif and ddd libraries
+LIBDIR = ../../lib
+
+
+DDD_CFLAGS = $(ARCH_CFLAGS) -DC_FRONTEND -I../../include
+
+
+####################################################################
+
+
+all: ddd_all
+
+clean: ddd_clean
+
+
+####################################################################
+
+### include ddd-makefile
+include $(DDD_DIR)/Makefile.ddd
+
+
+####################################################################
+

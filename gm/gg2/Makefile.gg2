@@ -1,26 +1,26 @@
 ##############################################################################
 #																			 #
-#	Makefile for the ug library (UNIX version)								 #
+#	Makefile for all modules of ug version 3								 #
 #																			 #
-#	created 20.07.92														 #
+#	created 16 December 1994												 #
 #																			 #
 ##############################################################################
 
-# include configuration and all makefile macro definitions
-include ../ug.conf
 
-OBJECTS = ugenv.o heaps.o fifo.o misc.o defaults.o initlow.o fileopen.o ugstruct.o debug.o
+# include configuration and all makefile macro definitions
+include ../../ug.conf
+
+OBJECTS = ggmain.o ggaccel.o ggm.o
 
 # local C compiler flags
-LCFLAGS = -I../include
+LCFLAGS = -I../../include
 
-all : $(OBJECTS) Makefile.low
-	$(ARCH_AR)  $(ARCH_ARFLAGS) ../lib/libug$(UG_LIBSUFFIX).a $(OBJECTS) 
+all : $(OBJECTS) Makefile.gg2
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libug$(UG_LIBSUFFIX).a $(OBJECTS) 
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
 clean:
 	rm -f $(OBJECTS)
-
 

@@ -1,0 +1,54 @@
+# this file is for internal ug configuration. don't change it!
+
+# central make option interface for ug and ug applications
+# this file is included into all Makefiles via ug.conf.
+#
+# INPUT: configuration macro definitions from ug.conf
+#
+# OUTPUT:	complete set of makefile macro definitions used for
+#			compiling, linking and archiving
+
+
+# These are the environment dependent variables from ug.conf
+ENV_CFLAGS = $(MODEL_ENV_CFLAGS)
+ENV_LFLAGS = $(MODEL_ENV_LFLAGS)
+
+
+# library name suffixes
+UG_DOMSUFFIX = $(DIM)
+UG_LIBSUFFIX = $(DIM)
+
+
+
+
+# include architecture-dependent makefile macro definitions
+include $(UGROOT)/arch/$(ARCH)/mk.arch
+
+
+# include macro definitions for programming model
+include $(UGROOT)/configs/mk.model.$(MODEL)
+
+
+# include macro definitions for debugging
+include $(UGROOT)/configs/mk.debug.$(DEBUG_MODE)
+
+
+# include macro definitions for netgen
+include $(UGROOT)/configs/mk.netgen.$(NETGEN)
+
+
+# include macro definitions for grape
+include $(UGROOT)/configs/mk.grape.$(GRAPE)
+
+
+
+# construct new macro definitions from given ones
+UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
+			$(ARCH_CFLAGS) $(PPIF_CFLAGS) $(MODEL_CFLAGS) \
+			$(ARCH_XINCLUDES) $(ENV_CFLAGS) \
+			$(NETGEN_CFLAGS) $(GRAPE_CFLAGS)
+
+UG_LFLAGS = $(ARCH_LFLAGS) $(PPIF_LFLAGS) $(MODEL_LFLAGS) \
+			$(ARCH_XLIB) $(ARCH_LIBS) $(ENV_LFLAGS) $(ARCH_PLIBS) \
+			$(NETGEN_LFLAGS) $(GRAPE_LFLAGS)
+

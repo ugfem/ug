@@ -1,0 +1,4 @@
+# this file is for internal ug configuration. don't change it!
+
+GRAPE_CFLAGS = -DGRAPET -I$(LD_LIBRARY_PATH)
+GRAPE_LFLAGS = -L$(LD_LIBRARY_PATH) -lgr -lgl -lGL -lspaceball

@@ -6,11 +6,12 @@
 #																			 #
 ##############################################################################
 
-# load architecture dependent makefile
-include ../../ug.arch
+# load configuration
+include ../../../ug.conf
 
-# architecture-dependent makefile entries
-include ../../machines/mk.$(ARCHDIR)
+
+GMAKE = make
+
 
 default:
 	cd meshing; $(GMAKE); cd ..;

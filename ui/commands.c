@@ -6466,6 +6466,7 @@ static INT BnodesCommand  (INT argc, char **argv)
 #endif
 
 #ifdef __THREEDIM__
+#ifdef NETGENT
 static INT BnodesCommand  (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -6507,6 +6508,7 @@ static INT BnodesCommand  (INT argc, char **argv)
 
   return(OKCODE);
 }
+#endif
 #endif
 
 /****************************************************************************/
@@ -6658,6 +6660,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
 #endif
 
 #ifdef __THREEDIM__
+#ifdef NETGENT
 static INT MakeGridCommand  (INT argc, char **argv)
 {
   INT smooth;
@@ -6673,6 +6676,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
 
   return (OKCODE);
 }
+#endif
 #endif
 
 /****************************************************************************/
@@ -10698,8 +10702,10 @@ INT InitCommands ()
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("gridscript",         GridScriptCommand                               )==NULL) return(__LINE__);
+        #if (! (defined(__THREEDIM__) && defined(NETGENF)))
   if (CreateCommand("bnodes",                 BnodesCommand                                       )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
+        #endif
 
   /* commands for grape */
         #ifdef __GRAPE_TRUE__

@@ -2,7 +2,7 @@
 #																			 #
 #	Makefile for all modules of ug version 3								 #
 #																			 #
-#	created 16 December 1994												 #
+#	created 18 March 1996    												 #
 #																			 #
 ##############################################################################
 
@@ -10,16 +10,26 @@
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
-OBJECTS = std_domain.o
+OBJECTS = gg3d.o
 
 # local C compiler flags
 LCFLAGS = -I../../include
 
-all : $(OBJECTS) Makefile.std
-	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) 
+# $(NETGEN) is set to ON or OFF in ug.conf
+
+all: $(OBJECTS) $(NETGEN) Makefile.gg3
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libug$(UG_LIBSUFFIX).a $(OBJECTS) 
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+
+ON:
+	echo "creating netgen"
+	cd netgen; make -f Makefile.netgen; cd ..;
+
+OFF:
+	echo "no netgen"
+
 
 clean:
 	rm -f $(OBJECTS)
