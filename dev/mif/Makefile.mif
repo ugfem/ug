@@ -1,6 +1,6 @@
 ##############################################################################
-#									 #
-#	Makefile for MacOS X interface										 #
+#																			 #
+#	Makefile for MacOS X interface											 #
 #																			 #
 #	created 17 August 1992													 #
 #																			 #
@@ -11,13 +11,11 @@
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
-OBJECTS = MGraphicWindow.o MShellTextView.o MAppController.o MInterface.o \
-          MShellView.o MGraphicView.o MShell.o MShellWindow.o MToolPanel.o
+OBJECTS = MGraphicWindow.o MInterface.o MGraphicView.o
 
 
 # local C compiler flags
-LCFLAGS = -I../../include -Wall \
-    -fno-common -pipe -I/System/Library/Frameworks/AppKit.framework/Headers
+LCFLAGS = -I../../include -Wall -fno-common -pipe
 
 all : $(OBJECTS) $(GUI) Makefile.mif
 	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdevM.a $(OBJECTS) 
@@ -33,8 +31,8 @@ OFF:
 	echo "no gui toolbox"
 
 clean:
-	find . -name '*.o' -exec rm {} \; -print
-	find . -name '*.a' -exec rm {} \; -print
+	find . -name '*.o' -exec rm -f {} \; -print
+	find . -name '*.a' -exec rm -f {} \; -print
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdevX.a $(OBJECTS)
