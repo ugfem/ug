@@ -385,7 +385,8 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
     {
       UserWriteF("W: scvf normal w. edge negative e=%5d i=%2d j=%2d\n",
                  ID(e),i,j);
-      RETURN(__LINE__);
+      /*                                RETURN(__LINE__); */
+      return (__LINE__);
     }
     ENDDEBUG
   }
@@ -644,6 +645,44 @@ INT EvaluateAFVGeometry (const ELEMENT *e, const DOUBLE *conf, FVElementGeometry
    0 when o.k.
  */
 
+INT TriangleIsCut (INT tag, INT c1, INT c2, INT c3, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR pos)
+{
+  DOUBLE_VECTOR v1,v2,r,coeff,M[DIM],MI[DIM];
+  DOUBLE det,sum;
+  INT a,b,c;
+
+  a = CORNER_OF_SIDE_TAG(tag,side,c1);          /* corner c1 of side */
+  b = CORNER_OF_SIDE_TAG(tag,side,c2);          /* corner c2 of side */
+  c = CORNER_OF_SIDE_TAG(tag,side,c3);          /* corner c3 of side */
+
+  V3_SUBTRACT(x[b],x[a],v1);                            /* vector from xa to xb */
+  V3_SUBTRACT(x[c],x[a],v2);                            /* vector from xa to xc */
+  V3_COPY(v1,M[0]);                                                     /* transposed coefficient matrix for cut of lines */
+  V3_COPY(v2,M[1]);
+  V3_COPY(vel,M[2]);
+  M3_INVERT_WR(M,MI,det);
+  if (det==0.0)
+    return (NO);
+
+  V3_SUBTRACT(ip,x[a],r);                                       /* right hand side */
+  MT3_TIMES_V3(MI,r,coeff);                                     /* solve for coefficients */
+  if (coeff[2] > 0.0)
+  {
+    sum = coeff[0] + coeff[1];
+    if ((coeff[0]>-SMALL_C) && (coeff[1]>-SMALL_C))             /* inside plane sector b,a,c? */
+    {
+      if (sum<1.0+SMALL_C)                                                              /* inside triangle a,b,c? */
+      {
+        V3_LINCOMB(1.0,x[a],coeff[0],v1,pos);                           /* global cordinates of cutting point */
+        V3_LINCOMB(1.0,pos,     coeff[1],v2,pos);
+        return (YES);
+      }
+    }
+  }
+
+  return (NO);
+}
+
 INT SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y)
 {
 #       ifdef __TWODIM__
@@ -679,7 +718,7 @@ INT SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const D
 #       ifdef __THREEDIM__
   DOUBLE_VECTOR v1,v2,r,coeff,M[DIM],MI[DIM];
   DOUBLE det,sum;
-  INT a,b,c;
+  INT a,b,c,std=TRUE;
 
   /* we search the cutting point of plane xa+c0*(xb-xa)+c1*(xc-xa) with ip-c2*vel by solving the system
                                                              T
@@ -692,60 +731,97 @@ INT SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const D
   a = CORNER_OF_SIDE_TAG(tag,side,0);                                                           /* corner 0 of side */
   b = CORNER_OF_SIDE_TAG(tag,side,1);                                                           /* corner 1 of side */
   c = CORNER_OF_SIDE_TAG(tag,side,2);                                                           /* corner 2 of side */
+
   V3_SUBTRACT(x[b],x[a],v1);                                                                            /* vector from xa to xb */
-  V3_SUBTRACT(x[c],x[a],v2);                                                                            /* vector from xa to xb */
+  V3_SUBTRACT(x[c],x[a],v2);                                                                            /* vector from xa to xc */
   V3_COPY(v1,M[0]);                                                                                             /* transposed coefficient matrix for cut of lines */
   V3_COPY(v2,M[1]);
   V3_COPY(vel,M[2]);
-  M3_INVERT_WR(M,MI,det);                                                                               /* inverse */
-  if (det==0.0)
-    return (NO);                                                                                                /* lines is parallel to plane */
 
-  V3_SUBTRACT(ip,x[a],r);                                                                       /* right hand side */
-  MT3_TIMES_V3(MI,r,coeff);                                                                             /* solve for coefficients */
-  if (coeff[2]>0.0)                                                                                             /* we search an upwind point */
+  if (CORNERS_OF_SIDE_TAG(tag,side)==4)
   {
-    sum = coeff[0] + coeff[1];
-    if ((coeff[0]>-SMALL_C) && (coeff[1]>-SMALL_C))                             /* inside plane sector b,a,c? */
-    {
-      if (sum<1.0+SMALL_C)                                                                              /* inside triangle a,b,c? */
-      {
-        V3_LINCOMB(1.0,x[a],coeff[0],v1,y);                                                     /* global cordinates of cutting point */
-        V3_LINCOMB(1.0,y,       coeff[1],v2,y);
-        return (YES);
-      }
-    }
-    else if (CORNERS_OF_SIDE_TAG(tag,side)==4)                                          /* is side a quadrilateral? */
-    {
-      /* check if in triangle 3,0,2 */
-      a = CORNER_OF_SIDE_TAG(tag,side,3);                                                                       /* corner 0 of side */
-      b = CORNER_OF_SIDE_TAG(tag,side,0);                                                                       /* corner 1 of side */
-      c = CORNER_OF_SIDE_TAG(tag,side,2);                                                                       /* corner 2 of side */
-      V3_SUBTRACT(x[b],x[a],v1);                                                                                        /* vector from xa to xb */
-      V3_SUBTRACT(x[c],x[a],v2);                                                                                        /* vector from xa to xb */
-      V3_COPY(v1,M[0]);                                                                                                         /* transposed coefficient matrix for cut of lines */
-      V3_COPY(v2,M[1]);
-      V3_COPY(vel,M[2]);
-      M3_INVERT_WR(M,MI,det);                                                                                           /* inverse */
-      if (det==0.0)
-        return (NO);                                                                                                            /* lines is parallel to plane */
+    /* check if corner 3 lies in the same plane */
+    DOUBLE_VECTOR normal;
+    DOUBLE f,f3;
 
-      V3_SUBTRACT(ip,x[side],r);                                                                                        /* right hand side */
-      MT3_TIMES_V3(MI,r,coeff);                                                                                         /* solve for coefficients */
-      if (coeff[2]>0.0)                                                                                                         /* we search an upwind point */
+    V3_VECTOR_PRODUCT(v1,v2,normal);
+    V3_SCALAR_PRODUCT(normal,x[a],f);
+    V3_SCALAR_PRODUCT(normal,x[CORNER_OF_SIDE_TAG(tag,side,3)],f3);
+    if (ABS(f3-f)>SMALL_C)
+    {
+      INT d=CORNER_OF_SIDE_TAG(tag,side,3);
+      std = FALSE;
+      /*                PrintErrorMessage('W',"SideIsCut","no planar side !!"); */
+      PRINTDEBUG(np,1,("no planar side: x(0)=(%f,%f,%f), x(1)=(%f,%f,%f, x(2)=(%f,%f,%f), x(3)=(%f,%f,%f)\n",x[a][0],x[a][1],x[a][2],x[b][0],x[b][1],x[b][2],x[c][0],x[c][1],x[c][2],x[d][0],x[d][1],x[d][2]));
+
+      /* check all possible triangles of a quadrilateral */
+      if (TriangleIsCut(tag,0,1,2,x,ip,vel,side,y))
+        return (YES);
+
+      if (TriangleIsCut(tag,0,1,3,x,ip,vel,side,y))
+        return (YES);
+
+      if (TriangleIsCut(tag,0,2,3,x,ip,vel,side,y))
+        return (YES);
+
+      if (TriangleIsCut(tag,2,1,3,x,ip,vel,side,y))
+        return (YES);
+    }
+  }
+
+  if (std)
+  {
+    /* planar case */
+    M3_INVERT_WR(M,MI,det);                                                                                     /* inverse */
+    if (det==0.0)
+      return (NO);                                                                                              /* lines is parallel to plane */
+
+    V3_SUBTRACT(ip,x[a],r);                                                                                     /* right hand side */
+    MT3_TIMES_V3(MI,r,coeff);                                                                           /* solve for coefficients */
+    if (coeff[2]>0.0)                                                                                           /* we search an upwind point */
+    {
+      sum = coeff[0] + coeff[1];
+      if ((coeff[0]>-SMALL_C) && (coeff[1]>-SMALL_C))                           /* inside plane sector b,a,c? */
       {
-        sum = coeff[0] + coeff[1];
-        if ((coeff[0]>-SMALL_C) && (coeff[1]>-SMALL_C))                                         /* inside plane sector b,a,c? */
+        if (sum<1.0+SMALL_C)                                                                    /* inside triangle a,b,c? */
         {
-          if (sum<1.0+SMALL_C)                                                                                          /* inside triangle a,b,c? */
-          {
-            V3_LINCOMB(1.0,x[a],coeff[0],v1,y);                                                                 /* global cordinates of cutting point */
-            V3_LINCOMB(1.0,y,       coeff[1],v2,y);
-            return (YES);
-          }
+          V3_LINCOMB(1.0,x[a],coeff[0],v1,y);                                           /* global cordinates of cutting point */
+          V3_LINCOMB(1.0,y,       coeff[1],v2,y);
+          return (YES);
         }
-        else
-          PrintErrorMessage('W',"SideIsCut","Huh???");
+      }
+      else if (CORNERS_OF_SIDE_TAG(tag,side)==4)                                        /* is side a quadrilateral? */
+      {
+        /* check if in triangle 3,0,2 */
+        a = CORNER_OF_SIDE_TAG(tag,side,3);                                                             /* corner 0 of side */
+        b = CORNER_OF_SIDE_TAG(tag,side,0);                                                             /* corner 1 of side */
+        c = CORNER_OF_SIDE_TAG(tag,side,2);                                                             /* corner 2 of side */
+        V3_SUBTRACT(x[b],x[a],v1);                                                                              /* vector from xa to xb */
+        V3_SUBTRACT(x[c],x[a],v2);                                                                              /* vector from xa to xb */
+        V3_COPY(v1,M[0]);                                                                                               /* transposed coefficient matrix for cut of lines */
+        V3_COPY(v2,M[1]);
+        V3_COPY(vel,M[2]);
+        M3_INVERT_WR(M,MI,det);                                                                                         /* inverse */
+        if (det==0.0)
+          return (NO);                                                                                                  /* lines is parallel to plane */
+
+        V3_SUBTRACT(ip,x[a],r);                                                                                         /* right hand side */
+        MT3_TIMES_V3(MI,r,coeff);                                                                               /* solve for coefficients */
+        if (coeff[2]>0.0)                                                                                               /* we search an upwind point */
+        {
+          sum = coeff[0] + coeff[1];
+          if ((coeff[0]>-SMALL_C) && (coeff[1]>-SMALL_C))                               /* inside plane sector b,a,c? */
+          {
+            if (sum<1.0+SMALL_C)                                                                        /* inside triangle a,b,c? */
+            {
+              V3_LINCOMB(1.0,x[a],coeff[0],v1,y);                                               /* global cordinates of cutting point */
+              V3_LINCOMB(1.0,y,       coeff[1],v2,y);
+              return (YES);
+            }
+          }
+          /* else */
+          /*                                    PrintErrorMessage('W',"SideIsCut","Huh???"); */
+        }
       }
     }
   }
@@ -806,6 +882,7 @@ static INT GetNodeNextToCut (INT tag, const DOUBLE_VECTOR *x, const DOUBLE_VECTO
 
   return (0);
 }
+
 #define POLYMAX         4
 #define INSIDE_POLY             -1
 #define OUTSIDE_POLY    -2
@@ -939,7 +1016,8 @@ INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const
   for (side=0; side<nco; side++)
   {
     /* skip side with pt */
-    /*         if (side==1) continue; */
+    if (side==1) continue;
+
     /* we search the cutting point of line xs+c0*(xn-xs) with pt-c1*vel by solving the system
                                                T
             (xn0-xs0  xn1-xs1)    (c0)   (pt0-xs0)
@@ -1046,7 +1124,7 @@ INT GetSkewedUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPV
     for (corn=0; corn<FVG_NSCV(geo); corn++)
       Shape[ip][corn] = 0.0;
 
-    if (V2_ISZERO(IPVel[ip]))
+    if (V_DIM_ISZERO(IPVel[ip]))
       continue;
 
     GetNodeNextToCut(tag,x,SCVF_GIP(FVG_SCVF(geo,ip)),IPVel[ip],&corn);
@@ -1080,20 +1158,26 @@ INT GetSkewedUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPV
 INT GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
 {
   const DOUBLE_VECTOR *x=FVG_GCOPTR(geo);
-  DOUBLE_VECTOR y;
+  DOUBLE_VECTOR y,local;
   const ELEMENT *elem=FVG_ELEM(geo);
   INT ip,corn,sd,side,tag=FVG_TAG(geo);
+  INT nco;
 #ifdef __TWODIM__
   DOUBLE d0, d1;
   INT co0,co1;
+#else
+  DOUBLE *CornerPtrs[MAXNC];
 #endif
 
+  nco = FVG_NSCV(geo);
   for (ip=0; ip<FVG_NSCVF(geo); ip++)
   {
-    for (corn=0; corn<FVG_NSCV(geo); corn++)
+    side = -1;
+
+    for (corn=0; corn<nco; corn++)
       Shape[ip][corn] = 0.0;
 
-    if (V2_ISZERO(IPVel[ip]))
+    if (V_DIM_ISZERO(IPVel[ip]))
       continue;
 
     /* find upwind point on element side */
@@ -1103,6 +1187,12 @@ INT GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[
         side = sd;
         break;
       }
+
+    if (side==-1)               /* no side found */
+    {
+      PrintErrorMessage('E',"GetLPSUpwindShapes","no side found -- abort");
+      return (__LINE__);
+    }
 #ifdef __TWODIM__
     co0 = CORNER_OF_SIDE(elem,side,0);
     co1 = CORNER_OF_SIDE(elem,side,1);
@@ -1111,8 +1201,15 @@ INT GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[
     Shape[ip][co0] = d1/(d0+d1);
     Shape[ip][co1] = d0/(d0+d1);
 #else
-    PrintErrorMessage('E',"GetLPSUpwindShapes","3D not implemented yet");
-    return(__LINE__);
+    CORNER_COORDINATES(elem,nco,CornerPtrs);
+
+    /* transform global coordinates to local of evaluation point */
+    if (UG_GlobalToLocal (nco,(const DOUBLE**)CornerPtrs,y,local))
+      return(__LINE__);
+
+    /* find values of shape functions in evaluation point */
+    if (GNs(nco,local,Shape[ip]))
+      return(__LINE__);
 #endif
   }
   return (0);
@@ -1375,7 +1472,6 @@ INT GetMJRawRegularUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECT
   }
 
 #   endif
-
 #   ifdef __THREEDIM__
   PrintErrorMessage('E',"GetMJRawRegularUpwindShapes","not implemented for 3D");
   return (__LINE__);
@@ -1515,7 +1611,7 @@ INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VEC
     for (i=0; i<FVG_NSCVF(geo); i++)
       IPShape[ip][i] = 0.0;
 
-    if (V2_ISZERO(IPVel[ip]))
+    if (V_DIM_ISZERO(IPVel[ip]))
       dimlessflow = 0.0;
     else
     {
