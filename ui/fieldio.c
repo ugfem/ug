@@ -37,6 +37,7 @@
 #include "gm.h"
 #include "evm.h"
 #include "shapes.h"
+#include "quadrature.h"
 #include "misc.h"
 #include "cmdline.h"
 #include "commands.h"
@@ -107,11 +108,7 @@ typedef struct {
 
 typedef struct {
   int nc;
-#ifdef __TWODIM__
-  int corner[4];
-#else
-  int corner[8];
-#endif
+  int corner[MAX_CORNERS_OF_ELEM];
 } EL_ARRAY;
 
 typedef struct {
@@ -138,15 +135,6 @@ typedef struct {
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
-
-/****************************************************************************/
-/*                                                                          */
-/* forward declarations of functions used before they are defined           */
-/*                                                                          */
-/****************************************************************************/
-
-static double AreaOfIntersection(COORD_POINT *a, int na,
-                                 COORD_POINT *b, int nb);
 
 /****************************************************************************/
 /*                                                                          */
@@ -349,12 +337,12 @@ static int WriteElementData(STREAM *stream, MULTIGRID *mg,
     lc[j] /= (double)CORNERS_OF_ELEM(e);
   for (i = 0; i < no_es; i++) {
     eval_s = se[i].eval->EvalProc;
-    s = eval_s(e, (const DOUBLE **)cc, lc);
+    s = eval_s(e, cc, lc);
     if (WriteDouble(stream, s)) return 1;
   }
   for (i = 0; i < no_ev; i++) {
     eval_v = ve[i].eval->EvalProc;
-    eval_v(e, (const DOUBLE **)cc, lc, v);
+    eval_v(e, cc, lc, v);
     for (j = 0; j < DIM; j++)
       if (WriteDouble(stream, v[j])) return 1;
   }
@@ -660,44 +648,106 @@ static int ParseArgumentsR(int argc, char **argv, MULTIGRID *mg, char *fname,
   return 0;
 }
 
-static void IE_Callback(BT_OBJECT *o, void *d)
+#if DIM==3
+static int InOuterHalfspace(DOUBLE_VECTOR *x, int i0, int i1, int i2,
+                            DOUBLE_VECTOR c, DOUBLE_VECTOR p)
+{
+  DOUBLE_VECTOR v1, v2, v3, n;
+  DOUBLE s;
+
+  V3_SUBTRACT(x[i1], x[i0], v1);
+  V3_SUBTRACT(x[i2], x[i0], v2);
+  V3_VECTOR_PRODUCT(v1, v2, n);
+  V3_SUBTRACT(c, x[i0], v3);
+  V3_SCALAR_PRODUCT(v3, n, s);
+  if (s > 0.0) V3_SCALE(-1.0, n);
+  V3_SUBTRACT(p, x[i0], v3);
+  V3_SCALAR_PRODUCT(v3, n, s);
+  if (s > 0.0) return 1;
+  return 0;
+}
+#endif
+
+static int PointInsideElement(DOUBLE_VECTOR *x, int n, DOUBLE_VECTOR p)
 {
 #if DIM==2
+  return PointInPolygonC(x, n, p);
+#else
+  DOUBLE_VECTOR c;
+  int i;
+
+  V3_SET(0.0, c);
+  for (i = 0; i < n; i++)
+    V3_ADD(c, x[i], c);
+  V3_SCALE(1.0/n, c);
+
+  switch(n)
+  {
+  case 4 :
+    if (InOuterHalfspace(x, 0, 1, 2, c, p)) return 0;
+    if (InOuterHalfspace(x, 1, 2, 3, c, p)) return 0;
+    if (InOuterHalfspace(x, 2, 0, 3, c, p)) return 0;
+    if (InOuterHalfspace(x, 0, 1, 3, c, p)) return 0;
+    break;
+  case 5 :
+    if (InOuterHalfspace(x, 0, 1, 2, c, p)) return 0;
+    if (InOuterHalfspace(x, 1, 2, 4, c, p)) return 0;
+    if (InOuterHalfspace(x, 2, 3, 4, c, p)) return 0;
+    if (InOuterHalfspace(x, 3, 0, 4, c, p)) return 0;
+    if (InOuterHalfspace(x, 0, 1, 4, c, p)) return 0;
+    break;
+  case 6 :
+    if (InOuterHalfspace(x, 0, 1, 2, c, p)) return 0;
+    if (InOuterHalfspace(x, 1, 2, 5, c, p)) return 0;
+    if (InOuterHalfspace(x, 2, 0, 3, c, p)) return 0;
+    if (InOuterHalfspace(x, 3, 0, 4, c, p)) return 0;
+    if (InOuterHalfspace(x, 3, 4, 5, c, p)) return 0;
+    break;
+  case 8 :
+    if (InOuterHalfspace(x, 0, 1, 2, c, p)) return 0;
+    if (InOuterHalfspace(x, 1, 2, 6, c, p)) return 0;
+    if (InOuterHalfspace(x, 2, 3, 7, c, p)) return 0;
+    if (InOuterHalfspace(x, 3, 0, 4, c, p)) return 0;
+    if (InOuterHalfspace(x, 0, 1, 5, c, p)) return 0;
+    if (InOuterHalfspace(x, 4, 5, 6, c, p)) return 0;
+    break;
+  }
+  return 1;
+#endif
+}
+
+static void IE_Callback(BT_OBJECT *o, void *d)
+{
   MY_BT_OBJECT *bto;
   IE_DATA *data;
   ELEMENT *e;
-  COORD_POINT a[4], b[4];
-  double area_inters, area_dest;
-  int i, j, na, nb;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR global;
+  int i, j, n;
+  QUADRATURE *quadrature;
+
+  const int order = 5;
 
   bto  = (MY_BT_OBJECT *)o;
   data = (IE_DATA *)d;
   e    = bto->e;
 
-  na = data->nc;
-  nb = CORNERS_OF_ELEM(e);
+  CORNER_COORDINATES(e, n, x);
 
-  for (i = 0; i < na; i++) {
-    a[i].x = data->p[i][0];
-    a[i].y = data->p[i][1];
+  if ((quadrature = GetQuadrature(DIM, n, order)) == NULL)
+    assert(0);
+
+  for (j = 0; j < Q_NIP(quadrature); j++) {
+    LOCAL_TO_GLOBAL(n, x, Q_LOCAL(quadrature, j), global);
+    if (PointInsideElement(data->p, data->nc, global)) {
+      for (i = 0; i < data->no_es; i++)
+        VVALUE(EVECTOR(e), data->es[i]) += data->scalar[i] * Q_WEIGHT(quadrature, j);
+      for (i = 0; i < data->no_ev; i++) {
+        VVALUE(EVECTOR(e), data->ev[i]+0) += data->vector[i][0] * Q_WEIGHT(quadrature, j);
+        VVALUE(EVECTOR(e), data->ev[i]+1) += data->vector[i][1] * Q_WEIGHT(quadrature, j);
+      }
+    }
   }
-
-  for (i = 0; i < nb; i++) {
-    b[i].x = XC(MYVERTEX(CORNER(e, i)));
-    b[i].y = YC(MYVERTEX(CORNER(e, i)));
-  }
-
-  area_inters = AreaOfIntersection(a, na, b, nb);
-  area_dest   = AreaOfIntersection(b, nb, b, nb);
-
-  for (i = 0; i < data->no_es; i++)
-    VVALUE(EVECTOR(e), data->es[i]) += data->scalar[i] * area_inters/area_dest;
-
-  for (i = 0; i < data->no_ev; i++) {
-    VVALUE(EVECTOR(e), data->ev[i]+0) += data->vector[i][0] * area_inters/area_dest;
-    VVALUE(EVECTOR(e), data->ev[i]+1) += data->vector[i][1] * area_inters/area_dest;
-  }
-#endif
 }
 
 static int IntegrateElementData(STREAM *stream, BOXTREE *tree, int no_elements,
@@ -835,116 +885,4 @@ INT InitFieldIO(void)
   if (CreateCommand("savefield", SaveFieldCommand) == NULL) return __LINE__;
   if (CreateCommand("loadfield", LoadFieldCommand) == NULL) return __LINE__;
   return 0;
-}
-
-/*** EOF ***/
-
-/*******************************************************************************
-   This incredible piece of shit is from http://cap-lore.com/MathPhys/IP/aip.c
-   It computes the area of the intersection of two polygons...
-*******************************************************************************/
-
-static double AreaOfIntersection(COORD_POINT * a, int na, COORD_POINT * b, int nb)
-{
-#if defined __GNUC__ && DIM==2
-  typedef struct {COORD_POINT min; COORD_POINT max;} box;
-  typedef long long hp;
-  typedef struct {long x; long y;} ipoint;
-  typedef struct {long mn; long mx;} rng;
-  typedef struct {ipoint ip; rng rx; rng ry; short in;} vertex;
-  vertex ipa[na+1], ipb[nb+1];
-  box B = {{MAX_D, MAX_D}, {-MAX_D, -MAX_D}};
-  double ascale;
-  void pp(ipoint p){ /*printf("<%08X, %08X> ", p.x, p.y)*/
-    ;
-  }
-  void range(COORD_POINT * x, int c){
-    while(c--) {
-      void bd(double * X, double y){
-        *X = *X<y ? *X : y;
-      }
-      void bu(double * X, double y){
-        *X = *X>y ? *X : y;
-      }
-      bd(&B.min.x, x[c].x); bu(&B.max.x, x[c].x);
-      bd(&B.min.y, x[c].y); bu(&B.max.y, x[c].y);
-    }
-  }
-  if(na < 3 || nb < 3) return 0;
-  range(a, na); range(b, nb);
-  {  const double gamut = 500000000., mid = gamut/2.;
-     double rngx = B.max.x - B.min.x, sclx = gamut/rngx,
-            rngy = B.max.y - B.min.y, scly = gamut/rngy;
-     {void fit(COORD_POINT * x, int cx, vertex * ix, int fudge){
-        {int c=cx; while(c--) {
-           ix[c].ip.x = (long)((x[c].x - B.min.x)*sclx - mid)&~7|fudge|c&1;
-           ix[c].ip.y = (long)((x[c].y - B.min.y)*scly - mid)&~7|fudge;
-         }}
-        ix[0].ip.y += cx&1;
-        ix[cx] = ix[0];
-        {int c=cx; while(c--) {
-           ix[c].rx = ix[c].ip.x < ix[c+1].ip.x ?
-                      (rng){ix[c].ip.x,ix[c+1].ip.x}: (rng){ix[c+1].ip.x,ix[c].ip.x};
-           ix[c].ry = ix[c].ip.y < ix[c+1].ip.y ?
-                      (rng){ix[c].ip.y,ix[c+1].ip.y}: (rng){ix[c+1].ip.y,ix[c].ip.y};
-           ix[c].in=0;
-         }}
-      }
-      fit(a, na, ipa, 0); fit(b, nb, ipb, 2);}
-     ascale = sclx*scly;}
-  { hp area(ipoint a, ipoint p, ipoint q)
-    {
-      return (hp)p.x*q.y - (hp)p.y*q.x +
-             (hp)a.x*(p.y - q.y) + (hp)a.y*(q.x - p.x);
-    }
-    hp s = 0; int j, k;
-    void cntrib(ipoint f, ipoint t, short w, char * S)
-    {
-      s += (hp)w*(t.x-f.x)*(t.y+f.y)/2;
-      if(0) {pp(f); pp(t); printf("%016llX %d, %s\n", s, w, S);}
-    }
-    int ovl(rng p, rng q){
-      return p.mn < q.mx && q.mn < p.mx;
-    }
-    for(j=0; j<na; ++j) for(k=0; k<nb; ++k)
-        if(ovl(ipa[j].rx, ipb[k].rx) && ovl(ipa[j].ry, ipb[k].ry)) {
-          hp a1 = -area(ipa[j].ip, ipb[k].ip, ipb[k+1].ip),
-             a2 = area(ipa[j+1].ip, ipb[k].ip, ipb[k+1].ip);
-          {int o = a1<0; if(o == a2<0)
-           {hp a3 = area(ipb[k].ip, ipa[j].ip, ipa[j+1].ip),
-               a4 = -area(ipb[k+1].ip, ipa[j].ip, ipa[j+1].ip);
-          if(a3<0 == a4<0) {
-            void cross(vertex * a, vertex * b, vertex * c, vertex * d,
-                       double a1, double a2, double a3, double a4){
-              double r1=a1/(a1+a2), r2 = a3/(a3+a4);
-              cntrib((ipoint){a->ip.x + r1*(b->ip.x-a->ip.x),
-                              a->ip.y + r1*(b->ip.y-a->ip.y)},
-                     b->ip, 1, "one");
-              cntrib(d->ip, (ipoint){
-                       c->ip.x + r2*(d->ip.x - c->ip.x),
-                       c->ip.y + r2*(d->ip.y - c->ip.y)
-                     }, 1, "two");
-              ++a->in; --c->in;
-            }
-            if(o) cross(&ipa[j], &ipa[j+1], &ipb[k], &ipb[k+1], a1, a2, a3, a4);
-            else cross(&ipb[k], &ipb[k+1], &ipa[j], &ipa[j+1], a3, a4, a1, a2);
-          }}}
-        }
-    {void inness(vertex * P, int cP, vertex * Q, int cQ){
-       int s=0, c=cQ; ipoint p = P[0].ip;
-       while(c--) if(Q[c].rx.mn < p.x && p.x < Q[c].rx.mx)
-         {int sgn = 0 < area(p, Q[c].ip, Q[c+1].ip);
-         s += sgn != Q[c].ip.x < Q[c+1].ip.x ? 0 : (sgn ? -1 : 1); }
-       {int j; for(j=0; j<cP; ++j)
-       {if(s) cntrib(P[j].ip, P[j+1].ip, s, "three");
-          s += P[j].in;}}
-       if(0) {int j; for(j=0; j<=cP; ++j)
-                /*printf("ip: %08X %08X, %d\n", P[j].ip.x, P[j].ip.y, P[j].in)*/;
-              printf("\n");}
-     }
-     inness(ipa, na, ipb, nb); inness(ipb, nb, ipa, na);}
-    return s/ascale;}
-#else
-  return 1.0; /* just for fun ... */
-#endif
 }
