@@ -5,10 +5,12 @@
 # mif (MacOS)
 # nif (NeXT)
 
-SUBDIRS = ppm meta ps . sif xif rif
+SUBDIRS = ppm meta ps . sif xif rif $(EXTRADIR)
 
 if MACOS
-SUBDIRS += mif
+  EXTRADIR = mif
+else
+  EXTRADIR =
 endif
 
 noinst_LTLIBRARIES = libdevices.la
