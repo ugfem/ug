@@ -38,6 +38,7 @@
 #include "compiler.h"
 #endif
 
+#include <string.h>
 #include "heaps.h"
 
 
@@ -167,6 +168,8 @@ const char *strntok             (const char *str, const char *sep, int n, char *
 char       *StrDup                              (const char *s);
 void        QSort               (void *base, INT n, INT size, int (*cmp)(const void *, const void *));
 void        SelectionSort       (void *base, INT n, INT size, int (*cmp)(const void *, const void *));
+char            *ExpandCShellVars       (char *string);
+
 #ifdef __MWCW__
 /* this function is no external for the MetroWerks CodeWarrior: so just define it */
 int                     matherr                         (struct exception *x);
