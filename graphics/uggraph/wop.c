@@ -11029,7 +11029,7 @@ static INT CompareElements (const void *ElementHandle0,
   {
     /* determine triangle of theElement0 */
     while( ((view0>>i1)&1) == b0) i1++;
-    for (j=0; j<CORNERS_OF_SIDE(theElement[0],0); j++)
+    for (j=0; j<CORNERS_OF_SIDE(theElement[0],i1); j++)
     {
       V3_TRAFOM4_V3(Corners[0][CORNER_OF_SIDE(theElement[0],i1,j)],ObsTrafo,Triangle[0][j])
       (*OBS_ProjectProc)(Triangle[0][j],&(ScreenPoints[0][j]));
@@ -11040,7 +11040,7 @@ static INT CompareElements (const void *ElementHandle0,
     for (k=0; k<num1; k++)
     {
       while ( ((view1>>k1)&1) == b1 ) k1++;
-      for (j=0; j<CORNERS_OF_SIDE(theElement[1],0); j++)
+      for (j=0; j<CORNERS_OF_SIDE(theElement[1],k1); j++)
       {
         V3_TRAFOM4_V3(Corners[1][CORNER_OF_SIDE(theElement[1],k1,j)],ObsTrafo,Triangle[1][j])
         (*OBS_ProjectProc)(Triangle[1][j],&(ScreenPoints[1][j]));
