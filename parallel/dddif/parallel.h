@@ -90,6 +90,8 @@ enum HandlerSets
 #define HAS_DDDHDR(t)      (dddctrl.dddObj[(t)])
 #define CONTEXT(p)         (dddctrl.context[(p)])
 
+#define DDD_DOMAIN_DATA    DDD_USER_DATA+1
+#define DDD_EXTRA_DATA     DDD_USER_DATA+2
 
 #endif /* ModelP */
 
@@ -130,7 +132,6 @@ extern DDD_TYPE TypeMatrix;
 extern DDD_TYPE TypeBndP;
 extern DDD_TYPE TypeEdge;
 extern DDD_TYPE TypeBndS;
-
 
 
 /* DDD Global Controls */
