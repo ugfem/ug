@@ -38,7 +38,7 @@ extern "C" {
 /* #define exactly one of the following constants: (in Makefile)            */
 /*                                                                          */
 /*          __MPW32__    Apple MacIntosh Programmers Workshop version 3.2   */
-/*          __INDIGO__   IRIS Indigo version                                */
+/*          __SGI__      IRIS Indigo version                                */
 /*          __PARIX__    PARIX Transputer version                           */
 /*          __AIX__      AIX version (IBM)                                  */
 /*          __PARAGON__  Intel Paragon version                              */

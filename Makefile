@@ -6,42 +6,37 @@
 #																			 #
 ##############################################################################
 
-# load architecture dependent makefile	
-include ug.arch
-
-# architecture-dependent makefile entries
-include machines/mk.$(ARCHDIR)
-
-# include switches
+# include configuration and all makefile macro definitions
 include ug.conf
 
 # the following list may be extended
-MODULES = LOW DEV DOM GM NUMERICS GRAPH GRAPE UI GG $(PMODULES)
-UGMODULES = LOW GM NUMERICS GRAPH GRAPE UI GG $(PMODULES)
+MODULES = LOW DEV DOM GM NUMERICS GRAPHICS UI $(MODEL_TARGET)
+UGMODULES = LOW GM NUMERICS GRAPHICS UI $(MODEL_TARGET)
 
-# dimension dependent targets
-version = $(DIM)Dversion
 
 # local C compiler flags
-LCFLAGS = -Ilow -Idddif -Idev -Idom -Idom/$(DOM_MODULE) -Igm -Igraph -Iui -Inumerics -Igg
+LCFLAGS = -I./include
 
 # object files for both dimensions
 OBJECTS = initug.o
 
+
+##############################################################################
+
 # make all
-all: $(MODULES) $(OBJECTS)
-	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
+all: $(OBJECTS) $(MODULES)
+	$(ARCH_AR) $(ARCH_ARFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 	echo "libug, libdom and libdev compiled"
 
-uglib: $(UGMODULES) $(OBJECTS) 
-	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
+uglib: $(OBJECTS) $(UGMODULES)
+	$(ARCH_AR) $(ARCH_ARFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 	echo "libug compiled"
+
+
+##############################################################################
 
 LOW: include
 	cd low; make -f Makefile.low; cd ..;
-
-DDDIF: include
-	cd dddif; make -f Makefile.dddif; cd ..;
 
 DEV: include
 	cd dev; make -f Makefile.dev; cd ..;
@@ -50,50 +45,60 @@ DOM: include
 	cd dom; make -f Makefile.dom; cd ..;
 
 GM: include
-	cd gm; make -f Makefile.gm $(version); cd ..;
+	cd gm; make -f Makefile.gm; cd ..;
 
 NUMERICS: include
-	cd numerics; make -f Makefile.numerics $(version); cd ..;
+	cd numerics; make -f Makefile.numerics; cd ..;
 
-GRAPH: include
-	cd graph; make -f Makefile.graph $(version); cd ..;
-
-GRAPE: include
-	cd grape; make -f Makefile.grape $(version)GRAPE$(GRAPE); cd ..;
+GRAPHICS: include
+	cd graphics; make -f Makefile.graphics; cd ..;
 
 UI: include
-	cd ui; make -f Makefile.ui $(version); cd ..;
+	cd ui; make -f Makefile.ui; cd ..;
 
-GG: include
-	cd gg; make -f Makefile.gg $(version); cd ..;
-	cd gg3d; make -f Makefile.gg3d $(version); cd ..;
+
+##############################################################################
+
+# targets for MODEL, exactly one will be chosen
+
+SEQUENTIAL:
+
+PARALLEL: include
+	cd parallel; make -f Makefile.parallel; cd ..;
+
+
+SEQUENTIAL_clean:
+
+PARALLEL_clean:
+	cd parallel; make -f Makefile.parallel clean; cd ..;
+
+
+##############################################################################
 
 include:
 	ugmakelinks;
 
 # default rule
 .c.o:
-	$(CC) $(UGDEFINES) $(CFLAGS) $(LCFLAGS) $<
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
-clean:
+
+##############################################################################
+
+clean: $(MODEL_TARGET)_clean
 	rm -f $(OBJECTS)
 	cd low; make -f Makefile.low clean; cd ..;
-	cd dddif; make -f Makefile.dddif clean; cd ..;
 	cd dev; make -f Makefile.dev clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
 	cd gm; make -f Makefile.gm clean; cd ..;
 	cd numerics; make -f Makefile.numerics clean; cd ..;
-	cd graph; make -f Makefile.graph clean; cd ..;
+	cd graphics; make -f Makefile.graphics clean; cd ..;
 	cd ui; make -f Makefile.ui clean; cd ..;
-	cd gg; make -f Makefile.gg clean; cd ..;
-	cd gg3d; make -f Makefile.gg3d clean; cd ..;
-#	cd machines/$(ARCHDIR); make clean; cd ..;
 
-ifdef:
-	cd dddif; make -f Makefile.dddif clean; cd ..;
+ifdef: $(MODEL_TARGET)_clean
 	cd gm; make -f Makefile.gm clean; cd ..;
 	cd numerics; make -f Makefile.numerics clean; cd ..;
-	cd graph; make -f Makefile.graph clean; cd ..;
+	cd graphics; make -f Makefile.graphics clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
 	cd ui; rm commands.o ; cd ..;
 	rm -f initug.o;
