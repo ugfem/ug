@@ -104,8 +104,8 @@ typedef struct {
   MEM used;
   struct block *heapptr;
   INT topStackPtr,bottomStackPtr;
-  char *topStack[MARK_STACK_SIZE];
-  char *bottomStack[MARK_STACK_SIZE];
+  MEM topStack[MARK_STACK_SIZE];
+  MEM bottomStack[MARK_STACK_SIZE];
 } HEAP;
 
 /****************************************************************************/
