@@ -341,13 +341,7 @@ struct vsegment {
   unsigned INT control;                         /* object identification, various flags */
   PATCH *thePatch;                                      /* pointer to patch						*/
   COORD lambda[DIM_OF_BND];                     /* position of vertex on boundary segmen*/
-
-        #ifdef __TWODIM__
-  COORD zeta;                                           /* local coord. of vertex  in father edg*/
-  /* Def.: l = (1-z)*l0 + z*l1			*/
-        #endif
-
-  struct vsegment *next;
+  struct vsegment *next;                /* pointer to next vsegment of the vertex*/
 };
 
 
@@ -377,7 +371,6 @@ union vertex {                                          /* only used to define p
   struct bvertex bv;
 } ;
 
-
 struct node {                                           /* level dependent part of a vertex     */
 
         #ifdef ModelP
@@ -396,7 +389,9 @@ struct node {                                           /* level dependent part 
   struct node *son;                                     /* node on finer level (NULL if none)	*/
   union vertex *myvertex;                       /* corresponding vertex structure		*/
 
-  /* associated vector if */
+  /* WARNING: the allocation of the vector pointer depends on the format      */
+
+  /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 } ;
 
@@ -416,7 +411,10 @@ struct edge {                                           /* undirected edge of th
 
   struct node *midnode;                         /* pointer to mid node on next finer gri*/
 
-  /* associated vector if */
+
+  /* WARNING: the allocation of the vector pointer depends on the format      */
+
+  /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 } ;
 
@@ -456,7 +454,12 @@ struct triangle {
   union element *sons[4];                       /* element tree                                                 */
   union element *nb[3];                         /* dual graph							*/
 
-  /* associated vector if */
+  /* WARNING: the allocation of the vector pointer depends on the format      */
+  /* void *ptr[4] would be possible too:                                      */
+  /* if there are no element vectors, the sides will be ptr[0],ptr[1],ptr[2]  */
+  /* Use the macros to find the correct address!                              *
+
+          /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
   struct elementside *side[3];          /* only on bnd, NULL if interior side	*/
@@ -481,7 +484,12 @@ struct quadrilateral {
   union element *sons[4];                       /* element tree                                                 */
   union element *nb[4];                         /* dual graph							*/
 
-  /* associated vector if */
+  /* WARNING: the allocation of the vector pointer depends on the format      */
+  /* void *ptr[5] would be possible too:                                      */
+  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
+  /* Use the macros to find the correct address!                              *
+
+          /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
   struct elementside *side[4];          /* only on bnd, NULL if interior side	*/
@@ -506,10 +514,15 @@ struct tetrahedron {
   union element *sons[1];                       /* element tree                                                 */
   union element *nb[4];                         /* dual graph							*/
 
-  /* associated vector if */
+  /* WARNING: the allocation of the vector pointer depends on the format      */
+  /* void *ptr[9] would be possible too:                                      */
+  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
+  /* Use the macros to find the correct address!                              *
+
+          /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
-  /* associated vector if */
+  /* associated vector */
   VECTOR *sidevector[4];                        /* associated vectors for sides			*/
 
   struct elementside *side[4];          /* only on bnd, NULL if interior side	*/
@@ -534,10 +547,15 @@ struct pyramid {
   union element *sons[1];                       /* element tree                                                 */
   union element *nb[5];                         /* dual graph							*/
 
-  /* associated vector if */
+  /* WARNING: the allocation of the vector pointer depends on the format      */
+  /* void *ptr[11] would be possible too:                                     */
+  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
+  /* Use the macros to find the correct address!                              *
+
+          /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
-  /* associated vector if */
+  /* associated vector */
   VECTOR *sidevector[5];                        /* associated vectors for sides			*/
 
   struct elementside *side[5];          /* only on bnd, NULL if interior side	*/
@@ -562,10 +580,15 @@ struct hexahedron {
   union element *sons[1];                       /* element tree                                                 */
   union element *nb[6];                         /* dual graph							*/
 
-  /* associated vector if */
+  /* WARNING: the allocation of the vector pointer depends on the format      */
+  /* void *ptr[13] would be possible too:                                     */
+  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
+  /* Use the macros to find the correct address!                              *
+
+          /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
-  /* associated vector if */
+  /* associated vector */
   VECTOR *sidevector[6];                        /* associated vectors for sides			*/
 
   struct elementside *side[6];          /* only on bnd, NULL if interior side	*/
@@ -1373,8 +1396,6 @@ extern CONTROL_ENTRY
 #define VS_PATCH(p)             (p)->thePatch
 #define PVECT(p)                (p)->lambda
 #define LAMBDA(p,i)     (p)->lambda[i]
-#define ZETA(p)                 (p)->zeta
-
 
 /****************************************************************************/
 /*																			*/
@@ -1890,6 +1911,8 @@ INT                     DisposeIMatrices                (GRID *theGrid, MATRIX *
 #endif
 EDGE            *CreateAuxEdge                  (GRID *theGrid, NODE *from, NODE *to);
 INT             DisposeAuxEdges                 (GRID *theGrid);
+INT         GetAllVectorsOfElement  (GRID *theGrid, ELEMENT *theElement,
+                                     VECTOR **vec);
 
 /* searching */
 NODE            *FindNodeFromId                 (GRID *theGrid, INT id);
