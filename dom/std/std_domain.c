@@ -2528,7 +2528,6 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 /****************************************************************************/
 /****************************************************************************/
 
-/* domain interface function: for description see domain.h */
 static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global)
 {
   if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
@@ -2557,6 +2556,7 @@ static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global)
   return(1);
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   BND_PS *ps;
@@ -2605,12 +2605,38 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
   return(1);
 }
 
+static INT SideIsCooriented (BND_PS *ps)
+{
+#       ifdef __TWODIM__
+  if (BND_LOCAL(ps,1)[0]>BND_LOCAL(ps,0)[0])
+    return (YES);
+  else
+    return (NO);
+#       endif
+
+#       ifdef __THREEDIM__
+  INT i, n;
+  DOUBLE vp, x0[2], x1[2];
+
+  n = BND_N(ps);
+  for (i=0; i<n; i++)
+  {
+    V2_SUBTRACT(BND_LOCAL(ps,(i+1)%n), BND_LOCAL(ps,i), x0);
+    V2_SUBTRACT(BND_LOCAL(ps,(i+n-1)%n), BND_LOCAL(ps,i), x1);
+    V2_VECTOR_PRODUCT(x0, x1, vp);
+    if (vp>SMALL_C)
+      return (NO);
+  }
+  return (YES);
+#       endif
+}
+
 /* domain interface function: for description see domain.h */
 INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
 {
   BND_PS *ps;
   PATCH *p;
-  DOUBLE lambda[DIM_OF_BND],global[DIM];
+  DOUBLE lambda[DIM_OF_BND+1],global[DIM+1];
   INT i;
 
   PRINTDEBUG(dom,1,(" BndCond loc %f\n",local[0]));
@@ -2656,45 +2682,25 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
     type[0] = PATCH_ID(p) - currBVP->sideoffset;
     if (PatchGlobal(p,lambda,global))
       return(1);
+    /* besides gobal coordinates return also whether element lies left or right of boundary */
+    global[DIM] = (SideIsCooriented(ps)) ? ELEM_IS_LEFT : ELEM_IS_RIGHT;
     if (in == NULL)
       return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
+    /* TODO: copy left/right (s.a.) also to in? (calling function has to provide enough storage) */
     for (i=0; i<DIM; i++)
       in[i] = global[i];
     return((*(currBVP->GeneralBndCond))(NULL,NULL,in,value,type));
   }
 
+  /* besides parametric coordinates return also whether element lies left or right of boundary */
+  lambda[DIM_OF_BND] = (SideIsCooriented(ps)) ? ELEM_IS_LEFT : ELEM_IS_RIGHT;
   if (in == NULL)
     return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,lambda,value,type));
 
+  /* TODO: copy left/right (s.a.) also to in? (calling function has to provide enough storage) */
   for (i=0; i<DIM_OF_BND; i++)
     in[i] = lambda[i];
   return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,in,value,type));
-}
-
-static INT SideIsCooriented (BND_PS *ps)
-{
-#       ifdef __TWODIM__
-  if (BND_LOCAL(ps,1)[0]>BND_LOCAL(ps,0)[0])
-    return (YES);
-  else
-    return (NO);
-#       endif
-
-#       ifdef __THREEDIM__
-  INT i, n;
-  DOUBLE vp, x0[2], x1[2];
-
-  n = BND_N(ps);
-  for (i=0; i<n; i++)
-  {
-    V2_SUBTRACT(BND_LOCAL(ps,(i+1)%n), BND_LOCAL(ps,i), x0);
-    V2_SUBTRACT(BND_LOCAL(ps,(i+n-1)%n), BND_LOCAL(ps,i), x1);
-    V2_VECTOR_PRODUCT(x0, x1, vp);
-    if (vp>SMALL_C)
-      return (NO);
-  }
-  return (YES);
-#       endif
 }
 
 /* domain interface function: for description see domain.h */
