@@ -93,20 +93,10 @@
 
 #ifdef __MWCW__
 #define Str255          ConstStr255Param
-#define qdgray          &qd.gray
+#define qdgray          &qd.black
 #else
-#define qdgray          &qd.gray
+#define qdgray          &qd.black
 #endif
-
-#define DOCSIZEMAX      200             /* minimum initial size of doc window		*/
-#define DOCHMIN         260             /* minimum horizontal size of doc window	*/
-#define DOCVMIN         50                      /* minimum vertical size of doc window		*/
-
-#define MAXZOOM         6000.0          /* maximum zoom factor						*/
-
-
-#define HiWrd(aLong) (((aLong) >> 16) & 0xFFFF)
-#define LoWrd(aLong) ((aLong) & 0xFFFF)
 
 #define GET_CHOSEN_TOOL(val,rect,m)     {\
     if (((int)m[1]<rect.bottom-16) || ((int)m[1]>rect.bottom) || ((int)m[0]-(rect.right-119)<0) \
@@ -335,6 +325,118 @@ static void MacPolymark (short n, SHORT_POINT *points)
     Marker(points[i]);
 }
 
+static void InvMarker (SHORT_POINT point)
+{
+  Rect r;
+  PolyHandle myPoly;
+  short n,s,S,x,y;
+
+  s = currgw->marker_size/2;
+  S = 1.41*s;
+  n = currgw->marker_id;
+
+  x = point.x;
+  y = point.y;
+  r.top = y-s; r.bottom = y+s;
+  r.left = x-s; r.right = x+s;
+
+  switch (n)
+  {
+  case EMPTY_SQUARE_MARKER :
+    PenMode(patXor);
+    FrameRect(&r);
+    break;
+  case GRAY_SQUARE_MARKER :
+    PenMode(patXor);
+    PenPat(qdgray);
+    PaintRect(&r);
+    PenNormal();
+    break;
+  case FILLED_SQUARE_MARKER :
+    PenMode(patXor);
+    PenPat(qdgray);
+    PaintRect(&r);
+    break;
+  case EMPTY_CIRCLE_MARKER :
+    PenMode(patXor);
+    FrameOval(&r);
+    break;
+  case GRAY_CIRCLE_MARKER :
+    PenMode(patXor);
+    PenPat(qdgray);
+    PaintOval(&r);
+    PenNormal();
+    break;
+  case FILLED_CIRCLE_MARKER :
+    PenMode(patXor);
+    PenPat(qdgray);
+    PaintOval(&r);
+    break;
+  case EMPTY_RHOMBUS_MARKER :
+    PenMode(patXor);
+    PenPat(qdgray);
+    MoveTo(x,y+S);
+    LineTo(x+S,y);
+    LineTo(x,y-S);
+    LineTo(x-S,y);
+    LineTo(x,y+S);
+    break;
+  case GRAY_RHOMBUS_MARKER :
+    PenMode(patXor);
+    PenPat(qdgray);
+    myPoly = OpenPoly();
+    MoveTo(x,y+S);
+    LineTo(x+S,y);
+    LineTo(x,y-s);
+    LineTo(x-S,y);
+    LineTo(x,y+S);
+    ClosePoly();
+    InvertPoly(myPoly);
+    KillPoly(myPoly);
+    PenNormal();
+    break;
+  case FILLED_RHOMBUS_MARKER :
+    myPoly = OpenPoly();
+    MoveTo(x,y+S);
+    LineTo(x+S,y);
+    LineTo(x,y-S);
+    LineTo(x-S,y);
+    LineTo(x,y+S);
+    ClosePoly();
+    InvertPoly(myPoly);
+    KillPoly(myPoly);
+    PenNormal();
+    break;
+  case PLUS_MARKER :
+    PenMode(patXor);
+    PenPat(qdgray);
+    MoveTo(x,y+s);
+    LineTo(x,y-s);
+    MoveTo(x-s,y);
+    LineTo(x+s,y);
+    break;
+  case CROSS_MARKER :
+    PenMode(patXor);
+    PenPat(qdgray);
+    MoveTo(x-s,y+s);
+    LineTo(x+s,y-s);
+    MoveTo(x-s,y-s);
+    LineTo(x+s,y+s);
+    break;
+  default :
+    break;
+  }
+  PenNormal();
+}
+
+static void MacInvPolymark (short n, SHORT_POINT *points)
+{
+  int i;
+
+  for (i=0; i<n; i++)
+    InvMarker(points[i]);
+}
+
 static void MacText (const char *s, INT mode)
 {
   switch(mode)
@@ -490,6 +592,7 @@ static void InitMacPort ()
   MacOutputDevice->InversePolygon         = MacInversePolygon;
   MacOutputDevice->ErasePolygon           = MacErasePolygon;
   MacOutputDevice->Polymark                       = MacPolymark;
+  MacOutputDevice->InvPolymark            = MacInvPolymark;
   MacOutputDevice->Text                           = MacText;
   MacOutputDevice->CenteredText           = MacCenteredText;
   MacOutputDevice->ClearViewPort          = MacClearViewPort;

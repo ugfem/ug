@@ -295,6 +295,9 @@ static void MetaPolymark (short n, SHORT_POINT *points)
   return;
 }
 
+static void MetaInvPolymark (short n, SHORT_POINT *points)
+{}
+
 static void MetaText (const char *s, INT mode)
 {
   short n,size;
@@ -476,6 +479,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
   thePort->InversePolygon = MetaInversePolygon;
   thePort->ErasePolygon   = MetaErasePolygon;
   thePort->Polymark               = MetaPolymark;
+  thePort->InvPolymark    = MetaInvPolymark;
   thePort->Text                   = MetaText;
   thePort->CenteredText   = MetaCenteredText;
   thePort->ClearViewPort  = MetaClearViewPort;
