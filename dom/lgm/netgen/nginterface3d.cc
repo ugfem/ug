@@ -41,20 +41,16 @@ static Point3d tripoint;
 extern int yyparse ();
 
 static ARRAY<Point3d> points;
-static ARRAY<Element> * volelements;
-static int disp;
-static double vol0;
 static int write;
 static int DD;
 
 static ARRAY<Point3d> locpoints;
 static ARRAY<Point2d> plainpoints;
 static ARRAY<ILINE> loclines;
-static const char * rname;
 static int cntelem;
 static int oldnl;
-static int qualclass, surfind;
-static int LGM_DEBUG = 1;
+static int surfind;
+static int LGM_DEBUG = 0;
 static double SMALL = 0.0005;
 static double Triangle_Angle2 = 40.0;
 static Point3d sp1;
@@ -241,9 +237,7 @@ void surfacemeshing :: ProjectPoint (INDEX surfind, Point3d & p) const
   Vec3d e1,e2,e3,n1,n2,n3,np;
   Point3d ep1,ep2,ep3,p1,pold,pnew;
   double dist;
-  int mi;
 
-  mi = GetTriangleId(p,pnew);
   p = pnew;
 
   dist = sqrt(  (p.X() - pold.X()) * (p.X() - pold.X())
@@ -325,7 +319,7 @@ double surfacemeshing :: CalcLocalH (const Point3d & p, int surfind, double gh) 
 
 int surfacemeshing :: Write_Surface_Grid ()
 {
-  int i,j;
+  int i;
   FILE *file;
 
   file = fopen("surface","w");
@@ -384,7 +378,7 @@ void my_surfacemeshing :: SaveElement (const Element & elem)
 }
 
 static my_surfacemeshing * meshing;
-static const surfacemeshing * meshthis;
+//static const surfacemeshing * meshthis;
 
 int AddGeomPoint (int id, double x, double y, double z)
 {
@@ -481,7 +475,7 @@ void surfacemeshing :: Mesh (double gh)
   ARRAY<int> delpoints, dellines;
   ARRAY<Element> locelements;
   int i, j, oldnp;
-  char ch, found;
+  char found;
   INDEX globind;
   double in[5];
   static ARRAY<Point3d> locp;
@@ -515,12 +509,12 @@ void surfacemeshing :: Mesh (double gh)
   }
 
   testmode = 0;
-  meshthis = this;
+  //	meshthis = this;
 
   StartMesh();
 
   adfront ->SetStartFront ();
-  while (ch != 'e' && !adfront ->Empty())
+  while (!adfront ->Empty())
   {
     //		adfront->Print(cout);
 
@@ -534,13 +528,11 @@ void surfacemeshing :: Mesh (double gh)
 
       h = gh;
       if (h>0.0)
-        qualclass =
-          adfront ->GetLocals (locpoints, loclines, pindex, lindex,
-                               surfind, 3 * h, dist);
+        adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                             surfind, 3 * h, dist);
       else
-        qualclass =
-          adfront ->GetLocals (locpoints, loclines, pindex, lindex,
-                               surfind, -3 * h, dist);
+        adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                             surfind, -3 * h, dist);
 
       oldnp = locpoints.Size();
       oldnl = loclines.Size();
@@ -567,9 +559,8 @@ void surfacemeshing :: Mesh (double gh)
         in[2] = bemp.Z();
         in[3] = gh;
         Get_Local_h(in,&h);
-        qualclass =
-          adfront ->GetLocals (locpoints, loclines, pindex, lindex,
-                               surfind, - 3 * gh, dist);
+        adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                             surfind, - 3 * gh, dist);
       }
 
       DefineTransformation (surfind, locpoints[loclines[1].I1()],
@@ -598,8 +589,6 @@ void surfacemeshing :: Mesh (double gh)
 
     found = GenerateTriangle (plainpoints, loclines, locelements,
                               dellines, h);
-    /*    found = ApplyRules (rules, plainpoints, loclines, locelements,
-                            dellines, qualclass);*/
 
     if (found)
     {
@@ -641,8 +630,6 @@ void surfacemeshing :: Mesh (double gh)
         Write2Shell(cntelem);
         //				Write_Surface_Grid();
         cntelem++;
-        //				printf("%d %d %d %d\n",cntelem,locelements[i].PNum(1),locelements[i].PNum(2),
-        //						locelements[i].PNum(3));
       }
 
       for (i = 1; i <= dellines.Size(); i++)
@@ -650,8 +637,6 @@ void surfacemeshing :: Mesh (double gh)
         adfront -> DeleteLine (lindex[dellines[i]]);
       }
 
-      //			rname = rules[found]->Name();
-      //			adfront->GetPoints(locp);
     }
     else
     {
@@ -859,7 +844,7 @@ double Project2Plane(   Point3d & p,
                         Vec3d & n1,
                         Vec3d & n2)
 {
-  double dist, dist1;
+  double dist;
   np = p - p0;
 
   dist = (n2 * np);
@@ -874,8 +859,6 @@ Vec3d NormalVector(InputElement e)
 {
   Vec3d e1,e2,e3,n1,n2,n3,np;
   Point3d ep1,ep2,ep3,pold,p;
-  double min,test,dist;
-  int mi,i;
 
   ep1 = geompoints[e.PNum(1)].p;
   ep2 = geompoints[e.PNum(2)].p;
@@ -907,7 +890,6 @@ int InitSurfaceNetgen (char * rulefilename)
 {
   meshing = new my_surfacemeshing(rulefilename);
 
-  volelements = new ARRAY<Element>;
   nbp = 0;
 
   return 0;
@@ -916,12 +898,11 @@ int InitSurfaceNetgen (char * rulefilename)
 int StartSurfaceNetgen (double h, int smooth, int display,int D)
 {
   int i;
-  double hpx, hpy, hpz, v1x, v1y, v1z, v2x, v2y, v2z;
+  double v1x, v1y, v1z, v2x, v2y, v2z;
   Vec3d n;
   Point3d p1,p2,p3,p,p_in,p_out;
 
   nbp = points.Size();
-  disp = display;
   write = 0;
   DD = D;
 
@@ -982,8 +963,8 @@ int StartSurfaceNetgen (double h, int smooth, int display,int D)
 
 int c11(const Point3d & point, Point3d & returnpoint, Vec3d n)
 {
-  int i,j,triang[10][4],trnb, mi, nn1, nn2, np1, np2;
-  double lam[3],prod,help, angle,sp;
+  int i, mi;
+  double lam[3],help, angle,sp;
   Point3d p0,p1,p2, p;
   Vec3d edge,geomedge,n0,n1,n2,np, ne;
   InputElement es;
@@ -996,7 +977,6 @@ int c11(const Point3d & point, Point3d & returnpoint, Vec3d n)
    */
 
   mi = 0;
-  trnb = 0;
   for(i=1; i<=geomelements.Size(); i++)
   {
     ne = NormalVector(geomelements[i]);
@@ -1037,7 +1017,7 @@ int c11(const Point3d & point, Point3d & returnpoint, Vec3d n)
 
 int c22(Point3d & p, Point3d & returnpoint, double &min, Vec3d n)
 {
-  int i,j, mi;
+  int i, mi;
   double lam[3],help, angle,sp;
   Point3d p0,p1,p2;
   Vec3d n0,n1,n2,np, ne;
@@ -1091,7 +1071,7 @@ int c22(Point3d & p, Point3d & returnpoint, double &min, Vec3d n)
 int c33(Point3d & p, Point3d & returnpoint, double &min, Vec3d n)
 {
   int i,j, mi;
-  double lam[3],help, d0, d1, dist, m, angle,sp;
+  double help, d0, d1, m, angle,sp;
   Point3d p0,p1,p2, point;
   Vec3d n0,n1,n2,np, dist_vec, ne;
 
@@ -1168,7 +1148,7 @@ int c33(Point3d & p, Point3d & returnpoint, double &min, Vec3d n)
 
 int Project_Point2Surface_2(Point3d &inpoint, Point3d &outpoint, Vec3d n)
 {
-  int i, j, mi,mi2,mi3;
+  int mi,mi2,mi3;
   double min2, min3;
   Point3d p1, p2, p3;
   mi = 0;
@@ -1198,8 +1178,8 @@ int Project_Point2Surface_2(Point3d &inpoint, Point3d &outpoint, Vec3d n)
 
 int Get_unique_Tangentialplane(const Point3d & point)
 {
-  int i,j,triang[10][4],trnb, mi, nn1, nn2, np1, np2,nb,list[10];
-  double lam[3],prod,help,angle;
+  int i,j,nb,list[10];
+  double lam[3],help,angle;
   Point3d p0,p1,p2, p;
   Vec3d edge,geomedge,n0,n1,n2,np,n_old,n_new;
   InputElement es;
@@ -1208,7 +1188,6 @@ int Get_unique_Tangentialplane(const Point3d & point)
   // liefere Inputdreieck zurueck, das eine sinnvolle Tangentialebene definiert
 
   p = point;
-  mi = 0;
   nb = 0;
   for(i=1; i<=geomelements.Size(); i++)
   {
@@ -1245,13 +1224,10 @@ int Get_unique_Tangentialplane(const Point3d & point)
 int case1(const Point3d & ep1, Point3d & ep2)
 {
   int i,j,triang[10][4],trnb, mi, nn1, nn2, np1, np2;
-  double lam[3],prod,help,det;
+  double lam[3],prod,help;
   Point3d p,p0,p1,p2,inp,e1,e2;
   Vec3d edge,geomedge,n0,n1,n2,np;
   InputElement es;
-  int mi1,mi2;
-  double angle1,angle2;
-
   // Punkt liegt genau auf der Kante zwischen 2 Dreiecken
   // passiert fuer erkannte Kanten auf der Surface
 
@@ -1270,7 +1246,7 @@ int case1(const Point3d & ep1, Point3d & ep2)
     p1 = geompoints[geomelements[i].PNum(2)].p;
     p2 = geompoints[geomelements[i].PNum(3)].p;
 
-    det = Calc_Local_Coordinates(p0,p1,p2,p,lam[0],lam[1],lam[2]);
+    Calc_Local_Coordinates(p0,p1,p2,p,lam[0],lam[1],lam[2]);
 
     Calc_Vectors(p0,p1,p2,n0,n1,n2);
     help = Project2Plane(p,np,p0,n0,n1,n2);
@@ -1326,7 +1302,7 @@ int case1(const Point3d & ep1, Point3d & ep2)
 
 int case2(const Point3d & ep1, Point3d & ep2)
 {
-  int i,j, mi, mi1, mi2;
+  int i, mi, mi1, mi2;
   double lam[3],help,min, angle1, angle2;
   Point3d p,p0,p1,p2,inp;
   Vec3d edge,geomedge,n0,n1,n2,np;
@@ -1386,7 +1362,7 @@ int case2(const Point3d & ep1, Point3d & ep2)
 int case3(const Point3d & ep1, Point3d & ep2)
 {
   int i,j, mi;
-  double lam[3],help,min;
+  double min,help;
   Point3d p,p0,p1,p2,inp;
   Vec3d edge,geomedge,n0,n1,n2,np,dummy;
 
@@ -1424,7 +1400,7 @@ int case3(const Point3d & ep1, Point3d & ep2)
 int case4(const Point3d & ep1, Point3d & ep2)
 {
   int i,j, mi;
-  double lam[3],help,min,m,dist;
+  double min,m,dist;
   Point3d p,p0,p1,p2,cp,point,returnpoint,inp;
   Vec3d edge,geomedge,n0,n1,n2,np,dist_vec,dummy;
 
@@ -1470,8 +1446,6 @@ int case4(const Point3d & ep1, Point3d & ep2)
     }
   }
 
-  help = Dist(returnpoint, cp);
-
   return(mi);
 }
 
@@ -1479,13 +1453,8 @@ int GetEdgeId(const Point3d & ep1, Point3d & ep2)
 {
   Vec3d e0,e1,e2,n0,n1,n2,hp,edge,geomedge,np,vec;
   Point3d p0,p1,p2,pold,p,em;
-  double lam[3],prod;
-  int mi ,i,j,triang[10][4],trnb, lam_i;
-  double help, min, min_i,min_lam;
+  int mi;
   InputElement es1,es2;
-  int nn1,nn2,np1,np2;
-  double fall1,fall2;
-  int fall1_i,fall2_i;
 
   mi = 0;
   mi = case1(ep1, ep2);
@@ -1510,7 +1479,7 @@ int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh, doubl
   Point3d midp,midsp,ep0,ep1,ep2;
   Vec3d n0,n1,n2,np,front_vec, triang_direction,dist_vec1,dist_vec2,front_n,edge_n;
   int front_id, line_id;
-  double angle,help1,help2,nh,sp,help,L,front;
+  double angle,help1,help2,nh,help,front;
 
   gl_sp1 = sp1;
   gl_sp2 = sp2;
@@ -1581,7 +1550,7 @@ int Test_Line_OLD(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh)
   Point3d midp,midsp,ep0,ep1,ep2;
   Vec3d n0,n1,n2,np,front_vec, triang_direction,dist_vec;
   int front_id, line_id;
-  double angle,help1,help2,nh,sp,help,L,front;
+  double angle,help1,help2,nh,help,front;
 
   gl_sp1 = sp1;
   gl_sp2 = sp2;
@@ -1643,12 +1612,10 @@ int Test_Point(Point3d p, Point3d sp1, Point3d sp2, double xh)
 {
   Point3d midp,midsp,ep0,ep1,ep2,p1;
   Vec3d n0,n1,n2,np;
-  int front_id, line_id,point_id;
-  double angle,help1,help2,nh,sp,help;
+  int front_id;
 
   midsp = Center (sp1,sp2);
 
-  nh = Dist(sp1,sp2);
   front_id = GetEdgeId(sp1,sp2);
 
   ep0 = geompoints[geomelements[front_id].PNum(1)].p;

@@ -69,31 +69,31 @@ static int CheckNewElement(ARRAY<Point2d> &lpoints, ARRAY<ILINE> &llines,double 
 
 static int Cross_Point(double p0[2], double n0[2], double p1[2], double n1[2], double *cp)
 {
-  double lambda0, lambda1, a, cp0[2], cp1[2];
+  double lambda0, a;
 
   a = - n0[0] * n1[1] + n0[1] * n1[0];
 
   lambda0 = ( n1[1] * (p0[0] - p1[0]) - n1[0] * (p0[1] - p1[1]) ) / a;
-  lambda1 = ( n0[1] * (p0[0] - p1[0]) - n0[0] * (p0[1] - p1[1]) ) / a;
+  /*	lambda1 = ( n0[1] * (p0[0] - p1[0]) - n0[0] * (p0[1] - p1[1]) ) / a;
 
-  cp0[0] = p0[0] + lambda0 * n0[0];
-  cp0[1] = p0[1] + lambda0 * n0[1];
+          cp0[0] = p0[0] + lambda0 * n0[0];
+          cp0[1] = p0[1] + lambda0 * n0[1];
 
-  cp1[0] = p1[0] + lambda1 * n1[0];
-  cp1[1] = p1[1] + lambda1 * n1[1];
+          cp1[0] = p1[0] + lambda1 * n1[0];
+          cp1[1] = p1[1] + lambda1 * n1[1];
 
-  /*	if(sqrt( (cp0[0]-cp1[0])*(cp0[0]-cp1[0]) + (cp0[1]-cp1[1])*(cp0[1]-cp1[1]) )>SMALLDOUBLE)
+          if(sqrt( (cp0[0]-cp1[0])*(cp0[0]-cp1[0]) + (cp0[1]-cp1[1])*(cp0[1]-cp1[1]) )>SMALLDOUBLE)
                   printf("%s\n", "ERROR");*/
 
-  cp[0] = cp0[0];
-  cp[1] = cp0[1];
+  cp[0] = p0[0] + lambda0 * n0[0];
+  cp[1] = p0[1] + lambda0 * n0[1];
   return(0);
 }
 
 
 double Calc_Circumcircusmidpoint(double xt[3],double yt[3],double *midp)
 {
-  double p0[2],p1[2],p2[2],n0[2],n1[2],n2[2],cp01[2],cp12[2],cp20[2],l,circ;
+  double p0[2],p1[2],p2[2],n0[2],n1[2],n2[2],cp01[2],cp12[2],cp20[2],l;
 
   /* edgemidpoints */
   p0[0] = 0.5 * ( xt[0] + xt[1] );
@@ -152,9 +152,8 @@ int GenerateTriangle (ARRAY<Point2d> & lpoints, ARRAY<ILINE> & llines,
                       ARRAY<INDEX> & dellines,
                       double h)
 {
-  int i, j, point_i, old, a, b, c, d, id[4];
+  int i, j, point_i, old, id[4];
   double xt[3],yt[3],np_midp[2],np[2],min_circ,np_circ,circ,midp[2];
-  double circ0, circ1, circ2;
   Element element;
   Point2d npoint;
 
@@ -191,10 +190,10 @@ int GenerateTriangle (ARRAY<Point2d> & lpoints, ARRAY<ILINE> & llines,
       if(CheckNewElement(lpoints,llines,xt, yt))
       {
         Calc_Circumcircusmidpoint(xt, yt, midp);
-        circ0 = sqrt( (midp[0]-xt[0])*(midp[0]-xt[0]) + (midp[1]-yt[0])*(midp[1]-yt[0]) );
-        circ1 = sqrt( (midp[0]-xt[1])*(midp[0]-xt[1]) + (midp[1]-yt[1])*(midp[1]-yt[1]) );
-        circ2 = sqrt( (midp[0]-xt[2])*(midp[0]-xt[2]) + (midp[1]-yt[2])*(midp[1]-yt[2]) );
-        /*				if( (sqrt((circ0-circ1)*(circ0-circ1))<SMALLDOUBLE) &&
+        /*				circ0 = sqrt( (midp[0]-xt[0])*(midp[0]-xt[0]) + (midp[1]-yt[0])*(midp[1]-yt[0]) );
+                                        circ1 = sqrt( (midp[0]-xt[1])*(midp[0]-xt[1]) + (midp[1]-yt[1])*(midp[1]-yt[1]) );
+                                        circ2 = sqrt( (midp[0]-xt[2])*(midp[0]-xt[2]) + (midp[1]-yt[2])*(midp[1]-yt[2]) );
+                                        if( (sqrt((circ0-circ1)*(circ0-circ1))<SMALLDOUBLE) &&
                                             (sqrt((circ1-circ2)*(circ1-circ2))<SMALLDOUBLE) &&
                                                 (sqrt((circ2-circ0)*(circ2-circ0))<SMALLDOUBLE) )
                                                 circ = circ1;
@@ -232,10 +231,6 @@ int GenerateTriangle (ARRAY<Point2d> & lpoints, ARRAY<ILINE> & llines,
   {
     for(j=0; j<3; j++)
     {
-      a = element.PNum(j%3+1);
-      b = element.PNum((j+1)%3+1);
-      c = llines[i].I1();
-      d = llines[i].I2();
       if( (element.PNum(j%3+1)==llines[i].I1()) && (element.PNum((j+1)%3+1)==llines[i].I2()))
       {
         dellines.Append(i);
