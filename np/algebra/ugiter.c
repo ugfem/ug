@@ -37,7 +37,7 @@
 #include "devices.h"
 #include "gm.h"
 #include "algebra.h"
-#include "assert.h"
+#include "debug.h"
 #include "general.h"
 #include "pargm.h"
 
@@ -227,7 +227,7 @@ INT l_ordervtypes (GRID *g, const SHORT TypeOrder[NVECTYPES])
   for (order=0; order<NVECTYPES; order++) Types[TypeOrder[order]] = TRUE;
   for (type=0; type<NVECTYPES; type++)
     if (!Types[type])
-      return (NUM_ERROR);
+      REP_ERR_RETURN (NUM_ERROR);
 
   for (type=0; type<NVECTYPES; type++) last_v_of_type[type] = NULL;
 
@@ -304,7 +304,7 @@ INT l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   first_vec = FIRSTVECTOR(g);
@@ -340,7 +340,7 @@ INT l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
         if (SolveSmallBlock(n,vcomp,VVALPTR(vec),
                             MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                             MVALPTR(VSTART(vec)),s)!=0)
-          return (NUM_SMALL_DIAG);
+          REP_ERR_RETURN (NUM_SMALL_DIAG);
       }
     }
 
@@ -373,17 +373,15 @@ INT l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
-   .n    1 if not converged
    D*/
 /****************************************************************************/
 
 INT jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT K_comp, INT u_comp, INT f_comp )
 {
   VECTOR *v, *end_v, *first_v;
-  INT ret = 0;
 
-  assert( (u_comp >= 0) && (K_comp >= 0) && (f_comp >= 0) );
-  assert( u_comp != f_comp );
+  ASSERT( (u_comp >= 0) && (K_comp >= 0) && (f_comp >= 0) );
+  ASSERT( u_comp != f_comp );
 
   first_v = BVFIRSTVECTOR( bv );
   end_v   = BVENDVECTOR( bv );
@@ -392,7 +390,7 @@ INT jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvd
   BLOCK_L_VLOOP(v,first_v,end_v)
   VVALUE(v,u_comp) = VVALUE(v,f_comp)/MVALUE(VSTART(v),K_comp);
 
-  return (ret);
+  REP_ERR_RETURN (NUM_OK);
 }
 
 
@@ -442,7 +440,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   first_vec = FIRSTVECTOR(g);
@@ -596,7 +594,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
     if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
                         MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                         MVALPTR(VSTART(vec)),s)!=0)
-      return (__LINE__);
+      REP_ERR_RETURN (__LINE__);
   }
 
   return (NUM_OK);
@@ -612,7 +610,7 @@ INT l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, 
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   first_vec = BVFIRSTVECTOR(theBV);
@@ -646,7 +644,7 @@ INT l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, 
     return (NUM_OK);
   }
 
-  return (__LINE__);
+  REP_ERR_RETURN (__LINE__);
 }
 
 INT l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
@@ -659,7 +657,7 @@ INT l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   first_vec = BVLASTVECTOR(theBV);
@@ -693,7 +691,7 @@ INT l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M
     return (NUM_OK);
   }
 
-  return (__LINE__);
+  REP_ERR_RETURN (__LINE__);
 }
 
 /****************************************************************************/
@@ -742,7 +740,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   last_vec = LASTVECTOR(g);
@@ -895,7 +893,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
     if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
                         MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                         MVALPTR(VSTART(vec)),s)!=0)
-      return (__LINE__);
+      REP_ERR_RETURN (__LINE__);
   }
 
   return (NUM_OK);
@@ -911,7 +909,7 @@ INT l_ugs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, 
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   last_vec = BVLASTVECTOR(theBV);
@@ -945,7 +943,7 @@ INT l_ugs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, 
     return (NUM_OK);
   }
 
-  return (__LINE__);
+  REP_ERR_RETURN (__LINE__);
 }
 
 /****************************************************************************/
@@ -995,7 +993,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   maxBVmembers = NVEC(g);
@@ -1012,7 +1010,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
 
   /* first copy rhs to v, then solve for v in place */
   if (l_dcopy(g,v,ACTIVE_CLASS,d)!=0)
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
 
   if (MD_IS_SCALAR(M))
   {
@@ -1041,7 +1039,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
       }
       /* solve */
       if (l_luiterB(g,theBV,v,M,v)!=0)
-        return (-bvn);
+        REP_ERR_RETURN (-bvn);
     }
 
     return (NUM_OK);
@@ -1175,7 +1173,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
     }
     /* solve */
     if (l_luiterB(g,theBV,v,M,v)!=0)
-      return (-bvn);
+      REP_ERR_RETURN (-bvn);
   }
 
   return (NUM_OK);
@@ -1236,16 +1234,16 @@ INT gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
   DOUBLE start_norm, new_norm;
   INT ret = 0;
 
-  assert( (u_comp >= 0) && (K_comp >= 0) && (f_comp >= 0) );
-  assert( u_comp != f_comp );
+  ASSERT( (u_comp >= 0) && (K_comp >= 0) && (f_comp >= 0) );
+  ASSERT( u_comp != f_comp );
 
   first_v = BVFIRSTVECTOR( bv );
   end_v   = BVENDVECTOR( bv );
 
   if ( aux_comp > -1 )
   {
-    assert( u_comp != aux_comp );
-    assert( f_comp != aux_comp );
+    ASSERT( u_comp != aux_comp );
+    ASSERT( f_comp != aux_comp );
     start_norm = new_norm = CalculateDefectAndNormBS( bv, bvd, bvdf, aux_comp, f_comp, K_comp, u_comp );
     if ( eps_relative )
       eps *= start_norm;
@@ -1295,6 +1293,9 @@ INT gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
       printf( "gauss seidel avarage of convergency rate ( %d iterations) = %12lg, end defect = %g\n", it, pow( new_norm / start_norm, 1.0 / (DOUBLE)it ), new_norm );
     }
   }
+
+  if ( ret != NUM_OK )
+    REP_ERR_RETURN(ret);
 
   return (ret);
 }
@@ -1349,7 +1350,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   first_vec = FIRSTVECTOR(g);
@@ -1507,7 +1508,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
     if (SolveSmallBlock(n,vcomp,VVALPTR(vec),
                         MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                         MVALPTR(VSTART(vec)),s)!=0)
-      return (__LINE__);
+      REP_ERR_RETURN (__LINE__);
 
     /* damp */
     for (i=0; i<n; i++)
@@ -1581,15 +1582,15 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
     {
       nr = MD_ROWS_IN_RT_CT(M,type,type);
 
-      assert (nr*nr <= MAX_SINGLE_MAT_COMP);
+      ASSERT (nr*nr <= MAX_SINGLE_MAT_COMP);
       /* if too little: increase MAX_SINGLE_VEC_COMP and recompile	*/
                         #ifdef NDEBUG
       if (nr*nr > MAX_SINGLE_MAT_COMP)
         /* check also in case NDEBUG is defined (assert off)	*/
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
                         #endif
       if (nr != MD_COLS_IN_RT_CT(M,type,type))
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
   /* check VD_rest iff */
   if (VD_rest!=NULL)
@@ -1597,9 +1598,9 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
       if (MD_ROWS_IN_RT_CT(M,type,type)>0)
       {
         if (VD_NCMPS_IN_TYPE(VD_rest,type)==0)
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (VD_NCMPS_IN_TYPE(VD_rest,type)!=MD_ROWS_IN_RT_CT(M,type,type))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
       }
 
   /* consistency check:
@@ -1609,11 +1610,11 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
       if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
       {
         if (MD_ROWS_IN_RT_CT(M,rtype,rtype)!=MD_ROWS_IN_RT_CT(M,rtype,ctype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_ROWS_IN_RT_CT(M,rtype,ctype)!=MD_COLS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_COLS_IN_RT_CT(M,rtype,ctype)!=MD_ROWS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
       }
 
   /* calculate offsets for beta and threshold for different types */
@@ -1667,7 +1668,7 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
 
       /* now we are at line i */
       diag = MVALUE(VSTART(vi),mc);                                     /* diagonal element */
-      if (fabs(diag)<SMALL_D) return(-i);                               /* decomposition failed */
+      if (fabs(diag)<SMALL_D) REP_ERR_RETURN(-i);                               /* decomposition failed */
 
       /* store inverse back to diag */
       if (StoreInverse)
@@ -1705,7 +1706,7 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
                 /* introduce new connection */
                 Mjk = CreateExtraConnection(g,vj,vk);
                 if (Mjk==NULL)
-                  return (NUM_OUT_OF_MEM);
+                  REP_ERR_RETURN (NUM_OUT_OF_MEM);
               }
           if (Mjk==NULL)
             if (VCUSED(vj))
@@ -1713,7 +1714,7 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
               /* introduce new connection */
               Mjk = CreateExtraConnection(g,vj,vk);
               if (Mjk==NULL)
-                return (NUM_OUT_OF_MEM);
+                REP_ERR_RETURN (NUM_OUT_OF_MEM);
             }
           if (Mjk!=NULL)
             MVALUE(Mjk,mc) -= pivot*MVALUE(Mik,mc);                                                                       /* entry is in pattern */
@@ -1744,7 +1745,7 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
     Diag = MVALUEPTR(VSTART(vi),0);
 
     if (InvertSmallBlock(n,DiagComp,Diag,InvMat)!=0)
-      return (-i);                              /* decompostion failed */
+      REP_ERR_RETURN (-i);                              /* decompostion failed */
 
     /* write inverse back to diagonal block */
     if (StoreInverse)
@@ -1857,9 +1858,9 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
                 sum += fabs(CorMat[l*nc+m]*j_Normalization[l]*k_Normalization[m]);
               if (sum>TypeThresh[l])
                 if (CreateExtraConnection(g,vj,vk)==NULL)
-                  return (NUM_OUT_OF_MEM);
-                else
-                  break;
+                  REP_ERR_RETURN (NUM_OUT_OF_MEM)
+                  else
+                    break;
             }
           }
         if (Mjk==NULL)
@@ -1868,7 +1869,7 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
             /* introduce new connection */
             Mjk = CreateExtraConnection(g,vj,vk);
             if (Mjk==NULL)
-              return (NUM_OUT_OF_MEM);
+              REP_ERR_RETURN (NUM_OUT_OF_MEM);
           }
         if (Mjk!=NULL)
         {
@@ -1951,7 +1952,7 @@ static INT SquareRootOfSmallBlock(SHORT n, const SHORT *mcomp,
   }
 
   if (n > MAX_SINGLE_MAT_COMP)
-    return(1);
+    REP_ERR_RETURN(1);
 
   for (i=0; i<n*n; i++)
     comp[i] = i;
@@ -1959,7 +1960,7 @@ static INT SquareRootOfSmallBlock(SHORT n, const SHORT *mcomp,
   /* Newton */
 
   if (InvertSmallBlock(n,mcomp,mat,SqRoot))
-    return(1);
+    REP_ERR_RETURN(1);
 
   for (i=0; i<n; i++)
     SqRoot[i*n+i] += 1.0;
@@ -1996,7 +1997,7 @@ static INT SquareRootOfSmallBlock(SHORT n, const SHORT *mcomp,
       return(0);
 
     if (InvertSmallBlock(n,comp,mat2,mat1))
-      return(1);
+      REP_ERR_RETURN(1);
 
     for (i=0; i<n; i++)
       mat1[i*n+i] += 1.0;
@@ -2032,7 +2033,7 @@ static INT SquareRootOfSmallBlock(SHORT n, const SHORT *mcomp,
     }
   }
 
-  return(1);
+  REP_ERR_RETURN(1);
 }
 
 INT l_icdecomp (GRID *g, const MATDATA_DESC *M)
@@ -2056,15 +2057,15 @@ INT l_icdecomp (GRID *g, const MATDATA_DESC *M)
     {
       nr = MD_ROWS_IN_RT_CT(M,type,type);
 
-      assert (nr*nr <= MAX_SINGLE_MAT_COMP);
+      ASSERT (nr*nr <= MAX_SINGLE_MAT_COMP);
       /* if too little: increase MAX_SINGLE_VEC_COMP and recompile	*/
                         #ifdef NDEBUG
       if (nr*nr > MAX_SINGLE_MAT_COMP)
         /* check also in case NDEBUG is defined (assert off)	*/
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
                         #endif
       if (nr != MD_COLS_IN_RT_CT(M,type,type))
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
 
   /* consistency check:
@@ -2075,13 +2076,13 @@ INT l_icdecomp (GRID *g, const MATDATA_DESC *M)
       {
         if (MD_ROWS_IN_RT_CT(M,rtype,rtype)
             !=MD_ROWS_IN_RT_CT(M,rtype,ctype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_ROWS_IN_RT_CT(M,rtype,ctype)
             !=MD_COLS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_COLS_IN_RT_CT(M,rtype,ctype)
             !=MD_ROWS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
       }
 
   /* decompose the matrix */
@@ -2121,7 +2122,7 @@ INT l_icdecomp (GRID *g, const MATDATA_DESC *M)
         matdiag -= sum * sum;
       }
 
-      if (matdiag<SMALL_D) return(-i);                                  /* decomposition failed */
+      if (matdiag<SMALL_D) REP_ERR_RETURN(-i);                                  /* decomposition failed */
 
       /* store sqrt of inverse back to diag */
       MVALUE(VSTART(vi),mc) = invdiag = 1.0/sqrt(matdiag);
@@ -2211,7 +2212,7 @@ INT l_icdecomp (GRID *g, const MATDATA_DESC *M)
     }
 
     if (SquareRootOfSmallBlock(n,DiiComp,Dii,InvMat)!=0)
-      return (-i);                              /* decompostion failed */
+      REP_ERR_RETURN (-i);                              /* decompostion failed */
 
     /* write inverse back to diagonal block */
     for (l=0; l<n2; l++)
@@ -2356,22 +2357,22 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
       nr = MD_ROWS_IN_RT_CT(M,type,type);
 
       if (VD_NCMPS_IN_TYPE(t,type)==0)
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
       if (VD_NCMPS_IN_TYPE(t,type)<nr)
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
 
-      assert (nr*nr <= MAX_SINGLE_MAT_COMP);
+      ASSERT (nr*nr <= MAX_SINGLE_MAT_COMP);
       /* if too little: increase MAX_SINGLE_VEC_COMP and recompile	*/
                         #ifdef NDEBUG
       if (nr*nr > MAX_SINGLE_MAT_COMP)
         /* check also in case NDEBUG is defined (assert off)	*/
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
                         #endif
       if (nr != MD_COLS_IN_RT_CT(M,type,type))
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
 
-  assert(found==1);                     /* see the CAUTION above */
+  ASSERT(found==1);                     /* see the CAUTION above */
 
   /* consistency check: the transpose block-matrices
      (iff) must have the same format */
@@ -2380,11 +2381,11 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
       if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
       {
         if (MD_ROWS_IN_RT_CT(M,rtype,rtype)!=MD_ROWS_IN_RT_CT(M,rtype,ctype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_ROWS_IN_RT_CT(M,rtype,ctype)!=MD_COLS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_COLS_IN_RT_CT(M,rtype,ctype)!=MD_ROWS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
       }
 
   /* calculate offsets for beta for different types */
@@ -2418,7 +2419,7 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
     SETVCUSED(vi,0);
 
   /* clear temp (here we acumulate the rowsums of the rest matrix) */
-  if (l_dset(g,t,EVERY_CLASS,0.0)) return (__LINE__);
+  if (l_dset(g,t,EVERY_CLASS,0.0)) REP_ERR_RETURN (__LINE__);
 
 
   /* decompose the matrix */
@@ -2440,7 +2441,7 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
 
       /* now we are at line i */
       diag = MVALUE(VSTART(vi),mc);                                     /* diagonal element */
-      if (fabs(diag)<SMALL_D) return(-i);                               /* decomposition failed */
+      if (fabs(diag)<SMALL_D) REP_ERR_RETURN(-i);                               /* decomposition failed */
 
       invdiag = 1.0/diag;
 
@@ -2471,7 +2472,7 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
               /* introduce new connection */
               Mjk = CreateExtraConnection(g,vj,vk);
               if (Mjk==NULL)
-                return (NUM_OUT_OF_MEM);
+                REP_ERR_RETURN (NUM_OUT_OF_MEM);
             }
           if (Mjk!=NULL)
             MVALUE(Mjk,mc) -= pivot*MVALUE(Mik,mc);                                                                     /* entry is in pattern */
@@ -2568,7 +2569,7 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
     Diag = MVALUEPTR(VSTART(vi),0);
 
     if (InvertSmallBlock(n,DiagComp,Diag,InvMat)!=0)
-      return (-i);                              /* decompostion failed */
+      REP_ERR_RETURN (-i);                              /* decompostion failed */
 
     /* write inverse back to diagonal block */
     if (StoreInverse)
@@ -2677,7 +2678,7 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
             /* introduce a new connection */
             Mjk = CreateExtraConnection(g,vj,vk);
             if (Mjk==NULL)
-              return (NUM_OUT_OF_MEM);
+              REP_ERR_RETURN (NUM_OUT_OF_MEM);
           }
         if (Mjk!=NULL)
         {
@@ -2867,15 +2868,15 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
     if (MD_ROWS_IN_RT_CT(M,type,type)>0)
     {
       nr = MD_ROWS_IN_RT_CT(M,type,type);
-      assert (nr*nr <= MAX_SINGLE_MAT_COMP);
+      ASSERT (nr*nr <= MAX_SINGLE_MAT_COMP);
       /* if too little: increase MAX_SINGLE_VEC_COMP and recompile */
                         #ifdef NDEBUG
       if (nr*nr > MAX_SINGLE_MAT_COMP)
         /* check also in case NDEBUG is defined (assert off)	*/
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
                         #endif
       if (nr != MD_COLS_IN_RT_CT(M,type,type))
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
 
   /* consistency check: the transpose block-matrices (iff) must have
@@ -2885,11 +2886,11 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
       if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
       {
         if (MD_ROWS_IN_RT_CT(M,rtype,rtype)!=MD_ROWS_IN_RT_CT(M,rtype,ctype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_ROWS_IN_RT_CT(M,rtype,ctype)!=MD_COLS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_COLS_IN_RT_CT(M,rtype,ctype)!=MD_ROWS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
       }
 
   /* consistency check: the block pattern should allow for elimination */
@@ -2899,7 +2900,7 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
         for (ctype=type+1; ctype<NVECTYPES; ctype++)
           if ((MD_ROWS_IN_RT_CT(M,type,ctype)>0) &&
               (MD_ROWS_IN_RT_CT(M,rtype,ctype)==0))
-            return (__LINE__);
+            REP_ERR_RETURN (__LINE__);
 
   /* decompose the matrix */
   if (MD_IS_SCALAR(M))
@@ -2919,7 +2920,7 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
 
       /* now we are at line i */
       diag = MVALUE(VSTART(vi),mc);                                     /* diagonal element */
-      if (fabs(diag)<SMALL_D) return(-i);                               /* decomposition failed */
+      if (fabs(diag)<SMALL_D) REP_ERR_RETURN(-i);                               /* decomposition failed */
 
       /* store inverse back to diag */
       if (StoreInverse)
@@ -2952,7 +2953,7 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
           {
             Mjk = CreateExtraConnection(g,vj,vk);
             if (Mjk==NULL)
-              return (NUM_OUT_OF_MEM);
+              REP_ERR_RETURN (NUM_OUT_OF_MEM);
           }
           MVALUE(Mjk,mc) -= pivot*MVALUE(Mik,mc);                                                                 /* entry is in pattern */
         }
@@ -2975,7 +2976,7 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
     Diag = MVALUEPTR(VSTART(vi),0);
 
     if (InvertSmallBlock(n,DiagComp,Diag,InvMat)!=0)
-      return (-i);                              /* decompostion failed */
+      REP_ERR_RETURN (-i);                              /* decompostion failed */
 
     /* write inverse back to diagonal block */
     if (StoreInverse)
@@ -3058,7 +3059,7 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
         {
           Mjk = CreateExtraConnection(g,vj,vk);
           if (Mjk==NULL)
-            return (NUM_OUT_OF_MEM);
+            REP_ERR_RETURN (NUM_OUT_OF_MEM);
         }
         /* subtract the entry from Mjk */
         Mat = MVALUEPTR(Mjk,0);
@@ -3119,24 +3120,28 @@ INT LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_
   register CONNECTION *con;
   register INT extra_con = 0;
 
+  ASSERT( bv != NULL );
+  ASSERT( A_comp != -1 );
+
   /* loop over all lines */
   end_vi = BVENDVECTOR( bv );
   for ( vi = BVFIRSTVECTOR( bv ); vi != end_vi; vi = SUCCVC( vi ) )
   {
     /* search aii */
-    for ( mij = VSTART( vi ); mij != NULL; mij = MNEXT( mij ) )
-      if ( MDEST( mij ) == vi )
-      {
-        aii = MVALUE( mij, A_comp );
-        break;
-      }
+    /*for ( mij = VSTART( vi ); mij != NULL; mij = MNEXT( mij ) )
+            if ( MDEST( mij ) == vi )
+            {
+                    aii = MVALUE( mij, A_comp );
+                    break;
+            }*/
     /* there must be a diagonal element; assert it */
-    assert( mij != NULL );
+    /*ASSERT( mij != NULL );*/
+    aii = MVALUE(VSTART(vi),A_comp);
 
     if ( fabs(aii) < SMALL_D )
     {
       PrintErrorMessage( 'E', "LUDecomposeDiagBS", "Diagonal element too small in LUDecompDiagBS!\n" );
-      return NUM_SMALL_DIAG;
+      REP_ERR_RETURN (NUM_SMALL_DIAG);
     }
 
     /* eliminate all entries aji in column i; to do this, walk through the
@@ -3167,7 +3172,7 @@ INT LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_
                 if ( (con = CreateExtraConnection( grid, vj, vk )) == NULL )
                 {
                   PrintErrorMessage( 'E', "LUDecomposeDiagBS", "Not enough memory" );
-                  return NUM_OUT_OF_MEM;
+                  REP_ERR_RETURN (NUM_OUT_OF_MEM);
                 }
                 mjk = CMATRIX0( con );
                 extra_con++;
@@ -3243,7 +3248,7 @@ INT l_lrregularize (GRID *theGrid, const MATDATA_DESC *M)
   if (found>1)
   {
     PrintErrorMessage('E',"l_lrregularize","more than one singular component in last block");
-    return (1);
+    REP_ERR_RETURN (1);
   }
   MVALUE(VSTART(LASTVECTOR(theGrid)),matComp) = 1.0;
 
@@ -3253,7 +3258,7 @@ INT l_lrregularize (GRID *theGrid, const MATDATA_DESC *M)
   if (StoreInverse)
   {
     if (InvertSmallBlock(ncmp,MD_MCMPPTR_OF_RT_CT(M,type,type),MVALUEPTR(VSTART(LASTVECTOR(theGrid)),0),InvMat)!=0)
-      return (2);                               /* decompostion failed */
+      REP_ERR_RETURN (2);                               /* decompostion failed */
 
     /* write inverse back to diagonal block */
     for (l=0; l<ncmp*ncmp; l++)
@@ -3328,7 +3333,7 @@ static INT l_lrregularizeB (GRID *theGrid, VECTOR *vec, const MATDATA_DESC *M)
   if (StoreInverse)
   {
     if (InvertSmallBlock(ncmp,MD_MCMPPTR_OF_RT_CT(M,type,type),MVALUEPTR(VSTART(vec),0),InvMat)!=0)
-      return (2);                               /* decompostion failed */
+      REP_ERR_RETURN (2);                               /* decompostion failed */
 
     /* write inverse back to diagonal block */
     for (l=0; l<ncmp*ncmp; l++)
@@ -3383,15 +3388,15 @@ INT l_lrdecompB (GRID *g, const MATDATA_DESC *M)
     if (MD_ROWS_IN_RT_CT(M,type,type)>0)
     {
       nr = MD_ROWS_IN_RT_CT(M,type,type);
-      assert (nr*nr <= MAX_SINGLE_MAT_COMP);
+      ASSERT (nr*nr <= MAX_SINGLE_MAT_COMP);
       /* if too little: increase MAX_SINGLE_VEC_COMP and recompile */
                         #ifdef NDEBUG
       if (nr*nr > MAX_SINGLE_MAT_COMP)
         /* check also in case NDEBUG is defined (assert off)	*/
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
                         #endif
       if (nr != MD_COLS_IN_RT_CT(M,type,type))
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
 
   /* consistency check: the transpose block-matrices (iff) must have
@@ -3401,11 +3406,11 @@ INT l_lrdecompB (GRID *g, const MATDATA_DESC *M)
       if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
       {
         if (MD_ROWS_IN_RT_CT(M,rtype,rtype)!=MD_ROWS_IN_RT_CT(M,rtype,ctype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_ROWS_IN_RT_CT(M,rtype,ctype)!=MD_COLS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_COLS_IN_RT_CT(M,rtype,ctype)!=MD_ROWS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
       }
 
   /* consistency check: the block pattern should allow for elimination */
@@ -3415,21 +3420,21 @@ INT l_lrdecompB (GRID *g, const MATDATA_DESC *M)
         for (ctype=type+1; ctype<NVECTYPES; ctype++)
           if ((MD_ROWS_IN_RT_CT(M,type,ctype)>0) &&
               (MD_ROWS_IN_RT_CT(M,rtype,ctype)==0))
-            return (__LINE__);
+            REP_ERR_RETURN (__LINE__);
 
   /* consistency check: BLOCKVECTOR-decomposition should consist of only one level */
   maxBVmembers = NVEC(g);
   for (theBV=GFIRSTBV(g); theBV!=NULL; theBV=BVSUCC(theBV))
     if (BVDOWNTYPE(theBV)!=BVDOWNTYPEVECTOR)
-      return (__LINE__);
-    else
-    {
-      /* encode associated BLOCKVECTOR number in vector index */
-      /* this index numbering is consistent with what other iterative schemes need */
-      index = BVNUMBER(theBV)*maxBVmembers;
-      for (vec=BVFIRSTVECTOR(theBV); vec!=BVENDVECTOR(theBV); vec=SUCCVC(vec))
-        VINDEX(vec) = index++;
-    }
+      REP_ERR_RETURN (__LINE__)
+      else
+      {
+        /* encode associated BLOCKVECTOR number in vector index */
+        /* this index numbering is consistent with what other iterative schemes need */
+        index = BVNUMBER(theBV)*maxBVmembers;
+        for (vec=BVFIRSTVECTOR(theBV); vec!=BVENDVECTOR(theBV); vec=SUCCVC(vec))
+          VINDEX(vec) = index++;
+      }
 
   /* decompose the matrix */
   if (MD_IS_SCALAR(M))
@@ -3456,7 +3461,7 @@ INT l_lrdecompB (GRID *g, const MATDATA_DESC *M)
         if (fabs(diag)<SMALL_DET)
         {
           if (vi!=((BVENDVECTOR(theBV)==NULL) ? LASTVECTOR(g) : PREDVC(BVENDVECTOR(theBV))))
-            return (-i);
+            REP_ERR_RETURN (-i);
           diag = MVALUE(VSTART(vi),mc) = 1.0;
           UserWriteF("block %d regularized, vector %d, component %d\n",bvn,i,mc);
         }
@@ -3494,7 +3499,7 @@ INT l_lrdecompB (GRID *g, const MATDATA_DESC *M)
             {
               Mjk = CreateExtraConnection(g,vj,vk);
               if (Mjk==NULL)
-                return (NUM_OUT_OF_MEM);
+                REP_ERR_RETURN (NUM_OUT_OF_MEM);
             }
             MVALUE(Mjk,mc) -= pivot*MVALUE(Mik,mc);                                                                       /* entry is in pattern */
           }
@@ -3524,9 +3529,9 @@ INT l_lrdecompB (GRID *g, const MATDATA_DESC *M)
       /* decompostion failed */
       if (InvertSmallBlock(n,DiagComp,Diag,InvMat)!=0)
         if (l_lrregularizeB(g,(BVENDVECTOR(theBV)==NULL) ? LASTVECTOR(g) : PREDVC(BVENDVECTOR(theBV)),M)!=0)
-          return (-i);
+          REP_ERR_RETURN (-i);
       /*if (InvertSmallBlock(n,DiagComp,Diag,InvMat)!=0)
-              return (-i); */
+         REP_ERR_RETURN (-i); */
 
       /* write inverse back to diagonal block */
       if (StoreInverse)
@@ -3611,7 +3616,7 @@ INT l_lrdecompB (GRID *g, const MATDATA_DESC *M)
           {
             Mjk = CreateExtraConnection(g,vj,vk);
             if (Mjk==NULL)
-              return (NUM_OUT_OF_MEM);
+              REP_ERR_RETURN (NUM_OUT_OF_MEM);
           }
           /* subtract the entry from Mjk */
           Mat = MVALUEPTR(Mjk,0);
@@ -3670,7 +3675,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   first_vec = FIRSTVECTOR(g);
@@ -3979,7 +3984,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
                                  VVALPTR(vec),
                                  MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                                  MVALPTR(VSTART(vec)),s)!=0)
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
     else
     {
@@ -3987,7 +3992,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
                           VVALPTR(vec),
                           MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                           MVALPTR(VSTART(vec)),s)!=0)
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
   }
 
@@ -4044,10 +4049,15 @@ INT solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMA
   register DOUBLE val, diag;
   register INT index_vi;
 
+  ASSERT( bv != NULL );
+  ASSERT( dest_comp != -1 );
+  ASSERT( LU_comp != -1 );
+  ASSERT( source_comp != -1 );
+
   /* solve lower triangular matrix */
   end_v = BVENDVECTOR( bv );
   vi = BVFIRSTVECTOR( bv );
-  assert( vi != NULL );
+  ASSERT( vi != NULL );
   /* the first VECTOR needs only copy */
   VVALUE( vi, dest_comp) = VVALUE( vi, source_comp );
   if ( vi != end_v )
@@ -4069,12 +4079,12 @@ INT solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMA
   end_v = PREDVC( BVFIRSTVECTOR( bv ) );
   vi = BVLASTVECTOR( bv );
   m = VSTART( vi );
-  assert( MDEST(m) == vi );
+  ASSERT( MDEST(m) == vi );
   diag = MVALUE( m, LU_comp );
   if ( fabs( diag ) < SMALL_D )
   {
     PrintErrorMessage( 'E', "solveLUMatBS", "Very small diagonal for division" );
-    return NUM_SMALL_DIAG;
+    REP_ERR_RETURN (NUM_SMALL_DIAG);
   }
   VVALUE( vi, dest_comp ) = VVALUE( vi, dest_comp ) / diag;
   vi = PREDVC( vi );
@@ -4096,7 +4106,7 @@ INT solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMA
     if ( fabs( diag ) < SMALL_D )
     {
       PrintErrorMessage( 'E', "solveLUMatBS", "Very small diagonal for division" );
-      return NUM_SMALL_DIAG;
+      REP_ERR_RETURN (NUM_SMALL_DIAG);
     }
 
     VVALUE( vi, dest_comp ) = val / diag;
@@ -4153,7 +4163,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   maxBVmembers = NVEC(g);
@@ -4472,7 +4482,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
                                  VVALPTR(vec),
                                  MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                                  MVALPTR(VSTART(vec)),s)!=0)
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
     else
     {
@@ -4480,7 +4490,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
                           VVALPTR(vec),
                           MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                           MVALPTR(VSTART(vec)),s)!=0)
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
   }
 
@@ -4532,7 +4542,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   first_vec = FIRSTVECTOR(g);
@@ -4748,7 +4758,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
                                VVALPTR(vec),
                                MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                                MVALPTR(VSTART(vec)),s)!=0)
-      return (__LINE__);
+      REP_ERR_RETURN (__LINE__);
   }
 
   last_vec = LASTVECTOR(g);
@@ -4792,7 +4802,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
                                VVALPTR(vec),
                                MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                                MVALPTR(VSTART(vec)),s)!=0)
-      return (__LINE__);
+      REP_ERR_RETURN (__LINE__);
   }
 
   return (NUM_OK);
@@ -4865,15 +4875,15 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
     {
       nr = MD_ROWS_IN_RT_CT(M,type,type);
 
-      assert (nr*nr <= MAX_SINGLE_MAT_COMP);
+      ASSERT (nr*nr <= MAX_SINGLE_MAT_COMP);
       /* if too little: increase MAX_SINGLE_VEC_COMP and recompile	*/
                         #ifdef NDEBUG
       if (nr*nr > MAX_SINGLE_MAT_COMP)
         /* check also in case NDEBUG is defined (assert off)	*/
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
                         #endif
       if (nr != MD_COLS_IN_RT_CT(M,type,type))
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
   /* check VD_rest iff */
   if (VD_rest!=NULL)
@@ -4881,9 +4891,9 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
       if (MD_ROWS_IN_RT_CT(M,type,type)>0)
       {
         if (VD_NCMPS_IN_TYPE(VD_rest,type)==0)
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (VD_NCMPS_IN_TYPE(VD_rest,type)!=MD_ROWS_IN_RT_CT(M,type,type))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
       }
 
   /* consistency check:
@@ -4893,11 +4903,11 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
       if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
       {
         if (MD_ROWS_IN_RT_CT(M,rtype,rtype)!=MD_ROWS_IN_RT_CT(M,rtype,ctype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_ROWS_IN_RT_CT(M,rtype,ctype)!=MD_COLS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
         if (MD_COLS_IN_RT_CT(M,rtype,ctype)!=MD_ROWS_IN_RT_CT(M,ctype,rtype))
-          return (__LINE__);
+          REP_ERR_RETURN (__LINE__);
       }
 
   /* calculate offsets for beta and threshold for different types */
@@ -4955,7 +4965,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
 
       /* now we are at line i */
       diag = MVALUE(VSTART(vi),mc);                                     /* diagonal element */
-      if (fabs(diag)<SMALL_D) return(-i);                               /* decomposition failed */
+      if (fabs(diag)<SMALL_D) REP_ERR_RETURN(-i);                               /* decomposition failed */
 
       /* store inverse back to diag */
       if (StoreInverse)
@@ -4993,7 +5003,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
                 /* introduce new connection */
                 Mjk = CreateExtraConnection(g,vj,vk);
                 if (Mjk==NULL)
-                  return (NUM_OUT_OF_MEM);
+                  REP_ERR_RETURN (NUM_OUT_OF_MEM);
               }
           if (Mjk==NULL)
             if (VCUSED(vj))
@@ -5001,7 +5011,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
               /* introduce new connection */
               Mjk = CreateExtraConnection(g,vj,vk);
               if (Mjk==NULL)
-                return (NUM_OUT_OF_MEM);
+                REP_ERR_RETURN (NUM_OUT_OF_MEM);
             }
           if (Mjk!=NULL)
             MVALUE(Mjk,mc) -= pivot*MVALUE(Mik,mc);                                                                       /* entry is in pattern */
@@ -5036,7 +5046,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
     Diag = MVALUEPTR(VSTART(vi),0);
 
     if (InvertSmallBlock(n,DiagComp,Diag,InvMat)!=0)
-      return (-i);                              /* decompostion failed */
+      REP_ERR_RETURN (-i);                              /* decompostion failed */
 
     /* write inverse back to diagonal block */
     if (StoreInverse)
@@ -5151,9 +5161,9 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
                 sum += fabs(CorMat[l*nc+m]*j_Normalization[l]*k_Normalization[m]);
               if (sum>TypeThresh[l])
                 if (CreateExtraConnection(g,vj,vk)==NULL)
-                  return (NUM_OUT_OF_MEM);
-                else
-                  break;
+                  REP_ERR_RETURN (NUM_OUT_OF_MEM)
+                  else
+                    break;
             }
           }
         if (Mjk==NULL)
@@ -5162,7 +5172,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
             /* introduce new connection */
             Mjk = CreateExtraConnection(g,vj,vk);
             if (Mjk==NULL)
-              return (NUM_OUT_OF_MEM);
+              REP_ERR_RETURN (NUM_OUT_OF_MEM);
           }
         if (Mjk!=NULL)
         {
@@ -5251,7 +5261,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
-    return (err);
+    REP_ERR_RETURN (err);
 #endif
 
   first_vec = FIRSTVECTOR(g);
@@ -5594,7 +5604,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
                                  VVALPTR(vec),
                                  MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                                  MVALPTR(VSTART(vec)),s)!=0)
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
     else
     {
@@ -5602,7 +5612,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
                           VVALPTR(vec),
                           MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                           MVALPTR(VSTART(vec)),s)!=0)
-        return (__LINE__);
+        REP_ERR_RETURN (__LINE__);
     }
   }
 

@@ -369,49 +369,49 @@ INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
 
   if (np->c == NULL) {
     PrintErrorMessage('E',"NPIterExecute","no vector c");
-    return (1);
+    REP_ERR_RETURN (1);
   }
   if (np->b == NULL) {
     PrintErrorMessage('E',"NPIterExecute","no vector b");
-    return (1);
+    REP_ERR_RETURN (1);
   }
   if (np->A == NULL) {
     PrintErrorMessage('E',"NPIterExecute","no matrix A");
-    return (1);
+    REP_ERR_RETURN (1);
   }
 
   if (ReadArgvOption("i",argc,argv)) {
     if (np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPIterExecute","no PreProcess");
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if ((*np->PreProcess)(np,level,np->c,np->b,np->A,&bl,&result)) {
       UserWriteF("NPIterExecute: PreProcess failed, error code %d\n",
                  result);
-      return (1);
+      REP_ERR_RETURN (1);
     }
   }
 
   if (ReadArgvOption("s",argc,argv)) {
     if (np->Iter == NULL) {
       PrintErrorMessage('E',"NPIterExecute","no Iter");
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if ((*np->Iter)(np,level,np->c,np->b,np->A,&result)) {
       UserWriteF("NPIterExecute: Iter failed, error code %d\n", result);
-      return (1);
+      REP_ERR_RETURN (1);
     }
   }
 
   if (ReadArgvOption("p",argc,argv)) {
     if (np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPIterExecute","no PostProcess");
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if ((*np->PostProcess)(np,level,np->c,np->b,np->A,&result)) {
       UserWriteF("NPIterExecute: PostProcess failed, error code %d\n",
                  result);
-      return (1);
+      REP_ERR_RETURN (1);
     }
   }
 
@@ -441,7 +441,7 @@ static INT SmootherDisplay (NP_BASE *theNP)
   np = (NP_SMOOTHER *) theNP;
   NPIterDisplay(&np->iter);
   UserWrite("configuration parameters:\n");
-  if (sc_disp(np->damp,np->iter.b,"damp")) return (1);
+  if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
   if (np->L != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
 
@@ -463,7 +463,7 @@ static INT Smoother (NP_ITER *theNP, INT level,
   np = (NP_SMOOTHER *) theNP;
   theGrid = NP_GRID(theNP,level);
   if ((*np->Step)(np,level,x,b,A,np->L,result))
-    return (1);
+    REP_ERR_RETURN (1);
     #ifdef ModelP
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
@@ -1105,7 +1105,7 @@ static INT SORSmoother (NP_ITER *theNP, INT level,
   np = (NP_SMOOTHER *) theNP;
   theGrid = NP_GRID(theNP,level);
   if ((*np->Step)(np,level,x,b,A,np->L,result))
-    return (1);
+    REP_ERR_RETURN (1);
     #ifdef ModelP
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
@@ -1231,26 +1231,26 @@ static INT SBGS_Init (NP_BASE *theNP, INT argc , char **argv)
       /* Blocking */
       if (strstr(option,"Blocking")!=NULL)
         if (ReadVecTypeINTs(value,MAX_BLOCKS+1,nTypeBlocks,TypeBlocks)!=0)
-          return (NP_NOT_ACTIVE);
-        else {bopt = TRUE; continue;}
+          REP_ERR_RETURN (NP_NOT_ACTIVE)
+          else {bopt = TRUE; continue;}
 
       /* BlockOrder */
       if (strstr(option,"BlockOrder")!=NULL)
         if (ReadVecTypeOrder(value,MAX_ORDER,MAX_BLOCKS,&SBGS_NBLOCKITER(theSBGS),SBGS_BLOCKORDER(theSBGS))!=0)
-          return (NP_NOT_ACTIVE);
-        else {boopt = TRUE; continue;}
+          REP_ERR_RETURN (NP_NOT_ACTIVE)
+          else {boopt = TRUE; continue;}
 
       /* BlockIter */
       if (strstr(option,"BlockIter")!=NULL)
         if (ReadVecTypeNUMPROCs(NP_MG(theNP),value,ITER_CLASS_NAME,MAX_BLOCKS,nBlockIter,BlockIter)!=0)
-          return (NP_NOT_ACTIVE);
-        else {biopt = TRUE; continue;}
+          REP_ERR_RETURN (NP_NOT_ACTIVE)
+          else {biopt = TRUE; continue;}
     }
 
   if (!(bopt && boopt && biopt))
   {
     PrintErrorMessage('E',"SBGS_Init","one or several options missing");
-    return (NP_NOT_ACTIVE);
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
   }
 
   /* fill SBLOCK_DESC data structure */
@@ -1281,7 +1281,7 @@ static INT SBGS_Init (NP_BASE *theNP, INT argc , char **argv)
     if (SBGS_BLOCKORD(theSBGS,i)>=nBlocks)
     {
       PrintErrorMessage('E',"SBGS_Init","block id in BlockOrder too large");
-      return (NP_NOT_ACTIVE);
+      REP_ERR_RETURN (NP_NOT_ACTIVE);
     }
 
   /* combine BlockIter to 'global' BlockIter */
@@ -1294,7 +1294,7 @@ static INT SBGS_Init (NP_BASE *theNP, INT argc , char **argv)
   if (nIter!=nBlocks)
   {
     PrintErrorMessage('E',"SBGS_Init","number of specified block iteration schemes does not match number of blocks");
-    return (NP_NOT_ACTIVE);
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
   }
 
   return (NPIterInit(&theSBGS->iter,argc,argv));
@@ -1474,7 +1474,7 @@ static INT SBGSPreProcess (NP_ITER *theNP, INT level,
           baselevel,
           result
           )!=0)
-      return (bl+1);
+      REP_ERR_RETURN (bl+1);
   }
 
   return (0);
@@ -1690,7 +1690,7 @@ static INT ILUDisplay (NP_BASE *theNP)
 
   SmootherDisplay(theNP);
   np = (NP_ILU *) theNP;
-  if (sc_disp(np->beta,np->smoother.iter.b,"beta")) return (1);
+  if (sc_disp(np->beta,np->smoother.iter.b,"beta")) REP_ERR_RETURN (1);
 
   return (0);
 }
@@ -1887,8 +1887,8 @@ static INT THILUDisplay (NP_BASE *theNP)
 
   SmootherDisplay(theNP);
   np = (NP_THILU *) theNP;
-  if (sc_disp(np->beta,np->smoother.iter.b,"beta")) return (1);
-  if (sc_disp(np->thresh,np->smoother.iter.b,"thresh")) return (1);
+  if (sc_disp(np->beta,np->smoother.iter.b,"beta")) REP_ERR_RETURN (1);
+  if (sc_disp(np->thresh,np->smoother.iter.b,"thresh")) REP_ERR_RETURN (1);
 
   return (0);
 }
@@ -1981,7 +1981,7 @@ static INT SPILUInit (NP_BASE *theNP, INT argc , char **argv)
   if (ReadArgvChar("mode",buffer,argc,argv))
   {
     PrintErrorMessage('E',"SPILUInit","specify mode");
-    return (NP_NOT_ACTIVE);
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
   }
   if (strncmp(buffer,"global",3)==0)
     np->mode = SP_GLOBAL;
@@ -1990,7 +1990,7 @@ static INT SPILUInit (NP_BASE *theNP, INT argc , char **argv)
   else
   {
     PrintErrorMessage('E',"SPILUInit","specify local/global for mode");
-    return (NP_NOT_ACTIVE);
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
   }
 
   return (SmootherInit(theNP,argc,argv));
@@ -2002,7 +2002,7 @@ static INT SPILUDisplay (NP_BASE *theNP)
 
   SmootherDisplay(theNP);
   np = (NP_SPILU *) theNP;
-  if (sc_disp(np->beta,np->smoother.iter.b,"beta")) return (1);
+  if (sc_disp(np->beta,np->smoother.iter.b,"beta")) REP_ERR_RETURN (1);
   UserWriteF(DISPLAY_NP_FORMAT_SS,"mode",
              (np->mode==SP_GLOBAL) ? "global" : "local");
 
@@ -2412,7 +2412,7 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
 
 #else
   PrintErrorMessage( 'E', "FFInit", "__BLOCK_VECTOR_DESC__ must be defined in gm.h" );
-  return 1;
+  REP_ERR_RETURN(1);
 #endif /* __BLOCK_VECTOR_DESC__ */
 }
 
@@ -2784,7 +2784,7 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 
 #else
   PrintErrorMessage( 'E', "FFPreProcess", "__BLOCK_VECTOR_DESC__ must be defined in gm.h" );
-  return (1);
+  REP_ERR_RETURN (1);
 #endif
 }
 
@@ -3025,7 +3025,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
   return (0);
 #else
   PrintErrorMessage( 'E', "FFStep", "__BLOCK_VECTOR_DESC__ must be defined in gm.h" );
-  return (1);
+  REP_ERR_RETURN (1);
 #endif
 }
 
@@ -3111,10 +3111,10 @@ static INT LmgcInit (NP_BASE *theNP, INT argc , char **argv)
   if (ReadArgvINT("b",&(np->baselevel),argc,argv))
     np->baselevel = 0;
 
-  if (np->Transfer == NULL) return(NP_NOT_ACTIVE);
-  if (np->PreSmooth == NULL) return(NP_NOT_ACTIVE);
-  if (np->PostSmooth == NULL) return(NP_NOT_ACTIVE);
-  if (np->BaseSolver == NULL) return(NP_NOT_ACTIVE);
+  if (np->Transfer == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (np->PreSmooth == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (np->PostSmooth == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (np->BaseSolver == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -3168,26 +3168,26 @@ static INT LmgcPreProcess  (NP_ITER *theNP, INT level,
   if (np->Transfer->PreProcess != NULL)
     if ((*np->Transfer->PreProcess)
           (np->Transfer,np->baselevel,level,x,b,A,result))
-      return(1);
+      REP_ERR_RETURN(1);
 
   if (np->PreSmooth->PreProcess != NULL)
     for (i = np->baselevel+1; i <= level; i++)
       if ((*np->PreSmooth->PreProcess)
             (np->PreSmooth,i,x,b,A,baselevel,result))
-        return(1);
+        REP_ERR_RETURN(1);
 
   if (np->PreSmooth != np->PostSmooth)
     if (np->PostSmooth->PreProcess != NULL)
       for (i = np->baselevel+1; i <= level; i++)
         if ((*np->PreSmooth->PreProcess)
               (np->PostSmooth,i,x,b,A,baselevel,result))
-          return(1);
+          REP_ERR_RETURN(1);
 
   *baselevel = MIN(np->baselevel,level);
   if (np->BaseSolver->PreProcess != NULL)
     if ((*np->BaseSolver->PreProcess)
           (np->BaseSolver,*baselevel,x,b,A,baselevel,result))
-      return(1);
+      REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -3212,7 +3212,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   if (level <= np->baselevel) {
     if ((*np->BaseSolver->Residuum)
           (np->BaseSolver,np->baselevel,level,c,b,A,&lresult))
-      return(1);
+      REP_ERR_RETURN(1);
     if ((*np->BaseSolver->Solver)(np->BaseSolver,level,c,b,A,
                                   np->BaseSolver->abslimit,
                                   np->BaseSolver->reduction,&lresult)) NP_RETURN(1,result[0]);
@@ -3225,31 +3225,31 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   if (AllocVDFromVD(theMG,level,level,c,&np->t)) NP_RETURN(1,result[0]);
   for (i=0; i<np->nu1; i++) {
     if ((*np->PreSmooth->Iter)(np->PreSmooth,level,np->t,b,A,result))
-      return(1);
+      REP_ERR_RETURN(1);
     if (l_daxpy(theGrid,c,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   }
   if ((*np->Transfer->RestrictDefect)
         (np->Transfer,level,b,b,A,Factor_One,result))
-    return(1);
+    REP_ERR_RETURN(1);
 
   if (l_dset(DOWNGRID(theGrid),c,EVERY_CLASS,0.0) != NUM_OK) NP_RETURN(1,result[0]);
   for (i=0; i<np->gamma; i++)
     if (Lmgc(theNP,level-1,c,b,A,result))
-      return(1);
+      REP_ERR_RETURN(1);
   if ((*np->Transfer->InterpolateCorrection)
         (np->Transfer,level,np->t,c,A,Factor_One,result))
-    return(1);
+    REP_ERR_RETURN(1);
   if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->t,EVERY_CLASS) != NUM_OK) NP_RETURN(1,result[0]);
   for (i=0; i<np->nu2; i++) {
     if ((*np->PostSmooth->Iter)(np->PostSmooth,level,np->t,b,A,result))
-      return(1);
+      REP_ERR_RETURN(1);
     if (l_daxpy(theGrid,c,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   }
   FreeVD(theNP->base.mg,level,level,np->t);
   if (np->Transfer->AdaptCorrection != NULL)
     if ((*np->Transfer->AdaptCorrection)(np->Transfer,level,c,b,A,result))
-      return(1);
+      REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -3266,25 +3266,25 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
   if (np->Transfer->PostProcess != NULL)
     if ((*np->Transfer->PostProcess)
           (np->Transfer,np->baselevel,level,x,b,A,result))
-      return(1);
+      REP_ERR_RETURN(1);
 
   if (np->PreSmooth->PostProcess != NULL)
     for (i = np->baselevel+1; i <= level; i++)
       if ((*np->PreSmooth->PostProcess)
             (np->PreSmooth,i,x,b,A,result))
-        return(1);
+        REP_ERR_RETURN(1);
 
   if (np->PreSmooth != np->PostSmooth)
     if (np->PostSmooth->PostProcess != NULL)
       for (i = np->baselevel+1; i <= level; i++)
         if ((*np->PreSmooth->PostProcess)
               (np->PostSmooth,i,x,b,A,result))
-          return(1);
+          REP_ERR_RETURN(1);
 
   if (np->BaseSolver->PostProcess != NULL)
     if ((*np->BaseSolver->PostProcess)
           (np->BaseSolver,np->baselevel,x,b,A,result))
-      return(1);
+      REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -3330,35 +3330,35 @@ INT InitIter ()
   INT i;
 
   if (CreateClass(ITER_CLASS_NAME ".jac",sizeof(NP_SMOOTHER),JacobiConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".gs",sizeof(NP_SMOOTHER),GSConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".bcgss",sizeof(NP_BCGSSMOOTHER),BCGSSConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sgs",sizeof(NP_SGS),SGSConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sor",sizeof(NP_SMOOTHER),SORConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sbgs",sizeof(NP_SBGS),SBGSConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".gbgs",sizeof(NP_SBGS),GBGSConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ilu",sizeof(NP_ILU),ILUConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".filu",sizeof(NP_ILU),FILUConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".thilu",sizeof(NP_THILU),THILUConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".spilu",sizeof(NP_ILU),SPILUConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ic",sizeof(NP_ILU),ICConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ff",sizeof(NP_FF),FFConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".lu",sizeof(NP_SMOOTHER),LUConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".lmgc",sizeof(NP_LMGC),LmgcConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
 

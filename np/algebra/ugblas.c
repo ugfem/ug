@@ -52,6 +52,7 @@
 #include "algebra.h"
 #include "devices.h"
 #include "general.h"
+#include "debug.h"
 #ifdef ModelP
 #include "pargm.h"
 #endif
@@ -142,6 +143,8 @@ static INT MaxBlockSize;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+REP_ERR_FILE;
+
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/
@@ -178,11 +181,11 @@ INT VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
 		{
 			/* consistency check: the x-types should include the y-types */
 			if (!VD_ISDEF_IN_TYPE(y,vtype))
-				return (NUM_DESC_MISMATCH);
+				REP_ERR_RETURN (NUM_DESC_MISMATCH);
 	
 			/* consistency check: the x-nComp should be equal to the y-nComp */
 			if (VD_NCMPS_IN_TYPE(x,vtype) != VD_NCMPS_IN_TYPE(y,vtype))
-		  		return (NUM_DESC_MISMATCH);
+		  		REP_ERR_RETURN (NUM_DESC_MISMATCH);
 		}
 	return (NUM_OK);
 }
@@ -228,16 +231,16 @@ INT MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const 
 				{
 					found = TRUE;
 					if (!VD_ISDEF_IN_TYPE(y,ctype))
-						return (NUM_DESC_MISMATCH);
+						REP_ERR_RETURN (NUM_DESC_MISMATCH);
 					maxsmallblock = MAX(maxsmallblock,VD_NCMPS_IN_TYPE(y,ctype));
 
 					/* consistency check: the M-nRow/ColComp should match the nComps of x,y resp. */
 					if (MD_ROWS_IN_RT_CT(M,rtype,ctype) != VD_NCMPS_IN_TYPE(x,rtype))
-						return (NUM_DESC_MISMATCH);
+						REP_ERR_RETURN (NUM_DESC_MISMATCH);
 					if (MD_COLS_IN_RT_CT(M,rtype,ctype) != VD_NCMPS_IN_TYPE(y,ctype))
-						return (NUM_DESC_MISMATCH);
+						REP_ERR_RETURN (NUM_DESC_MISMATCH);
 				}
-			if (!found) return (NUM_DESC_MISMATCH);	
+			if (!found) REP_ERR_RETURN (NUM_DESC_MISMATCH);	
 		}
 	
 	/* check size of the largest small block */
@@ -245,7 +248,7 @@ INT MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const 
 	#ifdef NDEBUG
 	/* check also in case NDEBUG is defined (assert off)	*/
 	if (maxsmallblock > MAX_SINGLE_VEC_COMP)
-		return (NUM_BLOCK_TOO_LARGE);
+		REP_ERR_RETURN (NUM_BLOCK_TOO_LARGE);
 	#endif
 			
 	return (NUM_OK);
@@ -300,7 +303,7 @@ static int Gather_VectorComp (DDD_OBJ obj, void *data)
 		if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
 		  *((DOUBLE *)data) = VVALUE(pv,VD_SCALCMP(ConsVector));
 
-		return(0);
+		return (NUM_OK);
 	}
    
 	type = VTYPE(pv);
@@ -308,7 +311,7 @@ static int Gather_VectorComp (DDD_OBJ obj, void *data)
 	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
 		((DOUBLE *)data)[i] = VVALUE(pv,Comp[i]);
 
-	return(0);
+	return (NUM_OK);
 }
  
 static int Scatter_VectorComp (DDD_OBJ obj, void *data)
@@ -322,7 +325,7 @@ static int Scatter_VectorComp (DDD_OBJ obj, void *data)
 		    if (!VECSKIP(pv))
 			    VVALUE(pv,VD_SCALCMP(ConsVector)) += *((DOUBLE *)data);
 
-		return(0);
+		return (NUM_OK);
 	}
 
 	type = VTYPE(pv);
@@ -336,7 +339,7 @@ static int Scatter_VectorComp (DDD_OBJ obj, void *data)
 			if (!(vecskip & (1<<i)))				
 				VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i]; 
 
-	return(0);
+	return (NUM_OK);
 }
 
 INT l_vector_consistent (GRID *g, const VECDATA_DESC *x)
@@ -434,7 +437,7 @@ static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
 		    if (!VECSKIP(pv))
 			    VVALUE(pv,VD_SCALCMP(ConsVector)) = *((DOUBLE *)data);
 
-		return(0);
+		return (NUM_OK);
 	}
 
 	type = VTYPE(pv);
@@ -442,7 +445,7 @@ static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
 	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
 		VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i]; 
 
-	return(0);
+	return (NUM_OK);
 }
 
 INT l_vector_ghostconsistent (GRID *g, const VECDATA_DESC *x)
@@ -497,7 +500,7 @@ static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
 			*((DOUBLE *)data) = VVALUE(pv,vc);
 			VVALUE(pv,vc) = 0.0;
 		}
-		return(0);
+		return (NUM_OK);
 	  }
 
 	type = VTYPE(pv);
@@ -507,7 +510,7 @@ static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
 		VVALUE(pv,Comp[i]) = 0.0;
 	}
 
-	return(0);
+	return (NUM_OK);
 }
 
 INT l_vector_collect (GRID *g, const VECDATA_DESC *x)
@@ -605,11 +608,11 @@ static int Gather_VectorVecskip (DDD_OBJ obj, void *data)
 	const SHORT *Comp;	
 
 	((DOUBLE *) data)[0] = VECSKIP(pv);
-	if (VECSKIP(pv) == 0) return(0);
+	if (VECSKIP(pv) == 0) return (NUM_OK);
 	if (VD_IS_SCALAR(ConsVector)) {
 		if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
 			((DOUBLE *)data)[1] = VVALUE(pv,VD_SCALCMP(ConsVector));
-		return(0);
+		return (NUM_OK);
 	}
    
 	type = VTYPE(pv);
@@ -617,7 +620,7 @@ static int Gather_VectorVecskip (DDD_OBJ obj, void *data)
 	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
 		((DOUBLE *)data)[i+1] = VVALUE(pv,Comp[i]);
 
-	return(0);
+	return (NUM_OK);
 }
  
 static int Scatter_VectorVecskip (DDD_OBJ obj, void *data)
@@ -628,7 +631,7 @@ static int Scatter_VectorVecskip (DDD_OBJ obj, void *data)
 	const SHORT *Comp;	
 
 	vecskip = ((DOUBLE *) data)[0];
-	if (vecskip == 0) return(0);
+	if (vecskip == 0) return (NUM_OK);
 
 	if (VD_IS_SCALAR(ConsVector)) {
   	    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
@@ -640,7 +643,7 @@ static int Scatter_VectorVecskip (DDD_OBJ obj, void *data)
                     VECSKIP(pv) = 1;
                 }
             }
-		return(0);
+		return (NUM_OK);
 	}
 	type = VTYPE(pv);
 	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
@@ -654,7 +657,7 @@ static int Scatter_VectorVecskip (DDD_OBJ obj, void *data)
             }
 		}
 
-	return(0);
+	return (NUM_OK);
 }
 
 INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
@@ -749,7 +752,7 @@ INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 	const SHORT *Comp;	
 
     if (l_vector_collect(g,x) != NUM_OK)
-	    return(NUM_ERROR);
+	    REP_ERR_RETURN(NUM_ERROR);
 	
 	if (VD_IS_SCALAR(x)) {
         mask = VD_SCALTYPEMASK(x);
@@ -809,7 +812,7 @@ static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
 	if (MD_IS_SCALAR(ConsMatrix)) {
 		if (MD_SCAL_RTYPEMASK(ConsMatrix) & VDATATYPE(pv)) 
 		    *((DOUBLE *)data) = MVALUE(VSTART(pv),MD_SCALCMP(ConsMatrix));
-		return(0);
+		return (NUM_OK);
 	}
 
 	vtype = VTYPE(pv);
@@ -820,7 +823,7 @@ static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
 		   *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
 	  ((DOUBLE *)data)[i] = MVALUE(m,Comp[i]);
 
-	return(0);
+	return (NUM_OK);
 }
  
 static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
@@ -834,7 +837,7 @@ static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
 		if (MD_SCAL_RTYPEMASK(ConsMatrix) & VDATATYPE(pv)) 
 		    if (!VECSKIP(pv))
 		        MVALUE(VSTART(pv),MD_SCALCMP(ConsMatrix)) += *((DOUBLE *)data); 
-		return(0);
+		return (NUM_OK);
 	}
 
 	vtype = VTYPE(pv);
@@ -854,7 +857,7 @@ static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
 			        MVALUE(m,Comp[j]) += ((DOUBLE *)data)[j];
 	}
 
-	return(0);
+	return (NUM_OK);
 }
 
 static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
@@ -866,7 +869,7 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	INT i, *proclist,mc,vtype,mtype,masc;
 	const SHORT *Comp;	
 
-	if (VSTART(pv) == NULL) return(0);
+	if (VSTART(pv) == NULL) return (NUM_OK);
 	if (MD_IS_SCALAR(ConsMatrix)) {
 		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
 		    mc = MD_SCALCMP(ConsMatrix);
@@ -884,7 +887,7 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 					}
 				}
 		}
-		return(0);
+		return (NUM_OK);
 	}
 
 	vtype = VTYPE(pv);
@@ -904,7 +907,7 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 		}
 	}
 
-	return(0);
+	return (NUM_OK);
 }
 
 static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
@@ -916,7 +919,7 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 	INT i, *proclist,mc,vtype,mtype,masc;
 	const SHORT *Comp;	
 
-	if (VSTART(pv) == NULL) return(0);
+	if (VSTART(pv) == NULL) return (NUM_OK);
 	if (MD_IS_SCALAR(ConsMatrix)) {
 		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
 		    mc = MD_SCALCMP(ConsMatrix);
@@ -938,7 +941,7 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 				if (masc  & VDATATYPE(MDEST(m))) 
 					MVALUE(m,mc) = 0.0;
 		}
-		return(0);
+		return (NUM_OK);
 	}
 
 	vtype = VTYPE(pv);
@@ -967,7 +970,7 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 	  }
 
 
-	return(0);
+	return (NUM_OK);
 }
 
 static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
@@ -979,10 +982,10 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	INT   i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
 	const SHORT *Comp;	
 
-	if (VSTART(pv) == NULL) return(0);
+	if (VSTART(pv) == NULL) return (NUM_OK);
 	if (MD_IS_SCALAR(ConsMatrix)) {
 		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
-		    if (VECSKIP(pv) != 0) return(0);
+		    if (VECSKIP(pv) != 0) return (NUM_OK);
 			mc = MD_SCALCMP(ConsMatrix);
 			masc =MD_SCAL_CTYPEMASK(ConsMatrix);
 			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
@@ -998,7 +1001,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 					}
 				}
 		}
-		return(0);
+		return (NUM_OK);
 	}
 
 	vtype = VTYPE(pv);
@@ -1038,7 +1041,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 			}
 		}
 
-	return(0);
+	return (NUM_OK);
 }
 
 static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
@@ -1061,7 +1064,7 @@ static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
 					    MVALUE(m,mc) = 0.0;
 			}
 		}
-		return(0);
+		return (NUM_OK);
 	}
 
 	for (v=FIRSTVECTOR(theGrid); v!=NULL; v=PREDVC(v)) {
@@ -1078,7 +1081,7 @@ static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
 		}
 	}
 
-	return(0);
+	return (NUM_OK);
 }
 
 static int sort_MatArray (const void *e1, const void *e2)
@@ -1090,7 +1093,7 @@ static int sort_MatArray (const void *e1, const void *e2)
 
 	if (g1<g2) return(-1);
 	if (g1>g2) return(1);
-	return(0);
+	return (NUM_OK);
 }
 
 static int CountInconsMatrices (DDD_OBJ obj)
@@ -1432,7 +1435,7 @@ INT l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 	DOUBLE scale;
 	DEFINE_VD_CMPS(cx);
 
-	if (a<=0.0) return (NUM_ERROR);
+	if (a<=0.0) REP_ERR_RETURN (NUM_ERROR);
 	scale = a/(DOUBLE)RAND_MAX;
 		
 	first_v = FIRSTVECTOR(g);
@@ -1824,7 +1827,7 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 #ifdef NDEBUG
 	/* check also in case NDEBUG is defined (assert off)	*/
 	if (maxsmallblock > MAX_SINGLE_VEC_COMP)
-		return (NUM_BLOCK_TOO_LARGE);
+		REP_ERR_RETURN (NUM_BLOCK_TOO_LARGE);
 #endif
 	
 	first_v = FIRSTVECTOR(g);
@@ -1837,8 +1840,8 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 					SET_VD_CMP_1(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN (NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN (NUM_ERROR);
 						VVALUE(v,cx0) = val[0];
 					}
 					break;
@@ -1847,8 +1850,8 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 					SET_VD_CMP_2(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN (NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN (NUM_ERROR);
 						VVALUE(v,cx0) = val[0];
 						VVALUE(v,cx1) = val[1];
 					}
@@ -1858,8 +1861,8 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 					SET_VD_CMP_3(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN (NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN (NUM_ERROR);
 						VVALUE(v,cx0) = val[0]; VVALUE(v,cx1) = val[1]; VVALUE(v,cx2) = val[2];
 					}
 					break;
@@ -1868,8 +1871,8 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN (NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN (NUM_ERROR);
 						for (i=0; i<ncomp; i++)
 							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = val[i];
 					}
@@ -1916,7 +1919,7 @@ INT l_dcopy (GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y)
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
 	first_v = FIRSTVECTOR(g);
@@ -1969,7 +1972,7 @@ INT l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const VEC
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
 	first_v = BVFIRSTVECTOR(theBV);
@@ -2050,7 +2053,7 @@ INT a_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, c
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
 	for (vtype=0; vtype<NVECTYPES; vtype++)
@@ -2127,7 +2130,7 @@ INT s_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
 	for (vtype=0; vtype<NVECTYPES; vtype++)
@@ -2497,7 +2500,7 @@ INT l_daxpy (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const 
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 
 	aoff = VD_OFFSETPTR(x);			
@@ -2558,7 +2561,7 @@ INT l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOU
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 
 	aoff = VD_OFFSETPTR(x);			
@@ -2650,7 +2653,7 @@ INT a_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, c
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 
 	aoff = VD_OFFSETPTR(x);			
@@ -2738,7 +2741,7 @@ INT s_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE 
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 
 	aoff = VD_OFFSETPTR(x);			
@@ -2833,7 +2836,7 @@ INT l_dxdy (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const V
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
 	aoff = VD_OFFSETPTR(x);				
@@ -2928,7 +2931,7 @@ INT a_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, co
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
 	aoff = VD_OFFSETPTR(x);				
@@ -3021,7 +3024,7 @@ INT s_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE *
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
 	aoff = VD_OFFSETPTR(x);				
@@ -3124,7 +3127,7 @@ INT l_ddot (const GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
   	spoff = VD_OFFSETPTR(x);				
@@ -3184,7 +3187,7 @@ INT l_ddot_sv (const GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_D
 	INT j;
 	VEC_SCALAR sp;
 	
-	if (l_ddot (g,x,xclass,y,sp)) return (NUM_ERROR);
+	if (l_ddot (g,x,xclass,y,sp)) REP_ERR_RETURN (NUM_ERROR);
 	*sv=0.0;
 	for (j=0; j<VD_NCOMP(x); j++)
 		*sv += weight[j]*sp[j];
@@ -3236,7 +3239,7 @@ INT a_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xcla
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
   	spoff = VD_OFFSETPTR(x);				
@@ -3331,7 +3334,7 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		return(err);
+		REP_ERR_RETURN(err);
 #endif
 	
   	spoff = VD_OFFSETPTR(x);				
@@ -3399,7 +3402,7 @@ INT s_ddot_sv (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 	INT j;
 	VEC_SCALAR sp;
 	
-	if (s_ddot (mg,fl,tl,x,y,sp)) return (NUM_ERROR);
+	if (s_ddot (mg,fl,tl,x,y,sp)) REP_ERR_RETURN (NUM_ERROR);
 	*sv=0.0;
 	for (j=0; j<VD_NCOMP(x); j++)
 		*sv += weight[j]*sp[j];
@@ -3518,7 +3521,7 @@ INT l_eunorm (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *eu)
 	INT i;
 	INT err;
 
-	if ((err=l_ddot (g,x,xclass,x,eu))!=0) 	return (err);
+	if ((err=l_ddot (g,x,xclass,x,eu))!=0) 	REP_ERR_RETURN (err);
 	for (i=0; i<VD_NCOMP(x); i++)
 		eu[i] = SQRT(eu[i]);
 	
@@ -3555,7 +3558,7 @@ INT a_eunorm (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xc
 	INT i;
 	INT err;
 
-	if ((err=a_ddot (mg,fl,tl,x,xclass,x,eu))!=0) 		return (err);
+	if ((err=a_ddot (mg,fl,tl,x,xclass,x,eu))!=0) 		REP_ERR_RETURN (err);
 	for (i=0; i<VD_NCOMP(x); i++)
 		eu[i] = SQRT(eu[i]);
 	
@@ -3594,7 +3597,7 @@ INT s_eunorm (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE
 	INT i;
 	INT err;
 
-	if ((err=s_ddot (mg,fl,tl,x,x,eu))!=0) 	return (err);
+	if ((err=s_ddot (mg,fl,tl,x,x,eu))!=0) 	REP_ERR_RETURN (err);
 	for (i=0; i<VD_NCOMP(x); i++)
 		eu[i] = SQRT(eu[i]);
 	
@@ -3995,13 +3998,13 @@ INT l_dmatcopy (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 			{
 				/* consistency check: the M1-types should include the M2-types */
 				if (!MD_ISDEF_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 	
 				/* consistency check: the M1-nRow/ColComp should be equal to the M2-nRow/ColComp */
 				if (MD_ROWS_IN_RT_CT(M1,rtype,ctype) != MD_ROWS_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 				if (MD_COLS_IN_RT_CT(M1,rtype,ctype) != MD_COLS_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 			}
 #endif
 	
@@ -4140,13 +4143,13 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 			{
 				/* consistency check: the M1-types should include the M2-types */
 				if (!MD_ISDEF_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 	
 				/* consistency check: the M1-nRow/ColComp should be equal to the M2-nRow/ColComp */
 				if (MD_ROWS_IN_RT_CT(M1,rtype,ctype) != MD_ROWS_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 				if (MD_COLS_IN_RT_CT(M1,rtype,ctype) != MD_COLS_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 			}
 #endif
 	
@@ -4307,13 +4310,13 @@ INT l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 			{
 				/* consistency check: the M1-types should include the M2-types */
 				if (!MD_ISDEF_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 	
 				/* consistency check: the M1-nRow/ColComp should be equal to the M2-nRow/ColComp */
 				if (MD_ROWS_IN_RT_CT(M1,rtype,ctype) != MD_ROWS_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 				if (MD_COLS_IN_RT_CT(M1,rtype,ctype) != MD_COLS_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 			}
 #endif
 	
@@ -4447,13 +4450,13 @@ INT l_dmatadd (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 			{
 				/* consistency check: the M1-types should include the M2-types */
 				if (!MD_ISDEF_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 	
 				/* consistency check: the M1-nRow/ColComp should be equal to the M2-nRow/ColComp */
 				if (MD_ROWS_IN_RT_CT(M1,rtype,ctype) != MD_ROWS_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 				if (MD_COLS_IN_RT_CT(M1,rtype,ctype) != MD_COLS_IN_RT_CT(M2,rtype,ctype))
-					return (NUM_DESC_MISMATCH);
+					REP_ERR_RETURN (NUM_DESC_MISMATCH);
 			}
 #endif
 	
@@ -4590,7 +4593,7 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	first_v = FIRSTVECTOR(g);
@@ -4786,7 +4789,7 @@ INT l_dmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const 
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	first_v = BVFIRSTVECTOR(theBVX);
@@ -4833,7 +4836,7 @@ INT l_dtpmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, cons
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	first_v = BVFIRSTVECTOR(theBVX);
@@ -4913,7 +4916,7 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	first_v = FIRSTVECTOR(g);
@@ -5114,7 +5117,7 @@ INT l_dmatmul_set (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DES
 
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	first_v = FIRSTVECTOR(g);
@@ -5310,7 +5313,7 @@ INT l_dmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, co
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	first_v = BVFIRSTVECTOR(theBVX);
@@ -5357,7 +5360,7 @@ INT l_dtpmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, 
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	first_v = BVFIRSTVECTOR(theBVX);
@@ -5404,7 +5407,7 @@ INT l_dmatmul_minus_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, 
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	first_v = BVFIRSTVECTOR(theBVX);
@@ -5485,7 +5488,7 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
@@ -5790,7 +5793,7 @@ INT s_dmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const M
 
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
@@ -6095,7 +6098,7 @@ INT s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
@@ -6430,7 +6433,7 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
@@ -6758,7 +6761,7 @@ INT l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC 
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
-		return (err);
+		REP_ERR_RETURN (err);
 #endif
 	
 	first_v = FIRSTVECTOR(g);
@@ -6789,7 +6792,7 @@ INT l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC 
 		return (NUM_OK);
 	}
 	
-	return (NUM_ERROR);
+	REP_ERR_RETURN (NUM_ERROR);
 }
 
 /****************************************************************************/
@@ -6931,7 +6934,7 @@ INT dsetG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, con
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7047,7 +7050,7 @@ INT dsetGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, IN
 	
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 	
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7125,8 +7128,8 @@ ENDDEBUG
 					SET_VD_CMP_1(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN(NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN(NUM_ERROR);
 						VVALUE(v,cx0) = val[0];
 					}
 					break;
@@ -7135,8 +7138,8 @@ ENDDEBUG
 					SET_VD_CMP_2(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN(NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN(NUM_ERROR);
 						VVALUE(v,cx0) = val[0];
 						VVALUE(v,cx1) = val[1];
 					}
@@ -7146,8 +7149,8 @@ ENDDEBUG
 					SET_VD_CMP_3(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN(NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN(NUM_ERROR);
 						VVALUE(v,cx0) = val[0]; VVALUE(v,cx1) = val[1]; VVALUE(v,cx2) = val[2];
 					}
 					break;
@@ -7156,8 +7159,8 @@ ENDDEBUG
 					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN(NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN(NUM_ERROR);
 						for (i=0; i<ncomp; i++)
 							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = val[i];
 					}
@@ -7228,7 +7231,7 @@ ENDDEBUG
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7241,8 +7244,8 @@ ENDDEBUG
 					SET_VD_CMP_1(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN(NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN(NUM_ERROR);
 						VVALUE(v,cx0) = val[0];
 					}
 					break;
@@ -7251,8 +7254,8 @@ ENDDEBUG
 					SET_VD_CMP_2(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN(NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN(NUM_ERROR);
 						VVALUE(v,cx0) = val[0];
 						VVALUE(v,cx1) = val[1];
 					}
@@ -7262,8 +7265,8 @@ ENDDEBUG
 					SET_VD_CMP_3(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN(NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN(NUM_ERROR);
 						VVALUE(v,cx0) = val[0]; VVALUE(v,cx1) = val[1]; VVALUE(v,cx2) = val[2];
 					}
 					break;
@@ -7272,8 +7275,8 @@ ENDDEBUG
 					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
-						if (VectorPosition(v,Point)) return (NUM_ERROR);
-						if (SetFunc(Point,vtype,val)!=0) return (NUM_ERROR);
+						if (VectorPosition(v,Point)) REP_ERR_RETURN(NUM_ERROR);
+						if (SetFunc(Point,vtype,val)!=0) REP_ERR_RETURN(NUM_ERROR);
 						for (i=0; i<ncomp; i++)
 							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = val[i];
 					}
@@ -7326,9 +7329,9 @@ INT dsetfuncBS (const BLOCKVECTOR *bv, INT xcomp, SetFuncProcPtr SetFunc)
 	BLOCK_L_VLOOP(v,first_v,end_v)
 	{
 		if (VectorPosition(v,Point)) 
-			return (NUM_ERROR);
+			REP_ERR_RETURN(NUM_ERROR);
 		if (SetFunc(Point,VTYPE(v),&val)!=0) 
-			return (NUM_ERROR);
+			REP_ERR_RETURN(NUM_ERROR);
 		VVALUE(v,xcomp) = val;
 	}
 	
@@ -7380,7 +7383,7 @@ INT dsetfuncGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7388,9 +7391,9 @@ INT dsetfuncGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf
 	BLOCK_L_VLOOP(v,first_v,end_v)
 	{
 		if (VectorPosition(v,Point)) 
-			return (NUM_ERROR);
+			REP_ERR_RETURN(NUM_ERROR);
 		if (SetFunc(Point,VTYPE(v),&val)!=0) 
-			return (NUM_ERROR);
+			REP_ERR_RETURN(NUM_ERROR);
 		VVALUE(v,xcomp) = val;
 	}
 	
@@ -7442,7 +7445,7 @@ INT dcopyB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const VECD
 	
 	/* check consistency */
 	if ( (err = VecCheckConsistency( x, y )) != NUM_OK )
-	    return err;
+	    REP_ERR_RETURN(err);
 #endif
 
 	first_v = BVFIRSTVECTOR( bv );
@@ -7531,12 +7534,12 @@ INT dcopyG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, co
 #ifndef NDEBUG
 	/* check consistency */
 	if ( (err = VecCheckConsistency(x,y)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 #endif
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7655,7 +7658,7 @@ INT dcopyGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, I
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7796,7 +7799,7 @@ INT dscaleG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, c
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -7917,7 +7920,7 @@ INT dscaleGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, 
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -8098,7 +8101,7 @@ INT daxpyB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const DOUB
 #ifndef NDEBUG
 	/* check consistency */
 	if ( (err = VecCheckConsistency( x, y )) != NUM_OK )
-	    return err;
+	    REP_ERR_RETURN(err);
 #endif
 
 	aoff = VD_OFFSETPTR(x);	
@@ -8197,14 +8200,14 @@ INT daxpyG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, co
 #ifndef NDEBUG
 	/* check consistency */
 	if ( (err = VecCheckConsistency( x, y )) != NUM_OK)
-		return err;
+		REP_ERR_RETURN(err);
 #endif
 	
 	aoff = VD_OFFSETPTR(x);	
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -8330,7 +8333,7 @@ INT daxpyGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, I
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -8389,7 +8392,7 @@ INT dxdyB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const DOUBL
 #ifndef NDEBUG
 	/* check consistency */
 	if ( (err = VecCheckConsistency( x, y )) != NUM_OK )
-	    return err;
+	    REP_ERR_RETURN(err);
 #endif
 
 	aoff = VD_OFFSETPTR(x);	
@@ -8491,14 +8494,14 @@ INT dxdyG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, con
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency( x, y ))!=NUM_OK)
-		return err;
+		REP_ERR_RETURN(err);
 #endif
 
 	aoff = VD_OFFSETPTR(x);	
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -8627,7 +8630,7 @@ INT dxdyGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, IN
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -8685,7 +8688,7 @@ INT ddotB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const VECDA
 #ifndef NDEBUG
 	/* check consistency */
 	if ( (err=VecCheckConsistency ( x, y)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 #endif
 		
 	spoff = VD_OFFSETPTR(x);	
@@ -8796,12 +8799,12 @@ INT ddotG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, con
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency( x, y ))!=NUM_OK)
-		return err;
+		REP_ERR_RETURN(err);
 #endif
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	spoff = VD_OFFSETPTR(x);	
 	
@@ -8940,7 +8943,7 @@ INT ddotGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, IN
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -8990,7 +8993,7 @@ INT eunormB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, DOUBLE *e
 	INT i, err;
 	
 	if ( (err = ddotB (bv,x,xclass,x,eu)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 
 	for (i=0; i<VD_NCOMP(x); i++)
 		eu[i] = SQRT(eu[i]);
@@ -9037,7 +9040,7 @@ INT eunormG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, c
 	INT i, err;
 	
 	if ( (err = ddotG (grid,bvd,bvdf,x,xclass,x,eu)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 
 	for (i=0; i<VD_NCOMP(x); i++)
 		eu[i] = SQRT(eu[i]);
@@ -9078,7 +9081,7 @@ INT eunormBS (const BLOCKVECTOR *bv, INT xcomp, DOUBLE *eu)
 	INT err;
 	
 	if ( (err = ddotBS (bv,xcomp,xcomp,eu)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 
 	*eu = SQRT(*eu);
 	
@@ -9122,7 +9125,7 @@ INT eunormGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, 
 	INT err;
 	
 	if ( (err = ddotGS (grid,bvd,bvdf,xcomp,xcomp,eu)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 
 	*eu = SQRT(*eu);
 	
@@ -9293,7 +9296,7 @@ INT dmatsetG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -9462,7 +9465,7 @@ INT dmatsetGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col,
 
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -9523,13 +9526,13 @@ INT dmatcopyB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_
 			{
 				/* consistency check: the M1-types should include the M2-types */
 				if (!MD_ISDEF_IN_RT_CT(M2,rtype,ctype))
-					return NUM_DESC_MISMATCH;
+					REP_ERR_RETURN(NUM_DESC_MISMATCH);
 	
 				/* consistency check: the M1-nRow/ColComp should be equal to the M2-nRow/ColComp */
 				if (MD_ROWS_IN_RT_CT(M1,rtype,ctype) != MD_ROWS_IN_RT_CT(M2,rtype,ctype))
-					return NUM_DESC_MISMATCH;
+					REP_ERR_RETURN(NUM_DESC_MISMATCH);
 				if ((MD_COLS_IN_RT_CT(M1,rtype,ctype) != MD_COLS_IN_RT_CT(M2,rtype,ctype)))
-					return NUM_DESC_MISMATCH;
+					REP_ERR_RETURN(NUM_DESC_MISMATCH);
 			}
 #endif
 	
@@ -9676,19 +9679,19 @@ INT dmatcopyG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col,
 			{
 				/* consistency check: the M1-types should include the M2-types */
 				if (!MD_ISDEF_IN_RT_CT(M2,rtype,ctype))
-					return NUM_DESC_MISMATCH;
+					REP_ERR_RETURN(NUM_DESC_MISMATCH);
 	
 				/* consistency check: the M1-nRow/ColComp should be equal to the M2-nRow/ColComp */
 				if (MD_ROWS_IN_RT_CT(M1,rtype,ctype) != MD_ROWS_IN_RT_CT(M2,rtype,ctype))
-					return NUM_DESC_MISMATCH;
+					REP_ERR_RETURN(NUM_DESC_MISMATCH);
 				if ((MD_COLS_IN_RT_CT(M1,rtype,ctype) != MD_COLS_IN_RT_CT(M2,rtype,ctype)))
-					return NUM_DESC_MISMATCH;
+					REP_ERR_RETURN(NUM_DESC_MISMATCH);
 			}
 #endif
 	
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -9869,7 +9872,7 @@ INT dmatcopyGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col
 	
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -9983,7 +9986,7 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 
 #ifndef NDEBUG
 	if ( (err = MatmulCheckConsistency(x,M,y)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 #endif
 	
 	first_v = BVFIRSTVECTOR( bv_row );
@@ -10259,12 +10262,12 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 
 #ifndef NDEBUG
 	if ( (err = MatmulCheckConsistency(x,M,y)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 #endif
 	
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -10590,7 +10593,7 @@ INT dmatmulGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col,
 	
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -10666,7 +10669,7 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 
 #ifndef NDEBUG
 	if ( (err = MatmulCheckConsistency(x,M,y)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 #endif
 	
 	first_v = BVFIRSTVECTOR( bv_row );
@@ -10942,12 +10945,12 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 
 #ifndef NDEBUG
 	if ( (err = MatmulCheckConsistency(x,M,y)) != NUM_OK )
-		return err;
+		REP_ERR_RETURN(err);
 #endif
 	
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -11269,7 +11272,7 @@ INT dmatmul_minusGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 	
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
-		return GM_NOT_FOUND;
+		REP_ERR_RETURN(GM_NOT_FOUND);
 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -11322,7 +11325,7 @@ INT dmatmul_minusGS (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
    RETURN VALUE:
    INT
 .n    NUM_OK if ok
-.n    GM_OUT_OF_MEM if no memory for additional matrix entries available
+.n    NUM_OUT_OF_MEM if no memory for additional matrix entries available
 */
 /****************************************************************************/
 
@@ -11358,7 +11361,7 @@ INT d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_D
 							if ( (con = CreateExtraConnection( grid, vi, vj )) == NULL )
 							{
 								UserWrite( "Not enough memory in d2matmulBS.\n" );
-									return GM_OUT_OF_MEM;
+								REP_ERR_RETURN(NUM_OUT_OF_MEM);
 							}
 							mij = CMATRIX0( con );
 							extra_cons++;						}
@@ -11404,7 +11407,7 @@ INT d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_D
    RETURN VALUE:
    INT
 .n    NUM_OK if ok
-.n    GM_OUT_OF_MEM if no memory for additional matrix entries available
+.n    NUM_OUT_OF_MEM if no memory for additional matrix entries available
 */
 /****************************************************************************/
 
@@ -11440,7 +11443,7 @@ INT d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, cons
 							if ( (con = CreateExtraConnection( grid, vi, vj )) == NULL )
 							{
 								UserWrite( "Not enough memory in d2matmulBS.\n" );
-									return GM_OUT_OF_MEM;
+								REP_ERR_RETURN(GM_OUT_OF_MEM);
 							}
 							mij = CMATRIX0( con );
 							extra_cons++;
@@ -11491,7 +11494,7 @@ INT d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, cons
    RETURN VALUE:
    INT
 .n    NUM_OK if ok
-.n    GM_OUT_OF_MEM if no memory for additional matrix entries available
+.n    NUM_OUT_OF_MEM if no memory for additional matrix entries available
 */
 /****************************************************************************/
 
@@ -11534,7 +11537,7 @@ INT d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_D
 									if ( (con = CreateExtraConnection( grid, vi, vj )) == NULL )
 									{
 										UserWrite( "Not enough memory in d3matmulBS.\n" );
-											return GM_OUT_OF_MEM;
+										REP_ERR_RETURN(GM_OUT_OF_MEM);
 									}
 									mij = CMATRIX0( con );
 									extra_cons++;
@@ -11617,7 +11620,7 @@ INT l_matflset (GRID *g, INT f)
 	VECTOR *v;
 	MATRIX *m;
 	
-	if (f!=0 && f!=1) return (1);
+	if (f!=0 && f!=1) REP_ERR_RETURN (1);
 	for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
 		if (VSTART(v) != NULL)
 			for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))

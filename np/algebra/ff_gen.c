@@ -82,6 +82,8 @@
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+REP_ERR_FILE;
+
 /* mute level for FFs */
 INT mute_level  = 0;
 
@@ -136,13 +138,13 @@ INT     storeVectorBS( BLOCKVECTOR *bv, INT x_comp, GRID *grid )
     if ( grid == NULL )
     {
       PrintErrorMessage( 'E', "storeVectorBS", "No memory allocated in blockvector" );
-      return GM_OUT_OF_MEM;
+      REP_ERR_RETURN(GM_OUT_OF_MEM);
 
     }
     if ( (mem = GetMem( MGHEAP(MYMG(grid)), BVNUMBEROFVECTORS(bv)*sizeof(DOUBLE), FROM_BOTTOM )) == NULL )
     {
       PrintErrorMessage( 'E', "storeVectorBS", "Not enough memory to store the vector" );
-      return GM_OUT_OF_MEM;
+      REP_ERR_RETURN(GM_OUT_OF_MEM);
     }
     BVUSERDATA( bv ) = mem;
   }
@@ -185,7 +187,7 @@ static INT HasDirichletNeighbour( const VECTOR *v )
   register VERTEX *nb_vertex;
 
   ASSERT(FALSE);       /* neues boundary konzept einbauen */
-  return 1;
+  REP_ERR_RETURN(1);
 
   register VSEGMENT *vseg;
   register BndCondProcPtr bnd_cond;
@@ -604,7 +606,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
   if ( n * n != nn )
   {
     PrintErrorMessage( 'E', "FF_PrepareGrid", "grid is not a square!" );
-    return 1;
+    REP_ERR_RETURN(1);
   }
 
   /* remove the boundary nodes from the calculations */
@@ -613,7 +615,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
   if ( CreateBVStripe2D( grid, n*n, n ) != GM_OK )
   {
     PrintErrorMessage( 'F', "FF_PrepareGrid", "can not build blockvector structure" );
-    return 1;
+    REP_ERR_RETURN(1);
   }
 
 #endif
@@ -624,7 +626,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
   if ( n * n * n != nn )
   {
     PrintErrorMessage( 'E', "FF_PrepareGrid", "grid is not a cube!" );
-    return 1;
+    REP_ERR_RETURN(1);
   }
 
   /* remove the boundary nodes from the calculations */
@@ -633,7 +635,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
   if ( CreateBVStripe3D( grid, n*n*n, n, n ) != GM_OK )
   {
     PrintErrorMessage( 'F', "FF_PrepareGrid", "can not build blockvector structure" );
-    return 1;
+    REP_ERR_RETURN(1);
   }
 
 #endif
@@ -1209,7 +1211,10 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
   BV_DESC bvd1, bvd2;
 
   if ( BV_IS_LEAF_BV(bv) )
-    return solveLUMatBS( bv, bvd, bvdf, v_comp, Tinv_comp, b_comp );
+  {
+    solveLUMatBS( bv, bvd, bvdf, v_comp, Tinv_comp, b_comp );
+    return NUM_OK;
+  }
 
   ASSERT( v_comp != aux_comp );
   ASSERT( b_comp != aux_comp );
