@@ -6145,15 +6145,15 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
                "FREE/((RED+GREEN)/RED)=%9.0f\n",
                free_bytes,free_bytes/mg_sum_size_div_red,
                free_bytes/mg_redplusgreen_size_div_red);
-    UserWriteF(" EST %2d  ELEMS=%9.0f MARKCOUNT=%9.0f  PRED_NEW0=%9.0f PRED_NEW1=%9.0f PRED_MAX=%9.0f\n",
-               REFINESTEP(REFINEINFO(theMG)),REAL(REFINEINFO(theMG)),
-               MARKCOUNT(REFINEINFO(theMG)),PREDNEW0(REFINEINFO(theMG)),
-               PREDNEW1(REFINEINFO(theMG)),PREDMAX(REFINEINFO(theMG)));
+    UserWriteF(" EST %2d  ELEMS=%9.0f MARKCOUNT=%9.0f PRED_NEW0=%9.0f PRED_NEW1=%9.0f PRED_MAX=%9.0f\n",
+               REFINESTEP(REFINEINFO(theMG)),REAL(REFINEINFO(theMG)),MARKCOUNT(REFINEINFO(theMG)),
+               PREDNEW0(REFINEINFO(theMG)),PREDNEW1(REFINEINFO(theMG)),PREDMAX(REFINEINFO(theMG)));
     UserWriteF(" EST TRACE step=%d\n",refine_info.step);
     for (i=0; i<refine_info.step; i++)
-      UserWriteF(" EST  %2d  ELEMS=%9.0f REAL=%9.0f MARKS=%9.0f  PRED0=%9.0f PRED1=%9.0f PRED_MAX=%9.0f\n",
-                 i,refine_info.real[i],((i>0) ? refine_info.real[i]-refine_info.real[i-1] : 0),
-                 refine_info.markcount[i],refine_info.predicted_new[i][0],
+      UserWriteF(" EST  %2d  ELEMS=%9.0f MARKS=%9.0f REAL=%9.0f PRED0=%9.0f PRED1=%9.0f PRED_MAX=%9.0f\n",
+                 i,refine_info.real[i],refine_info.markcount[i],
+                 ((i<refine_info.step) ? refine_info.real[i+1]-refine_info.real[i] : 0),
+                 refine_info.predicted_new[i][0],
                  refine_info.predicted_new[i][1],refine_info.predicted_max[i]);
   }
 
