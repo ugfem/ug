@@ -308,6 +308,122 @@ static void IFPolymark (short n, SHORT_POINT *points)
   for (i=0; i<n; i++) Marker(gw->marker_id,gw->marker_size,points[i]);
 }
 
+static void InvMarker (short n, short s, SHORT_POINT point)
+{
+  XGCValues values_return;
+  unsigned long valuemask,plane_mask;
+  int function;
+  short x,y;
+  short top, left, bottom, right;
+
+  x = point.x;
+  y = point.y;
+  top = y-s/2; bottom = y+s/2;
+  left = x-s/2; right = x+s/2;
+  n = n%11;
+
+  /* save values */
+  valuemask = GCPlaneMask;
+  XGetGCValues(display,gw->gc,valuemask,&values_return);
+  plane_mask = values_return.plane_mask;
+  valuemask = GCFunction;
+  XGetGCValues(display,gw->gc,valuemask,&values_return);
+  function = values_return.function;
+  XSetFunction(display,gw->gc,GXinvert);
+
+  switch (n)
+  {
+  case EMPTY_SQUARE_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000001);
+    XDrawRectangle(display, gw->win, gw->gc, left, top, s, s);
+    XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
+    break;
+  case GRAY_SQUARE_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000001);
+    XDrawRectangle(display, gw->win, gw->gc, left, top, s, s);
+    XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
+    break;
+  case FILLED_SQUARE_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000073);
+    XFillRectangle(display, gw->win, gw->gc, left, top, s, s);
+    XFillRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
+    break;
+  case EMPTY_CIRCLE_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000001);
+    XDrawArc( display, gw->win, gw->gc, left, top, s, s, 0, 360*64);
+    XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
+    break;
+  case GRAY_CIRCLE_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000001);
+    XDrawArc( display, gw->win, gw->gc, left, top, s, s, 0, 360*64);
+    XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
+    break;
+  case FILLED_CIRCLE_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000073);
+    XFillArc( display, gw->win, gw->gc, left, top, s+1, s+1, 0, 360*64);
+    XFillArc( display, gw->pixmap, gw->gc, left, top, s+1, s+1, 0, 360*64);
+    break;
+  case EMPTY_RHOMBUS_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000001);
+    XDrawLine( display, gw->win, gw->gc, x, y+s/2, x+s/2, y);
+    XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
+    XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
+    XDrawLine( display, gw->win, gw->gc, x-s/2, y, x, y+s/2);
+    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
+    XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
+    XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
+    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    break;
+  case GRAY_RHOMBUS_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000001);
+    XDrawLine( display, gw->win, gw->gc, x, y+s/2, x+s/2, y);
+    XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
+    XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
+    XDrawLine( display, gw->win, gw->gc, x-s/2, y, x, y+s/2);
+    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
+    XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
+    XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
+    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    break;
+  case FILLED_RHOMBUS_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000001);
+    XDrawLine( display, gw->win, gw->gc, x, y+s/2, x+s/2, y);
+    XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
+    XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
+    XDrawLine( display, gw->win, gw->gc, x-s/2, y, x, y+s/2);
+    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
+    XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
+    XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
+    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    break;
+  case PLUS_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000001);
+    XDrawLine( display, gw->win, gw->gc, x, y+s/2, x, y-s/2);
+    XDrawLine( display, gw->win, gw->gc, x-s/2, y, x+s/2, y);
+    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x, y-s/2);
+    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x+s/2, y);
+    break;
+  case CROSS_MARKER :
+    XSetPlaneMask(display,gw->gc,0x00000001);
+    XDrawLine( display, gw->win, gw->gc, x-s/2, y+s/2, x+s/2, y-s/2);
+    XDrawLine( display, gw->win, gw->gc, x-s/2, y-s/2, x+s/2, y+s/2);
+    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y+s/2, x+s/2, y-s/2);
+    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y-s/2, x+s/2, y+s/2);
+    break;
+  }
+  /* restore values */
+  XSetFunction(display,gw->gc,function);
+  XSetPlaneMask(display,gw->gc,plane_mask);
+}
+
+
+static void IFInvPolymark (short n, SHORT_POINT *points)
+{
+  int i;
+
+  for (i=0; i<n; i++) Marker(gw->marker_id,gw->marker_size,points[i]);
+}
+
 static void IFText (const char *s, INT mode)
 {
   XGCValues values_return;
@@ -698,6 +814,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
   thePort->InversePolygon = IFInversePolygon;
   thePort->ErasePolygon   = IFErasePolygon;
   thePort->Polymark               = IFPolymark;
+  thePort->InvPolymark    = IFInvPolymark;
   thePort->Text                   = IFText;
   thePort->CenteredText   = IFCenteredText;
   thePort->ClearViewPort  = IFClearViewPort;

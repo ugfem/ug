@@ -334,6 +334,9 @@ static void PSPolymark (short n, SHORT_POINT *points)
   return;
 }
 
+static void PSInvPolymark (short n, SHORT_POINT *points)
+{}
+
 static void PrintPSString (const char *s)
 {
   fputc('(',currPSF);
@@ -472,6 +475,7 @@ static void InitPSPort (OUTPUTDEVICE *thePort)
   thePort->InversePolygon = PSInversePolygon;
   thePort->ErasePolygon   = PSErasePolygon;
   thePort->Polymark               = PSPolymark;
+  thePort->InvPolymark    = PSInvPolymark;
   thePort->Text                   = PSText;
   thePort->CenteredText   = PSCenteredText;
   thePort->ClearViewPort  = PSClearViewPort;

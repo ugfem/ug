@@ -65,6 +65,7 @@ char *cmd_text[] =
   "InversePolygon",
   "ErasePolygon",
   "Polymark",
+  "InvPolymark",
   "Text",
   "CenteredText",
   "ClearViewPort",

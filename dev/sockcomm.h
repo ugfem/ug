@@ -96,6 +96,7 @@ enum DevCmds
   DC_InversePolygon,
   DC_ErasePolygon,
   DC_Polymark,
+  DC_InvPolymark,
   DC_Text,
   DC_CenteredText,
   DC_ClearViewPort,

@@ -406,6 +406,14 @@ static void ug_frontend (int sockfd)
       break;
     }
 
+    case DC_InvPolymark :
+    {
+      INT np = SocketReadINT(sockfd);
+      SocketRead(sockfd, buf, sizeof(SHORT_POINT)*np);
+      (*theOutputDevice->InvPolymark)(np, (SHORT_POINT *)buf);
+      break;
+    }
+
     case DC_Text :
     {
       INT mode = SocketReadINT(sockfd);

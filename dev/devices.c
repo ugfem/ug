@@ -491,7 +491,6 @@ else
 
 void PrintErrorMessage (char type, const char *procName, const char *text)
 {
-  char buffer[256];
   char classText[32];
 
   switch (type)
@@ -511,8 +510,7 @@ void PrintErrorMessage (char type, const char *procName, const char *text)
     strcpy(classText,"USERERROR");
     break;
   }
-  sprintf(buffer,"%s in %.20s: %.200s\n",classText,procName,text);
-  UserWrite(buffer);
+  UserWriteF("%s in %.20s: %.200s\n",classText,procName,text);
 }
 
 /****************************************************************************/

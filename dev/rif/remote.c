@@ -189,6 +189,15 @@ static void IFPolymark (short n, SHORT_POINT *points)
   SocketWrite(theSocket, (char *)points, sizeof(SHORT_POINT)*n);
 }
 
+static void IFInvPolymark (short n, SHORT_POINT *points)
+{
+  BUFSTART;
+  BUFINT(DC_InvPolymark);
+  BUFINT(n);
+  BUFEND;
+
+  SocketWrite(theSocket, (char *)points, sizeof(SHORT_POINT)*n);
+}
 
 static void IFText (const char *s, INT mode)
 {
@@ -354,6 +363,7 @@ void InitRemotePort (OUTPUTDEVICE *thePort)
   thePort->InversePolygon = IFInversePolygon;
   thePort->ErasePolygon   = IFErasePolygon;
   thePort->Polymark               = IFPolymark;
+  thePort->InvPolymark    = IFInvPolymark;
   thePort->Text                   = IFText;
   thePort->CenteredText   = IFCenteredText;
   thePort->ClearViewPort  = IFClearViewPort;
