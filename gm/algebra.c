@@ -1479,14 +1479,16 @@ MATRIX *GetOrderedMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
 {
   MATRIX *theMatrix;
 
-  if (INDEX(FromVector) > INDEX(ToVector)) {
-    for (theMatrix=VSTART(FromVector);
+  if (FromVector == ToVector)
+    return(VSTART(ToVector));
+  else if (INDEX(FromVector) > INDEX(ToVector)) {
+    for (theMatrix=MNEXT(VSTART(FromVector));
          theMatrix!=NULL; theMatrix = MNEXT(theMatrix))
       if (MDEST(theMatrix)==ToVector)
         return (theMatrix);
   }
   else {
-    for (theMatrix=VSTART(ToVector);
+    for (theMatrix=MNEXT(VSTART(ToVector));
          theMatrix!=NULL; theMatrix = MNEXT(theMatrix))
       if (MDEST(theMatrix)==FromVector)
         return (MADJ(theMatrix));

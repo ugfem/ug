@@ -102,6 +102,8 @@ INT GetElementVPtrs             (ELEMENT *theElement, const VECDATA_DESC *theTVD
                                  DOUBLE **vptr);
 INT GetElementVValues           (ELEMENT *theElement,
                                  const VECDATA_DESC *theVD, DOUBLE *value);
+INT AddElementVValues           (ELEMENT *theElement,
+                                 const VECDATA_DESC *theVD, DOUBLE *value);
 INT GetVlistVValues             (INT cnt, VECTOR **theVec,
                                  const VECDATA_DESC *theVD, DOUBLE *value);
 INT AddVlistVValues             (INT cnt, VECTOR **theVec,
@@ -116,7 +118,7 @@ INT GetElementMPtrs                             (ELEMENT *theElement,
                                                  const MATDATA_DESC *theTMD, DOUBLE **mptr);
 INT GetVlistMValues             (INT cnt, VECTOR **theVec,
                                  const MATDATA_DESC *theMD, DOUBLE *value);
-INT AddVlistMValues             (INT cnt, VECTOR **theVec,
+INT AddVlistMValues             (GRID *theGrid, INT cnt, VECTOR **theVec,
                                  const MATDATA_DESC *theMD, DOUBLE *value);
 INT GetElementVMPtrs            (ELEMENT *theElement,
                                  const VECDATA_DESC *theTVD, const MATDATA_DESC *theTMD,

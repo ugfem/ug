@@ -393,6 +393,8 @@ INT             WriteVEC_SCALAR                         (VECDATA_DESC *theVDT, V
 
 #ifdef __INTERPOLATION_MATRIX__
 /* interpolation matrix functions */
+INT GetInterpolationMatrix (ELEMENT *theElement, ELEMENT *theFather,
+                            INT me, DOUBLE *IntMat, VECDATA_DESC *theVD);
 INT AddInterpolationMatrix (GRID *theGrid,
                             ELEMENT *theElement, ELEMENT *theFather,
                             INT me, DOUBLE *IntMat, VECDATA_DESC *theVD);
@@ -410,7 +412,7 @@ INT RestrictByMatrix              (GRID *FineGrid, const VECDATA_DESC *to,
 INT RestrictByMatrix_s                    (GRID *FineGrid, const VECDATA_DESC *to,
                                            const VECDATA_DESC *from, const DOUBLE *damp);
 INT InterpolateNewVectorsByMatrix (GRID *FineGrid, const VECDATA_DESC *sol);
-INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat);
+INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric);
 #endif
 
 INT ScaleIVector (GRID *g, VECDATA_DESC *theVD);

@@ -61,15 +61,15 @@
   { register MATRIX *theMatrix0;                                              \
     register VECTOR *theVector0 = (v);                                        \
     register VECTOR *theVector1 = (w);                                        \
-    if (INDEX(theVector0) > INDEX(theVector1)) {                              \
-      for (theMatrix0=VSTART(theVector0); theMatrix0!=NULL;                 \
+    (m) = NULL;                                                               \
+    if (theVector0 == theVector1) (m) = VSTART(theVector0);                   \
+    else if (INDEX(theVector0) > INDEX(theVector1)) {                         \
+      for (theMatrix0=MNEXT(VSTART(theVector0)); theMatrix0!=NULL;          \
            theMatrix0=MNEXT(theMatrix0))                                    \
-        if (MDEST(theMatrix0)==theVector1) break;                         \
-      (m) = theMatrix0; }                                                   \
-    else { for (theMatrix0=VSTART(theVector1); theMatrix0!=NULL;              \
+        if (MDEST(theMatrix0)==theVector1) { (m) = theMatrix0; break; }}  \
+    else { for (theMatrix0=MNEXT(VSTART(theVector1)); theMatrix0!=NULL;       \
                 theMatrix0=MNEXT(theMatrix0))                                    \
-             if (MDEST(theMatrix0)==theVector0) break;                         \
-           (m) = MADJ(theMatrix0); }}
+             if (MDEST(theMatrix0)==theVector0) {(m) = MADJ(theMatrix0); break;}}}
 
 /****************************************************************************/
 /*																			*/

@@ -382,6 +382,54 @@ INT GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
 
 /****************************************************************************/
 /*D
+   AddElementVValue - add list of DOUBLE values for vectors
+
+   SYNOPSIS:
+   INT AddElementVValues (ELEMENT *theElement, VECDATA_DESC *theVD,
+   DOUBLE *value);
+
+   PARAMETERS:
+   .  theElement - pointer to an element
+   .  theVD - type vector descriptor
+   .  value - pointer to double values
+
+   DESCRIPTION:
+   This function adds all local vector values corresponding to an element.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT AddElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
+                       DOUBLE *value)
+{
+  VECTOR *theVec[MAX_NODAL_VECTORS];
+  DOUBLE *vptr;
+  INT i,j,m,cnt,vtype;
+
+  cnt = GetAllVectorsOfElementOfType(theElement,theVec,theVD);
+
+  if (cnt > MAX_NODAL_VECTORS || cnt < 1)
+    return(-1);
+
+  m = 0;
+  for (i=0; i<cnt; i++) {
+    vtype = VTYPE(theVec[i]);
+    vptr = VVALUEPTR(theVec[i],VD_CMP_OF_TYPE(theVD,vtype,0));
+    for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++) {
+      *vptr += value[m++];
+      vptr++;
+    }
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
    GetVlistVValue - get list of DOUBLE values for vectors
 
    SYNOPSIS:
@@ -782,10 +830,11 @@ INT GetVlistMValues (INT cnt, VECTOR **theVec,
    AddVlistMValues - add list of DOUBLE values for matrices
 
    SYNOPSIS:
-   INT AddVlistMValues (INT cnt, VECTOR **theVec,
+   INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
    const MATDATA_DESC *theMD, DOUBLE *value);
 
    PARAMETERS:
+   .  theGrid - pointer to grid
    .  cnt - number of vectors
    .  theVec - vector list
    .  theMD - type matrix descriptor
@@ -801,7 +850,7 @@ INT GetVlistMValues (INT cnt, VECTOR **theVec,
    D*/
 /****************************************************************************/
 
-INT AddVlistMValues (INT cnt, VECTOR **theVec,
+INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
                      const MATDATA_DESC *theMD, DOUBLE *value)
 {
   MATRIX *theMatrix;
@@ -834,8 +883,11 @@ INT AddVlistMValues (INT cnt, VECTOR **theVec,
     m2 = 0;
     for (j=0; j<i; j++) {
       GET_MATRIX(theVec[i],theVec[j],theMatrix);
-      if (theMatrix == NULL)
-        return (-1);
+      if (theMatrix == NULL) {
+        theMatrix = CreateExtraConnection(theGrid,theVec[i],theVec[j]);
+        if (theMatrix == NULL)
+          return (-1);
+      }
       mptr = MVALUEPTR(theMatrix,0);
       comp = Comp[i][j];
       for (k=0; k<vncomp[i]; k++)
