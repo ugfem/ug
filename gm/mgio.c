@@ -39,6 +39,7 @@
         #include "defaults.h"
         #include "fileopen.h"
         #include "domain.h"
+        #include "debug.h"
 
 #endif
 
@@ -113,6 +114,46 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+#ifdef __MGIO_USE_IN_UG__
+int MGIO_dircreate (char *filename)
+{
+
+  if (mgpathes_set) return(DirCreateUsingSearchPaths(filename,"mgpaths"));
+  else return(DirCreateUsingSearchPaths(filename,NULL));
+}
+#endif
+
+/****************************************************************************/
+/*D
+   MGIO_filetype - test for type of file
+
+   SYNOPSIS:
+   INT MGIO_filetype (char *filename);
+
+   PARAMETERS:
+   .  filename - name of file
+
+   DESCRIPTION:
+   test for type of file with name filename in searching pathes if exist
+
+   RETURN VALUE:
+   int
+   .n    FT_FILE if regular file
+   .n    FT_DIR  if directory
+   .n    FT_UNKNOWN else
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+#ifdef __MGIO_USE_IN_UG__
+int MGIO_filetype (char *filename)
+{
+
+  if (mgpathes_set) return(FileTypeUsingSearchPaths(filename,"mgpaths"));
+  else return(filetype(filename));
+}
+#endif
 
 /****************************************************************************/
 /*D
@@ -835,19 +876,32 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
  */
 /****************************************************************************/
 
-static int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
+int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
 {
   int i,m,s,np;
+  char buffer[28];
+  static int nb;
+
+  if (Bio_Read_string(buffer)) return (1);
+  if(strcmp(buffer,"PINFO_BEGIN")!=0)
+  {
+    printf("proc=%d, nb=%d\n",me,nb);
+    fflush(stdout);
+    assert(0);
+  }
+  nb++;
 
   s=0;
   m = 2+2*lge[ge].nCorner;
   if (Bio_Read_mint(m,intList)) return (1);
   pinfo->prio_elem = intList[s++];
+  assert(pinfo->prio_elem<32);
   pinfo->ncopies_elem = intList[s++];
   np = pinfo->ncopies_elem;
   for (i=0; i<lge[ge].nCorner; i++)
   {
     pinfo->prio_node[i] = intList[s++];
+    assert(pinfo->prio_node[i]<32);
     pinfo->ncopies_node[i] = intList[s++];
     np+= pinfo->ncopies_node[i];
   }
@@ -858,12 +912,18 @@ static int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
   for (i=0; i<lge[ge].nEdge; i++)
   {
     pinfo->prio_edge[i] = intList[s++];
+    assert(pinfo->prio_edge[i]<32);
     pinfo->ncopies_edge[i] = intList[s++];
     np+= pinfo->ncopies_edge[i];
   }
 #endif
-  if (Bio_Read_mint(np,intList)) return (1);
-  for (i=0; i<np; i++) pinfo->proclist[i] = intList[i];
+  if (np > 0) if (Bio_Read_mint(np,intList)) return (1);
+  if (pinfo->proclist==NULL) return (0);
+  for (i=0; i<np; i++)
+  {
+    pinfo->proclist[i] = intList[i];
+    ASSERT(pinfo->proclist[i]<nparfiles);
+  }
 
   return (0);
 }
@@ -877,9 +937,11 @@ static int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
  */
 /****************************************************************************/
 
-static int Write_pinfo (int ge, MGIO_PARINFO *pinfo)
+int Write_pinfo (int ge, MGIO_PARINFO *pinfo)
 {
   int i,m,s,np;
+
+  if (Bio_Write_string("PINFO_BEGIN")) return (1);
 
   s=0;
   intList[s++] = pinfo->prio_elem;
@@ -890,7 +952,7 @@ static int Write_pinfo (int ge, MGIO_PARINFO *pinfo)
     intList[s++] = pinfo->ncopies_node[i];
     np+= pinfo->ncopies_node[i];
   }
-  if (Bio_Write_mint(s,intList)) return (1);
+  if (Bio_Write_mint(s,intList)) RETURN (1);
 #if (MGIO_DIM==3)
   s=0;
   for (i=0; i<lge[ge].nEdge; i++)
@@ -899,10 +961,14 @@ static int Write_pinfo (int ge, MGIO_PARINFO *pinfo)
     intList[s++] = pinfo->ncopies_edge[i];
     np+= pinfo->ncopies_edge[i];
   }
+  if (Bio_Write_mint(s,intList)) RETURN (1);
 #endif
-  if (Bio_Write_mint(s,intList)) return (1);
-  for (i=0; i<np; i++) intList[i] = pinfo->proclist[i];
-  if (Bio_Write_mint(np,intList)) return (1);
+  for (i=0; i<np; i++)
+  {
+    intList[i] = pinfo->proclist[i];
+    ASSERT(intList[i]<nparfiles);
+  }
+  if (np > 0) if (Bio_Write_mint(np,intList)) RETURN (1);
 
   return (0);
 }
@@ -953,8 +1019,21 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
     if (MGIO_PARFILE)
     {
-      if (Bio_Read_mint(1,&pe->level)) return (1);
-      if (Read_pinfo(pe->ge,&pe->pinfo)) return (1);
+#if (MGIO_DIM==2)
+      m=lge[pe->ge].nCorner+2;
+#else
+      m=lge[pe->ge].nCorner+[pe->ge].nEdge+2;
+#endif
+      if (Bio_Read_mint(m,intList)) return (1);
+      s=0;
+      pe->level = intList[s++];
+      pe->e_ident = intList[s++];
+      for (j=0; j<lge[pe->ge].nCorner; j++)
+        pe->n_ident[j] = intList[s++];
+#if (MGIO_DIM==3)
+      for (j=0; j<lge[pe->ge].nEdge; j++)
+        pe->ed_ident[j] = intList[s++];
+#endif
     }
   }
 
@@ -1007,8 +1086,16 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
     if (MGIO_PARFILE)
     {
-      if (Bio_Write_mint(1,&pe->level)) return (1);
-      if (Write_pinfo(pe->ge,&pe->pinfo)) return (1);
+      s=0;
+      intList[s++] = pe->level;
+      intList[s++] = pe->e_ident;
+      for (j=0; j<lge[pe->ge].nCorner; j++)
+        intList[s++] = pe->n_ident[j];
+#if (MGIO_DIM==3)
+      for (j=0; j<lge[pe->ge].nEdge; j++)
+        intList[s++] = pe->ed_ident[j];
+#endif
+      if (Bio_Write_mint(s,intList)) return (1);
     }
   }
 
@@ -1078,16 +1165,16 @@ int Read_Refinement (int n, MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_rules)
       if (Bio_Read_mint(2,intList)) return (1);
       pr->sonex = intList[0];
       pr->nbid_ex = intList[1];
-      for (i=0; i<MGIO_MAX_SONS_OF_ELEM; i++)
-        if ((pr->sonex>>i)&1)
+      for (k=0; k<MGIO_MAX_SONS_OF_ELEM; k++)
+        if ((pr->sonex>>k)&1)
         {
-          tag = rr_rules[pr->refrule].sons[i].tag;
-          if (Read_pinfo(tag,&pr->pinfo[i])) return (1);
-          if ((pr->nbid_ex>>i)&1)
+          tag = rr_rules[pr->refrule].sons[k].tag;
+          if (Read_pinfo(tag,&pr->pinfo[k])) return (1);
+          if ((pr->nbid_ex>>k)&1)
           {
             if (Bio_Read_mint(lge[tag].nSide,intList)) return (1);
             for (j=0; j<lge[tag].nSide; j++)
-              pr->nbid[i][j] = intList[j];
+              pr->nbid[k][j] = intList[j];
           }
         }
     }

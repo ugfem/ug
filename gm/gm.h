@@ -2202,6 +2202,14 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MG_SAVED(p)                             ((p)->saved)
 #define MG_FILENAME(p)                  ((p)->filename)
 
+/* constants for USED flags of objects */
+#define MG_ELEMUSED     1
+#define MG_NODEUSED     2
+#define MG_EDGEUSED     4
+#define MG_VERTEXUSED   8
+#define MG_VECTORUSED   16
+#define MG_MATRIXUSED   32
+
 /****************************************************************************/
 /*																			*/
 /* declaration of exported global variables									*/

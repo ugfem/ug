@@ -262,7 +262,9 @@ struct mgio_cg_element {
 
   /* (procs>1)-extension */
   int level;
-  struct mgio_parinfo pinfo;                                            /* info for distr. data						*/
+  int e_ident;                                                                  /* identification of element				*/
+  int n_ident[MGIO_MAX_CORNERS_OF_ELEM];                /* identification of nodes of elem			*/
+  int ed_ident[MGIO_MAX_EDGES_OF_ELEM];                 /* identification of edges of element		*/
 };
 
 struct mgio_refinement_seq {                                    /* used only for sizeof						*/
@@ -352,6 +354,9 @@ int     Write_Refinement        (int n, MGIO_REFINEMENT *refinement, MGIO_RR_RUL
 int             Write_BD_General        (MGIO_BD_GENERAL *bd_general);
 
 #ifdef __MGIO_USE_IN_UG__
+int             Read_pinfo                      (int ge, MGIO_PARINFO *pinfo);
+int             Write_pinfo                     (int ge, MGIO_PARINFO *pinfo);
+int             MGIO_filetype           (char *filename);
 int             Read_PBndDesc           (BVP *theBVP, HEAP *theHeap, int n, BNDP **BndPList);
 int             Write_PBndDesc          (int n, BNDP **BndPList);
 #endif
