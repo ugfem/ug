@@ -51,6 +51,7 @@ extern "C" {
 /*          __CC__       CC-Parsytec (PowerPC)                              */
 /*          __C90__      CRAY 90 version                                    */
 /*          __NECSX4__   NEC SX4                                            */
+/*          __SR2201__   Hitachi SR2201                                     */
 /*          __MWCW__     Apple Power Macintosh                              */
 /*                                                                          */
 /* #define this if you are using NXLib                                      */
@@ -594,6 +595,37 @@ extern "C" {
 
 /* current time as DOUBLE value */
 #define CURRENT_TIME   ((DOUBLE)0.0)
+
+#endif
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for Hitachi SR2201                                           */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __SR2201__
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    long    /* sizeof(int) != sizeof(void *) !! */
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  double
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym ## _
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
 
