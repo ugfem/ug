@@ -145,7 +145,17 @@ static DOMAIN_INFO_TYP *DomainInfo_Pointer;
 static char ProblemName[31];
 
 INT	komponentenzaehler;
-INT *KomponentenIndexArray; 
+INT *KomponentenIndexArray; /* diese Array beinhaltet die IDs der einzelnen
+			       Komponenten aus dem CAD File,
+			       die am Ende der Datei in der Form
+				  K,1,salzgebiet
+			       ergaenzt wurden.
+			       Das array wir von 1 bis AnzahlAngaben gefuellt
+			       und hat die selbe ReihenfolÎge wie in der CAD-DAtei*/
+INT *bisherige_ID_array;    /* diese Array beinhaltet die Subdomain/Komponenten IDs
+			       aus dem CAD-Array ==> gefuellt sin die Plaetze 1
+		               bis AnzahlSbdms. Die Reihenfolge bezieht sich auf die
+			       SubdomainIDs des UGs !!!*/
 char *KomponentenNamenArray;
 
 static HEAP *theHeap;
@@ -297,6 +307,7 @@ int KomponentFct(char *linebuffer)
 	if(komponentenzaehler == MAX_NUB_OF_SBDMS)
 	{
 		PrintErrorMessage('E',"cadconvert"," Komponentenzaehler bigger than MAX_NUB_OF_SBDMS");
+		return(1);
 	}
 	KomponentenIndexArray[komponentenzaehler]=(INT)(strtol(s,&endp,10)); 
 
@@ -1099,6 +1110,15 @@ if ( KomponentenIndexArray == NULL )
 	return(1);
 }
 memset(KomponentenIndexArray,-1,(MAX_NUB_OF_SBDMS)*sizeof(INT));
+
+bisherige_ID_array  = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*sizeof(INT)); 
+if ( bisherige_ID_array == NULL ) 
+{ 
+	PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
+	return(1);
+}
+memset(bisherige_ID_array,-1,(MAX_NUB_OF_SBDMS)*sizeof(INT));
+
 KomponentenNamenArray = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*31*sizeof(char));
 if ( KomponentenNamenArray == NULL ) 
 { 
@@ -4961,6 +4981,7 @@ INT Ansys2lgmUpdateSbdmIDs()
 		if(sd_pointer != NULL)
 		{
 			bisherige_ID = SD_NAME(sd_pointer);
+			bisherige_ID_array[i] = bisherige_ID;
 			SD_NAME(sd_pointer) = i; /*Zuweisung der neuen UG-verstaendlichen ID*/
 			/*laufe ueber KomponentenIndexArray und suche die bisherige ID:*/
 			hlp = 1;
@@ -5332,10 +5353,62 @@ LGM_ANSYS_ReadSubDomain - reads general domain information from file
 /****************************************************************************/
 int LGM_ANSYS_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 {
-	int s,n;
+	int s,n,neue_ID,bisherige_ID,i,hlp;
 	SF_TYP *sfce;
+	SD_TYP *sd_pointer;
 	
 	n = 0;
+	
+
+
+	/*Zuweisung des Subdomainnamens :*/
+	/*laufe zur angegebenen Subdomain :*/
+	sd_pointer = EXCHNG_TYP2_ROOT_SBD(ExchangeVar_2_Pointer);
+	if(sd_pointer == NULL)
+	{
+		UserWrite("ERROR: in LGM_ANSYS_ReadSubDomain: Subdoamin is missing !!");
+		return (1);
+	}
+	
+	for(i=1; i<subdom_i; i++)
+	{
+		sd_pointer = SD_NEXT(sd_pointer);
+		if(sd_pointer == NULL)
+		{
+			UserWrite("ERROR: in LGM_ANSYS_ReadSubDomain: Subdoamin is missing !!");
+			return (1);
+		}
+	}
+	
+	neue_ID = SD_NAME(sd_pointer);
+	if ( (neue_ID >= MAX_NUB_OF_SBDMS) || (neue_ID<=0) )
+	{
+		UserWrite("ERROR: in LGM_ANSYS_ReadSubDomain: neue_ID is too big or too small");
+		return (1);
+	}
+	bisherige_ID = bisherige_ID_array[neue_ID];
+	if(bisherige_ID <= 0)
+	{
+		UserWrite("ERROR: in LGM_ANSYS_ReadSubDomain: bisherige_ID is <= 0 !!");
+		return (1);
+	}
+	/*laufe ueber KomponentenIndexArray und suche die bisherige ID:*/
+	hlp = 1;
+	while((KomponentenIndexArray[hlp] != -1) && (KomponentenIndexArray[hlp] != bisherige_ID))
+	{
+		hlp++;
+	}
+	if(KomponentenIndexArray[hlp] == -1)
+	{
+		strcpy(subdom_info->Unit,&(KomponentenNamenArray[0])); /*no name given for this Subdomain in ANSYS-FIle !!!*/
+	}
+	else
+	{
+		strcpy(subdom_info->Unit,&(KomponentenNamenArray[hlp*31]));
+	}
+		
+
+	
 	
 	sfce = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer); 
 	/*laufe ueber alle Surfaces*/
