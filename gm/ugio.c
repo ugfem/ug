@@ -1981,6 +1981,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       }
     }
   if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (PrepareAlgebraModification(theMG))                                                          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   i = MG_ELEMUSED | MG_NODEUSED | MG_EDGEUSED | MG_VERTEXUSED |  MG_VECTORUSED;
   ClearMultiGridUsedFlags(theMG,0,TOPLEVEL(theMG),i);
@@ -2121,6 +2122,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     PropagateVectorClasses(theGrid);
     PropagateNextVectorClasses(theGrid);
   }
+  if (PrepareAlgebraModification(theMG))                                                                                          {DisposeMultiGrid(theMG); return (NULL);}
 
   /* set DOFs on vectors */
   if (SetSurfaceClasses (theMG))                                                                                                          {DisposeMultiGrid(theMG); return (NULL);}
