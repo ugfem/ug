@@ -48,6 +48,7 @@
 #include "evm.h"
 #include "general.h"
 #include "debug.h"
+#include "domain.h"
 
 #ifdef __MPW32__
 #include "MacGui.h"
@@ -1935,13 +1936,30 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   NODE *Node[3];
   ELEMENT *theElement,*Neighbor[4];
   INT reply;
-
+  DOUBLE_VECTOR position;
+  BVP_DESC theBVPDesc;
+  DOUBLE diff;
 
   n = 3;                /* generate triangle */
 
   Node[0] = theElementContext->theNode[0];
   Node[1] = theElementContext->theNode[1];
   Node[2] = theElementContext->theNode[2];
+
+  V2_CLEAR(position);
+  for (i=0; i<3; i++)
+  {
+    V2_ADD1(CVECT(MYVERTEX(Node[i])),position);
+  }
+  V2_SCALE(0.3333333333333333,position);
+  if (BVP_SetBVPDesc(MG_BVP(MYMG(theGrid)),&theBVPDesc)) return (1);
+  V2_EUKLIDNORM_OF_DIFF(theBVPDesc.midpoint,position,diff);
+  if (diff>theBVPDesc.radius)
+  {
+    UserWrite("\nERROR: trying to create element outside bounding sphere of domain\n");
+    return (1);
+  }
+
 
   /* find neighboring elements */
   found = 0;
