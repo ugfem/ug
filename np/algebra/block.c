@@ -648,6 +648,38 @@ INT SolveFullMatrix (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
   return (NUM_OK);
 }
 
+INT Choleskydecomposition (INT n, DOUBLE *mat, DOUBLE *chol)
+{
+  DOUBLE piv,sum;
+  INT i,j,k;
+
+  for (i=0; i<n; i++) {
+    sum = mat[i*n+i];
+    for (k=0; k<i; k++)
+      sum -= chol[i*n+k] * chol[i*n+k];
+    if (sum < 0.0) {
+      PrintErrorMessage('E',"CholeskyDecomposition","not spd");
+      UserWriteF("%8.4f\n\n",sum);
+      for (i=0; i<n; i++) {
+        for (k=0; k<n; k++)
+          UserWriteF("%8.4f\t", mat[i*n+k]);
+        UserWriteF("\n");
+      }
+      UserWriteF("\n");
+      return (1);
+    }
+    chol[i*n+i] = piv = 1.0 / sqrt(sum);
+    for (j=i+1; j<n; j++) {
+      sum = mat[i*n+j];
+      for (k=0; k<i; k++)
+        sum -= chol[j*n+k] * chol[i*n+k];
+      chol[j*n+i] = piv * sum;
+    }
+  }
+
+  return(0);
+}
+
 INT InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv)
 {
   register DOUBLE dinv,piv,sum;
