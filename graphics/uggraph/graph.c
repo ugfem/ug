@@ -1007,10 +1007,44 @@ void UgPolygon (COORD_POINT *points, INT n)
   if (nout<2) return;
   (*CurrentOutputDevice->Polygon)(out, nout);
 }
+
+/****************************************************************************/
+/*D
+   UgShadedPolygon - Draw shaded polygon with edge points[0] to points[n-1]
+
+   SYNOPSIS:
+   void UgPolygon (COORD_POINT *points, INT n, DOUBLE intensity);
+
+   PARAMETERS:
+   .  points - list of edge points
+   .  n - nb.of points
+   .  intensity - intensity for shading
+
+   DESCRIPTION:
+   This function draws shaded polygon with edge points[0] to points[n-1].
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void UgShadedPolygon (COORD_POINT *points, INT n, DOUBLE intensity)
+{
+  INT nout;
+  SHORT_POINT out[MAX_POINTS_OF_POLY];
+
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
+  if (ClipPolygon(points, n, out, &nout)) return;
+  if (nout<2) return;
+  (*CurrentOutputDevice->ShadedPolygon)(out, nout, intensity);
+}
+
 /****************************************************************************/
 /*D
    UgInversePolygon - Invert polygon with edge points[0] to points[n-1]
-
    SYNOPSIS:
    void UgInversePolygon (COORD_POINT *points, INT n);
 

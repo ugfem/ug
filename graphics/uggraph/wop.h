@@ -102,6 +102,8 @@
 #define DO_DEPEND                                               15
 #define DO_INVERSE_POLYLINE                     16
 #define DO_STYLED_LINE                                  17
+#define DO_SURR_SHADED_POLYGON          18
+#define DO_SHADED_POLYGON               19
 
 #ifdef ModelP
 #define NO_TOKEN                        0
@@ -150,7 +152,6 @@
 #define WOP_DOWN_CHANNELS  2
 #define DO_BUFFER_SLOTS    2
 #define DO_SLOT_SIZE       (DO_SIZE+2)
-#define MAX_LEVELS_PAR     MAXLEVEL
 #endif
 
 

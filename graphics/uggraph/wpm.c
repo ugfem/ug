@@ -4243,6 +4243,7 @@ static INT DisplayVecMat_3D (PLOTOBJ *thePlotObj)
    .    $t~<type~list>			- only vectors of specified types
    .    <type~list>			- a list composed by any of nd, ed, el, si, seperated by blanks
    .    $s~<shrink>			- factor to shrink elements
+   .    $a~0..1                - contribution of ambient light to face intensity
    .    $p~<shrink>			- parallel only: factor to shrink processor partition
 
    KEYWORDS:
@@ -4285,6 +4286,7 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->ElemColored             = NO;
     theGpo->WhichElem                       = PO_ALL;
     theGpo->PlotSelection           = 0;
+    theGpo->AmbientLight        = 1.0;
   }
 
   /* set shrink option */
@@ -4386,6 +4388,17 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
     }
   }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='a')
+    {
+      if (sscanf(argv[i], "a %f", &fValue) != 1) break;
+      theGpo->AmbientLight = fValue;
+      break;
+    }
+  if (theGpo->AmbientLight < 0.0 || theGpo->AmbientLight > 1.0)
+    theGpo->AmbientLight = 1.0;
+
   return (ACTIVE);
 }
 
@@ -4424,6 +4437,7 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SF,"PartShrinkFactor",(float)theGpo->PartShrinkFactor);
         #endif
   UserWriteF(DISPLAY_PO_FORMAT_SI,"colered elems",(int)theGpo->ElemColored);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"AmbientLight", (float)theGpo->AmbientLight);
 
   switch (theGpo->WhichElem)
   {
@@ -4496,6 +4510,9 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
                                                           CAUTION: may slow down dramatically!)
    .    $m COLOR|CONTOURS_EQ	- mode: color or equidistant contour lines
    .    $n~<levels>			- number of levels for contour lines
+   .    $a~0..1                - contribution of ambient light to face intensity (back grid)
+
+
 
    KEYWORDS:
    graphics, plot, window, picture, plotobject, vecdesc, function
@@ -4525,6 +4542,7 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEspo->max                    = 1.0;
     theEspo->mode                   = PO_COLOR;
     theEspo->numOfContours  = 10;
+    theEspo->AmbientLight   = 1.0;
   }
 
   /* set mode option */
@@ -4619,6 +4637,16 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
         theEspo->EvalFct = GetElementValueEvalProc("nvalue");
       break;
     }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='a')
+    {
+      if (sscanf(argv[i], "a %f", &fValue) != 1) break;
+      theEspo->AmbientLight = fValue;
+      break;
+    }
+  if (theEspo->AmbientLight < 0.0 || theEspo->AmbientLight > 1.0)
+    theEspo->AmbientLight = 1.0;
 
   if (theEspo->EvalFct == NULL)
   {
@@ -4715,6 +4743,7 @@ static INT DisplayScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj)
    .    $l~<cut~len>			- cut off len relative to raster size (default 1 to avoid overlap)
    .    $c~0|1					- cut off vectors off/on
    .    $p~0|1					- project vector off/on (?)
+   .    $a~0..1                - contribution of ambient light to face intensity (back grid)
 
    KEYWORDS:
    graphics, plot, window, picture, plotobject, vecdesc, function
@@ -4746,6 +4775,7 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEvpo->RasterSize     = PO_RADIUS(thePlotObj)/10.0;
     theEvpo->EvalFct                = NULL;
     theEvpo->CutLenFactor   = 0.9;
+    theEvpo->AmbientLight   = 1.0;
   }
 
   /* set to option */
@@ -4842,6 +4872,16 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
         theEvpo->EvalFct = GetElementVectorEvalProc("nvector");
       break;
     }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='a')
+    {
+      if (sscanf(argv[i], "a %f", &fValue) != 1) break;
+      theEvpo->AmbientLight = fValue;
+      break;
+    }
+  if (theEvpo->AmbientLight < 0.0 || theEvpo->AmbientLight > 1.0)
+    theEvpo->AmbientLight = 1.0;
 
   if (theEvpo->EvalFct == NULL)
   {

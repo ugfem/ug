@@ -356,6 +356,7 @@ struct ElemScalarPlotObj3D {
   INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
   INT numOfContours;                                                    /* nb of contourlines if used					*/
   DOUBLE contValues[PO_MAXCONTOURS];                    /* contour values if used						*/
+  DOUBLE AmbientLight;
 };
 
 struct ElemVectorPlotObj3D {
@@ -370,6 +371,7 @@ struct ElemVectorPlotObj3D {
   INT ProjectVector;                                                    /* YES or NO									*/
   DOUBLE CutLenFactor;                                          /* vector will be cut if longer then                    */
   /*	'CutLenFactor*RasterSize'					*/
+  DOUBLE AmbientLight;
 };
 
 struct VecMatPlotObj3D {
@@ -399,7 +401,8 @@ struct GridPlotObj3D {
   INT OType[MAXVOBJECTS];                                       /* which object types if Vectors set			*/
   INT ElemColored;                                                      /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
-  INT PlotSelection;                                                            /* see above									*/
+  INT PlotSelection;                                                    /* see above									*/
+  DOUBLE AmbientLight;                          /* contribution of ambient light to face intensity */
 };
 
 union PlotObj {

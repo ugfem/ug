@@ -495,6 +495,7 @@ static INT							GE_fromLevel,GE_toLevel;
 #define EE3D_EDV_MARK		FILLED_SQUARE_MARKER
 #define	EE3D_VEC_SIZE		6		/* vector marker size					*/
 #define COLOR_CUT_EDGE		(RED_CLASS+3)
+#define COLOR_DEFAULT       (RED_CLASS+4)
 
 /* 2D */
 static INT	EE2D_Elem2Plot[10];	/* 1 if element has to be plotted			*/
@@ -524,6 +525,7 @@ static long EE3D_Color[10];		/* colors used								*/
 static INT	EE3D_MaxLevel;		/* level considered to be the top level 	*/
 static INT 	EE3D_PlotSelection;	/* 1 to plot only selection */
 static DOUBLE EE3D_ShrinkFactor;/* shrink factor, 1.0 if normal plot		*/
+static DOUBLE EE3D_AmbientLight;/* ...          , 1.0 if normal plot        */
 static INT	EE3D_Property;		/* 1 if plot property						*/
 static INT	EE3D_NProperty;		/* nb of properties							*/
 static long EE3D_PropertyColor[EE_MAX_PROP+1];	/* colors used			    */
@@ -4187,7 +4189,7 @@ static INT NW_SelectNode2D (DRAWINGOBJ *q)
 static INT Draw3D (DRAWINGOBJ *q)
 {
 	INT j, n, centered, end, mode;
-	DOUBLE help[3];
+	DOUBLE help[3], intensity;
 	COORD_POINT a, b, point[MAX_POINTS_OF_POLY];
 	long color;
 	
@@ -4373,8 +4375,8 @@ static INT Draw3D (DRAWINGOBJ *q)
 				}
 				UgPolymark(point,n);
 				break;
-			case DO_INVPOLYMARK:
-				DO_inc(q)
+		    case DO_INVPOLYMARK:
+			    DO_inc(q)
 				n = DO_2c(q); DO_inc(q)
 				UgSetMarker(DO_2s(q)); DO_inc(q);
 				UgSetMarkerSize(DO_2s(q)); DO_inc(q);
@@ -4385,8 +4387,36 @@ static INT Draw3D (DRAWINGOBJ *q)
 				}
 				UgInvPolymark(point,n);
 				break;
-			default:
-				RETURN(1);
+		    case DO_SURR_SHADED_POLYGON:
+			    DO_inc(q);
+				n = DO_2c(q); DO_inc(q)
+				UgSetColor(DO_2l(q)); DO_inc(q);
+				intensity = *q; DO_inc(q);
+				color = DO_2l(q); DO_inc(q);
+				for (j=0; j<n; j++)
+				{
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(help,point+j);
+				}
+				UgShadedPolygon(point,j,intensity);
+				UgSetColor(color);
+				point[j].x=point[0].x; point[j].y=point[0].y;
+				UgPolyLine(point,j+1);
+				break;
+		  case DO_SHADED_POLYGON:
+			    DO_inc(q);
+				n = DO_2c(q); DO_inc(q)
+				UgSetColor(DO_2l(q)); DO_inc(q);
+				intensity = *q; DO_inc(q);
+				for (j=0; j<n; j++)
+				{
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(help,point+j);
+				}
+				UgShadedPolygon(point,j,intensity);
+				break;
+		    default:
+			    RETURN(1);
 		}
 	}
 	
@@ -5713,29 +5743,7 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	EE2D_ElemID 					= theGpo->PlotElemID;
 	EE2D_Subdom 					= theGpo->PlotSubdomain;
 	EE2D_ShrinkFactor				= theGpo->ShrinkFactor;
-	#ifdef ModelP
-	{
-		INT i, nc;
-		ELEMENT *elem;
-		EE2D_PartShrinkFactor = theGpo->PartShrinkFactor;
-		if (EE2D_PartShrinkFactor < 1.0) {
-			nc = 0;
-			V2_CLEAR(EE3D_PartMidPoint);
-			for (elem = EW_GetFirstElement_vert_fw_up(theMG, 0, CURRENTLEVEL(theMG));
-				 elem != NULL;
-				 elem = EW_GetNextElement_vert_fw_up(elem))
-			{
-				for (i = 0; i < CORNERS_OF_ELEM(elem); i++) {
-					nc++;
-					V2_ADD(EE2D_PartMidPoint, CVECT(MYVERTEX(CORNER(elem, i))), 
-						   EE2D_PartMidPoint);
-				}
-			}
-			if (nc > 0)
-			    V2_SCALE(1.0/(DOUBLE)nc, EE2D_PartMidPoint);
-		}
-	}
-	#endif
+
 	EE2D_Property = 0;
 	if (theGpo->ElemColored==2)
 	{
@@ -5768,6 +5776,50 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	/* mark surface elements */
 	EE2D_MaxLevel = CURRENTLEVEL(theMG);
 	if (MarkElements2D(theMG,0,EE2D_MaxLevel)) return (1);
+
+    #ifdef ModelP
+	{
+		INT i, nc;
+		ELEMENT *elem;
+		EE3D_PartShrinkFactor = theGpo->PartShrinkFactor;
+		if (EE3D_PartShrinkFactor < 1.0) {
+			nc = 0;
+			V3_CLEAR(EE3D_PartMidPoint);
+			for (elem = EW_GetFirstElement_vert_fw_up(theMG, 0, CURRENTLEVEL(theMG));
+				 elem != NULL;
+				 elem = EW_GetNextElement_vert_fw_up(elem))
+			{
+				for (i = 0; i < CORNERS_OF_ELEM(elem); i++) {
+					nc++;
+					V3_ADD(EE3D_PartMidPoint, CVECT(MYVERTEX(CORNER(elem, i))), 
+						   EE3D_PartMidPoint);
+				}
+			}
+			V3_SCALE(1.0/(DOUBLE)nc, EE3D_PartMidPoint);
+		}
+	}
+/* 
+	{
+		GRID *theGrid;
+		NODE *theNode;
+		INT  nodes;
+
+		EE3D_PartShrinkFactor			= theGpo->PartShrinkFactor;
+		if (EE3D_PartShrinkFactor < 1.0)
+		{
+			nodes = 0;
+			theGrid = GRID_ON_LEVEL(theMG, 0);
+			V3_CLEAR(EE3D_PartMidPoint)
+			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
+				V3_ADD(EE3D_PartMidPoint,CVECT(MYVERTEX(theNode)),EE3D_PartMidPoint)
+				nodes++;
+			}
+			if (nodes > 0)
+				V3_SCALE(1.0/(DOUBLE)nodes,EE3D_PartMidPoint)
+		}
+	}
+*/
+	#endif
 
 	return (0);
 }
@@ -12000,17 +12052,17 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 	return (theDO);
 }
 
-static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
+static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j, NodeOrder, n;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM], *co[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
 	DOUBLE_VECTOR Polygon[MAX_POINTS_OF_POLY];
 	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
 	INT Viewable[MAX_SIDES_OF_ELEM];
-#	ifdef ModelP
+    #ifdef ModelP
 	ELEMENT *Neighbor;
 	DOUBLE_VECTOR help;
-#	endif
+    #endif
 	
 	DO_2c(theDO) = DO_NO_INST;
 
@@ -12130,17 +12182,17 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				if (!Viewable[i]) continue;
 				if (EE3D_Property)
 				{
-				  DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
-				  DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
-				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
-					return (1);
-				  #ifndef ModelP
-				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
-				  #else
-				  DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
-				  #endif
-				  DO_inc(theDO);
-				}			  
+					DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO);
+					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
+						return (1);
+                    #ifndef ModelP
+					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+                    #else
+					DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+                    #endif
+					DO_inc(theDO);
+				}	  
 				else if (EE3D_NoColor[ECLASS(theElement)])
 				{
 					DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
@@ -12149,7 +12201,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				else
 				{
 					DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
-					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO);
 					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
 				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
@@ -12310,11 +12362,21 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
 				}
 				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				#ifdef ModelP
+				for (j=0; j<n; j++)
+				{
+					V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
+						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+					V3_COPY(help,DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#else
 				for (j=0; j<n; j++)
 				{
 					V3_COPY(Polygon[j],DO_2Cp(theDO));
 					DO_inc_n(theDO,3);
 				}
+				#endif
 			}
 			else
 			{
@@ -12343,12 +12405,22 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
 				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				#ifdef ModelP
+				for (j=0; j<n; j++)
+				{
+					V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
+						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+					V3_COPY(help,DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#else
 				for (j=0; j<n; j++)
 				{
 					V3_COPY(Polygon[j],DO_2Cp(theDO));
 					DO_inc_n(theDO,3);
 				}
-				
+				#endif
+
 				/* inverse if selected */
 				if (IsElementSelected(GElem_MG,theElement))
 				{
@@ -12419,11 +12491,21 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 							DO_2c(theDO) = n; DO_inc(theDO) 
 							break;
 					}
+                    #ifdef ModelP
+					for (j=0; j<n; j++)
+					{
+						V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
+								   1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+							V3_COPY(help,DO_2Cp(theDO));
+						DO_inc_n(theDO,3);
+					}
+                    #else
 					for (j=0; j<n; j++)
 					{
 						V3_COPY(Polygon[j],DO_2Cp(theDO));
 						DO_inc_n(theDO,3);
 					}
+                    #endif
 				}
 				else
 				{
@@ -12450,13 +12532,22 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 							DO_2c(theDO) = n; DO_inc(theDO) 
 							break;
 					}
+                   #ifdef ModelP
+					for (j=0; j<n; j++)
+					{
+						V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
+								   1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+							V3_COPY(help,DO_2Cp(theDO));
+						DO_inc_n(theDO,3);
+					}
+                    #else
 					for (j=0; j<n; j++)
 					{
 						V3_COPY(Polygon[j],DO_2Cp(theDO));
 						DO_inc_n(theDO,3);
 					}
-				
-				
+                    #endif
+
 					/* inverse if selected */
 					if (IsElementSelected(GElem_MG,theElement))
 					{
@@ -12478,6 +12569,638 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	#endif
 	
 	return (0);
+}
+
+static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
+{
+	INT i, j, k, l, NodeOrder, n;
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], *co[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
+	DOUBLE_VECTOR Polygon[MAX_POINTS_OF_POLY];
+	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
+	DOUBLE xcs[3], lightDir[3], normal[3], scale1, scale2, cosa, intensity;
+	INT Viewable[MAX_SIDES_OF_ELEM];
+    #ifdef ModelP
+	ELEMENT *Neighbor;
+	DOUBLE_VECTOR help;
+    #endif
+	
+	DO_2c(theDO) = DO_NO_INST;
+
+    #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+	
+	if (!CUT_CutExisting || CUTMODE(theElement)==CM_BEHIND)
+	{
+		/* plot full element */
+		
+		/* determine viewable sides */
+		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			Viewable[i] = VIEWABLE(theElement,i);
+
+		/* get coordinates of corners of the element */
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			co[i] = x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+		
+		if (EE3D_ShrinkFactor==1.0)
+		{
+			if (EE3D_Elem2Plot[PLOT_ALL])
+			{
+				/* plot only parts lying on the boundary */
+				#ifdef ModelP
+				if (EE3D_PartShrinkFactor == 1.0) {
+				#endif
+					if (OBJT(theElement)==BEOBJ)
+					{
+						for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+							if (INNER_SIDE(theElement,i))
+								Viewable[i] = 0;
+					}
+					else 
+						return (0);
+				#ifdef ModelP
+				}
+				else
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (Viewable[i]) {
+							Neighbor = NBELEM(theElement, i);
+							if (Neighbor != NULL && DDD_InfoPriority(PARHDRE(Neighbor)) == PrioMaster)
+								Viewable[i] = 0;
+						}
+				#endif
+			}
+			else
+				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+					if (NBELEM(theElement,i) != NULL)
+						if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
+							Viewable[i] = 0;
+		}
+		else
+		{
+			/* get coordinates of corners of the element */
+			V3_CLEAR(MidPoint)
+			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+				V3_ADD(x[i],MidPoint,MidPoint)
+			V3_SCALE(1.0/CORNERS_OF_ELEM(theElement),MidPoint)
+			
+			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			{
+				V3_LINCOMB(EE3D_ShrinkFactor,x[i],1.0-EE3D_ShrinkFactor,MidPoint,sx[i])
+				x[i] = sx[i];
+			}
+		}
+	
+		/* store viewable sides on drawing obj */
+		if (LEVEL(theElement)<EE3D_MaxLevel)
+			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			{
+				if (!Viewable[i]) continue;
+
+				/* set light direction */
+				if (OBS_Perspective == YES) {
+					V3_CLEAR(xcs);
+					for (j=0; j<CORNERS_OF_SIDE(theElement, i); j++)
+						V3_ADD(x[CORNER_OF_SIDE(theElement, i, j)], xcs, xcs);
+					V3_SCALE(1.0/CORNERS_OF_SIDE(theElement, i), xcs);
+					V3_SUBTRACT(VO_VP(OE_ViewedObj), xcs, lightDir);
+				}
+				else 
+					V3_SUBTRACT(VO_VP(OE_ViewedObj), VO_VT(OE_ViewedObj), lightDir);
+
+				/* compute side normal */
+				V3_CLEAR(normal);
+				n = CORNERS_OF_SIDE(theElement, i);
+				for (j = 0; j < n; j++) {
+					k = CORNER_OF_SIDE(theElement, i, j);
+					l = CORNER_OF_SIDE(theElement, i, (j+1) % n);
+					normal[0] += (x[k][1]-x[l][1])*(x[k][2]+x[l][2]);
+					normal[1] += (x[k][2]-x[l][2])*(x[k][0]+x[l][0]);
+					normal[2] += (x[k][0]-x[l][0])*(x[k][1]+x[l][1]);
+				}
+
+				/* compute face intensity */
+				V3_SCALAR_PRODUCT(lightDir, normal, cosa);
+				V3_SCALAR_PRODUCT(normal, normal, scale1);
+				V3_SCALAR_PRODUCT(lightDir, lightDir, scale2);
+				cosa = ABS(cosa)/sqrt(scale1*scale2);
+				intensity = EE3D_AmbientLight + (1-EE3D_AmbientLight)*cosa;
+
+			    if (EE3D_Property)
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO); 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO); 
+					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
+						return (1);
+                    #ifndef ModelP
+					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				    #else
+					DO_2l(theDO) = EE3D_PropertyColor[me+1];
+				    #endif
+					DO_inc(theDO);
+				}			  
+				else if (EE3D_NoColor[COLOR_LOWER_LEVEL])
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO); 
+					DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+				}
+				else
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
+					DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+				}
+				*theDO = intensity; DO_inc(theDO);
+
+				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				#ifdef ModelP
+				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+				{
+					V3_LINCOMB(EE3D_PartShrinkFactor,x[CORNER_OF_SIDE(theElement,i,j)],
+						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+					V3_COPY(help,DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#else
+				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+				{
+					V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#endif
+			}
+		else
+			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			{
+				if (!Viewable[i]) continue;
+
+				/* set light direction */
+				if (OBS_Perspective == YES) {
+					V3_CLEAR(xcs);
+					for (j=0; j<CORNERS_OF_SIDE(theElement, i); j++)
+						V3_ADD(x[CORNER_OF_SIDE(theElement, i, j)], xcs, xcs);
+					V3_SCALE(1.0/CORNERS_OF_SIDE(theElement, i), xcs);
+					V3_SUBTRACT(VO_VP(OE_ViewedObj), xcs, lightDir);
+				}
+				else 
+					V3_SUBTRACT(VO_VP(OE_ViewedObj), VO_VT(OE_ViewedObj), lightDir);
+
+				/* compute side normal */
+				V3_CLEAR(normal);
+				n = CORNERS_OF_SIDE(theElement, i);
+				for (j = 0; j < n; j++) {
+					k = CORNER_OF_SIDE(theElement, i, j);
+					l = CORNER_OF_SIDE(theElement, i, (j+1) % n);
+					normal[0] += (x[k][1]-x[l][1])*(x[k][2]+x[l][2]);
+					normal[1] += (x[k][2]-x[l][2])*(x[k][0]+x[l][0]);
+					normal[2] += (x[k][0]-x[l][0])*(x[k][1]+x[l][1]);
+				}
+
+				/* compute face intensity */
+				V3_SCALAR_PRODUCT(lightDir, normal, cosa);
+				V3_SCALAR_PRODUCT(normal, normal, scale1);
+				V3_SCALAR_PRODUCT(lightDir, lightDir, scale2);
+				cosa = ABS(cosa)/sqrt(scale1*scale2);
+				intensity = EE3D_AmbientLight + (1-EE3D_AmbientLight)*cosa;
+
+				if (EE3D_Property)
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO); 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO);
+					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
+						return (1);
+                    #ifndef ModelP
+					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+                    #else
+					DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+                    #endif
+					DO_inc(theDO);
+				}	  
+				else if (EE3D_NoColor[ECLASS(theElement)])
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO); 
+					DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+				}
+				else
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO);
+					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
+				}
+				*theDO = intensity; DO_inc(theDO);
+
+				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				#ifdef ModelP
+				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+				{
+					V3_LINCOMB(EE3D_PartShrinkFactor,x[CORNER_OF_SIDE(theElement,i,j)],
+						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+					V3_COPY(help,DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#else
+				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+				{
+					V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#endif
+				
+				/* inverse if selected */
+				if (IsElementSelected(GElem_MG,theElement))
+				{
+					DO_2c(theDO) = DO_INVERSE_POLYGON; DO_inc(theDO) 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
+					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+					{
+						V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
+						DO_inc_n(theDO,3);
+					}
+				}
+			}
+		if (EE3D_Nodes)
+			theDO = ElementNodes(theElement,theDO,Viewable,co,z);
+		else if (EE3D_Vectors)
+			theDO = ElementVectors(theElement,theDO,Viewable,co,z);
+	}
+	else if (CUTMODE(theElement)==CM_INTERSECT)
+	{
+		/* plot cutted element */
+		
+		/* determine viewable sides */
+		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			Viewable[i] = VIEWABLE(theElement,i);
+		
+		/* get coordinates of corners of the element and their z coordinates in cut system */
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			co[i] = x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+		
+		if (EE3D_ShrinkFactor==1.0)
+		{
+			if (EE3D_Elem2Plot[PLOT_ALL])
+			{
+				/* only sides lying on the boundary are visible */
+				#ifdef ModelP
+				if (EE3D_PartShrinkFactor == 1.0) {
+				#endif
+					if (OBJT(theElement)==BEOBJ)
+					{
+						for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+							if (INNER_SIDE(theElement,i))
+								Viewable[i] = 0;
+					}
+					else 
+						for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+							Viewable[i] = 0;
+				#ifdef ModelP
+				}
+				else
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (Viewable[i]) {
+							Neighbor = NBELEM(theElement, i);
+							if (Neighbor != NULL && DDD_InfoPriority(PARHDRE(Neighbor)) == PrioMaster)
+								Viewable[i] = 0;
+						}
+				#endif
+			}
+			else
+				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+					if (NBELEM(theElement,i) != NULL)
+						if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
+							Viewable[i] = 0;
+		}
+		else
+		{
+			/* get coordinates of corners of the element */
+			V3_CLEAR(MidPoint)
+			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+				V3_ADD(x[i],MidPoint,MidPoint)
+			V3_SCALE(1.0/CORNERS_OF_ELEM(theElement),MidPoint)
+			
+			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			{
+				V3_LINCOMB(EE3D_ShrinkFactor,x[i],1.0-EE3D_ShrinkFactor,MidPoint,sx[i])
+				x[i] = sx[i];
+			}
+		}	
+		/* z coordinates of corners in cut system */
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			V3_TRAFO4_SC(x[i],CutTrafo,z[i])
+		
+		/* get node order */
+		NodeOrder = NODE_ORDER(theElement);
+        
+		/* plot that parts of the viewable sides of the element lying behind cut plane */
+		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+		{
+			if (!Viewable[i]) continue;
+			
+			/* determine polygon arising from intersection of triangle with half space behind cut plane */
+			switch (TAG(theElement)) {
+              case (TETRAHEDRON):
+                if (GetPolyElemSideISHalfSpaceTET (theElement,x,z,NodeOrder,i,Polygon,&n))
+				  return(1);
+                break;
+              case (PYRAMID):
+                if (GetPolyElemSideISHalfSpacePYR (theElement,x,z,NodeOrder,i,Polygon,&n))
+                  return(1);
+                break;
+              case (PRISM):
+                if (GetPolyElemSideISHalfSpacePRI (theElement,x,z,NodeOrder,i,Polygon,&n))
+                  return(1);
+                break;
+              case (HEXAHEDRON):
+                if (GetPolyElemSideISHalfSpaceHEX (theElement,x,z,NodeOrder,i,Polygon,&n))
+                  return(1);
+                break;
+              default:
+                RETURN(1);
+            }
+            
+			if (n<=2) continue;
+			
+ 			/* set light direction */
+			if (OBS_Perspective == YES) {
+				V3_CLEAR(xcs);
+				for (j=0; j<n; j++)
+					V3_ADD(Polygon[j], xcs, xcs);
+				V3_SCALE(1.0/n, xcs);
+				V3_SUBTRACT(VO_VP(OE_ViewedObj), xcs, lightDir);
+			}
+			else 
+				V3_SUBTRACT(VO_VP(OE_ViewedObj), VO_VT(OE_ViewedObj), lightDir);
+			
+			/* compute side normal */
+			V3_CLEAR(normal);
+			for (j = 0; j < n; j++) {
+				k = (j+1) % n;
+				normal[0] += (Polygon[j][1]-Polygon[k][1])*(Polygon[j][2]+Polygon[k][2]);
+				normal[1] += (Polygon[j][2]-Polygon[k][2])*(Polygon[j][0]+Polygon[k][0]);
+				normal[2] += (Polygon[j][0]-Polygon[k][0])*(Polygon[j][1]+Polygon[k][1]);
+			}
+			
+			/* compute face intensity */
+			V3_SCALAR_PRODUCT(lightDir, normal, cosa);
+			V3_SCALAR_PRODUCT(normal, normal, scale1);
+			V3_SCALAR_PRODUCT(lightDir, lightDir, scale2);
+			cosa = ABS(cosa)/sqrt(scale1*scale2);
+			intensity = EE3D_AmbientLight + (1-EE3D_AmbientLight)*cosa;
+
+			/* store on drawing object */
+			if (LEVEL(theElement)<EE3D_MaxLevel)
+			{
+			    if (EE3D_Property)
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO); 
+					DO_2c(theDO) = n; DO_inc(theDO);
+					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
+						return (1);
+				    #ifndef ModelP
+					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				    #else
+					DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+				    #endif
+					DO_inc(theDO);
+				}			  
+				else if (EE3D_NoColor[COLOR_LOWER_LEVEL])
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO);
+					DO_2c(theDO) = n; DO_inc(theDO); 
+					DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+				}
+				else
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
+					DO_2c(theDO) = n; DO_inc(theDO) 
+					DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
+				}
+				*theDO = intensity; DO_inc(theDO);
+
+				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				#ifdef ModelP
+				for (j=0; j<n; j++)
+				{
+					V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
+						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+					V3_COPY(help,DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#else
+				for (j=0; j<n; j++)
+				{
+					V3_COPY(Polygon[j],DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#endif
+			}
+			else
+			{
+			    if (EE3D_Property)
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO); 
+					DO_2c(theDO) = n; DO_inc(theDO);
+					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
+						return (1);
+				    #ifndef ModelP
+					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				    #else
+					DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+				    #endif
+					DO_inc(theDO);
+				}			  
+				else if (EE3D_NoColor[ECLASS(theElement)])
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
+					DO_2c(theDO) = n; DO_inc(theDO);
+					DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+				}
+				else
+				{
+					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
+					DO_2c(theDO) = n; DO_inc(theDO) 
+					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
+				}
+				*theDO = intensity; DO_inc(theDO);
+
+				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				#ifdef ModelP
+				for (j=0; j<n; j++)
+				{
+					V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
+						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+					V3_COPY(help,DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#else
+				for (j=0; j<n; j++)
+				{
+					V3_COPY(Polygon[j],DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#endif
+
+				/* inverse if selected */
+				if (IsElementSelected(GElem_MG,theElement))
+				{
+					DO_2c(theDO) = DO_INVERSE_POLYGON; DO_inc(theDO) 
+					DO_2c(theDO) = n; DO_inc(theDO) 
+					for (j=0; j<n; j++)
+					{
+						V3_COPY(Polygon[j],DO_2Cp(theDO));
+						DO_inc_n(theDO,3);
+					}
+				}
+			}
+		}
+		
+		if (EE3D_Nodes)
+			theDO = ElementNodes(theElement,theDO,Viewable,co,z);
+		else if (EE3D_Vectors)
+			theDO = ElementVectors(theElement,theDO,Viewable,co,z);
+		
+		/* plot intersection of element with cut plane if */
+		if (CUT_CutAtFront)
+		{
+			switch (TAG(theElement)) {
+              case (TETRAHEDRON):
+                if (GetPolyElemISCutPlaneTET(x,z,NodeOrder,Polygon,&n))
+                  return(1);
+                break;
+              case (PYRAMID):
+                if (GetPolyElemISCutPlanePYR(x,z,NodeOrder,Polygon,&n))
+                  return(1);
+                break;
+              case (PRISM):
+                if (GetPolyElemISCutPlanePRI(x,z,NodeOrder,Polygon,&n))
+                  return(1);
+                break;
+              case (HEXAHEDRON):
+                if (GetPolyElemISCutPlaneHEX(x,z,NodeOrder,Polygon,&n))
+                  return(1);
+                break;
+              default:
+                RETURN(1);
+            }
+
+			/* store on drawing object */
+			if (n>2) {
+				if (LEVEL(theElement)<EE3D_MaxLevel)
+				{
+					switch (EE3D_NoColor[COLOR_LOWER_LEVEL] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+					{
+						case 0:
+							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+							DO_2c(theDO) = n; DO_inc(theDO) 
+							DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+							break;
+						case 1:
+							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+							DO_2c(theDO) = n; DO_inc(theDO);
+							DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+							break;
+						case 2:
+							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
+							DO_2c(theDO) = n; DO_inc(theDO);
+							DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
+							break;
+						case 3:
+							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO);
+							DO_2c(theDO) = n; DO_inc(theDO) 
+							DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+							break;
+					}
+                    #ifdef ModelP
+					for (j=0; j<n; j++)
+					{
+						V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
+								   1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+							V3_COPY(help,DO_2Cp(theDO));
+						DO_inc_n(theDO,3);
+					}
+                    #else
+					for (j=0; j<n; j++)
+					{
+						V3_COPY(Polygon[j],DO_2Cp(theDO));
+						DO_inc_n(theDO,3);
+					}
+                    #endif
+				}
+				else
+				{
+					switch (EE3D_NoColor[ECLASS(theElement)] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+					{
+						case 0:
+							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+							DO_2c(theDO) = n; DO_inc(theDO) 
+							DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO)
+							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+							break;
+						case 1:
+							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+							DO_2c(theDO) = n; DO_inc(theDO);
+							DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+							break;
+						case 2:
+							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
+							DO_2c(theDO) = n; DO_inc(theDO) 
+							DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+							break;
+						case 3:
+							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO);
+							DO_2c(theDO) = n; DO_inc(theDO) 
+							DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+							break;
+					}
+                    #ifdef ModelP
+					for (j=0; j<n; j++)
+					{
+						V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
+								   1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+							V3_COPY(help,DO_2Cp(theDO));
+						DO_inc_n(theDO,3);
+					}
+                    #else
+					for (j=0; j<n; j++)
+					{
+						V3_COPY(Polygon[j],DO_2Cp(theDO));
+						DO_inc_n(theDO,3);
+					}
+                    #endif
+
+					/* inverse if selected */
+					if (IsElementSelected(GElem_MG,theElement))
+					{
+						DO_2c(theDO) = DO_INVERSE_POLYGON; DO_inc(theDO) 
+						DO_2c(theDO) = n; DO_inc(theDO) 
+						for (j=0; j<n; j++)
+						{
+							V3_COPY(Polygon[j],DO_2Cp(theDO));
+							DO_inc_n(theDO,3);
+						}
+					}
+				}				
+			}
+		}
+	}
+	DO_2c(theDO) = DO_NO_INST;
+
+    #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+	
+	return (0);
+}
+
+static INT EW_ElementEval3D(ELEMENT *theElement, DRAWINGOBJ *theDO)
+{
+	if (EE3D_AmbientLight < 1.0)
+		return EW_ElementEval3D_new(theElement, theDO);
+	else
+		return EW_ElementEval3D_old(theElement, theDO);
 }
 
 /****************************************************************************/
@@ -12936,7 +13659,7 @@ static void CalcViewableSides(ELEMENT *theElement)
 {
 	DOUBLE_VECTOR Vector, Vector01, Vector02, Vector03, ViewDirection;
 	INT Viewablility;
-	INT i,j;
+	INT i,j,k,l,n;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM], xc[3], xcs[3];
 	DOUBLE ScalarPrd;
 
@@ -13053,26 +13776,36 @@ static void CalcViewableSides(ELEMENT *theElement)
 				V3_ADD(x[i],xc,xc)
 			V3_SCALE(0.125,xc)
 				
-			/* set view direction */
 			if (OBS_Perspective == YES)
 			{
 				Viewablility = 0;
 				for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
 				{
-					/* compute senter of side */
+					/* compute center of side */
 					V3_CLEAR(xcs)
-					for (j=0; j<CORNERS_OF_SIDE(theElement,i); ++j)
+					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 						V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
 					V3_SCALE(0.25,xcs)
-					
-					V3_SUBTRACT(VO_VP(OE_ViewedObj),xcs,ViewDirection)
-					V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,0)],xcs,Vector01)
-					V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,1)],xcs,Vector02)
-					V3_SUBTRACT(xc,xcs,Vector03)
-					V3_VECTOR_PRODUCT(Vector01,Vector02,Vector)
+
+					/* set view direction */
+					V3_SUBTRACT(VO_VP(OE_ViewedObj),xcs,ViewDirection);
+
+					/* compute outer normal of (approximating plane for) side */
+					V3_CLEAR(Vector);
+					n = CORNERS_OF_SIDE(theElement, i);
+					for (j = 0; j < n; j++) {
+						k = CORNER_OF_SIDE(theElement, i, j);
+						l = CORNER_OF_SIDE(theElement, i, (j+1) % n);
+						Vector[0] += (x[k][1]-x[l][1])*(x[k][2]+x[l][2]);
+						Vector[1] += (x[k][2]-x[l][2])*(x[k][0]+x[l][0]);
+						Vector[2] += (x[k][0]-x[l][0])*(x[k][1]+x[l][1]);
+					}
+					V3_SUBTRACT(xc,xcs,Vector03);
 					V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
 					if (ScalarPrd>0)
-						V3_SCALE(-1.0, Vector)
+						V3_SCALE(-1.0, Vector);
+
+					/* test side */
 					if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
 					{
 						Viewablility |= (1<<i);
@@ -13085,19 +13818,31 @@ static void CalcViewableSides(ELEMENT *theElement)
 				Viewablility = 0;
 				for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
 				{
-					/* compute senter of side */
+					/* compute center of side */
 					V3_CLEAR(xcs)
-					for (j=0; j<CORNERS_OF_SIDE(theElement,i); ++j)
+					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 						V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
-					V3_SCALE(0.25,xcs)
-					
-					V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,0)],xcs,Vector01)
-					V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,1)],xcs,Vector02)
-					V3_SUBTRACT(xc,xcs,Vector03)
-					V3_VECTOR_PRODUCT(Vector01, Vector02, Vector)
+					V3_SCALE(0.25,xcs);
+
+					/* set view direction */
+					V3_SUBTRACT(VO_VP(OE_ViewedObj),VO_VT(OE_ViewedObj),
+								ViewDirection);
+					/* compute outer normal of (approximating plane for) side */
+					V3_CLEAR(Vector);
+					n = CORNERS_OF_SIDE(theElement, i);
+					for (j = 0; j < n; j++) {
+						k = CORNER_OF_SIDE(theElement, i, j);
+						l = CORNER_OF_SIDE(theElement, i, (j+1) % n);
+						Vector[0] += (x[k][1]-x[l][1])*(x[k][2]+x[l][2]);
+						Vector[1] += (x[k][2]-x[l][2])*(x[k][0]+x[l][0]);
+						Vector[2] += (x[k][0]-x[l][0])*(x[k][1]+x[l][1]);
+					}
+					V3_SUBTRACT(xc,xcs,Vector03);
 					V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
 					if (ScalarPrd>0)
-						V3_SCALE(-1.0, Vector)
+						V3_SCALE(-1.0, Vector);
+
+					/* test side */
 					if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
 					{
 						Viewablility |= (1<<i);
@@ -16202,6 +16947,8 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
+	EE3D_AmbientLight                   = theGpo->AmbientLight;
+
 	EE3D_NoColor[COLOR_LOWER_LEVEL] 	= 1;
 	EE3D_NoColor[COLOR_CUT_EDGE] 		= 0;	
 	if (theGpo->ElemColored == YES)
@@ -16223,36 +16970,17 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	EE3D_Color[COLOR_REG]			= theOD->red;
 	EE3D_Color[COLOR_LOWER_LEVEL]	= theOD->white;
 	EE3D_Color[COLOR_EDGE]			= theOD->black;
-	EE3D_Color[COLOR_CUT_EDGE]		= theOD->orange;
-		
+	EE3D_Color[COLOR_CUT_EDGE]	    = theOD->orange;
+	
+	EE3D_Color[COLOR_DEFAULT]       = theOD->gray;
+
 	EE3D_Elem2Plot[PLOT_ALL]		= 0;
 	EE3D_Elem2Plot[PLOT_COPY]		= 0;
 	EE3D_Elem2Plot[PLOT_IRR]		= 0;
 	EE3D_Elem2Plot[PLOT_REG]		= 0;
 	
 	EE3D_ShrinkFactor				= theGpo->ShrinkFactor;
-	#ifdef ModelP
-	{
-		GRID *theGrid;
-		NODE *theNode;
-		INT  nodes;
 
-		EE3D_PartShrinkFactor			= theGpo->PartShrinkFactor;
-		if (EE3D_PartShrinkFactor < 1.0)
-		{
-			nodes = 0;
-			theGrid = GRID_ON_LEVEL(theMG, CURRENTLEVEL(theMG));
-			V3_CLEAR(EE3D_PartMidPoint)
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
-				V3_ADD(EE3D_PartMidPoint,CVECT(MYVERTEX(theNode)),EE3D_PartMidPoint)
-				nodes++;
-			}
-			if (nodes > 0)
-				V3_SCALE(1.0/(DOUBLE)nodes,EE3D_PartMidPoint)
-		}
-	}
-	#endif
-	
 	if (EE3D_ShrinkFactor<1.0)
 	{
 		EE3D_Nodes					= theGpo->NodeMarkers;
@@ -16329,6 +17057,50 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 			UserWrite("wrong NProperty, switch back to standard mode\n");
 		}
 	}
+
+	#ifdef ModelP
+	{
+		INT i, nc;
+		ELEMENT *elem;
+		EE3D_PartShrinkFactor = theGpo->PartShrinkFactor;
+		if (EE3D_PartShrinkFactor < 1.0) {
+			nc = 0;
+			V3_CLEAR(EE3D_PartMidPoint);
+			for (elem = EW_GetFirstElement_vert_fw_up(theMG, 0, CURRENTLEVEL(theMG));
+				 elem != NULL;
+				 elem = EW_GetNextElement_vert_fw_up(elem))
+			{
+				for (i = 0; i < CORNERS_OF_ELEM(elem); i++) {
+					nc++;
+					V3_ADD(EE3D_PartMidPoint, CVECT(MYVERTEX(CORNER(elem, i))), 
+						   EE3D_PartMidPoint);
+				}
+			}
+			V3_SCALE(1.0/(DOUBLE)nc, EE3D_PartMidPoint);
+		}
+	}
+/* 
+	{
+		GRID *theGrid;
+		NODE *theNode;
+		INT  nodes;
+
+		EE3D_PartShrinkFactor			= theGpo->PartShrinkFactor;
+		if (EE3D_PartShrinkFactor < 1.0)
+		{
+			nodes = 0;
+			theGrid = GRID_ON_LEVEL(theMG, 0);
+			V3_CLEAR(EE3D_PartMidPoint)
+			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
+				V3_ADD(EE3D_PartMidPoint,CVECT(MYVERTEX(theNode)),EE3D_PartMidPoint)
+				nodes++;
+			}
+			if (nodes > 0)
+				V3_SCALE(1.0/(DOUBLE)nodes,EE3D_PartMidPoint)
+		}
+	}
+*/
+	#endif
 
 	return (0);
 }
@@ -16496,6 +17268,8 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
+	EE3D_AmbientLight                   = theEspo->AmbientLight;
+
 	EE3D_NoColor[COLOR_CUT_EDGE]		= 1;
 	EE3D_NoColor[COLOR_LOWER_LEVEL] 	= 1;
 	EE3D_NoColor[COLOR_COPY]			= 1;	
@@ -16507,8 +17281,8 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	EE3D_Color[COLOR_REG]			= theOD->red;
 	EE3D_Color[COLOR_LOWER_LEVEL]	= theOD->white;
 	EE3D_Color[COLOR_EDGE]			= theOD->black;
-	EE3D_Color[COLOR_CUT_EDGE]		= theOD->orange;
-		
+	EE3D_Color[COLOR_CUT_EDGE]	    = theOD->orange;
+
 	EE3D_Elem2Plot[PLOT_ALL]		= 1;
 	EE3D_Elem2Plot[PLOT_COPY]		= 1;
 	EE3D_Elem2Plot[PLOT_IRR]		= 1;
@@ -16623,6 +17397,8 @@ static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
+	EE3D_AmbientLight                   = theEvpo->AmbientLight;
+
 	EE3D_NoColor[COLOR_CUT_EDGE]		= 1;
 	EE3D_NoColor[COLOR_LOWER_LEVEL] 	= 1;
 	EE3D_NoColor[COLOR_COPY]			= 1;	
@@ -16634,7 +17410,7 @@ static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	EE3D_Color[COLOR_REG]			= theOD->red;
 	EE3D_Color[COLOR_LOWER_LEVEL]	= theOD->white;
 	EE3D_Color[COLOR_EDGE]			= theOD->black;
-	EE3D_Color[COLOR_CUT_EDGE]		= theOD->orange;
+	EE3D_Color[COLOR_CUT_EDGE]	    = theOD->orange;
 		
 	EE3D_Elem2Plot[PLOT_ALL]		= 1;
 	EE3D_Elem2Plot[PLOT_COPY]		= 1;

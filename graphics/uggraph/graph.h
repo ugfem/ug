@@ -92,6 +92,7 @@ void    UgStyledLine                            (COORD_POINT point1, COORD_POINT
 void    UgInverseLine                           (COORD_POINT point1, COORD_POINT point2);
 void    UgPolyLine                                      (COORD_POINT *points, INT n);
 void    UgPolygon                                       (COORD_POINT *points, INT n);
+void    UgShadedPolygon             (COORD_POINT *points, INT n, DOUBLE intensity);
 void    UgPolymark                                      (COORD_POINT *points, INT n);
 void    UgInvPolymark                           (COORD_POINT *points, INT n);
 void    UgText                                          (const char *s, INT mode);
