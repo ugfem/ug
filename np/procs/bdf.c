@@ -347,6 +347,9 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
       return(__LINE__);
 
     /* do nested iteration on new time step */
+    if (bdf->trans->PreProcessProject!=NULL)
+      if ((*bdf->trans->PreProcessProject)(bdf->trans,0,level,res))
+        return(__LINE__);
     for (k=low; k<=level; k++)
     {
       if (bdf->nested) UserWriteF("Nested Iteration on level %d\n",k);
@@ -403,21 +406,17 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
       /* interpolate up */
       if (k<level)
       {
-        if (bdf->trans->PreProcessProject!=NULL)
-          if ((*bdf->trans->PreProcessProject)(bdf->trans,k+1,&bl,res))
-            return(__LINE__);
         for (i=0; i<n_unk; i++) Factor[i] = 1.0;
         if ((*bdf->trans->InterpolateCorrection)(bdf->trans,k+1,bdf->y_p1,bdf->y_p1,NULL,Factor,res))
           return(__LINE__);
-        if (bdf->trans->PostProcessProject!=NULL)
-          if ((*bdf->trans->PostProcessProject)(bdf->trans,k+1,res))
-            return(__LINE__);
-
         /* set Dirichlet conditions in predicted solution */
         if ( (*tass->TAssembleSolution)(tass,k+1,k+1,bdf->t_p1,bdf->y_p1,res) )
           return(__LINE__);
       }
     }
+    if (bdf->trans->PostProcessProject!=NULL)
+      if ((*bdf->trans->PostProcessProject)(bdf->trans,0,level,res))
+        return(__LINE__);
 
     /* check convergence */
     if (!nlresult.converged) continue;                  /* start again with smaller time step   */

@@ -274,7 +274,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPTransferExecute","no vector x");
       return (1);
     }
-    if ((*np->InterpolateNewVectors)(np,level,np->x,&result)) {
+    if ((*np->InterpolateNewVectors)(np,0,level,np->x,&result)) {
       UserWriteF("NPTransferExecute: InterpolateNewVectors failed, error code %d\n",
                  result);
       return (1);
@@ -290,7 +290,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPTransferExecute","no vector x");
       return (1);
     }
-    if ((*np->ProjectSolution)(np,level,np->x,&result)) {
+    if ((*np->ProjectSolution)(np,0,level,np->x,&result)) {
       UserWriteF("NPTransferExecute: ProjectSolution failed, error code %d\n",
                  result);
       return (1);
@@ -314,7 +314,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPTransferExecute","no matrix A");
       return (1);
     }
-    if ((*np->PostProcess)(np,level,np->x,np->b,np->A,&result)) {
+    if ((*np->PostProcess)(np,0,level,np->x,np->b,np->A,&result)) {
       UserWriteF("NPTransferExecute: PostProcess failed, error code %d\n",
                  result);
       return (1);
@@ -575,21 +575,26 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
   return(result[0]);
 }
 
-static INT InterpolateNewVectors (NP_TRANSFER *theNP, INT level,
+static INT InterpolateNewVectors (NP_TRANSFER *theNP,  INT fl, INT tl,
                                   VECDATA_DESC *x, INT *result)
 {
   NP_STANDARD_TRANSFER *np;
+  INT i;
 
   np = (NP_STANDARD_TRANSFER *) theNP;
-  result[0] = (*np->intnew)(GRID_ON_LEVEL(theNP->base.mg,level),x);
+  for (i=fl+1; i<=fl; i++)
+    result[0] = (*np->intnew)(GRID_ON_LEVEL(theNP->base.mg,i),x);
 
   return(result[0]);
 }
 
-static INT ProjectSolution (NP_TRANSFER *theNP, INT level,
+static INT ProjectSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
                             VECDATA_DESC *x, INT *result)
 {
-  result[0] = StandardProject(GRID_ON_LEVEL(theNP->base.mg,level-1),x,x);
+  INT i;
+
+  for (i=tl-1; i>=fl; i--)
+    result[0] = StandardProject(GRID_ON_LEVEL(theNP->base.mg,i),x,x);
 
   return(result[0]);
 }
@@ -612,7 +617,7 @@ static INT AdaptCorrection (NP_TRANSFER *theNP, INT level,
   return(0);
 }
 
-static INT TransferPostProcess (NP_TRANSFER *theNP, INT level,
+static INT TransferPostProcess (NP_TRANSFER *theNP, INT fl, INT tl,
                                 VECDATA_DESC *x, VECDATA_DESC *b,
                                 MATDATA_DESC *A, INT *result)
 {

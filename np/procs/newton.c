@@ -124,23 +124,22 @@ static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
   n_unk = VD_NCOMP(x);
 
   /* project solution to all grid levels */
-  for (i=level; i>0; i--)
-  {
-    if (newton->trans->PreProcessProject!=NULL)
-      if ((*newton->trans->PreProcessProject)(newton->trans,i,&bl,&error)) {
-        error = __LINE__;
-        REP_ERR_RETURN(error);
-      }
-    if ((*newton->trans->ProjectSolution)(newton->trans,i,x,&error)) {
+  if (newton->trans->PreProcessProject!=NULL)
+    if ((*newton->trans->PreProcessProject)
+          (newton->trans,0,level,&error)) {
       error = __LINE__;
       REP_ERR_RETURN(error);
     }
-    if (newton->trans->PostProcessProject!=NULL)
-      if ((*newton->trans->PostProcessProject)(newton->trans,i,&error)) {
-        error = __LINE__;
-        REP_ERR_RETURN(error);
-      }
+  if ((*newton->trans->ProjectSolution)(newton->trans,0,level,x,&error)) {
+    error = __LINE__;
+    REP_ERR_RETURN(error);
   }
+  if (newton->trans->PostProcessProject!=NULL)
+    if ((*newton->trans->PostProcessProject)
+          (newton->trans,0,level,&error)) {
+      error = __LINE__;
+      REP_ERR_RETURN(error);
+    }
 
   if (init)
   {

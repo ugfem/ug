@@ -92,8 +92,8 @@ struct np_transfer {
     INT *);                                      /* result                          */
   INT (*PreProcessProject)
     (struct np_transfer *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
-    INT *,                                       /* baselevel                       */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
     INT *);                                      /* result                          */
   INT (*InterpolateCorrection)
     (struct np_transfer *,                   /* pointer to (derived) object     */
@@ -113,12 +113,14 @@ struct np_transfer {
     INT *);                                      /* result                          */
   INT (*InterpolateNewVectors)
     (struct np_transfer *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
     VECDATA_DESC *,                              /* solution vector                 */
     INT *);                                      /* result                          */
   INT (*ProjectSolution)
     (struct np_transfer *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
     VECDATA_DESC *,                              /* solution vector                 */
     INT *);                                      /* result                          */
   INT (*AdaptCorrection)
@@ -130,14 +132,16 @@ struct np_transfer {
     INT *);                                      /* result                          */
   INT (*PostProcess)
     (struct np_transfer *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
     VECDATA_DESC *,                              /* solution vector                 */
     VECDATA_DESC *,                              /* defect vector                   */
     MATDATA_DESC *,                              /* matrix                          */
     INT *);                                      /* result                          */
   INT (*PostProcessProject)
     (struct np_transfer *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
     INT *);                                      /* result                          */
 };
 typedef struct np_transfer NP_TRANSFER;
@@ -147,16 +151,19 @@ typedef INT (*PreProcessTransferProcPtr)                                    \
   INT *, INT *);
 typedef INT (*PreProcessSolutionProcPtr)                                    \
   (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *, INT *);
+typedef INT (*PreProcessProjectProcPtr)                                     \
+  (NP_TRANSFER *, INT, INT, INT *);
 typedef INT (*InterpolateCorrectionProcPtr)                                 \
   (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, DOUBLE *, INT *);
 typedef INT (*RestrictDefectProcPtr)                                        \
   (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, DOUBLE *, INT *);
 typedef INT (*InterpolateSolutionProcPtr)                                   \
-  (NP_TRANSFER *, INT, VECDATA_DESC *, INT *);
+  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *);
 typedef INT (*ProjectSolutionProcPtr)                                       \
-  (NP_TRANSFER *, INT, VECDATA_DESC *, INT *);
+  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *);
 typedef INT (*PostProcessTransferProcPtr)                                   \
-  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,  \
+  INT *);
 
 /****************************************************************************/
 /*																			*/

@@ -503,14 +503,33 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
 
   bl = 0;
   for (i=1; i<nev; i++)
-    if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&ev[i])) NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->r)) NP_RETURN(1,result[0]);
-  if (AllocMDFromVD(theNP->base.mg,bl,level,ev[0],ev[0],&np->M)) NP_RETURN(1,result[0]);
+    if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&ev[i]))
+      NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->r))
+    NP_RETURN(1,result[0]);
+  if (AllocMDFromVD(theNP->base.mg,bl,level,ev[0],ev[0],&np->M))
+    NP_RETURN(1,result[0]);
   if (Assemble->PreProcess != NULL)
     if ((*Assemble->PreProcess)(Assemble,bl,level,ev[0],result))
       return(1);
+  if (np->reset)
+    for (i=0; i<nev; i++)
+      if (SetUnsymmetric(theNP->base.mg,bl,level,ev[i],EVERY_CLASS))
+        NP_RETURN(1,result[0]);
+  np->reset = 0;
+  if (np->interpolate) {
+    if (np->Transfer->PreProcessSolution != NULL)
+      if ((*np->Transfer->PreProcessSolution)
+            (np->Transfer,bl,level,ev[0],result))
+        return(1);
+    for (i=0; i<nev; i++)
+      if ((*np->Transfer->InterpolateNewVectors)
+            (np->Transfer,bl,level,ev[i],result))
+        return(1);
+  }
   if (np->assemble) {
-    if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->t)) NP_RETURN(1,result[0]);
+    if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->t))
+      NP_RETURN(1,result[0]);
     if ((*Assemble->NLAssembleMatrix)(Assemble,bl,level,
                                       ev[0],np->r,np->t,np->M,result))
       return(1);
@@ -520,21 +539,6 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
                                 &np->baselevel,result))
         return(1);
     np->assemble = 0;
-  }
-  if (np->reset)
-    for (i=0; i<nev; i++)
-      if (SetUnsymmetric(theNP->base.mg,bl,level,ev[i],EVERY_CLASS)) NP_RETURN(1,result[0]);
-  np->reset = 0;
-  if (np->interpolate) {
-    if (np->Transfer->PreProcessSolution != NULL)
-      if ((*np->Transfer->PreProcessSolution)
-            (np->Transfer,bl,level,ev[0],result))
-        return(1);
-    for (l=bl+1; l<=level; l++)
-      for (i=0; i<nev; i++)
-        if ((*np->Transfer->InterpolateNewVectors)
-              (np->Transfer,l,ev[i],result))
-          return(1);
   }
 
   return (0);
@@ -801,8 +805,12 @@ static INT EWPostProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
     if ((*Assemble->PostProcess)(Assemble,bl,level,ev[0],
                                  np->r,np->M,result))
       return(1);
+  for (i=0; i<nev; i++)
+    if ((*np->Transfer->ProjectSolution)
+          (np->Transfer,bl,level,ev[i],result))
+      return(1);
   if (np->Transfer->PostProcess != NULL)
-    if ((*np->Transfer->PostProcess)(np->Transfer,level,
+    if ((*np->Transfer->PostProcess)(np->Transfer,0,level,
                                      ev[0],np->r,np->M,result))
       return(1);
   if (np->LS->PostProcess != NULL)

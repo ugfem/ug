@@ -3025,9 +3025,9 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
   np = (NP_LMGC *) theNP;
 
   if (np->Transfer->PostProcess != NULL)
-    for (i = np->baselevel; i <= level; i++)
-      if ((*np->Transfer->PostProcess)(np->Transfer,i,x,b,A,result))
-        return(1);
+    if ((*np->Transfer->PostProcess)
+          (np->Transfer,np->baselevel,level,x,b,A,result))
+      return(1);
 
   if (np->PreSmooth->PostProcess != NULL)
     for (i = np->baselevel+1; i <= level; i++)
