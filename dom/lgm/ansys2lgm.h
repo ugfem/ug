@@ -344,7 +344,7 @@ typedef struct {
 /* function declarations                                                    */
 /*                                                                          */
 /****************************************************************************/
-int LGM_ANSYS_ReadDomain                        (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info);
+int LGM_ANSYS_ReadDomain                        (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey);
 int LGM_ANSYS_ReadSizes                         (LGM_SIZES *lgm_sizes);
 int LGM_ANSYS_ReadSubDomain                     (int i, LGM_SUBDOMAIN_INFO *subdom_info);
 int LGM_ANSYS_ReadLines                         (int i, LGM_LINE_INFO *line_info);
