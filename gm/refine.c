@@ -1013,13 +1013,14 @@ static void RestrictMarks (GRID *theGrid)
 		}
 
 		flag = 0;
-		for (i=0; i<NSONS(theElement); i++)
+		for (i=0; i<NSONS(theElement); i++) {
 			/* if not all sons are marked no unrefinement is possible */
-			if (!COARSEN(SonList[i]))
+			if (!COARSEN(SonList[i]) || REFINECLASS(SonList[i])==RED)
 			{
 				flag = 1;
 				break;
 			}
+		}
 			
 		if (flag) continue;
 	
@@ -1085,6 +1086,75 @@ static int ComputeCopies (GRID *theGrid)
 	return(0);
 }
 
+/****************************************************************************/
+/*																			*/
+/* Function:  CheckElementContextConsistency					*/
+/*																			*/
+/* Purpose:   check NTYPE flags of nodes in elementcontextt with the sons	*/
+/*																			*/
+/* Param:	  ELEMENT *theElement: element to check						*/
+/*			  ELEMENTCONTEXT *theElementContext: context structure to check		*/
+/*																			*/
+/* return:	  none															*/
+/*																			*/
+/****************************************************************************/
+
+static void CheckElementContextConsistency(ELEMENT *theElement, ELEMENTCONTEXT theElementContext)
+{
+	int i;
+	int errorflag = 0;
+	int errortype[MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
+	int correcttype[MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
+
+	for (i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++) 
+		errortype[i] = correcttype[i] = -1;
+		
+
+	/* check corner nodes */
+	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+		if (theElementContext[i] != NULL)
+			if(NTYPE(theElementContext[i]) != CORNER_NODE) {
+				errortype[i] = NTYPE(theElementContext[i]); 
+				correcttype[i] = CORNER_NODE;
+			}
+
+	/* check mid nodes */
+	for (i=CORNERS_OF_ELEM(theElement); i<CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement); i++)
+		if (theElementContext[i] != NULL)
+			if(NTYPE(theElementContext[i]) != MID_NODE) {
+				errortype[i] = NTYPE(theElementContext[i]); 
+				correcttype[i] = MID_NODE;
+			}
+
+	#ifdef __THREEDIM__
+	/* check side nodes */
+	for (i=CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement); 
+		i<CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement)+SIDES_OF_ELEM(theElement); i++)
+		if (theElementContext[i] != NULL)
+			if(NTYPE(theElementContext[i]) != SIDE_NODE) {
+				errortype[i] = NTYPE(theElementContext[i]); 
+				correcttype[i] = SIDE_NODE;
+			}
+		
+	#endif
+
+	/* check center node */
+	i = CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement);
+	if (theElementContext[i] != NULL)
+		if(NTYPE(theElementContext[i]) != CENTER_NODE) {
+			errortype[i] = NTYPE(theElementContext[i]); 
+			correcttype[i] = CENTER_NODE;
+		}
+
+	for (i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)
+		if (errortype[i] != -1) {
+			printf("ERROR: NTYPE(CONTEXT(i=%d)=%d should be %d\n",i,errortype[i],correcttype[i]);
+			fflush(stdout);
+			errorflag = 1;
+		}
+
+	assert(errorflag == 0);	
+}
 
 /****************************************************************************/
 /*																			*/
@@ -1117,8 +1187,9 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 		theElementContext[i] = NULL;
 
 	/* get nodes, can be NULL */
-	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+	for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
 		theElementContext[i] = SONNODE(CORNER(theElement,i));
+	}
 
 	if (DIM==3 && TAG(theElement)==HEXAHEDRON && REFINECLASS(theElement)==GREEN) {
 
@@ -1130,11 +1201,13 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 			else
 				theElementContext[i+CORNERS_OF_ELEM(theElement)] = NULL;
 		}
+
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 		{
 			theNode = NULL;
 			theNode0 = theElementContext[EDGE_OF_SIDE(theElement,i,0)+CORNERS_OF_ELEM(theElement)];
 			theNode1 = theElementContext[EDGE_OF_SIDE(theElement,i,2)+CORNERS_OF_ELEM(theElement)];
+			l = 0;
 			if (theNode0 != NULL && theNode1 != NULL)
 			  for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
 				for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1)) 
@@ -1143,14 +1216,9 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 						UserWriteF("    		possible node ID=%d\n",ID(NBNODE(theLink0)));
 						ENDDEBUG
 
-						l = 0;
-						/* TODO: faster: substitute search by FLAG in node on sides */
-						for (theLink=START(NBNODE(theLink0)); theLink!=NULL; theLink=NEXT(theLink)) 
-							for (k=0; k<CORNERS_OF_SIDE(theElement,i); k++) 
-								if (NBNODE(theLink) == SONNODE(CORNER(theElement,CORNER_OF_SIDE(theElement,i,k))))
-									l = 1;
-						if (l == 0) {
+						if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
 							theNode = NBNODE(theLink0);
+							l++;
 							IFDEBUG(gm,3)
 							UserWriteF("    		FOUND node ID=%d\n",ID(NBNODE(theLink0)));
 							continue;
@@ -1165,8 +1233,10 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 					break;
 				}
 			}
+			assert(l==0 || l==1);
 			theElementContext[i+CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement)] = theNode;
 		}
+
 		/* get center node */
 		theNode = NULL;
 		/* TODO: not independent of element corner numbering */
@@ -1383,7 +1453,8 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			}
 		}
 		IFDEBUG(gm,2)
-		UserWriteF(" CHANGED ID(newMIDNODE)=%d\n",ID(MidNodes[i]));    
+		if (MidNodes[i] != NULL)
+			UserWriteF(" CHANGED ID(newMIDNODE)=%d\n",ID(MidNodes[i]));    
 		ENDDEBUG
 	}
 
@@ -1418,10 +1489,15 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 							}
 						}
 					}
-					else
-						assert(SIDE(theElement,i)!=NULL);
+					else {
+						/* TODO: here also situtation for delete=1??? */
+						if (OBJT(theElement) == BEOBJ)
+							assert(SIDE(theElement,i)!=NULL);
+						else
+							toDelete = 1;
+					}
 				}
-				else if (MARK2RULEADR(theElement,Mark)->sonandnode[i][0]==-1) {
+				else if (MARK2RULEADR(theElement,Mark)->sonandnode[EDGES_OF_ELEM(theElement)+i][0]==-1) {
 					toDelete = 1;
 				}
 			}
@@ -1454,6 +1530,16 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			  UserWriteF("    SideNode[%d]: delete=%d create=%d old=%x",i,toDelete,toCreate,SideNodes[i]);
 			else
 			  UserWriteF("    SideNode[%d]: delete=%d create=%d old=%x oldID=%d",i,toDelete,toCreate,SideNodes[i],ID(SideNodes[i]));
+			ENDDEBUG
+			IFDEBUG(gm,2)
+			if (SideNodes[i] != NULL)
+				if (START(SideNodes[i])!=NULL) {
+					LINK *sidelink;
+					UserWriteF("\n NO_OF_ELEM of EDGES:");
+					for (sidelink=START(SideNodes[i]); sidelink!=NULL; sidelink=NEXT(sidelink)) 
+						UserWriteF(" NO=%d NodeTo=%d",NO_OF_ELEM(sidelink),ID(NBNODE(sidelink)));
+					UserWrite("\n");
+				}
 			ENDDEBUG
 
 			if (toDelete)
@@ -1640,8 +1726,14 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElemen
 		if (REFINE(theSon)>0)
 		{
 				GetCurrentContext(theSon,sonContext);
+				#ifdef Debug
+				CheckElementContextConsistency(theSon,sonContext);
+				#endif
 				if (UnrefineElement(theGrid->finer,theSon,sonContext)) { assert(0); return(GM_FATAL);}
 				UpdateContext(theGrid->finer,theSon,sonContext);
+				#ifdef Debug
+				CheckElementContextConsistency(theSon,sonContext);
+				#endif
 		}
 	}
 
@@ -2978,6 +3070,9 @@ static int RefineGrid (GRID *theGrid)
 
 			GetCurrentContext(theElement,theContext);
 			/* TODO: delete special debug */ PRINTELEMID(-2)
+			#ifdef Debug
+			CheckElementContextConsistency(theElement,theContext);
+			#endif
 
 			IFDEBUG(gm,2)
 			UserWrite("  CurrentContext is :\n");
@@ -2995,6 +3090,9 @@ static int RefineGrid (GRID *theGrid)
 			if (UnrefineElement(fineGrid,theElement,theContext))  {assert(0);return(GM_FATAL);}
 			/* TODO: delete special debug */ PRINTELEMID(-2)
 			if (UpdateContext(fineGrid,theElement,theContext)!=0) {assert(0);return(GM_FATAL);}
+			#ifdef Debug
+			CheckElementContextConsistency(theElement,theContext);
+			#endif
 
 			IFDEBUG(gm,2)
 			UserWrite("  UpdateContext is :\n");
