@@ -1,0 +1,22 @@
+#!/usr/bin/perl -I /home/klaus/UG/ug/pm -w
+
+use ug;
+
+ug("start","df2d -ui cn");
+ug("print glist");
+print ug("ls");
+ug("ug","a=12");
+print ug("ug","print a");
+ug("end");
+
+
+
+
+
+
+
+
+
+
+
+
