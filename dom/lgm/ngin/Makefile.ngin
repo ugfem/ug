@@ -47,7 +47,9 @@ PARSER:
 	sed 's/yy/$(MOD)/g' y.tab.h > $(PNAME)-yacc.h
 	rm y.tab.h
 	$(LEX) $(PNAME).l
-	sed 's/yy/$(MOD)/g' lex.yy.c > $(PNAME)-lex.c
+	sed 's/yy/$(MOD)/g' lex.yy.c > foo
+	sed '1,5d' foo > $(PNAME)-lex.c
+	rm foo
 	rm lex.yy.c
 	sed 's/yy/$(MOD)/g' ng.orig > ng.c
 
