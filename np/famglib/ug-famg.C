@@ -578,7 +578,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 		return 0;
 	}
 
-	// init testvectors
+	// init testvectors 
 	*famg_interface.vector[FAMG_TVA] = 1.0;
 	*famg_interface.vector[FAMG_TVB] = 1.0;
 
@@ -592,6 +592,182 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 }
 
 
+
+#ifdef FAMG_SPARSE_BLOCK
+static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT level,
+							VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, MATDATA_DESC *ACons, MATDATA_DESC *D, VECDATA_DESC *tv, VECDATA_DESC *tvT,
+							INT *result)
+// in this case, use grid on level 0 as the fine grid for FAMG and
+// do not copy the start grid into level -1
+{
+	GRID *grid;
+    VECTOR *vec;
+	MATRIX *m;
+	INT nrVec = 0, nrLinks = 0, i;
+
+    grid = GRID_ON_LEVEL(mg,0);
+	assert(grid!=NULL);
+
+
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    {
+		VINDEX(vec) = nrVec;
+		nrVec++;
+        // if( (!VSKIPME(vec,0)) && (VDATATYPE(vec)&bmask) && (NEW_DEFECT(vec)))
+        if(!VSKIPME(vec,0))
+		{
+			for( m=VSTART(vec); m!=NULL; m = MNEXT(m) )
+				nrLinks++;
+		}
+		else
+		{
+			// check whether a dirichlet vector has exactly 1 matrix entry (the main diagonnal)
+            
+            // todo: check does not work for systems
+
+			m = VSTART(vec);
+			nrLinks++;
+			// assert(fabs(MVALUE(m,mcd))>=1e-8);
+			for( m=MNEXT(m); m!=NULL; m = MNEXT(m) )
+			{
+				nrLinks++;
+				// assert(fabs(MVALUE(m,mc))<1e-8);
+			}
+		}
+    }
+
+	famg_interface.gridvector = new FAMGugGridVector(grid);
+	if( famg_interface.gridvector == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create gridvector" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+	
+	famg_interface.vector[FAMG_DEFECT] = new FAMGugVector( *(FAMGugGridVector*)famg_interface.gridvector, b );
+	if( famg_interface.vector[FAMG_DEFECT] == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector FAMG_DEFECT" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+	
+	famg_interface.vector[FAMG_UNKNOWN] = new FAMGugVector( *(FAMGugGridVector*)famg_interface.gridvector, x );
+	if( famg_interface.vector[FAMG_UNKNOWN] == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector FAMG_UNKNOWN" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+
+    
+    // sparse vector structure of the test vectors
+    // todo: create this automatically from the script 
+    /*
+      short ncomp = 2;
+    short *compmap;
+    compmap = new short[2];
+    compmap[0] = 0; compmap[1] = 0; */
+    
+    short ncomp = 1;
+    short *compmap;
+    compmap = new short[1];
+    compmap[0] = 0; 
+
+	 famg_interface.vector[FAMG_TVA] = new FAMGugVector( *(FAMGugGridVector*)famg_interface.gridvector,tv,compmap,ncomp);
+	if( famg_interface.vector[FAMG_TVA] == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector FAMG_UNKNOWN" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+
+	 famg_interface.vector[FAMG_TVB] = new FAMGugVector( *(FAMGugGridVector*)famg_interface.gridvector,tvT,compmap,ncomp);
+	if( famg_interface.vector[FAMG_TVB] == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector FAMG_UNKNOWN" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+
+    delete compmap;
+
+    for(i = 0; i < FAMG_NVECTORS; i++)
+	{
+		switch(i)
+		{
+			case FAMG_DEFECT: 
+				continue;	// alreday allocated
+				
+			case FAMG_UNKNOWN:
+				continue;	// alreday allocated
+				
+			case FAMG_TVA:
+				continue;	// alreday allocated
+				
+			case FAMG_TVB:
+				continue;	// alreday allocated
+				
+			default:
+				famg_interface.vector[i] = famg_interface.vector[FAMG_UNKNOWN]->create_new();
+		}
+		
+		if( famg_interface.vector[i] == NULL )
+		{
+			ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector nr. " << i << endl;
+			FAMGError(ostr);
+			return 0;
+		}
+	}
+	
+	if( (famg_interface.matrix = new FAMGugMatrix( grid, A, nrVec, nrLinks )) == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create matrix" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+
+	if( A!=ACons )
+	{
+		if( (famg_interface.Consmatrix = new FAMGugMatrix( grid, ACons, nrVec, nrLinks )) == NULL )
+		{
+			ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create matrix" << endl;
+			FAMGError(ostr);
+			return 0;
+		}
+	}
+	else
+		famg_interface.Consmatrix = famg_interface.matrix;
+
+    // todo: I don't know how to alloc temporarily a sparse matrix.
+    //       So D has to be created explicitly in the script. 
+    //       I do not know how to check this.
+
+    if(D != NULL)
+    {
+		if( (famg_interface.diagmatrix = new FAMGugMatrix( grid, D, nrVec)) == NULL )
+		{
+			ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create matrix" << endl;
+			FAMGError(ostr);
+			return 0;
+		}
+    }
+
+        
+	
+	// init testvectors
+ 	*famg_interface.vector[FAMG_TVA] = 1.0;
+	*famg_interface.vector[FAMG_TVB] = 1.0;
+
+	FAMGConstructParameter(&famg_parameter);
+
+    FAMGConstruct(famg_interface.gridvector, famg_interface.matrix, famg_interface.Consmatrix, famg_interface.diagmatrix, famg_interface.vector);
+
+	result[0]=0;
+
+	return NUM_OK;
+}
+#else
 static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT level,
 							VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, MATDATA_DESC *ACons,
 							INT *result)
@@ -608,19 +784,6 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
     MarkTmpMem(MGHEAP(mg),mark_key); /* release in PostProcess */
 	
 	    
-#ifdef FAMG_SPARSE_BLOCK
-    if (VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
-	{
-		bmask  = VD_SCALTYPEMASK(b);
-    }
-    else
-    {
-        UserWrite("Not a scalar equation. \n");
-        REP_ERR_RETURN(1);
-    }
-    mc = A->sm[MTP(0,0)]->offset[0];
-    mcd = A->sm[DMTP(0)]->offset[0];
-#else
     if (MD_IS_SCALAR(A) && MD_IS_SCALAR(ACons) && VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
 	{
 		// WEG xc    = VD_SCALCMP(x);
@@ -635,15 +798,12 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
         REP_ERR_RETURN(1);
     }
     mcd = mc;
-#endif
 
     grid = GRID_ON_LEVEL(mg,0);
 	assert(grid!=NULL);
 
-#ifndef FAMG_SPARSE_BLOCK
 	if (AssembleDirichletBoundary (grid,A,x,b))
        NP_RETURN(1,result[0]); 
-#endif
 
     for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
@@ -733,6 +893,7 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 	else
 		famg_interface.Consmatrix = famg_interface.matrix;
 	
+
 	// init testvectors
 	*famg_interface.vector[FAMG_TVA] = 1.0;
 	*famg_interface.vector[FAMG_TVB] = 1.0;
@@ -745,7 +906,7 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 
 	return NUM_OK;
 }
-
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////
 //
@@ -1447,6 +1608,12 @@ INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 	if (ReadArgvINT("coarsegridagglo",&(famgtrans->coarsegridagglo),argc,argv))
         famgtrans->coarsegridagglo = 0;
 	
+#ifdef FAMG_SPARSE_BLOCK
+	famgtrans->D = ReadArgvMatDesc(theNP->mg, "D", argc, argv);
+	famgtrans->tv = ReadArgvVecDesc(theNP->mg, "tv", argc, argv);
+	famgtrans->tvT = ReadArgvVecDesc(theNP->mg, "tvT", argc, argv);
+#endif
+
 	//famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
 
 	famgtrans->smooth_sol = NULL;	// default to detect errors
@@ -1505,7 +1672,13 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 #endif
 	
 	if( np->coarsegridsolver )
+    {
+#ifdef FAMG_SPARSE_BLOCK
+		res = FAMGPreProcessForCoarseGridSolver( mg, &np->famg_mark_key, *fl, x, b, A, ACons, np->D, np->tv, np->tvT, result);
+#else
 		res = FAMGPreProcessForCoarseGridSolver( mg, &np->famg_mark_key, *fl, x, b, A, ACons, result);
+#endif
+    }
 	else
 	{
 		#ifdef ModelP

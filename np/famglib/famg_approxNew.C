@@ -19,6 +19,7 @@
 /*																			*/
 /****************************************************************************/
 
+
 #include <iostream.h>
 #include <strstream.h>
 #include <math.h>
@@ -29,7 +30,9 @@
 #include "famg_grid.h"
 #include "famg_graph.h"
 #include "famg_system.h"
+#include "famg_sparse.h"
 
+#ifndef FAMG_SPARSE_BLOCK
 
 struct FAMGMatrixLocal
 {
@@ -697,3 +700,5 @@ int FAMGGrid::AnalyseNode6(const FAMGVectorEntry &veci, FAMGPaList *&palist)
      return 0;
 
 }
+
+#endif

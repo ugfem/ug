@@ -22,10 +22,13 @@
 #include <math.h>
 #include <assert.h>
 
+#ifndef __SGI10__
+#include "famg_system.h"
+#endif
+#include "famg_grid.h"
 #include "famg_algebra.h"
 #include "famg_graph.h"
-#include "famg_grid.h"
-#include "famg_system.h"
+#include "famg_sparse.h"
 
 /* RCS_ID
 $Header$
@@ -39,6 +42,274 @@ $Header$
 //
 // template functions to profit by special implementations
 //
+
+#ifdef FAMG_SPARSE_BLOCK
+template<class VT>
+void SetValue( VT &v, double val )
+{
+	// typename is a new C++ keyword!
+	typename VT::Iterator viter(v); 
+	typename VT::VectorEntry ve; 
+	short ncmp = v.GetSparseVectorPtr()->Get_n();
+	short *comp = v.GetSparseVectorPtr()->Get_comp();
+    double *vptr;
+    
+	while(viter(ve))
+    {
+        vptr = v.GetValuePtr(ve);
+        for(short i = 0; i < ncmp; i++) vptr[comp[i]] = val;
+    }
+}
+
+
+template<class VT>
+void AddValue( VT &dest, const VT &source )
+{
+    // not really tesyed
+	// typename is a new C++ keyword!
+	typename VT::Iterator viter(dest); 
+	typename VT::VectorEntry ve; 
+	short ncmp_d = dest.GetSparseVectorPtr()->Get_n();
+	short ncmp_s = source.GetSparseVectorPtr()->Get_n();
+	short *comp_d = dest.GetSparseVectorPtr()->Get_comp();
+ 	short *comp_s = source.GetSparseVectorPtr()->Get_comp();
+    short ncmp;
+    double *vptr_d, *vptr_s;
+	
+    ncmp = Min(ncmp_d,ncmp_s);
+
+	while(viter(ve))
+    {
+        vptr_d = dest.GetValuePtr(ve);
+        vptr_s = source.GetValuePtr(ve);
+		for(short i = 0; i < ncmp; i++) vptr_d[comp_d[i]] += vptr_s[comp_s[i]];
+    }
+}
+
+template<class VT>
+void AddScaledValue( VT &dest, double scale, const VT &source )
+{
+    // not really tesyed
+	// typename is a new C++ keyword!
+	typename VT::Iterator viter(dest); 
+	typename VT::VectorEntry ve; 
+	short ncmp_d = dest.GetSparseVectorPtr()->Get_n();
+	short ncmp_s = source.GetSparseVectorPtr()->Get_n();
+	short *comp_d = dest.GetSparseVectorPtr()->Get_comp();
+ 	short *comp_s = source.GetSparseVectorPtr()->Get_comp();
+    short ncmp;
+    double *vptr_d, *vptr_s;
+	
+    ncmp = Min(ncmp_d,ncmp_s);
+
+	while(viter(ve))
+    {
+        vptr_d = dest.GetValuePtr(ve);
+        vptr_s = source.GetValuePtr(ve);
+		for(short i = 0; i < ncmp; i++) vptr_d[comp_d[i]] += scale*vptr_s[comp_s[i]];
+    }
+}
+
+template<class VT>
+void SubtractValue( VT &dest, const VT &source )
+{
+    // not really tesyed
+	// typename is a new C++ keyword!
+	typename VT::Iterator viter(dest); 
+	typename VT::VectorEntry ve; 
+	short ncmp_d = dest.GetSparseVectorPtr()->Get_n();
+	short ncmp_s = source.GetSparseVectorPtr()->Get_n();
+	short *comp_d = dest.GetSparseVectorPtr()->Get_comp();
+ 	short *comp_s = source.GetSparseVectorPtr()->Get_comp();
+    short ncmp;
+    double *vptr_d, *vptr_s;
+	
+    ncmp = Min(ncmp_d,ncmp_s);
+
+	while(viter(ve))
+    {
+        vptr_d = dest.GetValuePtr(ve);
+        vptr_s = source.GetValuePtr(ve);
+		for(short i = 0; i < ncmp; i++) vptr_d[comp_d[i]] -= vptr_s[comp_s[i]];
+    }
+}
+
+
+template<class VT>
+void CopyValue( VT &dest, const VT &source )
+{
+    // not really tesyed
+	// typename is a new C++ keyword!
+	typename VT::Iterator viter(dest); 
+	typename VT::VectorEntry ve; 
+	short ncmp_d = dest.GetSparseVectorPtr()->Get_n();
+	short ncmp_s = source.GetSparseVectorPtr()->Get_n();
+	short *comp_d = dest.GetSparseVectorPtr()->Get_comp();
+ 	short *comp_s = source.GetSparseVectorPtr()->Get_comp();
+    short ncmp;
+    double *vptr_d, *vptr_s;
+	
+    ncmp = Min(ncmp_d,ncmp_s);
+
+	while(viter(ve))
+    {
+        vptr_d = dest.GetValuePtr(ve);
+        vptr_s = source.GetValuePtr(ve);
+		for(short i = 0; i < ncmp; i++) vptr_d[comp_d[i]] = vptr_s[comp_s[i]];
+    }
+}
+
+
+
+template<class VT>
+double norm( const VT& v )
+{
+    assert(0); // todo: adapt to sparse matrix
+	// typename is a new C++ keyword!
+	typename VT::Iterator viter(v); 
+	typename VT::VectorEntry ve; 
+	register double val, res=0.0;
+	
+	while(viter(ve))
+	{
+		val = v[ve];
+		res += val*val; 
+	}
+	
+#ifdef ModelP
+	res = UG_GlobalSumDOUBLE( res );
+#endif
+	
+	return sqrt(res);
+}
+
+
+template<class VT>
+double ScalProd( const VT& v, const VT& w )
+{
+    assert(0);// todo: adapt to sparse matrix
+	// typename is a new C++ keyword!
+	typename VT::Iterator viter(v); 
+	typename VT::VectorEntry ve; 
+	register double res=0.0;
+	
+	while(viter(ve))
+		res += v[ve]*w[ve]; 
+	
+#ifdef ModelP
+	res = UG_GlobalSumDOUBLE( res );
+#endif
+
+	return res;
+}
+
+
+template<class VT>
+double sum( const VT& v )
+{
+    assert(0);// todo: adapt to sparse matrix
+	// typename is a new C++ keyword!
+	typename VT::Iterator viter(v); 
+	typename VT::VectorEntry ve; 
+	register double res=0.0;
+	
+	while(viter(ve))
+		res += v[ve];
+	
+	return res;
+}
+
+template<class VT>
+void Scale( VT &v, double scale )
+{
+	// typename is a new C++ keyword!
+	typename VT::Iterator viter(v); 
+	typename VT::VectorEntry ve; 
+	short ncmp = v.GetSparseVectorPtr()->Get_n();
+	short *comp = v.GetSparseVectorPtr()->Get_comp();
+    double *vptr;
+    
+	while(viter(ve))
+    {
+        vptr = v.GetValuePtr(ve);
+        for(short i = 0; i < ncmp; i++) vptr[comp[i]] *= scale;
+    }
+}
+template<class VT,class MT>
+void VecMinusMatVec( VT &d, const VT &f, const MT &M, const VT &u )
+{
+	typename VT::Iterator viter(d); 
+	typename VT::VectorEntry row; 
+	typename MT::MatrixEntry col; 
+	double *dptr, *fptr, *uptr, *mptr;
+	const FAMGSparseVector *svu  = u.GetSparseVectorPtr();
+	const FAMGSparseVector *svf  = f.GetSparseVectorPtr();
+	const FAMGSparseVector *svd  = d.GetSparseVectorPtr();
+	const FAMGSparseBlock *sb  = M.GetSparseBlockPtr();
+    const FAMGSparseBlock *sbd  = M.GetDiagSparseBlockPtr();
+    FAMGSparseVector svsum_d, svsum_o;
+
+    svsum_d.Product(sbd,svu);
+    svsum_o.Product(sb,svu);
+
+    double *sum_d = new double[svsum_d.Get_maxcomp()+1];
+    double *sum_o = new double[svsum_o.Get_maxcomp()+1];
+	
+	while(viter(row))
+	{
+		typename MT::Iterator miter(M,row);
+		
+        dptr = d.GetValuePtr(row);
+        fptr = f.GetValuePtr(row);
+        // diagonal 
+        miter(col);
+        uptr = u.GetValuePtr(col.dest());
+        mptr = M.GetValuePtr(col);
+        SparseBlockVSet(&svsum_d,sum_d,0.0);
+        SparseBlockVSet(&svsum_o,sum_o,0.0);
+        SparseBlockMVAddProduct(&svsum_d,sbd,svu,sum_d,mptr,uptr,1.0);
+		while(miter(col))
+        {
+            uptr = u.GetValuePtr(col.dest());
+            mptr = M.GetValuePtr(col);
+            SparseBlockMVAddProduct(&svsum_o,sb,svu,sum_o,mptr,uptr,1.0);
+			// sum += M[col] * u[col.dest()];
+        }
+        SparseBlockVSub(svd,svf,&svsum_o,dptr,fptr,sum_o);
+        SparseBlockVSub(svd,svd,&svsum_d,dptr,dptr,sum_d);
+		// d[row] = f[row] - sum;
+	}
+}
+
+template<class VT,class MT>
+void JacobiSmoothFG( VT &sol, const MT &D, const VT &def )
+// changes only the fine unknowns
+// result in sol_vec; def_vec: correct defect before call, after call destroyed
+{
+	typename VT::Iterator viter(sol); 
+	typename VT::VectorEntry ve; 
+	const FAMGSparseVector *svsol  = sol.GetSparseVectorPtr();
+	const FAMGSparseVector *svdef  = def.GetSparseVectorPtr();
+	const FAMGSparseBlock *sb  = D.GetDiagSparseBlockPtr();
+	double *solptr, *defptr, *matptr;
+
+	while(viter(ve))
+    {
+		if( sol.IsFG(ve) )
+        {
+            solptr = sol.GetValuePtr(ve);
+            defptr = def.GetValuePtr(ve);
+            matptr = D.GetDiagValuePtr(ve);
+            SparseBlockMVAddProduct(svsol,sb,svdef,solptr,matptr,defptr,1.0);
+			// sol[ve] += def[ve] / M.DiagValue(ve);
+        }
+    }
+	
+	return;
+}
+
+
+#else
 
 template<class VT>
 void SetValue( VT &v, double val )
@@ -168,7 +439,6 @@ void Scale( VT& v, double scale )
 		v[ve] *= scale;	
 }
 
-
 template<class VT,class MT>
 void VecMinusMatVec( VT &d, const VT &f, const MT &M, const VT &u )
 {
@@ -188,6 +458,22 @@ void VecMinusMatVec( VT &d, const VT &f, const MT &M, const VT &u )
 	}
 }
 
+template<class VT,class MT>
+void JacobiSmoothFG( VT &sol, const MT &M, const VT &def )
+// changes only the fine unknowns
+// result in sol_vec; def_vec: correct defect before call, after call destroyed
+{
+	typename VT::Iterator viter(sol); 
+	typename VT::VectorEntry ve; 
+
+	while(viter(ve))
+		if( sol.IsFG(ve) )
+			sol[ve] += def[ve] / M.DiagValue(ve);
+	
+	return;
+}
+
+#endif
 
 template<class VT,class MT>
 void MatVec( VT &dest, const MT &M, const VT &source )
@@ -209,20 +495,6 @@ void MatVec( VT &dest, const MT &M, const VT &source )
 }
 
        
-template<class VT,class MT>
-void JacobiSmoothFG( VT &sol, const MT &M, const VT &def )
-// changes only the fine unknowns
-// result in sol_vec; def_vec: correct defect before call, after call destroyed
-{
-	typename VT::Iterator viter(sol); 
-	typename VT::VectorEntry ve; 
-
-	while(viter(ve))
-		if( sol.IsFG(ve) )
-			sol[ve] += def[ve] / M.DiagValue(ve);
-	
-	return;
-}
 
 template<class VT,class MT>
 void JacobiSmoother( VT &sol, const MT &M, const VT &def )
@@ -376,6 +648,32 @@ void SGSSmoother( VT &sol, const MT &M, VT &def )
 	return;
 }
 
+#ifdef FAMG_SPARSE_BLOCK
+template<class MT>
+void MarkStrongLinks(const MT &A, const FAMGGrid &grid)
+{
+	typedef typename MT::Vector VT;
+	const typename MT::GridVector& gridvec = (typename MT::GridVector&)grid.GetGridVector();
+	typename MT::MatrixEntry matij;
+	typename VT::VectorEntry vi;
+	typename VT::Iterator viter(gridvec);
+
+
+	while (viter(vi))
+	{
+        typename MT::Iterator mij_iter(A,vi);
+        mij_iter(matij);
+        matij.set_strong(1);
+        while( mij_iter(matij) )
+        {
+                matij.set_strong(1);
+        }
+
+    }
+    
+	return;
+}
+#else
 template<class MT>
 void MarkStrongLinks(const MT &A, const FAMGGrid &grid)
 {
@@ -446,8 +744,176 @@ void MarkStrongLinks(const MT &A, const FAMGGrid &grid)
     
 	return;
 }
+#endif
+
+#ifdef FAMG_SPARSE_BLOCK
+
+template<class MT>
+int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
+// this matrix lives on the coarse grid
+// calculates Mcg := R * Mfg * P and with indices:
+// Mcg_(i,j) := \sum_{s,t} R_(i,s) * Mfg_(s,t) * P_(t,j)
+{
+	typedef typename MT::Vector VT;
+	
+	const FAMGTransfer &transfer = *fg.GetTransfer();
+	
+	const typename MT::GridVector& fg_gridvec = (typename MT::GridVector&)fg.GetGridVector();
+	const MT& Mfg = (MT&)*fg.GetMatrix();
+	const MT& Dfg = (MT&)*fg.GetDiagMatrix();
+	typename MT::MatrixEntry mij, mis;
+	typename VT::VectorEntry i_fg, i_cg, j_fg, j_cg, s_fg, s_cg, t_cg;
+	FAMGTransferEntry *pjs, *pij, *pst;
+	typename VT::Iterator viter(fg_gridvec);
+	
+    
+    // cast because GetSparseBlockPtr returns a const FAMGSparseBlock * pointer
+    FAMGSparseBlock *cmatsb_d = (FAMGSparseBlock *)Mcg.GetDiagSparseBlockPtr();
+    FAMGSparseBlock *cmatsb_o = (FAMGSparseBlock *)Mcg.GetSparseBlockPtr();
+
+    const FAMGSparseBlock *dmatsb = Dfg.GetDiagSparseBlockPtr();
+    const FAMGSparseBlock *fmatsb_o = Mfg.GetSparseBlockPtr();
+    const FAMGSparseBlock *fmatsb_d = Mfg.GetDiagSparseBlockPtr();
+    const FAMGSparseVector *sp = transfer.Get_sp();
+    const FAMGSparseVector *sr = transfer.Get_sr();
 
 
+    FAMGSparseBlock sb_o_p, sb_r_o, sb_r_o_p, sb_r_d_p, sb_r_dmat_p; // only offdiagonal blocks
+
+    sb_o_p.Product(fmatsb_o,sp);
+    sb_r_o.Product(sr,fmatsb_o);
+    sb_r_o_p.Product(sr,fmatsb_o,sp);
+    sb_r_dmat_p.Product(sr,dmatsb,sp);
+    sb_r_d_p.Product(sr,fmatsb_d,sp);
+    
+
+    // chech sparse block structure
+    if(cmatsb_o->CheckStructureforAdd(fmatsb_o)) return 1;
+    if(cmatsb_o->CheckStructureforAdd(&sb_o_p)) return 1;
+    if(cmatsb_o->CheckStructureforAdd(&sb_r_o)) return 1;
+    if(cmatsb_o->CheckStructureforAdd(&sb_r_o_p)) return 1;
+    if(cmatsb_o->CheckStructureforAdd(&sb_r_dmat_p)) return 1;
+    if(cmatsb_d->CheckStructureforAdd(fmatsb_d)) return 1;
+    if(cmatsb_d->CheckStructureforAdd(&sb_r_d_p)) return 1;
+    if(cmatsb_d->CheckStructureforAdd(&sb_o_p)) return 1;
+    if(cmatsb_d->CheckStructureforAdd(&sb_r_o)) return 1;
+    if(cmatsb_d->CheckStructureforAdd(&sb_r_o_p)) return 1;
+    if(cmatsb_d->CheckStructureforAdd(&sb_r_dmat_p)) return 1;
+
+
+    short maxoffset = sb_o_p.Get_maxoffset();
+    maxoffset = Max(maxoffset,sb_r_o.Get_maxoffset());
+    maxoffset = Max(maxoffset,sb_r_o_p.Get_maxoffset());
+    maxoffset = Max(maxoffset,sb_r_dmat_p.Get_maxoffset());
+    maxoffset = Max(maxoffset,sb_r_d_p.Get_maxoffset());
+
+    double *val = new double[maxoffset+1];
+    double *diaginv = new double[dmatsb->Get_maxoffset()+1];
+
+
+	while (viter(i_fg) )
+	{
+		if (fg_gridvec.IsCG(i_fg) )
+		{
+			// i is coarse
+		
+			transfer.GetFirstEntry(i_fg)->GetColInVar(i_cg);
+			
+			typename MT::Iterator mijiter(Mfg,i_fg);
+			while( mijiter(mij) )
+			{
+				j_fg = mij.dest();
+				
+				if( fg_gridvec.IsCG(j_fg) )
+				{
+					transfer.GetFirstEntry(j_fg)->GetColInVar(j_cg);
+					// Mcg.AddEntry(Mfg[mij], i_cg, j_cg);               // Mcc
+					if(i_cg == j_cg) Mcg.AddEntry(fmatsb_d,Mfg.GetValuePtr(mij), i_cg, j_cg);
+                    else Mcg.AddEntry(fmatsb_o,Mfg.GetValuePtr(mij), i_cg, j_cg);    // Mcc
+				}
+				else
+				{
+					for( pjs=transfer.GetFirstEntry(j_fg); pjs != NULL; pjs = pjs->GetNext())
+					{
+						pjs->GetColInVar(s_cg);
+                        SparseBlockMMProduct(&sb_o_p,fmatsb_o,sp,val,Mfg.GetValuePtr(mij),pjs->GetProlongationPtr());
+                        Mcg.AddEntry(&sb_o_p,val,i_cg, s_cg);
+
+						// Mcg.AddEntry(Mfg[mij]*pjs->GetProlongation(), i_cg, s_cg);      // Mcf*P
+					}
+				}
+			}
+		}
+		else
+		{
+			// i is fine
+
+			typename MT::Iterator misiter(Mfg,i_fg);
+			while( misiter(mis) )
+			{
+				s_fg = mis.dest();
+
+				for( pij=transfer.GetFirstEntry(i_fg); pij != NULL; pij = pij->GetNext())
+				{
+					pij->GetColInVar(j_cg);
+
+					if( fg_gridvec.IsCG(s_fg) )
+					{
+						transfer.GetFirstEntry(s_fg)->GetColInVar(s_cg);
+						// pij is equivalent to rji 
+						// Mcg.AddEntry(pij->GetRestriction()*Mfg[mis], j_cg, s_cg);          // R*Mfc
+                         SparseBlockMMProduct(&sb_r_o,sr,fmatsb_o,val,pij->GetRestrictionPtr(),Mfg.GetValuePtr(mis));
+                         Mcg.AddEntry(&sb_r_o,val,j_cg, s_cg);
+                       
+					}
+					else
+					{
+                        // s is fine 
+                        if(s_fg == i_fg)
+                        {
+                            // special treatment for the A_{i,i} to keep block sparsity pattern  
+                            for( pst=transfer.GetFirstEntry(s_fg); pst != NULL; pst = pst->GetNext())
+                            {
+                                pst->GetColInVar(t_cg);
+                                // pij is equivalent to rji
+                                // Mcg.AddEntry(pij->GetRestriction()*Mfg[mis]*pst->GetProlongation(), j_cg, t_cg);// R*Mff*P
+                                SparseBlockMMProduct(&sb_r_d_p,sr,fmatsb_d,sp,val,pij->GetRestrictionPtr(),Mfg.GetValuePtr(mis),pst->GetProlongationPtr());
+                                Mcg.AddEntry(&sb_r_d_p,val,j_cg, j_cg); // lump to diagonal
+
+                                if(j_cg != t_cg)
+                                {
+                                    SparseBlockMInvertDiag(dmatsb, diaginv, Dfg.GetValuePtr(mis));
+                                    SparseBlockMMProduct(&sb_r_dmat_p,sr,dmatsb,sp,val,pij->GetRestrictionPtr(),diaginv,pst->GetProlongationPtr());
+                                    Mcg.AddEntry(&sb_r_dmat_p,val,j_cg, t_cg); 
+                                    Mcg.AddEntry(&sb_r_dmat_p,val,j_cg, j_cg,-1.0); 
+                                }
+                                
+                            }
+						}
+                        else
+                        {
+                            for( pst=transfer.GetFirstEntry(s_fg); pst != NULL; pst = pst->GetNext())
+                            {
+                                pst->GetColInVar(t_cg);
+                                // pij is equivalent to rji
+                                // Mcg.AddEntry(pij->GetRestriction()*Mfg[mis]*pst->GetProlongation(), j_cg, t_cg);// R*Mff*P
+                                SparseBlockMMProduct(&sb_r_o_p,sr,fmatsb_o,sp,val,pij->GetRestrictionPtr(),Mfg.GetValuePtr(mis),pst->GetProlongationPtr());
+                                Mcg.AddEntry(&sb_r_o_p,val,j_cg, t_cg);
+                            }
+                        }
+					}
+				}
+				
+			}
+		}
+	}
+
+    delete val;
+    delete diaginv;
+
+	return 0;
+}
+#else
 template<class MT>
 int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 // this matrix lives on the coarse grid
@@ -529,3 +995,4 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 	}
 	return 0;
 }
+#endif

@@ -29,6 +29,7 @@
 #include "famg_heap.h"
 #include "famg_grid.h"
 #include "famg_misc.h"
+#include "famg_sparse.h"
 
 static FAMGParameter *famgparaptr;
 // WEG static int famgfirsti=0; // first index (0 or 1 ?)
@@ -202,6 +203,106 @@ int FAMGSystem::Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, 
 
     return 0;
 }
+#ifdef FAMG_SPARSE_BLOCK
+int FAMGSystem::Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, FAMGMatrixAlg* Consstiffmat,  FAMGMatrixAlg* diagmatrix, FAMGVector *vectors[FAMGMAXVECTORS] )
+{
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_BOTTOM);
+	int i;
+	
+	SetGridVector(gridvector);
+    if (mygridvector == NULL)
+	{
+        ostrstream ostr;
+        ostr << __FILE__ << __LINE__ <<  "you must provide a gridvector" << endl;
+        FAMGError(ostr);
+		RETURN(1);
+    }
+ 
+#ifdef USE_UG_DS
+	SetFineGrid(((FAMGugGridVector*)gridvector)->GetGrid());
+#endif
+	
+    SetMatrix(stiffmat);
+    if (GetMatrix() == NULL)
+	{
+        ostrstream ostr;
+        ostr << __FILE__ << __LINE__ <<  "you must provide a matrix" << endl;
+        FAMGError(ostr);
+		RETURN(1);
+    }
+
+#ifdef FAMG_SPARSE_BLOCK 
+    SetDiagMatrix(diagmatrix);
+    if (GetDiagMatrix() == NULL)
+	{
+        ostrstream ostr;
+        ostr << __FILE__ << __LINE__ <<  "you must provide a diagonal help matrix" << endl;
+        FAMGError(ostr);
+		RETURN(1);
+    }
+#endif
+ 
+    SetConsMatrix(Consstiffmat);
+    if (GetConsMatrix() == NULL)
+	{
+        ostrstream ostr;
+        ostr << __FILE__ << __LINE__ <<  "you must provide a consistent matrix" << endl;
+        FAMGError(ostr);
+		RETURN(1);
+    }
+ 
+#ifdef FAMG_REORDERCOLUMN	
+    // only for reorder column
+    colmap = (int*) FAMGGetMem(famg_interface->n*sizeof(int),FAMG_FROM_TOP);
+    if (colmap == NULL) RETURN(1);
+    if(GetMatrix()->OrderColumns(colmap)) RETURN(1);
+#endif
+        
+	for ( i=0; i<FAMGMAXVECTORS; i++ )
+	{
+	    if(vectors[i] == NULL)
+    	{
+        	ostrstream ostr;
+	        ostr << __FILE__ << __LINE__ <<  "you must provide vector " << i << endl;
+    	    FAMGError(ostr);
+			RETURN(1);
+	    }
+		vector[i] = vectors[i];
+	}
+	
+    char *solver = FAMGGetParameter()->Getsolver();
+    SolverPtr = &FAMGSystem::BiCGStab;
+    if(strcmp(solver,"bicgstab") == 0)
+    {
+        SolverPtr = &FAMGSystem::BiCGStab;
+    }
+    else if(strcmp(solver,"linit") == 0)
+    {
+        SolverPtr = &FAMGSystem::LinIt;
+    }
+    else if(strcmp(solver,"gmres") == 0)
+    {
+        SolverPtr = &FAMGSystem::GMRES;
+    }
+    else
+    {
+        ostrstream ostr;
+        ostr << __FILE__ << __LINE__ <<  "solver = bicgstab" << endl;
+        FAMGWarning(ostr);
+    }
+
+    FAMGMultiGrid *mg0 = CreateMultiGrid();
+    if(mg0 == NULL)
+		RETURN(1);
+    if (mg0->Init(*this))
+		RETURN(1);
+    if (mg0->Construct())
+		RETURN(1);
+
+    return 0;
+}
+#endif
 
 
 int FAMGSystem::Solve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown)

@@ -29,6 +29,7 @@
 #include "famg_algebra.h"
 #include "famg_heap.h"
 #include "famg_system.h"
+#include "famg_sparse.h"
 
 /* RCS_ID
 $Header$
@@ -41,6 +42,13 @@ int FAMGMultiGrid::Init(const FAMGSystem &system)
 {
     FAMGGrid *grid0;
     int i;
+
+
+#ifdef FAMG_SPARSE_BLOCK
+    FAMGTestSparseBlock();
+    cout << "test call in FAMGMultiGrid::Init";
+#endif
+
 
     n = 0;
     for(i = 0; i < FAMGMAXGRIDS; i++) grid[i] = NULL;
@@ -123,6 +131,10 @@ int FAMGMultiGrid::Construct()
 #endif
         if (gamma < 1) return 0;	// ModelP: simple return because gamma is known to all processors
 
+#ifdef FAMG_SPARSE_BLOCK
+        if (g->ConstructDiagonal()) 
+			RETURN(1);       
+#endif
         if (g->ConstructTransfer()) 
 			RETURN(1);       
         nnc = (g->GetN())-(g->GetNF());

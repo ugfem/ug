@@ -30,6 +30,7 @@
 
 //#include "gm.h"        /* for ug data structure               */
 #include "famg_ugalgebra.h"
+#include "famg_sparse.h"
 
 
 #define FAMG_RHS      0
@@ -44,6 +45,9 @@ struct FAMG_Interface
 {
   FAMGMatrixAlg* matrix;
   FAMGMatrixAlg* Consmatrix;
+#ifdef FAMG_SPARSE_BLOCK
+  FAMGMatrixAlg* diagmatrix;
+#endif
   FAMGGridVector* gridvector;
   FAMGVector* vector[FAMG_NVECTORS];
 };
@@ -137,6 +141,9 @@ FAMG_TransferEntry* FAMG_GetTransferEntry(int level,int i);
 int FAMGConstructParameter(struct FAMGParameter_ug *in_parameter);
 void FAMGDeconstructParameter();
 int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGMatrixAlg *Consmatrix, FAMGVector *vectors[FAMG_NVECTORS]);
+#ifdef FAMG_SPARSE_BLOCK
+int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGMatrixAlg *Consmatrix, FAMGMatrixAlg *diagmatrix, FAMGVector *vectors[FAMG_NVECTORS]);
+#endif
 int FAMGConstructSimple(FAMGMatrixAlg *matrix, FAMGVector *tvA, FAMGVector *tvB);
 int FAMGSolve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown);
 void FAMGDeconstruct();

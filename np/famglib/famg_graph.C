@@ -83,7 +83,39 @@ void FAMGNode::Init(int index, const FAMGVectorEntry &i)
 
 // Class PaList
 
+#ifdef FAMG_SPARSE_BLOCK
+void FAMGPaList::Init(FAMGPaList *next, int np, const int p[], FAMGSparseVector *sp, FAMGSparseVector *sr, double **c, double **ct, double error)
+{
+    int z;
+    short i;
+    
+    SetNext(next);
+    SetNp(np);
+    SetApprox(error);
+	SetNewCG(0.0);
+	SetNewLinks(0);
+	
+    short maxcomp_p = sp->Get_maxcomp();
+    short maxcomp_r = sr->Get_maxcomp();
 
+    for(z = 0; z < np; z++)
+    {
+        SetPa(z,p[z]);
+        
+        for(i = 0; i <= maxcomp_p; i++)
+        {
+            SetCoeff(z,i,(c[z])[i]);
+        }
+        for(i = 0; i <= maxcomp_r; i++)
+        {
+            SetCoefft(z,i,(ct[z])[i]);
+        }
+    }
+
+    return;
+}
+
+#else
 void FAMGPaList::Init(FAMGPaList *next, int np, const int p[], double c[], double ct[], double error)
 {
     int z;
@@ -94,16 +126,17 @@ void FAMGPaList::Init(FAMGPaList *next, int np, const int p[], double c[], doubl
 	SetNewCG(0.0);
 	SetNewLinks(0);
 	
+
     for(z = 0; z < np; z++)
     {
-        SetPa(z,p[z]);
+        SetPa(z,p[z]);  
         SetCoeff(z,c[z]);
         SetCoefft(z,ct[z]);
     }
 
     return;
 }
-
+#endif
 
     // Class Graph
 
@@ -330,6 +363,40 @@ void FAMGGraph::CorrectPaList(FAMGPaList *&palist, double threshold)
     return;
 } 
 
+#ifdef FAMG_SPARSE_BLOCK
+int FAMGGraph::SavePaList(FAMGPaList *&list, int np, const int pa[], double **c, double **ct, double error)
+{
+    FAMGPaList *pl;
+    double *cptr, *ctptr;
+
+    if (GetFreePaList() != NULL)
+    {
+        pl = GetFreePaList();
+        SetFreePaList(pl->GetNext());
+    }
+    else
+    {
+        pl = (FAMGPaList *) FAMGGetMem(sizeof(class FAMGPaList), FAMG_FROM_BOTTOM);
+        if (pl == NULL) return 1;
+        short maxcomp_p = sp.Get_maxcomp();
+        short maxcomp_r = sr.Get_maxcomp();
+        for(short i = 0; i < FAMGMAXPARENTS;i++)
+        {
+            cptr = (double *) FAMGGetMem((maxcomp_p+1)*sizeof(double), FAMG_FROM_BOTTOM);
+            ctptr = (double *) FAMGGetMem((maxcomp_r+1)*sizeof(double), FAMG_FROM_BOTTOM);
+            pl->SetCoeff(i,cptr);
+            pl->SetCoefft(i,ctptr);
+        }
+            
+    }
+
+    pl->Init(list,np,pa,&sp,&sr,c,ct,error);
+
+    list = pl;
+
+    return 0;
+}   
+#else
 int FAMGGraph::SavePaList(FAMGPaList *&list, int np, const int pa[], double c[], double ct[], double error)
 {
     FAMGPaList *pl;
@@ -351,6 +418,8 @@ int FAMGGraph::SavePaList(FAMGPaList *&list, int np, const int pa[], double c[],
 
     return 0;
 }   
+
+#endif
 
 void FAMGGraph::MarkFGNode(FAMGNode *fgnode)
 {

@@ -34,6 +34,7 @@ extern "C" {
 #include "famg_algebra.h"
 #include "famg_grid.h"
 #include "famg_multigrid.h"
+#include "famg_sparse.h"
 
 /* RCS_ID
    $Header$
@@ -319,6 +320,10 @@ public:
   FAMGGridVector * GetGridVector() const;
   FAMGMatrixAlg * GetMatrix() const;
   FAMGMatrixAlg * GetConsMatrix() const;
+#ifdef FAMG_SPARSE_BLOCK
+  FAMGMatrixAlg * GetDiagMatrix() const;
+  void SetDiagMatrix(FAMGMatrixAlg *);
+#endif
   FAMGVector *GetVector(int i) const;
   FAMGMultiGrid *GetMultiGrid(int) const;
   void SetGridVector(FAMGGridVector *);
@@ -338,6 +343,9 @@ public:
   int ComputeEigenVector(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
   int ComputeEigenVectorTrans(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
   int GMRES();
+#ifdef FAMG_SPARSE_BLOCK
+  int Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, FAMGMatrixAlg* Consstiffmat,  FAMGMatrixAlg* diagmatrix, FAMGVector *vectors[FAMGMAXVECTORS] );
+#endif
   int Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, FAMGMatrixAlg* Consstiffmat, FAMGVector* vectors[FAMGMAXVECTORS] );
   int ConstructSimple( FAMGMatrixAlg* stiffmat, FAMGVector* tvA, FAMGVector* tvB );
   int Deconstruct();
@@ -355,6 +363,9 @@ private:
   FAMGMultiGrid *mg[FAMGMULTIGRIDS];
   FAMGMatrixAlg *matrix;
   FAMGMatrixAlg *Consmatrix;
+#ifdef FAMG_SPARSE_BLOCK
+  FAMGMatrixAlg *diagmatrix;
+#endif
   FAMGGridVector *mygridvector;
   FAMGVector *vector[FAMGMAXVECTORS];
   int *colmap;
@@ -394,6 +405,14 @@ inline void FAMGSystem::SetConsMatrix(FAMGMatrixAlg *ptr) {
 inline void FAMGSystem::SetVector(int i, FAMGVector *ptr) {
   vector[i] = ptr;
 }
+#ifdef FAMG_SPARSE_BLOCK
+inline FAMGMatrixAlg *FAMGSystem::GetDiagMatrix() const {
+  return diagmatrix;
+}
+inline void FAMGSystem::SetDiagMatrix(FAMGMatrixAlg *ptr) {
+  diagmatrix = ptr;
+}
+#endif
 
 FAMGParameter * FAMGGetParameter();
 void FAMGSetParameter(FAMGParameter *ptr);

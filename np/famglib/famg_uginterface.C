@@ -25,6 +25,7 @@
 #include "famg_algebra.h"
 #include "famg_system.h"
 #include "famg_heap.h"
+#include "famg_sparse.h"
 
 /* RCS_ID
 $Header$
@@ -158,6 +159,39 @@ int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGMatrixA
 
     return 0;
 }
+#ifdef FAMG_SPARSE_BLOCK
+int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGMatrixAlg *Consmatrix, FAMGMatrixAlg *diagmatrix, FAMGVector *vectors[FAMG_NVECTORS])
+{
+ 
+
+    FAMGHeap *heap = new FAMGHeap (FAMGGetParameter()->Getheap());
+    if (heap == NULL) 
+	{
+		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not allocate Heap" << endl;
+		FAMGError(ostr);
+		assert(0);
+	}
+    FAMGSetHeap(heap);
+
+    famgsystemptr = (FAMGSystem *) FAMGGetMem(sizeof(FAMGSystem),FAMG_FROM_TOP);
+    if(famgsystemptr == NULL)
+	{
+		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not allocate FAMGSystem" << endl;
+		FAMGError(ostr);
+		assert(0);
+	}
+    
+    famgsystemptr->Init();
+    if(famgsystemptr->Construct(gridvector,matrix,Consmatrix,diagmatrix,vectors))
+	{
+		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not construct FAMGSystem" << endl;
+		FAMGError(ostr);
+		assert(0);
+	}
+
+    return 0;
+}
+#endif
 
 int FAMGConstructSimple(FAMGMatrixAlg *matrix, FAMGVector *tvA, FAMGVector *tvB)
 {

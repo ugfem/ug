@@ -23,6 +23,11 @@
 #include <strstream.h>
 #include <math.h>
 
+extern "C"
+{
+#include "udm.h"
+}
+
 #include "famg_misc.h"
 #include "famg_grid.h"
 #include "famg_graph.h"
@@ -92,6 +97,155 @@ int pl(FAMGGraph *graph);
 
 // Class FAMGGrid
  
+
+#ifdef FAMG_SPARSE_BLOCK
+void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect) const
+// including smoothing of fine nodes
+{
+	FAMGVectorEntry fvec;
+	const FAMGTransfer &transfer = *GetTransfer();
+	FAMGTransferEntry *transfg;
+	
+#ifdef ModelP
+	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
+		assert(0);
+#endif
+	
+	
+	// jacobi smoothing for the fine nodes
+    fgsolution.JacobiSmoothFG( *GetDiagMatrix(), fgdefect );
+
+#ifdef ModelP
+	if (l_vector_consistent(mygrid,((FAMGugVector&)fgsolution).GetUgVecDesc())!=NUM_OK) 
+		assert(0);
+#endif
+	
+	
+	// correct defect
+	Defect(fgdefect, fgdefect, fgsolution);
+#ifdef ModelP
+	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
+		assert(0);
+#endif
+	
+	
+	const FAMGSparseVector *svfg  = fgdefect.GetSparseVectorPtr();
+	const FAMGSparseVector *svcg  = cgdefect.GetSparseVectorPtr();
+	const FAMGSparseVector *svr  = transfer.Get_sr();
+
+	FAMGVectorIter fiter(GetGridVector());
+	while( fiter(fvec) )
+#ifdef ModelP
+		if(IS_FAMG_MASTER(((FAMGugVectorEntryRef*)(fvec.GetPointer()))->myvector()))
+#endif	
+        {
+	    	for(transfg = transfer.GetFirstEntry(fvec); transfg != NULL; transfg = transfg->GetNext())
+            {
+				// cgdefect[transfg->GetCol()] += transfg->GetRestriction() * fgdefect[fvec];
+                SparseBlockMVAddProduct(svcg,svr,svfg,
+                                        cgdefect.GetValuePtr(transfg->GetCol()),
+                                        transfg->GetRestrictionPtr(),
+                                        cgdefect.GetValuePtr(fvec),1.0);
+            }
+        }
+		
+#ifdef ModelP
+	if (l_vector_collectAll(DOWNGRID(mygrid),((FAMGugVector&)cgdefect).GetUgVecDesc())!=NUM_OK) 
+		assert(0);
+#endif
+	
+	
+    return;
+}
+    
+void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVector &fgsol, FAMGVector &fgdefect, FAMGVector *c)
+// adds the prolongued solution-update to the fine grid solution
+// including smoothing of fine nodes
+// c is set for FAMG transfer; not used for FAMG solver
+{
+	FAMGVectorEntry fvec;
+	const FAMGTransfer &transfer = *GetTransfer();
+	FAMGTransferEntry *transfg;
+	
+	
+#ifdef ModelP
+	// distribute master values to V(H)Ghosts
+	if (l_ghostvector_consistent(DOWNGRID(mygrid),((FAMGugVector&)cgsol).GetUgVecDesc())!= NUM_OK)
+		assert(0);
+#endif        
+	
+	
+	const FAMGSparseVector *svfg  = fgsol.GetSparseVectorPtr();
+	const FAMGSparseVector *svcg  = cgsol.GetSparseVectorPtr();
+	const FAMGSparseVector *svp  = transfer.Get_sp();
+
+	FAMGVectorIter fiter(GetGridVector());
+	while( fiter(fvec) )
+	{
+#ifdef ModelP
+		if(!IS_FAMG_MASTER(((FAMGugVectorEntryRef*)(fvec.GetPointer()))->myvector()))
+			continue;
+#endif		
+		// fgsol[fvec] = 0.0;
+        SparseBlockVSet(svfg,fgsol.GetValuePtr(fvec),0.0);
+	    for(transfg = transfer.GetFirstEntry(fvec); transfg != NULL; transfg = transfg->GetNext())
+        {
+                SparseBlockMVAddProduct(svfg,svp,svcg,
+                                        fgsol.GetValuePtr(fvec),
+                                        transfg->GetProlongationPtr(),
+                                        cgsol.GetValuePtr(transfg->GetCol()),1.0);
+                // fgsol[fvec] += transfg->GetProlongation() * cgsol[transfg->GetCol()];
+        }
+	}
+#ifdef ModelP
+	if (l_force_consistence(mygrid,((FAMGugVector&)fgsol).GetUgVecDesc())!=NUM_OK) 
+		assert(0);
+#endif
+
+	
+	// prepare defect for jacobi smoothing
+	Defect(fgdefect, fgdefect, fgsol);
+#ifdef ModelP
+	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
+		assert(0);
+#endif
+	
+
+	if(c == NULL)
+    {
+        // famg as solver
+
+		#ifdef ModelP
+		assert(0);	// "FAMG as solver" not ported to parallel
+		#endif
+
+        // jacobi smoothing for the fine nodes
+        fgsol.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
+        
+        // correct defect
+        Defect(fgdefect, fgdefect, fgsol);
+    }
+    else
+    {
+        // famg as transfer
+        (*c) += fgsol;
+        fgsol = 0.0;
+
+		// jacobi smoothing for the fine nodes
+        fgsol.JacobiSmoothFG( *GetDiagMatrix(), fgdefect );
+#ifdef ModelP
+		if (l_vector_consistent(mygrid,((FAMGugVector&)fgsol).GetUgVecDesc())!=NUM_OK) 
+			assert(0);
+#endif
+
+
+		// defect is computed in ug (Lmgc)
+    }
+
+	return;
+}
+#else
+
 void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect) const
 // including smoothing of fine nodes
 {
@@ -129,14 +283,12 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
 #endif
-
 #ifdef PROTOCOLNUMERIC
     cout<<"FAMGGrid::Restriction: defect after defect "<<fgdefect*fgdefect<<endl;
     cout<<"FAMGGrid::Restriction: sol after defect "<<fgsolution*fgsolution<<endl;
     cout<<"FAMGGrid::Restriction: defect*sol after defect "<<fgdefect*fgsolution<<endl;
 #endif
 	
-	cgdefect = 0.0;
 	
 	FAMGVectorIter fiter(GetGridVector());
 	while( fiter(fvec) )
@@ -288,6 +440,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 
 	return;
 }
+#endif
 
 void FAMGGrid::CGSmooth()
 {
@@ -499,6 +652,11 @@ int FAMGGrid::BiCGStab()
 
 void FAMGGrid::SmoothTV()
 {
+
+#ifdef FAMG_SPARSE_BLOCK
+    return; // not yet implemented
+#else
+
     double sum, normA, mii, scaling;
     FAMGVector &tvA = *vector[FAMGTVA];
     FAMGVector &tvB = *vector[FAMGTVB];
@@ -553,6 +711,7 @@ void FAMGGrid::SmoothTV()
 	}
 
 	return;
+#endif
 }
     
 
@@ -714,7 +873,7 @@ int FAMGGrid::InitLevel0(const class FAMGSystem &system)
 {
     int i;
 
-	n = system.GetN();
+    n = system.GetN();
     nf = 0;
 	mygridvector = system.GetGridVector();
 	
@@ -727,6 +886,9 @@ int FAMGGrid::InitLevel0(const class FAMGSystem &system)
     matrix = system.GetMatrix();
     Consmatrix = system.GetConsMatrix();
     tmpmatrix = Consmatrix;
+#ifdef FAMG_SPARSE_BLOCK
+    diagmatrix = system.GetDiagMatrix();
+#endif
 	
 #ifdef FAMG_ILU
     decomp = NULL;
@@ -782,6 +944,11 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 	matrix = new FAMGugMatrix(new_grid, *(FAMGugMatrix*)grid_pattern.GetMatrix());
     if(matrix == NULL)
 		RETURN(1);
+#ifdef FAMG_SPARSE_BLOCK
+	diagmatrix = new FAMGugMatrix(new_grid, *(FAMGugMatrix*)grid_pattern.GetDiagMatrix());
+    if(diagmatrix == NULL)
+		RETURN(1);
+#endif
 	if(grid_pattern.GetMatrix()!=grid_pattern.GetConsMatrix())
 	{
 		Consmatrix = new FAMGugMatrix(new_grid, *(FAMGugMatrix*)grid_pattern.GetConsMatrix());
@@ -881,7 +1048,8 @@ void FAMGGrid::Deconstruct(int level)
 	delete mygridvector; mygridvector = NULL;
 	
     return;
-}    
+} 
+
 
 int FAMGGrid::Construct(FAMGGrid *fg)
 {
@@ -945,6 +1113,7 @@ int FAMGGrid::Construct(FAMGGrid *fg)
     }
 #endif
 	
+
     if(GetMatrix()->ConstructGalerkinMatrix(*fg)) 
 		RETURN(1);
 	
@@ -980,9 +1149,6 @@ int FAMGGrid::ConstructTransfer()
 	TotalTime = CURRENT_TIME_LONG;
 	
     conloops = FAMGGetParameter()->Getconloops();
-    transfer = (FAMGTransfer *) FAMGGetMem(sizeof(FAMGTransfer),FAMG_FROM_TOP);
-    if(transfer == NULL) assert(0);
-    if (transfer->Init(this)) assert(0);
 
     FAMGMarkHeap(FAMG_FROM_BOTTOM);
 
@@ -996,6 +1162,10 @@ int FAMGGrid::ConstructTransfer()
 
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+
+    transfer = (FAMGTransfer *) FAMGGetMem(sizeof(FAMGTransfer),FAMG_FROM_TOP);
+    if(transfer == NULL) assert(0);
+    if (transfer->Init(this)) assert(0);
 
 #ifdef ModelP
 	if( level == 0 )

@@ -788,7 +788,18 @@ void FAMGPaList::MarkParents(FAMGGrid *grid)
     return;
 }
 
-        
+#ifdef FAMG_SPARSE_BLOCK        
+int FAMGGrid::SaveCoeffs(const FAMGVectorEntry& fg_vec, int np, const int pa[], double **coeff, double **coefft)
+{
+    int z;
+    const FAMGGraph *theGraph = GetGraph();
+
+    for(z = 0; z < np; z++)
+		transfer->SetEntries(fg_vec,theGraph->GetNode(pa[z])->GetVec(),theGraph->Get_spPtr(), theGraph->Get_srPtr(), coeff[z],coefft[z]);
+ 
+    return 0;
+}
+#else
 int FAMGGrid::SaveCoeffs(const FAMGVectorEntry& fg_vec, int np, const int pa[], double coeff[], double coefft[])
 {
     int z;
@@ -798,6 +809,7 @@ int FAMGGrid::SaveCoeffs(const FAMGVectorEntry& fg_vec, int np, const int pa[], 
  
     return 0;
 }
+#endif
 
 int FAMGNode::CheckPaList(FAMGGraph *graph)
 {
@@ -1066,6 +1078,52 @@ int FAMGGraph::InsertNode(FAMGGrid *gridptr, FAMGNode *nodei)
 	return 0;
 }
 		
+#ifdef FAMG_SPARSE_BLOCK
+void FAMGGraph::ConstructSparseBlocks(FAMGGrid *gridptr)
+{
+	const FAMGVector &tvA = *(gridptr->GetVector(FAMGTVA));
+	const FAMGVector &tvB = *(gridptr->GetVector(FAMGTVB));
+	const FAMGMatrixAlg &A = *(gridptr->GetTmpMatrix());
+	const FAMGMatrixAlg &D = *(gridptr->GetDiagMatrix());
+
+    const FAMGSparseBlock *Dsb = D.GetDiagSparseBlockPtr();
+    const FAMGSparseBlock *Asb = A.GetSparseBlockPtr();
+    const FAMGSparseBlock *AsbT = A.GetSparseBlockAdjPtr();
+    const FAMGSparseVector *tvAsv = tvA.GetSparseVectorPtr();
+    const FAMGSparseVector *tvBsv = tvB.GetSparseVectorPtr();
+
+    sb1.Product(Dsb,Asb);
+    sb1T.Product(Dsb,AsbT);
+    sb1.FixDiag();
+    sb1T.FixDiag();
+    sb2.Product(&sb1,&sb1);  
+    sb2T.Product(&sb1T,&sb1T);
+    sb3.Product(&sb1,&sb2);   
+    sb3T.Product(&sb1T,&sb2T);
+    
+ 
+    sbia = sb2; sbiaT = sb2T;
+    sb0a = sb3; sb0aT = sb3T;
+    AdaptStructure(&sbia,&sb0a);
+    AdaptStructure(&sbiaT,&sb0aT);
+
+    stv.Construct(tvAsv);
+    stvT.Construct(tvBsv);
+
+    spi.ScalProdConstruct(&sb2);
+    sp0.ScalProdConstruct(&sb3);
+    sp0i.ScalProdConstruct(&sb0a,&sbia);
+    spiT.ScalProdConstruct(&sb2T);
+    sp0T.ScalProdConstruct(&sb3T);
+    sp0iT.ScalProdConstruct(&sb0aT,&sbiaT);
+
+    sp.ConstructSparseTransfer(&stv,&sp0,&sp0i,&spi);
+    sr.ConstructSparseTransfer(&stvT,&sp0T,&sp0iT,&spiT);
+
+}
+#endif
+
+
 int FAMGGraph::Construct(FAMGGrid *gridptr)
 {
 	FAMGGraph *graph = gridptr->GetGraph();
@@ -1086,6 +1144,10 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 #endif 
 
     int type = FAMGGetParameter()->Gettype();
+
+#ifdef FAMG_SPARSE_BLOCK
+    ConstructSparseBlocks(gridptr);
+#endif
     
     for(i = 0; i < n; i++)
     {
@@ -1094,12 +1156,14 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 			continue;
         switch (type)
         {
+#ifndef FAMG_SPARSE_BLOCK
         case 0: if (gridptr->AnalyseNode0(nodei->GetVec(),palist)) return 1; break;
         case 1: if (gridptr->AnalyseNode1(nodei->GetVec(),palist)) return 1; break;
         case 2: if (gridptr->AnalyseNode2(nodei->GetVec(),palist)) return 1; break;
         case 3: if (gridptr->AnalyseNode3(nodei->GetVec(),palist)) return 1; break;
         case 4: if (gridptr->AnalyseNode4(nodei->GetVec(),palist)) return 1; break;
         case 5: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
+#endif
         case 6: if (gridptr->AnalyseNode6(nodei->GetVec(),palist)) return 1; break;
        }
         nodei->SetPaList(palist);
@@ -1199,13 +1263,15 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
 			continue; 
         switch (type)
         {
+#ifndef FAMG_SPARSE_BLOCK
         case 0: if (gridptr->AnalyseNode0(nodei->GetVec(),palist)) return 1; break;
         case 1: if (gridptr->AnalyseNode1(nodei->GetVec(),palist)) return 1; break;
         case 2: if (gridptr->AnalyseNode2(nodei->GetVec(),palist)) return 1; break;
         case 3: if (gridptr->AnalyseNode3(nodei->GetVec(),palist)) return 1; break;
         case 4: if (gridptr->AnalyseNode4(nodei->GetVec(),palist)) return 1; break;
         case 5: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
-        case 6: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
+#endif
+        case 6: if (gridptr->AnalyseNode6(nodei->GetVec(),palist)) return 1; break;
         }
         nodei->SetPaList(palist);
         nodei->SetNSons(0);

@@ -56,8 +56,13 @@ public:
   FAMGTransferEntry *GetEntry(const FAMGVectorEntry &cg_vec);
   double GetProlongation(void) const;
   double GetRestriction(void) const;
+  double *GetProlongationPtr(void) const;
+  double *GetRestrictionPtr(void) const;
   void SetProlongation(double);
   void SetRestriction(double);
+#ifdef FAMG_SPARSE_BLOCK
+  void SetTransferEntry(const FAMGSparseVector*,const FAMGSparseVector*,double*);
+ #endif
   //void AddProlongation(double);
   //void AddRestriction(double);
 #ifdef USE_UG_DS
@@ -124,6 +129,12 @@ inline double FAMGTransferEntry::GetProlongation() const {
 inline double FAMGTransferEntry::GetRestriction() const {
   return MVALUE((MATRIX*)this,RESTRICTION_COMP);
 }
+inline double *FAMGTransferEntry::GetProlongationPtr() const {
+  return &(MVALUE((MATRIX*)this,0));
+}
+inline double *FAMGTransferEntry::GetRestrictionPtr() const {
+  return &(MVALUE((MATRIX*)this,0));
+}
 inline void FAMGTransferEntry::SetProlongation(double val) {
   MVALUE((MATRIX*)this,PROLONGATION_COMP) = val;
 }
@@ -153,6 +164,12 @@ inline double FAMGTransferEntry::GetProlongation() const {
 inline double FAMGTransferEntry::GetRestriction() const {
   return data[RESTRICTION_COMP];
 }
+inline double *FAMGTransferEntry::GetProlongationPtr() const {
+  return &(data[PROLONGATION_COMP]);
+}
+inline double *FAMGTransferEntry::GetRestrictionPtr() const {
+  return &(data[RESTRICTION_COMP]);
+}
 inline void FAMGTransferEntry::SetProlongation(double val) {
   data[PROLONGATION_COMP] = val;
 }
@@ -174,7 +191,13 @@ public:
   int Init(class FAMGGrid*);
   FAMGTransferEntry* GetFirstEntry(const FAMGVectorEntry& fg_vec) const;
   FAMGTransferEntry* NewEntry(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec);
+#ifdef FAMG_SPARSE_BLOCK
+  int SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec, const FAMGSparseVector *sploc, const FAMGSparseVector *srloc, double *prolongation_val, double *restriction_val);
+  const FAMGSparseVector *Get_sp() const;
+  const FAMGSparseVector *Get_sr() const;
+#else
   int SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec,double prolongation_val, double restriction_val);
+#endif
   int SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg );
 #if defined  USE_UG_DS && !defined ONLY_ONE_ALGEBRA_DS
   FAMGTransferEntry* GetFirstEntry(const FAMGugVectorEntry& fg_vec) const;
@@ -182,6 +205,10 @@ public:
 #endif
 
 private:
+#ifdef FAMG_SPARSE_BLOCK
+  FAMGSparseVector sp;
+  FAMGSparseVector sr;
+#endif
 
 #ifdef USE_UG_DS
   GRID *mygrid;
@@ -205,5 +232,12 @@ inline FAMGTransferEntry *FAMGTransfer::GetFirstEntry(const FAMGVectorEntry& fg_
   return row_array[((FAMGarrayVectorEntry*)(fg_vec->GetPointer()))->myid()];
 }
 #endif
-
+#ifdef FAMG_SPARSE_BLOCK
+inline const FAMGSparseVector *FAMGTransfer::Get_sp() const {
+  return &sp;
+}
+inline const FAMGSparseVector *FAMGTransfer::Get_sr() const {
+  return &sr;
+}
+#endif
 #endif

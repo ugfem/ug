@@ -40,6 +40,8 @@ A new version will be checked in soon !
 $Header$
 */
 
+#ifndef FAMG_SPARSE_BLOCK
+
 struct FAMGSpecialData
 {
     int j;
@@ -1776,3 +1778,5 @@ int FAMGGrid::AnalyseNode2(const FAMGVectorEntry &veci, FAMGPaList *&palist)
     FAMGReleaseHeap(FAMG_FROM_TOP);
     return 0;
 }
+
+#endif

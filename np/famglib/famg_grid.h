@@ -38,6 +38,7 @@ const int FAMGTVA=3;
 const int FAMGTVB=4;
 const int FAMGMAXVECTORS=5;
 
+
 class FAMGTransfer;
 
 class FAMGGrid
@@ -48,6 +49,12 @@ public:
     return n;
   };
   FAMGMatrixAlg *GetMatrix() const;
+#ifdef FAMG_SPARSE_BLOCK
+  FAMGMatrixAlg *GetDiagMatrix() const;
+  void SetDiagMatrix(FAMGMatrixAlg *mat);
+  int ConstructDiagonal();
+  int ConstructSparseBlockStructure(FAMGGrid *fg);
+#endif
   FAMGMatrixAlg *GetTmpMatrix() const;
   FAMGDecomp *GetDecomp() const;
   FAMGGraph *GetGraph() const;
@@ -140,7 +147,11 @@ public:
   int SetFlagsAndCount(int i, int f);
   int Connected(int i, int z);
   void SetFlags(int i, int f);
+#ifdef FAMG_SPARSE_BLOCK
+  int SaveCoeffs(const FAMGVectorEntry& i, int np, const int pa[], double **coeff, double **coefft);
+#else
   int SaveCoeffs(const FAMGVectorEntry& i, int np, const int pa[], double coeff[], double coefft[]);
+#endif
   int CountLinks(int i);
   int UpdateNBNewCG(int i);
   int UpdateNeighborsCG(int i);
@@ -186,6 +197,9 @@ private:
   FAMGMatrixAlg *matrix;                        // stiffness matrix
   FAMGMatrixAlg *Consmatrix;                    // (partly) consistent stiffness matrix
   FAMGMatrixAlg *tmpmatrix;                     // temp. stiffness matrix for a double-step
+#ifdef FAMG_SPARSE_BLOCK
+  FAMGMatrixAlg *diagmatrix;
+#endif
   FAMGTransfer *transfer;                       // transfer matrix
   FAMGGraph *graph;                                     // node graph for elemination
   FAMGGridVector *mygridvector;
@@ -262,7 +276,14 @@ inline void FAMGGrid::Defect( void ) const
 {       // take default values
   Defect(*GetVector(FAMGDEFECT), *GetVector(FAMGRHS), *GetVector(FAMGUNKNOWN));
 }
-
+#ifdef FAMG_SPARSE_BLOCK
+inline FAMGMatrixAlg *FAMGGrid::GetDiagMatrix() const {
+  return diagmatrix;
+}
+inline void FAMGGrid::SetDiagMatrix(FAMGMatrixAlg *mat) {
+  diagmatrix = mat;
+}
+#endif
 
 #ifdef USE_UG_DS
 #else

@@ -66,8 +66,30 @@ FAMGTransferEntry *FAMGTransferEntry::GetEntry(const FAMGVectorEntry &cg_vec)
 
 int FAMGTransfer::Init(FAMGGrid *grid) 
 {
+
 #ifdef USE_UG_DS
 	mygrid = grid->GetugGrid();
+#ifdef FAMG_SPARSE_BLOCK
+    const FAMGSparseVector *sptmp = grid->GetGraph()->Get_spPtr();
+    const FAMGSparseVector *srtmp = grid->GetGraph()->Get_srPtr();
+
+	short MType = MATRIXTYPE(NODEVEC,NODEVEC); // only node vectors !!!
+    short availsize = FMT_S_IMAT_TP(MGFORMAT(MYMG(mygrid)),MType);
+
+    short needsize = (sptmp->Get_maxcomp()+1 + srtmp->Get_maxcomp()+1)*sizeof(double);
+    if(needsize > availsize)
+    {
+        ostrstream ostr;
+        ostr << __FILE__ << ", line " <<  __LINE__  << "size of transfer matrix too small !" << endl;
+        FAMGError(ostr);
+        assert(0);
+    }
+    
+    sp.Init(sptmp,0);
+    sr.Init(srtmp,sptmp->Get_maxcomp()+1);
+        
+#endif
+
 	return 0;
 #else
     FAMGTransferEntry *rowi;
@@ -130,6 +152,76 @@ FAMGTransferEntry *FAMGTransfer::NewEntry(const FAMGVectorEntry& fg_vec, const F
 #endif
 }
 
+#ifdef FAMG_SPARSE_BLOCK
+int FAMGTransfer::SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec, const FAMGSparseVector *sploc, const FAMGSparseVector *srloc, double *prolongation_val, double *restriction_val)
+{
+    // todo: adapt to sparse matrices
+
+    FAMGTransferEntry *transij, *row_entry;
+
+    // test 
+    short i; short small = 1;
+    for(i = 0; i < sploc->Get_n(); i++)
+    {
+        if (Abs(prolongation_val[sploc->Get_comp(i)]) > 1e-20) {small = 0; break;}
+    }
+    if(small)
+    {
+        for(i = 0; i < srloc->Get_n(); i++)
+        {
+            if (Abs(restriction_val[srloc->Get_comp(i)]) > 1e-20) {small = 0; break;}
+        }
+    }
+    if(small) return 0; // nothing to save.
+
+ 
+	row_entry = GetFirstEntry(fg_vec);
+	if(row_entry==NULL)
+	{
+		transij = NewEntry(fg_vec,cg_vec);
+		if(transij==NULL)
+	    {
+			ostrstream ostr;
+			ostr << __FILE__ << __LINE__  << "can not create new transfer matrix entry" << endl;
+			FAMGError(ostr);
+			assert(0);
+		}
+	}
+	else
+	{
+		transij = row_entry->GetEntry(cg_vec);
+		if(transij==NULL)
+	    {	// not found
+			transij = NewEntry(fg_vec,cg_vec);
+			if(transij==NULL)
+		    {
+				ostrstream ostr;
+				ostr << __FILE__ << __LINE__  << "can not create new transfer matrix entry" << endl;
+				FAMGError(ostr);
+				assert(0);
+			}
+		}
+	}
+	
+	transij->SetTransferEntry(&sp,sploc,prolongation_val);
+	transij->SetTransferEntry(&sr,srloc,restriction_val);
+	
+    return 0;
+}
+
+
+void FAMGTransferEntry::SetTransferEntry(const FAMGSparseVector *st, const FAMGSparseVector *stloc, double *val)
+{
+    short ncmp = st->Get_n();
+    for(short i = 0; i < ncmp; i++)
+    {
+        MVALUE((MATRIX*)this,st->Get_comp(i)) = val[stloc->Get_comp(i)]; 
+    }
+    return;
+}
+    
+
+#else
 int FAMGTransfer::SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec,double prolongation_val, double restriction_val)
 {
     FAMGTransferEntry *transij, *row_entry;
@@ -171,6 +263,7 @@ int FAMGTransfer::SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntr
 	
     return 0;
 }
+#endif
 
 int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg )
 // until now, the destination of the tansferentries was a coarse vector in the fine grid;

@@ -66,7 +66,10 @@ typedef struct
 
   VECDATA_DESC *smooth_sol;                     /* for the fine grid smoother */
   VECDATA_DESC *smooth_def;                     /* for the fine grid smoother */
+  VECDATA_DESC *tv;                             /* test vector */
+  VECDATA_DESC *tvT;                            /* test vector */
   MATDATA_DESC *ConsMat;                        /* (partly) consistent matrix */
+  MATDATA_DESC *D;                              /* approximation of the inverse of the diagonal*/
   int ConsMatTempAllocated;
 } NP_FAMG_TRANSFER;
 

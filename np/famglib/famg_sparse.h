@@ -24,94 +24,150 @@
 #ifndef __FAMG_SPARSE__
 #define __FAMG_SPARSE__
 
-/* #define FAMG_SPARSE_BLOCK 1 */
+// #define FAMG_SPARSE_BLOCK 1
 
 #ifdef FAMG_SPARSE_BLOCK
+extern "C"
+{
+#include "sm.h"
+}
 
-class FAMGSparseTransfer
+
+class FAMGSparseVector
 {
 public:
-  int Get_nr() const;
-  int *Get_offset() const;
-  int Get_offset(int i) const;
-  void Construct(const class FAMGSparseBlock &sb);
+  FAMGSparseVector();
+  ~FAMGSparseVector();
+  FAMGSparseVector(const FAMGSparseVector &sv);
+  FAMGSparseVector(const short);
+  FAMGSparseVector(const short, const short *);
+  FAMGSparseVector(const short *, const short *, const short);
+  FAMGSparseVector &operator=(const FAMGSparseVector &sb);
+  void Init(const FAMGSparseVector *sv, int off);
+  void Construct(const FAMGSparseVector *sv);
+  void Construct(const short, const short *);
+  void Product(const class FAMGSparseBlock *sb, const FAMGSparseVector *sv);
+  short Get_n() const;
+  short *Get_comp() const;
+  short Get_comp(const short i) const;
+  short Get_maxcomp() const;
+  void ScalProdConstruct(const class FAMGSparseBlock *sb);
+  void ScalProdConstruct(const class FAMGSparseBlock *sb1, const class FAMGSparseBlock *sb2);
+  void ConstructSparseTransfer(const FAMGSparseVector *sv1, const FAMGSparseVector *sv2, const FAMGSparseVector *sv3, const FAMGSparseVector *sv4);
 private:
-  int nr;
-  int *offset;
-
+  short n;
+  short *comp;
+  short maxcomp;
 };
 
-inline int FAMGSparseTransfer::Get_nr() const {
-  return nr;
+inline short FAMGSparseVector::Get_n() const {
+  return n;
 }
-inline int *FAMGSparseTransfer::Get_offset() const {
-  return offset;
+inline short *FAMGSparseVector::Get_comp() const {
+  return comp;
 }
-inline int FAMGSparseTransfer::Get_offset(int i) const {
-  return offset[i];
+inline short FAMGSparseVector::Get_comp(const short i) const {
+  return comp[i];
+}
+inline short FAMGSparseVector::Get_maxcomp() const {
+  return maxcomp;
 }
 
 
 class FAMGSparseBlock
 {
 public:
-  int Get_ne() const;
-  int Get_nid() const;
-  int Get_nr() const;
-  int Get_nc() const;
-  int *Get_start() const;
-  int Get_start(const int i) const;
-  int *Get_index() const;
-  int Get_index(const int i) const;
-  int *Get_offset() const;
-  int Get_offset(const int i) const;
-  void Transposed(const FAMGSparseBlock &sb);
-  int Product(const FAMGSparseBlock &sb);
-  int CheckCGIdent(const FAMGSparseTransfer &sp, const FAMGSparseTransfer &sr);
+  FAMGSparseBlock();
+  ~FAMGSparseBlock();
+  FAMGSparseBlock(SPARSE_MATRIX*);
+  FAMGSparseBlock(const FAMGSparseBlock &sb);
+  FAMGSparseBlock &operator=(const FAMGSparseBlock &sb);
+  void Init(SPARSE_MATRIX* ugsm);
+  short Get_ne() const;
+  short Get_nr() const;
+  short Get_nc() const;
+  short *Get_start() const;
+  short Get_start(const short i) const;
+  short *Get_index() const;
+  short Get_index(const short i) const;
+  short *Get_offset() const;
+  short Get_offset(const short i) const;
+  short Get_maxoffset() const;
+  int Product(const FAMGSparseBlock *sb1, const FAMGSparseBlock *sb2);
+  int Product(const FAMGSparseBlock *sb, const FAMGSparseVector *sv);
+  int Product(const FAMGSparseVector *sv, const FAMGSparseBlock *sb);
+  int Product(const FAMGSparseVector *svl, const FAMGSparseBlock *sb, const FAMGSparseVector *svr);
+  int Transposed(const FAMGSparseBlock *sb);
+  void FixDiag();
+  int CheckStructureforAdd(const FAMGSparseBlock *sb) const;
 private:
-  int ne;
-  int nid;
-  int nr;
-  int nc;
-  int *start;
-  int *index;
-  int *offset;
+  short ne;
+  short nr;
+  short nc;
+  short *start;
+  short *index;
+  short *offset;
+  short maxoffset;
 
+  friend void AdaptStructure(FAMGSparseBlock *sb1, FAMGSparseBlock *sb2);
   friend void FAMGTestSparseBlock();
-  friend void SparseBlockProduct();
 };
 
-inline int FAMGSparseBlock::Get_ne() const {
+inline short FAMGSparseBlock::Get_ne() const {
   return ne;
 }
-inline int FAMGSparseBlock::Get_nid() const {
-  return nid;
-}
-inline int FAMGSparseBlock::Get_nr() const {
+inline short FAMGSparseBlock::Get_nr() const {
   return nr;
 }
-inline int FAMGSparseBlock::Get_nc() const {
+inline short FAMGSparseBlock::Get_nc() const {
   return nc;
 }
-inline int *FAMGSparseBlock::Get_start() const {
+inline short *FAMGSparseBlock::Get_start() const {
   return start;
 }
-inline int FAMGSparseBlock::Get_start(const int i) const {
+inline short FAMGSparseBlock::Get_start(const short i) const {
   return start[i];
 }
-inline int *FAMGSparseBlock::Get_index() const {
+inline short *FAMGSparseBlock::Get_index() const {
   return index;
 }
-inline int FAMGSparseBlock::Get_index(const int i) const {
+inline short FAMGSparseBlock::Get_index(const short i) const {
   return index[i];
 }
-inline int *FAMGSparseBlock::Get_offset() const {
+inline short *FAMGSparseBlock::Get_offset() const {
   return offset;
 }
-inline int FAMGSparseBlock::Get_offset(const int i) const {
+inline short FAMGSparseBlock::Get_offset(const short i) const {
   return offset[i];
 }
+inline short FAMGSparseBlock::Get_maxoffset() const {
+  return maxoffset;
+}
 
+void SparseBlockVSet(const FAMGSparseVector *sv, double *v, double val);
+void SparseBlockMSet(const FAMGSparseBlock *sb, double *a, double val);
+void SparseBlockMInvertDiag(const FAMGSparseBlock *sb, double *dest, double *source);
+double SparseBlockMNorm(const FAMGSparseBlock *sb,double *a);
+void SparseBlockMSetDiag(const FAMGSparseBlock *sb, double *a, double val);
+int SparseBlockMMAdd(const FAMGSparseBlock *sbdest, const FAMGSparseBlock *sbsource, double *dest, const double *source);
+int SparseBlockMMAdd(const FAMGSparseBlock *sbdest, const FAMGSparseBlock *sbsource, double *dest, const double *source, double factor);
+int SparseBlockMMProduct(const FAMGSparseBlock *sp, const FAMGSparseBlock *sb1, const FAMGSparseBlock *sb, double *ap, double *a1, double *a2);
+int SparseBlockMMProduct(const FAMGSparseBlock *sd, const FAMGSparseVector *sv, const FAMGSparseBlock *sb, double *dest, double *d, double *a);
+int SparseBlockMMProduct(const FAMGSparseBlock *sd, const FAMGSparseBlock *sb, const FAMGSparseVector *sv, double *dest, double *a, double *d);
+int SparseBlockMMProduct(const FAMGSparseBlock *sd, const FAMGSparseVector *svl, const FAMGSparseBlock *sb, const FAMGSparseVector *svr, double *dest, double *dl, double *a, double *dr);
+int SparseBlockMMAddProduct(const FAMGSparseBlock *sp, const FAMGSparseBlock *sb1, const FAMGSparseBlock *sb2, double *ap, double *a1, double *a2, double factor);
+int SparseBlockMVAddProduct(const FAMGSparseVector *dcomp, const FAMGSparseBlock *sb, const FAMGSparseVector *scomp, double *vd, double *a, double *vs, const double factor);
+int SparseBlockMVAddProduct(const FAMGSparseVector *dest, const FAMGSparseVector *sv, const FAMGSparseVector *source, double *vd, double *d, double *vs, const double factor);
+void SparseBlockMCopy(const FAMGSparseBlock *sd, const FAMGSparseBlock *ss, double *dest, double *source, double factor);
+void SparseBlockVCopy(const FAMGSparseVector *svd, const FAMGSparseVector *svs, double *dest, double *source, double factor);
+void SparseBlockVAdd(const FAMGSparseVector *svd, const FAMGSparseVector *svs1, const FAMGSparseVector *svs2, double *dest, double *source1, double *source2);
+void SparseBlockVSub(const FAMGSparseVector *svd, const FAMGSparseVector *svs1, const FAMGSparseVector *svs2, double *dest, double *source1, double *source2);
+void SparseBlockVAdd(const FAMGSparseVector *svd, const FAMGSparseVector *svs1, const FAMGSparseVector *svs2, double *dest, double *source1, double *source2, double factor);
+
+
+void AdaptStructure(FAMGSparseBlock *sb1, FAMGSparseBlock *sb2);
+void SparseBlockRowAddScalProd(const FAMGSparseVector *sp, const FAMGSparseBlock *sb, double *scalprod, double *a, double *b);
+void SparseBlockRowAddScalProd(const FAMGSparseVector *sp, const FAMGSparseBlock *sb1, const FAMGSparseBlock *sb2, double *scalprod, double *a, double *b);
 
 void FAMGTestSparseBlock();
 
