@@ -1625,14 +1625,15 @@ typedef struct {
 
 } CONTROL_ENTRY;
 
-/** \brief Global array with descriptions */
+#ifndef __cplusplus  /* Seems like cw.c only compiles with c++ if the following isn't there
+                        /** \brief Global array with descriptions */
 extern CONTROL_WORD
   control_words[MAX_CONTROL_WORDS];
 
 /** \brief Predefined control words */
 extern CONTROL_ENTRY
   control_entries[MAX_CONTROL_ENTRIES];
-
+#endif
 
 /* general query macros */
 
@@ -2641,6 +2642,7 @@ typedef struct {
 } GENERAL_ELEMENT;
 
 /* these are the offsets into the variable length pointer array of the element */
+
 extern INT n_offset[TAGS];
 extern INT father_offset[TAGS];
 extern INT sons_offset[TAGS];
@@ -2651,8 +2653,8 @@ extern INT side_offset[TAGS];
 extern INT data_offset[TAGS];
 
 /* the element descriptions are also globally available, these are pointers ! */
-extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
-extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
+GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
+INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -3038,10 +3040,12 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 /****************************************************************************/
 
 /* predefined blockvector description formats */
+#if 0
 extern const BV_DESC_FORMAT DH_bvdf;            /* bvdf for domain halfening    */
 extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel   */
 extern const BV_DESC_FORMAT two_level_bvdf;     /* bvdf for 2 blocklevels               */
 extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels       */
+#endif
 
 #if defined ModelP && defined __OVERLAP2__
 extern INT ce_NO_DELETE_OVERLAP2;
