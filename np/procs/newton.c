@@ -283,7 +283,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         #endif
 
   /* compute norm of nonlinear defect */
-  CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(newton),'*',"\n");
+  CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(newton),'%',"\n");
   if (PreparePCR(newton->d,newton->displayMode,text,&PrintID))    {res->error_code = __LINE__; return(res->error_code);}
   if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v,newton->d,newton->J,&lr)) {
     res->error_code = __LINE__;
