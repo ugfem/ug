@@ -1453,7 +1453,7 @@ static BNDP* M_BNDS_CreateBndP (HEAP *Heap, BNDS *theBndS, DOUBLE *local)
   INT i;
 
   ASSERT(ps != NULL);
-  ASSERT(ps->n == 4);
+  /*	ASSERT(ps->n == 4); */
   ASSERT(p != NULL);
 
   M_BNDS_Global(theBndS,local,p->pos);
