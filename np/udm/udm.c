@@ -240,7 +240,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
     VD_NCMPS_IN_TYPE(vd,tp) = NCmpInType[tp];
     Comp = VD_CMPPTR_OF_TYPE(vd,tp) = VM_COMPPTR(vd) + offset[tp];
     for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
-      if (i >= ncmp) break;
+      if (i >= offset[tp+1]) break;
       if (j*sizeof(DOUBLE) >= theMG->theFormat->VectorSizes[tp])
         return(NULL);
       if (READ_DR_VEC_FLAG(theMG,tp,j)) continue;
@@ -450,8 +450,9 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
     MD_COLS_IN_MTYPE(md,tp) = ColsInType[tp];
     Comp = MD_MCMPPTR_OF_MTYPE(md,tp) = VM_COMPPTR(md) + offset[tp];
     for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
-      if (i >= ncmp) break;
-      if (j*sizeof(DOUBLE) >= theMG->theFormat->MatrixSizes[tp])
+      if (i >= offset[tp+1]) break;
+      if (j*sizeof(DOUBLE) >=
+          theMG->theFormat->MatrixSizes[MatrixType[MTYPE_RT(tp)][MTYPE_CT(tp)]])
         return(NULL);
       if (READ_DR_MAT_FLAG(theMG,tp,j)) continue;
       Comp[i++] = j;
@@ -473,7 +474,7 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *theMD,
                                 SHORT *ColsInType, SHORT *Comps)
 {
   MATDATA_DESC *md;
-  SHORT offset[NVECOFFSETS];
+  SHORT offset[NMATOFFSETS];
   SHORT *offptr;
   INT j,tp,ncmp,size;
 
@@ -613,6 +614,7 @@ static INT AllocVecDesc (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
   GRID *theGrid;
   INT i,j,tp;
 
+  if (vd == NULL) return(1);
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NVECTYPES; tp++)
@@ -635,7 +637,7 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 {
   VECDATA_DESC *vd;
 
-  if (*new_desc == NULL) {
+  if (AllocVecDesc(theMG,fl,tl,*new_desc)) {
     for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd)) {
       if (VM_LOCKED(vd)) continue;
       if (CompVecDesc(vd,template_desc->NCmpInType)) continue;
@@ -647,11 +649,10 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
     *new_desc = CreateVecDesc(theMG,NULL,template_desc->compNames,
                               template_desc->NCmpInType);
     if (*new_desc == NULL) return(1);
+    return (AllocVecDesc(theMG,fl,tl,*new_desc));
   }
-  PRINTDEBUG(numerics,1,(" AllocVD %s from %d to %d\n",
-                         ENVITEM_NAME(*new_desc),fl,tl));
 
-  return (AllocVecDesc(theMG,fl,tl,*new_desc));
+  return(0);
 }
 
 /****************************************************************************/
@@ -741,6 +742,7 @@ static INT AllocMatDesc (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
   GRID *theGrid;
   INT i,j,tp;
 
+  if (md == NULL) return(1);
   for (i=fl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (tp=0; tp<NMATTYPES; tp++)
@@ -766,7 +768,7 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
   SHORT RowsInType[NMATTYPES];
   SHORT ColsInType[NMATTYPES];
 
-  if (*new_desc == NULL) {
+  if (AllocMatDesc(theMG,fl,tl,*new_desc)) {
     for (i=0; i<NVECTYPES; i++)
       for (j=0; j<NVECTYPES; j++) {
         tp = MTP(i,j);
@@ -788,9 +790,10 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
     }
     *new_desc = CreateMatDesc(theMG,NULL,NULL,RowsInType,ColsInType);
     if (*new_desc == NULL) return(1);
+    return (AllocMatDesc(theMG,fl,tl,*new_desc));
   }
 
-  return (AllocMatDesc(theMG,fl,tl,*new_desc));
+  return(0);
 }
 
 /****************************************************************************/
@@ -823,10 +826,11 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
 {
   MATDATA_DESC *md;
 
-  if (*new_desc == NULL) {
+  if (AllocMatDesc(theMG,fl,tl,*new_desc)) {
     for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md)) {
       if (VM_LOCKED(md)) continue;
-      if (CompMatDesc(md,template_desc->RowsInType,template_desc->ColsInType))
+      if (CompMatDesc(md,template_desc->RowsInType,
+                      template_desc->ColsInType))
         continue;
       if (!AllocMatDesc(theMG,fl,tl,md)) {
         *new_desc = md;
@@ -837,9 +841,10 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
                               template_desc->RowsInType,
                               template_desc->ColsInType);
     if (*new_desc == NULL) return(1);
+    return (AllocMatDesc(theMG,fl,tl,*new_desc));
   }
 
-  return (AllocMatDesc(theMG,fl,tl,*new_desc));
+  return(0);
 }
 
 /****************************************************************************/
