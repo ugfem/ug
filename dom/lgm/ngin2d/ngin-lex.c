@@ -98,6 +98,8 @@ typedef struct ng_buffer_state *YY_BUFFER_STATE;
 extern int ngleng;
 extern FILE *ngin, *ngout;
 
+int ngerror (char *s);
+
 #define EOB_ACT_CONTINUE_SCAN 0
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
@@ -389,6 +391,11 @@ char *ngtext;
 #include <stdlib.h>
 #include "ng2d.h"
 #include "ngin-yacc.h"
+
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
 
 static int noline=1;
 
@@ -1587,9 +1594,9 @@ int main()
 #line 59 "ngin.l"
 
 
-NP_Error (int *line, char *text)
+int NP_Error (int *line, char *text)
 {
   *line=noline;
   strcpy(text,ngtext);
-  return;
+  return 0;
 }

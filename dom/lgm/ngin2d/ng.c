@@ -39,6 +39,11 @@
         #include "defaults.h"
 #endif
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -84,10 +89,10 @@ static int ng_abort;
 static int *Line_npoints;
 static LGM_MESH_INFO *Global_Mesh;
 static HEAP *Global_Heap;
-static Global_MarkKey;
+static int Global_MarkKey;
 
 #ifdef __USE_IN_UG__
-static lgmdomainpathes_set;
+static int lgmdomainpathes_set;
 #endif
 
 /* data for CVS */
@@ -100,6 +105,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 void ngbreak (void);
+int ngparse (void);
+
 
 /****************************************************************************/
 /*D
