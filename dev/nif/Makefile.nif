@@ -1,0 +1,34 @@
+##############################################################################
+#																			 #
+#	Makefile for parallel ug version										 #
+#																			 #
+#	created 23 September 1997												 #
+#																			 #
+##############################################################################
+
+
+
+# include configuration and all makefile macro definitions
+include ../../ug.conf
+
+OBJECTS = NeXTMain.o NeXTGraph.o UGshell.o
+
+# local C compiler flags
+LCFLAGS = -I../../include
+
+all : $(OBJECTS) Makefile.nif
+	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdevN.a $(OBJECTS) 
+
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+
+.m.o:
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+
+clean:
+	rm -f *.o
+
+extract:
+	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdevN.a $(OBJECTS)
+
+xmc: extract all clean
