@@ -35,6 +35,13 @@ extern "C"
 #include "graph.h"
 #include "gm.h"
 #include "commands.h"
+#include "npscan.h"
+
+#ifdef ModelP
+#include "parallel.h"
+#include "pargm.h"
+#endif
+
 }
     
 #include "famg_uginterface.h"
@@ -48,13 +55,56 @@ static long RedColor; /* Red  */
 static VECTOR *GlobalVec1;
 static VECTOR *GlobalVec2;
 static INT GlobalIds;
+static INT VecCoordComp;
 
-    
+#ifdef ModelP
+static long GreenColor; /* Green for non master vectors */
+static VECDATA_DESC *ConsVector;
+
+static int Gather_CoordVectorComp (DDD_OBJ obj, void *data)
+{
+	DOUBLE *vecdata = VVALUEPTR((VECTOR *)obj,VecCoordComp);
+								
+	V_DIM_COPY(vecdata,(DOUBLE*)data);	// set data[DIM] := vec_coord
+		
+	return NUM_OK;
+}
+ 
+static int Scatter_CoordVectorComp (DDD_OBJ obj, void *data)
+{
+	DOUBLE *vecdata = VVALUEPTR((VECTOR *)obj,VecCoordComp);
+								
+	V_DIM_COPY((DOUBLE*)data, vecdata);	// set vec_coord := data[DIM]
+
+	return NUM_OK;
+}
+
+INT l_coord_project (GRID *g, const VECDATA_DESC *x)
+{
+	int n;
+	
+	if( g==NULL )
+		return NUM_OK;
+	
+	ConsVector = (VECDATA_DESC *)x;
+
+	DDD_IFAOneway(BorderVectorIF, GRID_ATTR(g), IF_BACKWARD, DIM * sizeof(DOUBLE),
+				  Gather_CoordVectorComp, Scatter_CoordVectorComp);
+
+	DDD_IFAOneway(VectorVIF, GRID_ATTR(g), IF_BACKWARD, DIM * sizeof(DOUBLE),
+				  Gather_CoordVectorComp, Scatter_CoordVectorComp);
+
+	return NUM_OK;
+}
+#endif
+
+
 struct FAMGPlotObject
 {
-    struct PlotObjHead theHead;    /* the head */
-    int level;
-    int ids;
+	struct PlotObjHead theHead;    /* the head */
+	int level;
+	int ids;
+	VECDATA_DESC *CoordVec;
 };
 
 
@@ -71,10 +121,19 @@ static INT SetFAMGGraph (PLOTOBJ *thePlotObj, INT argc, char **argv)
 
     if (ReadArgvINT("l",&l,argc,argv)) l = 999;
     theObj->level = l;
+	
     if (ReadArgvINT("i",&i,argc,argv)) i = 1;
     if(i > 0) theObj->ids = 1;
     else theObj->ids = 0;
    
+    theObj->CoordVec = ReadArgvVecDesc(PO_MG(thePlotObj),"coordvec",argc,argv);
+	if( theObj->CoordVec != NULL )
+		if (VD_ncmps_in_otype(theObj->CoordVec,NODEVEC) < DIM)
+		{
+			PrintErrorMessage('E',"plot FAMG Graph","coordinate vector has too few components");
+			return(NOT_ACTIVE);
+		}
+
 	return (ACTIVE);
 }
     
@@ -84,7 +143,11 @@ static INT  DisplayFAMGGraph (PLOTOBJ *thePlotObj)
     
 	theObj = (struct FAMGPlotObject *) &(thePlotObj->theExternObject);
 
-    UserWriteF("level: %d \n",theObj->level); 
+    UserWriteF("level: %d \n",theObj->level);
+	
+	if (theObj->CoordVec != NULL) 
+		UserWriteF(DISPLAY_NP_FORMAT_SS,"CoordVec",ENVITEM_NAME(theObj->CoordVec));
+	
 	return (0);
 }
 
@@ -104,6 +167,9 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 
 	BlackColor = theOD->black;
 	RedColor = theOD->red;
+#ifdef ModelP
+	GreenColor = theOD->green;
+#endif
     if(theObj->level == 999) 
     {
         level =  CURRENTLEVEL(mg);
@@ -124,7 +190,51 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
     GlobalVec2 = FIRSTVECTOR(grid);
     GlobalIds = theObj->ids;
 
-    
+	VecCoordComp = -1;		// dummy to indicate "no vector for coordinates"
+    if( (theObj->CoordVec != NULL) && ( level < 0 ) ) 
+    {
+		INT i, n;
+	    VERTEX *vertex;
+		NODE *node;
+		DOUBLE *vertex_coord, *vector_coord, *vcoarse_coord;
+		MATRIX *im;
+		VECTOR *vec;
+		
+		// copy coordinate info into coordinate vector
+	
+		// initialize coordinate vector with the vertex-coordinate info
+		grid = GRID_ON_LEVEL(mg,0);
+		VecCoordComp = VD_ncmp_cmpptr_of_otype(theObj->CoordVec,NODEVEC,&n)[0];
+	    assert(n>=DIM);
+		for( node=PFIRSTNODE(grid); node!=NULL; node=SUCCN(node) )
+		{
+		    vertex_coord = CVECT(MYVERTEX(node));
+			vector_coord = VVALUEPTR(NVECTOR(node),VecCoordComp);
+			V_DIM_COPY(vertex_coord,vector_coord);	// set vector_coord := vertex_coord
+		}
+		
+		// now propagate the coordinate info to the algebraic levels
+		for( i=0; i>=level; i-- )
+		{
+			grid = GRID_ON_LEVEL(mg,i);
+			for( vec=PFIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec) )
+			{
+				im = VISTART(vec);
+				if( im!=NULL && MNEXT(im)==NULL )
+				{	// this vector has exactly 1 interpolation matrix entry; thus it is a coarse grid vector and its coord value must be restricted to its coarse grid instance
+					vector_coord = VVALUEPTR(vec,VecCoordComp);
+					vcoarse_coord = VVALUEPTR(MDEST(im),VecCoordComp);
+					V_DIM_COPY(vector_coord,vcoarse_coord);	// set vcoarse_coord := vector_coord
+				}
+			}
+			
+			#ifdef ModelP
+			// communicate the coord info to copies
+			l_coord_project (DOWNGRID(grid), theObj->CoordVec);
+			#endif
+		}
+	}
+	
     return(0);
 }
 
@@ -136,22 +246,35 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
     int j;
     VECTOR *nbvec;
     MATRIX *mat, *imat;
+	long VectorColor;
 
     UgSetLineWidth(1);
 
-
     if(vec == NULL) return (0);
 
-    vertex = MYVERTEX(VMYNODE(vec));
-    V_DIM_COPY(CVECT(vertex),mypos);
+	if( VecCoordComp == -1 )
+	{
+	    vertex = MYVERTEX(VMYNODE(vec));				// take coord from vertex
+    	V_DIM_COPY(CVECT(vertex),mypos);
+	}
+	else
+	{
+		V_DIM_COPY(VVALUEPTR(vec,VecCoordComp),mypos);	// take coord from special vector
+	}
 
-
+#ifdef ModelP
+	if( !IS_FAMG_MASTER(vec) )
+		VectorColor = GreenColor;
+	else
+#endif
+		VectorColor = BlackColor;
+	
     /* plot  marker */
     if(VCCOARSE(vec))
     {
         DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO); 
         DO_2c(theDO) = 1; DO_inc(theDO); 
-        DO_2l(theDO) = BlackColor; DO_inc(theDO);
+        DO_2l(theDO) = VectorColor; DO_inc(theDO);
         DO_2s(theDO) = FILLED_CIRCLE_MARKER; DO_inc(theDO); 
         DO_2s(theDO) = 8; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
@@ -160,7 +283,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
     {
         DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO); 
         DO_2c(theDO) = 1; DO_inc(theDO); 
-        DO_2l(theDO) = BlackColor; DO_inc(theDO);
+        DO_2l(theDO) = VectorColor; DO_inc(theDO);
         DO_2s(theDO) = EMPTY_CIRCLE_MARKER; DO_inc(theDO); 
         DO_2s(theDO) = 8; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
@@ -171,7 +294,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
     {
         /* print id */
         DO_2c(theDO) = DO_TEXT; DO_inc(theDO);
-        DO_2l(theDO) = BlackColor; DO_inc(theDO);
+        DO_2l(theDO) = VectorColor; DO_inc(theDO);
         DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO); 
         DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO); 
         DO_2s(theDO) = 6; DO_inc(theDO);
@@ -184,8 +307,15 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
     for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
     {
         nbvec = MDEST(mat);
-        nbvertex = MYVERTEX(VMYNODE(nbvec));
-        V_DIM_COPY(CVECT(nbvertex),nbpos);
+		if( VecCoordComp == -1 )
+		{
+        	nbvertex = MYVERTEX(VMYNODE(nbvec));
+	        V_DIM_COPY(CVECT(nbvertex),nbpos);					// take coord from vertex
+		}
+		else
+		{
+	        V_DIM_COPY(VVALUEPTR(nbvec,VecCoordComp),nbpos);	// take coord from special vector
+		}
         DO_2c(theDO) = DO_LINE; DO_inc(theDO); 
         DO_2l(theDO) =BlackColor; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
@@ -196,8 +326,8 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 
             
     return(0);
-    
 }
+
 static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
 {
     VERTEX *vertex, *nbvertex;
@@ -210,17 +340,29 @@ static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
 
     if(vec == NULL) return (0);
 
-    vertex = MYVERTEX(VMYNODE(vec));
-    V_DIM_COPY(CVECT(vertex),mypos);
-
-
+	if( VecCoordComp == -1 )
+	{
+	    vertex = MYVERTEX(VMYNODE(vec));				// take coord from vertex
+    	V_DIM_COPY(CVECT(vertex),mypos);
+	}
+	else
+	{
+		V_DIM_COPY(VVALUEPTR(vec,VecCoordComp),mypos);	// take coord from special vector
+	}
 
     /* plot transfer */
     for (imat=VISTART(vec); imat!=NULL; imat=MNEXT(imat))
     {
         nbvec = MDEST(imat);
-        nbvertex = MYVERTEX(VMYNODE(nbvec));
-        V_DIM_COPY(CVECT(nbvertex),nbpos);
+		if( VecCoordComp == -1 )
+		{
+        	nbvertex = MYVERTEX(VMYNODE(nbvec));
+	        V_DIM_COPY(CVECT(nbvertex),nbpos);					// take coord from vertex
+		}
+		else
+		{
+	        V_DIM_COPY(VVALUEPTR(nbvec,VecCoordComp),nbpos);	// take coord from special vector
+		}
         DO_2c(theDO) = DO_LINE; DO_inc(theDO); 
         DO_2l(theDO) =RedColor; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
