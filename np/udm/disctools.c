@@ -1886,8 +1886,9 @@ INT AssembleDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
-  INT i,j,comp1,comp2,ncomp,dcomp,type,dtype;
+  INT i,j,comp1,comp2,ncomp,dcomp,type,dtype,cnt;
 
+  cnt = 0;
   for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL;
        theVector=SUCCVC(theVector))
   {
@@ -1897,6 +1898,7 @@ INT AssembleDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
     for (j=0; j<ncomp; j++)
       if (VECSKIP(theVector) & (1<<j))
       {
+        cnt++;
         comp1 = VD_CMP_OF_TYPE(Sol,type,j);
         comp2 = VD_CMP_OF_TYPE(Rhs,type,j);
         VVALUE(theVector,comp2) =     VVALUE(theVector,comp1);
