@@ -6,12 +6,10 @@
 #																			 #
 ##############################################################################
 
-
-
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
-OBJECTS = wpm.o graph.o wop.o initgraph.o
+OBJECTS = wpm.o graph.o wop.o initgraph.o plotproc.o
 
 # local C compiler flags
 LCFLAGS = -I../../include

@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de							    */
 /*																			*/
 /* History:   27.02.95 begin, ug version 3.0								*/
 /*																			*/
@@ -39,6 +39,7 @@
 /* graph module */
 #include "wpm.h"
 #include "wop.h"
+#include "plotproc.h"
 
 /* own header */
 #include "initgraph.h"
@@ -53,7 +54,7 @@
 RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
-/*D
+/*
    InitGraph -  Call the inits for the graph module
 
    SYNOPSIS:
@@ -68,8 +69,8 @@ RCSID("$Header$",UG_RCS_STRING)
    RETURN VALUE:
    INT
    .n    0 if ok
-   .n    1 if some error occured.
-   D*/
+   .n    __LINE__ if some error occured.
+ */
 /****************************************************************************/
 
 INT InitGraph ()
@@ -85,6 +86,13 @@ INT InitGraph ()
 
   /* init wop.c */
   if ((err=InitWOP())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init plotproc.c */
+  if ((err=InitPlotProc())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);
