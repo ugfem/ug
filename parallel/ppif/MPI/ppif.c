@@ -456,7 +456,7 @@ int Spread (int slave, void *data, int size)
 
 {
   if (slave < degree)
-    if (SendSync (downtree[slave], data, 0) < 0) return (PPIF_FAILURE);
+    if (SendSync (downtree[slave], data, size) < 0) return (PPIF_FAILURE);
 
   return (PPIF_SUCCESS);
 }
