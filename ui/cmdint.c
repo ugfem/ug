@@ -2583,8 +2583,9 @@ void CommandLoop (int argc, char **argv)
       {
         sprintf(inpLine,"execute %s\n",argv[i]);
         InterpretCommand(inpLine);         /* execute command line argument */
-        if (strcmp(argv[i+1],"-noquit") == 0)
-          CommandLoop(0,NULL);
+        if (i + 1 < argc)
+          if (strcmp(argv[i+1],"-noquit") == 0)
+            CommandLoop(0,NULL);
         InterpretCommand("quit\n");        /* end program */
         i++;
         continue;
