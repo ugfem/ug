@@ -23,6 +23,7 @@ then
 	echo "         AIX (set ARCH = AIX)";
 	echo "         AIXGCC (set ARCH = AIXGCC)";
 	echo "         SOLARIS (set ARCH = SOLARIS)";
+	echo "         SOLARISGCC (set ARCH = SOLARISGCC)";
 	echo "         SUN4GCC (set ARCH = SUN4GCC)";
 	echo "         SP2 (set ARCH = SP2)";
 	echo "         T3D (set ARCH = T3D)";
@@ -246,6 +247,9 @@ edit_ugconf()
 		;;
 	SOLARIS)
 		sed 's/^ARCH.*$/ARCH = SOLARIS/' $1 > $1.tmp
+		;;
+	SOLARISGCC)
+		sed 's/^ARCH.*$/ARCH = SOLARISGCC/' $1 > $1.tmp
 		;;
 	SUN4GCC)
 		sed 's/^ARCH.*$/ARCH = SUN4GCC/' $1 > $1.tmp

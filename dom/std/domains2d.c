@@ -1274,7 +1274,7 @@ INT STD_BVP_Configure (INT argc, char **argv)
       if (InitCircle())
         return(1);
     }
-    if (strcmp(DomainName,"Ring") == 0)
+    else if (strcmp(DomainName,"Ring") == 0)
     {
       if (InitRing())
         return(1);
