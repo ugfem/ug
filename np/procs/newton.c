@@ -560,63 +560,6 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     la = newton->lambda; accept=0;
     for (kk=1; kk<=newton->maxLineSearch; kk++) {
 
-      if (newton->lineSearch == 3) {
-        if (lambda_old == 1.0) {
-          if (kk == 1)
-            mu = sold*sold*0.5 / (s*s);
-          else
-            mu = sold * 0.5 / sprime;
-          UserWriteF("lambda_old %f s %f sold %f sprime %f mu %f\n",
-                     lambda_old,s,sold,sprime,mu);
-          la = MIN(1.0,mu);
-        }
-        else {
-
-
-          if (dnrm2(mg,0,level,ON_SURFACE,newton->dold,&s_tmp)!=NUM_OK)
-            NP_RETURN(1,res->error_code);
-          UserWriteF("kk %d s_old %f\n",kk,s_tmp);
-
-          if (dnrm2(mg,0,level,ON_SURFACE,newton->dsave,&s_tmp)!=NUM_OK)
-            NP_RETURN(1,res->error_code);
-          UserWriteF("kk %d s_save %f\n",kk,s_tmp);
-
-          if (dscal(mg,0,level,ALL_VECTORS,newton->dold,lambda_old - 1.0))
-            REP_ERR_RETURN (1);
-          if (dadd(mg,0,level,ALL_VECTORS,newton->dold,newton->dsave) != NUM_OK)
-            REP_ERR_RETURN (1);
-          if (dnrm2(mg,0,level,ON_SURFACE,newton->dold,&s_tmp)!=NUM_OK)
-            NP_RETURN(1,res->error_code);
-          s_tmp *= s_tmp;
-          if (dsub(mg,0,level,ALL_VECTORS,newton->dold,newton->dsave) != NUM_OK)
-            REP_ERR_RETURN (1);
-          if (dscal(mg,0,level,ALL_VECTORS,newton->dold,1.0 / (lambda_old - 1.0)))
-            REP_ERR_RETURN (1);
-          if (s_tmp <= 0.0)
-            la = lambda_old * LINE_SEARCH_REDUCTION;
-          else {
-            s_tmp = sqrt(s_tmp);
-            UserWriteF("kk %d s_tmp %f %f\n",kk,s_tmp,
-                       sold*(lambda_old-1)+s);
-            if (kk == 1)
-              mu=lambda_old*lambda_old*sold*sold*0.5/(s*s_tmp);
-            else
-              mu = lambda_old*lambda_old*s*0.5 / s_tmp;
-            UserWriteF("lambda_old %f s %f sold %f sprime %f mu %f\n",
-                       lambda_old,s,sold,sprime,mu);
-            la = MIN(1.0,mu);
-          }
-
-          mu = sold * 0.5 *lambda_old / sprime;
-
-        }
-        if (kk == 1)
-          if (newton->lineSearch == 3)
-            dcopy(mg,0,level,ALL_VECTORS,newton->dold,newton->dsave);
-        la = MAX(la,lambda_min);
-        lambda_old = la;
-      }
-
       /* update solution */
       dcopy(mg,0,level,ALL_VECTORS,x,newton->s);
       daxpy(mg,0,level,ALL_VECTORS,x,-la,newton->v);
@@ -647,7 +590,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       if (newton->lineSearch)
         if (newton->displayMode == PCR_FULL_DISPLAY)
           UserWriteF(" ++ ls=%2d, s=%12.4E, rho=%8.4g, lambda= %8.4g\n",
-                     kk,sprime,rho[kk],fabs(la));
+                     kk,sprime,rho[kk],la);
 
       if (sprime/s<=1-0.25*fabs(la) || !newton->lineSearch) {
         lambda_old = la;
