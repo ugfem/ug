@@ -45,13 +45,8 @@
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef __TWODIM__
-#define LOCAL_DIM 21
-#endif
+#define LOCAL_DIM MAX_NODAL_VALUES
 
-#ifdef __THREEDIM__
-#define LOCAL_DIM 42
-#endif
 /****************************************************************************/
 /*                                                                          */
 /* data structures exported by the corresponding source file                */
