@@ -167,6 +167,12 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define YELLOW                  0
 #define GREEN                   1
 
+/* values for node types (relative to the father element of the vertex) */
+#define CORNER_NODE             0
+#define MID_NODE        1
+#define SIDE_NODE       2
+#define CENTER_NODE     3
+
 /* macros for the control word management									*/
 #define MAX_CONTROL_WORDS       20              /* maximum number of control words		*/
 #define MAX_CONTROL_ENTRIES 80          /* max number of entries				*/
@@ -1435,14 +1441,14 @@ extern CONTROL_ENTRY
 #define MODIFIED(p)                             CW_READ(p,MODIFIED_CE)
 #define SETMODIFIED(p,n)                        CW_WRITE(p,MODIFIED_CE,n)
 
-#define NPROP_CE                                        66
-#define NPROP_SHIFT                                     7
-#define NPROP_LEN                                       4
-#define NPROP(p)                                        CW_READ(p,NPROP_CE)
-#define SETNPROP(p,n)                           CW_WRITE(p,NPROP_CE,n)
+#define NTYPE_CE                                        66
+#define NTYPE_SHIFT                                     7
+#define NTYPE_LEN                                       2
+#define NTYPE(p)                                        CW_READ(p,NTYPE_CE)
+#define SETNTYPE(p,n)                           CW_WRITE(p,NTYPE_CE,n)
 
 #define XFERNODE_CE                             71
-#define XFERNODE_SHIFT                          7
+#define XFERNODE_SHIFT                          9
 #define XFERNODE_LEN                            2
 #define XFERNODE(p)                             CW_READ(p,XFERNODE_CE)
 #define SETXFERNODE(p,n)                        CW_WRITE(p,XFERNODE_CE,n)
