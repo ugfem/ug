@@ -103,6 +103,8 @@ typedef struct {
 
   int id;
   int bnd;
+  int segment;
+  int property;
   double x[MAX_DIM];
   BP *bp;
 
@@ -118,6 +120,7 @@ typedef struct {
 typedef struct {
 
   int id;
+  int nS;
   int S[MAX_SEGMENTS];
 
 } LINE;
