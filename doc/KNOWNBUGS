@@ -60,4 +60,14 @@ Bug description: The dataexplorer command can fail in parallel mode if the buffe
 Bug fix (hack): Increase the size of PFILE_BUFFER_SIZE until the command suceeds.
 	A permanent solution should probably determine the buffer size dynamically,
 	but could then be unable to allocate enough memory.
-
+
+
+UG/ug/dom/lgm/
+----------------
+
+lgm_load.c:
+Bug description: Not 64 bit clean, depends on sizeof(void *) == sizeof(int).
+
+lgm_load.c:
+Bug description: geometry file is not properly parsed if lines are terminated
+	with CR/LF (a la DOS/Windows).
