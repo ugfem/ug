@@ -156,12 +156,10 @@ static void ResetIdentFlags (GRID *UpGrid)
 
     SETNIDENT(theNode,CLEAR);
 
-                #ifdef __THREEDIM__
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink)) {
       theEdge = MYEDGE(theLink);
       SETEDIDENT(theEdge,CLEAR);
     }
-                #endif
   }
 
 }
@@ -849,11 +847,9 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
   if (AllocateControlEntry(NODE_CW,1,&ce_NIDENT) != GM_OK)
     assert(0);
 
-        #ifdef __THREEDIM__
   /* allocate a control word entry to lock edges */
   if (AllocateControlEntry(EDGE_CW,1,&ce_EDIDENT) != GM_OK)
     assert(0);
-        #endif
 
   /* set Ident_FctPtr to identification mode */
   Ident_FctPtr = Identify_by_ObjectList;
@@ -882,9 +878,7 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 
   FreeControlEntry(ce_NIDENT);
 
-        #ifdef __THREEDIM__
   FreeControlEntry(ce_EDIDENT);
-        #endif
 }
 
 #endif /* end ModelP */
