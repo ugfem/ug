@@ -58,7 +58,7 @@
 #define MAXCMDLEN                       256
 
 #define POINTER                                 0               /* arrow tool can zoom pictures		*/
-#define DRAG                                    1               /* arrow tool can drag pictures		*/
+#define PAN                                             1               /* arrow tool can pan pictures		*/
 #define ZOOM                                    2               /* arrow tool can zoom pictures		*/
 #define ROTATE                                  3               /* arrow tool can rotate pictures	*/
 #define N_ARROW_FUNCS_WO_CUT    4
@@ -99,7 +99,7 @@ static PICTURE *currPicture;
 static INT autoRefresh;                                 /* ON or OFF						*/
 
 static char *ArrowToolFuncs[N_ARROW_FUNCS]={"pointer",
-                                            "drag",
+                                            "pan",
                                             "zoom",
                                             "rotate",
                                             "rotate cut",
@@ -113,6 +113,83 @@ static OUTPUTDEVICE *DefaultDevice;     /* our default ouput device             
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
+
+/****************************************************************************/
+/*D
+   toolbox - interactive mouse tools for graphics
+
+   DESCRIPTION:
+   The toolbox appearing in a ug graphical window at the lower right corner
+   offers the possibility to switch between different mouse tools to
+   interactively manipulate graphics.
+   The tools are (from left to right):
+   .n    arrow
+   .n    x
+   .n    +
+   .n    circle
+   .n    hand
+   .n    heart
+   .n    gnoedel
+
+   The tools can be disabled or can have multiple functionality. Moving the
+   mouse over the toolbox the 'infobox' (to the left of the toolbox) shows
+   the current functionality, its index and the number of functions for this tool.
+   In general, the functionality is associated with a plot object ('PLOTOBJ'). So
+   tools are only active and chooseable (by clicking on them) if the active window
+   contains the current ppicture with a valid plot object.
+   The multiple functionality of a tool can be switched by multiply clicking on it.
+
+   For a description of the tools see 'arrowtool' (which is availabble for all
+   plotobejcts with the same functionality) or the different plot objects
+   (EScalar, EVector, Grid, Matrix, VecMat).
+
+   KEYWORDS:
+   graphics, interactive, tools, mouse
+
+   SEE ALSO:
+   'EScalar', 'EVector', 'Grid', 'Matrix', 'VecMat', 'arrowtool'
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   arrowtool - general functionality: pan, zoom, rotate, rotate cut, move cut
+
+   DESCRIPTION:
+   The arrow tool is available for all plot objects and has the following
+   functionalities:~
+   .     pointer		- only to make windows and pictures the current (active) ones.
+                                          (All other tools and functionalities offer this possinility too.)
+   .	  pan			- click into the current picture, push mouse button and move.
+                                          A frame indicating the bounds of the picture will be drawn when moving.
+                                          Realising the mouse button will move the picture to the current
+                                          frame position.
+                                          Moving the mouse outside the current picture cancels the operation.
+   .     zoom			- click into the current picture, push mouse button and move.
+                                          A frame is pulled indicaating the region which will be centerd and zoomed
+                                          to fit the pictures borders after releasing the button.
+                                          Moving the mouse outside the current picture cancels the operation.
+   .     rotate		- click into the current picture, push mouse button and move.
+                                          A tripod showing the coordinate axes will indiacte the rotated position
+                                          (in 3D a little cube will facilitate orientation).
+                                          Moving the mouse outside the current picture cancels the operation.
+
+   .     rotate cut	- this is possible only with 3D plot objects which offer the possibilty
+                                          of a cutting plane. Everything works similar to 'rotate'
+   .     move cut		- this is possible only with 3D plot objects which offer the possibilty
+                                          of a cutting plane. At the lower part of the picture a ruler will
+                                          aopear on mouse click into the current picture. A cross is indicating
+                                          the current cut position in units of the objects bounding sphere.
+                                          A tick mark can be moved by horizontal mouse movement.
+                                          Moving the mouse outside the current picture cancels the operation.
+
+   KEYWORDS:
+   graphics, interactive, tools, mouse, rotate, pan, zoom
+
+   SEE ALSO:
+   'EScalar', 'EVector', 'Grid', 'Matrix', 'VecMat', 'toolbox'
+   D*/
+/****************************************************************************/
 
 /****************************************************************************/
 /*D
@@ -647,19 +724,6 @@ static void PrintEvent (EVENT theEvent)
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  ProcessEvent													*/
-/*																			*/
-/* Purpose:   process next EXT event or event from GUI						*/
-/*																			*/
-/* Input:	  none															*/
-/*																			*/
-/* Output:	  char String: string got from TERM_STRING - event				*/
-/*																			*/
-/* Return:	  INT : see below												*/
-/*																			*/
-/****************************************************************************/
-/****************************************************************************/
 /*D
         ProcessEvent - the event handler of ug
 
@@ -952,7 +1016,7 @@ static INT ProcessEvent (char *String, INT EventMask)
       case ZOOM :
         ZoomPicture(currPicture,MousePosition);
         break;
-      case DRAG :
+      case PAN :
         DragPicture(currPicture,MousePosition);
         break;
       case ROTATE :
@@ -981,6 +1045,7 @@ static INT ProcessEvent (char *String, INT EventMask)
         PrintErrorMessage('W',"ProcessEvent","viewed object is not active");
       break;
     }
+    UGW_BOXSTATE(theUgW) = BOX_INVALID;
     break;
   case DOC_UPDATE :
     WinID = theEvent.DocDrag.win;
