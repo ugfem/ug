@@ -423,6 +423,9 @@ void InitXPort (OUTPUTDEVICE *thePort)
 
   if (ncolors!=0) return;
 
+  thePort->signx          = 1;
+  thePort->signy          = -1;
+
   /* init color table */
   ncolors = 0;
 
