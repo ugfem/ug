@@ -204,11 +204,11 @@ int PrintDataFileInfo (char *filename, int *magic_cookie)
   printf("\n");
   printf("# VecData:      %d\n",dio_general.nVD);
   printf("\n");
-  printf("    # comp  |  type  |  name\n");
+  printf("    # comp  |  name  |  type\n");
   printf("  ----------+--------+---------\n");
   for (i=0; i<dio_general.nVD; i++)
   {
-    printf("    %3d     |   %-4s |  ",dio_general.VDncomp[i],dio_general.VDname[i]);
+    printf("    %3d     |  %-4s  |  ",dio_general.VDncomp[i],dio_general.VDname[i]);
     if (dio_general.VDtype[i]==DIO_SCALAR)
       printf("scal\n");
     if (dio_general.VDtype[i]==DIO_VECTOR)
