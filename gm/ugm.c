@@ -926,8 +926,8 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
           theVertex = MYVERTEX(theNode);
           theFather = VFATHER(theVertex);
           if (theFather == theElement) {
-            assert(ONSIDE(theVertex) == side);
-            return(theNode);
+            if (ONSIDE(theVertex) == side)
+              return(theNode);
           }
           else if (theFather == NBELEM(theElement,side)) {
             SETONNBSIDE(theVertex,side);
