@@ -93,6 +93,7 @@ void FAMGGrid::Restriction(FAMGGrid *cg) const
 void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
 // adds the prolongued solution-update to the fine grid solution
 // including smoothing of fine nodes
+// c is set for FAMG transfer; not used for FAMG solver
 {
 	FAMGVector &fgsol = *GetVector(FAMGUNKNOWN);
 	FAMGVector &fgdefect = *GetVector(FAMGDEFECT);
