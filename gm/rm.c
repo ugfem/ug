@@ -1882,6 +1882,11 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
   INT side;
         #endif
 
+  if (theElement == NULL) return(0);
+        #ifdef ModelP
+  if (EGHOST(theElement)) return(0);
+        #endif
+
   SETCOARSEN(theElement,0);
 
   if (rule != COARSE)
@@ -2148,6 +2153,9 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
 
 INT EstimateHere (ELEMENT *theElement)
 {
+        #ifdef ModelP
+  if (EGHOST(theElement)) return(0);
+        #endif
   return(LEAFELEM(theElement));
 }
 
