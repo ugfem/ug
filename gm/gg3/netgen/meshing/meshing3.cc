@@ -376,13 +376,13 @@ void Meshing3 :: Mesh (double ah,int make_prism)
             locpoints[locelements[i].PNum(6)].Y() << "," <<
             locpoints[locelements[i].PNum(6)].Z() << ")" << endl;
 
-            printf("%d %d %d %d %d %d\n",   locelements[i].PNum(1),
-                   locelements[i].PNum(2),
-                   locelements[i].PNum(3),
-                   locelements[i].PNum(4),
-                   locelements[i].PNum(5),
-                   locelements[i].PNum(6)
-                   );
+            /*	printf("%d %d %d %d %d %d\n",	locelements[i].PNum(1),
+                                                                                            locelements[i].PNum(2),
+                                                                                    locelements[i].PNum(3),
+                                                                                    locelements[i].PNum(4),
+                                                                                    locelements[i].PNum(5),
+                                                                                    locelements[i].PNum(6)
+                                                                                    );*/
             printf("%s %d\n","nff:",adfront->NFF());
           }
           prismvol = prismvol
@@ -529,12 +529,12 @@ void Meshing3 :: Mesh (double ah,int make_prism)
             locpoints[locelements[i].PNum(5)].Y() << "," <<
             locpoints[locelements[i].PNum(5)].Z() << ")" << endl;
 
-            printf("%d %d %d %d %d\n",      locelements[i].PNum(1),
-                   locelements[i].PNum(2),
-                   locelements[i].PNum(3),
-                   locelements[i].PNum(4),
-                   locelements[i].PNum(5)
-                   );
+            /*printf("%d %d %d %d %d\n",	locelements[i].PNum(1),
+                                                                    locelements[i].PNum(2),
+                                                                    locelements[i].PNum(3),
+                                                                    locelements[i].PNum(4),
+                                                                    locelements[i].PNum(5)
+                                                                    );*/
             printf("%s %d\n","nff:",adfront->NFF());
           }
           pyramidvol = pyramidvol
@@ -823,7 +823,7 @@ void Meshing3 :: Mesh (double ah,int make_prism)
         for (j = 1; j <= locelements[i].NP(); j++)
           locelements[i].PNum(j) = adfront -> GetGlobalIndex (pindex[locelements[i].PNum(j)]);
         //			if(MESH_DEBUG)
-        printf("%s %d\n","NFF:",adfront->NFF());
+        //				printf("%s %d\n","NFF:",adfront->NFF());
 
         SaveElement (locelements[i]);
         cntelem++;
