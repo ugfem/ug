@@ -345,6 +345,8 @@ INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
   INT i,j,k,l;
   FORMAT *theFormat;
 
+  memset(object,0,size);
+  ((int *)object)[1] = -1;
   ptr = (void **) object;
 
   /* 'ptr' will be set equal to 'object' but with different inter-		*/
@@ -1920,6 +1922,8 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
   NODE *from,*to;
   INT found;
 
+  HEAPFAULT(theEdge);
+
   /* reconstruct data */
   link0 = LINK0(theEdge);
   link1 = LINK1(theEdge);
@@ -2011,6 +2015,8 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
   EDGE *pe;
   NODE *to;
 
+  HEAPFAULT(theNode);
+
   /* call DisposeElement first! */
   assert(START(theNode) == NULL);
 
@@ -2064,6 +2070,8 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
 INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 {
   VSEGMENT *theVSeg;
+
+  HEAPFAULT(theVertex);
 
   /* remove vertex from vertex list */
   if (PREDV(theVertex)!=NULL)
@@ -2123,6 +2131,8 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
   EDGE *theEdge;
   ELEMENTSIDE *theElementSide;
   ELEMENT *theNeighbor;
+
+  HEAPFAULT(theElement);
 
   /* remove element from element list */
   if (PREDE(theElement)!=NULL)

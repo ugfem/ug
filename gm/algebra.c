@@ -917,6 +917,8 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
   if (theVector == NULL)
     return(0);
 
+  HEAPFAULT(theVector);
+
   /* remove all connections concerning the vector */
   for (theMatrix=VSTART(theVector); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
     if (DisposeConnection(theGrid,MMYCON(theMatrix)))
@@ -1081,6 +1083,8 @@ INT DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
 {
   VECTOR *from, *to;
   MATRIX *Matrix, *ReverseMatrix, *SearchMatrix;
+
+  HEAPFAULT(theConnection);
 
   /* remove matrix(s) from their list(s) */
   Matrix = CMATRIX0(theConnection);
