@@ -162,43 +162,43 @@ enum Priorities
 
 #define ID_FMT      "%ld/%08x"
 #define ID_FFMT     "%9ld/%08x"
-#define ID_PRT(x)   ((long)ID(x)),DDD_InfoGlobalId(PARHDR(x))
+#define ID_PRT(x)   ((long)ID(x)),GID(x)
 #define ID_FMTE     "%ld/%08x/%d"
 #define ID_FFMTE    "%9ld/%08x/%02d"
-#define ID_PRTE(x)  ((long)ID(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#define ID_PRTE(x)  ((long)ID(x)),GID(x),PRIO(x)
 #define ID_FMTX     "%x/%ld/%08x/%d"
 #define ID_FFMTX    "%x/%9ld/%08x/%02d"
-#define ID_PRTX(x)  x,((long)ID(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#define ID_PRTX(x)  x,((long)ID(x)),GID(x),PRIO(x)
 
 #define VID_FMT     ID_FMT
 #define VID_FFMT    ID_FFMT
-#define VID_PRT(x)  ((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x))
+#define VID_PRT(x)  ((long)ID(x)),VXGID(x)
 #define VID_FMTE    ID_FMTE
 #define VID_FFMTE   ID_FFMTE
-#define VID_PRTE(x) ((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x)),DDD_InfoPriority(PARHDRV(x))
+#define VID_PRTE(x) ((long)ID(x)),VXGID(x),VXPRIO(x)
 #define VID_FMTX    ID_FMTX "/%d"
 #define VID_FFMTX   ID_FFMTX "/%d"
-#define VID_PRTX(x) x,((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x)),DDD_InfoPriority(PARHDRV(x)),LEVEL(x)
+#define VID_PRTX(x) x,((long)ID(x)),VXGID(x),VXPRIO(x),LEVEL(x)
 
 #define EID_FMT     ID_FMT
 #define EID_FFMT    ID_FFMT
-#define EID_PRT(x)  ((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x))
+#define EID_PRT(x)  ((long)ID(x)),EGID(x)
 #define EID_FMTE    ID_FMTE
 #define EID_FFMTE   ID_FFMTE
-#define EID_PRTE(x) ((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x)),DDD_InfoPriority(PARHDRE(x))
+#define EID_PRTE(x) ((long)ID(x)),EGID(x),EPRIO(x)
 #define EID_FMTX    ID_FMTX "/%d"
 #define EID_FFMTX   ID_FFMTX "/%d"
-#define EID_PRTX(x) x,((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x)),DDD_InfoPriority(PARHDRE(x)),TAG(x)
+#define EID_PRTX(x) x,((long)ID(x)),EGID(x),EPRIO(x),TAG(x)
 
 #define VINDEX_FMT     ID_FMT
 #define VINDEX_FFMT    ID_FFMT
-#define VINDEX_PRT(x)  ((long)VINDEX(x)),DDD_InfoGlobalId(PARHDR(x))
+#define VINDEX_PRT(x)  ((long)VINDEX(x)),GID(x)
 #define VINDEX_FMTE    ID_FMTE
 #define VINDEX_FFMTE   ID_FFMTE
-#define VINDEX_PRTE(x) ((long)VINDEX(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#define VINDEX_PRTE(x) ((long)VINDEX(x)),GID(x),PRIO(x)
 #define VINDEX_FMTX    ID_FMTX
 #define VINDEX_FFMTX   ID_FFMTX
-#define VINDEX_PRTX(x) x,((long)VINDEX(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#define VINDEX_PRTX(x) x,((long)VINDEX(x)),GID(x),PRIO(x)
 
 #ifdef __TWODIM__
 #define EDID_FMT     "%08x"
@@ -215,13 +215,13 @@ enum Priorities
 #ifdef __THREEDIM__
 #define EDID_FMT     "%08x"
 #define EDID_FFMT    EDID_FMT
-#define EDID_PRT(x)  DDD_InfoGlobalId(PARHDR(x))
+#define EDID_PRT(x)  GID(x)
 #define EDID_FMTE    "%08x/%d"
 #define EDID_FFMTE   EDID_FMTE
-#define EDID_PRTE(x) DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#define EDID_PRTE(x) GID(x),PRIO(x)
 #define EDID_FMTX    "%x/%08x/%d"
 #define EDID_FFMTX   EDID_FMTX
-#define EDID_PRTX(x) x,DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#define EDID_PRTX(x) x,GID(x),PRIO(x)
 #endif
 
 
@@ -316,7 +316,7 @@ extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF;
 extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF,
               VectorVIF, VectorVAllIF;
 #ifdef __THREEDIM__
-extern DDD_IF EdgeIF, BorderEdgeSymmIF;
+extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF;
 #endif
 #endif
 
