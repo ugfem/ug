@@ -378,10 +378,10 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   double dList[DIM];
 
   if (Bio_Read_mint(3,iList)) return (NULL);
+  p = (BP *) GetFreelistMemory(Heap,sizeof(BP)+(iList[2]-1)*sizeof(int));
   p->id = iList[0];
   p->property = iList[1];
   p->n = iList[2];
-  p = (BP *) GetFreelistMemory(Heap,sizeof(BP)+(p->n-1)*sizeof(int));
   if (Bio_Read_mint(p->n,iList)) return (NULL);
   for (j=0; j<p->n; j++)
     p->segment[j] = iList[j];
@@ -400,10 +400,10 @@ BNDP *BNDP_LoadBndP_Ext (void)
   double dList[DIM];
 
   if (Bio_Read_mint(3,iList)) return (NULL);
+  p  = (BP *)malloc(sizeof(BP)+(iList[2]-1)*sizeof(int));
   p->id = iList[0];
   p->property = iList[1];
   p->n = iList[2];
-  p  = (BP *)malloc(sizeof(BP)+(p->n-1)*sizeof(int));
   if (Bio_Read_mint(p->n,iList)) return (NULL);
   for (j=0; j<p->n; j++)
     p->segment[j] = iList[j];
@@ -628,6 +628,10 @@ INT InitGeometry (HEAP *Heap, GEOMETRY *G)
               G->C[i].bs[j]->x[k][l] =
                 G->P[G->C[i].P[faces[G->C[i].n][j][k]]].x[l];
           }
+          PRINTDEBUG(dom,3,("bs C %d F %d S %d prop %d\n",
+                            i,j,
+                            G->C[i].bs[j]->segment,
+                            G->S[G->C[i].S[j]].property));
         }
         else
           G->C[i].bs[j] = NULL;
