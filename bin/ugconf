@@ -75,6 +75,8 @@ if test "$1" = "NETGEN"
 then
 sed 's/^NETGEN.*$/NETGEN = ON/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+sed 's/^DIM.*$/DIM = 3/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
 fi			
 
 if test "$1" = "GRAPE"
