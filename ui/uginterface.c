@@ -60,7 +60,12 @@
 #define POINTER                                 0               /* arrow tool can zoom pictures		*/
 #define DRAG                                    1               /* arrow tool can drag pictures		*/
 #define ZOOM                                    2               /* arrow tool can zoom pictures		*/
-#define N_ARROW_FUNCS                   3
+#define ROTATE                                  3               /* arrow tool can rotate pictures	*/
+#define N_ARROW_FUNCS_WO_CUT    4
+
+#define ROTATE_CUT                              4               /* arrow tool can rotate cut (iff)	*/
+#define MOVE_CUT                                5               /* arrow tool can move cut (iff)	*/
+#define N_ARROW_FUNCS                   6
 
 #define SEL_NODE                                0               /* hand tool can select nodes		*/
 #define SEL_VECTOR                              1               /* hand tool can select vectors		*/
@@ -93,9 +98,12 @@ static PICTURE *currPicture;
 
 static INT autoRefresh;                                 /* ON or OFF						*/
 
-static char *ArrowToolFuncs[N_ARROW_FUNCS]={ "pointer",
-                                             "drag",
-                                             "zoom"};
+static char *ArrowToolFuncs[N_ARROW_FUNCS]={"pointer",
+                                            "drag",
+                                            "zoom",
+                                            "rotate",
+                                            "rotate cut",
+                                            "move cut"};
 
 static INT theCmdKeyDirID;                              /* env ID for the /Cmd Key dir		*/
 static INT theCmdKeyVarID;                              /* env ID for the /Cmd Key dir		*/
@@ -397,7 +405,6 @@ INT ListCmdKeys ()
 {
   CMDKEY *theCmdKey;
   ENVDIR *theDir;
-  char buffer[MAXCMDLEN+4];
 
   /* loop through and print all cmd keys */
   if ((theDir=ChangeEnvDir("/Cmd Keys"))==NULL)
@@ -409,10 +416,7 @@ INT ListCmdKeys ()
   UserWrite("key command\n");
   for (theCmdKey = (CMDKEY *) theDir->down; theCmdKey!=NULL; theCmdKey=(CMDKEY *) NEXT_ENVITEM(theCmdKey))
     if (ENVITEM_TYPE(theCmdKey) == theCmdKeyVarID)
-    {
-      sprintf(buffer," %c  %s\n",ENVITEM_NAME(theCmdKey)[0],theCmdKey->CommandName);
-      UserWrite(buffer);
-    }
+      UserWriteF(" %c  %s\n",ENVITEM_NAME(theCmdKey)[0],theCmdKey->CommandName);
 
   return (0);
 }
@@ -509,8 +513,13 @@ static void DoInfoBox (WINDOWID win, INT mp[2])
         switch (tool)
         {
         case arrowTool :
+          if (PO_USESCUT(PIC_PO(currPicture)) && (CUT_STATUS(VO_CUT(PIC_VO(currPicture)))==ACTIVE))
+            nfct = N_ARROW_FUNCS;
+          else
+            nfct = N_ARROW_FUNCS_WO_CUT;
+
           fct = (tool==UGW_CURRTOOL(ugw)) ? UGW_CURRFUNC(ugw) : 0;
-          sprintf(buffer,"%s [%d/%d]",ArrowToolFuncs[fct],(int)(fct+1),(int)N_ARROW_FUNCS);
+          sprintf(buffer,"%s [%d/%d]",ArrowToolFuncs[fct],(int)(fct+1),(int)nfct);
           break;
 
         default :
@@ -730,7 +739,7 @@ static INT ProcessEvent (char *String, INT EventMask)
   DOUBLE qw, qh, scaling;
   UGWINDOW *theUgW;
   PICTURE *thePic;
-  INT WinID, UGW_LLL_old[2], UGW_LUR_old[2], Offset[2];
+  INT WinID, UGW_LLL_old[2], UGW_LUR_old[2], Offset[2], nfct;
   static INT MousePosition[2];
 
   if (GetNextUGEvent(&theEvent,EventMask))
@@ -870,7 +879,12 @@ static INT ProcessEvent (char *String, INT EventMask)
       switch (theEvent.DocChangeTool.Tool)
       {
       case arrowTool :
-        UGW_CURRFUNC(theUgW) = (UGW_CURRFUNC(theUgW)+1)%N_ARROW_FUNCS;
+        if (PO_USESCUT(PIC_PO(currPicture)) && (CUT_STATUS(VO_CUT(PIC_VO(currPicture)))==ACTIVE))
+          nfct = N_ARROW_FUNCS;
+        else
+          nfct = N_ARROW_FUNCS_WO_CUT;
+
+        UGW_CURRFUNC(theUgW) = (UGW_CURRFUNC(theUgW)+1)%nfct;
         break;
 
       default :
@@ -940,6 +954,20 @@ static INT ProcessEvent (char *String, INT EventMask)
         break;
       case DRAG :
         DragPicture(currPicture,MousePosition);
+        break;
+      case ROTATE :
+        if (RotatePicture(currPicture,MousePosition))
+          UserWrite("error in rotate\n");
+        break;
+      case ROTATE_CUT :
+        if (PO_USESCUT(PIC_PO(currPicture)) && (CUT_STATUS(VO_CUT(PIC_VO(currPicture)))==ACTIVE))
+          if (RotateCut(currPicture,MousePosition))
+            UserWrite("error in rotate\n");
+        break;
+      case MOVE_CUT :
+        if (PO_USESCUT(PIC_PO(currPicture)) && (CUT_STATUS(VO_CUT(PIC_VO(currPicture)))==ACTIVE))
+          if (MoveCut(currPicture,MousePosition))
+            UserWrite("error in rotate\n");
         break;
       }
       break;
@@ -1040,8 +1068,7 @@ INT UserInterrupt (const char *text)
       mutelevel = GetMuteLevel();
       if (GetMuteLevel()<0)
         SetMuteLevel(0);
-      sprintf(buffer,"### user-interrupt in '%s'?",text);
-      UserWrite(buffer);
+      UserWriteF("### user-interrupt in '%s'?",text);
       UserRead(buffer);
       if (buffer[0]=='y')
       {
