@@ -194,8 +194,8 @@ int PrintDataFileInfo (char *filename, int *magic_cookie)
   printf("\n############# data-file  #############\n\n");
   switch (dio_general.mode)
   {
-  case BIO_DEBUG :
-    printf("Mode:           DEBUG\n");
+  case BIO_XDR :
+    printf("Mode:           XDR\n");
     break;
   case BIO_ASCII :
     printf("Mode:           ASCII\n");
