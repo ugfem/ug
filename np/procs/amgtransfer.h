@@ -102,6 +102,8 @@ typedef struct
 
   INT reorderFlag;                           /* ordering of fine grid points    */
 
+  INT transformdef;                          /* transform defect in RS scheme   */
+
   INT fgcstep;                                   /* do fine grid correction step in */
   /* Reusken/Wagner scheme           */
   VECDATA_DESC *p;                           /* for fgcstep                     */

@@ -524,6 +524,8 @@ static INT LinearSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
   NPLS_b(theNP) = b;
 
   np = (NP_LS *) theNP;
+  if (np->Iter==NULL)
+    REP_ERR_RETURN(1);              /* no iteration specified */
   if (np->Iter->PreProcess != NULL)
     if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result))
       REP_ERR_RETURN(1);

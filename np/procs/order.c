@@ -773,7 +773,7 @@ static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
   theGrid = NP_GRID(theNP,level);
   A = np->order.A;
   if (A==NULL) return (1);
-  comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,np->comp);
+  comp = MD_MCMP_OF_MTYPE(A,MTP(NODEVEC,NODEVEC),np->comp);
 
   /* set matrix dependencies */
   if (MatrixDep_Adjoint(theGrid,A,comp)) return (1);

@@ -371,8 +371,8 @@ static INT EU_Construct (NP_BASE *theNP)
    'npinit <name>  $f <from sym> $t <to sym>'
 
    .  <name> - num proc name
-   .  $f~<from~sym> - name of the source vector descriptor
-   .  $t~<to~sym> - name of the destination vector descriptor
+   .  $s~<from~sym> - name of the source vector descriptor
+   .  $d~<to~sym> - name of the destination vector descriptor
 
    'npexecute <name>'
 

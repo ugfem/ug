@@ -690,6 +690,7 @@ Continue:
                                      bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
     REP_ERR_RETURN(1);
 
+  /* no Update */
   /* accept new time step */
   dcopy(mg,0,level,ALL_VECTORS,bdf->y_m1,bdf->y_0 );
   bdf->t_m1 = bdf->t_0;

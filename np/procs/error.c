@@ -461,29 +461,17 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
       if (EstimateHere(t))
       {
         est = List[nel++];
-        /*
-                    if (est > rf)
-                      {
-                        if (MarkForRefinementX(t,from,to,RED,0) == GM_OK)
-                            mfr++;
-                      }
-                    if (est < cr)
-                      {
-                        if (MarkForRefinementX(t,from,to,COARSE,0) == GM_OK)
-                            mfc++;
-                      }
-         */
         if ((ECLASS(t)==RED_CLASS) && (est > rf) && (k < to))
         {
           MarkForRefinement(t,RED,0);
           mfr++;
         }
-        if ((ECLASS(t)==GREEN_CLASS) && (est > rf) && (k < to+1))
+        if ((ECLASS(t)==GREEN_CLASS) && (est > rf) && (k <= to))
         {
           MarkForRefinement(t,RED,0);
           mfr++;
         }
-        if ((ECLASS(t)==YELLOW_CLASS) && (est > rf) && (k < to+1))
+        if ((ECLASS(t)==YELLOW_CLASS) && (est > rf) && (k <= to))
         {
           MarkForRefinement(t,RED,0);
           mfr++;

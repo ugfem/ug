@@ -188,11 +188,14 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
    .vb
    npcreate <name> $c {selectionAMG | clusterAMG};
-   npinit <name> {$strongAll | $strongAbs <thetaS> [<compS>] | $strongRel <thetaS> [<compS>]
+   npinit <name> {$strongAll | $strongOffDiag | $strongAbs <thetaS> [<compS>] | $strongRel <thetaS> [<compS>]
  | $strongVanek  <thetaS> [<compS>]}
                 {$C {Average | Greedy | BFS | RugeStueben} | $C {VanekNeuss}}
-                {$I {Average | Greedy | RugeStueben} | $I {PiecewiseConstant | Vanek}}
-                [$fgc]
+                {$I {Average | RugeStueben
+ | Wagner  | WagnerReducedFFGraph  | WagnerDecoupled
+ | Reusken | ReuskenReducedFFGraph | ReuskenDecoupled }
+ | $I {PiecewiseConstant | Vanek}}
+                [$fgc] [$transdef]
                 {$CM {Galerkin | FastGalerkin} [$CMtype]}
                 [{$keepAbs <thetaK> [<compK>] | $keepRel <thetaK> [<compK>]} [$lump] ]
                                 [{$coarsefine | $finecoarse}]
@@ -289,7 +292,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
 {
-  INT i;
+  INT i,schurType=0;
   NP_AMG_TRANSFER *np;
   char buffer[VALUELEN];
 
@@ -302,6 +305,8 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
   np->thetaS = 0.0;
   np->compS = 0;
   if (ReadArgvOption("strongAll",argc,argv)==1)
+    np->MarkStrong=MarkAll;
+  if (ReadArgvOption("strongOffDiag",argc,argv)==1)
     np->MarkStrong=MarkOffDiagWithoutDirichlet;
   if (ReadArgvDOUBLE_INT("strongAbs",&(np->thetaS),&(np->compS),argc,argv))
   {
@@ -348,6 +353,8 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
       np->Coarsen = CoarsenRugeStueben;
     if (strcmp(buffer,"Greedy") == 0)
       np->Coarsen = CoarsenGreedy;
+    if (strcmp(buffer,"GreedyWithBnd") == 0)
+      np->Coarsen = CoarsenGreedyWithBndLoop;
     if (strcmp(buffer,"BFS") == 0)
       np->Coarsen = CoarsenBreadthFirst;
   }
@@ -356,6 +363,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
     if (strcmp(buffer,"VanekNeuss") == 0)
       np->Coarsen = CoarsenVanek;
   }
+
   if (np->Coarsen==NULL) {
     PrintErrorMessage('E',"NPAMGTransferInit",
                       "$C ... definition is incorrect");
@@ -375,11 +383,33 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
       np->SetupIR = IpAverage;
     if (strcmp(buffer,"RugeStueben") == 0)
       np->SetupIR = IpRugeStueben;
+
     if (strcmp(buffer,"Reusken") == 0) {
-      np->SetupIR = IpReusken; np->symmIR = 0;
+      np->SetupIR = IpReusken; np->symmIR = 0; schurType=1;
     }
+    if (strcmp(buffer,"ReuskenReducedFFGraph") == 0) {
+      np->SetupIR = IpReuskenReducedFFGraph; np->symmIR = 0; schurType=1;
+    }
+    if (strcmp(buffer,"ReuskenReducedInterpol") == 0) {
+      np->SetupIR = IpReuskenReducedInterpol; np->symmIR = 0; schurType=1;
+    }
+
     if (strcmp(buffer,"Wagner") == 0) {
-      np->SetupIR = IpWagner; np->symmIR = 0;
+      np->SetupIR = IpWagner; np->symmIR = 0; schurType=1;
+    }
+    if (strcmp(buffer,"WagnerReducedFFGraph") == 0) {
+      np->SetupIR = IpWagnerReducedFFGraph; np->symmIR = 0; schurType=1;
+    }
+    if (strcmp(buffer,"WagnerReducedInterpol") == 0) {
+      np->SetupIR = IpWagnerReducedInterpol; np->symmIR = 0; schurType=1;
+    }
+
+    /* Test: a version with less mixing of components: */
+    if (strcmp(buffer,"ReuskenDecoupled") == 0) {
+      np->SetupIR = IpReuskenDecoupled; np->symmIR = 0; schurType=1;
+    }
+    if (strcmp(buffer,"WagnerDecoupled") == 0) {
+      np->SetupIR = IpWagnerDecoupled; np->symmIR = 0; schurType=1;
     }
   }
   else if (np->AMGtype==CLUSTER_AMG)
@@ -398,6 +428,16 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
   np->fgcstep=0;
   if (ReadArgvOption("fgc",argc,argv)==1)
     np->fgcstep=1;
+
+  /* transform defect */
+  np->transformdef=0;
+  if (ReadArgvOption("transdef",argc,argv)==1)
+    np->transformdef=1;
+
+  if ( (np->transformdef==1) && (schurType==0) ) {
+    PrintErrorMessage('W',"NPAMGTransferInit", "defect is only copied, not transformed!");
+    PrintErrorMessage('W',"NPAMGTransferInit", "Is your transform def option correct?");
+  }
 
   /* specification of coarse grid matrix computation */
   np->SetupCG = NULL;
@@ -579,6 +619,8 @@ INT AMGTransferDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Coarsen","Vanek");
   else if (np->Coarsen==CoarsenGreedy)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Coarsen","Greedy");
+  else if (np->Coarsen==CoarsenGreedyWithBndLoop)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"Coarsen","GreedyWithBnd");
   else if (np->Coarsen==CoarsenBreadthFirst)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Coarsen","BFS");
   else if (np->Coarsen==CoarsenAverage)
@@ -590,8 +632,22 @@ INT AMGTransferDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","RugeStueben");
   else if (np->SetupIR==IpReusken)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","Reusken");
+  else if (np->SetupIR==IpReuskenReducedFFGraph)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","ReuskenReducedFFGraph");
+  else if (np->SetupIR==IpReuskenReducedInterpol)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","ReuskenReducedInterpol");
   else if (np->SetupIR==IpWagner)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","Wagner");
+  else if (np->SetupIR==IpWagnerReducedFFGraph)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","WagnerReducedFFGraph");
+  else if (np->SetupIR==IpWagnerReducedInterpol)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","WagnerReducedInterpol");
+  /* Test: a version with less mixing of components: */
+  else if (np->SetupIR==IpReuskenDecoupled)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","ReuskenDecoupled");
+  else if (np->SetupIR==IpWagnerDecoupled)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","WagnerDecoupled");
+
   else if (np->SetupIR==IpAverage)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","Average");
   else if (np->SetupIR==IpPiecewiseConstant)
@@ -621,19 +677,22 @@ INT AMGTransferDisplay (NP_BASE *theNP)
   {
     UserWriteF(DISPLAY_NP_FORMAT_SS,"MarkKeep","MarkRelative");
     UserWriteF(DISPLAY_NP_FORMAT_SF,"thetaK",(float)np->thetaK);
-    UserWriteF(DISPLAY_NP_FORMAT_SI,"compK",(float)np->compK);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"compK",(int)np->compK);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"lump",(int)np->sparsenFlag);
   }
   else if (np->MarkKeep==MarkAbsolute)
   {
     UserWriteF(DISPLAY_NP_FORMAT_SS,"MarkKeep","MarkAbsolute");
     UserWriteF(DISPLAY_NP_FORMAT_SF,"thetaK",(float)np->thetaK);
-    UserWriteF(DISPLAY_NP_FORMAT_SI,"compK",(float)np->compK);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"compK",(int)np->compK);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"lump",(int)np->sparsenFlag);
   }
   else if (np->MarkKeep==MarkVanek)
   {
     UserWriteF(DISPLAY_NP_FORMAT_SS,"MarkKeep","MarkVanek");
     UserWriteF(DISPLAY_NP_FORMAT_SF,"thetaK",(float)np->thetaK);
-    UserWriteF(DISPLAY_NP_FORMAT_SI,"compK",(float)np->compK);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"compK",(int)np->compK);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"lump",(int)np->sparsenFlag);
   }
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"MarkKeep","unknown");
@@ -651,6 +710,11 @@ INT AMGTransferDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"fgcstep","yes");
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"fgcstep","no");
+
+  if (np->transformdef==1)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"transformdef","yes");
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"transformdef","no");
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"vectLimit",(int)np->vectLimit);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"matLimit",(int)np->matLimit);
@@ -775,6 +839,14 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         break;
       }
 
+      /* we mark connections in algebraic and geometric case so
+         we can work on a reduced graph in both cases */
+      if (np->MarkStrong != NULL) {
+        UnmarkAll(theGrid,NULL,0.0,0);
+        if ((result[0]=(np->MarkStrong)(theGrid,A,np->thetaS,np->compS))!=0)
+          REP_ERR_RETURN(result[0]);
+      }
+
       if (level > 0)
       {
         for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
@@ -802,16 +874,10 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
           REP_ERR_RETURN(result[0]);
         }
       }
-      else
+      else                    /* level <= 0 */
       {
         PRINTDEBUG(np,1,("%d: AGG %d agglev %d\n",
                          me,level-1,np->agglevel));
-
-        if (np->MarkStrong != NULL) {
-          UnmarkAll(theGrid,NULL,0.0,0);
-          if ((result[0]=(np->MarkStrong)(theGrid,A,np->thetaS,np->compS))!=0)
-            REP_ERR_RETURN(result[0]);
-        }
 
         breakflag = (np->Coarsen)(theGrid);
                 #ifdef ModelP
@@ -822,6 +888,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
           result[0]=breakflag;
           PrintErrorMessage('E',"AMGTransferPreProcess",
                             "error in coarsening");
+          UserWriteF("    level to coarsen was %d\n",GLEVEL(theGrid));
           REP_ERR_RETURN(result[0]);
         }
         PRINTDEBUG(np,1,("%d: breakflag coarsen %d\n",me,breakflag));
@@ -937,8 +1004,8 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                         #endif
       if (breakflag>0) break;
       level--;
-    }
-  }
+    }              /* end while (level > np->levelLimit) */
+  }            /* end if ((theGrid->coarser == NULL) || (np->hold == 0) ) */
   else {
     /* keep coarsening and interpolation, recompute matrices */
     for (level=tl; level>theMG->bottomLevel; level--) {
@@ -964,6 +1031,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     if (np->display == PCR_FULL_DISPLAY)
       UserWriteF("\n");
   }
+
   /*	Set_AMG_Vecskipflags(theMG,x);*/
   for (level=tl; level >= theMG->bottomLevel; level--)
     if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b)) {
@@ -971,7 +1039,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       REP_ERR_RETURN(1);
     }
 
-  if (np->fgcstep)
+  if (np->transformdef || np->fgcstep)
   {
     /* we allocate a field to store the defect (modified, in the
        Wagner case) during the mg iteration */
@@ -998,40 +1066,59 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
                            INT *result)
 {
   NP_AMG_TRANSFER *np;
+  VECDATA_DESC *td;       /* transformed or untransformed defect */
 
   np = (NP_AMG_TRANSFER *) theNP;
 
-  if (np->fgcstep)
+  if (np->transformdef || np->fgcstep)
+    td = np->p;
+  else
+    td = from;
+
+  if (np->transformdef)
   {
-    if (np->SetupIR==IpWagner)
+    if ( np->SetupIR==IpWagner )
     {
-      if ((result[0] = NBTransformDefect(GRID_ON_LEVEL(NP_MG(theNP),level),
-                                         np->p,from,A))!=0)
+      if (result[0] = NBTransformDefect(GRID_ON_LEVEL(NP_MG(theNP),level),
+                                        td,from,A,0,0))
+        REP_ERR_RETURN(result[0]);
+    }
+    else if ( np->SetupIR==IpWagnerReducedFFGraph )
+    {
+      if (result[0] = NBTransformDefect(GRID_ON_LEVEL(NP_MG(theNP),level),
+                                        td,from,A,1,0))
+        REP_ERR_RETURN(result[0]);
+    }
+    else if ( np->SetupIR==IpWagnerDecoupled )             /* not reduced! */
+    {
+      if (result[0] = NBTransformDefect(GRID_ON_LEVEL(NP_MG(theNP),level),
+                                        td,from,A,0,1))
         REP_ERR_RETURN(result[0]);
     }
     else
     {
-      if ((result[0]=dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->p,from))!=0)
+      if ((result[0]=dcopy(NP_MG(theNP),level,level,ALL_VECTORS,td,from))!=0)
         REP_ERR_RETURN(result[0]);
     }
-    if ((result[0]=RestrictByMatrix_s (GRID_ON_LEVEL(NP_MG(theNP),level),
-                                       to,np->p,damp))!=0)
+  }
+  else if (np->fgcstep)       /* unfortunately we must copy the untransformed defect since
+                                                         otherwise we can't do the fgc-step in InterpolateCorrection */
+  {
+    if ((result[0]=dcopy(NP_MG(theNP),level,level,ALL_VECTORS,td,from))!=0)
+      REP_ERR_RETURN(result[0]);
+  }
+
+  if (np->symmIR)
+  {
+    if (result[0]=RestrictByMatrix (GRID_ON_LEVEL(NP_MG(theNP),level),
+                                    to,td,damp))
       REP_ERR_RETURN(result[0]);
   }
   else
   {
-    if (np->symmIR)
-    {
-      if ((result[0]=RestrictByMatrix (GRID_ON_LEVEL(NP_MG(theNP),level),
-                                       to,from,damp))!=0)
-        REP_ERR_RETURN(result[0]);
-    }
-    else
-    {
-      if ((result[0]=RestrictByMatrix_s (GRID_ON_LEVEL(NP_MG(theNP),level),
-                                         to,from,damp))!=0)
-        REP_ERR_RETURN(result[0]);
-    }
+    if (result[0]=RestrictByMatrix_s (GRID_ON_LEVEL(NP_MG(theNP),level),
+                                      to,td,damp))
+      REP_ERR_RETURN(result[0]);
   }
 
   return(0);
@@ -1051,9 +1138,20 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
     REP_ERR_RETURN(result[0]);
 
   if (np->fgcstep)
-    if ((result[0]=NBFineGridCorrection (GRID_ON_LEVEL(NP_MG(theNP),level),
-                                         to, np->p, A))!=0)
-      REP_ERR_RETURN(result[0]);
+  {
+    if ( np->SetupIR==IpWagnerDecoupled || np->SetupIR==IpReuskenDecoupled )
+    {
+      if (result[0]=NBFineGridCorrection (GRID_ON_LEVEL(NP_MG(theNP),level),
+                                          to, np->p, A, 1))
+        REP_ERR_RETURN(result[0]);
+    }
+    else
+    {
+      if (result[0]=NBFineGridCorrection (GRID_ON_LEVEL(NP_MG(theNP),level),
+                                          to, np->p, A, 0))
+        REP_ERR_RETURN(result[0]);
+    }
+  }
 
   return(NUM_OK);
 }
@@ -1072,7 +1170,7 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   theMG = NP_MG(theNP);
   ASSERT(*fl == theMG->bottomLevel);
 
-  if (np->fgcstep)
+  if (np->transformdef || np->fgcstep)
     FreeVD(theMG,*fl,tl,np->p);
 
   for (level=-1; level>=theMG->bottomLevel; level--)
