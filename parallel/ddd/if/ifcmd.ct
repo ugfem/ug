@@ -1,0 +1,394 @@
+/****************************************************************************/
+/*                                                                          */
+/* File:      ifcmd.ct                                                      */
+/*                                                                          */
+/* Purpose:   template routines for interface functions                     */
+/*                                                                          */
+/* Author:    Klaus Birken                                                  */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            internet: birken@ica3.uni-stuttgart.de                        */
+/*                                                                          */
+/* History:   970110 kb  begin                                              */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* derived macros                                                           */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef IF_WITH_ATTR
+#define PART ifAttr
+#else
+#define PART ifHead
+#endif
+
+
+#ifdef IF_WITH_XARGS
+#define EXEC_LOOP(a,b,c)     IFExecLoopCplX(a,b,c)
+#define COMM_LOOP(a,b,c,d,e) IFCommLoopCplX(a,b,c,d,e)
+#define D_AB(p)              (p->cplAB)
+#define D_BA(p)              (p->cplBA)
+#define D_ABA(p)             (p->cplABA)
+#else
+#define EXEC_LOOP(a,b,c)     IFExecLoopObj(a,b,c)
+#define COMM_LOOP(a,b,c,d,e) IFCommLoopObj(a,b,c,d,e)
+#define D_AB(p)              (p->objAB)
+#define D_BA(p)              (p->objBA)
+#define D_ABA(p)             (p->objABA)
+#endif
+
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* auxiliary macros                                                         */
+/*                                                                          */
+/****************************************************************************/
+
+#ifndef IF_AUX_MACROS
+#define IF_AUX_MACROS
+
+#define FIND_ATTR \
+	ifAttr = ifHead->ifAttr;                          \
+	while ((ifAttr!=NULL) && (ifAttr->attr!=attr))    \
+	{                                                 \
+		ifAttr = ifAttr->next;                        \
+	}                                                 \
+	if (ifAttr==NULL) continue;
+
+
+#define CONCAT(txt,fct)    txt FUNCNAME_STR(fct)
+#define FUNCNAME_STR(f)   #f
+
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* routines                                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+
+
+#ifdef C_FRONTEND
+void IF_FUNCNAME (DDD_IF ifId,
+	#ifdef IF_WITH_ATTR
+		DDD_ATTR attr,
+	#endif
+	#ifdef IF_EXECLOCAL
+		#ifdef IF_WITH_XARGS
+			ExecProcXPtr ExecProc)
+		#else
+			ExecProcPtr ExecProc)
+		#endif
+	#else
+		#ifdef IF_ONEWAY
+			int dir,
+		#endif
+		size_t itemSize,
+		#ifdef IF_WITH_XARGS
+			ComProcXPtr Gather, ComProcXPtr Scatter)
+		#else
+			ComProcPtr Gather, ComProcPtr Scatter)
+		#endif
+	#endif
+{
+
+#else  /* F_FRONTEND */
+
+void IF_FUNCNAME (DDD_IF *_ifId,
+	#ifdef IF_WITH_ATTR
+		DDD_ATTR *_attr,
+	#endif
+	#ifdef IF_EXECLOCAL
+		#ifdef IF_WITH_XARGS
+			ExecProcXPtr ExecProc)
+		#else
+			ExecProcPtr ExecProc)
+		#endif
+	#else
+		#ifdef IF_ONEWAY
+			int *_dir,
+		#endif
+		size_t *_itemSize,
+		#ifdef IF_WITH_XARGS
+			ComProcXPtr Gather, ComProcXPtr Scatter)
+		#else
+			ComProcPtr Gather, ComProcPtr Scatter)
+		#endif
+	#endif
+{
+	/* in F_FRONTEND, copy call-by-ref params into variables */
+	DDD_IF ifId     = *_ifId;
+	#ifdef IF_WITH_ATTR
+	DDD_ATTR attr   = *_attr;
+	#endif
+	#ifndef IF_EXECLOCAL
+		#ifdef IF_ONEWAY
+		int    dir      = *_dir;
+		#endif
+		size_t itemSize = *_itemSize;
+	#endif
+#endif  /* C_FRONTEND */
+
+	IF_PROC		*ifHead;
+	int			try;
+	int         recv_mesgs;
+
+
+	/* prohibit using standard interface (IF0) */
+	if (ifId==STD_INTERFACE)
+	{
+		DDD_PrintError('E', 4300,
+			CONCAT("cannot use standard interface in ",IF_FUNCNAME));
+		exit(1);
+	}
+
+
+	/* shortcuts can only be used without extended handler arguments */
+	#ifndef IF_WITH_XARGS
+		/* if shortcut tables are invalid -> recompute */
+		IFCheckShortcuts(ifId);
+	#endif
+
+
+#ifdef IF_EXECLOCAL
+
+	ForIF(ifId,ifHead)
+	{
+		#ifdef IF_WITH_ATTR
+			IF_ATTR	    *ifAttr;
+			FIND_ATTR; /* find ifAttr */
+		#endif
+
+		EXEC_LOOP(ExecProc, D_BA(PART),  PART->nBA);
+		EXEC_LOOP(ExecProc, D_AB(PART),  PART->nAB);
+		EXEC_LOOP(ExecProc, D_ABA(PART), PART->nABA);
+	}
+
+#else /* ! IF_EXECLOCAL */
+
+	STAT_ZEROTIMER;
+	STAT_RESET1;
+	STAT_SETCOUNT(20,0);
+	STAT_SETCOUNT(21,0);
+	STAT_SETCOUNT(22,0);
+
+	/* allocate storage for in and out buffers */
+	ForIF(ifId,ifHead)
+	{
+		#ifdef IF_WITH_ATTR
+			IF_ATTR	    *ifAttr;
+		#endif
+		#ifdef IF_ONEWAY
+			int      nOut, nIn;
+		#endif
+
+		#ifdef IF_WITH_ATTR
+			FIND_ATTR; /* find ifAttr */
+		#endif
+		
+
+		#ifdef IF_EXCHANGE
+			IFGetMem(ifHead, itemSize, PART->nItems, PART->nItems);
+		#endif
+
+		#ifdef IF_ONEWAY
+			if (dir==IF_FORWARD) {
+				nOut = PART->nAB; nIn = PART->nBA;
+			}
+			else {
+				nOut = PART->nBA; nIn = PART->nAB;
+			}
+			IFGetMem(ifHead, itemSize, nIn+PART->nABA, nOut+PART->nABA);
+		#endif
+
+		STAT_SETCOUNT(20,STAT_GETCOUNT(20)+ifHead->nItems);
+		STAT_SETCOUNT(21,STAT_GETCOUNT(21)+2);
+		STAT_SETCOUNT(22,STAT_GETCOUNT(22)+ifHead->lenBufIn+ifHead->lenBufOut);
+	}
+	STAT_TIMER1(63);
+
+
+	/* init communication, initiate receives */
+	recv_mesgs = IFInitComm(ifId, itemSize);
+
+
+	/* build messages using gather-handler and send them away */
+	ForIF(ifId,ifHead)
+	{
+		char   *buffer;
+		#ifdef IF_WITH_ATTR
+			IF_ATTR *ifAttr;
+		#endif
+		#ifdef IF_ONEWAY
+			int      nOut;
+			#ifdef IF_WITH_XARGS
+			COUPLING **datOut;
+			#else
+			DDD_OBJ  *datOut;
+			#endif
+		#endif
+
+		#ifdef IF_WITH_ATTR
+		FIND_ATTR; /* find ifAttr */
+		#endif
+
+		buffer = ifHead->msgBufOut;
+
+		#ifdef IF_EXCHANGE
+			/* exchange BA and AB during send */
+			buffer= COMM_LOOP(Gather, D_BA(PART), buffer, itemSize, PART->nBA);
+			buffer= COMM_LOOP(Gather, D_AB(PART), buffer, itemSize, PART->nAB);
+		#endif
+
+		#ifdef IF_ONEWAY
+			if (dir==IF_FORWARD) {
+				nOut = PART->nAB;  datOut = D_AB(PART);
+			}
+			else {
+				nOut = PART->nBA;  datOut = D_BA(PART);
+			}
+
+			buffer= COMM_LOOP(Gather, datOut, buffer, itemSize, nOut);
+		#endif
+
+		buffer= COMM_LOOP(Gather, D_ABA(PART), buffer, itemSize, PART->nABA);
+
+		IFInitSend(ifHead);
+	}
+
+
+
+	/* poll receives and scatter data */
+	for(try=0; try<MAX_TRIES && recv_mesgs>0; try++)
+	{
+		/* poll receive calls */
+		ForIF(ifId,ifHead)
+		{
+			if (ifHead->msgIn!=-1)
+			{
+				int error = InfoARecv(ifHead->vc, ifHead->msgIn);
+				/* TODO complete error handling */
+				if (error==1)
+				{
+					char     *buffer;
+					#ifdef IF_ONEWAY
+						int      nIn;
+						#ifdef IF_WITH_XARGS
+						COUPLING **datIn;
+						#else
+						DDD_OBJ  *datIn;
+						#endif
+					#endif
+					#ifdef IF_WITH_ATTR
+						IF_ATTR  *ifAttr;
+					#endif
+
+					recv_mesgs--;
+					ifHead->msgIn=-1;
+
+					#ifdef IF_WITH_ATTR
+					FIND_ATTR; /* find ifAttr */
+					#endif
+
+					buffer = ifHead->msgBufIn;
+
+					/* get data using scatter-handler */
+					#ifdef IF_EXCHANGE
+						buffer = COMM_LOOP(Scatter,
+									D_AB(PART), buffer, itemSize, PART->nAB);
+						buffer = COMM_LOOP(Scatter,
+									D_BA(PART), buffer, itemSize, PART->nBA);
+					#endif
+
+					#ifdef IF_ONEWAY
+						if (dir==IF_FORWARD) {
+							nIn  = PART->nBA;  datIn = D_BA(PART);
+						}
+						else {
+							nIn  = PART->nAB;  datIn = D_AB(PART);
+						}
+
+						buffer = COMM_LOOP(Scatter, datIn, buffer, itemSize, nIn);
+					#endif
+
+					buffer = COMM_LOOP(Scatter,
+						D_ABA(PART), buffer, itemSize, PART->nABA);
+				}
+			}
+		}
+	}
+
+	/* finally poll send completion */
+	if ((recv_mesgs>0) || (! IFPollSend(ifId)))
+	{
+		DDD_PrintError('E', 4200, CONCAT("timeout in ", IF_FUNCNAME));
+		/* TODO complete error handling */
+	}
+
+	/* free memory */
+	IFExitComm(ifId);
+
+	STAT_TIMER1(60);
+
+#endif /* IF_EXECLOCAL */
+}
+
+
+/****************************************************************************/
+
+/* undefs for all input macros and defines */
+
+#undef IF_FUNCNAME
+
+#ifdef IF_ONEWAY
+#undef IF_ONEWAY
+#endif
+
+#ifdef IF_EXCHANGE
+#undef IF_EXCHANGE
+#endif
+
+#ifdef IF_EXECLOCAL
+#undef IF_EXECLOCAL
+#endif
+
+
+#ifdef IF_WITH_ATTR
+#undef IF_WITH_ATTR
+#endif
+
+#ifdef IF_WITH_XARGS
+#undef IF_WITH_XARGS
+#endif
+
+
+
+/* undefs for derived macros */
+
+#undef PART
+#undef EXEC_LOOP
+#undef COMM_LOOP
+#undef D_AB
+#undef D_BA
+#undef D_ABA
+
+
+/****************************************************************************/
+
