@@ -51,6 +51,7 @@
 /****************************************************************************/
 
 #define DEFAULTSFILENAME            "defaults"
+#define UGRC_NAME                           ".ugrc"
 
 #define BUFFSIZE    256             /* max length of name string    */
 #define BUFFLEN     255             /* BUFFSIZE-1                   */
@@ -69,6 +70,7 @@
 /****************************************************************************/
 
 /* access to default file */
-INT  GetDefaultValue   (const char *filename, const char *name, char *value);
+INT     GetDefaultValue                         (const char *filename, const char *name, char *value);
+INT     GetLocalizedDefaultValue        (const char *filename, const char *name, char *value);
 
 #endif

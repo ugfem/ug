@@ -35,6 +35,7 @@
 
 #include "fileopen.h"
 #include "general.h"
+#include "debug.h"
 #include "misc.h"
 #include "defaults.h"
 #ifdef ModelP
@@ -58,10 +59,10 @@ static char *defaults_buffer=NULL;
 
 /****************************************************************************/
 /*D
-   GetDefaultValue - Provide access to defaults file
+   GetLocalizedDefaultValue - Provide access to defaults file
 
    SYNOPSIS:
-   INT GetDefaultValue (const char *filename, const char *name, char *value);
+   INT GetLocalizedDefaultValue (const char *filename, const char *name, char *value);
 
    PARAMETERS:
    .  filename - pointer to char (const)
@@ -77,6 +78,9 @@ static char *defaults_buffer=NULL;
    INT
    .n    0 if OK
    .n    1 if error in opening or reading defaults file
+
+   SEE ALSO:
+   GetDefaultValue
    D*/
 /****************************************************************************/
 
@@ -84,7 +88,7 @@ static char *defaults_buffer=NULL;
 #define NAMELEN     31
 #define NAMELENSTR    "31"
 
-INT GetDefaultValue (const char *filename, const char *name, char *value)
+INT GetLocalizedDefaultValue (const char *filename, const char *name, char *value)
 {
   FILE *defaultsFile;
   char Name[NAMESIZE];
@@ -93,10 +97,15 @@ INT GetDefaultValue (const char *filename, const char *name, char *value)
   int file_ok;
   size_t fsize,actsize;
   char *curr;
+  static char *buffered_filename;
 
   if (defaults_buffer==NULL)
   {
-    /* first call to GetDefaultValue, we must read the defaults file */
+    /* first call to GetLocalizedDefaultValue, we must read the defaults file */
+    if (filename==NULL)
+      return(1);
+
+    buffered_filename = StrDup(filename);
 
     /* get filesize and broadcast it */
     if (me==master) fsize = filesize(filename);
@@ -131,6 +140,11 @@ INT GetDefaultValue (const char *filename, const char *name, char *value)
 
     /* broadcast buffer */
     Broadcast(defaults_buffer, fsize);
+  }
+  else
+  {
+    if (filename!=NULL && strcmp(buffered_filename,filename)!=0)
+      return(1);
   }
 
   curr = defaults_buffer;
@@ -175,4 +189,119 @@ INT GetDefaultValue (const char *filename, const char *name, char *value)
   return(1);
 
         #endif
+}
+
+
+/****************************************************************************/
+/*D
+   GetDefaultValue - Provide access to defaults file
+
+   SYNOPSIS:
+   INT GetDefaultValue (const char *filename, const char *name, char *value);
+
+   PARAMETERS:
+   .  filename - pointer to char (const)
+   .  name -     pointer to char (const)
+   .  value -    pointer to char
+
+   DESCRIPTION:
+   This function provides access to defaults file. When 'ug' is started
+   this function reads the defaults on file in order to set some
+   parameters of 'ug' in advance.
+
+   RETURN VALUE:
+   INT
+   .n    0 if OK
+   .n    1 if error in opening or reading defaults file
+
+   SEE ALSO:
+   GetLocalizedDefaultValue
+   D*/
+/****************************************************************************/
+
+
+#define MAX_PATH_LEN            1024
+enum {PATH_TOO_LONG = 1, COULD_NOT_STAT};
+
+static INT GetPathedUGRCValue (const char *path, const char *name, char *value, int *err)
+{
+  char full_path[MAX_PATH_LEN];
+
+  if (strlen(path)+strlen(UGRC_NAME)+2 >= MAX_PATH_LEN)
+    return PATH_TOO_LONG;
+
+  strcpy(full_path,path);
+  AppendTrailingSlash(full_path);
+  strcat(full_path,UGRC_NAME);
+  if (filetype(full_path)==FT_FILE)
+  {
+    *err = GetLocalizedDefaultValue(full_path,name,value);
+    return 0;
+  }
+  else
+    return COULD_NOT_STAT;
+}
+
+INT GetDefaultValue (const char *filename, const char *name, char *value)
+{
+        #ifdef ModelP
+  static int already_called = FALSE;
+
+  if (already_called)
+    return GetLocalizedDefaultValue(NULL,name,value);
+  else
+    already_called = TRUE;
+        #endif
+
+  if (strchr(filename,'/')!=NULL)
+  {
+    PRINTDEBUG(low,2,("GetDefaultValue: GetLocalizedDefaultValue called directly with: '%s'\n",filename));
+    return GetLocalizedDefaultValue(filename,name,value);
+  }
+  else if (strcmp(filename,DEFAULTSFILENAME)==0)
+  {
+    if (filetype(filename)==FT_FILE)
+    {
+      PRINTDEBUG(low,2,("GetDefaultValue: GetLocalizedDefaultValue called with defaults: '%s'\n",filename));
+      return GetLocalizedDefaultValue(filename,name,value);
+    }
+  }
+  else if (strcmp(filename,UGRC_NAME)!=0)
+    ASSERT(FALSE);                      /* try GetLocalizedDefaultValue */
+
+  /* localize defaults file */
+  {
+    int err;
+
+    /* reset BasePath for the time being */
+    char *OldBasePath = StrDup(GetBasePath());
+
+    const char *path = getenv("HOME");
+
+    SetBasePath("");
+    if (path!=NULL)
+      if (GetPathedUGRCValue(path,name,value,&err)==0)
+      {
+        PRINTDEBUG(low,2,("GetDefaultValue: GetPathedUGRCValue called for HOME='%s', err=%d\n",path,err));
+        SetBasePath(OldBasePath);
+        free(OldBasePath);
+        return err;
+      }
+    path = getenv("UGROOT");
+    if (path!=NULL)
+    {
+      char data_path[MAX_PATH_LEN];
+      strcpy(data_path,path);
+      AppendTrailingSlash(data_path);
+      strcat(data_path,"lib/ugdata");
+      if (GetPathedUGRCValue(data_path,name,value,&err)==0)
+      {
+        PRINTDEBUG(low,2,("GetDefaultValue: GetPathedUGRCValue called for DATA='%s', err=%d\n",data_path,err));
+        SetBasePath(OldBasePath);
+        free(OldBasePath);
+        return err;
+      }
+    }
+  }
+  return 1;
 }
