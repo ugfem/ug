@@ -790,8 +790,12 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   PROBLEM *theProblem;
   BOUNDARY_SEGMENT *theSegment;
   BOUNDARY_CONDITION *theBndCond;
-  PATCH **corners,**lines,**sides,*thePatch;
-  INT i,j,k,n,m,maxSubDomains,ncorners,nlines,nsides;
+  PATCH **corners,**sides,*thePatch;
+  INT i,j,n,m,maxSubDomains,ncorners,nlines,nsides;
+#       ifdef __THREEDIM__
+  PATCH **lines;
+  INT k;
+#       endif
 
   theBVP = (STD_BVP *)BVP_GetByName(name);
   if (theBVP == NULL)
@@ -1446,10 +1450,12 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   STD_BVP *theBVP;
   BND_PS *ps;
   PATCH *p;
-  DOUBLE lc;
-  INT j,n,pid;
+  INT j,pid;
   int i;
   float pos[DIM_OF_BND];
+#       ifdef __THREEDIM__
+  DOUBLE lc;
+#       endif
 
   theBVP = GetSTD_BVP(aBVP);
 
@@ -1564,12 +1570,12 @@ static DOUBLE MeshSize (CoeffProcPtr coeff, PATCH *p, DOUBLE *lambda)
   return(step);
 }
 
-INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
-                    INT *sides, INT ***corners, CoeffProcPtr coeff)
+static INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
+                           INT *sides, INT ***corners, CoeffProcPtr coeff)
 {
   INT i,j,n,nside,left,right;
   DOUBLE length,plength,step,step1;
-  DOUBLE lambda[DIM_OF_BND],lambda1,x[DIM];
+  DOUBLE lambda[DIM_OF_BND],lambda1;
   PATCH *p;
   BND_PS *ps;
 
@@ -1710,12 +1716,12 @@ INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
 }
 
 #ifdef __TWODIM__
-INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
-                      INT *sides, INT ***corners, DOUBLE h)
+static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
+                             INT *sides, INT ***corners, DOUBLE h)
 {
   INT i,j,m,n,nside,left,right;
-  DOUBLE length,plength,step,step1;
-  DOUBLE lambda[DIM_OF_BND],lambda1,x[DIM];
+  DOUBLE length,plength,step;
+  DOUBLE lambda[DIM_OF_BND],lambda1;
   PATCH *p;
   BND_PS *ps;
 
@@ -1974,8 +1980,8 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
                              INT *siden)
 {
   BND_PS *ps;
-  INT i,j,k,left,right,nside;
-  DOUBLE lvect[DIM-1],gvect[DIM],gvect1[DIM];
+  INT i,k,left,right;
+  DOUBLE gvect[DIM],gvect1[DIM];
   DOUBLE next_local[CORNERS_OF_BND_SEG][DIM-1];
   DOUBLE lambda,dist,step;
   INT next_cornerid[CORNERS_OF_BND_SEG];
@@ -2245,7 +2251,6 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
 MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 {
   STD_BVP *theBVP;
-  BND_PS *ps;
   INT i,j,m,n;
   MESH *mesh;
   CoeffProcPtr coeff;
@@ -2417,7 +2422,6 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
   BND_PS *ps;
   PATCH *p;
   DOUBLE lambda[DIM_OF_BND];
-  INT i,j;
 
   ps = (BND_PS *)aBndS;
   p = currBVP->patches[ps->patch_id];
@@ -2494,7 +2498,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   BND_PS *ps;
   PATCH *p;
   DOUBLE lambda[DIM_OF_BND],global[DIM];
-  INT i,j;
+  INT i;
 
   PRINTDEBUG(dom,1,(" BndCond loc %f\n",local[0]));
 
@@ -2598,8 +2602,6 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 {
   BND_PS *ps,*pp;
   PATCH *p;
-  DOUBLE lambda[DIM_OF_BND];
-  INT n,i,j;
 
   if (aBndS == NULL)
     return(NULL);
@@ -2678,9 +2680,8 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 
 INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
-  BND_PS *ps,*pp;
+  BND_PS *ps;
   PATCH *p,*s;
-  DOUBLE lambda[DIM_OF_BND];
   INT j,k;
   DOUBLE pglobal[DIM];
 
@@ -2784,10 +2785,8 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 
 INT BNDP_BndPDesc (BNDP *theBndP, INT *move)
 {
-  BND_PS *ps,*pp;
+  BND_PS *ps;
   PATCH *p;
-  DOUBLE lambda[DIM_OF_BND];
-  INT n,i,j;
 
   ps = (BND_PS *)theBndP;
   p = currBVP->patches[ps->patch_id];
@@ -2836,7 +2835,10 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   BND_PS *bp[4],*bs;
   PATCH *p[4];
   DOUBLE *lambda[4];
-  INT i,j,k,l,pid;
+  INT i,j,l,pid;
+#       ifdef __THREEDIM__
+  INT k;
+#       endif
 
   PRINTDEBUG(dom,1,("Create BNDS:\n"));
   for (i=0; i<n; i++)
@@ -2952,9 +2954,11 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   BND_PS *bp0,*bp1,*bp;
-  PATCH *p0,*p1,*p;
-  DOUBLE *lambda0,*lambda1;
-  INT i,j,k,l,pid,cnt,cnt1;
+  PATCH *p0,*p1;
+  INT i,j,k,l,cnt;
+#       ifdef __THREEDIM__
+  PATCH *p;
+#       endif
 
   bp0 = (BND_PS *)aBndP0;
   bp1 = (BND_PS *)aBndP1;
@@ -3115,7 +3119,6 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   PATCH *p;
   DOUBLE global[DIM];
   DOUBLE *local;
-  INT j;
 
   if (i < 0)
     return(1);
@@ -3279,7 +3282,6 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
   BND_PS *bp;
   int i,j,pid,n;
-  double local;
   int iList[2];
   double dList[DIM-1];
 
@@ -3320,8 +3322,6 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 
 INT InitDom ()
 {
-  int heapSize;
-  char buffer[128];
 
   /* change to root directory */
   if (ChangeEnvDir("/")==NULL)
