@@ -75,7 +75,7 @@ int Debuggraph              =       0;
 int Debuglow                =       0;
 int Debugmachines   =       0;
 int Debugnumerics   =       0;
-int Debugui                 =       2;      /* temporary setting for debugging ModelP */
+int Debugui                 =       0;      /* temporary setting for debugging ModelP */
 
 
 /* from dddif/ppif.h */
