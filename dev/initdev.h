@@ -52,4 +52,7 @@ OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error);
 /* metafile device */
 INT InitMeta (void);
 
+/* metafile device */
+INT InitPostScript (void);
+
 #endif

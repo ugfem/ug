@@ -8,22 +8,21 @@
 
 # load architecture dependent makefile	
 include ../ug.arch
-include ../ug.conf
 
 # architecture-dependent makefile entries
 include ../machines/mk.$(ARCHDIR)
 
-LCFLAGS = -I../low -I../dddif
+LCFLAGS = -I../low
 
-# select your devices: one of XIF or SIF, META is optional
-DEVICES = XIF META
+# select your devices: one of XIF or SIF, META, PS is optional
+DEVICES = XIF META PS
 OBJECTS = devices.o
 
 all : $(OBJECTS) $(DEVICES) Makefile.dev
 	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
 
 .c.o:
-	$(CC) $(UGDEFINES) $(CFLAGS) $(LCFLAGS) $<
+	$(CC) $(CFLAGS) $(LCFLAGS) $<
 
 XIF:
 	cd xif; make -f Makefile.xif; cd ..;
@@ -34,21 +33,26 @@ SIF:
 META:
 	cd meta; make -f Makefile.meta; cd ..;
 
+PS:
+	cd ps; make -f Makefile.ps; cd ..;
+
 XLIB: 
 	rm -f ../lib/libdev.a
 	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
 	cd meta; make -f Makefile.meta; cd ..;
 	cd xif; make -f Makefile.xif; cd ..;
+	cd ps; make -f Makefile.ps; cd ..;
 
 SLIB: 
 	rm -f ../lib/libdev.a
 	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
 	cd meta; make -f Makefile.meta; cd ..;
 	cd sif; make -f Makefile.sif; cd ..;
+	cd ps; make -f Makefile.ps; cd ..;
 
 clean:
 	rm $(OBJECTS)
 	cd xif;  make -f Makefile.xif  clean; cd ..;
 	cd sif;  make -f Makefile.sif  clean; cd ..;
 	cd meta; make -f Makefile.meta clean; cd ..;
-
+	cd ps;   make -f Makefile.ps   clean; cd ..;

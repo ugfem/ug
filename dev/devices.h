@@ -58,6 +58,8 @@
 #define PLUS_MARKER                             9
 #define CROSS_MARKER                            10
 
+#define NMARKERS                                        11
+
 /* tool numbers */
 #define nboftools                               7
 #define arrowTool                               0
@@ -77,9 +79,14 @@
 #define heartToolName                   "select el tool"
 #define gnoedelToolName                 "mark red tool"
 
+/* text position */
+#define TEXT_NOT_CENTERED               0
+#define TEXT_CENTERED                   1
+
 /* text modes */
 #define TEXT_REGULAR                    0
 #define TEXT_INVERSE                    1
+#define TEXT_INDEXED                    2
 
 /* buffer space for command line input */
 #define INPUTBUFFERLEN                  256
@@ -154,6 +161,8 @@ struct outputdevice {
   long spectrumStart;                                   /* usable range for a continuous						*/
   long spectrumEnd;                                             /* color spectrum										*/
   COORD PixelRatio;                                             /* ratio of (physical) hight to width of a pixel		*/
+  short signx;                                                  /* direction of increasing x-coordinates				*/
+  short signy;                                                  /* direction of increasing y-coordinates				*/
 
   /* pointers to basic drawing functions */
   void (*Move)(SHORT_POINT);                                                            /* move in device coordinates		*/

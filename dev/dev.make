@@ -22,7 +22,7 @@
 #****************************************************************************#
 
 # list of devices to build
-DEVICES = META MIF
+DEVICES = META MIF PS
 
 # list of source files
 OBJECTS = devices.c.o
@@ -31,22 +31,29 @@ OBJECTS = devices.c.o
 LCFLAGS = -i "::low"
 
 # the main rule
-all Ä {OBJECTS} {DEVICES} dev.make
+all Ÿ {OBJECTS} {DEVICES} dev.make
 	Lib -o "::lib:libdev.a" {OBJECTS}
 
 # compile all source files
-devices.c.o Ä  devices.c
+devices.c.o Ÿ  devices.c
 	 C {COPTS} {LCFLAGS} devices.c
 
 # build devices
-META Ä
+META Ÿ
 	directory meta
 	make -d COPTS="{COPTS}" -f meta.make > makeout
 	makeout
 	delete makeout
 	directory ::
 
-MIF Ä
+PS Ÿ
+	directory ps
+	make -d COPTS="{COPTS}" -f ps.make > makeout
+	makeout
+	delete makeout
+	directory ::
+
+MIF Ÿ
 	directory mif
 	make -d COPTS="{COPTS}" -f mif.make > makeout
 	makeout
@@ -54,9 +61,10 @@ MIF Ä
 	directory ::
 
 # clean up
-clean Ä
+clean Ÿ
 	Set Exit 0
 	delete -i "::lib:libdev.a"
-	delete -i Å.o
-	delete -i :meta:Å.o
-	delete -i :mif:Å.o
+	delete -i ‰.o
+	delete -i :meta:‰.o
+	delete -i :ps:‰.o
+	delete -i :mif:‰.o

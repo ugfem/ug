@@ -39,6 +39,7 @@
 #include "ugenv.h"
 #include "defaults.h"
 #include "debug.h"
+#include "ugstruct.h"
 
 /* dev module */
 #include "devices.h"
@@ -48,7 +49,6 @@
 #ifdef ModelP
 #include "ppif.h"
 #endif
-
 
 /****************************************************************************/
 /*																			*/
@@ -341,7 +341,8 @@ void UserWrite (const char *s)
   {
         #endif
 
-  WriteString(s);
+  if (mutelevel>-1000)
+    WriteString(s);
   if (logFile!=NULL) {
     fputs(s,logFile);
                 #ifdef Debug
@@ -593,7 +594,10 @@ const char *GetToolName (INT tool)
 
 INT InitDevices (int argc, char **argv)
 {
-  INT error;
+  ENVDIR *DevDir;
+  ENVITEM *dev;
+  INT error,i;
+  char sv[32];
 
   /* init tool names */
   strcpy(ToolName[arrowTool],arrowToolName);
@@ -629,9 +633,40 @@ INT InitDevices (int argc, char **argv)
 }
         #endif
 
-
   /* init metafile device */
-  InitMeta();
+  if (InitMeta()!=0)
+  {
+    SetHiWrd(error,__LINE__);
+    return (error);
+  }
+
+  /* init postscript device */
+  if (InitPostScript()!=0)
+  {
+    SetHiWrd(error,__LINE__);
+    return (error);
+  }
+
+  /* create struct and fill stringvars */
+  if (MakeStruct(":Devices")!=0)
+  {
+    SetHiWrd(error,__LINE__);
+    return (error);
+  }
+  for (i=0, dev=ENVDIR_DOWN(DevDir); dev!=NULL; i++, dev=NEXT_ENVITEM(dev))
+  {
+    sprintf(sv,":Devices:device%d",(int)i);
+    if (SetStringVar(sv,ENVITEM_NAME(dev))!=0)
+    {
+      SetHiWrd(error,__LINE__);
+      return (error);
+    }
+  }
+  if (SetStringValue(":Devices:nDevices",i)!=0)
+  {
+    SetHiWrd(error,__LINE__);
+    return (error);
+  }
 
   return(0);
 }
