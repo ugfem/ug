@@ -31,7 +31,7 @@
 #include "compiler.h"
 
 /* dev */
-#include "devices.h"
+#include "ugdevices.h"
 
 /* gm */
 #include "gm.h"
@@ -128,7 +128,7 @@ INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd)
         #ifdef ModelP
   /* TODO: parallel version */
   PrintErrorMessage('E',"MoveFreeBoundary","parallel not implemented");
-  return (1);
+  ASSERT(FALSE);
         #endif
 
   if (VD_ncmps_in_otype_mod(vd,NODEVEC,NON_STRICT)<DIM)
@@ -148,12 +148,24 @@ INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd)
           continue;
         if (MOVE(vert)!=DIM)
           continue;
+
+        PRINTDEBUG(np,2,("MoveFreeBoundary - old(%d): (%15.7e,%15.7e)",
+                         (int)ID(vert),
+                         (float)XC(vert),
+                         (float)YC(vert)));
+
         if (MoveFreeBoundaryVertex(mg,vert,VVALUEPTR(vec,VD_CMP_OF_TYPE(vd,VTYPE(vec),0))))
           REP_ERR_RETURN (1);
+
+        PRINTDEBUG(np,2,(" new: (%15.7e,%15.7e)\n",
+                         (float)XC(vert),
+                         (float)YC(vert)));
       }
 
   if (FinishMovingFreeBoundaryVertices(mg))
     REP_ERR_RETURN(1);
+
+  PRINTDEBUG(np,1,("MoveFreeBoundary: boundary set from %s\n",ENVITEM_NAME(vd)));
 
   return (0);
 }
@@ -209,6 +221,9 @@ INT StoreMGgeom (const MULTIGRID *mg, const VECDATA_DESC *vd)
       pos = LCVECT(MYVERTEX(nd));
       V_DIM_COPY(pos,VVALUEPTR(vec,VD_CMP_OF_TYPE(vd,vt,DIM)));
     }
+
+  PRINTDEBUG(np,1,("StoreMGgeom: geometry stored in %s\n",ENVITEM_NAME(vd)));
+
   return (0);
 }
 
@@ -266,5 +281,65 @@ INT RestoreMGgeom (MULTIGRID *mg, const VECDATA_DESC *vd)
                                     VVALUEPTR(vec,VD_CMP_OF_TYPE(vd,vt,DIM))))
           REP_ERR_RETURN (1);
     }
+
+  PRINTDEBUG(np,1,("RestoreMGgeom: geometry restored from %s\n",ENVITEM_NAME(vd)));
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   ComputeBoundaryVelocity - compute boundary velocity due to position change
+
+   SYNOPSIS:
+   INT ComputeBoundaryVelocity (MULTIGRID *mg, INT fl, INT tl,
+                                                                        const VECDATA_DESC *VD_p_0,
+                                                                        const VECDATA_DESC *VD_p_m1,
+                                                                        DOUBLE dt,
+                                                                        const VECDATA_DESC *VD_vel)
+
+   PARAMETERS:
+   .  mg		- multigrid
+   .  fl		- from level
+   .  tl		- to   level
+   .  VD_p_0	- position descriptor of time k
+   .  VD_p_m1	- position descriptor of time k-1
+   .  dt		- time step between k-1 and k
+   .  VD_vel	- resulting velocity from change in coordinates
+
+   DESCRIPTION:
+   This function computes the boundary velocity due to the position change
+   from time step t_(k-1) to t_k.
+
+   RETURN VALUE:
+   INT
+   .n    0: ok
+   .n    else: error
+   D*/
+/****************************************************************************/
+
+INT ComputeBoundaryVelocity (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *VD_p_0, const VECDATA_DESC *VD_p_m1, DOUBLE dt, const VECDATA_DESC *VD_vel)
+{
+  DOUBLE inv_dt;
+
+  PRINTDEBUG_EXT(np,1,("ComputeBoundaryVelocity\n"));
+
+  if (dt<SMALL_D)
+    REP_ERR_RETURN(1);
+
+  if (VDequal(VD_vel,VD_p_m1))
+    REP_ERR_RETURN(1);
+
+  if (!VDequal(VD_vel,VD_p_0))
+    if (dcopy(mg,fl,tl,ALL_VECTORS,VD_vel,VD_p_0))
+      REP_ERR_RETURN(1);
+
+  if (dsub(mg,fl,tl,ALL_VECTORS,VD_vel,VD_p_m1))
+    REP_ERR_RETURN(1);
+
+  inv_dt = 1./dt;
+  if (dscal(mg,fl,tl,ALL_VECTORS,VD_vel,inv_dt))
+    REP_ERR_RETURN(1);
+
   return (0);
 }
