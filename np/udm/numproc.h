@@ -101,12 +101,15 @@ typedef struct
 /*																			*/
 /****************************************************************************/
 
-INT CreateClass (const char *classname, INT size, ConstructorProcPtr Construct);
-NP_CONSTRUCTOR *GetConstructor (const char *classname);
-INT CreateObject (MULTIGRID *theMG, const char *objectname, const char *classname);
+INT                             CreateClass                     (const char *classname, INT size, ConstructorProcPtr Construct);
+NP_CONSTRUCTOR *GetConstructor          (const char *classname);
+INT                             CreateObject            (MULTIGRID *theMG, const char *objectname, const char *classname);
 
-NP_BASE *GetNumProcByName (const MULTIGRID *theMG, const char *objectname, const char *classname);
+NP_BASE            *GetNumProcByName    (const MULTIGRID *theMG, const char *objectname, const char *classname);
+INT                             MGListNPClasses         (const MULTIGRID *theMG, PrintfProcPtr PrintF);
+INT                             MGListNPsOfClass        (const MULTIGRID *theMG, const char *ClassName, PrintfProcPtr PrintF);
+INT                             MGListAllNPs            (const MULTIGRID *theMG, PrintfProcPtr PrintF);
 
-INT InitNumProcManager (void);
+INT                             InitNumProcManager      (void);
 
 #endif

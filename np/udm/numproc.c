@@ -48,6 +48,8 @@
 /*																			*/
 /****************************************************************************/
 
+#define MAXCLASSES              20
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -297,6 +299,159 @@ NP_BASE *GetNumProcByName (const MULTIGRID *theMG, const char *object_name, cons
 
   /* not found */
   return(NULL);
+}
+
+/****************************************************************************/
+/*D
+   MGListNPClasses - display classes using general print format function
+
+   SYNOPSIS:
+   INT MGListNPClasses (const MULTIGRID *theMG, PrintfProcPtr PrintF)
+
+   PARAMETERS:
+   .  theMG - numproc objects are now associated with a multigrid
+   .  PrintF - general print format function
+
+   DESCRIPTION:
+   This function lists all abstract classes of numerical procedures enroled for
+   a certain multigrid.
+
+   RETURN VALUE:
+   INT
+   .n    0 no error.
+   .n     __LINE__ error, usually memory overflow in environment or something not found.
+   D*/
+/****************************************************************************/
+
+INT MGListNPClasses (const MULTIGRID *theMG, PrintfProcPtr PrintF)
+{
+  ENVITEM *item;
+  INT n,i;
+  char *p,classlist[MAXCLASSES][NAMESIZE];
+
+  /* change to object directory of multigrid */
+  if (ChangeEnvDir("/Multigrids") == NULL) return (__LINE__);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (__LINE__);
+  item = (ENVITEM *)ChangeEnvDir("Objects");
+  if (item == NULL) return (__LINE__);
+
+  /* now scan through list of objects */
+  n = 0;
+  for (item=ENVITEM_DOWN(item); item!=NULL; item=NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == ObjectVarID)
+    {
+      if (n>=MAXCLASSES)
+        return (__LINE__);
+
+      strcpy(classlist[n],ENVITEM_NAME(item));
+      p = strchr(classlist[n],'.');
+      ASSERT(p!=NULL);
+
+      *p = '\0';
+
+      for (i=0; i<n; i++)
+        if (strcmp(classlist[n],classlist[i])==0)
+          break;
+      if ((n==0) || (i>=n))
+        n++;
+    }
+
+  /* list class names */
+  for (i=0; i<n; i++)
+    PrintF("%s\n",classlist[i]);
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   MGListNPsOfClass - display num proc contents of all num procs of given class
+
+   SYNOPSIS:
+   INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName, PrintfProcPtr PrintF)
+
+   PARAMETERS:
+   .  theMG - numproc objects are now associated with a multigrid
+   .  ClassName - list num procs of this class
+   .  PrintF - general print format function
+
+   DESCRIPTION:
+   This function displays the num proc contents of all num procs of a given class.
+
+   RETURN VALUE:
+   INT
+   .n    0 no error.
+   .n     __LINE__ error, usually memory overflow in environment or something not found.
+   D*/
+/****************************************************************************/
+
+INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName, PrintfProcPtr PrintF)
+{
+  ENVITEM *item;
+  INT n;
+
+  /* change to object directory of multigrid */
+  if (ChangeEnvDir("/Multigrids") == NULL) return (__LINE__);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (__LINE__);
+  item = (ENVITEM *)ChangeEnvDir("Objects");
+  if (item == NULL) return (__LINE__);
+
+  /* now scan through list of objects */
+  n = strlen(ClassName);
+  for (item=ENVITEM_DOWN(item); item!=NULL; item=NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == ObjectVarID)
+      if (strncmp(ENVITEM_NAME(item),ClassName,n)==0)
+      {
+        PrintF("\n=================================================\n"
+               "contents of num proc '%s':\n",ENVITEM_NAME(item));
+        if (((*((NP_BASE*)item)->Display)((NP_BASE*)item)))
+          return (__LINE__);
+      }
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   MGListAllNPs - display num proc contents of all num procs
+
+   SYNOPSIS:
+   INT MGListAllNPs (const MULTIGRID *theMG, PrintfProcPtr PrintF)
+
+   PARAMETERS:
+   .  theMG - numproc objects are now associated with a multigrid
+   .  PrintF - general print format function
+
+   DESCRIPTION:
+   This function displays the num proc contents of all num procs.
+
+   RETURN VALUE:
+   INT
+   .n    0 no error.
+   .n     __LINE__ error, usually memory overflow in environment or something not found.
+   D*/
+/****************************************************************************/
+
+INT MGListAllNPs (const MULTIGRID *theMG, PrintfProcPtr PrintF)
+{
+  ENVITEM *item;
+
+  /* change to object directory of multigrid */
+  if (ChangeEnvDir("/Multigrids") == NULL) return (__LINE__);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (__LINE__);
+  item = (ENVITEM *)ChangeEnvDir("Objects");
+  if (item == NULL) return (__LINE__);
+
+  /* now scan through list of objects */
+  for (item=ENVITEM_DOWN(item); item!=NULL; item=NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == ObjectVarID)
+    {
+      PrintF("\n=================================================\n"
+             "contents of num proc '%s':\n",ENVITEM_NAME(item));
+      if (((*((NP_BASE*)item)->Display)((NP_BASE*)item)))
+        return (__LINE__);
+    }
+  return(0);
 }
 
 /****************************************************************************/
