@@ -1,11 +1,11 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  eiter.h                                                                                                       */
-/*																			*/
-/* Purpose:   definition of the extended iter num proc type			                */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          eiter.h                                                                                                       */
+/*                                                                                                                                                      */
+/* Purpose:   definition of the extended iter num proc type                                     */
+/*                                                                                                                                                      */
 /* Author:    Klaus Johannsen                                               */
 /*            IWR/Technische Simulation                                     */
 /*            Universitaet Heidelberg                                       */
@@ -14,9 +14,9 @@
 /*            email: klaus.johannsen@iwr.uni-heidelberg.de                  */
 /*                                                                          */
 /* History:   22.07.02 begin                                                */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __EITER__
@@ -35,14 +35,25 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define EITER_CLASS_NAME "ext_iter"
@@ -56,9 +67,9 @@
 #define NPEIT_POST(p)           (((NP_EITER*)(p))->PostProcess)
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_eiter {
@@ -74,7 +85,7 @@ struct np_eiter {
   INT (*PreProcess)
     (struct np_eiter *,                      /* pointer to (derived) object     */
     INT,                                         /* level                           */
-    EVECDATA_DESC *,                             /* solution vector					*/
+    EVECDATA_DESC *,                             /* solution vector                                     */
     EVECDATA_DESC *,                             /* defect vector                   */
     EMATDATA_DESC *,                             /* matrix                          */
     INT *,                                       /* baselevel used by iter          */
@@ -89,7 +100,7 @@ struct np_eiter {
   INT (*PostProcess)
     (struct np_eiter *,                      /* pointer to (derived) object     */
     INT,                                         /* level                           */
-    EVECDATA_DESC *,                             /* solution vector					*/
+    EVECDATA_DESC *,                             /* solution vector                                     */
     EVECDATA_DESC *,                             /* defect vector                   */
     EMATDATA_DESC *,                             /* matrix                          */
     INT *);                                      /* result                          */
@@ -101,9 +112,9 @@ typedef INT (*EIterProcPtr)(NP_EITER *, INT, EVECDATA_DESC *, EVECDATA_DESC *, E
 typedef INT (*PostProcessEIterProcPtr)(NP_EITER *, INT, EVECDATA_DESC *, EVECDATA_DESC *, EMATDATA_DESC *, INT *);
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* generic init function for iter num procs */
@@ -117,5 +128,9 @@ INT NPEIterExecute (NP_BASE *theNP, INT argc , char **argv);
 
 /* create standard iter num proc type */
 INT InitEIter (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

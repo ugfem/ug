@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __TS__
@@ -37,22 +37,33 @@
 #include "nls.h"
 #include "assemble.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define T_SOLVER_CLASS_NAME "ts"
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_t_solver {
@@ -61,8 +72,8 @@ struct np_t_solver {
 
   /* things to be initialized by generic init */
   VECDATA_DESC *y;                       /* solution vector                             */
-  NP_T_ASSEMBLE *tass;                   /* time assemble numproc			*/
-  NP_NL_SOLVER *nlsolve;                 /* nonlinear solver numproc		*/
+  NP_T_ASSEMBLE *tass;                   /* time assemble numproc                       */
+  NP_NL_SOLVER *nlsolve;                 /* nonlinear solver numproc            */
   VEC_SCALAR reduction;                      /* reduction factor per time step  */
   VEC_SCALAR abslimit;                       /* absolute limit for the defect   */
 
@@ -96,9 +107,9 @@ typedef INT (*TimePostProcessProcPtr)                                        \
   (NP_T_SOLVER *, INT, INT *);
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* default init function for tsolver num procs */
@@ -112,5 +123,9 @@ INT NPTSolverExecute (NP_BASE *np, INT argc, char **argv);
 
 /* init */
 INT InitTSolver (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  assemble.h                                                                                                    */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          assemble.h                                                                                                    */
+/*                                                                                                                                                      */
 /* Purpose:   definition of the assemble num proc type                                  */
-/*																			*/
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
+/*                                                                                                                                                      */
+/* Author:        Christian Wieners                                                                             */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
 /* History:   November 29, 1996                                                                         */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __ASSEMBLE__
@@ -35,14 +35,25 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define ASSEMBLE_CLASS_NAME     "assemble"
@@ -160,15 +171,15 @@ enum PP_ACTIONS {
 #define NPPT_FINAL(p)                   (((NP_T_PARTASS*)(p))->TPassembleFinal)
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* linear assemble interface												*/
-/*																			*/
+/*                                                                          */
+/* linear assemble interface                                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 struct np_assemble {
@@ -191,7 +202,7 @@ struct np_assemble {
   INT (*Assemble)
     (struct np_assemble *,                   /* pointer to (derived) object     */
     INT,                                         /* level                           */
-    VECDATA_DESC *,                                          /* current solution	(initial)	*/
+    VECDATA_DESC *,                                          /* current solution        (initial)       */
     VECDATA_DESC *,                                          /* right hand side                         */
     MATDATA_DESC *,                              /* matrix                          */
     INT *);                                      /* result                          */
@@ -213,9 +224,9 @@ typedef INT (*PostProcessAssembleProcPtr)                                   \
   (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 
 /****************************************************************************/
-/*																			*/
-/* local assemble interface													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* local assemble interface                                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_local_assemble {
@@ -279,9 +290,9 @@ typedef INT (*PostProcessLocalAssembleProcPtr)                              \
 
 
 /****************************************************************************/
-/*																			*/
-/* nonlinear assemble interface												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* nonlinear assemble interface                                                                                         */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_nl_assemble {
@@ -319,7 +330,7 @@ struct np_nl_assemble {
     (struct np_nl_assemble *,                /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
-    VECDATA_DESC *,                                          /* current solution	(initial)	*/
+    VECDATA_DESC *,                                          /* current solution        (initial)       */
     VECDATA_DESC *,                                          /* defect for current solution     */
     VECDATA_DESC *,                                          /* correction to be computed               */
     MATDATA_DESC *,                              /* matrix                          */
@@ -329,7 +340,7 @@ struct np_nl_assemble {
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
     NODE *,                              /* pointer to node                 */
-    VECDATA_DESC *,                                          /* current solution	(initial)	*/
+    VECDATA_DESC *,                                          /* current solution        (initial)       */
     VECDATA_DESC *,                                          /* defect for current solution     */
     VECDATA_DESC *,                                          /* correction to be computed               */
     MATDATA_DESC *,                              /* matrix                          */
@@ -361,9 +372,9 @@ typedef INT (*PostProcessNLAssembleProcPtr)                                  \
   (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* non-linear extension to nonlinear assemble interface                     */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_enl_assemble {
@@ -401,7 +412,7 @@ struct np_enl_assemble {
     (struct np_enl_assemble *,               /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
-    EVECDATA_DESC *,                                         /* current solution	(initial)	*/
+    EVECDATA_DESC *,                                         /* current solution        (initial)       */
     EVECDATA_DESC *,                                         /* defect for current solution     */
     EVECDATA_DESC *,                                         /* correction to be computed               */
     EMATDATA_DESC *,                             /* matrix                          */
@@ -418,9 +429,9 @@ struct np_enl_assemble {
 typedef struct np_enl_assemble NP_ENL_ASSEMBLE;
 
 /****************************************************************************/
-/*																			*/
-/* time-dependent assemble interface										*/
-/*																			*/
+/*                                                                                                                                                      */
+/* time-dependent assemble interface                                                                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_t_assemble {
@@ -428,38 +439,38 @@ struct np_t_assemble {
   NP_BASE base;                              /* inherits base class             */
 
   /* functions */
-  INT (*TAssemblePreProcess)                     /* call at begin of timestep	        */
+  INT (*TAssemblePreProcess)                     /* call at begin of timestep           */
     (struct np_t_assemble *,                 /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
-    DOUBLE,                                                              /* time t_k+1						*/
-    DOUBLE,                                                              /* time t_k						*/
-    DOUBLE,                                                              /* time t_k-1						*/
+    DOUBLE,                                                              /* time t_k+1                                          */
+    DOUBLE,                                                              /* time t_k                                            */
+    DOUBLE,                                                              /* time t_k-1                                          */
     VECDATA_DESC *,                              /* (unknown) solution at t_k+1         */
     VECDATA_DESC *,                              /* solution vector at t_k          */
     VECDATA_DESC *,                              /* solution vector at t_k-1        */
     INT *);                                      /* result                          */
-  INT (*TAssembleInitial)                        /* set initial values				*/
+  INT (*TAssembleInitial)                        /* set initial values                          */
     (struct np_t_assemble *,                 /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
-    DOUBLE,                                                              /* time value t					*/
+    DOUBLE,                                                              /* time value t                                        */
     VECDATA_DESC *,                              /* solution vector at time t       */
     INT *);                                      /* result                          */
   INT (*TAssembleSolution)               /* set dirichlet conditions in sol.*/
     (struct np_t_assemble *,                 /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
-    DOUBLE,                                                              /* time value t					*/
+    DOUBLE,                                                              /* time value t                                        */
     VECDATA_DESC *,                              /* solution vector at time t       */
     INT *);                                      /* result                          */
-  INT (*TAssembleDefect)                     /* accumulate to defect vector		*/
+  INT (*TAssembleDefect)                     /* accumulate to defect vector             */
     (struct np_t_assemble *,                 /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
-    DOUBLE,                                                              /* time value t					*/
-    DOUBLE,                                                              /* scaling for m-term: s_m			*/
-    DOUBLE,                                                              /* scaling for a-term: s_a			*/
+    DOUBLE,                                                              /* time value t                                        */
+    DOUBLE,                                                              /* scaling for m-term: s_m                     */
+    DOUBLE,                                                              /* scaling for a-term: s_a                     */
     VECDATA_DESC *,                              /* solution vector y               */
     VECDATA_DESC *,                              /* accumulate s_m*m(t,y)+s_a*a(t,y)*/
     MATDATA_DESC *,                              /* matrix may be handy for Picard  */
@@ -468,8 +479,8 @@ struct np_t_assemble {
     (struct np_t_assemble *,                 /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
-    DOUBLE,                                                              /* time value t					*/
-    DOUBLE,                                                              /* scaling for a-term: s_a	(s_m=1!)*/
+    DOUBLE,                                                              /* time value t                                        */
+    DOUBLE,                                                              /* scaling for a-term: s_a     (s_m=1!)*/
     VECDATA_DESC *,                                          /* current sol (linearization pt)  */
     VECDATA_DESC *,                                          /* defect for current solution     */
     VECDATA_DESC *,                                          /* correction to be computed               */
@@ -480,8 +491,8 @@ struct np_t_assemble {
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
     NODE *,                              /* pointer to node                 */
-    DOUBLE,                                                              /* time value t					*/
-    DOUBLE,                                                              /* scaling for a-term: s_a	(s_m=1!)*/
+    DOUBLE,                                                              /* time value t                                        */
+    DOUBLE,                                                              /* scaling for a-term: s_a     (s_m=1!)*/
     VECDATA_DESC *,                                          /* current sol (linearization pt)  */
     VECDATA_DESC *,                                          /* defect for current solution     */
     VECDATA_DESC *,                                          /* correction to be computed               */
@@ -491,10 +502,10 @@ struct np_t_assemble {
     (struct np_t_assemble *,                 /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
-    DOUBLE,                                                              /* time t_k+1						*/
-    DOUBLE,                                                              /* time t_k						*/
-    DOUBLE,                                                              /* time t_k-1						*/
-    VECDATA_DESC *,                              /* solution t_k+1 (just computed!)	*/
+    DOUBLE,                                                              /* time t_k+1                                          */
+    DOUBLE,                                                              /* time t_k                                            */
+    DOUBLE,                                                              /* time t_k-1                                          */
+    VECDATA_DESC *,                              /* solution t_k+1 (just computed!)     */
     VECDATA_DESC *,                              /* solution vector at t_k          */
     VECDATA_DESC *,                              /* solution vector at t_k-1        */
     INT *);                                      /* result                          */
@@ -522,22 +533,22 @@ typedef INT (*TAssemblePostProcessProcPtr)                                    \
   (NP_T_ASSEMBLE *, INT, INT, DOUBLE, DOUBLE, DOUBLE, VECDATA_DESC *, VECDATA_DESC *, VECDATA_DESC *, INT *);
 
 /****************************************************************************/
-/*																			*/
-/* nonlinear assemble interface												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* nonlinear assemble interface                                                                                         */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 typedef struct {
 
-  INT action;                                                           /* def/mat (enum PP_ACTIONS)	*/
-  DOUBLE s_a;                                                           /* scale stiffness mat			*/
-  DOUBLE s_m;                                                           /* scale mass matrix			*/
+  INT action;                                                           /* def/mat (enum PP_ACTIONS)    */
+  DOUBLE s_a;                                                           /* scale stiffness mat                  */
+  DOUBLE s_m;                                                           /* scale mass matrix                    */
   DOUBLE time;                                                          /* time                                                 */
-  DOUBLE dt;                                                            /* time step					*/
-  DOUBLE dt_old;                                                        /* last time step				*/
-  INT ass_part;                                                         /* assemble part only			*/
-  INT partskip[NVECTYPES];                              /* own skip flag positions		*/
-  INT co_partskip[NVECTYPES];                           /* co skip flag positions		*/
+  DOUBLE dt;                                                            /* time step                                    */
+  DOUBLE dt_old;                                                        /* last time step                               */
+  INT ass_part;                                                         /* assemble part only                   */
+  INT partskip[NVECTYPES];                              /* own skip flag positions              */
+  INT co_partskip[NVECTYPES];                           /* co skip flag positions               */
   MATDATA_DESC   *MD_A;                                         /* stiffness matrix                     */
   MATDATA_DESC   *MD_A_glob;
   VECDATA_DESC   *VD_s;                                         /* solution                                     */
@@ -545,125 +556,125 @@ typedef struct {
   VECDATA_DESC   *VD_s_i;
   VECDATA_DESC   *VD_s_co;
   VECDATA_DESC   *VD_s_ico;
-  VECDATA_DESC   *VD_o;                                         /* last time step sol			*/
+  VECDATA_DESC   *VD_o;                                         /* last time step sol                   */
   VECDATA_DESC   *VD_o_glob;
-  VECDATA_DESC   *VD_c;                                         /* correction					*/
+  VECDATA_DESC   *VD_c;                                         /* correction                                   */
   VECDATA_DESC   *VD_c_glob;
-  VECDATA_DESC   *VD_r;                                         /* right hand side				*/
+  VECDATA_DESC   *VD_r;                                         /* right hand side                              */
   VECDATA_DESC   *VD_r_glob;
-  VECDATA_DESC   *VD_gridvel;                                   /* grid velocity				*/
+  VECDATA_DESC   *VD_gridvel;                                   /* grid velocity                                */
 
 } PARTASS_PARAMS;
 
 struct np_nl_partass {
 
-  NP_BASE base;                                                 /* inherits base class				*/
+  NP_BASE base;                                                 /* inherits base class                          */
 
-  /* data (optional, necessary for calling the generic execute routine)	*/
-  VEC_TEMPLATE *t;                                              /* template matching x				*/
+  /* data (optional, necessary for calling the generic execute routine)   */
+  VEC_TEMPLATE *t;                                              /* template matching x                          */
   INT s;                                                        /* sub vec for own part                         */
   VECDATA_DESC *x;                                              /* solution                                             */
-  VECDATA_DESC *c;                                              /* correction						*/
-  VECDATA_DESC *b;                                              /* defect							*/
-  VECDATA_DESC *g;                                              /* grid velocity					*/
-  MATDATA_DESC *A;                                              /* matrix							*/
+  VECDATA_DESC *c;                                              /* correction                                           */
+  VECDATA_DESC *b;                                              /* defect                                                       */
+  VECDATA_DESC *g;                                              /* grid velocity                                        */
+  MATDATA_DESC *A;                                              /* matrix                                                       */
 
   /* functions */
   INT (*NLPpreprocess)(
-    struct np_nl_partass *,                             /* pointer to (derived) object		*/
-    INT fl,                                                             /* from level						*/
+    struct np_nl_partass *,                             /* pointer to (derived) object          */
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
   INT (*NLPassembleSolution)(
-    struct np_nl_partass *,                             /* pointer to (derived) object		*/
-    INT fl,                                                             /* from level						*/
+    struct np_nl_partass *,                             /* pointer to (derived) object          */
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
   INT (*NLPassemble)(
-    struct np_nl_partass *,                             /* pointer to (derived) object		*/
-    INT fl,                                                             /* from level						*/
+    struct np_nl_partass *,                             /* pointer to (derived) object          */
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
   INT (*NLPpostprocess)(
-    struct np_nl_partass *,                             /* pointer to (derived) object		*/
-    INT fl,                                                             /* from level						*/
+    struct np_nl_partass *,                             /* pointer to (derived) object          */
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
 };
 typedef struct np_nl_partass NP_NL_PARTASS;
 
 /****************************************************************************/
-/*																			*/
-/* time-dependent part assemble interface									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* time-dependent part assemble interface                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_t_partass {
 
-  NP_BASE base;                                                 /* inherits base class				*/
+  NP_BASE base;                                                 /* inherits base class                          */
 
-  /* data (optional, necessary for calling the generic execute routine)	*/
-  VEC_TEMPLATE *t;                                              /* template matching x				*/
+  /* data (optional, necessary for calling the generic execute routine)   */
+  VEC_TEMPLATE *t;                                              /* template matching x                          */
   INT s;                                                        /* sub vec for own part                         */
 
   /* functions */
   INT (*TPassembleInitial)(
-    struct np_t_partass *,                              /* pointer to (derived) object		*/
-    INT fl,                                                             /* from level						*/
+    struct np_t_partass *,                              /* pointer to (derived) object          */
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
   INT (*TPpreprocess)(
-    struct np_t_partass *,                              /* pointer to (derived) object		*/
-    INT fl,                                                             /* from level						*/
+    struct np_t_partass *,                              /* pointer to (derived) object          */
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
   INT (*TPassembleSolution)(
-    struct np_t_partass *,                              /* pointer to (derived) object		*/
-    INT fl,                                                             /* from level						*/
+    struct np_t_partass *,                              /* pointer to (derived) object          */
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
   INT (*TPassemble)(
-    struct np_t_partass *,                              /* pointer to (derived) object		*/
-    INT fl,                                                             /* from level						*/
+    struct np_t_partass *,                              /* pointer to (derived) object          */
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
   INT (*TPpostprocess)(
-    struct np_t_partass *,                              /* pointer to (derived) object		*/
-    INT fl,                                                             /* from level						*/
+    struct np_t_partass *,                              /* pointer to (derived) object          */
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
   INT (*TPassembleFinal)                                /* call after finishing integration*/
     (struct np_t_partass *,                             /* pointer to (derived) object     */
-    INT fl,                                                             /* from level						*/
+    INT fl,                                                             /* from level                                           */
     INT tl,                                                             /* to level                                             */
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
-    INT *                                                               /* result							*/
+    INT *                                                               /* result                                                       */
     );
 };
 typedef struct np_t_partass NP_T_PARTASS;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* generic init/display/execute functions for Assemble num procs */
@@ -716,5 +727,9 @@ const char *pp_action2str               (const PARTASS_PARAMS *pp);
 
 /* init tis file */
 INT InitAssemble (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

@@ -1,11 +1,11 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  mgheapmgr.c													*/
-/*																			*/
-/* Purpose:   mg heap manager                                                                           */
-/*																			*/
+/*                                                                          */
+/* File:      mgheapmgr.c                                                   */
+/*                                                                          */
+/* Purpose:   mg heap manager                                               */
+/*                                                                          */
 /* Author:	  Stefan Lang                                                                                   */
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
@@ -15,8 +15,8 @@
 /*																			*/
 /* History:   980826, start                                                                             */
 /*																			*/
-/* Remarks: controls de/allocation of bottom heap memory					*/
-/*																			*/
+/* Remarks: controls de/allocation of bottom heap memory                    */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
@@ -32,6 +32,14 @@
 #include "heaps.h"
 #include "gm.h"
 #include "algebra.h"
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*																			*/

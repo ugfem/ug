@@ -1,25 +1,25 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ff_gen.h														*/
-/*																			*/
+/*                                                                          */
+/* File:      ff_gen.h                                                      */
+/*                                                                                                                                                      */
 /* Purpose:   general frequency filtering decompostion routines             */
-/*                numproc mechanism												*/
-/*																			*/
-/* Author:	  Christian Wrobel                                                                              */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de			                                */
-/*																			*/
-/* History:   16.09.96 begin, ug version 3.3								*/
-/*																			*/
-/* Remarks:   FF is used as the abbreviation for "frequency filtering"		*/
+/*                numproc mechanism                                                                                             */
+/*                                                                                                                                                      */
+/* Author:        Christian Wrobel                                                                              */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
+/* History:   16.09.96 begin, ug version 3.3                                                            */
+/*                                                                                                                                                      */
+/* Remarks:   FF is used as the abbreviation for "frequency filtering"          */
 /*                        TFF is used as the abbreviation for the "tangential frequency */
-/*			       filtering" method due to Christian Wagner, 1995			*/
-/*																			*/
+/*                             filtering" method due to Christian Wagner, 1995                  */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -28,22 +28,33 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __FF_GEN__
 #define __FF_GEN__
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* if defined, special BV communication routines are used */
@@ -173,9 +184,9 @@
 #define FFCrossNbPosOffset(pe,vnr,nbnr) (FFCrossOffsetPtr(pe)->nb_rel_pos[vnr][nbnr])
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct ffcommbuffer
@@ -214,9 +225,9 @@ struct peinfo
 typedef struct peinfo PEInfo;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 extern PEInfo *PEInfoArray;             /* dyn. allocacted array for each slave pe */
@@ -271,9 +282,9 @@ extern INT aux6_COMP;
 
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -336,5 +347,9 @@ INT FFMultWithMInv(
   );
 
 INT InitFF (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

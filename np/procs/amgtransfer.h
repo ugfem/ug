@@ -1,23 +1,23 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  amgtransfer.h                                                                                                 */
-/*																			*/
-/* Purpose:   initialization for algebraic multigrid	                    */
+/*                                                                                                                                                      */
+/* File:          amgtransfer.h                                                                                                 */
+/*                                                                                                                                                      */
+/* Purpose:   initialization for algebraic multigrid                        */
 /*                                                                          */
-/* Author:	  Nicolas Neuss                                                                                     */
-/*			  Institut fuer Angewandte Mathematik                           */
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 294										*/
-/*			  69120 Heidelberg												*/
-/*			  email: neuss@iwr.uni-heidelberg.de			                        */
-/*																			*/
-/* History:   1994-1995 in old ug2.0							            */
+/* Author:        Nicolas Neuss                                                                                     */
+/*                        Institut fuer Angewandte Mathematik                           */
+/*                        Universitaet Heidelberg                                                                               */
+/*                        Im Neuenheimer Feld 294                                                                               */
+/*                        69120 Heidelberg                                                                                              */
+/*                        email: neuss@iwr.uni-heidelberg.de                                            */
+/*                                                                                                                                                      */
+/* History:   1994-1995 in old ug2.0                                                                */
 /*            May 1997  in new ug3.7                                        */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -26,9 +26,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __AMGTRANSFER__
@@ -37,14 +37,25 @@
 #include "np.h"
 #include "transfer.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define SELECTION_AMG 1
@@ -55,9 +66,9 @@
 #define DISPLAY_NP_AMG_FORMAT "%3d   %8d   %8d   %8d\n"
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* a data type for returning the status of the coarsening procedure         */
@@ -126,15 +137,15 @@ typedef struct
 } NP_AMG_TRANSFER;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT AMGTransferInit       (NP_BASE *np, INT argc , char **argv);
@@ -146,5 +157,9 @@ INT AMGTransferExecute    (NP_BASE *theNP, INT argc , char **argv);
 
 INT InitAMGTransfer       (void);
 INT AMGTransferConstruct  (NP_BASE *theNP);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

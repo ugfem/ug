@@ -43,6 +43,14 @@
 
 #include "transfer.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -289,7 +297,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NPTransferInit (NP_TRANSFER *np, INT argc , char **argv)
+INT NS_PREFIX NPTransferInit (NP_TRANSFER *np, INT argc , char **argv)
 {
   INT i;
 
@@ -310,7 +318,7 @@ INT NPTransferInit (NP_TRANSFER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPTransferDisplay (NP_TRANSFER *np)
+INT NS_PREFIX NPTransferDisplay (NP_TRANSFER *np)
 {
   if ((np->A == NULL) && (np->x == NULL) && (np->b == NULL) && (np->c == NULL))
     return(0);
@@ -334,7 +342,7 @@ INT NPTransferDisplay (NP_TRANSFER *np)
   return(0);
 }
 
-INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_TRANSFER *np;
   INT result,level;
@@ -481,8 +489,8 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
-INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
-                   MATDATA_DESC *A, VECDATA_DESC *t, INT display)
+INT NS_PREFIX MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
+                             MATDATA_DESC *A, VECDATA_DESC *t, INT display)
 {
   MULTIGRID *mg;
   DOUBLE a0,a1;

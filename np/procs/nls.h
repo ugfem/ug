@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  nls.h                                                                                                         */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          nls.h                                                                                                         */
+/*                                                                                                                                                      */
 /* Purpose:   definition of the assemble num proc type                                  */
-/*																			*/
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
+/*                                                                                                                                                      */
+/* Author:        Christian Wieners                                                                             */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
 /* History:   November 29, 1996                                                                         */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __NLS__
@@ -37,23 +37,34 @@
 #include "ls.h"
 #include "assemble.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define NL_SOLVER_CLASS_NAME "nl_solver"
 #define ENL_SOLVER_CLASS_NAME "enl_solver"
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported data structures                                   */
+/*                                                                          */
 /****************************************************************************/
 
 /* a data type for returning the status of the computation                  */
@@ -71,9 +82,9 @@ typedef struct {
 } NLRESULT;
 
 /****************************************************************************/
-/*																			*/
-/* ordinary nonlinear solver												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* ordinary nonlinear solver                                                                                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_nl_solver {
@@ -81,7 +92,7 @@ struct np_nl_solver {
 
   /* data (optinal, necessary for calling the generic execute routine)    */
   VECDATA_DESC *x;                       /* solution                        */
-  NP_NL_ASSEMBLE *Assemble;              /* the assemble numproc			*/
+  NP_NL_ASSEMBLE *Assemble;              /* the assemble numproc                        */
   VEC_SCALAR reduction;                      /* reduction factor                */
   VEC_SCALAR abslimit;                       /* absolute limit for the defect   */
 
@@ -95,7 +106,7 @@ struct np_nl_solver {
     (struct np_nl_solver *,                  /* pointer to (derived) object     */
     INT,                                         /* level                           */
     VECDATA_DESC *,                              /* solution vector                 */
-    NP_NL_ASSEMBLE *,                                /* the assemble numproc			*/
+    NP_NL_ASSEMBLE *,                                /* the assemble numproc                    */
     VEC_SCALAR,                                  /* absolute limit for the defect   */
     VEC_SCALAR,                                  /* reduction factor                */
     NLRESULT *);                                 /* result structure                */
@@ -112,9 +123,9 @@ typedef INT (*Solver)(NP_NL_SOLVER *, INT, VECDATA_DESC *, NP_NL_ASSEMBLE *, VEC
 typedef INT (*PostProcessNLSolverProcPtr)(NP_NL_SOLVER *, INT, VECDATA_DESC *, INT *);
 
 /****************************************************************************/
-/*																			*/
-/* extended nonlinear solver												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* extended nonlinear solver                                                                                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* a data type for returning the status of the computation                  */
@@ -164,9 +175,9 @@ typedef struct np_enl_solver NP_ENL_SOLVER;
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* generic init function for LinearSolver num procs */
@@ -182,5 +193,9 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv);
 
 /* create standard LinearSolver num proc type */
 INT InitNonlinearSolver (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

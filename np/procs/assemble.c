@@ -42,6 +42,14 @@
 #include "ugdevices.h"
 #include "assemble.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -69,6 +77,10 @@
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
 
 typedef struct
 {
@@ -229,7 +241,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NPAssembleInit (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPAssembleInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ASSEMBLE *np;
 
@@ -244,7 +256,7 @@ INT NPAssembleInit (NP_BASE *theNP, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPAssembleDisplay (NP_BASE *theNP)
+INT NS_PREFIX NPAssembleDisplay (NP_BASE *theNP)
 {
   NP_ASSEMBLE *np;
 
@@ -399,7 +411,7 @@ INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
    D*/
 /****************************************************************************/
 
-INT NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_NL_ASSEMBLE *np;
 
@@ -415,7 +427,7 @@ INT NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPNLAssembleDisplay (NP_BASE *theNP)
+INT NS_PREFIX NPNLAssembleDisplay (NP_BASE *theNP)
 {
   NP_NL_ASSEMBLE *np;
 
@@ -436,7 +448,7 @@ INT NPNLAssembleDisplay (NP_BASE *theNP)
   return(0);
 }
 
-INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_NL_ASSEMBLE *np;
   INT result,level;
@@ -807,17 +819,17 @@ INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
    D*/
 /****************************************************************************/
 
-INT NPTAssembleInit (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPTAssembleInit (NP_BASE *theNP, INT argc , char **argv)
 {
   return(NP_ACTIVE);
 }
 
-INT NPTAssembleDisplay (NP_BASE *theNP)
+INT NS_PREFIX NPTAssembleDisplay (NP_BASE *theNP)
 {
   return(0);
 }
 
-INT NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   REP_ERR_RETURN(1);   /* never executable */
 }
@@ -857,10 +869,10 @@ INT NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
    D*/
 /****************************************************************************/
 
-INT SetPartassParams (PARTASS_PARAMS *pp,
-                      DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
-                      VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
-                      VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A)
+INT NS_PREFIX SetPartassParams (PARTASS_PARAMS *pp,
+                                DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
+                                VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
+                                VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A)
 {
   int i;
 
@@ -931,10 +943,10 @@ INT SetPartassParams (PARTASS_PARAMS *pp,
    D*/
 /****************************************************************************/
 
-INT SetPartassParamsX (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt, INT sub,
-                       DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
-                       VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
-                       VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A)
+INT NS_PREFIX SetPartassParamsX (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt, INT sub,
+                                 DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
+                                 VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
+                                 VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A)
 {
   /* checks */
   if (s==NULL)

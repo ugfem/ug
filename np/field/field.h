@@ -1,21 +1,21 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*									                                                                        */
-/* File:	field.h						                                                        */
-/*									                                                                        */
-/* Purpose:	definition of the field num proc type		                                */
-/*									                                                                        */
-/* Author:	Carsten Schwarz						                                                */
-/*		Institut fuer Hydromechanik und Wasserwirtschaft	                        */
-/*		ETH Hoenggerberg					                                                        */
-/*		8093 Zuerich						                                                        */
-/*		email: schwarz@ihw.baum.ethz.ch			                                        */
-/*									                                                                        */
-/* History:	February 1997						                                                */
-/*									                                                                        */
+/*                                                                                                                                              */
+/* File:        field.h                                                                                                 */
+/*                                                                                                                                              */
+/* Purpose:     definition of the field num proc type                                           */
+/*                                                                                                                                              */
+/* Author:      Carsten Schwarz                                                                                         */
+/*              Institut fuer Hydromechanik und Wasserwirtschaft                                */
+/*              ETH Hoenggerberg                                                                                                */
+/*              8093 Zuerich                                                                                                    */
+/*              email: schwarz@ihw.baum.ethz.ch                                                         */
+/*                                                                                                                                              */
+/* History:     February 1997                                                                                           */
+/*                                                                                                                                              */
 /* Remarks:                                                                                                                     */
-/*									                                                                        */
+/*                                                                                                                                              */
 /****************************************************************************/
 
 
@@ -24,9 +24,9 @@
  */
 
 /****************************************************************************/
-/*									                                                                        */
-/* auto include mechanism and other include files			                        */
-/*									                                                                        */
+/*                                                                                                                                              */
+/* auto include mechanism and other include files                                               */
+/*                                                                                                                                              */
 /****************************************************************************/
 
 #ifndef __NPFIELD__
@@ -34,14 +34,25 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*									                                                                        */
-/* defines in the following order					                                        */
-/*									                                                                        */
-/*	compile time constants defining static data size (i.e. arrays)	        */
-/*	other constants							                                                                */
-/*	macros								                                                                */
-/*									                                                                        */
+/*                                                                                                                                              */
+/* defines in the following order                                                                               */
+/*                                                                                                                                              */
+/*      compile time constants defining static data size (i.e. arrays)          */
+/*      other constants                                                                                                                 */
+/*      macros                                                                                                                          */
+/*                                                                                                                                              */
 /****************************************************************************/
 
 #define FIELD_CLASS_NAME        "field"
@@ -53,9 +64,9 @@
 #define FIELD_NORMDIST          2
 
 /****************************************************************************/
-/*									                                                                        */
-/* definition of exported data structures				                                */
-/*									                                                                        */
+/*                                                                                                                                              */
+/* definition of exported data structures                                                               */
+/*                                                                                                                                              */
 /****************************************************************************/
 
 struct np_field
@@ -81,7 +92,7 @@ struct np_stoch_field
   INT inttype;
   INT initial;
   DOUBLE *Fld;
-  MEM FldSize;                          /* current allocation size of Fld in byte		*/
+  MEM FldSize;                          /* current allocation size of Fld in byte               */
 };
 
 
@@ -114,9 +125,9 @@ typedef struct np_get_fld NP_GET_FIELD;
 typedef struct np_aniso_fld NP_ANISO_FIELD;
 
 /****************************************************************************/
-/*									                                                                        */
-/* definition of exported functions					                                        */
-/*									                                                                        */
+/*                                                                                                                                              */
+/* definition of exported functions                                                                             */
+/*                                                                                                                                              */
 /****************************************************************************/
 
 INT Field_genStochField(NP_STOCH_FIELD *np);
@@ -125,5 +136,9 @@ INT Field_GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out);
 INT Field_RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out);
 
 INT InitStochField (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

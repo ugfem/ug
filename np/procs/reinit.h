@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __REINIT__
@@ -35,22 +35,33 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define REINIT_CLASS_NAME "reinit"
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define PARAMETER_MAX               10
@@ -86,12 +97,17 @@ struct np_reinit {
 typedef struct np_reinit NP_REINIT;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT REINIT_Display (NP_BASE *base);
 INT InitReinit (void);
+
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

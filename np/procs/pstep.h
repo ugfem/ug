@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __PSTEP__
@@ -35,14 +35,25 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define P_STEP_CLASS_NAME "pstep"
@@ -53,9 +64,9 @@
   p.exec_time=0.0;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct pstep_result {
@@ -73,8 +84,8 @@ struct np_p_step {
   NP_BASE base;                              /* derived from nonlinear assemble */
 
   /* things to be initialized by generic init */
-  EVECDATA_DESC *sol_p0;                 /* solution vector	0				*/
-  EVECDATA_DESC *sol_p1;                 /* solution vector	1				*/
+  EVECDATA_DESC *sol_p0;                 /* solution vector     0                               */
+  EVECDATA_DESC *sol_p1;                 /* solution vector     1                               */
 
   /* functions */
   INT (*PreProcess)                                              /* called before first time step   */
@@ -96,11 +107,15 @@ struct np_p_step {
 typedef struct np_p_step NP_P_STEP;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT InitPStep (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

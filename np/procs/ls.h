@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ls.h                                                                                                          */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          ls.h                                                                                                          */
+/*                                                                                                                                                      */
 /* Purpose:   definition of the linear solver num proc type                             */
-/*																			*/
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
+/*                                                                                                                                                      */
+/* Author:        Christian Wieners                                                                             */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
 /* History:   November 29, 1996                                                                         */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,24 +25,35 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __LS__
 #define __LS__
 
 #include "np.h"
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define LINEAR_SOLVER_CLASS_NAME "linear_solver"
@@ -57,9 +68,9 @@
 #define NPLS_printbasetime(p)           (((NP_LINEAR_SOLVER*)(p))->printbasetime)
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* a data type for returning the status of the computation                  */
@@ -143,9 +154,9 @@ typedef INT (*PostProcessLinearSolverProcPtr)                                \
   INT *);
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* generic init function for LinearSolver num procs */
@@ -159,5 +170,9 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv);
 
 /* create standard LinearSolver num proc type */
 INT InitLinearSolver (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

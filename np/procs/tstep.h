@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __TSTEP__
@@ -35,14 +35,25 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define T_STEP_CLASS_NAME "tstep"
@@ -53,9 +64,9 @@
   t.exec_time=0.0;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct tstep_result {
@@ -75,9 +86,9 @@ struct np_t_step {
 
   /* things to be initialized by generic init */
   DOUBLE t0;                                 /* time 0                          */
-  VECDATA_DESC *sol_t0;                  /* solution vector at time t0		*/
+  VECDATA_DESC *sol_t0;                  /* solution vector at time t0          */
   DOUBLE t1;                                 /* time 1                          */
-  VECDATA_DESC *sol_t1;                  /* solution vector at time t1		*/
+  VECDATA_DESC *sol_t1;                  /* solution vector at time t1          */
 
   /* functions */
   INT (*TimePreProcess)                                  /* called before first time step   */
@@ -106,11 +117,15 @@ struct np_t_step {
 typedef struct np_t_step NP_T_STEP;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT InitTStep (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

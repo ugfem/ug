@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* File:      nliter.c                                                          */
 /*                                                                          */
 /* Purpose:   nonlinear iteration num procs                                 */
@@ -14,15 +14,15 @@
 /*            email: ug@ica3.uni-stuttgart.de                               */
 /*                                                                          */
 /* History:   30.07.97 begin, ug version 3.8                                */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __NLITER__
@@ -31,14 +31,25 @@
 #include "np.h"
 #include "assemble.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define NL_ITER_CLASS_NAME "nliter"
@@ -53,9 +64,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_nl_iter {
@@ -66,29 +77,29 @@ struct np_nl_iter {
   VECDATA_DESC *b;                       /* defect                      */
   VECDATA_DESC *x;                       /* solution                    */
   MATDATA_DESC *A;                       /* matrix                      */
-  NP_NL_ASSEMBLE *Assemble;              /* the assemble numproc		*/
+  NP_NL_ASSEMBLE *Assemble;              /* the assemble numproc                */
 
   /* functions */
   INT (*PreProcess)
     (struct np_nl_iter *,            /* pointer to (derived) object     */
     INT,                                     /* level                           */
     VECDATA_DESC *,                          /* defect vector                   */
-    VECDATA_DESC *,                          /* solution vector		            */
+    VECDATA_DESC *,                          /* solution vector                     */
     MATDATA_DESC *,                          /* matrix                          */
     INT *,                                   /* baselevel used by iter          */
     INT *);                                  /* result                          */
   INT (*NLIter)
     (struct np_nl_iter *,                /* pointer to (derived) object     */
     INT,                                     /* level                           */
-    VECDATA_DESC *,                          /* solution vector		            */
+    VECDATA_DESC *,                          /* solution vector                     */
     VECDATA_DESC *,                          /* defect vector                   */
     MATDATA_DESC *,                          /* matrix                          */
-    NP_NL_ASSEMBLE *,                            /* the assemble numproc			*/
+    NP_NL_ASSEMBLE *,                            /* the assemble numproc                        */
     INT *);                              /* result                          */
   INT (*PostProcess)
     (struct np_nl_iter *,                /* pointer to (derived) object     */
     INT,                                     /* level                           */
-    VECDATA_DESC *,                          /* solution vector					*/
+    VECDATA_DESC *,                          /* solution vector                                 */
     VECDATA_DESC *,                          /* defect vector                   */
     MATDATA_DESC *,                          /* matrix                          */
     INT *);                                  /* result                          */
@@ -103,9 +114,9 @@ typedef INT (*PostProcessNLIterProcPtr) \
   (NP_NL_ITER *, INT, VECDATA_DESC *, MATDATA_DESC *, INT *);
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* generic init function for iter num procs */
@@ -119,5 +130,9 @@ INT NPNLIterExecute (NP_BASE *theNP, INT argc , char **argv);
 
 /* create nonlinear iter num proc type */
 INT InitNLIter (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

@@ -48,6 +48,14 @@
 #include "iter.h"
 #include "ls.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -68,7 +76,7 @@
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
 /*		  in the corresponding include file!)								*/
-/*																			*/
+/*                                                                          */
 /****************************************************************************/
 
 struct np_ls
@@ -374,7 +382,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
+INT NS_PREFIX NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
 {
   INT i;
 
@@ -404,7 +412,7 @@ INT NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
+INT NS_PREFIX NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
 {
   if ((np->x != NULL) || (np->b != NULL) || (np->A != NULL)) {
     UserWrite("symbolic user data:\n");
@@ -428,7 +436,7 @@ INT NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
   return(0);
 }
 
-INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_LINEAR_SOLVER *np;
   LRESULT lresult;

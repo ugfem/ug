@@ -1,24 +1,24 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  pcr.h															*/
-/*																			*/
-/* Purpose:   defines for priniting of convergence rates					*/
-/*																			*/
-/* Author:	  Klaus Johannsen/Henrik Rentz-Reichert							*/
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de								*/
-/*																			*/
-/* History:   25.03.95 begin, ug version 3.0								*/
-/*			  09.12.95 transition to new descriptor formats (HRR)			*/
-/*			  December 2, 1996 redesign of numerics                                                 */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          pcr.h                                                                                                                 */
+/*                                                                                                                                                      */
+/* Purpose:   defines for priniting of convergence rates                                        */
+/*                                                                                                                                                      */
+/* Author:        Klaus Johannsen/Henrik Rentz-Reichert                                                 */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                               */
+/*                                                                                                                                                      */
+/* History:   25.03.95 begin, ug version 3.0                                                            */
+/*                        09.12.95 transition to new descriptor formats (HRR)                   */
+/*                        December 2, 1996 redesign of numerics                                                 */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -27,9 +27,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __PCR__
@@ -43,14 +43,25 @@
 #include "numproc.h"
 #include "scan.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* DisplayModes for PrintConvergenceRate */
@@ -67,9 +78,9 @@
 #define PCR_INTERN_SD                   5
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT                     GetStrINTinRange                        (const char *str, INT min, INT max, INT *value);
@@ -78,5 +89,9 @@ INT             PreparePCR                                      (VECDATA_DESC *V
 INT         PrepareEPCR                 (EVECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID);
 INT             PostPCR                                         (INT ID, char *path);
 INT             DoPCR                                           (INT ID, VEC_SCALAR Defect, INT PrintMode);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

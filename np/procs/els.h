@@ -1,11 +1,11 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  els.h                                                                                                         */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          els.h                                                                                                         */
+/*                                                                                                                                                      */
 /* Purpose:   definition of the extended linear solver num proc type            */
-/*																			*/
+/*                                                                                                                                                      */
 /* Author:    Klaus Johannsen                                               */
 /*            IWR/Technische Simulation                                     */
 /*            Universitaet Heidelberg                                       */
@@ -14,9 +14,9 @@
 /*            email: klaus.johannsen@iwr.uni-heidelberg.de                  */
 /*                                                                          */
 /* History:   19.07.02 begin                                                */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __ELS__
@@ -35,14 +35,25 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define ELINEAR_SOLVER_CLASS_NAME "ext_linear_solver"
@@ -57,9 +68,9 @@
 #define NPELS_printbasetime(p)  (((NP_ELINEAR_SOLVER*)(p))->printbasetime)
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported data structures									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported data structures                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* a data type for returning the status of the computation                  */
@@ -133,9 +144,9 @@ typedef INT (*ELinearSolverProcPtr)(NP_ELINEAR_SOLVER *, INT, EVECDATA_DESC *, E
 typedef INT (*PostProcessELinearSolverProcPtr)(NP_ELINEAR_SOLVER *, INT, EVECDATA_DESC *, EVECDATA_DESC *, EMATDATA_DESC *, INT *);
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* generic init function for LinearSolver num procs */
@@ -149,5 +160,9 @@ INT NPELinearSolverExecute (NP_BASE *theNP, INT argc , char **argv);
 
 /* create standard LinearSolver num proc type */
 INT InitELinearSolver (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

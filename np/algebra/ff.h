@@ -1,24 +1,24 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  tff.h															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          tff.h                                                                                                                 */
+/*                                                                                                                                                      */
 /* Purpose:   (tangential) frequency filtering decompostion routines        */
-/*																			*/
-/* Author:	  Christian Wrobel                                                                              */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de			                                */
-/*																			*/
-/* History:   14.11.95 begin, ug version 3.1								*/
-/*																			*/
-/* Remarks:   FF is used as the abbreviation for "frequency filtering"		*/
+/*                                                                                                                                                      */
+/* Author:        Christian Wrobel                                                                              */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
+/* History:   14.11.95 begin, ug version 3.1                                                            */
+/*                                                                                                                                                      */
+/* Remarks:   FF is used as the abbreviation for "frequency filtering"          */
 /*                        TFF is used as the abbreviation for the "tangential frequency */
-/*			       filtering" method due to Christian Wagner, 1995			*/
-/*																			*/
+/*                             filtering" method due to Christian Wagner, 1995                  */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -27,40 +27,51 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __TFF__
 #define __TFF__
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                          */
+/* function declarations                                                                                                        */
+/*                                                                          */
 /****************************************************************************/
 
 INT TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest,
@@ -122,4 +133,11 @@ INT TFFSolve( const BLOCKVECTOR *bv,
               DOUBLE meshwidth,
               DOUBLE eps,
               GRID *grid );
+
+
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
+
 #endif

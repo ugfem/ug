@@ -47,6 +47,14 @@
 
 #include "error.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -63,6 +71,13 @@
 /*        in the corresponding include file!)                               */
 /*                                                                          */
 /****************************************************************************/
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
+
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
 
 typedef struct {
 
@@ -169,7 +184,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NPErrorInit (NP_ERROR *np, INT argc , char **argv)
+INT NS_PREFIX NPErrorInit (NP_ERROR *np, INT argc , char **argv)
 {
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
   np->o = ReadArgvVecDesc(np->base.mg,"o",argc,argv);
@@ -180,7 +195,7 @@ INT NPErrorInit (NP_ERROR *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPErrorDisplay (NP_ERROR *np)
+INT NS_PREFIX NPErrorDisplay (NP_ERROR *np)
 {
   if ((np->x == NULL) && (np->o == NULL))
     return(0);
@@ -386,9 +401,9 @@ static DOUBLE ElementIndicator_minmax (ELEMENT *t, INT ncomp,
   return(theMax-theMin);
 }
 
-INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
-                      DOUBLE refine, DOUBLE coarse, INT project,
-                      INT from, INT to, INT clear, ERESULT *eresult)
+INT NS_PREFIX SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
+                                DOUBLE refine, DOUBLE coarse, INT project,
+                                INT from, INT to, INT clear, ERESULT *eresult)
 {
   ELEMENT *t;
   DOUBLE *List,min,max,est,rf,cr;

@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  project.h                                                                                                     */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          project.h                                                                                                     */
+/*                                                                                                                                                      */
 /* Purpose:   projection header                                                                         */
-/*																			*/
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
+/*                                                                                                                                                      */
+/* Author:        Christian Wieners                                                                             */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70550 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
 /* History:   Nov 5, 1997 begin                                                                 */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:   not finished!                                                                     */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* RCS_ID
@@ -24,9 +24,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __PROJECT__
@@ -34,22 +34,33 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  project the solution of an eigenvalue-calculation in a space          */
-/*		  where the eigenvalues aren't zero.                                                            */
-/*		                                                                                                                                */
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                project the solution of an eigenvalue-calculation in a space          */
+/*                where the eigenvalues aren't zero.                                                            */
+/*                                                                                                                                              */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define PROJECT_CLASS_NAME "project"
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct np_project {
@@ -91,15 +102,15 @@ typedef INT (*ProjectionVector)(NP_PROJECT *, INT, INT, INT, VECDATA_DESC *,INT 
 typedef INT (*PostProcessProject)(NP_PROJECT *, INT *);
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT Project_Init (NP_PROJECT *theNP, INT argc, char **argv);
@@ -107,5 +118,9 @@ INT Project_Display (NP_PROJECT *theNP);
 
 
 INT     InitProject (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

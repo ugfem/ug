@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* File:	  er.c															*/
 /*																			*/
 /* Purpose:   extract rules realized in a multigrid                                             */
@@ -76,8 +76,16 @@
 /* own header */
 #include "er.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* defines in the following order											*/
 /*																			*/
 /*		  compile time constants defining static data size (i.e. arrays)	*/
@@ -164,6 +172,19 @@ enum ER_DBG {
 /*																			*/
 /****************************************************************************/
 
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
+
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
+extern INT sons_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT evector_offset[TAGS];
+extern INT svector_offset[TAGS];
+extern INT side_offset[TAGS];
+extern INT data_offset[TAGS];
+
 typedef struct {
 
   SHORT nsons;                                  /* number of son elements					*/
@@ -202,9 +223,9 @@ typedef struct hashed_rule HRULE;
 typedef REFRULE URULE;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -1762,7 +1783,7 @@ static void WriteDebugInfo (void)
   return;
 }
 
-INT GetOrderedSons (ELEMENT *theElement, MGIO_RR_RULE *theRule, NODE **NodeContext, ELEMENT **SonList, INT *nmax)
+INT NS_PREFIX GetOrderedSons (ELEMENT *theElement, MGIO_RR_RULE *theRule, NODE **NodeContext, ELEMENT **SonList, INT *nmax)
 {
   INT i,j,k,l,nfound,found;
   ELEMENT *NonorderedSonList[MAX_SONS];

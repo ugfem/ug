@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  error.h                                                                                                       */
-/*																			*/
-/* Purpose:   header for indicator.c										*/
-/*																			*/
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de					                */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          error.h                                                                                                       */
+/*                                                                                                                                                      */
+/* Purpose:   header for indicator.c                                                                            */
+/*                                                                                                                                                      */
+/* Author:        Christian Wieners                                                                             */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70550 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
 /* History:   Sep 4, 1996, ug version 3.4                                                               */
-/*																			*/
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __ERROR__
@@ -36,22 +36,33 @@
 #include "np.h"
 #include "ts.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define ERROR_CLASS_NAME "error"
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* a data type for returning the status of the computation                  */
@@ -90,7 +101,7 @@ struct np_error {
     DOUBLE *,                                    /* time step                       */
     VECDATA_DESC *,                              /* solution vector                 */
     VECDATA_DESC *,                              /* old solution vector             */
-    NP_T_SOLVER *,                               /* reference to timesolver	    */
+    NP_T_SOLVER *,                               /* reference to timesolver         */
     ERESULT *);                                  /* result                          */
   INT (*PostProcess)
     (struct np_error *,                      /* pointer to (derived) object     */
@@ -110,15 +121,15 @@ typedef INT (*PostProcessErrorProcPtr)                                      \
   (NP_ERROR *, INT, INT *);
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
@@ -135,5 +146,9 @@ INT NPErrorDisplay (NP_ERROR *theNP);
 INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv);
 
 INT     InitError (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif
