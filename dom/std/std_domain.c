@@ -1582,10 +1582,6 @@ INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
   for (i=0; i<=theBVP->numOfSubdomains; i++)
     sides[i] = 0;
 
-  for (j=0; j<=theBVP->numOfSubdomains; j++)
-    PRINTDEBUG(dom,1,("  g h       nside %d %d %d\n",nside,
-                      theBVP->nsides,sides[j]));
-
   for (i=theBVP->sideoffset; i<theBVP->sideoffset+theBVP->nsides; i++)
   {
     nside = n;
@@ -1722,9 +1718,6 @@ INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
   COORD lambda[DIM_OF_BND],lambda1,x[DIM];
   PATCH *p;
   BND_PS *ps;
-
-  for (j=0; j<=theBVP->numOfSubdomains; j++)
-    PRINTDEBUG(dom,1,("  g h       nside %d %d %d\n",nside,n,sides[j]));
 
   n = theBVP->ncorners;
   for (i=0; i<=theBVP->numOfSubdomains; i++)
