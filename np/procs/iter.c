@@ -1786,6 +1786,7 @@ static INT TSPostProcess (NP_ITER *theNP, INT level,
   NP_TS *np;
 
   np = (NP_TS *) theNP;
+  FreeMD(NP_MG(theNP),level,level,np->S);
   if (np->u_iter->PostProcess != NULL)
     if ((*np->u_iter->PostProcess)
           (np->u_iter,level,x,b,A,result))
