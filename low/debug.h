@@ -48,13 +48,14 @@
 #define PRINTDEBUG(m,n,s) IFDEBUG(m,n) PrintDebug s; ENDDEBUG
 #define ENDDEBUG  }
 #define RETURN(rcode)   {INT rc; rc = rcode; assert(!rc); return (rc);}
+#define HEAPFAULT(ptr)  assert(((int *)ptr)[1]!=-1);
 #else
 #define IFDEBUG(m,n)    if (1==0) {
 #define ENDDEBUG        }
 #define PRINTDEBUG(m,n,s) /* no debugging */
 #define RETURN(rcode)   return (rcode)
+#define HEAPFAULT(ptr)
 #endif
-
 
 /****************************************************************************/
 /*																			*/
