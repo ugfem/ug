@@ -465,7 +465,7 @@ static INT InitPuncturedDisc (void)
                               3,3,4,1,
                               0.0,10.0,
                               TopBoundary, NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left", 1,0,
+  if (CreateBoundarySegment2D("left", 0,1,
                               4,0,4,1,
                               0.0,1.0,
                               LeftBoundary, NULL)==NULL) return(1);
