@@ -64,14 +64,19 @@ START_UG_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
+/* when autotools build system is used DYNAMIC_MEMORY_ALLOCMODEL is
+ * implicitly set in config.h so we override the setting*/
+#ifndef AUTOTOOLS_BUILD
+
+
 /* define this to use DYNAMIC_MEMORY_ALLOCMODEL */
 /* matrices and vectors (for amg) are allocated */
 /* using Mark/Release                           */
-
-/* Set this here only if the old build system is used */
-#ifndef HAVE_CONFIG_H
 #define DYNAMIC_MEMORY_ALLOCMODEL
+
+
 #endif
+/* end of possible autotools-override */
 
 /****************************************************************************/
 /* defines for the simple and general heap management                       */
