@@ -43,6 +43,7 @@ class FAMGTransfer;
 class FAMGGrid
 {
 public:
+  ~FAMGGrid();
   int GetN() const {
     return n;
   };
@@ -68,14 +69,14 @@ public:
   void BGSSmooth();
   void ILUTSmooth();
   void JacobiSmoothFG();
-  void Prolongation(const FAMGGrid *cg, FAMGVector *c = NULL);
-  void Restriction(FAMGGrid *cg) const;
+  void Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVector &fgsol, FAMGVector &fgdefect, FAMGVector *c);
+  void Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect) const;
   int ConstructTransfer();
   int AnalyseParents(int i);
   int InitLevel0(const class FAMGSystem &);
   int Init(int n, const FAMGGrid &grid_pattern);
   int Construct(FAMGGrid *);
-  void Deconstruct();
+  void Deconstruct( int level);
   int SolveCoarseGrid();
   int BiCGStab();
   void SmoothTV();
@@ -166,7 +167,6 @@ public:
   GRID *GetugGrid() {
     return mygrid;
   }
-
 #endif
 
 private:
@@ -249,6 +249,11 @@ inline void FAMGGrid::SetConsMatrix(FAMGMatrixAlg *cm) {
 inline FAMGMatrixAlg *FAMGGrid::GetConsMatrix() const {
   return Consmatrix;
 }                                                                               // in parallel the (partly) consistent stiffness matrix
+inline FAMGGrid::~FAMGGrid() {
+  delete GetGraph(); delete &GetGridVector();
+  delete GetMatrix(); delete GetConsMatrix();
+  for( int i=0; i<FAMGMAXVECTORS; i++) delete GetVector(i);
+};
 
 #ifdef USE_UG_DS
 #else

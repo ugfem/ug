@@ -1390,12 +1390,19 @@ static INT FAMGIterPostProcess (NP_ITER *theNP, INT level,
 	
 	np = (NP_FAMG_ITER *) theNP;
 
-	delete famg_interface.gridvector;
+	if( famg_interface.Consmatrix != famg_interface.matrix )
+		delete famg_interface.Consmatrix;
+		
+	delete famg_interface.matrix;
 	
 	for(i = 0; i < FAMG_NVECTORS; i++)
 		delete famg_interface.vector[i];
 	
-	delete famg_interface.matrix;
+	delete famg_interface.gridvector;
+
+	FAMGDeconstruct();
+	
+	FAMGDeconstructParameter();
 	
 	mg = NP_MG(theNP);
 	FAMGFreeHeap();
@@ -1540,21 +1547,30 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	np = (NP_FAMG_TRANSFER *) theNP;
 	theMG = NP_MG(theNP);
 
+	FAMGDeconstruct();
+	
+	FAMGDeconstructParameter();
+	
+	if( famg_interface.Consmatrix != famg_interface.matrix )
+		delete famg_interface.Consmatrix;
+		
+	delete famg_interface.matrix;
+	
+	for(i = 0; i < FAMG_NVECTORS; i++)
+		delete famg_interface.vector[i];	// free temp allocated symbols
+	
+	delete famg_interface.gridvector;
+	
+	ReleaseTmpMem(MGHEAP(theMG),np->famg_mark_key); /* mark in PreProcess */
+	// all memory released? TODO
+	
 	if (np->ConsMatTempAllocated)
 	{
-		if( FreeMD(theMG,*fl,tl,np->ConsMat)) 
+		if( FreeMD(theMG,*fl,tl,np->ConsMat))
 			NP_RETURN(1,result[0]);
 		np->ConsMat = NULL;
 		np->ConsMatTempAllocated = 0;
 	}
-	
-	for(i = 0; i < FAMG_NVECTORS; i++)
-		delete famg_interface.vector[i];	// free temp allocated symbols
-	delete famg_interface.gridvector;
-	
-    ReleaseTmpMem(MGHEAP(theMG),np->famg_mark_key); /* mark in PreProcess */
-	FAMGFreeHeap();
-	// all memory released? TODO
 	
 	return 0;
 }

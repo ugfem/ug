@@ -124,6 +124,7 @@ void FAMGDeconstructParameter()
 {
     FAMGParameter *parameter = FAMGGetParameter();
     delete parameter;
+    FAMGSetParameter(NULL);
 }
 
 int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGMatrixAlg *Consmatrix, FAMGVector *vectors[FAMG_NVECTORS])
@@ -174,8 +175,7 @@ void FAMGDeconstruct()
 {
     famgsystemptr->Deconstruct();
     
-    FAMGHeap *heap = FAMGGetHeap();
-    delete heap;
+    FAMGFreeHeap();
 }
 
 void FAMGDeconstructSimple()
@@ -220,20 +220,8 @@ int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, V
 	FAMGugVector fgsol(*(const FAMGugGridVector*)&fg.GetGridVector(),smooth_sol);
 	FAMGugVector fgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),from);
 	FAMGugVector cgdef(*(const FAMGugGridVector*)&cg.GetGridVector(),to);
-	
-	// be sure not to use an out-dated pointer
-	for (i=0; i<FAMGMAXVECTORS; i++ )
-	{
-		fg.SetVector(i, NULL);
-		cg.SetVector(i, NULL);
-	}
-	
-	fg.SetVector(FAMGUNKNOWN, &fgsol);
-	fg.SetVector(FAMGDEFECT, &fgdef);
-	fg.SetVector(FAMGRHS, &fgdef);		// rhs and defect are the same for smoothing/defect calculation 
-	cg.SetVector(FAMGDEFECT, &cgdef);
-	
-	fg.Restriction(&cg);
+		
+	fg.Restriction(fgsol, fgdef, cgdef);
 	
 	return 0;
 }
@@ -256,25 +244,13 @@ int FAMG_ProlongCorrection( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from
 	FAMGugVector fgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),smooth_def);
 	FAMGugVector c(*(const FAMGugGridVector*)&fg.GetGridVector(),from);
 	FAMGugVector cgsol(*(const FAMGugGridVector*)&cg.GetGridVector(),from);
-
-	// be sure not to use an out-dated pointer
-	for (i=0; i<FAMGMAXVECTORS; i++ )
-	{
-		fg.SetVector(i, NULL);
-		cg.SetVector(i, NULL);
-	}
-	
-	fg.SetVector(FAMGUNKNOWN, &fgsol);
-	fg.SetVector(FAMGDEFECT, &fgdef);
-	fg.SetVector(FAMGRHS, &fgdef);		// rhs and defect are the same for smoothing/defect calculation 
-	cg.SetVector(FAMGUNKNOWN, &cgsol);
 	
 	#ifdef PROTOCOLNUMERIC
 	FAMGugVector cgdef(*(const FAMGugGridVector*)&cg.GetGridVector(),smooth_def);
 	cg.SetVector(FAMGDEFECT, &cgdef);
 	#endif	
 	
-	fg.Prolongation(&cg,&c);
+	fg.Prolongation(&cg, cgsol, fgsol, fgdef, &c);
 	
 	return 0;
 }

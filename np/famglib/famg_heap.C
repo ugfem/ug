@@ -225,6 +225,7 @@ void FAMGFreeHeap()
 {
 	famgheapptr->PrintInfo();
 	delete famgheapptr;
+	FAMGSetHeap( NULL );
 }
 
 FAMGHeap *FAMGGetHeap()

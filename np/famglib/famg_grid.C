@@ -98,12 +98,9 @@ void FAMGGrid::Defect() const
     return;
 }
 
-void FAMGGrid::Restriction(FAMGGrid *cg) const
+void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect) const
 // including smoothing of fine nodes
 {
-	FAMGVector &fgsolution = *GetVector(FAMGUNKNOWN);
-	FAMGVector &fgdefect = *GetVector(FAMGDEFECT);
-	FAMGVector &cgdefect = *(cg->GetVector(FAMGDEFECT));
 	FAMGVectorEntry fvec;
 	const FAMGTransfer &transfer = *GetTransfer();
 	FAMGTransferEntry *transfg;
@@ -145,14 +142,11 @@ void FAMGGrid::Restriction(FAMGGrid *cg) const
     return;
 }
     
-void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
+void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVector &fgsol, FAMGVector &fgdefect, FAMGVector *c)
 // adds the prolongued solution-update to the fine grid solution
 // including smoothing of fine nodes
 // c is set for FAMG transfer; not used for FAMG solver
 {
-	FAMGVector &fgsol = *GetVector(FAMGUNKNOWN);
-	FAMGVector &fgdefect = *GetVector(FAMGDEFECT);
-	const FAMGVector &cgsol = *(cg->GetVector(FAMGUNKNOWN));
 	FAMGVectorEntry fvec;
 	const FAMGTransfer &transfer = *GetTransfer();
 	FAMGTransferEntry *transfg;
@@ -834,11 +828,14 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 }
 
 
-void FAMGGrid::Deconstruct()
+void FAMGGrid::Deconstruct(int level)
 {
 	int i;
 
-    for(i = 0; i < FAMGMAXVECTORS; i++)
+	if( level == 0 )
+		return;	// objects for level 0 have not been allocated by FAMGGrid, thus are not allowed to be freed here
+	
+    for(i = 0; i < FAMGMAXVECTORS; i++)	
     {
 #ifdef USE_UG_DS
 		delete GetVector(i);

@@ -182,7 +182,7 @@ int FAMGMultiGrid::Deconstruct()
 #ifdef FAMG_REORDERCOLUMN
     if(Reorder()) RETURN(1);
 #endif
-    for(i = 0; i < n; i++) if(grid[i] != NULL)  grid[i]->Deconstruct();
+    for(i = n-1; i >= 0; i--) if(grid[i] != NULL)  grid[i]->Deconstruct(i);
     FAMGReleaseHeap(FAMG_FROM_TOP); // mark in construct
     n = 1;
 
@@ -239,13 +239,13 @@ int FAMGMultiGrid::Step(int level)
         }        
 
         // g->DevideFGDefect(); included in the new restriction
-        g->Restriction(cg);
+        g->Restriction(*(g->GetVector(FAMGUNKNOWN)), *(g->GetVector(FAMGDEFECT)), *(cg->GetVector(FAMGDEFECT)));
         *(cg->GetVector(FAMGUNKNOWN)) = 0.0;
         *(cg->GetVector(FAMGRHS)) = *(cg->GetVector(FAMGDEFECT));
 		for(i = 0; i < gamma; i++) 
 			if(Step(level+1)) 
 				RETURN(1);
-        g->Prolongation(cg);
+        g->Prolongation(cg, *(cg->GetVector(FAMGUNKNOWN)), *(g->GetVector(FAMGUNKNOWN)), *(g->GetVector(FAMGDEFECT)), NULL);
         // g->Defect(); included in the new restriction
 
         for(i = 0; i < n2; i++)
