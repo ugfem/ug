@@ -41,6 +41,7 @@
 
 #include "dddi.h"
 
+USING_UG_NAMESPACES
 
 /*
    #define DebugTypeDefine

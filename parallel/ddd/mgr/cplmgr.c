@@ -36,7 +36,7 @@
 
 #include "dddi.h"
 
-
+USING_UG_NAMESPACES
 
 #define DebugCoupling 10  /* 10 is off */
 

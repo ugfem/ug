@@ -37,6 +37,7 @@
 
 #include "dddi.h"
 
+USING_UG_NAMESPACES
 
 /*
    #define DebugCreation
@@ -56,8 +57,8 @@
 
 
 #define MakeUnique(n)  (((n)<<MAX_PROCBITS_IN_GID)+me)
-#define ProcFromId(n)  ((n)&((1<<MAX_PROCBITS_IN_GID)-1))
-#define CountFromId(n) (((n)-((n)&((1<<MAX_PROCBITS_IN_GID)-1)))>>MAX_PROCBITS_IN_GID)
+#define ProcFromId(n)  ((n)& ((1<<MAX_PROCBITS_IN_GID)-1))
+#define CountFromId(n) (((n)-((n)& ((1<<MAX_PROCBITS_IN_GID)-1)))>>MAX_PROCBITS_IN_GID)
 
 
 
