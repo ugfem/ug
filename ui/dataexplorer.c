@@ -119,21 +119,42 @@ static INT get_offset (INT n)
   return(offset);
 }
 
+/*
+   static void LocallyUniqueIDs (MULTIGRID *mg)
+   {
+        VERTEX *vx;
+        INT k, nv;
+
+        nv = 0;
+        for (k=0; k<=TOPLEVEL(mg); k++)
+                for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
+                        ID(vx) = nv++;
+   }
+ */
+
 static void LocallyUniqueIDs (MULTIGRID *mg)
 {
-  GRID *grid;
   VERTEX *vx;
-  INT nv;
-  int k,j;
+  ELEMENT *el;
+  INT i, k, nv;
 
-  nv = 0;
-  j = mg->topLevel;
-  for (k=0; k<=j; k++) {
-    grid = GRID_ON_LEVEL(mg,k);
-    for (vx=FIRSTVERTEX(grid); vx!=NULL; vx=SUCCV(vx))
-      ID(vx) = nv++;
-  }
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
+      SETUSED(vx,0);
+
+  nv=0;
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
+      if (!EstimateHere(el)) continue;
+      for (i=0; i<CORNERS_OF_ELEM(el); i++) {
+        vx = MYVERTEX(CORNER(el,i));
+        if (USED(vx)) continue;
+        SETUSED(vx,1);
+        ID(vx) = nv++;
+      }
+    }
 }
+
 #endif
 
 /****************************************************************************/
@@ -381,10 +402,26 @@ static INT DataExplorerCommand (INT argc, char **argv)
   /********************************/
 
   /* count vertices */
-  numVertices = 0;
+  /*
+          numVertices = 0;
+          for (k=0; k<=TOPLEVEL(mg); k++)
+                  for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
+                          numVertices++;
+   */
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
-      numVertices++;
+      SETUSED(vx,0);
+  numVertices = 0;
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
+      if (!EstimateHere(el)) continue;
+      for (i=0; i<CORNERS_OF_ELEM(el); i++) {
+        vx = MYVERTEX(CORNER(el,i));
+        if (USED(vx)) continue;
+        SETUSED(vx,1);
+        numVertices++;
+      }
+    }
 
   /* count surface elements */
   numElements = 0;
@@ -426,6 +463,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
   heap = mg->theHeap;
   MarkTmpMem(heap, &key);
   Id2Position = (INT *)GetTmpMem(heap, numVertices*sizeof(INT), key);
+  if (Id2Position == NULL) {
+    ReleaseTmpMem(heap, key);
+    UserWrite("dataexplorer: OOM\n");
+    return CMDERRORCODE;
+  }
 
   /* write vertex coordinates */
   counter=0;
