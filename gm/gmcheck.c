@@ -1646,7 +1646,7 @@ static INT CheckGeometry (GRID *theGrid)
 	{
 		if (!USED(theNode))
 		{
-#ifdef __OVERLAP2__
+#if defined  __OVERLAP2__ || defined USE_FAMG
 			UserWriteF("node=" ID_FMTX " has no element\n",ID_PRTX(theNode));
 #else
 			errors++;

@@ -4058,7 +4058,7 @@ INT VectorPosition (const VECTOR *theVector, DOUBLE *position)
 
   ASSERT(theVector != NULL);
 
-        #ifdef __OVERLAP2__
+        #if defined __OVERLAP2__ || defined USE_FAMG
   if( VOBJECT(theVector) == NULL )
   {
     for (i=0; i<DIM; i++)
