@@ -28,32 +28,43 @@
 
  */
 
-#ifndef UG_NAMESPACE_H
-#define UG_NAMESPACE_H
+//#ifndef UG_NAMESPACE_H
+//#define UG_NAMESPACE_H
 
 #ifdef __cplusplus
 
-# if defined(__TWODIM__) || defined(__THREEDIM__)
-/* namespace for dimension */
-#  ifdef __TWODIM__
-#   define NAMESPACE D2
-#   define NS_PREFIX D2::
-#  define USING_UG_NAMESPACES using namespace UG; using namespace UG::D2;
-#  else
-#   define NAMESPACE D3
-#   define NS_PREFIX D3::
-#  define USING_UG_NAMESPACES using namespace UG; using namespace UG::D3;
-#  endif
-#  define START_NAMESPACE namespace UG { namespace NAMESPACE {
-#  define END_NAMESPACE } }
-# else
-/* no dimension set */
-#  define NS_PREFIX UG::
-#  define START_NAMESPACE namespace UG {
-#  define END_NAMESPACE }
-#  define USING_UG_NAMESPACES using namespace UG;
-# endif
+// # if defined(__TWODIM__) || defined(__THREEDIM__)
+//   /* namespace for dimension */
+// #  ifdef __TWODIM__
+// #   define NAMESPACE D2
+// #   define NS_PREFIX D2::
+// #  define USING_UG_NAMESPACES using namespace UG; using namespace UG::D2;
+// #  else
+// #   define NAMESPACE D3
+// #   define NS_PREFIX D3::
+// #  define USING_UG_NAMESPACES using namespace UG; using namespace UG::D3;
+// #  endif
+// #  define START_NAMESPACE namespace UG { namespace NAMESPACE {
+// #  define END_NAMESPACE } }
+// # else
+//   /* no dimension set */
+// #  define NS_PREFIX UG::
+// #  define START_NAMESPACE namespace UG {
+// #  define END_NAMESPACE }
+// #  define USING_UG_NAMESPACES using namespace UG;
+// # endif
 
+#ifdef _3
+#define START_NAMESPACE namespace UG3d {
+#define END_NAMESPACE }
+#define USING_UG_NAMESPACES using namespace UG3d;
+#define NS_PREFIX UG3d::
+#else
+#define START_NAMESPACE namespace UG2d {
+#define END_NAMESPACE }
+#define USING_UG_NAMESPACES using namespace UG2d;
+#define NS_PREFIX UG2d::
+#endif
 
 #else
 /* normal C-compiler, no namespace-stuff */
@@ -68,4 +79,4 @@
 # error missing symbol!
 #endif
 
-#endif
+//#endif
