@@ -5136,7 +5136,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		if (!IS_REFINED(theElement) || !EHGHOSTPRIO(prio)) continue;
 		INT prio = EPRIO(theElement);
 		PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
-		/* connec is only FROM hgost copies */
+							me,DDD_InfoGlobalId(PARHDRE(theElement)),
 							theElement,ID(theElement),
 							LEVEL(theElement)));
 
@@ -5158,8 +5158,11 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 			if (!THEFLAG(theElement) && !THEFLAG(theNeighbor)) continue;
 
 			/* connect only TO master copies */
+			if (!IS_REFINED(theNeighbor) || !MASTERPRIO(prio))	continue;
+
+			if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
 					Sons_of_Side_List,SonSides,1,0)!=GM_OK) RETURN(GM_FATAL);
-			if (!IS_REFINED(theNeighbor) || !MASTERPRIO(prio) || !THEFLAG(theNeighbor))	continue;
+
 			IFDEBUG(gm,1)
 				UserWriteF(PFMT " 		side=%d NSONS=%d Sons_of_Side=%d:\n",
 					me,i,NSONS(theElement),Sons_of_Side);
