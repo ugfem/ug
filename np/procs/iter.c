@@ -1911,6 +1911,9 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     if (dmatmul(theMG,level,level,ALL_VECTORS,np->q,np->puA,np->u)
         != NUM_OK)
       NP_RETURN(1,result[0]);
+    if (dmatmul_minus(theMG,level,level,ALL_VECTORS,np->q,np->ppA,np->p)
+        != NUM_OK)
+      NP_RETURN(1,result[0]);
     if (ddot(theMG,level,level,ALL_VECTORS,np->q,np->p,&lambda))
       NP_RETURN(1,result[0]);
     ASSERT(lambda != 0);
