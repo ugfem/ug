@@ -59,13 +59,15 @@
 /*																			*/
 /****************************************************************************/
 
+#define LIST_MAX_ENTRIES        100
+
 typedef struct
 {
   NP_ORDERED_LIST db;
 
   char name[NAMELEN];
   INT n;
-  DOUBLE *list;
+  DOUBLE list[LIST_MAX_ENTRIES];
   DOUBLE regular_step;
 
 } NP_LIST;
@@ -120,33 +122,11 @@ static int cmp_real (const void *p, const void *q)
 
 static INT List_PreProcess (NP_ORDERED_LIST *theNP, INT *result)
 {
-  NP_LIST *np;
-  int i,n;
-  char buffer[NAMESIZE];
-
-  np = (NP_LIST *)theNP;
-  n = np->n;
-  np->list = (DOUBLE*) GetMemoryForObject(NP_MG(np),n*sizeof(DOUBLE),-1);
-  for (i=0; i<n; i++)
-  {
-    sprintf(buffer,"%s%d",np->name,(int)i);
-    if (GetStringValue(buffer,np->list+i)) return (1);
-  }
-
-  /* sort list */
-  qsort((void *)np->list,np->n,sizeof(DOUBLE),cmp_real);
-
   return(0);
 }
 
 static INT List_PostProcess (NP_ORDERED_LIST *theNP, INT *result)
 {
-  NP_LIST *np;
-
-  np = (NP_LIST *)theNP;
-  if (PutFreelistMemory(MGHEAP(NP_MG(np)),np->list,np->n*sizeof(DOUBLE)))
-    NP_RETURN(1,*result);
-
   return(0);
 }
 
@@ -155,7 +135,7 @@ static INT List_GetListEntry_Index (NP_ORDERED_LIST *theNP, INT n, DOUBLE *Entry
   NP_LIST *np;
 
   np = (NP_LIST *)theNP;
-  if (n>=np->n)
+  if (n<0 || n>=np->n)
   {
     *Entry = 0.0;
     *result = 0;
@@ -204,14 +184,30 @@ static INT List_GetListEntry_NextHigherEntry (NP_ORDERED_LIST *theNP, DOUBLE val
 INT List_Init (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_LIST *np;
+  INT i;
+  char buffer[NAMESIZE];
 
   np = (NP_LIST *)theNP;
   if (ReadArgvINT("n",&(np->n),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (np->n<0 || np->n>LIST_MAX_ENTRIES)
+  {
+    UserWriteF("ERROR in initialization of list: n is limited to [0,%d]\n",LIST_MAX_ENTRIES);
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
   if (ReadArgvChar ("L",np->name,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
   if (ReadArgvDOUBLE("s",&(np->regular_step),argc,argv))
   {
     np->regular_step = -1.0;
   }
+  for (i=0; i<np->n; i++)
+  {
+    sprintf(buffer,"%s%d",np->name,(int)i);
+    if (GetStringValue(buffer,np->list+i)) return (1);
+  }
+
+  /* sort list */
+  if (np->n>1)
+    qsort((void *)np->list,np->n,sizeof(DOUBLE),cmp_real);
 
   return (NP_ACTIVE);
 }
@@ -224,12 +220,11 @@ INT List_Display (NP_BASE *theNP)
 
   np = (NP_LIST *)theNP;
   UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)np->n);
-  if (np->list!=NULL)
-    for (i=0; i<np->n; i++)
-    {
-      sprintf(buffer,"List[%d]",(int)i);
-      UserWriteF(DISPLAY_NP_FORMAT_SF,buffer,np->list[i]);
-    }
+  for (i=0; i<np->n; i++)
+  {
+    sprintf(buffer,"List[%d]",(int)i);
+    UserWriteF(DISPLAY_NP_FORMAT_SF,buffer,np->list[i]);
+  }
 
   return (0);
 }
