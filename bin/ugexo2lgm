@@ -305,7 +305,7 @@ sub write_unit
 	
 	LOOP: foreach $nus (0 .. $cdf{nunits}-1)
 	{
-		printf LGM "unit %d MATERIAL%d\n",$nus+1, $nus+1;
+		printf LGM "unit %d MATERIAL1\n",$nus+1;
 	}
 
 	print LGM "\n";
