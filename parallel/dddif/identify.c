@@ -658,7 +658,7 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
   INT ncorners;
   NODE *theNode;
 
-  GetSonSideNodes(theElement,i,&nodes,SideNodes);
+  GetSonSideNodes(theElement,i,&nodes,SideNodes,0);
   ncorners = CORNERS_OF_SIDE(theElement,i);
   n = 0;
 
@@ -689,7 +689,7 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
                         "EDGES and VECTORS\n",me));
 
     if (Get_Sons_of_ElementSide(theElement,i,&SonsOfSide,
-                                SonList,SonSides,1)!=GM_OK)
+                                SonList,SonSides,1,0)!=GM_OK)
       RETURN(GM_FATAL);
 
     for (j=0; j<SonsOfSide; j++) {

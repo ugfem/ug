@@ -2892,7 +2892,7 @@ typedef struct compare_record COMPARE_RECORD;
 
 
 INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, 
-					 NODE *SideNodes[MAX_SIDE_NODES])
+					 NODE *SideNodes[MAX_SIDE_NODES], INT ioflag)
 {
 	EDGE *theEdge;
 	INT i,ncorners,nedges;
@@ -2912,13 +2912,18 @@ INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes,
 	for (i=0; i<ncorners; i++)
 	{
 		SideNodes[i] = SONNODE(CORNER_OF_SIDE_PTR(theElement,side,i));
-		assert(SideNodes[i]!=NULL && CORNERTYPE(SideNodes[i]));
+        #ifndef ModelP
+		assert(SideNodes[i]!=NULL);
+		#endif
+		if (!ioflag)
+			assert(SideNodes[i]==NULL || CORNERTYPE(SideNodes[i]));
 		(*nodes)++;
 	}
 
 	/* determine mid nodes */
 	for (i=0; i<nedges; i++)
 	{
+/* TODO: delete
 		#ifdef __TWODIM__
 	    ASSERT(OBJT(NFATHER(SideNodes[i])) == NDOBJ);
 	    ASSERT(OBJT(NFATHER(SideNodes[i+1])) == NDOBJ);
@@ -2941,6 +2946,14 @@ INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes,
 		{
 			SideNodes[ncorners+i] = MIDNODE(theEdge);
 			assert(NTYPE(MIDNODE(theEdge)) == MID_NODE);
+			(*nodes)++;
+		}
+*/
+
+		SideNodes[ncorners+i] = GetMidNode(theElement,EDGE_OF_SIDE(theElement,side,i));
+		if (SideNodes[ncorners+i] != NULL)
+		{
+			assert(NTYPE(SideNodes[ncorners+i]) == MID_NODE);
 			(*nodes)++;
 		}
 	}
@@ -2991,7 +3004,7 @@ static INT compare_node (const void *e0, const void *e1)
 
 INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 							 ELEMENT *SonList[MAX_SONS], INT *SonSides, 
-							 INT NeedSons)
+							 INT NeedSons, INT ioflag)
 {
 	INT i,j,nsons,markclass;
 
@@ -3047,7 +3060,7 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 			INT n,nodes;
 
 			/* determine nodes of sons on side of element */ 
-			GetSonSideNodes(theElement,side,&nodes,SideNodes);
+			GetSonSideNodes(theElement,side,&nodes,SideNodes,0);
 
 			/* sort side nodes in descending adress order */
 			qsort(SideNodes,MAX_SIDE_NODES,sizeof(NODE *),compare_node);
@@ -3417,7 +3430,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 
 	/* get sons of neighbor to connect */
 	Get_Sons_of_ElementSide(theNeighbor,nbside,&Sons_of_NbSide,
-		Sons_of_NbSide_List,NbSonSides,1);
+		Sons_of_NbSide_List,NbSonSides,1,0);
 
 	if (!ioflag)
 		/* match exactly */
@@ -4861,7 +4874,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 			Sons_of_Side_List[j] = SonList[j];
 
 		if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
-				Sons_of_Side_List,SonSides,0)!=GM_OK) RETURN(GM_FATAL);
+				Sons_of_Side_List,SonSides,0,0)!=GM_OK) RETURN(GM_FATAL);
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
 				Sons_of_Side_List,SonSides,hFlag,0)!=GM_OK) RETURN(GM_FATAL);
@@ -5032,7 +5045,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		PRINTDEBUG(gm,1,("%d: SonsOfSide=%d\n",me,SonsOfSide))
 
 		for (s=0; s<SonsOfSide; s++)
-			SonList,SonSides,1);
+		{
 			theSon = SonList[s];
 			ASSERT(theSon != NULL);
 
@@ -5139,7 +5152,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 			if (!IS_REFINED(theNeighbor) || !MASTERPRIO(prio))	continue;
 			IFDEBUG(gm,1)
 				UserWriteF(PFMT " 		side=%d NSONS=%d Sons_of_Side=%d:\n",
-					Sons_of_Side_List,SonSides,1)!=GM_OK) RETURN(GM_FATAL);
+					me,i,NSONS(theElement),Sons_of_Side);
 				for (j=0; j<Sons_of_Side; j++)
 					UserWriteF(PFMT "            son=%08x/%x sonside=%d\n",
 				INT j;
