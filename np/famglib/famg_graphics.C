@@ -262,17 +262,14 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 
     UgSetLineWidth(1);
 
-    if(vec == NULL) return (0);
+    if(vec == NULL)
+		goto EvalFAMGGraph1_finish;
 
 #ifdef ModelP
 	if( !IS_FAMG_MASTER(vec) )
 	{
 		if( !DrawBorderVec )
-		{
-		    DO_2c(theDO) = DO_NO_INST;
-			WOP_DObjPnt = theDO;
-			return 0;
-		}
+			goto EvalFAMGGraph1_finish;
 		VectorColor = GreenColor;
 	}
 	else
@@ -290,8 +287,8 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 	
 	if( VecCoordComp == -1 )
 	{
-	    vertex = MYVERTEX(VMYNODE(vec));				// take coord from vertex
-    	V_DIM_COPY(CVECT(vertex),mypos);
+		vertex = MYVERTEX(VMYNODE(vec));				// take coord from vertex
+		V_DIM_COPY(CVECT(vertex),mypos);
 	}
 	else
 	{
@@ -338,12 +335,12 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
         nbvec = MDEST(mat);
 		if( VecCoordComp == -1 )
 		{
-        	nbvertex = MYVERTEX(VMYNODE(nbvec));
-	        V_DIM_COPY(CVECT(nbvertex),nbpos);					// take coord from vertex
+			nbvertex = MYVERTEX(VMYNODE(nbvec));
+			V_DIM_COPY(CVECT(nbvertex),nbpos);					// take coord from vertex
 		}
 		else
 		{
-	        V_DIM_COPY(VVALUEPTR(nbvec,VecCoordComp),nbpos);	// take coord from special vector
+			V_DIM_COPY(VVALUEPTR(nbvec,VecCoordComp),nbpos);	// take coord from special vector
 		}
         DO_2c(theDO) = DO_LINE; DO_inc(theDO); 
         DO_2l(theDO) = BlackColor; DO_inc(theDO);
@@ -351,8 +348,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
         V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
     }
 
-    DO_2c(theDO) = DO_NO_INST;
-
+EvalFAMGGraph1_finish:	
 	#ifdef ModelP
 	WOP_DObjPnt = theDO;
 	#endif
@@ -370,12 +366,13 @@ static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
 
     UgSetLineWidth(1);
 
-    if(vec == NULL) return (0);
+    if(vec == NULL)
+		goto EvalFAMGGraph2_finish;
 
 	if( VecCoordComp == -1 )
 	{
-	    vertex = MYVERTEX(VMYNODE(vec));				// take coord from vertex
-    	V_DIM_COPY(CVECT(vertex),mypos);
+		vertex = MYVERTEX(VMYNODE(vec));				// take coord from vertex
+		V_DIM_COPY(CVECT(vertex),mypos);
 	}
 	else
 	{
@@ -388,12 +385,12 @@ static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
         nbvec = MDEST(imat);
 		if( VecCoordComp == -1 )
 		{
-        	nbvertex = MYVERTEX(VMYNODE(nbvec));
-	        V_DIM_COPY(CVECT(nbvertex),nbpos);					// take coord from vertex
+			nbvertex = MYVERTEX(VMYNODE(nbvec));
+			V_DIM_COPY(CVECT(nbvertex),nbpos);					// take coord from vertex
 		}
 		else
 		{
-	        V_DIM_COPY(VVALUEPTR(nbvec,VecCoordComp),nbpos);	// take coord from special vector
+			V_DIM_COPY(VVALUEPTR(nbvec,VecCoordComp),nbpos);	// take coord from special vector
 		}
         DO_2c(theDO) = DO_LINE; DO_inc(theDO); 
         DO_2l(theDO) = RedColor; DO_inc(theDO);
@@ -401,8 +398,7 @@ static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
         V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2); 
      }
 
-     DO_2c(theDO) = DO_NO_INST;
-
+EvalFAMGGraph2_finish:	
 	#ifdef ModelP
 	WOP_DObjPnt = theDO;
 	#endif
@@ -415,7 +411,16 @@ static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
 static INT EvalFAMGGraph (DRAWINGOBJ *theDO, INT *end)
 {
 
-    if(GlobalVec2 == NULL) { *end = 1; return(0);}
+    if(GlobalVec2 == NULL)
+	{
+		*end = 1;
+		
+		#ifdef ModelP
+		WOP_DObjPnt = theDO;
+		#endif
+	
+		return(0);
+	}
     else *end = 0;
     if((GlobalVec2 != NULL) && (GlobalVec1 == NULL))
     {
@@ -430,7 +435,7 @@ static INT EvalFAMGGraph (DRAWINGOBJ *theDO, INT *end)
 
     if(GlobalVec2 == NULL) *end = 1;
     else *end = 0;
-            
+
     return(0);
     
 }
