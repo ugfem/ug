@@ -476,6 +476,9 @@ INT DisposeUgWindow (UGWINDOW *theUgWindow)
   if (OutputDevice == NULL) return (1);
 
   /* close associated IFWindow */
+#ifdef ModelP
+  if (me == master)
+#endif
   if ((*OutputDevice->CloseOutput)(theUgWindow->theIFWindow)) return (1);
 
   /* dispose window */

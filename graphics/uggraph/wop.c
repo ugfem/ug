@@ -20339,7 +20339,9 @@ static void PWorkVW_Evaluate(void)
 
    DESCRIPTION:
    see PWorkEW_Evaluate
-
+   The callback function WOP_EXT_EvaluateProc in ModelP must set WOP_DObjPnt = theDO
+   after their last DO_inc.
+   
    PARAMETERS:
    none
 
