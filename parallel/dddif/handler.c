@@ -1425,8 +1425,8 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
     if (enew == NULL)
     {
       PRINTDEBUG(dddif,1,(PFMT "  ElemScatterEdge(): ERROR pe=" EID_FMTX
-                          " i=%d CreateEdge returned NULL\n",
-                          me,EID_PRTX(pe),i));
+                          " i=%d %s returned NULL\n",
+                          me,EID_PRTX(pe),i,(newness==XFER_NEW) ? "CreateEdge()" : "GetEdge()"));
       ASSERT(0);
     }
 #ifdef Debug
@@ -1451,7 +1451,6 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
     /* TODO: delete
                     MIDNODE(enew) = MIDNODE(ecopy);
                     if (MIDNODE(enew) != NULL)
-                    {
      */
     if (MIDNODE(ecopy) != NULL)
     {
