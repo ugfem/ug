@@ -675,11 +675,23 @@ int FAMGGrid::AnalyseNode6(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 
     if(veci.GetIndex() == n-1) 
     {
-        cout << "time1 " << time1 << endl;
-        cout << "time2 " << time2 << endl;
-        cout << "time3 " << time3 << endl;
-        cout << "time4 " << time4 << endl;
-        time1 = time2 = time3 = time4 = 0;
+#ifdef ModelP
+		cout << me << ": ";
+#endif
+		cout << "time1 " << time1 << endl;
+#ifdef ModelP
+		cout << me << ": ";
+#endif
+		cout << "time2 " << time2 << endl;
+#ifdef ModelP
+		cout << me << ": ";
+#endif
+		cout << "time3 " << time3 << endl;
+#ifdef ModelP
+		cout << me << ": ";
+#endif
+		cout << "time4 " << time4 << endl;
+		time1 = time2 = time3 = time4 = 0;
     }
 
      return 0;
