@@ -441,8 +441,10 @@ INT JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM
 		}
 	
 	    det = J[0][0]*J[1][1] - J[0][1]*J[1][0];
-	 	if (fabs(det)<=1.0E-15) return (1);
-	
+	 	if (fabs(det)<=1.0E-15) {
+	 		return (1);
+		}
+		
 		/* fill inverse */
 	    Jinv[0][0] =  J[1][1]/det; Jinv[0][1] = -J[0][1]/det;
 	    Jinv[1][0] = -J[1][0]/det; Jinv[1][1] =  J[0][0]/det;
@@ -685,6 +687,7 @@ INT SurfaceElement (INT dim, INT nc,
 					DOUBLE ip_local[DIM], DOUBLE *result)
 {
 	DOUBLE E,G,F;
+	DOUBLE Phi_Xi, Phi_Eta, Psi_Xi, Psi_Eta, Chi_Xi, Chi_Eta;
 	
 	if (dim==2)
 	{
@@ -703,11 +706,14 @@ INT SurfaceElement (INT dim, INT nc,
 				return(0);
 				
 			case 4:
-				E = SQ((X0-X1)*(1-Eta)+(X2-X3)*Eta) + SQ((Y0-Y1)*(1-Eta)+(Y2-Y3)*Eta) + SQ((Z0-Z1)*(1-Eta)+(Z2-Z3)*Eta);
-				G = SQ((X3-X0)*(1-Xi )+(X2-X1)*Xi ) + SQ((Y3-Y0)*(1-Xi )+(Y2-Y1)*Xi ) + SQ((Z3-Z0)*(1-Xi )+(Z2-Z1)*Xi );
-				F = ((X0-X1)*(1-Eta)+(X2-X3)*Eta)*((X3-X0)*(1-Xi )+(X2-X1)*Xi )
-				  + ((Y0-Y1)*(1-Eta)+(Y2-Y3)*Eta)*((Y3-Y0)*(1-Xi )+(Y2-Y1)*Xi )
-				  + ((Z0-Z1)*(1-Eta)+(Z2-Z3)*Eta)*((Z3-Z0)*(1-Xi )+(Z2-Z1)*Xi );
+				Phi_Xi = (X1-X0)*(1-Eta)+(X2-X3)*Eta; Phi_Eta = (X3-X0)*(1-Xi )+(X2-X1)*Xi ;
+				Psi_Xi = (Y1-Y0)*(1-Eta)+(Y2-Y3)*Eta; Psi_Eta = (Y3-Y0)*(1-Xi )+(Y2-Y1)*Xi ;
+				Chi_Xi = (Z1-Z0)*(1-Eta)+(Z2-Z3)*Eta; Chi_Eta = (Z3-Z0)*(1-Xi )+(Z2-Z1)*Xi ;
+				
+				E = Phi_Xi*Phi_Xi + Psi_Xi*Psi_Xi + Chi_Xi*Chi_Xi;
+				G = Phi_Eta*Phi_Eta + Psi_Eta*Psi_Eta + Chi_Eta*Chi_Eta;
+				F = Phi_Xi*Phi_Eta + Psi_Xi*Psi_Eta + Chi_Xi*Chi_Eta;
+				
 				*result = sqrt(E*G-F*F);
 				return(0);
 		}
@@ -1150,8 +1156,8 @@ INT D_GN (INT n, INT i, COORD *ip_local, DOUBLE *derivative)
 			derivative[2] = -(1.0-Xi)*(Eta);
             return(0);
           case 4:
-			derivative[0] = -(1.0-Eta)*(-Mu);
-			derivative[1] = -(1.0-Xi)*(-Mu);
+			derivative[0] = -(1.0-Eta)*(Mu);
+			derivative[1] = -(1.0-Xi)*(Mu);
 			derivative[2] = (1.0-Xi)*(1.0-Eta);
 			return(0);
 		  case 5: 
@@ -1218,10 +1224,10 @@ COORD *LMP (INT n)
 
 /****************************************************************************/
 /*D
-   GlobalToLocal - Transform global coordinates to local
+   UG_GlobalToLocal - Transform global coordinates to local
 
    SYNOPSIS:
-   INT GlobalToLocal (INT n, const COORD **Corners, const COORD *EvalPoint, 
+   INT UG_GlobalToLocal (INT n, const COORD **Corners, const COORD *EvalPoint, 
    COORD *LocalCoord);
 
    PARAMETERS:
@@ -1241,7 +1247,7 @@ COORD *LMP (INT n)
 D*/
 /****************************************************************************/
 
-INT GlobalToLocal (INT n, const COORD **Corners, 
+INT UG_GlobalToLocal (INT n, const COORD **Corners, 
 				   const COORD *EvalPoint, COORD *LocalCoord)
 {
 	COORD_VECTOR tmp,diff,M[DIM],IM[DIM];

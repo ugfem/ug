@@ -509,7 +509,7 @@ DOUBLE 		GN 		(INT n, INT i, COORD *ip_local);
 INT 		GNs 	(INT n, COORD *ip_local, DOUBLE *result);
 INT 		D_GN 	(INT n, INT i, COORD *ip_local, DOUBLE *derivative);
 COORD 	   *LMP 	(INT n);
-INT 	    GlobalToLocal   (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
+INT 	    UG_GlobalToLocal   (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 
 INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result);
 /*****************************************************************************

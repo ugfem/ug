@@ -813,7 +813,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
               CORNER_COORDINATES(theElement,n,x);
             }
             V_DIM_COPY(bnd_global,global);
-            GlobalToLocal(n,(const COORD **)x,global,local);
+            UG_GlobalToLocal(n,(const COORD **)x,global,local);
           }
         }
     }
@@ -941,7 +941,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
         SETMOVED(theVertex,1);
         V3_COPY(bnd_global,global);
         CORNER_COORDINATES(theElement,m,x);
-        GlobalToLocal(m,(const COORD **)x,global,local);
+        UG_GlobalToLocal(m,(const COORD **)x,global,local);
       }
     }
   }
@@ -1058,7 +1058,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
       }
       else
         V_DIM_LINCOMB(1.0,global,fac,CVECT(VertexOnEdge[j]),global);
-    GlobalToLocal(n,(const COORD **)x,global,local);
+    UG_GlobalToLocal(n,(const COORD **)x,global,local);
   }
   VFATHER(theVertex) = theElement;
   NFATHER(theNode) = NULL;
@@ -3321,7 +3321,7 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
     else
     {
       CORNER_COORDINATES(theElement,n,x);
-      GlobalToLocal(n,(const COORD **)x,newPos,LCVECT(theVertex));
+      UG_GlobalToLocal(n,(const COORD **)x,newPos,LCVECT(theVertex));
       VFATHER(theVertex) = theElement;
     }
   }
@@ -3449,7 +3449,7 @@ INT MoveMidNode (MULTIGRID *theMG,
                 CORNER_COORDINATES(theElement,n,x);
               }
               V_DIM_COPY(bnd_global,global);
-              GlobalToLocal(n,(const COORD **)x,global,local);
+              UG_GlobalToLocal(n,(const COORD **)x,global,local);
             }
           }
   }
@@ -3577,8 +3577,8 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
           else
           {
             CORNER_COORDINATES(eptr,m,corn);
-            GlobalToLocal(m,(const COORD **)corn,
-                          cvect,LCVECT(vptr));
+            UG_GlobalToLocal(m,(const COORD **)corn,
+                             cvect,LCVECT(vptr));
             VFATHER(vptr) = eptr;
           }
         }
@@ -3659,7 +3659,9 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 }
 #endif
 
-INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList)
+
+
+INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList)
 {
   GRID             *theGrid;
   INT i,j,k,l,m,found,num,tag,ElementType;
@@ -3883,37 +3885,8 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList)
   else
     for (i=0; i<SIDES_OF_REF(n); i++)
     {
-      theElement = ElemList[i];
-      /* for all sides of the neighbour element */
-      for (j=0; j<SIDES_OF_ELEM(theElement); j++)
-      {
-        num = 0;
-        /* for all corners of the side of the neighbour */
-        for (m=0; m<CORNERS_OF_SIDE(theElement,j); m++)
-        {
-          NeighborNode = CORNER(theElement,
-                                CORNER_OF_SIDE(theElement,j,m));
-          /* for all corners of the side of the
-                 element to be created */
-          for (k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
-            if(NeighborNode==sideNode[k])
-            {
-              num++;
-              break;
-            }
-        }
-        if(num==CORNERS_OF_SIDE_REF(n,i))
-        {
-          if (NBELEM(theElement,j)!=NULL)
-          {
-            PrintErrorMessage('E',"InsertElement",
-                              "neighbor relation inconsistent");
-            RETURN(GM_ERROR);
-          }
-          Neighbor[i] = theElement;
-          NeighborSide[i] = j;
-        }
-      }
+      Neighbor[i] = ElemList[i];
+      NeighborSide[i] = NbgSdList[i];
     }
 
   /* create element */
@@ -4048,7 +4021,7 @@ INT InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
     RETURN(GM_ERROR);
   }
 
-  return (InsertElement(theMG,n,Node,NULL));
+  return (InsertElement(theMG,n,Node,NULL,NULL));
 }
 
 /****************************************************************************/
