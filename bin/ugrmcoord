@@ -1,0 +1,57 @@
+#!/bin/sh 
+if test "$1" = "-help"
+then
+	echo "usage: $0";
+	echo "runs through all subdirectories of the current directory";
+	echo "purpose: exchange COORD to DOUBLE";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+sed 's/typedef COORD COORD_VECTOR/typedef KOORD KOORD_VECTOR/g' $UGROOT/gm/gm.h > $UGROOT/gm/gm.h.tmp
+mv $UGROOT/gm/gm.h.tmp $UGROOT/gm/gm.h
+
+sed 's/typedef COORD	COORD_VECTOR/typedef KOORD KOORD_VECTOR/g' $UGROOT/gm/gm.h > $UGROOT/gm/gm.h.tmp
+mv $UGROOT/gm/gm.h.tmp $UGROOT/gm/gm.h
+
+sed 's/COORD/KOORD/g' $UGROOT/arch/compiler.h > $UGROOT/arch/compiler.h.tmp
+mv $UGROOT/arch/compiler.h.tmp $UGROOT/arch/compiler.h
+
+for i in . * */* */*/* */*/*/* */*/*/*/*
+do
+	if test -d $i -a ! -h $i
+	then
+		if test "$i" != "bin" -a "$i" != "include" -a `basename $i` != "doc" -a `basename $i` != "CVS"
+        then
+			echo "cd " $i
+			cd $i
+			for j in *.c *.h *.doc
+			do
+				if test "$j" != "*.c" -a "$j" != "*.h" -a "$j" != "*.doc"
+				then	
+			    	echo $j
+					sed 's/COORDI/KOORDI/g'               $j      > $j.tmp
+					sed 's/COORD_VECTOR/DOUBLE_VECTOR/g'  $j.tmp  > $j
+					sed 's/COORD_/KOORD_/g'               $j      > $j.tmp
+					sed 's/COORD/DOUBLE/g'                $j.tmp  > $j
+					sed 's/KOORD/COORD/g'                 $j      > $j.tmp
+					mv $j.tmp $j
+				fi
+			done
+            cd $PWD
+        fi
+	fi
+done
+
+sed 's/typedef KOORD KOORD_VECTOR/typedef COORD COORD_VECTOR/g' $UGROOT/gm/gm.h > $UGROOT/gm/gm.h.tmp
+mv $UGROOT/gm/gm.h.tmp $UGROOT/gm/gm.h
+
+sed 's/KOORD/COORD/g' $UGROOT/arch/compiler.h > $UGROOT/arch/compiler.h.tmp
+mv $UGROOT/arch/compiler.h.tmp $UGROOT/arch/compiler.h
+
+echo "now recompile"
