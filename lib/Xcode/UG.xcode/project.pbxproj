@@ -3742,7 +3742,7 @@
 			);
 			isa = PBXGroup;
 			name = low;
-			path = ../../../../UG/ug/low;
+			path = ../../low;
 			refType = 4;
 			sourceTree = "<group>";
 		};
@@ -4217,9 +4217,9 @@
 			);
 			isa = PBXGroup;
 			name = dom;
-			path = ../../../../UG/ug/dom;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
+			path = ../../dom;
+			refType = 4;
+			sourceTree = "<group>";
 		};
 		1184E44406425C4000210118 = {
 			children = (
@@ -4625,9 +4625,9 @@
 			);
 			isa = PBXGroup;
 			name = dev;
-			path = /Volumes/Users/vcr/UG/ug/dev;
-			refType = 0;
-			sourceTree = "<absolute>";
+			path = ../../../../UG/ug/dev;
+			refType = 4;
+			sourceTree = "<group>";
 		};
 		1184E4B706425C9F00210118 = {
 			children = (
