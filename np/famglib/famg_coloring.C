@@ -338,7 +338,8 @@ int ConstructColoring_cm2( void )
 				res = InfoASend( NbCh[SendQueue[i]], MsgOutId[i] );
 				
 				if( res == 1 )
-				{	// message sended successfully
+				{	// message sent successfully
+					PRINTDEBUG(np,2,(PFMT " sent my color to %d (SendQueue[i] = %d, i=%d)\n", me, Nb[SendQueue[i]], SendQueue[i], i));
 					j--;
 					MsgOutId[i] = -1;	// reset
 					if( j==0 )
@@ -606,7 +607,7 @@ int ConstructColoring_cm3( void )
 				res = InfoASend( NbCh[i], MsgOutId[i] );
 				
 				if( res == 1 )
-				{	// message sended successfully
+				{	// message sent successfully
 					j--;
 					MsgOutId[i] = -1;	// reset
 					if( j==0 )
@@ -644,7 +645,8 @@ int ConstructColoring_cm3( void )
 				res = InfoASend( NbCh[SendQueue[i]], MsgOutId[i] );
 				
 				if( res == 1 )
-				{	// message sended successfully
+				{	// message sent successfully
+					PRINTDEBUG(np,2,(PFMT " sent my color to %d (SendQueue[i] = %d, i=%d)\n", me, Nb[SendQueue[i]], SendQueue[i], i));
 					j--;
 					MsgOutId[i] = -1;	// reset
 					if( j==0 )
