@@ -47,6 +47,7 @@
 #include "helpmsg.h"
 #include "shapes.h"
 #include "quadrature.h"
+#include "general.h"
 
 #include "fegeom.h"
 
@@ -129,8 +130,8 @@
 /*																			*/
 /****************************************************************************/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/

@@ -145,8 +145,8 @@ typedef struct {
 
 static LOCAL_COORDS LocalCoords[TAGS];
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
