@@ -19,7 +19,8 @@ DDD_DIR  = ../ddd
 LIBDIR = ../../lib
 
 
-DDD_CFLAGS = $(ARCH_CFLAGS) -DC_FRONTEND -I../../include
+DDD_CFLAGS = $(ARCH_CFLAGS) $(ARCH_PCFLAGS)  -DDDD_FRONTEND_C  -I../../include
+DDD_CC     = $(ARCH_CC)
 
 
 ####################################################################
