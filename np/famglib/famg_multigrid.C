@@ -188,7 +188,7 @@ int FAMGMultiGrid::Construct()
 		}
 
 #ifdef ModelP
-		if( myleaveinfo.cgminnodespe <= cgminnodespe )
+		if( myleaveinfo.cgminnodespe < cgminnodespe )
 		{
 			leave = 1;
 			if( me==master )	

@@ -136,7 +136,7 @@ static void FAMGReadArgvParameter(INT argc, char **argv)
 		famg_parameter.cglevels = 100;
 #ifdef ModelP
 	if (ReadArgvINT("cgnpe",&(famg_parameter.cgminnodespe),argc,argv))
-		famg_parameter.cgminnodespe = 1;
+		famg_parameter.cgminnodespe = 0;
 #endif
 }
 	
