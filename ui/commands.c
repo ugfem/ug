@@ -10321,7 +10321,7 @@ static INT InitScreenSize (void)
 static INT LBCommand (INT argc, char **argv)
 {
   INT res,cmd_error,error,maxlevel,i;
-  INT minlevel,cluster_depth,threshold,Const,n,c,
+  int minlevel,cluster_depth,threshold,Const,n,c,depth,
       strategy,eigen,loc,dims,weights,coarse,mode,iopt;
   char levelarg[32];
   MULTIGRID *theMG;
