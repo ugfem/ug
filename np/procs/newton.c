@@ -283,6 +283,32 @@ static INT NewtonPreProcess  (NP_NL_SOLVER *solve, INT level, VECDATA_DESC *x, I
   if (AllocMDFromVD(solve->base.mg,0,level,x,x,&newton->J))
     NP_RETURN(1,result[0]);
 
+  /* check function pointers in numprocs */
+  if (newton->trans->base.status < NP_ACTIVE)
+  {
+    UserWrite("Newton: newton->trans not active\n");
+    NP_RETURN(1,result[0]);
+  }
+  if (newton->trans->ProjectSolution==NULL)
+  {
+    UserWrite("Newton: newton->trans->ProjectSolution not defined\n");
+    NP_RETURN(1,result[0]);
+  }
+  if (newton->solve->base.status < NP_ACTIVE)
+  {
+    UserWrite("Newton: newton->solve not active\n");
+    NP_RETURN(1,result[0]);
+  }
+  if (newton->solve->Solver==NULL)
+  {
+    UserWrite("Newton: newton->solve->Solver not defined\n");
+    NP_RETURN(1,result[0]);
+  }
+  if (newton->solve->Residuum==NULL)
+  {
+    UserWrite("Newton: newton->solve->Residuum not defined\n");
+    NP_RETURN(1,result[0]);
+  }
   return(0);
 }
 
@@ -353,12 +379,6 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       lambda_min = LINE_SEARCH_REDUCTION * lambda_min;
   }
   /* check function pointers in numprocs */
-  if (newton->trans->ProjectSolution==NULL)
-  {
-    UserWrite("Newton: newton->trans->ProjectSolution not defined\n");
-    res->error_code = __LINE__;
-    REP_ERR_RETURN (res->error_code);
-  }
   if (ass->NLAssembleSolution==NULL)
   {
     UserWrite("Newton: ass->NLAssembleSolution not defined\n");
@@ -377,19 +397,6 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     res->error_code = __LINE__;
     REP_ERR_RETURN(res->error_code);
   }
-  if (newton->solve->Solver==NULL)
-  {
-    UserWrite("Newton: newton->solve->Solver not defined\n");
-    res->error_code = __LINE__;
-    REP_ERR_RETURN(res->error_code);
-  }
-  if (newton->solve->Residuum==NULL)
-  {
-    UserWrite("Newton: newton->solve->Residuum not defined\n");
-    res->error_code = __LINE__;
-    REP_ERR_RETURN(res->error_code);
-  }
-
   /* dynamic XDATA_DESC allocation */
   if (ass->A == NULL)
     ass->A = newton->J;
