@@ -22,7 +22,7 @@ LCFLAGS = -I../../include -Wall \
 all : $(OBJECTS) $(GUI) Makefile.mif
 	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdevM.a $(OBJECTS) 
 
-.m.o:
+.m.o: *.h *.m
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) -ObjC $<
 
 ON:

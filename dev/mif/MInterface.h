@@ -37,7 +37,7 @@
 #include "devices.h"
 #endif
 
-#import <NSWindow.h>
+#import <Cocoa/Cocoa.h>
 
 /****************************************************************************/
 /*																			*/

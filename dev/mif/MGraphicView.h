@@ -18,14 +18,10 @@
 #ifndef _MGRAPHICVIEW_
 #define _MGRAPHICVIEW_
 
-#import <AppKit/AppKit.h>
-
-#import "MShell.h"
+#import <Cocoa/Cocoa.h>
 
 @interface MGraphicView : NSView
 {
-  MShellTextView      *theShellTextView;
-
   NSCursor            *currentCursor;
 
   NSCursor            *arrowCursor;

@@ -2,7 +2,7 @@
 /*																			*/
 /* File:	  MInterface.m													*/
 /*																			*/
-/* Purpose:   OPENSTEP graphical user interface for ug 3.0 					*/
+/* Purpose:   MacOS X graphical user interface for ug	 					*/
 /*            All functions UG needs for user interaction are				*/
 /*            defined here.	See below for comments.							*/
 /*																			*/
@@ -26,8 +26,7 @@
 /****************************************************************************/
 
 /* OPENSTEP specific includes */
-#import <AppKit.h>
-//#import <AppKit/NSColor.h>
+#import <Cocoa/Cocoa.h>
 
 /* standard C includes */
 #include <string.h>
@@ -48,12 +47,9 @@
 #include "defaults.h"
 #include "cmdint.h"
 
-#include "MShell.h"
-#include "MShellWindow.h"
 #include "MGraphicWindow.h"
 #include "MGraphicView.h"
 #include "MInterface.h"
-#include "MAppController.h"
 
 /****************************************************************************/
 /*																			*/
@@ -88,13 +84,10 @@ struct ugcolortable	{
 	int blue;
 };
 typedef struct ugcolortable UGColorTable;
-static UGColorTable ColorTable[256];
+static UGColorTable colorTable[256];
 NSColor	*currentColor=nil;
 
 NSAutoreleasePool *pool;
-
-MShell	*theUGshell;			/* the shell object */
-MAppController *appControl;
 
 static int dbcount=0;
 
@@ -120,170 +113,170 @@ static int dbcount=0;
 
 static void MacOSXServerMove (SHORT_POINT point)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerMove(%ld)\n",dbcount++))
+	PRINTDEBUG(dev,4,("MacOSXServerMove(%ld)\n",dbcount++))
 	[currgw->theGraphWindow moveToPoint:point];
-    return;
+	return;
 }
 
 static void MacOSXServerDraw (SHORT_POINT point)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerDraw(%ld)\n",dbcount++))
+	PRINTDEBUG(dev,4,("MacOSXServerDraw(%ld)\n",dbcount++))
 	[currgw->theGraphWindow drawLineTo:point];
-    return;
+	return;
 }
 
 static void MacOSXServerPolyline (SHORT_POINT *points, INT n)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerPolyline(%ld)\n",dbcount++))
+	PRINTDEBUG(dev,4,("MacOSXServerPolyline(%ld)\n",dbcount++))
 	[currgw->theGraphWindow drawPolyLine:points noOfPoints:n];
 }
 
 static void MacOSXServerInversePolyline (SHORT_POINT *points, INT n)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerInversePolyline(%ld)\n",dbcount++))
-    [currgw->theGraphWindow drawInversePolygon:points noOfPoints:n];
-    return;
+	PRINTDEBUG(dev,4,("MacOSXServerInversePolyline(%ld)\n",dbcount++))
+	[currgw->theGraphWindow drawInversePolygon:points noOfPoints:n];
+	return;
 }
 
 static void MacOSXServerPolygon (SHORT_POINT *points, INT n)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerPolygon(%ld)\n",dbcount++))
+	PRINTDEBUG(dev,4,("MacOSXServerPolygon(%ld)\n",dbcount++))
 	[currgw->theGraphWindow drawPolygon:points noOfPoints:n];
-    return;
+	return;
 }
 
 static void MacOSXServerShadedPolygon (SHORT_POINT *points, INT n, DOUBLE i)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerShadedPolygon(%ld)\n",dbcount++))
-    [currgw->theGraphWindow drawShadedPolygon:points noOfPoints:n intensity:i];
-    return;
+	PRINTDEBUG(dev,4,("MacOSXServerShadedPolygon(%ld)\n",dbcount++))
+	[currgw->theGraphWindow drawShadedPolygon:points noOfPoints:n intensity:i];
+	return;
 }
 
 static void MacOSXServerInversePolygon (SHORT_POINT *points, INT n)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerInversePolygon(%ld)\n",dbcount++))
-    [currgw->theGraphWindow drawInversePolygon:points noOfPoints:n];
+	PRINTDEBUG(dev,4,("MacOSXServerInversePolygon(%ld)\n",dbcount++))
+	[currgw->theGraphWindow drawInversePolygon:points noOfPoints:n];
 	return;
 }
 
 static void MacOSXServerErasePolygon (SHORT_POINT *points, INT n)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerErasePolygon(%ld)\n",dbcount++))
-    [currgw->theGraphWindow erasePolygon:points noOfPoints:n];
+	PRINTDEBUG(dev,4,("MacOSXServerErasePolygon(%ld)\n",dbcount++))
+	[currgw->theGraphWindow erasePolygon:points noOfPoints:n];
 	return;
 }
 
 static void MacOSXServerSetMarker (short n)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerSetMarker(%ld)\n",dbcount++))
-    [currgw->theGraphWindow setMarker:n];
-    return;
+	PRINTDEBUG(dev,4,("MacOSXServerSetMarker(%ld)\n",dbcount++))
+	[currgw->theGraphWindow setMarker:n];
+	return;
 }
 
 static void MacOSXServerSetMarkerSize (short s)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerSetMarkerSize(%ld)\n",dbcount++))
-    [currgw->theGraphWindow setMarkerSize:s];
-    return;
+	PRINTDEBUG(dev,4,("MacOSXServerSetMarkerSize(%ld)\n",dbcount++))
+	[currgw->theGraphWindow setMarkerSize:s];
+	return;
 }
 
 static void MacOSXServerPolymark (short n, SHORT_POINT *points)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerPolymark(%ld)\n",dbcount++))
-    [currgw->theGraphWindow polyMark:points noOfPoints:n];
+	PRINTDEBUG(dev,4,("MacOSXServerPolymark(%ld)\n",dbcount++))
+	[currgw->theGraphWindow polyMark:points noOfPoints:n];
 	return;
 }
 
 /*static void MacOSXServerInvMarker (SHORT_POINT point)
 {
-    [currgw->theGraphWindow invMarker:point];
+	[currgw->theGraphWindow invMarker:point];
 	return;
 }*/
 
 		
 static void MacOSXServerInvPolymark (short n, SHORT_POINT *points)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerInvPolymark(%ld)\n",dbcount++))
-    [currgw->theGraphWindow invPolyMark:points noOfPoints:n];
+	PRINTDEBUG(dev,4,("MacOSXServerInvPolymark(%ld)\n",dbcount++))
+	[currgw->theGraphWindow invPolyMark:points noOfPoints:n];
 	return;
 }
 
 static void MacOSXServerDrawText (const char *s, INT m)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerDrawText(%ld)\n",dbcount++))
-    [currgw->theGraphWindow drawText:s mode:m];
+	PRINTDEBUG(dev,4,("MacOSXServerDrawText(%ld)\n",dbcount++))
+	[currgw->theGraphWindow drawText:s mode:m];
 	return;
 }
 
 static void MacOSXServerCenteredText (SHORT_POINT point, const char *s, INT m)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerCenteredText(%ld)\n",dbcount++))
-    [currgw->theGraphWindow drawCenteredText:s
-                                     atPoint:point mode:m];
+	PRINTDEBUG(dev,4,("MacOSXServerCenteredText(%ld)\n",dbcount++))
+	[currgw->theGraphWindow drawCenteredText:s
+	                                 atPoint:point mode:m];
 	return;
 }
 
 static void MacOSXServerClearViewPort (void)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerClearViewPort(%ld)\n",dbcount++))
-    [currgw->theGraphWindow clearView];
+	PRINTDEBUG(dev,4,("MacOSXServerClearViewPort(%ld)\n",dbcount++))
+	[currgw->theGraphWindow clearView];
 	return;
 }
 
 static void MacOSXServerSetLineWidth (short w)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerSetLineWidth(%ld)\n",dbcount++))
+	PRINTDEBUG(dev,4,("MacOSXServerSetLineWidth(%ld)\n",dbcount++))
 	[currgw->theGraphWindow setLineWidth:w];
 	return;
 }
 
 static void MacOSXServerSetTextSize (short s)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerSetTextSize(%ld)\n",dbcount++))
-    [currgw->theGraphWindow setTextSize:s];
+	PRINTDEBUG(dev,4,("MacOSXServerSetTextSize(%ld)\n",dbcount++))
+	[currgw->theGraphWindow setTextSize:s];
 	return;
 }
 
 static void MacOSXServerSetColor (long index)
 {	
-    PRINTDEBUG(dev,4,("MacOSXServerSetColor(%ld)\n",dbcount++))
-    [currgw->theGraphWindow setColorRed:(float)ColorTable[index].red/(float)0xFFFF
-                                  green:(float)ColorTable[index].green/(float)0xFFFF
-                                   blue:(float)ColorTable[index].blue/(float)0xFFFF];
-    /*printf ("c[%ld] = (%f, %f, %f)\n", index,
-            (float)ColorTable[index].red/(float)0xFFFF,
-            (float)ColorTable[index].green/(float)0xFFFF,
-            (float)ColorTable[index].blue/(float)0xFFFF);*/
+	PRINTDEBUG(dev,4,("MacOSXServerSetColor(%ld)\n",dbcount++))
+	[currgw->theGraphWindow setColorRed:(float)colorTable[index].red/(float)0xFFFF
+	                              green:(float)colorTable[index].green/(float)0xFFFF
+	                               blue:(float)colorTable[index].blue/(float)0xFFFF];
+	/*printf ("c[%ld] = (%f, %f, %f)\n", index,
+	        (float)colorTable[index].red/(float)0xFFFF,
+	        (float)colorTable[index].green/(float)0xFFFF,
+	        (float)colorTable[index].blue/(float)0xFFFF);*/
 	return;
 }
 
 static void MacOSXServerSetPaletteEntry (long index, short r, short g, short b)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerSetPaletteEntry %d %d %d %d\n",index,r,g,b))
-    [currgw->theGraphWindow setPaletteEntryWithIndex:index red:r green:g blue:b];
+	PRINTDEBUG(dev,4,("MacOSXServerSetPaletteEntry %d %d %d %d\n",index,r,g,b))
+	[currgw->theGraphWindow setPaletteEntryWithIndex:index red:r green:g blue:b];
 	return;
 }
 
 static void MacOSXServerSetNewPalette (long index, long count, short *r, short *g, short *b)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerSetNewPalette %d %ld %d %d %d\n",index,count,*r,*g,*b))
-    [currgw->theGraphWindow setNewPaletteEntryWithIndex:index
-                                           withCount:count
-                                           red:*r green:*g blue:*b];
+	PRINTDEBUG(dev,4,("MacOSXServerSetNewPalette %d %ld %d %d %d\n",index,count,*r,*g,*b))
+	[currgw->theGraphWindow setNewPaletteEntryWithIndex:index
+	                                       withCount:count
+	                                       red:*r green:*g blue:*b];
 	return;
 }
 
 static void MacOSXServerGetPaletteEntry (long index, short *r, short *g, short *b)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerGetPaletteEntry %d %d %d %d\n",index,*r,*g,*b))
-    [currgw->theGraphWindow getPaletteEntryWithIndex:index red:r green:g blue:b];
-    return;
+	PRINTDEBUG(dev,4,("MacOSXServerGetPaletteEntry %d %d %d %d\n",index,*r,*g,*b))
+	[currgw->theGraphWindow getPaletteEntryWithIndex:index red:r green:g blue:b];
+	return;
 }
 
 static void MacOSXServerFlush (void)
 {
-    PRINTDEBUG(dev,4,("MacOSXServerFlush(%ld)\n",dbcount++))
-    [currgw->theGraphWindow flush];
+	PRINTDEBUG(dev,4,("MacOSXServerFlush(%ld)\n",dbcount++))
+	[currgw->theGraphWindow flush];
 	return;
 }
 
@@ -309,7 +302,7 @@ static void MacOSXServerFlush (void)
 
 INT GetScreenSize (INT size[2])
 {
-    NSRect screenRect = [[NSScreen mainScreen] frame];
+	NSRect screenRect = [[NSScreen mainScreen] frame];
 	
 	size[0] = screenRect.size.width;
 	size[1] = screenRect.size.height;
@@ -341,9 +334,18 @@ INT GetScreenSize (INT size[2])
 /****************************************************************************/
 
 INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
-{
-    //[[theUGshell window] displayIfNeeded];
-    theEvent->Type = NO_EVENT;
+{	
+	/* no event as default */
+	theEvent->Type = NO_EVENT;
+	theEvent->NoEvent.InterfaceEvent = 0;
+	
+	/* we have no command keys */	
+	if (EventMask==TERM_CMDKEY) return 0;
+	
+	/* read in a string from the user and store it in event structure */
+	fgets(theEvent->TermString.String,INPUTBUFFERLEN,stdin);
+	theEvent->Type = TERM_STRING;
+	
 	return 0;
 }
 
@@ -359,7 +361,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
 .  s - string to write
   
    DESCRIPTION:
-   This function writes a string to the shell window.
+   This function writes a string to the shell.
    
    RETURN VALUE:
    void												
@@ -368,8 +370,8 @@ INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
 
 void WriteString (const char *s)
 {
-	[theUGshell appendToText:s];
-    return;
+	fprintf(stdout,"%s",s);
+	return;
 }
 
 
@@ -399,57 +401,56 @@ void WriteString (const char *s)
 
 INT MouseStillDown (void)
 {
-    printf("MouseStillDown was called\n");
-    return (0);
+	printf("MouseStillDown was called\n");
+	return (0);
 }
 
 void DrawInfoBox (WINDOWID win, const char *info)
 {
-    printf("DrawInfoBox called\n");
-    return;
+	printf("DrawInfoBox called\n");
+	return;
 }
 
 INT WhichTool (WINDOWID win, const INT mouse[2], INT *tool)
 {
-    printf("WhichTool called\n");
-    return (0);
+	printf("WhichTool called\n");
+	return (0);
 }
 
 
 
 static WINDOWID MacOSXServer_OpenOutput (
 	const char *title,						/* title of the window	 		*/
-    INT rename,                                     
+	INT rename,                                     
 	INT x, INT y, INT width, INT height,	/* plot rgn in standard coord.	*/
 	INT *Global_LL, INT *Global_UR, 		/* global machine coordinates	*/
 	INT *Local_LL, INT *Local_UR,			/* local machine coordinates	*/
 	INT *error) 							/* error code					*/
 {
 	GRAPH_WINDOW	*gw;
-    NSRect viewRect = NSMakeRect(0, 0, width, height);
+	NSRect viewRect = NSMakeRect(0, 0, width, height);
 	*error = 0;
 	
 	/* create GRAPH_WINDOW structure and put in list */
-    gw = (GRAPH_WINDOW*) GetMem(guiHeap,sizeof(GRAPH_WINDOW),GENERAL_HEAP);
+	gw = (GRAPH_WINDOW*) GetMem(guiHeap,sizeof(GRAPH_WINDOW),GENERAL_HEAP);
 	if (gw==NULL)	{*error=1; return(0);}
 	gw->next   = windowList;
 	windowList = gw;
 	
-    gw->currTool = arrowTool;
+	gw->currTool = arrowTool;
 
 	gw->theGraphWindow = [[MGraphicWindow alloc]
-                initWithContentRect:viewRect
-                styleMask:  ( NSTitledWindowMask
-                            | NSResizableWindowMask
-                            | NSMiniaturizableWindowMask)
-                backing:	NSBackingStoreBuffered
-                defer:		NO];
+	            initWithContentRect:viewRect
+	            styleMask:  ( NSTitledWindowMask
+	                        | NSResizableWindowMask
+	                        | NSMiniaturizableWindowMask)
+	            backing:	NSBackingStoreBuffered
+	            defer:		NO];
 
-    [gw->theGraphWindow setTitle:[NSString stringWithCString:title]];
-    [gw->theGraphWindow setFrameOrigin:NSMakePoint(x,y)];
-    [gw->theGraphWindow makeKeyAndOrderFront:gw->theGraphWindow];
-    [gw->theGraphWindow setDelegate:[[[MShell instantiate] window] contentView]];
-    
+	[gw->theGraphWindow setTitle:[NSString stringWithCString:title]];
+	[gw->theGraphWindow setFrameOrigin:NSMakePoint(x,y)];
+	[gw->theGraphWindow makeKeyAndOrderFront:gw->theGraphWindow];
+	
 	/* fill global and local lower left and upper right in the devices coordinate system */
 	gw->Global_LL[0] = Global_LL[0] = x;
 	gw->Global_LL[1] = Global_LL[1] = y+height;
@@ -467,16 +468,15 @@ static WINDOWID MacOSXServer_OpenOutput (
 
 static INT MacOSXServer_CloseOutput (WINDOWID win)
 {
-    PRINTDEBUG(dev,1,("MacOSXServer_CloseOutput\n"))
+	PRINTDEBUG(dev,1,("MacOSXServer_CloseOutput\n"))
 	[((GRAPH_WINDOW *)win)->theGraphWindow close];
-    //[((GRAPH_WINDOW *)win)->theGraphWindow release];
-    return 0;
+	return 0;
 }
 
 
 INT MacOSXServer_ActivateOutput (WINDOWID win)
 {
-    PRINTDEBUG(dev,1,("MacOSXServer_ActivateOutput\n"))
+	PRINTDEBUG(dev,1,("MacOSXServer_ActivateOutput\n"))
 	currgw = (GRAPH_WINDOW *)(win);
 
 	[currgw->theGraphWindow activateOutput];
@@ -485,18 +485,17 @@ INT MacOSXServer_ActivateOutput (WINDOWID win)
 
 INT MacOSXServer_UpdateOutput (WINDOWID win, INT tool)
 {
-    currgw = (GRAPH_WINDOW *)(win);
-    PRINTDEBUG(dev,1,("MacOSXServer_UpdateOutput\n"))
+	currgw = (GRAPH_WINDOW *)(win);
+	PRINTDEBUG(dev,1,("MacOSXServer_UpdateOutput\n"))
 
-    [currgw->theGraphWindow updateOutput];
+	[currgw->theGraphWindow updateOutput];
 	return 0;
 }
 
 void MousePosition (INT *ScreenPoint)
 {
-	NSPoint mousePoint = [theUGshell getMouseLocation];
-	ScreenPoint[0] = (INT) mousePoint.x;
-	ScreenPoint[1] = (INT) mousePoint.y;
+	ScreenPoint[0] = 0.0;
+	ScreenPoint[1] = 0.0;
 	return;
 }
 
@@ -513,9 +512,8 @@ void MousePosition (INT *ScreenPoint)
 .  error - errorcode
 
    DESCRIPTION:
-   Do setup for gui and return pointer to screen outputdevice. Opens the
-   UG shell window.
-
+   Do setup for gui and return pointer to screen outputdevice. 
+   
    RETURN VALUE:
    OUTPUTDEVICE *
 .n      POINTER if all is o.k.
@@ -527,7 +525,6 @@ void MousePosition (INT *ScreenPoint)
 OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 {
 	char buffer[256];
-	NSRect	shellFrame;
 	int i,j;
 	unsigned short res,delta,max,r,g,b;
 	int scrollback;
@@ -535,7 +532,7 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	int fontNum;
 	int fontSize;
 	int TermWinH=0,TermWinV=0,TermWinDH=400,TermWinDV=300;
-    
+	
 	/*
 	 * Get some default values
 	 */
@@ -559,29 +556,17 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 		sscanf(buffer," %d ",&TermWinDH);
 	if (GetDefaultValue(DEFAULTSFILENAME,"TermWinDV",buffer)==0)
 		sscanf(buffer," %d ",&TermWinDV);
-
-  	[NSApplication sharedApplication];
-    pool = [[NSAutoreleasePool alloc] init];
-
-    appControl = [[MAppController alloc] init];
-    /* Create the unique shell object and set some of its values */
-    theUGshell = [MShell instantiate];
-    if (theUGshell==NULL) return NULL;
-
-    [NSBundle loadNibNamed:@"UG_MacOSXServer.nib" owner:theUGshell];
-    //[NSBundle loadNibNamed:@"UG_MacOSXServer.nib" owner:NSApp];
-
-	[theUGshell setScrollback:scrollback];
-	[theUGshell setCharactersPerLine:charsperline];
-	[theUGshell setFontSize:10.0];
-    [NSApp setDelegate:theUGshell];
-    
-    shellFrame = NSMakeRect(TermWinH, TermWinV, TermWinDH, TermWinDV);
-	[[theUGshell window] setFrame:shellFrame display:YES];
-
+	
+	pool = [[NSAutoreleasePool alloc] init];
+	[NSApplication sharedApplication];
+	
 	/* create output device */
-	if ((MacOSXServerOutputDevice=CreateOutputDevice("screen"))==NULL) return(NULL);
-
+	if ((MacOSXServerOutputDevice=CreateOutputDevice("screen"))==NULL) 
+	{	
+		fprintf(stderr,"InitScreen: Couldn't create output device screen\n");
+		return(NULL);
+	}
+	
 	/* init output device 'MacOSXServer' */
 	MacOSXServerOutputDevice->OpenOutput	= MacOSXServer_OpenOutput;
 	MacOSXServerOutputDevice->CloseOutput	= MacOSXServer_CloseOutput;
@@ -601,46 +586,46 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 
 	/* fixed colors */
 	i = 0;
-	ColorTable[i].red = 0xFFFF;	ColorTable[i].green = 0xFFFF; ColorTable[i++].blue = 0xFFFF;
-	ColorTable[i].red = 0xD000; ColorTable[i].green = 0xD000; ColorTable[i++].blue = 0xD000;
-	ColorTable[i].red = 0xFFFF; ColorTable[i].green = 0xFFFF; ColorTable[i++].blue = 0x0   ;
-	ColorTable[i].red = 0xFFFF; ColorTable[i].green = 0x0	; ColorTable[i++].blue = 0xFFFF;
-	ColorTable[i].red = 0xFFFF; ColorTable[i].green = 0x0	; ColorTable[i++].blue = 0x0   ;
-	ColorTable[i].red = 0x0;	ColorTable[i].green = 0xFFFF; ColorTable[i++].blue = 0xFFFF;
-	ColorTable[i].red = 0x0;	ColorTable[i].green = 0xFFFF; ColorTable[i++].blue = 0x0   ;
-	ColorTable[i].red = 0x0;	ColorTable[i].green = 0x0	; ColorTable[i++].blue = 0xFFFF;
-	ColorTable[i].red = 0x0;	ColorTable[i].green = 0x0	; ColorTable[i++].blue = 0x0   ;
-	ColorTable[i].red = 65520 ; ColorTable[i].green = 32240 ; ColorTable[i++].blue = 0x0   ;
-	ColorTable[i].red = 65520 ; ColorTable[i].green = 60000 ; ColorTable[i++].blue = 0x0   ;
+	colorTable[i].red = 0xFFFF;	colorTable[i].green = 0xFFFF; colorTable[i++].blue = 0xFFFF;
+	colorTable[i].red = 0xD000; colorTable[i].green = 0xD000; colorTable[i++].blue = 0xD000;
+	colorTable[i].red = 0xFFFF; colorTable[i].green = 0xFFFF; colorTable[i++].blue = 0x0   ;
+	colorTable[i].red = 0xFFFF; colorTable[i].green = 0x0	; colorTable[i++].blue = 0xFFFF;
+	colorTable[i].red = 0xFFFF; colorTable[i].green = 0x0	; colorTable[i++].blue = 0x0   ;
+	colorTable[i].red = 0x0;	colorTable[i].green = 0xFFFF; colorTable[i++].blue = 0xFFFF;
+	colorTable[i].red = 0x0;	colorTable[i].green = 0xFFFF; colorTable[i++].blue = 0x0   ;
+	colorTable[i].red = 0x0;	colorTable[i].green = 0x0	; colorTable[i++].blue = 0xFFFF;
+	colorTable[i].red = 0x0;	colorTable[i].green = 0x0	; colorTable[i++].blue = 0x0   ;
+	colorTable[i].red = 65520 ; colorTable[i].green = 32240 ; colorTable[i++].blue = 0x0   ;
+	colorTable[i].red = 65520 ; colorTable[i].green = 60000 ; colorTable[i++].blue = 0x0   ;
 
 	/* color spectrum */
 	/* TODO: This can be done much nicer on a MacOSXServer */
 	r = g = 0; b = max;
-	ColorTable[i].red = r; ColorTable[i].green = g; ColorTable[i].blue = b; i++;
+	colorTable[i].red = r; colorTable[i].green = g; colorTable[i].blue = b; i++;
 
 	/* blue to cyan */
 	for (j=0; j<res; j++)
 	{
 		g += delta;
-		ColorTable[i].red = r; ColorTable[i].green = g; ColorTable[i].blue = b; i++;
+		colorTable[i].red = r; colorTable[i].green = g; colorTable[i].blue = b; i++;
 	}
 	/* cyan to green */
 	for (j=0; j<res; j++)
 	{
 		b -= delta;
-		ColorTable[i].red = r; ColorTable[i].green = g; ColorTable[i].blue = b; i++;
+		colorTable[i].red = r; colorTable[i].green = g; colorTable[i].blue = b; i++;
 	}
 	/* green to yellow */
 	for (j=0; j<res; j++)
 	{
 		r += delta;
-		ColorTable[i].red = r; ColorTable[i].green = g; ColorTable[i].blue = b; i++;
+		colorTable[i].red = r; colorTable[i].green = g; colorTable[i].blue = b; i++;
 	}
 	/* yellow to red */
 	for (j=0; j<res; j++)
 	{
 		g -= delta;
-		ColorTable[i].red = r; ColorTable[i].green = g; ColorTable[i].blue = b; i++;
+		colorTable[i].red = r; colorTable[i].green = g; colorTable[i].blue = b; i++;
 	}
 
 	MacOSXServerOutputDevice->black	= 8;
@@ -669,8 +654,8 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	MacOSXServerOutputDevice->Draw				= MacOSXServerDraw;
 	MacOSXServerOutputDevice->Polyline			= MacOSXServerPolyline;
 	MacOSXServerOutputDevice->InversePolyline	= MacOSXServerInversePolyline;
-    MacOSXServerOutputDevice->Polygon			= MacOSXServerPolygon;
-    MacOSXServerOutputDevice->ShadedPolygon		= MacOSXServerShadedPolygon;
+	MacOSXServerOutputDevice->Polygon			= MacOSXServerPolygon;
+	MacOSXServerOutputDevice->ShadedPolygon		= MacOSXServerShadedPolygon;
 	MacOSXServerOutputDevice->InversePolygon 	= MacOSXServerInversePolygon;
 	MacOSXServerOutputDevice->ErasePolygon		= MacOSXServerErasePolygon;
 	MacOSXServerOutputDevice->Polymark			= MacOSXServerPolymark;
@@ -682,7 +667,7 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	/* init pointers to set functions */
 	MacOSXServerOutputDevice->SetLineWidth		= MacOSXServerSetLineWidth;
 	MacOSXServerOutputDevice->SetTextSize		= MacOSXServerSetTextSize;
-    MacOSXServerOutputDevice->SetMarker			= MacOSXServerSetMarker;
+	MacOSXServerOutputDevice->SetMarker			= MacOSXServerSetMarker;
 	MacOSXServerOutputDevice->SetMarkerSize		= MacOSXServerSetMarkerSize;
 	MacOSXServerOutputDevice->SetColor			= MacOSXServerSetColor;
 	MacOSXServerOutputDevice->SetPaletteEntry	= MacOSXServerSetPaletteEntry;
@@ -691,11 +676,11 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	/* init pointers to miscellaneous functions */
 	MacOSXServerOutputDevice->GetPaletteEntry	= MacOSXServerGetPaletteEntry;
 	MacOSXServerOutputDevice->Flush				= MacOSXServerFlush;
-    MacOSXServerOutputDevice->PlotPixelBuffer	= NULL;
+	MacOSXServerOutputDevice->PlotPixelBuffer	= NULL;
 
 	printf("output device 'screen' for ");
-    printf(ARCHNAME);
-    printf(" window manager created\n");
+	printf(ARCHNAME);
+	printf(" window manager created\n");
 
 	/* get gui heapsize */
 	if (GetDefaultValue(DEFAULTSFILENAME,"guimemory",buffer)==0)
@@ -714,34 +699,9 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 
 void ExitScreen (void)
 {
-    printf("ExitScreen\n");
-    [pool release];
-    [NSApp stop:NULL];
+	// what is a good way to do this?  If we call [pool release] here, we
+	// exit with a segfault.  I think that the process releases its autorelease 
+	// pools when it quits. So it should be okay.
+	
+	//[pool release];
 }
-
-/****************************************************************************/
-/*D
-   MacOSXServerCommandLoop - NEXTSTEP version of CommandLoop 
-
-   SYNOPSIS:
-   void CommandLoop (int argc, char **argv);
-
-   PARAMETERS:
-.  argc - argument counter
-.  argv - argument vector
-
-   DESCRIPTION:
-   MacOSXServerEventLoop is used 'instead' of 
-
-   RETURN VALUE:
-   void
-D*/
-/****************************************************************************/
-
-void MacOSXServerEventLoop (int argc, char **argv)
-{
-    printf("MacOSXServerEventLoop\n");
-    [theUGshell appendPrompt];
-    [NSApp run];
-}
-

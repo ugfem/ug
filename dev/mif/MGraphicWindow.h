@@ -20,7 +20,7 @@
 #ifndef _MGRAPHICWINDOW_
 #define _MGRAPHICWINDOW_
 
-#import <AppKit.h>
+#import <Cocoa/Cocoa.h>
 
 #ifndef __COMPILER__
 #include "compiler.h"
@@ -53,6 +53,11 @@
   INT currTool;                                                 // The current tool.
   int moveto_x, moveto_y;                               // Value is set in moveToPoint method.
   int viewHeight;                                               // Height of the view.
+  int linewidth;                                                // Current line width.
+
+  NSDate *updateDate;                                           // Flush output when this date is reached.
+  NSTimeInterval timeBetweenUpdates;            // Time between flushes.
+  int ups;                                                              // If every 'ups' graphics operation should be flushed
 
 }
 

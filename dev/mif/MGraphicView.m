@@ -25,7 +25,6 @@
 - (id) initWithFrame:(NSRect)frameRect
 {
     [super initWithFrame:frameRect];
-	theShellTextView = [[MShell instantiate] textview];
 
 	[self addTrackingRect:frameRect owner:self userData:nil assumeInside:NO];
 	
@@ -48,17 +47,9 @@
     return self;
 }
 
-- (void) keyDown:(NSEvent *)theEvent
-{
-	[theShellTextView keyDown:theEvent];
-}
-
 - (void)drawRect:(NSRect)aRect
 {
-	//PSsetgray(NSWhite);
-	//NSRectFill(aRect);
 	printf("drawRect called\n");
-    //InterpretCommand("plot");
 }
 
 - (void) mouseEntered:(NSEvent *)anEvent
