@@ -6084,7 +6084,7 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
   GRID *theGrid;
   VECTOR *vec;
   MATRIX *mat;
-  INT delete,i,nextra;
+  INT delete,i,nextra,nc;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -6117,9 +6117,16 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
         nextra++;
   nextra /= 2;                  /* have been counted twice */
 
-  UserWriteF("%d extra connections on level %d (total %d)\n",(int)nextra,(int)CURRENTLEVEL(theMG),(int)NC(theGrid));
+  nc = NC(theGrid);
+        #ifdef ModelP
+  nextra = UG_GlobalSumINT(nextra);
+  nc = UG_GlobalSumINT(nc);
+        #endif
 
-  SetStringValue(":extraconratio",nextra/((DOUBLE)NC(theGrid)));
+  UserWriteF("%d extra connections on level %d (total %d)\n",
+             (int)nextra,(int)CURRENTLEVEL(theMG),(int)NC(theGrid));
+
+  SetStringValue(":extraconratio",nextra/((DOUBLE)nc));
 
   if (delete)
   {
