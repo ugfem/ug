@@ -54,7 +54,7 @@ extern "C"
 #include "amgtransfer.h"
 #endif
 
-// give C-linkage to this two functions
+// give C-linkage to these functions
 INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 						   VECDATA_DESC *to, VECDATA_DESC *from, 
 						   MATDATA_DESC *A, VEC_SCALAR damp,
@@ -64,6 +64,7 @@ INT FAMGInterpolateCorrection (NP_TRANSFER *theNP, INT level,
 								  VECDATA_DESC *to, VECDATA_DESC *from, 
 								  MATDATA_DESC *A, VEC_SCALAR damp,
 								  INT *result);
+INT InitFAMG (void);
 
 } // extern "C"
 
@@ -1493,7 +1494,7 @@ static INT FAMGConstructTransferNP (NP_BASE *theNP)
 }
 
 
-INT InitFAMG ()
+INT InitFAMG (void)
 {	
 	if (CreateClass(ITER_CLASS_NAME ".famg",sizeof(NP_FAMG_ITER),FAMGConstructIterNP))
 		REP_ERR_RETURN (__LINE__);

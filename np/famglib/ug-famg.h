@@ -81,5 +81,6 @@ INT FAMGInterpolateCorrection (NP_TRANSFER *theNP, INT level,
                                VECDATA_DESC *to, VECDATA_DESC *from,
                                MATDATA_DESC *A, VEC_SCALAR damp,
                                INT *result);
+INT InitFAMG (void);
 
 #endif
