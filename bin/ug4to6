@@ -1,0 +1,91 @@
+#!/bin/csh -f
+
+#set verbose
+set ToolName = `basename $0`;
+
+
+if ( $1 == "-h" || $1 == "-help" ) then
+echo $ToolName " [-h] <data-name>";
+exit;
+endif
+
+
+##################################################################
+
+# default settings
+#set Dummy = 0;
+
+
+##################################################################
+
+
+# process list of options in variable order
+
+set ready = 0;
+while ($ready == 0)
+
+	# process one option
+	switch ($1)
+		#case "-Sa":
+		#	set timescale = 31536000;
+		#	breaksw;
+		
+		default:
+			set ready = 1;
+	endsw
+
+	# eat option argument if it was interpreted
+	if ($ready == 0) then
+		shift;
+	endif
+end
+
+
+##################################################################
+
+
+set PREFIX = $1
+set ABORT_TIMEOUT = 100
+
+
+### rename data files
+
+@ i = 0
+@ renamed_files = 0
+@ abort_now = $ABORT_TIMEOUT
+while ($i <= 10000)
+
+	set DataFileSuffix    = `echo $i | awk '{printf("%04d.ug.data.bin",$1);}' - `
+	set DataFile    = $PREFIX.$DataFileSuffix
+	if (! -f $DataFile ) then
+		@ abort_now = $abort_now - 1
+		if ($abort_now <= 0) then
+			break;
+		endif
+		continue;
+	endif
+
+	set DataFileSuffixNew = `echo $i | awk '{printf("%06d.ug.data.bin",$1);}' - `
+	set DataFileNew = $PREFIX.$DataFileSuffixNew
+	if ( -f $DataFileNew ) then
+		echo $ToolName": file "$DataFileNew" already exists."
+		break;
+	endif
+
+	echo $ToolName": renaming "$DataFile" to "$DataFileNew
+	mv $DataFile $DataFileNew
+	@ renamed_files = $renamed_files + 1
+	@ abort_now = $ABORT_TIMEOUT
+
+	@ i = $i + 1
+end
+
+echo $ToolName": processed "$renamed_files" files."
+
+
+
+##################################################################
+
+
+##################################################################
+
