@@ -476,16 +476,12 @@ NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, char *name, char *class,
                           INT argc, char **argv)
 {
   INT i;
-  char option[OPTIONLEN],value[VALUELEN];
+  char value[VALUELEN];
 
-  for (i=0; i<argc; i++)
-    if (sscanf(argv[i],
-               expandfmt(CONCAT5("%",OPTIONLENSTR,"[a-zA-Z0-9_] %",
-                                 VALUELENSTR,"[ -~]")),option,value)==2)
-      if (strcmp(option,name) == 0)
-        return(GetNumProcByName(theMG,value,class));
+  if (ReadArgvChar(name,value,argc,argv))
+    return (NULL);
 
-  return (NULL);
+  return(GetNumProcByName(theMG,value,class));
 }
 
 /****************************************************************************/

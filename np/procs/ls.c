@@ -177,15 +177,16 @@ INT NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
 
 INT NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
 {
-  UserWrite("symbolic user data:\n");
-  if (np->A != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"A",ENVITEM_NAME(np->A));
-  if (np->x != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
-  if (np->b != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(np->x));
-  UserWrite("\n");
-
+  if ((np->x != NULL) || (np->b 1= NULL) || (np->A 1= NULL)) {
+    UserWrite("symbolic user data:\n");
+    if (np->A != NULL)
+      UserWriteF(DISPLAY_NP_FORMAT_SS,"A",ENVITEM_NAME(np->A));
+    if (np->x != NULL)
+      UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
+    if (np->b != NULL)
+      UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(np->x));
+    UserWrite("\n");
+  }
   UserWrite("configuration parameters:\n");
   if (np->x != NULL)
     if (sc_disp(np->reduction,np->x,"red"))
