@@ -73,7 +73,6 @@ static INT thePlotObjTypesVarID;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-
 static INT SetDeviceInfo (void)
 {
   DOUBLE counter;
@@ -471,15 +470,19 @@ INT DisposeUgWindow (UGWINDOW *theUgWindow)
   /* check if there are no pictures on the UgWindow */
   if (UGW_NPIC(theUgWindow) != 0) return (1);
 
+#ifdef ModelP
+  if (me == master)
+  {
+#endif
   /* find output device */
   OutputDevice = UGW_OUTPUTDEV(theUgWindow);
   if (OutputDevice == NULL) return (1);
 
   /* close associated IFWindow */
-#ifdef ModelP
-  if (me == master)
-#endif
   if ((*OutputDevice->CloseOutput)(theUgWindow->theIFWindow)) return (1);
+#ifdef ModelP
+}
+#endif
 
   /* dispose window */
   if (ChangeEnvDir("/UgWindows") == NULL) return (1);
