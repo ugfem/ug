@@ -40,7 +40,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_1.9"
+#define MGIO_VERSION                                    "UG_IO_2.0"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
@@ -62,6 +62,8 @@
         #include "rm.h"
         #include "domain.h"
 
+        #define MGIO_PARFILE                                            (nparfiles>1)
+
         #define MGIO_BNDP                                                       BNDP
         #define MGIO_BNDS                                                       BNDS
 
@@ -76,9 +78,17 @@
 
         #define MGIO_MAXLEVEL                                           MAXLEVEL
         #define MGIO_TAGS                                                       TAGS
+        #define MGIO_REFINEMENT_SIZE                            (MGIO_PARFILE ? sizeof(MGIO_REFINEMENT) : sizeof(struct mgio_refinement_seq))
+        #define MGIO_CG_POINT_SIZE                                      (MGIO_PARFILE ? (sizeof(MGIO_CG_POINT)) : (sizeof(struct mgio_cg_point_seq)))
+        #define MGIO_CG_ELEMENT_SIZE                            (MGIO_PARFILE ? (sizeof(MGIO_CG_ELEMENT)) : (sizeof(struct mgio_cg_element_seq)))
+
+        #define MGIO_REFINEMENT_PS(r,n)                         (MGIO_PARFILE ? ((r)+(n)) : ((MGIO_REFINEMENT*)(((struct mgio_refinement_seq*)(r))+(n))))
+        #define MGIO_CG_POINT_PS(p,n)                           (MGIO_PARFILE ? ((p)+(n)) : ((MGIO_CG_POINT*)(((struct mgio_cg_point_seq*)(p))+(n))))
+        #define MGIO_CG_ELEMENT_PS(e,n)                         (MGIO_PARFILE ? ((e)+(n)) : ((MGIO_CG_ELEMENT*)(((struct mgio_cg_element_seq*)(e))+(n))))
 
 #else
 
+        #define MGIO_PAR                                                        0
         #define MGIO_MAXLEVEL                                           32
         #define MGIO_TAGS                                                       8
 
@@ -127,6 +137,10 @@ struct mgio_mg_general {
   char version[MGIO_NAMELEN];       /* version of i/o							*/
   int magic_cookie;                             /* identification number					*/
   char ident[MGIO_NAMELEN];             /* identification string from input file	*/
+
+  /* parallel part */
+  int nparfiles;                                /* number of processors						*/
+  int me;                                               /* id of my processor						*/
 
   /* number of objects */
   int nLevel;                                   /* nb of levels of the mg						*/
@@ -195,25 +209,71 @@ struct mgio_cg_general {
   int nInnerElement;                                            /* nb of inner elements on coarse grid				*/
 };
 
-struct mgio_cg_point {
+struct mgio_cg_point_seq {
 
   double position[MGIO_DIM];                            /* position of the point							*/
 };
 
+struct mgio_cg_point {
+
+  double position[MGIO_DIM];                            /* position of the point							*/
+  int level;                                                            /* level of creation								*/
+  int prio;                                                             /* priority											*/
+};
+
 struct mgio_movedcorner {
 
-  int id;                                                               /* local id of moved corner							*/
+  int id;                                                               /* local id of moved node							*/
   double position[MGIO_DIM];                            /* position of the point							*/
+};
+
+
+struct mgio_parinfo {
+  unsigned short *proclist;                                             /* NULL for elements without copies             */
+  unsigned short prio_elem;
+  unsigned short ncopies_elem;
+  unsigned short prio_node[MGIO_MAX_CORNERS_OF_ELEM];
+  unsigned short ncopies_node[MGIO_MAX_CORNERS_OF_ELEM];
+
+#if (MGIO_DIM==3)
+  unsigned short prio_edge[MGIO_MAX_EDGES_OF_ELEM];
+  unsigned short ncopies_edge[MGIO_MAX_EDGES_OF_ELEM];
+#endif
+};
+
+struct mgio_cg_element_seq {
+
+  int ge;                                                                               /* id of general element					*/
+  int nodeid[MGIO_MAX_CORNERS_OF_ELEM];                 /* ids of nodes (data reference)			*/
+  int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
+  int nhe;                                                                              /* nb of he_elements of this element		*/
+  /* if 0 element not refined					*/
+  int subdomain;                                                                /* id of subdomain							*/
 };
 
 struct mgio_cg_element {
 
   int ge;                                                                               /* id of general element					*/
-  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of corners							*/
+  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of nodes (data reference)			*/
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int nhe;                                                                              /* nb of he_elements of this element		*/
   /* if 0 element not refined					*/
   int subdomain;                                                                /* id of subdomain							*/
+
+  /* (procs>1)-extension */
+  int level;
+  struct mgio_parinfo pinfo;                                            /* info for distr. data						*/
+};
+
+struct mgio_refinement_seq {                                    /* used only for sizeof						*/
+
+  int refrule;                                                                  /* id of refinement rule					*/
+  int sonref;                                                                           /* 1 if sons are refined, bitwise			*/
+  int refclass;                                                                 /* refinement class							*/
+  int nnewcorners;                                                              /* nb of new corners on next level			*/
+  int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of new vert.or -1 */
+  int nmoved;                                                                           /* nmoved new vertices moved				*/
+  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved node			*/
 };
 
 struct mgio_refinement {
@@ -222,9 +282,16 @@ struct mgio_refinement {
   int sonref;                                                                           /* 1 if sons are refined, bitwise			*/
   int refclass;                                                                 /* refinement class							*/
   int nnewcorners;                                                              /* nb of new corners on next level			*/
-  int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of new corners    */
-  int nmoved;                                                                           /* nmoved new corners moved					*/
-  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved corners		*/
+  int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of new vert.or -1 */
+  int nmoved;                                                                           /* nmoved new vertices moved				*/
+  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved node			*/
+
+  /* (procs>1)-extension */
+  int sonex;                                                                            /* used bitwise								*/
+  int nbid_ex;                                                                  /* used bitwise: nbid exists for son ...	*/
+  int nbid[MGIO_MAX_SONS_OF_ELEM][MGIO_MAX_SIDES_OF_ELEM];       /* nb-elem-ids of non-orphan   */
+  /* elems referring to orphan elems if nec.  */
+  struct mgio_parinfo pinfo[MGIO_MAX_SONS_OF_ELEM];
 };
 
 struct mgio_bd_general {
@@ -242,6 +309,7 @@ typedef struct mgio_cg_point MGIO_CG_POINT;
 typedef struct mgio_cg_element MGIO_CG_ELEMENT;
 typedef struct mgio_refinement MGIO_REFINEMENT;
 typedef struct mgio_bd_general MGIO_BD_GENERAL;
+typedef struct mgio_parinfo MGIO_PARINFO;
 
 /****************************************************************************/
 /*																			*/
@@ -267,7 +335,7 @@ int             Read_RR_Rules           (int n, MGIO_RR_RULE    *rr_rules);
 int     Read_CG_General         (MGIO_CG_GENERAL *cg_general);
 int             Read_CG_Points          (int n, MGIO_CG_POINT   *cg_point);
 int             Read_CG_Elements        (int n, MGIO_CG_ELEMENT *cg_element);
-int     Read_Refinement         (int n, MGIO_REFINEMENT *refinement);
+int     Read_Refinement         (int n, MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_rules);
 int             Read_BD_General         (MGIO_BD_GENERAL *bd_general);
 
 /* write functions */
@@ -280,7 +348,7 @@ int             Write_RR_Rules          (int n, MGIO_RR_RULE    *rr_rules);
 int     Write_CG_General        (MGIO_CG_GENERAL *cg_general);
 int             Write_CG_Points         (int n, MGIO_CG_POINT   *cg_point);
 int             Write_CG_Elements       (int n, MGIO_CG_ELEMENT *cg_element);
-int     Write_Refinement        (int n, MGIO_REFINEMENT *refinement);
+int     Write_Refinement        (int n, MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_rules);
 int             Write_BD_General        (MGIO_BD_GENERAL *bd_general);
 
 #ifdef __MGIO_USE_IN_UG__

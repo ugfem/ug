@@ -95,6 +95,7 @@ static int rw_mode;                                     /* ASCII or ... (see hea
 static char buffer[MGIO_BUFFERSIZE]; /* general purpose buffer		*/
 static int intList[MGIO_INTSIZE];       /* general purpose integer list */
 static double doubleList[MGIO_DOUBLESIZE]; /* general purpose double list*/
+static int nparfiles;                                     /* nb of parallel files		*/
 
 /* local storage of general elements */
 static MGIO_GE_ELEMENT lge[MGIO_TAGS];
@@ -227,7 +228,7 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   if (Bio_Read_string(mg_general->DomainName)) return (1);
   if (Bio_Read_string(mg_general->MultiGridName)) return (1);
   if (Bio_Read_string(mg_general->Formatname)) return (1);
-  if (Bio_Read_mint(8,intList)) return (1);
+  if (Bio_Read_mint(10,intList)) return (1);
   mg_general->dim                 = intList[0];
   mg_general->magic_cookie= intList[1];
   mg_general->heapsize    = intList[2];
@@ -236,6 +237,11 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   mg_general->nPoint              = intList[5];
   mg_general->nElement    = intList[6];
   mg_general->VectorTypes = intList[7];
+  mg_general->me                  = intList[8];
+  mg_general->nparfiles   = intList[9];
+
+  /* init global parameters */
+  nparfiles                               = mg_general->nparfiles;
 
   return (0);
 }
@@ -289,7 +295,12 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
   intList[5] = mg_general->nPoint;
   intList[6] = mg_general->nElement;
   intList[7] = mg_general->VectorTypes;
-  if (Bio_Write_mint(8,intList)) return (1);
+  intList[8] = mg_general->me;
+  intList[9] = mg_general->nparfiles;
+  if (Bio_Write_mint(10,intList)) return (1);
+
+  /* init global parameters */
+  nparfiles                               = mg_general->nparfiles;
 
   return (0);
 }
@@ -714,7 +725,6 @@ int Read_CG_General (MGIO_CG_GENERAL *cg_general)
 
 int Write_CG_General (MGIO_CG_GENERAL *cg_general)
 {
-
   intList[0] = cg_general->nPoint;
   intList[1] = cg_general->nBndPoint;
   intList[2] = cg_general->nInnerPoint;
@@ -751,23 +761,21 @@ int Write_CG_General (MGIO_CG_GENERAL *cg_general)
 
 int Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
 {
-  int i,j,s,nmax,read,copy_until,still_to_read;
+  int i,j;
+  MGIO_CG_POINT *cgp;
 
-  copy_until=0; still_to_read=n;
-  nmax = MGIO_DOUBLESIZE-MGIO_DOUBLESIZE%MGIO_DIM; nmax /= MGIO_DIM;
   for(i=0; i<n; i++)
   {
-    if (i>=copy_until)
-    {
-      if (still_to_read<=nmax) read=still_to_read;
-      else read=nmax;
-      if (Bio_Read_mdouble(MGIO_DIM*read,doubleList)) return (1);
-      still_to_read -= read;
-      copy_until += read;
-      s=0;
-    }
+    if (Bio_Read_mdouble(MGIO_DIM,doubleList)) return (1);
+    cgp = MGIO_CG_POINT_PS(cg_point,i);
     for(j=0; j<MGIO_DIM; j++)
-      cg_point[i].position[j] = doubleList[s++];
+      cgp->position[j] = doubleList[j];
+    if (MGIO_PARFILE)
+    {
+      if (Bio_Read_mint(2,intList)) return (1);
+      cgp->level = intList[0];
+      cgp->prio =  intList[1];
+    }
   }
 
   return (0);
@@ -798,21 +806,103 @@ int Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
 
 int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
 {
-  int i,j,s;
+  int i,j;
+  MGIO_CG_POINT *cgp;
 
-  s=0;
   for(i=0; i<n; i++)
   {
+    cgp = MGIO_CG_POINT_PS(cg_point,i);
     for(j=0; j<MGIO_DIM; j++)
-      doubleList[s++] = cg_point[i].position[j];
-    if (s>MGIO_DOUBLESIZE-MGIO_DIM)
+      doubleList[j] = cgp->position[j];
+    if (Bio_Write_mdouble(MGIO_DIM,doubleList)) return (1);
+    if (MGIO_PARFILE)
     {
-      if (Bio_Write_mdouble(s,doubleList)) return (1);
-      s=0;
+      intList[0] = cgp->level;
+      intList[1] = cgp->prio;
+      if (Bio_Write_mint(2,intList)) return (1);
     }
   }
-  if (s>0)
-    if (Bio_Write_mdouble(s,doubleList)) return (1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   Read_pinfo - reads parallel-info for an element
+
+   SYNOPSIS:
+   static int Read_pinfo (MGIO_CG_ELEMENT *pe);
+ */
+/****************************************************************************/
+
+static int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
+{
+  int i,m,s,np;
+
+  s=0;
+  m = 2+2*lge[ge].nCorner;
+  if (Bio_Read_mint(m,intList)) return (1);
+  pinfo->prio_elem = intList[s++];
+  pinfo->ncopies_elem = intList[s++];
+  np = pinfo->ncopies_elem;
+  for (i=0; i<lge[ge].nCorner; i++)
+  {
+    pinfo->prio_node[i] = intList[s++];
+    pinfo->ncopies_node[i] = intList[s++];
+    np+= pinfo->ncopies_node[i];
+  }
+#if (MGIO_DIM==3)
+  s=0;
+  m = 2*lge[ge].nEdge;
+  if (Bio_Read_mint(m,intList)) return (1);
+  for (i=0; i<lge[ge].nEdge; i++)
+  {
+    pinfo->prio_edge[i] = intList[s++];
+    pinfo->ncopies_edge[i] = intList[s++];
+    np+= pinfo->ncopies_edge[i];
+  }
+#endif
+  if (Bio_Read_mint(np,intList)) return (1);
+  for (i=0; i<np; i++) pinfo->proclist[i] = intList[i];
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   Write_pinfo - writes parallel-info for an element
+
+   SYNOPSIS:
+   static int Write_pinfo (MGIO_CG_ELEMENT *pe);
+ */
+/****************************************************************************/
+
+static int Write_pinfo (int ge, MGIO_PARINFO *pinfo)
+{
+  int i,m,s,np;
+
+  s=0;
+  intList[s++] = pinfo->prio_elem;
+  intList[s++] = np = pinfo->ncopies_elem;
+  for (i=0; i<lge[ge].nCorner; i++)
+  {
+    intList[s++] = pinfo->prio_node[i];
+    intList[s++] = pinfo->ncopies_node[i];
+    np+= pinfo->ncopies_node[i];
+  }
+  if (Bio_Write_mint(s,intList)) return (1);
+#if (MGIO_DIM==3)
+  s=0;
+  for (i=0; i<lge[ge].nEdge; i++)
+  {
+    intList[s++] = pinfo->prio_edge[i];
+    intList[s++] = pinfo->ncopies_edge[i];
+    np+= pinfo->ncopies_edge[i];
+  }
+#endif
+  if (Bio_Write_mint(s,intList)) return (1);
+  for (i=0; i<np; i++) intList[i] = pinfo->proclist[i];
+  if (Bio_Write_mint(np,intList)) return (1);
 
   return (0);
 }
@@ -845,9 +935,10 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
   int i,j,m,s;
   MGIO_CG_ELEMENT *pe;
 
-  pe = cg_element;
   for (i=0; i<n; i++)
   {
+    pe = MGIO_CG_ELEMENT_PS(cg_element,i);
+
     /* coarse grid part */
     if (Bio_Read_mint(1,&pe->ge)) return (1);
     m=lge[pe->ge].nCorner+lge[pe->ge].nSide+2;
@@ -859,7 +950,12 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
     for (j=0; j<lge[pe->ge].nSide; j++)
       pe->nbid[j] = intList[s++];
     pe->subdomain = intList[s++];
-    pe++;
+
+    if (MGIO_PARFILE)
+    {
+      if (Bio_Read_mint(1,&pe->level)) return (1);
+      if (Read_pinfo(pe->ge,&pe->pinfo)) return (1);
+    }
   }
 
   return (0);
@@ -893,9 +989,10 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
   int i,j,s;
   MGIO_CG_ELEMENT *pe;
 
-  pe = cg_element;
   for (i=0; i<n; i++)
   {
+    pe = MGIO_CG_ELEMENT_PS(cg_element,i);
+
     /* coarse grid part */
     s=0;
     intList[s++] = pe->ge;
@@ -908,7 +1005,11 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
     MGIO_CHECK_INTSIZE(s);
     if (Bio_Write_mint(s,intList)) return (1);
 
-    pe++;
+    if (MGIO_PARFILE)
+    {
+      if (Bio_Write_mint(1,&pe->level)) return (1);
+      if (Write_pinfo(pe->ge,&pe->pinfo)) return (1);
+    }
   }
 
   return (0);
@@ -937,15 +1038,15 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
  */
 /****************************************************************************/
 
-int Read_Refinement (int n, MGIO_REFINEMENT *refinement)
+int Read_Refinement (int n, MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_rules)
 {
-  int i,j,k,s;
+  int i,j,k,s,tag;
   unsigned int ctrl;
   MGIO_REFINEMENT *pr;
 
-  pr = refinement;
   for (i=0; i<n; i++)
   {
+    pr = MGIO_REFINEMENT_PS(refinement,i);
     if (Bio_Read_mint(2,intList)) return (1);
     ctrl = intList[0];
     pr->sonref = intList[1];
@@ -971,7 +1072,25 @@ int Read_Refinement (int n, MGIO_REFINEMENT *refinement)
             pr->mvcorner[j].position[k] = doubleList[s++];
       }
     }
-    pr++;
+
+    if (MGIO_PARFILE)
+    {
+      if (Bio_Read_mint(2,intList)) return (1);
+      pr->sonex = intList[0];
+      pr->nbid_ex = intList[1];
+      for (i=0; i<MGIO_MAX_SONS_OF_ELEM; i++)
+        if ((pr->sonex>>i)&1)
+        {
+          tag = rr_rules[pr->refrule].sons[i].tag;
+          if (Read_pinfo(tag,&pr->pinfo[i])) return (1);
+          if ((pr->nbid_ex>>i)&1)
+          {
+            if (Bio_Read_mint(lge[tag].nSide,intList)) return (1);
+            for (j=0; j<lge[tag].nSide; j++)
+              pr->nbid[i][j] = intList[j];
+          }
+        }
+    }
   }
 
   return (0);
@@ -1000,14 +1119,14 @@ int Read_Refinement (int n, MGIO_REFINEMENT *refinement)
  */
 /****************************************************************************/
 
-int Write_Refinement (int n, MGIO_REFINEMENT *refinement)
+int Write_Refinement (int n, MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_rules)
 {
-  int i,j,k,s,t;
+  int i,j,k,s,t,tag;
   MGIO_REFINEMENT *pr;
 
-  pr = refinement;
   for (i=0; i<n; i++)
   {
+    pr = MGIO_REFINEMENT_PS(refinement,i);
     s=t=0;
     intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved,pr->refclass);
     intList[s++] = pr->sonref;
@@ -1027,7 +1146,25 @@ int Write_Refinement (int n, MGIO_REFINEMENT *refinement)
     MGIO_CHECK_DOUBLESIZE(t);
     if (t>0) if (Bio_Write_mdouble(t,doubleList)) return (1);
 
-    pr++;
+    if (MGIO_PARFILE)
+    {
+      intList[0] = pr->sonex;
+      intList[1] = pr->nbid_ex;
+      if (Bio_Write_mint(2,intList)) return (1);
+      for (i=0; i<MGIO_MAX_SONS_OF_ELEM; i++)
+        if ((pr->sonex>>i)&1)
+        {
+          tag = rr_rules[pr->refrule].sons[i].tag;
+          if (Write_pinfo(tag,&pr->pinfo[i])) return (1);
+          if ((pr->nbid_ex>>i)&1)
+          {
+            for (j=0; j<lge[tag].nSide; j++)
+              intList[j] = pr->nbid[i][j];
+            if (Bio_Write_mint(lge[tag].nSide,intList)) return (1);
+          }
+        }
+    }
+
   }
 
   return (0);
