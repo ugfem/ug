@@ -1353,7 +1353,8 @@ INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
   if (DOWNGRID(FineGrid)==NULL)
     return (NUM_NO_COARSER_GRID);
 
-  l_dset (FineGrid,to,EVERY_CLASS,0.0);
+  dset(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),ALL_VECTORS,
+       (VECDATA_DESC *)to,0.0);
 
   if (VD_IS_SCALAR(to) && VD_IS_SCALAR(from))
   {
@@ -1371,7 +1372,8 @@ INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
             VVALUE(v,xc) += MVALUE(m,0) * VVALUE(w,yc);
         }
     if (damp[0] != 1.0)
-      if (l_dscale (FineGrid,to,EVERY_CLASS,damp))
+      if (dscalex(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
+                  ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
         return (NUM_ERROR);
 
     return (NUM_OK);
@@ -1423,10 +1425,10 @@ INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
   }
 
   if (CheckDamp(VD_NCOMP(to),damp))
-    if (l_dscale (FineGrid,to,EVERY_CLASS,damp))
-      return (NUM_ERROR);
+    if (dscalex(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
+                ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
 
-  return (NUM_OK);
+      return (NUM_OK);
 }
 
 INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to,
@@ -1442,7 +1444,8 @@ INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to
   if (DOWNGRID(FineGrid)==NULL)
     return (NUM_NO_COARSER_GRID);
 
-  l_dset (FineGrid,to,EVERY_CLASS,0.0);
+  dset(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),ALL_VECTORS,
+       (VECDATA_DESC *)to,0.0);
 
   if (VD_IS_SCALAR(to) && VD_IS_SCALAR(from))
   {
@@ -1460,7 +1463,8 @@ INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to
             VVALUE(v,xc) += MVALUE(m,0) * VVALUE(w,yc);
         }
     if (damp[0] != 1.0)
-      if (l_dscale (FineGrid,to,EVERY_CLASS,damp))
+      if (dscalex(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
+                  ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
         return (NUM_ERROR);
 
     return (NUM_OK);
@@ -1490,7 +1494,8 @@ INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to
   }
 
   if (CheckDamp(VD_NCOMP(to),damp))
-    if (l_dscale (FineGrid,to,EVERY_CLASS,damp))
+    if (dscalex(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
+                ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
       return (NUM_ERROR);
 
   return (NUM_OK);
@@ -1637,7 +1642,7 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
   MATRIX *m,*im,*jm,*cm;
   VECTOR *v,*w,*iv,*jv;
   register DOUBLE sum,*mptr,*cmptr,*imptr,*jmptr,mvalue,imvalue;
-  register DOUBLE *imptr0,*imptr1,*jmptr0,*jmptr1,*madjptr;
+  register DOUBLE *imptr0,*imptr1,*jmptr0,*jmptr1,*madjptr,fac;
   INT vtype,ivtype,mtype,cmtype,vncomp,wncomp,ivncomp,jvncomp,rmask,cmask;
   INT wtype,ivindex;
   register SHORT i,j,k,l,mc,*mcomp,*cmcomp,*madjcomp;
