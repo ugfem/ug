@@ -46,6 +46,7 @@ extern "C" {
 /*          __HP__       HP Workstations                                    */
 /*          __PC__       IBM compatible PC                                  */
 /*          __T3D__      CRAY T3D version                                   */
+/*          __T3E__      CRAY T3E version                                   */
 /*          __POWERGC__  XPLORER (PowerPC)                                  */
 /*          __CC__       CC-Parsytec (PowerPC)                              */
 /*          __C90__      CRAY 90 version                                    */
@@ -86,6 +87,9 @@ extern "C" {
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
 /* Diese bloeden const pointer gehen immer noch nicht ! P.B. 27.7.95 */
 #define const
 
@@ -113,6 +117,9 @@ extern "C" {
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym ## _
+
 #endif
 
 
@@ -137,6 +144,9 @@ extern "C" {
 /* memory */
 #define ALIGNMENT 4                                         /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFFC                    /* compatible to alignment			*/
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
 
 #endif
 
@@ -164,6 +174,9 @@ extern "C" {
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment          */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
 #endif
 
 
@@ -188,6 +201,9 @@ extern "C" {
 /* memory */
 #define ALIGNMENT 8                                         /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8                    /* compatible to alignment			*/
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym ## _
 
 #endif
 
@@ -214,6 +230,9 @@ extern "C" {
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
 #endif
 
 /****************************************************************************/
@@ -237,6 +256,9 @@ extern "C" {
 /* memory */
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
 
 #endif
 
@@ -262,6 +284,9 @@ extern "C" {
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
 #endif
 
 
@@ -286,6 +311,9 @@ extern "C" {
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
 #endif
 
 
@@ -309,6 +337,9 @@ extern "C" {
 /* memory */
 #define ALIGNMENT   8                   /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
 
 #endif
 
@@ -335,6 +366,9 @@ extern "C" {
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment          */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
 #endif
 
 
@@ -359,6 +393,37 @@ extern "C" {
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  usym
+
+#endif
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for CRAY T3E                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __T3E__
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  usym
+
 #endif
 
 
@@ -382,6 +447,9 @@ extern "C" {
 /* memory */
 #define ALIGNMENT 8               /* power of 2 and >=sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8     /*  compatible to alignment */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
 
 #endif
 
@@ -409,6 +477,9 @@ extern "C" {
 #define ALIGNMENT 4               /* power of 2 and >=sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFFC     /*  compatible to alignment */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
 #endif
 
 
@@ -433,6 +504,9 @@ extern "C" {
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
 
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
+
 #endif
 
 
@@ -456,6 +530,9 @@ extern "C" {
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
 
 #endif
 
@@ -490,6 +567,9 @@ extern "C" {
 #define free(p) DisposPtr((Ptr) p)
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym
 
 #endif
 
