@@ -1,6 +1,111 @@
 #!/bin/sh
 
-cd $UGROOT/../fe/appl
-time fe2d ugdemo2d.scr
-diff results/log.ugdemo2d results/log.ugdemo2d.save
+if test "x$UGROOT" = "x"
+then
+        echo "$0: to use $0 set shell environment variable UGROOT!";
+        exit 1;
+fi
 
+# if no parameter is specified make in current directory
+if test $# -eq 0 
+then
+        echo "UG demonstration";
+        echo "usage: ugdemo XXX";   
+if test -x $UGROOT/../ns/appl2d/ns2d
+then
+        echo "dc2d: Navier Stokes driven cavity 2d";
+fi
+if test -x $UGROOT/../ns/appl3d/ns3d
+then
+        echo "dc3d: Navier Stokes driven cavity 3d";
+fi
+if test -x $UGROOT/../df/gen/appl/df2d
+then
+        echo "df2d: Density driven flow 2d";
+fi
+if test -x $UGROOT/../sc/appl2d/scalar2d
+then
+        echo "pm2d: Poros media equation 2d";   
+fi
+if test -x $UGROOT/../fe/appl/fe2d
+then
+        echo "ep3d: Elasto-plasticity 3d";
+fi
+if test -x $UGROOT/../fe/appl/fe2d
+then
+        echo "ep2d: Elasto-plasticity 2d";
+        echo "ew2d: Eigenvalues of the Wolfgangssee";
+        echo "ball: Local refinement of a ball";
+        echo "disc: Demonstration of discretization 2d";
+        echo "diff: Diffusion equation 2d";
+        echo "er2d: Error bounds for the Emden equation 2d";
+fi
+fi
+
+if test $# -eq 1
+then
+	PROC=1
+fi
+if test $# -ge 2
+then
+	PROC=$2
+fi
+
+
+
+if test $# -ge 1 
+then
+        # check whether first  option is ug module 
+        case $1 in
+        dc2d)
+			cd $UGROOT/../ns/appl2d
+			ugrun ns2d $PROC ugdemo.scr
+			;;
+        dc3d)
+			cd $UGROOT/../ns/appl3d
+			ugrun ns3d $PROC DrivenCavity.scr
+			;;
+        pm2d)
+			cd $UGROOT/../sc/appl2d
+			ugrun scalar2d $PROC ugdemo.scr
+			;;
+        df2d)
+			cd $UGROOT/../df/gen/appl
+			ugrun df2d $PROC ugdemo.scr
+			;;
+        ep2d)
+			cd $UGROOT/../fe/appl
+			ugrun fe2d $PROC gpd.scr
+			;;
+        ep3d)
+			cd $UGROOT/../fe/appl
+			ugrun fe3d $PROC lame.scr
+			;;
+        ball)
+			cd $UGROOT/../fe/appl
+			ugrun fe3d $PROC ugdemo3d.scr
+			;;
+        diff)
+			cd $UGROOT/../fe/appl
+			ugrun fe2d $PROC simple.scr
+			;;
+        disc)
+			cd $UGROOT/../fe/appl
+			ugrun fe2d $PROC ugdemo2d.scr
+			;;
+        ew2d)
+			cd $UGROOT/../fe/appl
+			ugrun fe2d $PROC wolfgangsee.scr
+			;;
+        er2d)
+			cd $UGROOT/../fe/appl
+			ugrun fe2d $PROC emden.scr
+			;;
+        *)
+                echo "target $1 not found";
+                exit 1;
+                ;;
+        esac;
+fi
+
+exit 0;
