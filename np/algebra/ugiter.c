@@ -1261,7 +1261,7 @@ INT gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
       eps *= start_norm;
   }
   else
-    new_norm = eps - 1.0;               /* avoid premature terminating */
+    new_norm = eps + 1.0;               /* avoid premature terminating */
 
   it = 0;
 
