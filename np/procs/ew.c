@@ -1305,7 +1305,7 @@ static int EWCompare (DOUBLE **index1, DOUBLE **index2)
   else return (0);
 }
 
-static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT new,
+static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
                       VECDATA_DESC **ev, DOUBLE *ew, NP_NL_ASSEMBLE *Assemble,
                       VEC_SCALAR abslimit, VEC_SCALAR reduction,
                       EWRESULT *ewresult)
@@ -1330,7 +1330,7 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT new,
   ewresult->error_code = 0;
   CenterInPattern(text,DISPLAY_WIDTH,
                   " inverse block iteration ",'%',"\n");
-  for (i=0; i<new; i++) {
+  for (i=0; i<New; i++) {
     if (Rayleigh(theNP,level,ev[i],Assemble,a,&ew[i],
                  &ewresult->error_code))
       NP_RETURN(1,ewresult->error_code);
@@ -1359,7 +1359,7 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT new,
       break;
     if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
       NP_RETURN(1,ewresult->error_code);
-    for (i=0; i<new; i++) {
+    for (i=0; i<New; i++) {
       if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
                                         ev[i],np->t,
                                         np->M,&ewresult->error_code))
@@ -1380,120 +1380,120 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT new,
             != NUM_OK)
           NP_RETURN(1,ewresult->error_code);
     }
-    for (i=0; i<new; i++) {
+    for (i=0; i<New; i++) {
       if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i]) != NUM_OK)
         NP_RETURN(1,ewresult->error_code);
-      if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[i],&A[i*new+i]))
+      if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[i],&A[i*New+i]))
         NP_RETURN(1,ewresult->error_code);
-      if (dscal(theMG,0,level,ALL_VECTORS,ev[i],1/sqrt(A[i*new+i]))
+      if (dscal(theMG,0,level,ALL_VECTORS,ev[i],1/sqrt(A[i*New+i]))
           != NUM_OK)
         NP_RETURN(1,ewresult->error_code);
     }
     if (dscal(theMG,0,level,ALL_VECTORS,np->r,1/sqrt(A[0])) != NUM_OK)
       NP_RETURN(1,ewresult->error_code);
-    for (i=0; i<new; i++)
+    for (i=0; i<New; i++)
     {
       if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i]) != NUM_OK)
         NP_RETURN(1,ewresult->error_code);
       for (j=0; j<=i; j++)
-        if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[j],&A[i*new+j]))
+        if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[j],&A[i*New+j]))
           NP_RETURN(1,ewresult->error_code);
     }
-    for (i=0; i<new; i++) {
+    for (i=0; i<New; i++) {
       if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
                                         ev[i],np->t,
                                         np->M,&ewresult->error_code))
         NP_RETURN(1,ewresult->error_code);
       for (j=0; j<=i; j++)
-        if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[j],&B[i*new+j]))
+        if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[j],&B[i*New+j]))
           NP_RETURN(1,ewresult->error_code);
     }
     if (FreeVD(theMG,bl,level,np->t))
       NP_RETURN(1,ewresult->error_code);
-    for (i=0; i<new; i++)
+    for (i=0; i<New; i++)
       for (j=0; j<i; j++) {
-        A[j*new+i] = A[i*new+j];
-        B[j*new+i] = B[i*new+j];
+        A[j*New+i] = A[i*New+j];
+        B[j*New+i] = B[i*New+j];
       }
-    for (i=0; i<new; i++)
+    for (i=0; i<New; i++)
       for (j=0; j<i; j++)
         E[i][j] = E[j][i] = 0.0;
-    for (i=0; i<new; i++)
+    for (i=0; i<New; i++)
       E[i][i] = 1.0;
-    if (Choleskydecomposition(new,B,L))
+    if (Choleskydecomposition(New,B,L))
       NP_RETURN(1,ewresult->error_code);
 
     /* Inverse of L */
-    for (i=1; i<new; i++) {
+    for (i=1; i<New; i++) {
       for (j=0; j<i; j++)
       {
-        DOUBLE sum = L[i*new+j] * L[j*new+j];
+        DOUBLE sum = L[i*New+j] * L[j*New+j];
 
         for (k=j+1; k<i; k++)
-          sum += L[i*new+k] * L[k*new+j];
-        L[i*new+j] = - sum * L[i*new+i];
+          sum += L[i*New+k] * L[k*New+j];
+        L[i*New+j] = - sum * L[i*New+i];
       }
     }
 
     /* Left hand side for special Eigenvalue problem */
-    for (i=0; i<new; i++) {
+    for (i=0; i<New; i++) {
       for (j=0; j<=i; j++)
       {
         DOUBLE sum = 0.0;
 
         for (k=0; k<=i; k++)
           for (l=0; l<=j; l++)
-            sum += L[i*new+k] * A[k*new+l] * L[j*new+l];
+            sum += L[i*New+k] * A[k*New+l] * L[j*New+l];
         G[i][j] = G[j][i]  = sum;
       }
     }
 
     /* Special Eigenvalue problem  G E_i = lambda E_i */
 
-    SmallEWSolver(new,G,ew,E);
+    SmallEWSolver(New,G,ew,E);
 
     /* transform back the Eigenvectors */
-    for (i=0; i<new; i++) {
-      for (j=0; j<new; j++)
+    for (i=0; i<New; i++) {
+      for (j=0; j<New; j++)
       {
-        DOUBLE sum = L[i*new+i]*E[i][j];
+        DOUBLE sum = L[i*New+i]*E[i][j];
 
-        for (k=i+1; k<new; k++)
-          sum += L[k*new+i]*E[k][j];
+        for (k=i+1; k<New; k++)
+          sum += L[k*New+i]*E[k][j];
         E[i][j]= sum;
       }
     }
 
-    for (i=0; i<new; i++) {
+    for (i=0; i<New; i++) {
       if (AllocVDFromVD(theMG,bl,level,ev[0],&np->e[i]))
         NP_RETURN(1,ewresult->error_code);
     }
-    for (i=0; i<new; i++) {
+    for (i=0; i<New; i++) {
       if (dset(theMG,bl,level,ALL_VECTORS,np->e[i],0.0))
         NP_RETURN(1,ewresult->error_code);
-      for (j=0; j<new; j++)
+      for (j=0; j<New; j++)
         if (daxpy(theMG,bl,level,ALL_VECTORS,np->e[i],E[j][i],ev[j])
             != NUM_OK)
           NP_RETURN(1,ewresult->error_code);
     }
 
-    for (i=0; i<new; i++)
+    for (i=0; i<New; i++)
       table[i] = &ew[i];
-    qsort(table, new, sizeof(*table),
+    qsort(table, New, sizeof(*table),
           (int (*)(const void *, const void *))EWCompare);
-    for (i=0; i<new; i++)
-      for (j=0; j<new; j++)
+    for (i=0; i<New; i++)
+      for (j=0; j<New; j++)
         if (table[i]==&ew[j])
           index[i] = j;
 
-    for (i=0; i<new; i++)
+    for (i=0; i<New; i++)
     {
       if (dcopy(theMG,bl,level,ALL_VECTORS,ev[i],np->e[index[i]]))
         NP_RETURN(1,ewresult->error_code);
       if (FreeVD(theMG,bl,level,np->e[index[i]]))
         NP_RETURN(1,ewresult->error_code);
     }
-    for (i=0; i<new; i++) {
+    for (i=0; i<New; i++) {
       if (Rayleigh(theNP,level,ev[i],Assemble,a,&ew[i],
                    &ewresult->error_code))
         NP_RETURN(1,ewresult->error_code);
