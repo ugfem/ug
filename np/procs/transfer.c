@@ -226,6 +226,8 @@ INT NPTransferInit (NP_TRANSFER *np, INT argc , char **argv)
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
   np->c = ReadArgvVecDesc(np->base.mg,"c",argc,argv);
   np->b = ReadArgvVecDesc(np->base.mg,"b",argc,argv);
+  np->baselevel = 0;
+  ReadArgvINT("baselevel",&(np->baselevel),argc,argv);
 
   if (sc_read(np->damp,np->x,"damp",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
@@ -254,6 +256,7 @@ INT NPTransferDisplay (NP_TRANSFER *np)
   UserWrite("\n");
 
   UserWrite("configuration parameters:\n");
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
   if (sc_disp(np->damp,np->b,"damp"))
     return (1);
 
@@ -285,7 +288,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPTransferExecute","no matrix A");
       return (1);
     }
-    if ((*np->PreProcess)(np,0,level,np->x,np->b,np->A,&result)) {
+    if ((*np->PreProcess)(np,&(np->baselevel),level,np->x,np->b,np->A,&result)) {
       UserWriteF("NPTransferExecute: PreProcess failed, error code %d\n",
                  result);
       return (1);
@@ -301,7 +304,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPTransferExecute","no vector x");
       return (1);
     }
-    if ((*np->PreProcessSolution)(np,0,level,np->x,&result)) {
+    if ((*np->PreProcessSolution)(np,np->baselevel,level,np->x,&result)) {
       UserWriteF("NPTransferExecute: PreProcessSolution failed, error code %d\n",
                  result);
       return (1);
@@ -397,7 +400,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPTransferExecute","no matrix A");
       return (1);
     }
-    if ((*np->PostProcess)(np,0,level,np->x,np->b,np->A,&result)) {
+    if ((*np->PostProcess)(np,&(np->baselevel),level,np->x,np->b,np->A,&result)) {
       UserWriteF("NPTransferExecute: PostProcess failed, error code %d\n",
                  result);
       return (1);
@@ -562,7 +565,7 @@ static INT TransferDisplay (NP_BASE *theNP)
   return (0);
 }
 
-static INT TransferPreProcess (NP_TRANSFER *theNP, INT fl, INT tl,
+static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                                VECDATA_DESC *x, VECDATA_DESC *b,
                                MATDATA_DESC *A, INT *result)
 {
@@ -579,11 +582,11 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT fl, INT tl,
   if (np->mode == SCALEDMG_MODE)
   {
                 #ifdef ModelP
-    if (AllocMDFromMD(theNP->base.mg,fl,tl,A,&np->L)) {
+    if (AllocMDFromMD(theNP->base.mg,*fl,tl,A,&np->L)) {
       result[0] = __LINE__;
       return (1);
     }
-    for (i=tl; i>=fl; i--)
+    for (i=tl; i>=*fl; i--)
     {
       theGrid = GRID_ON_LEVEL(theMG,i);
       if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) {
@@ -599,7 +602,7 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT fl, INT tl,
     np->L = A;
                 #endif
     /* create restriction matrices */
-    for (i=tl; i>fl; i--)
+    for (i=tl; i>*fl; i--)
     {
       err = InstallScaledRestrictionMatrix(GRID_ON_LEVEL(theMG,i),np->L,np->cut);
       if (err!=NUM_OK) {
@@ -609,13 +612,13 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT fl, INT tl,
       }
     }
     /* scale equations */
-    for (i=tl; i>=fl; i--)
+    for (i=tl; i>=*fl; i--)
       if (DiagonalScaleSystem(GRID_ON_LEVEL(theMG,i),A,np->L,b)!=NUM_OK) {
         result[0] = __LINE__;
         return (1);
       }
                 #ifdef ModelP
-    FreeMD(theNP->base.mg,fl,tl,np->L);
+    FreeMD(theNP->base.mg,*fl,tl,np->L);
                 #endif
   }
 
@@ -717,7 +720,7 @@ static INT AdaptCorrection (NP_TRANSFER *theNP, INT level,
   return(0);
 }
 
-static INT TransferPostProcess (NP_TRANSFER *theNP, INT fl, INT tl,
+static INT TransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                                 VECDATA_DESC *x, VECDATA_DESC *b,
                                 MATDATA_DESC *A, INT *result)
 {

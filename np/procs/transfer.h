@@ -68,17 +68,18 @@ struct np_transfer {
 
   NP_BASE base;                              /* inherits base class             */
 
-  /* data (optinal, necessary for calling the generic execute routine)    */
+  /* data (optional, necessary for calling the generic execute routine)    */
   VECDATA_DESC *x;                       /* solution                        */
   VECDATA_DESC *c;                       /* correction                      */
   VECDATA_DESC *b;                       /* defect                          */
   MATDATA_DESC *A;                       /* matrix                          */
   VEC_SCALAR damp;                           /* damping factor                  */
+  INT baselevel;                             /* baselevel                       */
 
   /* functions */
   INT (*PreProcess)
     (struct np_transfer *,                   /* pointer to (derived) object     */
-    INT,                                         /* from level                      */
+    INT *,                                       /* from level (changed by AMG)     */
     INT,                                         /* to level                        */
     VECDATA_DESC *,                              /* solution vector                 */
     VECDATA_DESC *,                              /* defect vector                   */
@@ -132,7 +133,7 @@ struct np_transfer {
     INT *);                                      /* result                          */
   INT (*PostProcess)
     (struct np_transfer *,                   /* pointer to (derived) object     */
-    INT,                                         /* from level                      */
+    INT *,                                       /* from level(changed by AMG)      */
     INT,                                         /* to level                        */
     VECDATA_DESC *,                              /* solution vector                 */
     VECDATA_DESC *,                              /* defect vector                   */
@@ -140,7 +141,7 @@ struct np_transfer {
     INT *);                                      /* result                          */
   INT (*PostProcessProject)
     (struct np_transfer *,                   /* pointer to (derived) object     */
-    INT,                                         /* from level                      */
+    INT *,                                       /* from level                      */
     INT,                                         /* to level                        */
     INT *);                                      /* result                          */
   INT (*PostProcessSolution)
@@ -168,7 +169,7 @@ typedef INT (*InterpolateSolutionProcPtr)                                   \
 typedef INT (*ProjectSolutionProcPtr)                                       \
   (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *);
 typedef INT (*PostProcessTransferProcPtr)                                   \
-  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,  \
+  (NP_TRANSFER *, INT *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,  \
   INT *);
 typedef INT (*PostProcessSolutionProcPtr)                                   \
   (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *);

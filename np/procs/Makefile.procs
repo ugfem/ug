@@ -9,7 +9,8 @@
 # include configuration and all makefile macro definitions
 include $(UGROOT)/ug.conf
 
-OBJECTS = nls.o ls.o assemble.o basics.o iter.o transfer.o error.o newton.o ts.o bdf.o ew.o
+OBJECTS = nls.o ls.o assemble.o basics.o iter.o transfer.o error.o newton.o ts.o \
+		  bdf.o ew.o amgtransfer.o
 
 $(UG_LIB) : $(OBJECTS) Makefile.procs
 	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
@@ -28,4 +29,4 @@ clean:
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 
-xmc: extract all clean
+xmc: extract $(UG_LIB) clean

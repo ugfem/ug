@@ -43,6 +43,7 @@
 #include "pcr.h"
 #include "np.h"
 
+#include "block.h"
 #include "iter.h"
 #include "ls.h"
 
@@ -491,6 +492,10 @@ static INT LinearSolverInit (NP_BASE *theNP, INT argc , char **argv)
   if (np->Iter == NULL)
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   np->baselevel = 0;
+  ReadArgvINT("baselevel",&(np->baselevel),argc,argv);
+  if (ReadArgvINT("m",&(np->maxiter),argc,argv))
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+
   np->c = ReadArgvVecDesc(theNP->mg,"c",argc,argv);
 
   return (NPLinearSolverInit(&np->ls,argc,argv));
@@ -1037,8 +1042,6 @@ static INT CRPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, V
     if (np->Iter->PostProcess == NULL) return(0);
     return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
   }
-  else
-    return (0);
 
   return(0);
 }
@@ -1549,8 +1552,6 @@ static INT BCGSPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x,
     if (np->Iter->PostProcess == NULL) return(0);
     return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
   }
-  else
-    return (0);
 
   return(0);
 }
