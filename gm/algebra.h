@@ -118,6 +118,9 @@ enum ALGEBRA_CE {
 /*																			*/
 /****************************************************************************/
 
+/* domain part for object */
+INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side);
+
 /* basic create and dispose functions */
 INT                     CreateVector                                    (GRID *theGrid, INT ObjectType, GEOM_OBJECT *object, VECTOR **vHandle);
 INT             CreateSideVector                (GRID *theGrid, INT side, GEOM_OBJECT *object, VECTOR **vHandle);
