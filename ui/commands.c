@@ -9185,7 +9185,23 @@ static INT ClearCommand (INT argc, char **argv)
     PrintErrorMessage('E',"clear","no current multigrid");
     return(CMDERRORCODE);
   }
-
+  theVD = ReadArgvVecDesc(theMG,"clear",argc,argv);
+  if (theVD == NULL) {
+    PrintErrorMessage('E',"clear","could not read data descriptor");
+    return (PARAMERRORCODE);
+  }
+  if (ReadArgvOption("d",argc,argv)) {
+    for (i=theMG->bottomLevel; i<=TOPLEVEL(theMG); i++)
+      ClearVecskipFlags(GRID_ON_LEVEL(theMG,i),theVD);
+    return (OKCODE);
+  }
+  if (ReadArgvOption("r",argc,argv)) {
+    i = CURRENTLEVEL(theMG);
+    l_dsetrandom(GRID_ON_LEVEL(theMG,i),theVD,EVERY_CLASS,1.0);
+    if (ReadArgvOption("d",argc,argv))
+      ClearDirichletValues(GRID_ON_LEVEL(theMG,i),theVD);
+    return (OKCODE);
+  }
   /* check options */
   fl = tl = CURRENTLEVEL(theMG);
   skip = FALSE;
@@ -9223,14 +9239,6 @@ static INT ClearCommand (INT argc, char **argv)
       PrintHelp("clear",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
-
-  theVD = ReadArgvVecDesc(theMG,"clear",argc,argv);
-
-  if (theVD == NULL) {
-    PrintErrorMessage('E',"clear","could not read data descriptor");
-    return (PARAMERRORCODE);
-  }
-
   if (j >= 0) {
     for (v = FIRSTVECTOR(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)));
          v != NULL; v = SUCCVC(v)) {
@@ -9242,19 +9250,15 @@ static INT ClearCommand (INT argc, char **argv)
       j -= n;
     }
   }
-
-  if (skip)
-  {
+  if (skip) {
     if (a_dsetnonskip(theMG,fl,tl,theVD,EVERY_CLASS,value)
         !=NUM_OK)
       return (CMDERRORCODE);
   }
-  else
-  {
-    if (a_dset(theMG,fl,tl,theVD,EVERY_CLASS,value)!=NUM_OK)
+  else {
+    if (dset(theMG,fl,tl,ALL_VECTORS,theVD,value)!=NUM_OK)
       return (CMDERRORCODE);
   }
-
   return (OKCODE);
 }
 
