@@ -83,7 +83,7 @@ sp_preorder(char *refact,  SuperMatrix *A, int *perm_c,
   AC->nrow        = A->nrow;
   AC->ncol        = A->ncol;
   Astore          = (NCformat*)A->Store;
-  ACstore = (NCPformat*)AC->Store = (void *) SUPERLU_MALLOC( sizeof(NCPformat) );
+  ACstore = (NCPformat*)(AC->Store = (void *) SUPERLU_MALLOC( sizeof(NCPformat) ));
   if ( !ACstore ) ABORT("SUPERLU_MALLOC fails for ACstore");
   ACstore->nnz    = Astore->nnz;
   ACstore->nzval  = Astore->nzval;

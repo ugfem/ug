@@ -279,10 +279,11 @@ dLUMemInit(char *refact, void *work, int lwork, int m, int n, int annz,
       stack.size = stack.top2;
     }
 
-    lsub  = (int*)expanders[LSUB].mem  = Lstore->rowind;
-    lusup = (double*)expanders[LUSUP].mem = Lstore->nzval;
-    usub  = (int*)expanders[USUB].mem  = Ustore->rowind;
-    ucol  = (double*)expanders[UCOL].mem  = Ustore->nzval;;
+    lsub  = (int*)(expanders[LSUB].mem  = Lstore->rowind);
+    lusup = (double*)(expanders[LUSUP].mem = Lstore->nzval);
+    usub  = (int*)(expanders[USUB].mem  = Ustore->rowind);
+    ucol  = (double*)(expanders[UCOL].mem  = Ustore->nzval);
+
     expanders[LSUB].size         = nzlmax;
     expanders[LUSUP].size        = nzlumax;
     expanders[USUB].size         = nzumax;
@@ -552,16 +553,16 @@ void
         user_bcopy((char*)expanders[type+1].mem, (char*)new_mem, bytes_to_copy);
 
         if ( type < USUB ) {
-          Glu->usub = (int*)expanders[USUB].mem =
-                        (void*)((char*)expanders[USUB].mem + extra);
+          Glu->usub = (int*)(expanders[USUB].mem =
+                               (void*)((char*)expanders[USUB].mem + extra));
         }
         if ( type < LSUB ) {
-          Glu->lsub = (int*)expanders[LSUB].mem =
-                        (void*)((char*)expanders[LSUB].mem + extra);
+          Glu->lsub = (int*)(expanders[LSUB].mem =
+                               (void*)((char*)expanders[LSUB].mem + extra));
         }
         if ( type < UCOL ) {
-          Glu->ucol = (double*)expanders[UCOL].mem =
-                        (void*)((char*)expanders[UCOL].mem + extra);
+          Glu->ucol = (double*)(expanders[UCOL].mem =
+                                  (void*)((char*)expanders[UCOL].mem + extra));
         }
         stack.top1 += extra;
         stack.used += extra;
