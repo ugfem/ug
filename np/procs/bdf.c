@@ -444,7 +444,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
           NP_RETURN(1,res[0]);
         if ((*bdf->error->TimeError)
               (bdf->error,level,bdf->t_p1,&dt_0,bdf->y_p1,bdf->y_0,
-              bdf->tsolver.nlass.A,&eresult))
+              ts,&eresult))
           NP_RETURN(1,res[0]);
         if (nlsolve->PostProcess!=NULL)
           if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
