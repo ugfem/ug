@@ -1640,6 +1640,8 @@ extern CONTROL_ENTRY
 #define ELEMENT_OFFSET                                  0
 #define FLAG_CW                                                 8
 #define FLAG_OFFSET                                             2
+#define PROPERTY_CW                                             12
+#define PROPERTY_OFFSET                                 3
 
 #define ELEMENT_GEN                                     43
 #define FLAG_GEN                                                44
@@ -1666,6 +1668,24 @@ extern CONTROL_ENTRY
 /* macros for flag word                           */
 /* are obviously all for internal use */
 
+/* the property field */
+#define SUBDOMAIN_CE                    75
+#define SUBDOMAIN_SHIFT                 24
+#define SUBDOMAIN_LEN                   6
+#define SUBDOMAIN(p)                    CW_READ(p,SUBDOMAIN_CE)
+#define SETSUBDOMAIN(p,n)               CW_WRITE(p,SUBDOMAIN_CE,n)
+
+#define NODEORD_CE                      76
+#define NODEORD_SHIFT                   0
+#define NODEORD_LEN                     24
+#define NODEORD(p)                      CW_READ(p,NODEORD_CE)
+#define SETNODEORD(p,n)                 CW_WRITE(p,NODEORD_CE,n)
+
+#define PROP_CE                         77
+#define PROP_SHIFT                      30
+#define PROP_LEN                        2
+#define PROP(p)                         CW_READ(p,PROP_CE)
+#define SETPROP(p,n)                    CW_WRITE(p,PROP_CE,n)
 
 /* parallel macros */
 #ifdef ModelP
@@ -1776,8 +1796,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 
 #define CTRL2(p)        ((p)->ge.flag)
 #define FLAG(p)                 (p)->ge.flag
-#define PROP(p)                 (p)->ge.property
-#define SETPROP(p,n)    ((p)->ge.property = n)
 #define SUCCE(p)                (p)->ge.succ
 #define PREDE(p)                (p)->ge.pred
 
