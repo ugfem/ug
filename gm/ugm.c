@@ -108,8 +108,8 @@ static char buffer[256];                        /* general purpose text buffer		
 
 static VIRT_HEAP_MGMT *theGenMGUDM; /* general user data space management	*/
 
-static INT theMGVarID;                          /* env var ID for the multigrids		*/
-static INT theDocDirID;                         /* env dir ID for the multigrids		*/
+static INT theMGDirID;                          /* env var ID for the multigrids		*/
+static INT theMGRootDirID;                      /* env dir ID for the multigrids		*/
 
 static INT UsedOBJT;                            /* for the dynamic OBJECT management	*/
 
@@ -1247,7 +1247,7 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
    .  name - name of the multigrid
 
    DESCRIPTION:
-   This function creates a multigrid environment item.
+   This function creates a multigrid environment directory.
 
    RETURN VALUE:
    MULTIGRID *
@@ -1258,12 +1258,15 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
 
 MULTIGRID *MakeMGItem (const char *name)
 {
-  if (ChangeEnvDir("/Documents") == NULL) return (NULL);
+  MULTIGRID *theMG;
+
+  if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (strlen(name)>=NAMESIZE || strlen(name)<=1) return (NULL);
+  theMG = (MULTIGRID *) MakeEnvItem(name,theMGDirID,sizeof(MULTIGRID));
+  if (theMG == NULL) return(NULL);
 
-  return ((MULTIGRID *) MakeEnvItem(name,theMGVarID,sizeof(MULTIGRID)));
+  return (theMG);
 }
-
 
 /****************************************************************************/
 /*D
@@ -1288,7 +1291,8 @@ MULTIGRID *MakeMGItem (const char *name)
 
 MULTIGRID *GetMultigrid (const char *name)
 {
-  return ((MULTIGRID *) SearchEnv(name,"/Documents",theMGVarID,theDocDirID));
+  return ((MULTIGRID *) SearchEnv(name,"/Multigrids",
+                                  theMGDirID,theMGRootDirID));
 }
 
 /****************************************************************************/
@@ -1302,7 +1306,7 @@ MULTIGRID *GetMultigrid (const char *name)
    .  void
 
    DESCRIPTION:
-   This function returns a pointer to the first multigrid in the /Documents
+   This function returns a pointer to the first multigrid in the /Multigrids
    directory.
 
    RETURN VALUE:
@@ -1314,18 +1318,17 @@ MULTIGRID *GetMultigrid (const char *name)
 
 MULTIGRID *GetFirstMultigrid ()
 {
-  ENVDIR *theDocDir;
+  ENVDIR *theMGRootDir;
   MULTIGRID *theMG;
 
-  theDocDir = ChangeEnvDir("/Documents");
+  theMGRootDir = ChangeEnvDir("/Multigrids");
 
-  assert (theDocDir!=NULL);
+  assert (theMGRootDir!=NULL);
 
-  theMG = (MULTIGRID *) ENVDIR_DOWN(theDocDir);
+  theMG = (MULTIGRID *) ENVDIR_DOWN(theMGRootDir);
 
   if (theMG != NULL)
-    if (InitElementTypes(theMG)!=GM_OK)
-    {
+    if (InitElementTypes(theMG) != GM_OK) {
       PrintErrorMessage('E',"GetFirstMultigrid",
                         "error in InitElementTypes");
       return(NULL);
@@ -1345,7 +1348,7 @@ MULTIGRID *GetFirstMultigrid ()
    .  theMG - multigrid structure
 
    DESCRIPTION:
-   This function returns a pointer to the next multigrid in the /Documents
+   This function returns a pointer to the next multigrid in the /Multigrids
    directory.
 
    RETURN VALUE:
@@ -1362,8 +1365,7 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
   MG = (MULTIGRID *) NEXT_ENVITEM(theMG);
 
   if (MG != NULL)
-    if (InitElementTypes(MG)!=GM_OK)
-    {
+    if (InitElementTypes(MG)!=GM_OK) {
       PrintErrorMessage('E',"GetNextMultigrid",
                         "error in InitElementTypes");
       return(NULL);
@@ -2043,8 +2045,8 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
   ((ENVITEM*) theMG)->v.locked = FALSE;
 
   /* delete mg */
-  if (ChangeEnvDir("/Documents")==NULL) RETURN (GM_ERROR);
-  if (RemoveEnvItem ((ENVITEM *)theMG)) RETURN (GM_ERROR);
+  if (ChangeEnvDir("/Multigrids")==NULL) RETURN (GM_ERROR);
+  if (RemoveEnvDir ((ENVITEM *)theMG)) RETURN (GM_ERROR);
 
   return(GM_OK);
 }
@@ -6446,19 +6448,19 @@ INT InitUGManager ()
 
   InitVirtualHeapManagement(theGenMGUDM,SIZE_UNKNOWN);
 
-  /* install the /Documents directory */
+  /* install the /Multigrids directory */
   if (ChangeEnvDir("/")==NULL)
   {
     PrintErrorMessage('F',"InitUGManager","could not changedir to root");
     return(__LINE__);
   }
-  theDocDirID = GetNewEnvDirID();
-  if (MakeEnvItem("Documents",theDocDirID,sizeof(ENVDIR))==NULL)
+  theMGRootDirID = GetNewEnvDirID();
+  if (MakeEnvItem("Multigrids",theMGRootDirID,sizeof(ENVDIR))==NULL)
   {
-    PrintErrorMessage('F',"InitUGManager","could not install /Documents dir");
+    PrintErrorMessage('F',"InitUGManager","could not install /Multigrids dir");
     return(__LINE__);
   }
-  theMGVarID = GetNewEnvVarID();
+  theMGDirID = GetNewEnvDirID();
 
   /* init the OBJT management */
   UsedOBJT = 0;
