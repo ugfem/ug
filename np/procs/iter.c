@@ -378,6 +378,7 @@ typedef struct
   FLOAT *FMat;                                          /* float-matrix							*/
   DOUBLE *DMat;                                         /* double-matrix						*/
   INT mem;                                                      /* memory used temporary (bytes)		*/
+  INT pp_failed;                                        /* 1 if preproc failed, used in smooth  */
 
   DOUBLE *Vec;                                          /* vector								*/
 
@@ -5288,6 +5289,7 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   n = 0;
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) n++;
   np->nv = n;
+  np->pp_failed=0;
 
   if (n == 0)
     return(0);
@@ -5413,7 +5415,7 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     if (EXCopyMatrixFLOAT (theGrid,x,A,np->bw,np->FMat))
       REP_ERR_RETURN(1);
     if (EXDecomposeMatrixFLOAT (np->FMat,np->bw,np->nv))
-      REP_ERR_RETURN(1);
+      np->pp_failed=1;
     if (np->CopyBack)
       if (EXCopyMatrixFLOATback(theGrid,x,np->smoother.L,np->bw,np->FMat))
         REP_ERR_RETURN(1);
@@ -5431,7 +5433,7 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     if (EXCopyMatrixDOUBLE (theGrid,x,A,np->bw,np->DMat))
       REP_ERR_RETURN(1);
     if (EXDecomposeMatrixDOUBLE (np->DMat,np->bw,np->nv))
-      REP_ERR_RETURN(1);
+      np->pp_failed=1;
     if (np->CopyBack)
       if (EXCopyMatrixDOUBLEback(theGrid,x,np->smoother.L,np->bw,np->DMat))
         REP_ERR_RETURN(1);
@@ -5455,6 +5457,13 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
 
   np = (NP_EX *) theNP;
   theGrid = NP_GRID(theNP,level);
+
+  /* check failure of preprocess */
+  if (np->pp_failed)
+  {
+    if (dset(NP_MG(theNP),level,level,ALL_VECTORS,x,0.0)!= NUM_OK) NP_RETURN(1,result[0]);
+    return(0);
+  }
 
   /* init */
   n               = np->nv;
