@@ -291,29 +291,19 @@ static INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
 static void CheckMatrixList (VECTOR *theVector)
 {
   MATRIX *theMatrix;
-  char buffer[256];
 
   for (theMatrix=VSTART(theVector); theMatrix!= NULL; theMatrix=MNEXT(theMatrix))
   {
     if (MDIAG(theMatrix))
     {
       if (theVector != MDEST(theMatrix))
-      {
-        sprintf (buffer,"matrix ??? should be diagonal matrix but dest. ptr does not point back\n");
-        UserWrite(buffer);
-      }
+        UserWriteF("matrix ??? should be diagonal matrix but dest. ptr does not point back\n");
       if (VSTART(theVector) != theMatrix)
-      {
-        sprintf (buffer,"matrix ??? is diagonal matrix but is not at first place in the list\n");
-        UserWrite(buffer);
-      }
+        UserWriteF("matrix ??? is diagonal matrix but is not at first place in the list\n");
     }
     else
     if (MDEST(MADJ(theMatrix)) != theVector)
-    {
-      sprintf (buffer,"adj of matrix ??? does not point back\n");
-      UserWrite(buffer);
-    }
+      UserWriteF("adj of matrix ??? does not point back\n");
   }
 }
 
@@ -2443,7 +2433,7 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
   VECTOR *vec0[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
   VECTOR *vec1[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
   CONNECTION *theCon;
-  char buffer[256], msg[128];
+  char msg[128];
   INT errors = 0;
 
   sprintf(msg,"ERROR: missing connection between element %lu and %lu: ",
@@ -2534,7 +2524,6 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
 static INT CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth, INT *MatSize)
 {
   int i,errors = 0;
-  ELEMENT *theErrorElement;
 
   /* is anything to do ? */
   if (theElement==NULL) return (NULL);

@@ -2104,13 +2104,10 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
 
 static INT PrintEdgeData (struct edgedata theEdgeData)
 {
-  char buffer[128];
-
-  sprintf(buffer,"typ=%d from=%2d to=%2d side=%2d",(int)theEdgeData.type
-          ,(int)theEdgeData.from
-          ,(int)theEdgeData.to
-          ,(int)theEdgeData.side);
-  UserWrite(buffer);
+  UserWriteF("typ=%d from=%2d to=%2d side=%2d",(int)theEdgeData.type
+             ,(int)theEdgeData.from
+             ,(int)theEdgeData.to
+             ,(int)theEdgeData.side);
   return(0);
 }
 
@@ -2119,8 +2116,7 @@ static INT PrintSonData(struct sondata theSonData)
   char buffer[128];
   int i,j;
 
-  sprintf(buffer,"tag=%d ",(int)theSonData.tag);
-  UserWrite(buffer);
+  UserWriteF("tag=%d ",(int)theSonData.tag);
 
   j = 0;
   j = sprintf(buffer," corners=");
@@ -2138,8 +2134,7 @@ static INT PrintSonData(struct sondata theSonData)
   }
   UserWrite(buffer);
 
-  sprintf(buffer,"  path=");
-  UserWrite(buffer);
+  UserWriteF("  path=");
   for (i=8*sizeof(INT)-1; i>=0; i--)
   {
     sprintf(buffer,"%d",(int)((theSonData.path>>i) & 0x1));
@@ -2153,7 +2148,6 @@ static INT PrintSonData(struct sondata theSonData)
 
 INT ShowRefRule (INT tag, INT nb)
 {
-  char buffer[128];
   INT i;
   REFRULE *theRule;
 
@@ -2167,38 +2161,28 @@ INT ShowRefRule (INT tag, INT nb)
 
   /* header */
   UserWrite("\n");
-  sprintf(buffer,"RefRule %3d:\n",nb);
-  UserWrite(buffer);
+  UserWriteF("RefRule %3d:\n",nb);
 
   /* nsons, mark and class */
-  sprintf(buffer,"   tag=%d mark=%3d class=%2d, nsons=%d\n",(int)theRule->tag,(int)theRule->mark,(int)theRule->class,(int)theRule->nsons);
-  UserWrite(buffer);
+  UserWriteF("   tag=%d mark=%3d class=%2d, nsons=%d\n",(int)theRule->tag,(int)theRule->mark,(int)theRule->class,(int)theRule->nsons);
 
   /* pattern */
   UserWrite("   pattern= ");
   for (i=0; i<(element_descriptors[tag]->edges_of_elem+element_descriptors[tag]->sides_of_elem+1); i++)
-  {
-    sprintf(buffer,"%2d ",(int)theRule->pattern[i]);
-    UserWrite(buffer);
-  }
+    UserWriteF("%2d ",(int)theRule->pattern[i]);
   UserWrite("\n");
 
   /* pat */
   UserWrite("   pat    = ");
   for (i=0; i<(element_descriptors[tag]->edges_of_elem+element_descriptors[tag]->sides_of_elem+1); i++)
-  {
-    sprintf(buffer,"%2d ",(int)((theRule->pat>>i) & 0x1));
-    UserWrite(buffer);
-  }
+    UserWriteF("%2d ",(int)((theRule->pat>>i) & 0x1));
   UserWrite("\n");
 
   /* sonandnode */
   for (i=0; i<MAX_NEW_CORNERS(tag); i++)
   {
-    sprintf(buffer,"   newnode %2d: sonandnode[%2d][0]=%2d",i,i,(int)theRule->sonandnode[i][0]);
-    UserWrite(buffer);
-    sprintf(buffer,"  [%2d][1]=%2d\n",i,(int)theRule->sonandnode[i][1]);
-    UserWrite(buffer);
+    UserWriteF("   newnode %2d: sonandnode[%2d][0]=%2d",i,i,(int)theRule->sonandnode[i][0]);
+    UserWriteF("  [%2d][1]=%2d\n",i,(int)theRule->sonandnode[i][1]);
   }
   UserWrite("\n");
 
@@ -2206,8 +2190,7 @@ INT ShowRefRule (INT tag, INT nb)
   UserWrite("   Edge data\n");
   for (i=0; i<MAX_NEW_EDGES(tag); i++)
   {
-    sprintf(buffer,"      e %2d: ",i);
-    UserWrite(buffer);
+    UserWriteF("      e %2d: ",i);
     PrintEdgeData(theRule->edges[i]);
     if (i%2 == 1) UserWrite("\n");
   }
@@ -2217,8 +2200,7 @@ INT ShowRefRule (INT tag, INT nb)
   UserWrite("   Son data\n");
   for (i=0; i<(int)theRule->nsons; i++)
   {
-    sprintf(buffer,"      son %2d: ",i);
-    UserWrite(buffer);
+    UserWriteF("      son %2d: ",i);
     PrintSonData(theRule->sons[i]);
     UserWrite("\n");
   }
