@@ -282,6 +282,9 @@ INT SPS_ENLAssembleMatrix (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *
     if ((*reinit->ReinitProblem)(reinit,sps->name[i],u->e[i],&reinit_res)) return(1);
     if (daxpy(NP_MG(sps),fl,tl,ALL_VECTORS,J->me[i],-1.0,J->em[0])) return(1);
     if (dscal(NP_MG(sps),fl,tl,ALL_VECTORS,J->me[i],1.0/PARAMETER_EPS/u->e[i])) return(1);
+#ifdef ModelP
+    if (a_vector_consistent(NP_MG(sps),fl,tl,J->me[i])) return(1);
+#endif
   }
   for (i=0; i<u->n; i++)
   {
