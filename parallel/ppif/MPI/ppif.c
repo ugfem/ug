@@ -105,8 +105,8 @@ enum directions {north, east, south, west, up, down};
 
 typedef struct {
   int used;
-  long p;
-  long chanid;
+  int p;
+  int chanid;
 } VChannel;
 
 typedef VChannel *VChannelPtr;
@@ -417,12 +417,12 @@ int InitPPIF (int *argcp, char ***argvp)
   succ=1;
   for(i=0; i<degree; i++)
   {
-    MPI_Recv ((void *) &(slvcnt[i]), (long) sizeof(int), MPI_BYTE, downtree[i]->p, ID_TREE, MPI_COMM_WORLD, &status);
+    MPI_Recv ((void *) &(slvcnt[i]), (int) sizeof(int), MPI_BYTE, downtree[i]->p, ID_TREE, MPI_COMM_WORLD, &status);
     succ += slvcnt[i];
   }
   if (me>0)
   {
-    MPI_Send ((void *) &succ, (long) sizeof(int), MPI_BYTE, (long)(me-1)/2, ID_TREE, MPI_COMM_WORLD);
+    MPI_Send ((void *) &succ, (int) sizeof(int), MPI_BYTE, (int)(me-1)/2, ID_TREE, MPI_COMM_WORLD);
   }
 
   return (PPIF_SUCCESS);
