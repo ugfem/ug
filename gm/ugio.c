@@ -1435,6 +1435,11 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
           cge->nbid[j] = ID(NBELEM(theElement,j));
         else
           cge->nbid[j] = -1;
+      cge->side_on_bnd = 0;
+      if (OBJT(theElement)==BEOBJ)
+        for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+          if (SIDE_ON_BND(theElement,j))
+            cge->side_on_bnd |= (1<<j);
       cge->subdomain = SUBDOMAIN(theElement);
 
       /* increment counters */
