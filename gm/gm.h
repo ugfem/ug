@@ -1459,6 +1459,7 @@ extern CONTROL_ENTRY
 #define SETONEDGE(p,n)                          CW_WRITE_STATIC(p,ONEDGE_,VERTEX_,n)
 
 #define ONSIDE_CE                               73
+#define ONSIDE_CE                               73
 #define ONSIDE_SHIFT                            3
 #define ONSIDE_LEN                                      3
 #define ONSIDE(p)                                       CW_READ_STATIC(p,ONSIDE_,VERTEX_)
@@ -1812,10 +1813,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define EVECTOR(p)              ((VECTOR *) (p)->ge.refs[evector_offset[TAG(p)]])
 #define SVECTOR(p,i)    ((VECTOR *) (p)->ge.refs[svector_offset[TAG(p)]+(i)])
 #define EDATA(p)            ((void *) (p)->ge.refs[data_offset[TAG(p)]])
-#define ELEMENT_TO_MARK(e)  ((NSONS(e)>1) ? NULL :                           \
-                             (ECLASS(e) == RED_CLASS) ? e :                    \
-                             (ECLASS(EFATHER(e)) == RED_CLASS) ?               \
-                             EFATHER(e) : EFATHER(EFATHER(e)))
 #define SIDE_ON_BND(p,i) (ELEM_BNDS(p,i) != NULL)
 #define INNER_SIDE(p,i)  (ELEM_BNDS(p,i) == NULL)
 #define INNER_BOUNDARY(p,i) (InnerBoundary(p,i))
@@ -2041,7 +2038,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MULTIGRID_STATUS_OFFSET                 (sizeof(ENVDIR))
 
 #define MGSTATUS(p)                     ((p)->status)
-#define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = (int)time(NULL); (p)->saved=0}
+#define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = (int)time(NULL); (p)->saved=0;}
 #define MG_MAGIC_COOKIE(p)              ((p)->magic_cookie)
 #define VIDCNT(p)                       ((p)->vertIdCounter)
 #define NIDCNT(p)                       ((p)->nodeIdCounter)
@@ -2253,6 +2250,9 @@ void            ListVectorRange                 (MULTIGRID *theMG,              
 
 /* query */
 LINK            *GetLink                                (NODE *from, NODE *to);
+#ifdef __THREEDIM__
+EDGE            *FatherEdge                             (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge);
+#endif
 EDGE            *GetEdge                                (NODE *from, NODE *to);
 INT             GetSons                                 (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
 INT             VectorPosition                  (VECTOR *theVector, DOUBLE *position);
