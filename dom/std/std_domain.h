@@ -2,9 +2,9 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:	  header.h														*/
+/* File:	  std_domain.h													*/
 /*																			*/
-/* Purpose:   standard header file template                                                             */
+/* Purpose:   standard domain declaration	                                                                */
 /*																			*/
 /* Author:	  Peter Bastian/Klaus Johannsen                                                                 */
 /*			  Institut fuer Computeranwendungen III                                                 */
@@ -146,11 +146,11 @@ struct bndcond {
 
 /****************************************************************************/
 /*																			*/
-/* BondaryValueProblem data structure										*/
+/* BoundaryValueProblem data structure										*/
 /*																			*/
 /****************************************************************************/
 
-struct std_BondaryValueProblem
+struct std_BoundaryValueProblem
 {
   /* fields for environment directory */
   ENVDIR d;
@@ -208,7 +208,7 @@ typedef struct boundary_segment BOUNDARY_SEGMENT;
 typedef struct problem PROBLEM ;
 typedef struct bndcond BOUNDARY_CONDITION;
 
-typedef struct std_BondaryValueProblem STD_BVP;
+typedef struct std_BoundaryValueProblem STD_BVP;
 typedef struct std_Patch STD_PATCH;
 
 /****************************************************************************/
