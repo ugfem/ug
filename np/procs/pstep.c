@@ -239,7 +239,7 @@ INT SPS_ENLAssembleDefect (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *
   /* assemble defect */
   dcopy(NP_MG(sps),fl,tl,ALL_VECTORS,d->vd,x);
   daxpy(NP_MG(sps),fl,tl,ALL_VECTORS,d->vd,-1.0,p);
-  ddot(NP_MG(sps),fl,tl,ALL_VECTORS,d->vd,t,&r);
+  ddot(NP_MG(sps),fl,tl,ON_SURFACE,d->vd,t,&r);
   d->e[0]=r-sps->scale*sps->last_nls_nt;
 
   dset(NP_MG(sps),fl,tl,ALL_VECTORS,d->vd,0.0);
@@ -517,7 +517,7 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
   {
     dcopy(mg,0,level,ALL_VECTORS,sps->sol_t->vd,sps->pstep.sol_p1->vd);
     daxpy(mg,0,level,ALL_VECTORS,sps->sol_t->vd,-1.0,sps->pstep.sol_p0->vd);
-    dnrm2(mg,0,level,ALL_VECTORS,sps->sol_t->vd,&nt);
+    dnrm2(mg,0,level,ON_SURFACE,sps->sol_t->vd,&nt);
     assert(nt!=0.0);
     dscal(mg,0,level,ALL_VECTORS,sps->sol_t->vd,1.0/nt);
     for (i=0; i<sps->pstep.sol_p0->n; i++)

@@ -379,7 +379,6 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
         sc[i*newton->d->n+j]=newton->J->ee[i*newton->d->n+j]-sc[i*newton->d->n+j];
       }
     }
-    sc[0]*=1.4142135623730950488;
 
     /* solve */
     dcopy(mg,0,level,ALL_VECTORS,newton->s,newton->d->vd);
