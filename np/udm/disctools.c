@@ -2713,7 +2713,7 @@ INT NS_PREFIX PrintIMatrix (GRID *g, VECDATA_DESC *V, INT vclass, INT vnclass)
         ccomp = VD_NCMPS_IN_TYPE(V,MDESTTYPE(m));
         Mcomp = i * ccomp;
         for (j=0; j<ccomp; j++)
-          UserWriteF("%4.2f ",MVALUE(m,i+j*rcomp));
+          UserWriteF("%+5.3f ",MVALUE(m,Mcomp+j));
       }
       UserWrite("\n");
     }
