@@ -845,6 +845,7 @@ NODE *GetSideNode (ELEMENT *theElement, NODE *theNode0, NODE *theNode1, INT side
 NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
 {
   DOUBLE *global,*local;
+  DOUBLE_VECTOR diff;
   INT n,m,j,moved;
   VERTEX *theVertex,*VertexOnEdge[MAX_EDGES_OF_ELEM];
   NODE *theNode;
@@ -882,28 +883,21 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
   CORNER_COORDINATES(theElement,n,x);
   global = CVECT(theVertex);
   local = LCVECT(theVertex);
-  if (moved == 0)
-  {
-    V_DIM_CLEAR(local);
-    fac = 1.0 / n;
-    for (j=0; j<n; j++)
-      V_DIM_LINCOMB(1.0,local,
-                    fac,LOCAL_COORD_OF_ELEM(theElement,j),local);
-    LOCAL_TO_GLOBAL(n,x,local,global);
-  }
-  else
-  {
-    V_DIM_CLEAR(global);
-    m = EDGES_OF_ELEM(theElement);
-    fac = 1.0 / m;
-    for (j=0; j<m; j++)
-      if (VertexOnEdge[j] == NULL)
-      {
-        V_DIM_LINCOMB(1.0,global,0.5*fac,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)))),global);
-        V_DIM_LINCOMB(1.0,global,0.5*fac,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)))),global);
+  V_DIM_CLEAR(local);
+  fac = 1.0 / n;
+  for (j=0; j<n; j++)
+    V_DIM_LINCOMB(1.0,local,
+                  fac,LOCAL_COORD_OF_ELEM(theElement,j),local);
+  LOCAL_TO_GLOBAL(n,x,local,global);
+  if (moved) {
+    V_DIM_CLEAR(diff);
+    for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+      if (VertexOnEdge[j] != NULL) {
+        V_DIM_COPY(CVECT(VertexOnEdge[j]),diff);
+        V_DIM_LINCOMB(1.0,diff,-0.5,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)))),diff);
+        V_DIM_LINCOMB(1.0,diff,-0.5,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)))),diff);
+        V_DIM_LINCOMB(0.5,diff,1.0,global,global);
       }
-      else
-        V_DIM_LINCOMB(1.0,global,fac,CVECT(VertexOnEdge[j]),global);
     UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
   }
   VFATHER(theVertex) = theElement;
