@@ -318,7 +318,7 @@ VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex)
   /* initialize data */
   CTRL(vs) = 0;
   SETOBJT(vs,VSOBJ);
-  BSEGDESC(vs) = NULL;
+  VS_PATCH(vs) = NULL;
   for (i=0; i<DIM; i++) LAMBDA(vs,i) = 0.0;
 
   /* insert in vsegment list */
@@ -1125,7 +1125,7 @@ ELEMENTSIDE *CreateElementSide (GRID *theGrid)
   /* initialize data */
   CTRL(ps) = 0;
   SETOBJT(ps,ESOBJ);
-  SEGDESC(ps) = NULL;
+  ES_PATCH(ps) = NULL;
 
   /* insert in side list */
   SUCCS(ps) = FIRSTELEMSIDE(theGrid);
@@ -1366,38 +1366,24 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, char *format, unsigned long heapSize)
+MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *format, unsigned long heapSize)
 {
   HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
   GRID *theGrid;
-  BOUNDARY_SEGMENT *theSegment;
-  BOUNDARY_CONDITION *theBndCond;
   VERTEX **pv;
   NODE *pn;
   INT i,j,k,n,ds,l,FatalError;
   COORD cvect[DIM];
   DOUBLE pardist;
   VSEGMENT *vs;
-  DOMAIN *theDomain;
-  PROBLEM *theProblem;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH *thePatch, **PatchList;
+  PATCH_DESC thePatchDesc;
   FORMAT *theFormat;
   INT maxNsubdomain,minNsubdomain,Nsubdomain,err;
   INT *counter;
-
-  theDomain = GetDomain(domain);
-  if (theDomain==NULL)
-  {
-    PrintErrorMessage('E',"CreateMultiGrid","domain not found");
-    return(NULL);
-  }
-
-  theProblem = GetProblem(domain,problem);
-  if (theProblem==NULL)
-  {
-    PrintErrorMessage('E',"CreateMultiGrid","problem not found");
-    return(NULL);
-  }
 
   theFormat = GetFormat(format);
   if (theFormat==NULL)
@@ -1416,6 +1402,42 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
   {
     DisposeMultiGrid(theMG);
     return(NULL);
+  }
+
+  theBVP = GetBVP(BndValProblem);
+  if (theBVP==NULL)
+  {
+    PrintErrorMessage('E',"CreateMultiGrid","BVP not found");
+    return(NULL);
+  }
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
+  {
+    PrintErrorMessage('E',"CreateMultiGrid","BVP not evaluated");
+    return(NULL);
+  }
+
+  /* create a ID-orientated list of patches */
+  Mark(theHeap,FROM_TOP);
+  if ((PatchList=(PATCH**)GetMem(theHeap,BVPD_NPATCHES(theBVPDesc)*sizeof(PATCH*),FROM_TOP))==NULL)
+  {
+    Release(theHeap,FROM_TOP);
+    UserWrite("ERROR: could not allocate memory for PatchList\n");
+    return (NULL);
+  }
+  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
+  {
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc))
+    {
+      Release(theHeap,FROM_TOP);
+      return (NULL);
+    }
+    i = PATCH_ID(thePatchDesc);
+    if (i<0 || i>=BVPD_NPATCHES(theBVPDesc) || PatchList[i]!=NULL)
+    {
+      Release(theHeap,FROM_TOP);
+      return (NULL);
+    }
+    PatchList[i] = thePatch;
   }
 
   /* allocate user data from that heap */
@@ -1459,9 +1481,8 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
   theMG->nodeIdCounter = 0;
   theMG->elemIdCounter = 0;
   theMG->topLevel = -1;
-  theMG->theDomain = theDomain;
+  MG_BVP(theMG) = theBVP;
   theMG->theFormat = theFormat;
-  theMG->theProblem = theProblem;
   theMG->theHeap = theHeap;
   SELECTIONSIZE(theMG) = 0;
   for (i=0; i<MAXLEVEL; i++) theMG->grids[i] = NULL;
@@ -1483,121 +1504,8 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
     return(NULL);
   }
 
-  /* allocate boundary descriptors */
-  n = theDomain->numOfSegments;
-  theMG->numOfSegments = n;
-  theMG->segments = (BNDSEGDESC *) GetMem(theHeap,n*sizeof(BNDSEGDESC),FROM_BOTTOM);
-  if (theMG->segments==NULL) { DisposeMultiGrid(theMG); return(NULL); }
-  for (i=0; i<n; i++)
-  {
-    theMG->segments[i].theSegment = NULL;
-    theMG->segments[i].theBoundaryCondition = NULL;
-  }
-
-  /* combine boundary coordinates and boundary conditions */
-  for (theSegment=GetFirstBoundarySegment(theDomain); theSegment!=NULL; theSegment = GetNextBoundarySegment(theSegment))
-  {
-    i = theSegment->id;
-    if ((i<0)||(i>=n))
-    {
-      PrintErrorMessage('E',"CreateMultiGrid","segment id out of range");
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    if (theMG->segments[i].theSegment!=NULL)
-    {
-      PrintErrorMessage('E',"CreateMultiGrid","segment id multiply defined");
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    theMG->segments[i].theSegment = theSegment;
-    theMG->segments[i].id = i;
-  }
-  for (theBndCond=GetFirstBoundaryCondition(theProblem); theBndCond!=NULL; theBndCond = GetNextBoundaryCondition(theBndCond))
-  {
-    i = theBndCond->id;
-    if ((i<0)||(i>=n))
-    {
-      PrintErrorMessage('E',"CreateMultiGrid","boundary condition id out of range");
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    if (theMG->segments[i].theBoundaryCondition!=NULL)
-    {
-      PrintErrorMessage('E',"CreateMultiGrid","boundary condition id multiply defined");
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    theMG->segments[i].theBoundaryCondition = theBndCond;
-  }
-
-  /* check if all pointers are correctly defined */
-  maxNsubdomain = -MAX_I;
-  minNsubdomain =  MAX_I;
-  for (i=0; i<n; i++)
-  {
-    theSegment = theMG->segments[i].theSegment;
-
-    if (theSegment==NULL)
-    {
-      PrintErrorMessage('E',"CreateMultiGrid","boundary segment not found");
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    if (theMG->segments[i].theBoundaryCondition==NULL)
-    {
-      PrintErrorMessage('E',"CreateMultiGrid","boundary conditionnot found");
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    if (theSegment->left==theSegment->right)
-    {
-      sprintf(buffer,"ERROR: left==right for segment %d",i);
-      PrintErrorMessage('E',"CreateMultiGrid",buffer);
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    maxNsubdomain = MAX(maxNsubdomain,MAX(theSegment->left,theSegment->right));
-    minNsubdomain = MIN(minNsubdomain,MIN(theSegment->left,theSegment->right));
-  }
-
-  /* check subdomains */
-
-  if (minNsubdomain!=0)
-  {
-    PrintErrorMessage('E',"CreateMultiGrid","ERROR: subdomain IDs must be >= 0");
-    DisposeMultiGrid(theMG);
-    return(NULL);
-  }
-
-  /* get storage for subdomain counters */
-  Nsubdomain = maxNsubdomain+1;
-  Mark(theHeap,FROM_TOP);
-  counter = (INT *) GetMem(theHeap,Nsubdomain*sizeof(INT),FROM_TOP);
-  for (i=0; i<Nsubdomain; i++) counter[i] = 0;
-  for (i=0; i<n; i++)
-  {
-    counter[LEFT(theMG->segments+i)]++;
-    counter[RIGHT(theMG->segments+i)]++;
-  }
-  err = 0;
-  for (i=0; i<Nsubdomain; i++)
-    if (counter[i]<=0)
-    {
-      err++;
-      sprintf(buffer,"ERROR: subdomain ID %d not used\n",i);
-      UserWrite(buffer);
-    }
-  Release(theHeap,FROM_TOP);
-  if (err)
-  {
-    free(theHeap);
-    return (NULL);
-  }
-  theMG->numOfSubdomains = Nsubdomain;
-
   /* allocate corner vertices pointers */
-  n = theDomain->numOfCorners;
+  n = BVPD_NCORNERS(theBVPDesc);
   theMG->numOfCorners = n;
   pv = (VERTEX **) GetMem(theHeap,n*sizeof(VERTEX *),FROM_BOTTOM);
   if (pv==NULL) { DisposeMultiGrid(theMG); return(NULL); }
@@ -1617,39 +1525,44 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
   }
 
   /* create and fill segment data of vertex */
-  for (i=0; i<theMG->numOfSegments; i++)
+  for (i=0; i<BVPD_NPATCHES(theBVPDesc); i++)
   {
-    theSegment = theMG->segments[i].theSegment;
-
-    for( k=0; k<CORNERS_OF_BND_SEG; k++ )
+    thePatch = PatchList[i];
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc))
     {
-      j = theSegment->points[k];
+      Release(theHeap,FROM_TOP);
+      return (NULL);
+    }
+
+    for( k=0; k<PATCH_N(thePatchDesc); k++ )
+    {
+      j = PATCH_CID(thePatchDesc,k);
       SETUSED(pv[j],1);
       vs = CreateVertexSegment(theGrid,pv[j]);
       if (vs==NULL) { DisposeMultiGrid(theMG); return(NULL); }
 
-      BSEGDESC(vs) = &(theMG->segments[i]);
+      VS_PATCH(vs) = thePatch;
 
       FatalError = 0;
       if (DIM_OF_BND == 1)
         switch(k)
         {
-        case 0 : LAMBDA(vs,0) = theSegment->alpha[0];   break;
-        case 1 : LAMBDA(vs,0) = theSegment->beta[0];    break;
+        case 0 : LAMBDA(vs,0) = PATCH_LCVECT(thePatchDesc,0)[0];        break;
+        case 1 : LAMBDA(vs,0) = PATCH_LCVECT(thePatchDesc,1)[0];        break;
         default : FatalError = 1;                                                break;
         }
       else if (DIM_OF_BND == 2)
         switch(k)
         {
-        case 0 : LAMBDA(vs,0) = theSegment->alpha[0];
-          LAMBDA(vs,1) = theSegment->alpha[1];   break;
-        case 1 : LAMBDA(vs,0) = theSegment->beta[0];
-          LAMBDA(vs,1) = theSegment->alpha[1];   break;
-        case 2 : LAMBDA(vs,0) = theSegment->beta[0];
-          LAMBDA(vs,1) = theSegment->beta[1];    break;
-        case 3 : LAMBDA(vs,0) = theSegment->alpha[0];
-          LAMBDA(vs,1) = theSegment->beta[1];    break;
-        default : FatalError = 1;                                                break;
+        case 0 : LAMBDA(vs,0) = PATCH_LCVECT(thePatchDesc,0)[0];
+          LAMBDA(vs,1) = PATCH_LCVECT(thePatchDesc,0)[1];        break;
+        case 1 : LAMBDA(vs,0) = PATCH_LCVECT(thePatchDesc,1)[0];
+          LAMBDA(vs,1) = PATCH_LCVECT(thePatchDesc,1)[1];        break;
+        case 2 : LAMBDA(vs,0) = PATCH_LCVECT(thePatchDesc,2)[0];
+          LAMBDA(vs,1) = PATCH_LCVECT(thePatchDesc,2)[1];        break;
+        case 3 : LAMBDA(vs,0) = PATCH_LCVECT(thePatchDesc,3)[0];
+          LAMBDA(vs,1) = PATCH_LCVECT(thePatchDesc,3)[1];        break;
+        default : FatalError = 1;                                                                        break;
         }
       else
         FatalError = 1;
@@ -1663,12 +1576,12 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
       /* if the vs is the first of that vertex: set vertex coordinates */
       if( NEXTSEG(vs) == NULL )
       {
-        (*theSegment->BndSegFunc)(theSegment->data,PVECT(vs),CVECT(pv[j]));
+        Patch_local2global(thePatch,PVECT(vs),CVECT(pv[j]));
         continue;                          /* next point (k) */
       }
 
       /* if the vs is not the first one compare the new geometrical data with the old ones */
-      (*theSegment->BndSegFunc)(theSegment->data,PVECT(vs),cvect);
+      Patch_local2global(thePatch,PVECT(vs),cvect);
       for( l = 0, pardist = 0.0  ; l < DIM ; l++)
         pardist += ((pv[j]->iv.x[l]) - cvect[l])*((pv[j]->iv.x[l]) - cvect[l]);
       if ( pardist > (MAX_PAR_DIST*MAX_PAR_DIST) )
@@ -1691,6 +1604,9 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
     }
   }
   for (i=0; i<n; i++) SETUSED(pv[i],0);
+
+  /*release heap */
+  Release(theHeap,FROM_TOP);
 
   /* return ok */
   return(theMG);
@@ -2327,18 +2243,19 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
   MULTIGRID *theMG;
   NODE **table,*theNode;
   LINK *theLink,*LinkTable[LINKTABLESIZE];
-  DOMAIN *theDomain;
   INT i,entries,firstID,nl;
   HEAP *theHeap;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
 
   theMG   = MYMG(theGrid);
   firstID = ID(FIRSTNODE(theGrid));
   entries = NN(theGrid);
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
 
   /* calculate the diameter of the bounding rectangle of the domain */
-  theDomain = MGDOMAIN(theMG);
-  if (theDomain==NULL) return (1);
-  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / theDomain->radius;
+  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   /* allocate memory for the node list */
   theHeap = MGHEAP(theMG);
@@ -2601,13 +2518,16 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
    D*/
 /****************************************************************************/
 
-INT InsertBoundaryNode (MULTIGRID *theMG, INT bnd_seg_id, COORD *pos)
+INT InsertBoundaryNode (MULTIGRID *theMG, INT patch_id, COORD *pos)
 {
   GRID *theGrid;
   NODE *theNode;
   VERTEX *theVertex;
   VSEGMENT *vsnew1;
-  BNDSEGDESC *theSegment1;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
   int i;
 
 
@@ -2619,17 +2539,30 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT bnd_seg_id, COORD *pos)
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
 
+  /* get BVP description */
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (GM_ERROR);
+
   /* scan input */
-  if ((bnd_seg_id<0)||(bnd_seg_id>=MGNOOFSEG(theMG)))
+  if ((patch_id<0)||(patch_id>=BVPD_NPATCHES(theBVPDesc)))
   {
     PrintErrorMessage('E',"InsertBoundaryNode","segment id out of range");
     return(GM_ERROR);
   }
-  theSegment1 = MGBNDSEGDESC(theMG,bnd_seg_id);
+  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
+  {
+    if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(GM_ERROR);
+    if (PATCH_ID(thePatchDesc)==patch_id) break;
+  }
+  if (thePatch==NULL)
+  {
+    PrintErrorMessage('E',"InsertBoundaryNode","segment not found");
+    return(GM_ERROR);
+  }
 
   /* check range of parameters */
   for(i=0; i<DIM_OF_BND; i++)
-    if ( (pos[0]<ALPHA(theSegment1,i))||(pos[0]> BETA(theSegment1,i)) )
+    if ( (pos[0]<PATCH_LCVECT(thePatchDesc,0)[i])||(pos[0]> PATCH_LCVECT(thePatchDesc,1)[i]) )
     {
       PrintErrorMessage('E',"InsertBoundaryNode","parameter not in range of segment");
       return(GM_ERROR);
@@ -2638,7 +2571,7 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT bnd_seg_id, COORD *pos)
   /* check distance from corner */
   if (DIM==2)
   {
-    if (  (fabs(pos[0]-ALPHA(theSegment1,0))<SMALL_C) || (fabs(pos[0]-BETA(theSegment1,0))<SMALL_C) )
+    if (  (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,0)[0])<SMALL_C) || (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,1)[0])<SMALL_C) )
     {
       PrintErrorMessage('E',"InsertBoundaryNode","parameter describes one of the corners of the segment");
       return(GM_ERROR);
@@ -2647,10 +2580,10 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT bnd_seg_id, COORD *pos)
   if (DIM==3)
   {
     i = 0;
-    if (fabs(pos[0]-ALPHA(theSegment1,0))+fabs(pos[1]-ALPHA(theSegment1,1))<SMALL_C) i = 1;
-    if (fabs(pos[0]-ALPHA(theSegment1,0))+fabs(pos[1]-BETA(theSegment1,1))<SMALL_C) i = 1;
-    if (fabs(pos[0]-BETA(theSegment1,0))+fabs(pos[1]-ALPHA(theSegment1,1))<SMALL_C) i = 1;
-    if (fabs(pos[0]-BETA(theSegment1,0))+fabs(pos[1]-BETA(theSegment1,1))<SMALL_C) i = 1;
+    if (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,0)[0])+fabs(pos[1]-PATCH_LCVECT(thePatchDesc,0)[1])<SMALL_C) i = 1;
+    if (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,1)[0])+fabs(pos[1]-PATCH_LCVECT(thePatchDesc,1)[1])<SMALL_C) i = 1;
+    if (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,2)[0])+fabs(pos[1]-PATCH_LCVECT(thePatchDesc,2)[1])<SMALL_C) i = 1;
+    if (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,3)[0])+fabs(pos[1]-PATCH_LCVECT(thePatchDesc,3)[1])<SMALL_C) i = 1;
     if (i)
     {
       PrintErrorMessage('E',"InsertBoundaryNode","parameter describes one of the corners of the segment");
@@ -2672,7 +2605,7 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT bnd_seg_id, COORD *pos)
     PrintErrorMessage('E',"InsertBoundaryNode","cannot create node");
     return(GM_ERROR);
   }
-  vsnew1 = CreateVertexSegment(theGrid, theVertex);
+  vsnew1 = CreateVertexSegment(theGrid,theVertex);
   if (vsnew1==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -2683,8 +2616,8 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT bnd_seg_id, COORD *pos)
 
   /* fill data into the first vertexsegment */
   for(i=0; i<DIM_OF_BND; i++) LAMBDA(vsnew1,i) =  pos[i];
-  (*BNDSEGFUNC (theSegment1))(BNDDATA(theSegment1),pos,CVECT(theVertex));
-  BSEGDESC(vsnew1) = theSegment1;
+  Patch_local2global(thePatch,pos,CVECT(theVertex));
+  VS_PATCH(vsnew1) = thePatch;
 
   /* fill data into node/vertex */
   INDEX(theNode) = 0;
@@ -2859,7 +2792,10 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
 {
   GRID *theGrid;
   int i,j,m,found,NeighborSide[4],bndEdges;
-  BNDSEGDESC *theSeg[4];
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH *thePatch[4];
+  PATCH_DESC thePatchDesc;
   NODE *theNode,*aNode,*bNode;
   VERTEX *Vertex[4],*theVertex,*aVertex,*bVertex;
   VSEGMENT *aVSeg, *bVSeg, *aUniqueSeg, *bUniqueSeg;
@@ -2875,6 +2811,14 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
 
+  /* get BVP description */
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
+  {
+    PrintErrorMessage('E',"InsertElement","cannot evaluate BVP");
+    return(GM_ERROR);
+  }
+
   /* check tag */
   if ((n!=TRIANGLE)&&(n!=QUADRILATERAL))
   {
@@ -2887,7 +2831,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
   {
     Vertex[i]       = MYVERTEX(Node[i]);
     Neighbor[i] = NULL;
-    theSeg[i]       = NULL;
+    thePatch[i]     = NULL;
   }
 
   /* find orientation */
@@ -2942,33 +2886,34 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
     /* if at least one vertex is in the interior then skip */
     if ((OBJT(aVertex)==IVOBJ)||(OBJT(bVertex)==IVOBJ)) continue;
 
-    /* aVertex and bVertex must be on the same boundary segment with unique parameters */
+    /* aVertex and bVertex must be on the same boundary patch with unique parameters */
     found = 0;
     for (aVSeg = VSEG(aVertex); aVSeg != NULL; aVSeg = NEXTSEG(aVSeg))
       for (bVSeg = VSEG(bVertex); bVSeg != NULL; bVSeg = NEXTSEG(bVSeg))
-        if( BSEGDESC(aVSeg) == BSEGDESC(bVSeg) )
+        if( VS_PATCH(aVSeg) == VS_PATCH(bVSeg) )
         {
           found++;
           aUniqueSeg = aVSeg;
           bUniqueSeg = bVSeg;
         }
 
-    /* no common boundary segment -> this will be an interior edge */
+    /* no common patch -> this will be an interior edge */
     if (found==0) continue;
 
-    /* common boundary segment, but non unique parameters -> refuse to insert (no closed boundary segments!) */
+    /* common patch, but non unique parameters -> refuse to insert (no closed patches!) */
     if (found>1)
     {
-      PrintErrorMessage('E',"InsertElement","non unique parameter encountered, do not define closed boundary segments");
+      PrintErrorMessage('E',"InsertElement","non unique parameter encountered, do not define closed patches");
       return(GM_ERROR);
     }
 
-    /* both nodes are on same boundary segment with unique parameters */
-    theSeg[i] = BSEGDESC(aUniqueSeg);
+    /* both nodes are on same patch with unique parameters */
+    thePatch[i] = VS_PATCH(aUniqueSeg);
     from[i] = LAMBDA(aUniqueSeg,0); to[i] = LAMBDA(bUniqueSeg,0);
     if (from[i]<to[i])
     {
-      if (LEFT(theSeg[i])<=0)
+      if (Patch_GetPatchDesc(thePatch[i],&thePatchDesc)) return (GM_ERROR);
+      if (PATCH_LEFT(thePatchDesc)<=0)
       {
         PrintErrorMessage('E',"InsertElement","element outside of domain");
         return(GM_ERROR);
@@ -2976,7 +2921,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
     }
     else
     {
-      if (RIGHT(theSeg[i])<=0)
+      if (PATCH_RIGHT(thePatchDesc)<=0)
       {
         PrintErrorMessage('E',"InsertElement","element outside of domain");
         return(GM_ERROR);
@@ -3030,7 +2975,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
     for (i=0; i<n; i++)
     {
       SET_SIDE(theElement,i,NULL);
-      if (theSeg[i]!=NULL)
+      if (thePatch[i]!=NULL)
       {
         SET_SIDE(theElement,i,CreateElementSide(theGrid));
         if (SIDE(theElement,i)==NULL)
@@ -3039,7 +2984,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
           DisposeElement(theGrid,theElement);
           return(GM_ERROR);
         }
-        SEGDESC(SIDE(theElement,i)) = theSeg[i];
+        ES_PATCH(SIDE(theElement,i)) = thePatch[i];
         PARAM(SIDE(theElement,i),0,0) = from[i];
         PARAM(SIDE(theElement,i),1,0) = to[i];
       }
@@ -3132,13 +3077,16 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
   GRID             *theGrid;
   int i,j,k,l,m,found,num;
   int NeighborSide[MAX_SIDES_OF_ELEM];
-  BNDSEGDESC       *theSeg[MAX_SIDES_OF_ELEM], *Seg;
   NODE             *sideNode[MAX_CORNERS_OF_SIDE];
   VERTEX           *Vertex[MAX_CORNERS_OF_ELEM],*sideVertex[MAX_CORNERS_OF_SIDE];
   ELEMENT          *theElement,*Neighbor[MAX_SIDES_OF_ELEM];
   EDGE             *theEdge;
   COORD param[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE][DIM_OF_BND], *plambda[MAX_CORNERS_OF_SIDE];
   VSEGMENT         *vs;
+  BVP             *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH            *thePatch[MAX_SIDES_OF_ELEM], *Patch;
+  PATCH_DESC thePatchDesc;
 
   /* check level */
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
@@ -3147,6 +3095,14 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
     return(GM_ERROR);
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
+
+  /* get BVP description */
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
+  {
+    PrintErrorMessage('E',"InsertElement","cannot evaluate BVP");
+    return(GM_ERROR);
+  }
 
   /* check parameters */
   if ( n != 4 )
@@ -3163,7 +3119,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
   for (i=0; i<MAX_SIDES_OF_ELEM; i++)
   {
     Neighbor[i] = NULL;
-    theSeg[i] = NULL;
+    thePatch[i] = NULL;
   }
 
   /* compute side information (theSeg[i]==NULL) means inner side */
@@ -3189,15 +3145,15 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
     /* That means, one should not define elements at the boundary	*/
     /* with a boundary side covering more than one segment.			*/
 
-    for (j=0; j<theMG->numOfSegments; j++)
+    for (Patch=BVP_GetFirstPatch(theBVP); Patch!=NULL; Patch=BVP_GetNextPatch(theBVP,Patch))
     {
-      Seg = &(theMG->segments[j]);
+      if (Patch_GetPatchDesc(Patch,&thePatchDesc)) return (GM_ERROR);
       for( k=0; k<MAX_CORNERS_OF_SIDE; k++ )
       {
         found = 0;
         for( vs = VSEG(sideVertex[k]); vs!=NULL; vs = NEXTSEG(vs) )                           /* the segments of that corner */
         {
-          if( BSEGDESC(vs) == Seg )                               /* corner belongs to segment */
+          if (VS_PATCH(vs)==Patch)                               /* corner belongs to segment */
           {
             found = 1;
             break;
@@ -3211,10 +3167,10 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
         break;
     }
 
-    if (found)             /* a segment with three corners was found i.e. the side is a boundary side */
+    if (found)             /* a patch with three corners was found i.e. the side is a boundary side */
     {
       /*	set boundary parameters for vertices of that side */
-      theSeg[i] = Seg;
+      thePatch[i] = Patch;
       for( k=0; k<MAX_CORNERS_OF_SIDE; k++)                    /* vertices of side i */
       {
         param[i][k][0] = plambda[k][0];
@@ -3264,7 +3220,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
 
   found = 0;
   for (i=0; i<MAX_SIDES_OF_ELEM; i++)
-    if (theSeg[i]!=NULL)
+    if (thePatch[i]!=NULL)
       found++;
 
   /* create element */
@@ -3284,7 +3240,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
     for (i=0; i<MAX_SIDES_OF_ELEM; i++)
     {
       SET_SIDE(theElement,i,NULL);
-      if (theSeg[i]!=NULL)
+      if (thePatch[i]!=NULL)
       {
         SET_SIDE(theElement,i,CreateElementSide(theGrid));
         if (SIDE(theElement,i)==NULL)
@@ -3293,7 +3249,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
           PrintErrorMessage('E',"InsertElement","cannot allocate element side");
           return(GM_ERROR);
         }
-        SEGDESC(SIDE(theElement,i)) = theSeg[i];
+        ES_PATCH(SIDE(theElement,i)) = thePatch[i];
         for(k=0; k<MAX_CORNERS_OF_SIDE; k++)
           for(l=0; l<DIM_OF_BND; l++)
             PARAM(SIDE(theElement,i),k,l) = param[i][k][l];
@@ -3908,13 +3864,22 @@ void ListMultiGridHeader (const INT longformat)
 void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
 {
   char c;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+
+  /* get BVP description */
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
+  {
+    PrintErrorMessage('E',"InsertElement","cannot evaluate BVP");
+    return;
+  }
 
   c = isCurrent ? '*' : ' ';
 
   if (longformat)
-    sprintf(buffer," %c %-20.20s %-20.20s %-20.20s %10lu %10lu\n",c,ENVITEM_NAME(theMG),
-            ENVITEM_NAME(theMG->theDomain),ENVITEM_NAME(theMG->theProblem),
-            HeapSize(theMG->theHeap),HeapUsed(theMG->theHeap));
+    sprintf(buffer," %c %-20.20s %-20.20s %10lu %10lu\n",c,ENVITEM_NAME(theMG),
+            BVPD_NAME(theBVPDesc), HeapSize(theMG->theHeap),HeapUsed(theMG->theHeap));
   else
     sprintf(buffer," %c %-20.20s\n",c,ENVITEM_NAME(theMG));
 
@@ -4121,6 +4086,11 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
   VSEGMENT *vs;
   LINK *theLink;
   int i;
+  BVP             *theBVP;
+  PATCH_DESC thePatchDesc;
+
+  /* get BVP description */
+  theBVP = MG_BVP(theMG);
 
   theFormat = MGFORMAT(theMG);
   theVertex = MYVERTEX(theNode);
@@ -4182,7 +4152,8 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
       /* print vertex boundary information */
       for(vs=VSEG(theVertex); vs!=NULL; vs=NEXTSEG(vs))
       {
-        sprintf(buffer,"   SEGID=%9ld ",(long)SEGID(BSEGDESC(vs)) );
+        if (Patch_GetPatchDesc(VS_PATCH(vs),&thePatchDesc)) return;
+        sprintf(buffer,"   PATID=%9ld ",(long)PATCH_ID(thePatchDesc));
         UserWrite(buffer);
         for(i=0; i<DIM_OF_BND; i++)
         {
@@ -4402,6 +4373,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
         #ifdef __THREEDIM__
   ELEMENT *SonList[MAX_SONS];
         #endif
+  PATCH_DESC thePatchDesc;
 
   theFormat = MGFORMAT(theMG);
 
@@ -4464,7 +4436,8 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
       for (i=0; i<SIDES_OF_ELEM(theElement); i++)
         if ((theSide=SIDE(theElement,i))!=NULL)
         {
-          sprintf(buffer,"SEGID%d=%ld ",i,(long)SEGID(SEGDESC(SIDE(theElement,i))));
+          if (Patch_GetPatchDesc(ES_PATCH(theSide),&thePatchDesc)) return;
+          sprintf(buffer,"PATID%d=%ld ",i,(long)PATCH_ID(thePatchDesc));
           UserWrite(buffer);
           for(j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
@@ -4910,7 +4883,7 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   ELEMENTSIDE *theSide;
   VERTEX *theVertex;
   VSEGMENT *vs;
-  BNDSEGDESC *theSegment;
+  PATCH *thePatch;
 
   *SideError = 0;
   *NodeError = 0;
@@ -4941,9 +4914,9 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
               theVertex = MYVERTEX(CORNER(theElement,(k=(i+j)%n)));
               if (OBJT(theVertex) == BVOBJ)
               {
-                theSegment = SEGDESC(theSide);
+                thePatch = ES_PATCH(theSide);
                 for (vs=VSEG(theVertex); vs!=NULL; vs=NEXTSEG(vs))
-                  if (theSegment == BSEGDESC(vs))
+                  if (thePatch == VS_PATCH(vs))
                     break;
                 if (vs == NULL)
                   *NodeError |= (i<<k);
@@ -5157,7 +5130,7 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   ELEMENTSIDE *theSide;
   VERTEX *theVertex;
   VSEGMENT *vs;
-  BNDSEGDESC *theSegment;
+  PATCH *thePatch;
 
   *SideError = 0;
   *NodeError = 0;
@@ -5190,9 +5163,9 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
               theVertex = MYVERTEX(CORNER(theElement,(k=CornerOfSide[i][j])));
               if (OBJT(theVertex) == BVOBJ)
               {
-                theSegment = SEGDESC(theSide);
+                thePatch = ES_PATCH(theSide);
                 for (vs=VSEG(theVertex); vs!=NULL; vs=NEXTSEG(vs))
-                  if (theSegment == BSEGDESC(vs))
+                  if (thePatch == VS_PATCH(vs))
                     break;
                 if (vs == NULL)
                   *NodeError |= (i<<k);
@@ -5230,9 +5203,9 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
               theVertex = MYVERTEX(CORNER(theElement,(k=CornerOfSide[i][j])));
               if (OBJT(theVertex) == BVOBJ)
               {
-                theSegment = SEGDESC(theSide);
+                thePatch = ES_PATCH(theSide);
                 for (vs=VSEG(theVertex); vs!=NULL; vs=NEXTSEG(vs))
-                  if (theSegment == BSEGDESC(vs))
+                  if (thePatch == VS_PATCH(vs))
                     break;
                 if (vs == NULL)
                   *NodeError |= (i<<k);

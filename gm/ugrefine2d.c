@@ -1077,7 +1077,8 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *aft
   VERTEX *theVertex;
   VSEGMENT *vsnew;
   NODE *theNode;
-  BNDSEGDESC *theSeg;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
 
   n = TAG(theElement);
 
@@ -1090,7 +1091,7 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *aft
   {
     /* find optimal boundary coordinate for boundary vertex */
     theSide = SIDE(theElement,side);
-    theSeg = SEGDESC(theSide);
+    thePatch = ES_PATCH(theSide);
     smin = 1.0E30;
     lambda0 = PARAM(theSide,0,0);
     lambda1 = PARAM(theSide,1,0);
@@ -1099,7 +1100,7 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *aft
     for (i=1; i<BMNRESOLUTION; i++)
     {
       lambda += dlambda;
-      BNDSEGFUNC(theSeg) (BNDDATA(theSeg),&lambda,r);
+      if (Patch_local2global(thePatch,&lambda,r)) return (NULL);
       s = (r[0]-x)*(r[0]-x)+(r[1]-y)*(r[1]-y);
       if (s<smin)
       {
@@ -1119,11 +1120,11 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *aft
       return(NULL);
     }
     LAMBDA(vsnew,0) = lambdaopt;
-    BNDSEGFUNC(theSeg) (BNDDATA(theSeg),PVECT(vsnew),CVECT(theVertex));
+    if (Patch_local2global(thePatch,PVECT(vsnew),CVECT(theVertex))) return (NULL);
     z = (lambdaopt-lambda0)/(lambda1-lambda0);
     ZETA(vsnew) = z;
     SETONEDGE(theVertex,side);
-    BSEGDESC(vsnew) = theSeg;
+    VS_PATCH(vsnew) = thePatch;
     if (n==3)
     {
       if (side==0) { XI(theVertex)= z  ; ETA(theVertex)= 0.0; }
@@ -1833,7 +1834,7 @@ static INT RefineElement (GRID *theGrid, ELEMENT *theElement, ElementContext *th
           if ((newSide0==NULL)||(newSide1==NULL)) return(1);
           Sides[2*i] = newSide0;
           Sides[2*i+1] = newSide1;
-          SEGDESC(newSide0) = SEGDESC(newSide1) = SEGDESC(oldSide);
+          ES_PATCH(newSide0) = ES_PATCH(newSide1) = ES_PATCH(oldSide);
           PARAM(newSide0,0,0) = PARAM(oldSide,0,0);
           PARAM(newSide1,1,0) = PARAM(oldSide,1,0);
           PARAM(newSide0,1,0) = PARAM(newSide1,0,0) = LAMBDA(VSEG(MYVERTEX(MidNodes[i])),0);
@@ -1843,7 +1844,7 @@ static INT RefineElement (GRID *theGrid, ELEMENT *theElement, ElementContext *th
           newSide0 = CreateElementSide(theGrid);
           if (newSide0==NULL) return(1);
           Sides[2*i] = newSide0;
-          SEGDESC(newSide0) = SEGDESC(oldSide);
+          ES_PATCH(newSide0) = ES_PATCH(oldSide);
           PARAM(newSide0,0,0) = PARAM(oldSide,0,0);
           PARAM(newSide0,1,0) = PARAM(oldSide,1,0);
         }

@@ -234,6 +234,8 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   int i,j,k,n,m;
   long i1,i2,i3;
   char buffer[1024];
+  BVP_DESC theBVPDesc;
+  PATCH_DESC thePatchDesc;
 
   RenumberMultiGrid(theMG);
 
@@ -266,6 +268,9 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   fprintf(stream,"(DIM = %ld)\n",DIM);
 
   /* start with multigrid information */
+  /* get BVPDesc */
+  if (BVP_GetBVPDesc(MG_BVP(theMG),&theBVPDesc)) return (GM_ERROR);
+
   /* NB: keep first two ints written for compatibility mode (former controlword) */
   fprintf(stream,"(MG %d %d %ld %ld %ld %ld %ld %ld \n\"%s\"\n\"%s\"\n\"%s\"\n",
           0,
@@ -276,8 +281,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
           (long) theMG->elemIdCounter,
           (long) theMG->topLevel,
           (long) theMG->currentLevel,
-          theMG->theDomain->d.name,
-          theMG->theProblem->d.name,
+          BVPD_NAME(theBVPDesc),
           theMG->theFormat->d.name);
   fprintf(stream,"%ld",(long)theMG->numOfCorners);
   for (i=0; i<theMG->numOfCorners; i++)
@@ -333,7 +337,8 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
         fprintf(stream," %ld",i);
         for (theVertexSegment=VSEG(theVertex); theVertexSegment!= NULL; theVertexSegment=NEXTSEG(theVertexSegment))
         {
-          fprintf(stream," (VS %lx %ld",CTRL(theVertexSegment),ID(BSEGDESC(theVertexSegment)));
+          if (Patch_GetPatchDesc(VS_PATCH(theVertexSegment),&thePatchDesc)) return (GM_ERROR);
+          fprintf(stream," (VS %lx %ld",CTRL(theVertexSegment),PATCH_ID(thePatchDesc));
           for (i=0; i<DIM_OF_BND; i++)
             fprintf(stream," %lg",(double) (LAMBDA(theVertexSegment,i)));
           fprintf(stream,")");
@@ -465,7 +470,8 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
           theSide = SIDE(theElement,i);
           if (theSide!=NULL)
           {
-            fprintf(stream," (SI %ld %lx %ld",(long)i,(unsigned long) CTRL(theSide),(long) ID(SEGDESC(theSide)));
+            if (Patch_GetPatchDesc(ES_PATCH(theSide),&thePatchDesc)) return (GM_ERROR);
+            fprintf(stream," (SI %ld %lx %ld",(long)i,(unsigned long) CTRL(theSide),(long)PATCH_ID(thePatchDesc));
             for (n=0; n<CORNERS_OF_SIDE(theElement,i); n++)
               for (m=0; m<DIM_OF_BND; m++)
                 fprintf(stream," %lg",(double)(PARAM(theSide,n,m)));
@@ -520,7 +526,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
    D*/
 /****************************************************************************/
 
-MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, char *problem, char *format, unsigned long heapSize)
+MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, char *problem, char *format, unsigned long heapSize)
 {
   FILE *stream;
   FORMAT *theFormat;
@@ -534,10 +540,10 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
   ELEMENTSIDE *theSide;
   HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
-  BOUNDARY_SEGMENT *theSegment;
-  BOUNDARY_CONDITION *theBndCond;
-  DOMAIN *theDomain;
-  PROBLEM *theProblem;
+  BVP *theBVP;
+  PATCH *thePatch, **PatchList;
+  BVP_DESC theBVPDesc;
+  PATCH_DESC thePatchDesc;
   VIRT_HEAP_MGMT *theGenMGUDM;
   INT ds;
   int i,j,j1,k,n,m,o,dim;
@@ -634,36 +640,48 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
   theMG->topLevel = -1;
   SELECTIONSIZE(theMG) = 0;
 
-  /* find domain structure */
+  /* find BVP structure */
   while ((c=getc(stream))!='"') ;
   i = 0;
   while ((c=getc(stream))!='"') buffer[i++] = c;
   buffer[i] = (char) 0;
-  if (domain==NULL)
-    theDomain = GetDomain(buffer);
+  if (BVPName==NULL)
+    theBVP = GetBVP(buffer);
   else
-    theDomain = GetDomain(domain);
-  if (theDomain==NULL)
+    theBVP = GetBVP(BVPName);
+  if (theBVP==NULL)
   {
-    PrintErrorMessage('E',"LoadMultiGrid","domain not found");
+    PrintErrorMessage('E',"LoadMultiGrid","BndValProblem not found");
     DisposeMultiGrid(theMG);
     fclose(stream); return(NULL);
   }
 
-  /* find problem structure */
-  while ((c=getc(stream))!='"') ;
-  i = 0;
-  while ((c=getc(stream))!='"') buffer[i++] = c;
-  buffer[i] = (char) 0;
-  if (problem==NULL)
-    theProblem = GetProblem(ENVITEM_NAME(theDomain),buffer);
-  else
-    theProblem = GetProblem(ENVITEM_NAME(theDomain),problem);
-  if (theProblem==NULL)
+  /* create a ID-orientated list of patches */
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (NULL);
+  Mark(theHeap,FROM_TOP);
+  if ((PatchList=(PATCH**)GetMem(theHeap,BVPD_NPATCHES(theBVPDesc)*sizeof(PATCH*),FROM_TOP))==NULL)
   {
-    PrintErrorMessage('E',"LoadMultiGrid","problem not found");
-    DisposeMultiGrid(theMG);
-    fclose(stream); return(NULL);
+    Release(theHeap,FROM_TOP);
+    UserWrite("ERROR: could not allocate memory for PatchList\n");
+    fclose(stream);
+    return (NULL);
+  }
+  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
+  {
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc))
+    {
+      Release(theHeap,FROM_TOP);
+      fclose(stream);
+      return (NULL);
+    }
+    i = PATCH_ID(thePatchDesc);
+    if (i<0 || i>=BVPD_NPATCHES(theBVPDesc) || PatchList[i]!=NULL)
+    {
+      Release(theHeap,FROM_TOP);
+      fclose(stream);
+      return (NULL);
+    }
+    PatchList[i] = thePatch;
   }
 
   /* find format structure */
@@ -715,9 +733,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
     MG_USER_HEAP(theMG) = NULL;
 
   /* domain, problem and format */
-  theMG->theDomain = theDomain;
+  MG_BVP(theMG) = theBVP;
   theMG->theFormat = theFormat;
-  theMG->theProblem = theProblem;
   theMG->theHeap = theHeap;
   for (i=0; i<MAXLEVEL; i++) theMG->grids[i] = NULL;
   for (i=0; i<MAXOBJECTS; i++) theMG->freeObjects[i] = NULL;
@@ -730,126 +747,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
       theMG->freeIMatrices[i][j] = NULL;
 #endif
 
-  /* allocate boundary descriptors */
-  n = theDomain->numOfSegments;
-  theMG->numOfSegments = n;
-  theMG->segments = (BNDSEGDESC *) GetMem(theHeap,n*sizeof(BNDSEGDESC),FROM_BOTTOM);
-  if (theMG->segments==NULL)
-  {
-    PrintErrorMessage('E',"LoadMultiGrid","no memory for segments");
-    DisposeMultiGrid(theMG);
-    fclose(stream); return(NULL);
-  }
-  for (i=0; i<n; i++)
-  {
-    theMG->segments[i].theSegment = NULL;
-    theMG->segments[i].theBoundaryCondition = NULL;
-  }
-
-  /* combine boundary coordinates and boundary conditions */
-  for (theSegment=GetFirstBoundarySegment(theDomain); theSegment!=NULL; theSegment = GetNextBoundarySegment(theSegment))
-  {
-    i = theSegment->id;
-    if ((i<0)||(i>=n))
-    {
-      PrintErrorMessage('E',"LoadMultiGrid","segment id out of range");
-      DisposeMultiGrid(theMG);
-      fclose(stream); return(NULL);
-    }
-    if (theMG->segments[i].theSegment!=NULL)
-    {
-      PrintErrorMessage('E',"LoadMultiGrid","multiply defined segment");
-      DisposeMultiGrid(theMG);
-      fclose(stream); return(NULL);
-    }
-    theMG->segments[i].theSegment = theSegment;
-    theMG->segments[i].id = i;
-  }
-  for (theBndCond=GetFirstBoundaryCondition(theProblem); theBndCond!=NULL; theBndCond = GetNextBoundaryCondition(theBndCond))
-  {
-    i = theBndCond->id;
-    if ((i<0)||(i>=n))
-    {
-      PrintErrorMessage('E',"LoadMultiGrid","boundary condition id out of range");
-      DisposeMultiGrid(theMG);
-      fclose(stream); return(NULL);
-    }
-    if (theMG->segments[i].theBoundaryCondition!=NULL)
-    {
-      PrintErrorMessage('E',"LoadMultiGrid","multiply defined boundary condition");
-      DisposeMultiGrid(theMG);
-      fclose(stream); return(NULL);
-    }
-    theMG->segments[i].theBoundaryCondition = theBndCond;
-  }
-
-  /* check if all pointers are correctly defined */
-  maxNsubdomain = -MAX_I;
-  minNsubdomain =  MAX_I;
-  for (i=0; i<n; i++)
-  {
-    theSegment = theMG->segments[i].theSegment;
-
-    if (theSegment==NULL)
-    {
-      PrintErrorMessage('E',"LoadMultiGrid","boundary segment not found");
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    if (theMG->segments[i].theBoundaryCondition==NULL)
-    {
-      PrintErrorMessage('E',"LoadMultiGrid","boundary conditionnot found");
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    if (theSegment->left==theSegment->right)
-    {
-      sprintf(buffer,"ERROR: left==right for segment %d",i);
-      PrintErrorMessage('E',"LoadMultiGrid",buffer);
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    maxNsubdomain = MAX(maxNsubdomain,MAX(theSegment->left,theSegment->right));
-    minNsubdomain = MIN(minNsubdomain,MIN(theSegment->left,theSegment->right));
-  }
-
-  /* check subdomains */
-
-  if (minNsubdomain!=0)
-  {
-    PrintErrorMessage('E',"LoadMultiGrid","ERROR: subdomain IDs must be >= 0");
-    DisposeMultiGrid(theMG);
-    return(NULL);
-  }
-
-  /* get storage for subdomain counters */
-  Nsubdomain = maxNsubdomain+1;
-  Mark(theHeap,FROM_TOP);
-  counter = (INT *) GetMem(theHeap,Nsubdomain*sizeof(INT),FROM_TOP);
-  for (i=0; i<Nsubdomain; i++) counter[i] = 0;
-  for (i=0; i<n; i++)
-  {
-    counter[LEFT(theMG->segments+i)]++;
-    counter[RIGHT(theMG->segments+i)]++;
-  }
-  err = 0;
-  for (i=0; i<Nsubdomain; i++)
-    if (counter[i]<=0)
-    {
-      err++;
-      sprintf(buffer,"ERROR: subdomain ID %d not used\n",i);
-      UserWrite(buffer);
-    }
-  Release(theHeap,FROM_TOP);
-  if (err)
-  {
-    free(theHeap);
-    return (NULL);
-  }
-  theMG->numOfSubdomains = Nsubdomain;
-
   /* load corner vertices ids */
-  n = theDomain->numOfCorners;
+  n = BVPD_NCORNERS(theBVPDesc);
   theMG->numOfCorners = n;
   pv = (VERTEX **) GetMem(theHeap,n*sizeof(VERTEX *),FROM_BOTTOM);
   if (pv==NULL)
@@ -976,7 +875,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
               fclose(stream); return(NULL);
             }
             CTRL(vs) = (unsigned INT) ul;
-            BSEGDESC(vs) = &(theMG->segments[i1]);
+            VS_PATCH(vs) = PatchList[i1];
             for (j1=0; j1<DIM_OF_BND; j1++)
             {
               fscanf(stream," %lf",&val);
@@ -998,7 +897,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
               fclose(stream); return(NULL);
             }
             fscanf(stream," %ld",&i1);                                     /* segment no. */
-            BSEGDESC(vs) = &(theMG->segments[i1]);
+            VS_PATCH(vs) = PatchList[i1];
             for (j1=0; j1<DIM_OF_BND; j1++)
             {
               fscanf(stream," %lf",&val);
@@ -1015,50 +914,66 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
           else                               /* scan segment list */
           {
             /* find logical number of vertex */
-            fscanf(stream," %ld",&i1);                                     /* segment no. */
-            theSegment = theMG->segments[i1].theSegment;
+            fscanf(stream," %ld",&i1);                                     /* patch no. */
+            thePatch = PatchList[i1];
+            if (Patch_GetPatchDesc(thePatch,&thePatchDesc))
+            {
+              Release(theHeap,FROM_TOP);
+              fclose(stream);
+              return (NULL);
+            }
+
             /* old version can only be 2D ! */
             fscanf(stream," %lf",&lambda);
             fscanf(stream," %lf",&val);                                     /* dummy read */
             fscanf(stream," %ld",&i1);
             onside = i1;
             point = -1;
-            if (fabs(lambda-theSegment->alpha[0])<1.0E-10)
-              point = theSegment->points[0];
-            if (fabs(lambda-theSegment->beta[0])<1.0E-10)
-              point = theSegment->points[1];
+            if (fabs(lambda-PATCH_LCVECT(thePatchDesc,0)[0])<1.0E-10)
+              point = PATCH_CID(thePatchDesc,0);
+            if (fabs(lambda-PATCH_LCVECT(thePatchDesc,1)[0])<1.0E-10)
+              point = PATCH_CID(thePatchDesc,1);
             if (point<0)
             {
               PrintErrorMessage('E',"LoadMultiGrid","cannot fill vseg list");
+              Release(theHeap,FROM_TOP);
               DisposeMultiGrid(theMG);
               fclose(stream); return(NULL);
             }
-            for (j1=0; j1<theMG->numOfSegments; j1++)
+            for (j1=0; j1<BVPD_NPATCHES(theBVPDesc); j1++)
             {
-              theSegment = theMG->segments[j1].theSegment;
-              if (theSegment->points[0]==point)
+              thePatch = PatchList[j1];
+              if (Patch_GetPatchDesc(thePatch,&thePatchDesc))
               {
-                vs = CreateVertexSegment (theGrid,theVertex);
-                if (vs == NULL)
-                {
-                  PrintErrorMessage('E',"LoadMultiGrid","cannot allocate vertex segment");
-                  DisposeMultiGrid(theMG);
-                  fclose(stream); return(NULL);
-                }
-                BSEGDESC(vs) = &(theMG->segments[j1]);
-                LAMBDA(vs,0) = theSegment->alpha[0];
+                Release(theHeap,FROM_TOP);
+                fclose(stream);
+                return (NULL);
               }
-              if (theSegment->points[1]==point)
+              if (PATCH_CID(thePatchDesc,0)==point)
               {
                 vs = CreateVertexSegment (theGrid,theVertex);
                 if (vs == NULL)
                 {
                   PrintErrorMessage('E',"LoadMultiGrid","cannot allocate vertex segment");
+                  Release(theHeap,FROM_TOP);
                   DisposeMultiGrid(theMG);
                   fclose(stream); return(NULL);
                 }
-                BSEGDESC(vs) = &(theMG->segments[j1]);
-                LAMBDA(vs,0) = theSegment->beta[0];
+                VS_PATCH(vs) = thePatch;
+                LAMBDA(vs,0) = PATCH_LCVECT(thePatchDesc,0)[0];
+              }
+              if (PATCH_CID(thePatchDesc,1)==point)
+              {
+                vs = CreateVertexSegment (theGrid,theVertex);
+                if (vs == NULL)
+                {
+                  PrintErrorMessage('E',"LoadMultiGrid","cannot allocate vertex segment");
+                  Release(theHeap,FROM_TOP);
+                  DisposeMultiGrid(theMG);
+                  fclose(stream); return(NULL);
+                }
+                VS_PATCH(vs) = thePatch;
+                LAMBDA(vs,0) = PATCH_LCVECT(thePatchDesc,1)[0];
               }
             }
             SETMOVE(theVertex,0);
@@ -1267,13 +1182,14 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
           if (theSide==NULL)
           {
             PrintErrorMessage('E',"LoadMultiGrid","cannot allocate element side");
+            Release(theHeap,FROM_TOP);
             DisposeMultiGrid(theMG);
             fclose(stream); return(NULL);
           }
           fscanf(stream," (%c%c %ld %lx %ld",&c1,&c2,&i1,&ul,&i2);
           SET_SIDE(theElement,i1,theSide);
           CTRL(theSide) = (unsigned INT) ul;
-          SEGDESC(theSide) = &(theMG->segments[i2]);
+          ES_PATCH(theSide) = PatchList[i2];
           for (n=0; n<CORNERS_OF_SIDE(theElement,i1); n++)
             for (m=0; m<DIM_OF_BND; m++)
             {

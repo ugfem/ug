@@ -16,7 +16,7 @@ include ../machines/mk.$(ARCHDIR)
 include ../ug.conf
 
 # local C compiler flags
-LCFLAGS = -I../low -I../dev
+LCFLAGS = -I../low -I../dev -I../dom
 
 # object files for both dimensions
 OBJECTS = algebra.o enrol.o evm.o ugio.o ugm.o cw.o initgm.o elements.o shapes.o evalproc.o 

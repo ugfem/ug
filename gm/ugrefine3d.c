@@ -482,7 +482,7 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *aft
   VERTEX            *theVertex, *v1, *v2;
   VSEGMENT          *vs1,*vs2, *vs;
   NODE              *theNode;
-  BNDSEGDESC        *theSeg;
+  PATCH             *thePatch;
 
   /* calculate midpoint of edge */
   ni0 = CornerOfEdge[edge][0];
@@ -507,7 +507,7 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *aft
     {
       for (vs2=VSEG(v2); vs2!=NULL; vs2=NEXTSEG(vs2))
       {
-        if (BSEGDESC(vs1) == BSEGDESC(vs2))
+        if (VS_PATCH(vs1) == VS_PATCH(vs2))
         {
           if (theVertex == NULL)
           {
@@ -521,7 +521,7 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *aft
             DisposeVertex(theGrid, theVertex);
             return(NULL);
           }
-          theSeg = BSEGDESC(vs) = BSEGDESC(vs1);
+          thePatch = VS_PATCH(vs) = VS_PATCH(vs1);
 
           /* find optimal parameters for this segment */
           lambda1 = PVECT(vs1);
@@ -532,7 +532,7 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *aft
           lambda[0] = 0.5*(lambda1[0] + lambda2[0]);
           lambda[1] = 0.5*(lambda1[1] + lambda2[1]);
 
-          (*BNDSEGFUNC (theSeg))(SEGDATA(theSeg),lambda,ropt);
+          if (Patch_local2global(thePatch,lambda,ropt)) return (NULL);
 
           V3_EUKLIDNORM_OF_DIFF(x,ropt,smin)
 
@@ -547,7 +547,7 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *aft
 
             for (i=0; i<=RESOLUTION; i++)
             {
-              (*BNDSEGFUNC (theSeg))(SEGDATA(theSeg),l,r);
+              if (Patch_local2global(thePatch,l,r)) return (NULL);
               V3_EUKLIDNORM_OF_DIFF(x,r,s)
               if (s<smin)
               {
@@ -1128,7 +1128,7 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
         newSide = CreateElementSide(theGrid);
         if (newSide==NULL) return(1);
         SET_SIDE(SonList[s],j,newSide);
-        SEGDESC(newSide) = SEGDESC(oldSide);
+        ES_PATCH(newSide) = ES_PATCH(oldSide);
 
         for (i=0; i<MAX_CORNERS_OF_SIDE; i++)
         {
@@ -1151,7 +1151,7 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
             /* find common boundary segment */
             for( vs=VSEG(myvertex); vs!=NULL; vs = NEXTSEG(vs) )
             {
-              if (BSEGDESC(vs) == SEGDESC(oldSide)) break;
+              if (VS_PATCH(vs) == ES_PATCH(oldSide)) break;
             }
             assert(vs!=NULL);
             PARAM(newSide,i,0) =  LAMBDA(vs,0);

@@ -138,7 +138,7 @@ static ELEMENT *FindFather(VERTEX *vptr)
     eside=SIDE(eptr,ONEDGE(vptr));
     vseg = VSEG(vptr);
 
-    if (BSEGDESC(vseg)!=SEGDESC(eside))
+    if (VS_PATCH(vseg)!=ES_PATCH(eside))
       return(NULL);
 
     /* for higher dimensions (3d) the following must be generalized */
@@ -198,8 +198,8 @@ static INT Local2Global (MULTIGRID *theMG, VERTEX *vptr)
   ELEMENT *eptr;
   VERTEX *vptr1,*vptr2,*vptra,*vptre;
   VSEGMENT *vseg;
-  BNDSEGDESC *segPtr;
-
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
 
   if ((eptr=VFATHER(vptr))==NULL)
     return(8040);
@@ -208,15 +208,15 @@ static INT Local2Global (MULTIGRID *theMG, VERTEX *vptr)
   if (OBJT(vptr)==BVOBJ)
   {
     vseg = VSEG(vptr);
-    if ((segPtr=BSEGDESC(vseg))==NULL)
-      return(8041);
+    if ((thePatch=VS_PATCH(vseg))==NULL) return(8041);
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(8041);
 
     side=ONEDGE(vptr);
     vptr1=MYVERTEX(CORNER(eptr,side));
     vptr2=MYVERTEX(CORNER(eptr,(side+1)%n));
 
-    vptra=theMG->corners[POINT(segPtr,0)]; lambdaa=ALPHA(segPtr,0);
-    vptre=theMG->corners[POINT(segPtr,1)]; lambdae=BETA(segPtr,0);
+    vptra=theMG->corners[PATCH_CID(thePatchDesc,0)]; lambdaa=PATCH_LCVECT(thePatchDesc,0)[0];
+    vptre=theMG->corners[PATCH_CID(thePatchDesc,1)]; lambdae=PATCH_LCVECT(thePatchDesc,1)[0];
 
     if (vptr1==vptra)
       lambda1=lambdaa;
@@ -236,7 +236,7 @@ static INT Local2Global (MULTIGRID *theMG, VERTEX *vptr)
 
 
     LAMBDA(vseg,0)=(1-ZETA(vseg))*lambda1+ZETA(vseg)*lambda2;
-    BNDSEGFUNC(BSEGDESC (vseg))(BNDDATA(BSEGDESC(vseg)),PVECT(vseg),CVECT(vptr));
+    if (Patch_local2global(thePatch,PVECT(vseg),CVECT(vptr))) return(8041);
   }
   else
   {
@@ -289,7 +289,8 @@ static INT Global2Local (MULTIGRID *theMG, VERTEX *vptr)
   ELEMENT *eptr;
   VERTEX *vptr1,*vptr2,*vptra,*vptre;
   VSEGMENT *vseg;
-  BNDSEGDESC *segPtr;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
 
   if ((eptr=VFATHER(vptr))==NULL)
     return(0);
@@ -298,13 +299,14 @@ static INT Global2Local (MULTIGRID *theMG, VERTEX *vptr)
   {
     n=TAG(eptr);
     vseg = VSEG(vptr);
-    segPtr=BSEGDESC(vseg);
+    thePatch=VS_PATCH(vseg);
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (1);
     side=ONEDGE(vptr);
     vptr1=MYVERTEX(CORNER(eptr,side));
     vptr2=MYVERTEX(CORNER(eptr,(side+1)%n));
 
-    vptra=theMG->corners[POINT(segPtr,0)]; lambdaa=ALPHA(segPtr,0);
-    vptre=theMG->corners[POINT(segPtr,1)]; lambdae=BETA(segPtr,0);
+    vptra=theMG->corners[PATCH_CID(thePatchDesc,0)]; lambdaa=PATCH_LCVECT(thePatchDesc,0)[0];
+    vptre=theMG->corners[PATCH_CID(thePatchDesc,1)]; lambdae=PATCH_LCVECT(thePatchDesc,1)[0];
 
     if (vptr1==vptra)
       lambda1=lambdaa;
@@ -591,7 +593,7 @@ INT MoveInnerNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
    D*/
 /****************************************************************************/
 
-INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT segid, COORD *newPos)
+INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT patchid, COORD *newPos)
 {
   GRID *theGrid,*theGrid2;
   int i,n,k,k2;
@@ -599,8 +601,19 @@ INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT segid, COORD *newPos)
   VERTEX *theVertex,*theVertex2;
   ELEMENT *theElement,*oldElement;
   ELEMENTSIDE *theSide;
-  BNDSEGDESC *theSegment,*oldSegment;
   double oldx,oldy,l,oldl;
+  BVP             *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH *thePatch, *oldPatch;
+  PATCH_DESC thePatchDesc;
+
+  /* get BVP description */
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
+  {
+    PrintErrorMessage('E',"MoveBoundaryNode","cannot evaluate BVP");
+    return(1);
+  }
 
   k = LEVEL(theNode);
   theGrid = GRID_ON_LEVEL(theMG,k);
@@ -628,32 +641,32 @@ INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT segid, COORD *newPos)
   }
 
   l = oldl = LAMBDA(VSEG(theVertex),0);
-  oldSegment = BSEGDESC(VSEG(theVertex));
+  oldPatch = VS_PATCH(VSEG(theVertex));
   if (START(theNode)==NULL)
   {
-    if(segid >= theMG->numOfSegments)
+    if(patchid >= BVPD_NPATCHES(theBVPDesc))
     {
-      PrintErrorMessage('E',"MoveBoundaryNode","segid out of range");
+      PrintErrorMessage('E',"MoveBoundaryNode","patchid out of range");
       return(GM_ERROR);
     }
-    theSegment = theMG->segments+segid;
+    thePatch = Patch_GetPatchByID(theBVP,patchid);
   }
-  else
-    theSegment = BSEGDESC(VSEG(theVertex));
+  else thePatch = VS_PATCH(VSEG(theVertex));
 
-  segid = theSegment->id;
+  if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (1);
+  patchid = PATCH_ID(thePatchDesc);
 
   l = newPos[0];
 
-  if ((l<ALPHA(theSegment,0))||(l>BETA(theSegment,0)))
+  if ((l<PATCH_LCVECT(thePatchDesc,0)[0]) || (l>PATCH_LCVECT(thePatchDesc,1)[0]))
   {
     PrintErrorMessage('E',"MoveBoundaryNode","parameter out of range");
     return(GM_ERROR);
   }
 
   LAMBDA(VSEG(theVertex),0) = l;
-  BNDSEGFUNC(theSegment) (BNDDATA(theSegment),PVECT(VSEG(theVertex)),CVECT(theVertex));
-  BSEGDESC(VSEG(theVertex)) = theSegment;
+  if (Patch_local2global(thePatch,PVECT(VSEG(theVertex)),CVECT(theVertex))) return (1);
+  VS_PATCH(VSEG(theVertex)) = thePatch;
 
   if (VFATHER(theVertex)!=NULL)
   {
@@ -661,7 +674,7 @@ INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT segid, COORD *newPos)
     if ((theElement=FindFather(theVertex))==NULL)
     {
       PrintErrorMessage('E',"MoveBoundaryNode","No father element! Probably you have tried to move the vertex too far");
-      XC(theVertex) = oldx; YC(theVertex) = oldy; LAMBDA(VSEG(theVertex),0)=oldl; BSEGDESC(VSEG(theVertex)) = oldSegment;
+      XC(theVertex) = oldx; YC(theVertex) = oldy; LAMBDA(VSEG(theVertex),0)=oldl; VS_PATCH(VSEG(theVertex)) = oldPatch;
       return(GM_ERROR);
     }
     else
@@ -725,14 +738,14 @@ INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT segid, COORD *newPos)
             if (NFATHER(theNode2)==NULL)
             {
               theVertex2=MYVERTEX(theNode2);
-              if (BSEGDESC(VSEG(theVertex2))==theSegment)
+              if (VS_PATCH(VSEG(theVertex2))==thePatch)
                 PARAM(theSide,0,0) = LAMBDA(VSEG(theVertex2),0);
             }
             theNode2=CORNER(theElement,(i+1)%n);
             if (NFATHER(theNode2)==NULL)
             {
               theVertex2=MYVERTEX(theNode2);
-              if (BSEGDESC(VSEG(theVertex2))==BSEGDESC(VSEG(theVertex)))
+              if (VS_PATCH(VSEG(theVertex2))==VS_PATCH(VSEG(theVertex)))
                 PARAM(theSide,1,0) = LAMBDA(VSEG(theVertex2),0);
             }
           }
@@ -788,10 +801,13 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
   ELEMENTSIDE *eside;
   VERTEX *vptr0,*vptr1,*vptr2,*vptra,*vptre,*vptr;
   LINK *lptr;
-  BNDSEGDESC *segPtr;
+  BVP *theBVP;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
 
   COORD x[2];
 
+  theBVP = MG_BVP(theMG);
   n = niter;
   if (n<=0) n = 1;
   if (n>50) n = 50;
@@ -828,15 +844,15 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 
           /* test if free boundary: since that type is determined by the grid it may only
              be smoothed in certain cases and in a special way */
-          segPtr=BSEGDESC(VSEG(vptr0));
-          if (BNDDATA(segPtr)!=NULL)
-            if (*((INT *) BNDDATA(segPtr))==1)
-              continue;                                                 /* free boundary is not allowed to be smoothed */
+          thePatch=VS_PATCH(VSEG(vptr0));
+          if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
+          if (PATCH_TYPE(thePatchDesc)==FREE)
+            continue;                                           /*free boundary is not allowed to be smoothed */
 
           /* first find endpoints of vptr0's boundary segment */
           lambda0=LAMBDA(VSEG(vptr0),0);
-          vptra=theMG->corners[POINT(segPtr,0)]; lambdaa=ALPHA(segPtr,0);
-          vptre=theMG->corners[POINT(segPtr,1)]; lambdae=BETA(segPtr,0);
+          vptra=theMG->corners[PATCH_CID(thePatchDesc,0)]; lambdaa=PATCH_LCVECT(thePatchDesc,0)[0];
+          vptre=theMG->corners[PATCH_CID(thePatchDesc,1)]; lambdae=PATCH_LCVECT(thePatchDesc,1)[0];
 
           /* search for the two nearest neighbors on the same segment */
           vptr1=vptr2=NULL;
@@ -855,7 +871,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
               if (vptr==vptre)
                 lambda=lambdae;
               else
-              if (segPtr==BSEGDESC(VSEG(vptr)))
+              if (thePatch==VS_PATCH(VSEG(vptr)))
                 lambda=LAMBDA(VSEG(vptr),0);
               else
                 continue;
@@ -893,7 +909,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
           if ((vptr1==NULL)||(vptr2==NULL))
             return(GM_ERROR);
 
-          if (BNDDATA(segPtr)!=NULL)
+          if (PATCH_TYPE(thePatchDesc)==FREE)
           {
             /*	This is only sensible if the free boundary is a line and the endpoints are moved.
                     A more general smoothing would be to use e.g. a quadratic interpolant. */
@@ -906,7 +922,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
           {
             LAMBDA(VSEG(vptr0),0)=.5*(lambda1+lambda2);
             /* set global coordinates */
-            (BNDSEGFUNC (segPtr))(BNDDATA(segPtr),PVECT(VSEG(vptr0)),CVECT(vptr0));
+            if (Patch_local2global(thePatch,PVECT(VSEG(vptr0)),CVECT(vptr0))) return (GM_ERROR);
 
             /* set local boundary coordinates */
             if ((status=Global2Local(theMG,vptr0))!=0)
