@@ -130,7 +130,6 @@ void ConstructConsistentGrid (GRID *theGrid)
 	SetBorderPriorities(theGrid);
 	DDD_XferEnd();
 
-#ifdef __TWODIM__
 	/* this is the simplest fix for VFATHER zombies  */
 	/* just reset all VFATHER pointers and set them  */
 	/* only by master nodes of this or upper levels. */
@@ -158,7 +157,6 @@ void ConstructConsistentGrid (GRID *theGrid)
 			}
 */
 	}
-#endif
 
 	/* reconstruct VFATHER pointers and                */
 	/* make ghost neighborships symmetric (only for 3d)*/
