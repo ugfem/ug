@@ -917,7 +917,7 @@ static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDAT
     s=0.0; for (j=0; j<VD_NCOMP(x); j++) s += np->weight[j]*scal[j];
     if (s_ddot (theNP->base.mg,np->baselevel,level,b,np->h3,scal)!=NUM_OK) REP_ERR_RETURN (1);
     t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += np->weight[j]*scal[j];
-    if (ABS(s)>1e-5)
+    if (ABS(s)>1e-3*ABS(t) || (np->restart>0 && s!=0.0))
     {
       for (j=0; j<VD_NCOMP(x); j++) scal[j] = t/s;
       if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
