@@ -3938,6 +3938,7 @@ INT CreateGridOverlap (MULTIGRID *theMG)
   ELEMENT *theElement,*theNeighbor,*theSon;
   ELEMENT *SonList[MAX_SONS];
 
+  ddd_HandlerInit(HSET_REFINE);
   DDD_XferBegin();
   if (!IS_REFINED(theNeighbor) || !EHGHOSTPRIO(prio)) continue;
   for (l=0; l<TOPLEVEL(theMG); l++) {
