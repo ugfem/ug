@@ -4733,14 +4733,18 @@ static INT FixCoarseGridCommand (INT argc, char **argv)
 
   theMG = currMG;
   if (theMG==NULL) {
-    PrintErrorMessage('E',"fixcoarsegirdmark","no open multigrid");
+    PrintErrorMessage('E',"fixcoarsegridmark","no open multigrid");
     return (CMDERRORCODE);
   }
   if (CreateAlgebra(GRID_ON_LEVEL(theMG,0)) != GM_OK) {
-    PrintErrorMessage('E',"fixcoarsegirdmark",
+    PrintErrorMessage('E',"fixcoarsegridmark",
                       "could not create algebra");
     return (CMDERRORCODE);
   }
+
+    #ifdef ModelP
+  ddd_test(0, currMG);         /* WARNING: will disappear! */
+        #endif
 
   return(OKCODE);
 }
