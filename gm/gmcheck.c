@@ -565,7 +565,7 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT *EdgeError,
 						 INT *NodeError, INT *ESonError, INT *NSonError)
 {
-	INT		i,j,k,l,n,nsons,nerrors;
+	INT		i,j,k,l,n,nsons,bserror,nerrors;
 	NODE	*theNode,*theNode1;
 	EDGE	*theEdge;
 	ELEMENT *NbElement,*theFather;
@@ -582,6 +582,8 @@ PAR(
 	*ESonError = 0;
 	*NSonError = 0;
 	nerrors    = 0;
+	
+	bserror = 0;
 
 	/* check level */
 	if (GLEVEL(theGrid) != LEVEL(theElement))
@@ -600,7 +602,45 @@ PAR(
 					break;
 			if (j == SIDES_OF_ELEM(NbElement))
 				*SideError |= (1<<i);
-
+			else
+			{
+				/* if this is a boundary side it has to be an inner boundary 
+				   and the neighbour side is also a boundary side */
+				/* TODO: check boundary side for NbElement==NULL */
+				if (OBJT(theElement) == BEOBJ)
+					if (SIDE_ON_BND(theElement,i))
+					{
+						INT id,nbid,id_nb,nbid_nb,part;
+						
+						if (BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid,&part))
+							bserror |= (1<<i);
+						else
+						{
+							if ((id==0) || (nbid==0))
+								/* no interior boundary */
+								bserror |= (1<<i);
+							if (id==nbid)
+								/* should be avoided */
+								bserror |= (1<<i);
+							
+							/* check neighbour */
+							if (!SIDE_ON_BND(NbElement,j))
+								bserror |= (1<<i);
+							else
+							{
+								if (BNDS_BndSDesc(ELEM_BNDS(NbElement,j),&id_nb,&nbid_nb,&part))
+									bserror |= (1<<i);
+								else
+								{
+									if (id!=nbid_nb)
+										bserror |= (1<<i);
+									if (nbid!=id_nb)
+										bserror |= (1<<i);
+								}
+							}
+						}
+					}
+			}
 			if (ECLASS(theElement)!=YELLOW_CLASS) 
 			{
 				n = CORNERS_OF_SIDE(theElement,i);
@@ -868,7 +908,9 @@ if (0)
 			}
 		}
 	}
-
+	
+	if (bserror)
+		nerrors++;
 	if (nerrors > 0)
 		UserWriteF("ELEM(" EID_FMTX "): element has %d errors\n",
 			EID_PRTX(theElement),nerrors);
