@@ -824,7 +824,7 @@ void NodeObjMkCons (DDD_OBJ obj, int newness)
 	}
 	#endif
 		
-	/* TODO: this needs to be done here not in NodeUpdate() for 2D, 	*/			
+	/* TODO: this needs to be done here not in NodeUpdate() for 2D, 	*/
 	/* since father would be overwritten by ElemScatterEdge() 			*/ 
 	#ifdef __TWODIM__
 	if (NFATHER(theNode) != NULL)
@@ -833,11 +833,11 @@ void NodeObjMkCons (DDD_OBJ obj, int newness)
 		{
 			case (CORNER_NODE):
 				ASSERT(OBJT(NFATHER(theNode)) == NDOBJ);
-				SONNODE(NFATHER(theNode)) = theNode;
+				SONNODE((NODE *)NFATHER(theNode)) = theNode;
 				break;
 
 			case (MID_NODE):
-				ASSERT(OBJT((EDGE *)NFATHER(theNode)) == EDOBJ);
+				ASSERT(OBJT(NFATHER(theNode)) == EDOBJ);
 				MIDNODE((EDGE *)NFATHER(theNode)) = theNode; 
 				break;
 
