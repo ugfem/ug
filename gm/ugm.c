@@ -4350,17 +4350,10 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
   /******************************/
   /* print standard information */
   /******************************/
-  /* line 1 */ sprintf(buffer,"NODEID=%9ld CTRL=%8lx IX=%8ld VEID=%9ld LEVEL=%2d",(long)ID(theNode),(long)CTRL(theNode),
-                       (long)INDEX(theNode),(long)ID(theVertex),LEVEL(theNode));
+  /* line 1 */ sprintf(buffer,"NODEID=" ID_FFMT " CTRL=%8lx IX=%8ld VEID=" VID_FFMT " LEVEL=%2d",
+                       ID_PRT(theNode),(long)CTRL(theNode),
+                       (long)INDEX(theNode),VID_PRT(theVertex),LEVEL(theNode));
   UserWrite(buffer);
-
-        #ifdef ModelP
-  sprintf(buffer," NGID=%08x VGID=%08x",
-          DDD_InfoGlobalId(PARHDR(theNode)),
-          DDD_InfoGlobalId(PARHDRV(theVertex))
-          );
-  UserWrite(buffer);
-        #endif
 
   /* print coordinates of that node */
   for(i=0; i<DIM; i++)
@@ -4580,32 +4573,29 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
     {
     case TRIANGLE :                  strcpy(etype,"TRI"); break;
     case QUADRILATERAL :             strcpy(etype,"QUA"); break;
+    default :                strcpy(etype,"???"); break;
     }
   else
     switch (TAG(theElement))
     {
-    case TETRAHEDRON :               strcpy(ekind,"TET"); break;
-    case PYRAMID :                   strcpy(ekind,"PYR"); break;
-    case PRISM :                             strcpy(ekind,"PRI"); break;
-    case HEXAHEDRON :                strcpy(ekind,"HEX"); break;
+    case TETRAHEDRON :               strcpy(etype,"TET"); break;
+    case PYRAMID :                   strcpy(etype,"PYR"); break;
+    case PRISM :                             strcpy(etype,"PRI"); break;
+    case HEXAHEDRON :                strcpy(etype,"HEX"); break;
+    default :                strcpy(etype,"???"); break;
     }
   switch (ECLASS(theElement))
   {
-  case YELLOW_CLASS :              strcpy(etype,"YELLOW "); break;
-  case GREEN_CLASS :               strcpy(etype,"GREEN  "); break;
-  case RED_CLASS :                 strcpy(etype,"RED    "); break;
+  case YELLOW_CLASS :              strcpy(ekind,"YELLOW "); break;
+  case GREEN_CLASS :               strcpy(ekind,"GREEN  "); break;
+  case RED_CLASS :                 strcpy(ekind,"RED    "); break;
+  default :                strcpy(ekind,"???    "); break;
   }
-  sprintf(buffer,"ELEMID=%9ld %5s %5s CTRL=%8lx CTRL2=%8lx REFINE=%2d MARK=%2d LEVEL=%2d",(long)ID(theElement),ekind,etype,
+  sprintf(buffer,"ELEMID=" EID_FFMTE " %5s %5s CTRL=%8lx CTRL2=%8lx REFINE=%2d MARK=%2d LEVEL=%2d",
+          EID_PRTE(theElement),ekind,etype,
           (long)CTRL(theElement),(long)FLAG(theElement),REFINE(theElement),MARK(theElement),LEVEL(theElement));
   UserWrite(buffer);
   if (COARSEN(theElement)) UserWrite(" COARSEN");
-
-        #ifdef ModelP
-  sprintf(buffer," EGID=%08x EPRIO=%d",DDD_InfoGlobalId(PARHDRE(theElement)),
-          DDD_InfoPriority(PARHDRE(theElement)));
-  UserWrite(buffer);
-        #endif
-
   UserWrite("\n");
 
   if (vopt)
@@ -4823,13 +4813,6 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
   ELEMENT *theElement;
   MATRIX *theMatrix;
   void *Data;
-  char par[20];
-        #ifdef ModelP
-  DDD_GID gid = DDD_InfoGlobalId(PARHDR(theVector));
-  sprintf(par, " GID=%08x", gid);
-        #else
-  par[0] = 0;        /* no additional output in sequential case */
-        #endif
 
   theFormat = MGFORMAT(theMG);
 
@@ -4837,27 +4820,38 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
   if (VTYPE(theVector)==NODEVECTOR)
   {
     theNode = (NODE*)VOBJECT(theVector);
-    sprintf(buffer,"NODE-V IND=%7ld nodeID=%7ld                VCLASS=%1d VNCLASS=%1d%s\n",VINDEX(theVector),ID(theNode),VCLASS(theVector),VNCLASS(theVector),par);
+    sprintf(buffer,"NODE-V IND=" VINDEX_FFMTE " nodeID=" ID_FFMT
+            "                VCLASS=%1d VNCLASS=%1d\n",
+            VINDEX_PRTE(theVector),ID_PRT(theNode),VCLASS(theVector),VNCLASS(theVector));
     UserWrite(buffer);
   }
   if (VTYPE(theVector)==EDGEVECTOR)
   {
     theEdge = (EDGE*)VOBJECT(theVector);
-    sprintf(buffer,"EDGE-V IND=%7ld fromID=%7ld to__ID=%7ld VCLASS=%1d VNCLASS=%1d%s\n",VINDEX(theVector),ID(NBNODE(LINK0(theEdge))),ID(NBNODE(LINK1(theEdge))),VCLASS(theVector),VNCLASS(theVector),par);
+    sprintf(buffer,"EDGE-V IND=" VINDEX_FFMTE " fromID=" ID_FFMT
+            " to__ID=%7ld VCLASS=%1d VNCLASS=%1d\n",
+            VINDEX_PRTE(theVector),ID_PRT(NBNODE(LINK0(theEdge))),
+            ID(NBNODE(LINK1(theEdge))),VCLASS(theVector),VNCLASS(theVector));
     UserWrite(buffer);
   }
         #ifdef __THREEDIM__
   if (VTYPE(theVector)==SIDEVECTOR)
   {
     theElement = (ELEMENT*)VOBJECT(theVector);
-    sprintf(buffer,"SIDE-V IND=%7ld elemID=%ld                VCLASS=%1d VNCLASS=%1d%s\n",VINDEX(theVector),ID(theElement),VCLASS(theVector),VNCLASS(theVector),par);
+    sprintf(buffer,"SIDE-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
+            "                VCLASS=%1d VNCLASS=%1d\n",
+            VINDEX_PRTE(theVector),EID_PRT(theElement),
+            VCLASS(theVector),VNCLASS(theVector));
     UserWrite(buffer);
   }
         #endif
   if (VTYPE(theVector)==ELEMVECTOR)
   {
     theElement = (ELEMENT*)VOBJECT(theVector);
-    sprintf(buffer,"ELEM-V IND=%7ld elemID=%ld                VCLASS=%1d VNCLASS=%1d%s\n",VINDEX(theVector),ID(theElement),VCLASS(theVector),VNCLASS(theVector),par);
+    sprintf(buffer,"ELEM-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
+            "                VCLASS=%1d VNCLASS=%1d\n",
+            VINDEX_PRTE(theVector),EID_PRT(theElement),
+            VCLASS(theVector),VNCLASS(theVector));
     UserWrite(buffer);
   }
 
@@ -5258,8 +5252,9 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
   {
     n = SIDES_OF_ELEM(theElement);
     if (CheckElement(theElement, &SideError, &EdgeError, &NodeError)==0) continue;
-    sprintf(buffer,"ELEM %ld:\n",(long)ID(theElement));
+    sprintf(buffer,"ELEM " EID_FMTE ":\n", EID_PRTE(theElement));
     UserWrite(buffer);
+
     if (SideError)
       for (i=0; i<n; i++)
       {
@@ -5268,7 +5263,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,(i+j)%n)));
+            sprintf(buffer,ID_FMT, ID_PRT(CORNER(theElement,(i+j)%n)));
             UserWrite(buffer);
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
@@ -5279,7 +5274,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,(i+j)%n)));
+            sprintf(buffer, ID_FMT, ID_PRT(CORNER(theElement,(i+j)%n)));
             UserWrite(buffer);
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
@@ -5290,7 +5285,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,(i+j)%n)));
+            sprintf(buffer, ID_FMT, ID_PRT(CORNER(theElement,(i+j)%n)));
             UserWrite(buffer);
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
@@ -5301,7 +5296,8 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
       for (i=0; i<EDGES_OF_ELEM(theElement); i++)
       {
         if (!(EdgeError & 1<<i)) continue;
-        sprintf(buffer,"   EDGE(%ld,%ld) is missing\n",(long)ID(CORNER(theElement,i)),(long)ID(CORNER(theElement,(i+1)%n)));
+        sprintf(buffer,"   EDGE(" ID_FMT "," ID_FMT ") is missing\n",
+                ID_PRT(CORNER(theElement,i)), ID_PRT(CORNER(theElement,(i+1)%n)));
         UserWrite(buffer);
       }
     if (NodeError)
@@ -5309,12 +5305,13 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
       {
         if (NodeError & (1<<i))
         {
-          sprintf(buffer,"   CORNER %ld is BVOBJ, ids from elementside and vertexsegment are not consistent\n",(long)ID(CORNER(theElement,i)));
+          sprintf(buffer,"   CORNER " ID_FMT " is BVOBJ, ids from elementside and vertexsegment are not consistent\n", ID_PRT(CORNER(theElement,i)));
           UserWrite(buffer);
         }
         if (NodeError & (1<<(i+n)))
         {
-          sprintf(buffer,"   CORNER %ld is IVOBJ, but lies on elementside\n",(long)ID(CORNER(theElement,i)));
+          sprintf(buffer,"   CORNER " ID_FMT " is IVOBJ, but lies on elementside\n",
+                  ID_PRT(CORNER(theElement,i)));
           UserWrite(buffer);
         }
       }
@@ -5335,7 +5332,9 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
       if (USED(theLink)!=1 || USED(REVERSE(theLink))!=1)
       {
                 #ifdef ModelP
-        UserWriteF("edge between %ld and %ld dead: USED=%d USEDREV=%d \n",(long)ID(theNode),(long)ID(NBNODE(theLink)),USED(theLink),USED(REVERSE(theLink)));
+        UserWriteF("edge between " ID_FMT " and " ID_FMT " dead: USED=%d USEDREV=%d \n",
+                   ID_PRT(theNode), ID_PRT(NBNODE(theLink)),
+                   USED(theLink),USED(REVERSE(theLink)));
                                 #endif
       }
     }
@@ -5371,7 +5370,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
     {
       if (OBJT(SUCCE(theElement))!=IEOBJ && OBJT(SUCCE(theElement))!=BEOBJ)
       {
-        sprintf(buffer,"pointer of ELEM(%ld) (number %ld) to next element is no pointer to an element\n",(long)ID(theElement),(long)count);
+        sprintf(buffer,"pointer of ELEM(" EID_FMT ") (number %ld) to next element is no pointer to an element\n", EID_PRT(theElement),(long)count);
         UserWrite(buffer);
         break;
       }
@@ -5379,13 +5378,13 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
       {
         if (PREDE(SUCCE(theElement))!=theElement)
         {
-          sprintf(buffer,"pointer of ELEM(%ld) (number %ld) to previous element is not the previous element\n",(long)ID(SUCCE(theElement)),(long)(count+1));
+          sprintf(buffer,"pointer of ELEM(" EID_FMT ") (number %ld) to previous element is not the previous element\n",EID_PRT(SUCCE(theElement)),(long)(count+1));
           UserWrite(buffer);
         }
       }
       else
       {
-        sprintf(buffer,"pointer of ELEM(%ld) (number %ld) to previous element is NULL\n",(long)ID(SUCCE(theElement)),(long)(count+1));
+        sprintf(buffer,"pointer of ELEM(" EID_FMT ") (number %ld) to previous element is NULL\n",EID_PRT(SUCCE(theElement)),(long)(count+1));
         UserWrite(buffer);
       }
     }

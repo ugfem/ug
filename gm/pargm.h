@@ -88,9 +88,90 @@ enum Priorities
 #define VECTORPRIOS                     1
 #define VERTEXPRIOS                     1
 
+#endif
 
+
+
+/*
+        printing of IDs via printf()
+
+        use ID_FMT as format string, and ID_PRT as macro for printing.
+        example of usage:
+
+                printf("NodeId " ID_FMT "\n", ID_PRT(theNode));
+
+        ID_FFMT (fixed format) is a version of ID_FMT with fixed width.
+        ID_FFMTE (extended) is a version of ID_FFMT with additional information.
+
+        in ModelP, additionaly the DDD_GlobalID is printed for each object.
+
+        NOTE: for vertices and elements, one must use the VID_ and EID_ macros,
+              respectively. this is due to differences in data structures
+              (unions -> PARHDRV/PARHDRE ->VID_/EID_)
+ */
+
+#ifdef ModelP
+
+#define ID_FMT      "%ld/%08x"
+#define ID_FFMT     "%9ld/%08x"
+#define ID_PRT(x)   ((long)ID(x)),DDD_InfoGlobalId(PARHDR(x))
+#define ID_FMTE     "%ld/%08x/%d"
+#define ID_FFMTE    "%9ld/%08x/%02d"
+#define ID_PRTE(x)  ((long)ID(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+
+#define VID_FMT     ID_FMT
+#define VID_FFMT    ID_FFMT
+#define VID_PRT(x)  ((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x))
+#define VID_FMTE    ID_FMTE
+#define VID_FFMTE   ID_FFMTE
+#define VID_PRTE(x) ((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x)),DDD_InfoPriority(PARHDRV(x))
+
+#define EID_FMT     ID_FMT
+#define EID_FFMT    ID_FFMT
+#define EID_PRT(x)  ((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x))
+#define EID_FMTE    ID_FMTE
+#define EID_FFMTE   ID_FFMTE
+#define EID_PRTE(x) ((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x)),DDD_InfoPriority(PARHDRE(x))
+
+#define VINDEX_FMT     ID_FMT
+#define VINDEX_FFMT    ID_FFMT
+#define VINDEX_PRT(x)  ((long)VINDEX(x)),DDD_InfoGlobalId(PARHDR(x))
+#define VINDEX_FMTE    ID_FMTE
+#define VINDEX_FFMTE   ID_FFMTE
+#define VINDEX_PRTE(x) ((long)VINDEX(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+
+#else
+
+#define ID_FMT      "%ld"
+#define ID_FFMT     "%9ld"
+#define ID_PRT(x)   ((long)ID(x))
+#define ID_FMTE     "%ld"
+#define ID_FFMTE    "%9ld"
+#define ID_PRTE(x)  ID_PTR(x)
+
+#define VID_FMT     ID_FMT
+#define VID_FFMT    ID_FFMT
+#define VID_PRT(x)  ID_PRT(x)
+#define VID_FMTE    ID_FMTE
+#define VID_FFMTE   ID_FFMTE
+#define VID_PRTE(x) VID_PRT(x)
+
+#define EID_FMT     ID_FMT
+#define EID_FFMT    ID_FFMT
+#define EID_PRT(x)  ID_PRT(x)
+#define EID_FMTE    ID_FMTE
+#define EID_FFMTE   ID_FFMTE
+#define EID_PRTE(x) EID_PRT(x)
+
+#define VINDEX_FMT     ID_FMT
+#define VINDEX_FFMT    ID_FFMT
+#define VINDEX_PRT(x)  ((long)VINDEX(x))
+#define VINDEX_FMTE    ID_FMTE
+#define VINDEX_FFMTE   ID_FFMTE
+#define VINDEX_PRTE(x) VINDEX_PRT(x)
 
 #endif
+
 
 /****************************************************************************/
 /*                                                                          */
