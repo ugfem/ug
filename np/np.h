@@ -170,46 +170,48 @@ int DDD_InfoPrioCopies (DDD_HDR hdr);
 
 /* blas level 1 (vector operations) */
 
-INT dset           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+INT dset           (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     DOUBLE a);
-INT dcopy          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    VECDATA_DESC *y);
-INT dscal          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+INT dcopy          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y);
+INT dscal          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     DOUBLE a);
-INT dscalx         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+INT dscalx         (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VEC_SCALAR a);
+INT dadd           (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y);
+INT dsub           (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y);
+INT daxpy          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    DOUBLE a, const VECDATA_DESC *y);
+INT daxpyx         (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VEC_SCALAR a, const VECDATA_DESC *y);
+INT ddot           (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y, DOUBLE *a);
+INT ddotx          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y, VEC_SCALAR a);
+INT ddotw          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y, const VEC_SCALAR w, DOUBLE *a);
+INT dnrm2          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     DOUBLE *a);
-INT dadd           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    VECDATA_DESC *y);
-INT dsub           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    VECDATA_DESC *y);
-INT daxpy          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    DOUBLE a, VECDATA_DESC *y);
-INT daxpyx         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    DOUBLE *a, VECDATA_DESC *y);
-INT ddot           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    VECDATA_DESC *y, DOUBLE *a);
-INT ddotx          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    VECDATA_DESC *y, DOUBLE *a);
-INT dnrm2          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    DOUBLE *a);
-INT dnrm2x         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    DOUBLE *a);
+INT dnrm2x         (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    VEC_SCALAR a);
 
 
 /* blas level 2 (matrix operations) */
 
-INT dmatset        (MULTIGRID *mg, INT fl, INT tl, INT mode, MATDATA_DESC *M,
+INT dmatset        (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M,
                     DOUBLE a);
 INT dmatcopy       (MULTIGRID *mg, INT fl, INT tl, INT mode,
-                    MATDATA_DESC *M, MATDATA_DESC *N);
+                    const MATDATA_DESC *M, const MATDATA_DESC *N);
 INT dmatadd        (MULTIGRID *mg, INT fl, INT tl, INT mode,
-                    MATDATA_DESC *M, MATDATA_DESC *N);
-INT dmatmul        (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    MATDATA_DESC *M, VECDATA_DESC *y);
-INT dmatmul_add    (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    MATDATA_DESC *M, VECDATA_DESC *y);
-INT dmatmul_minus  (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-                    MATDATA_DESC *M, VECDATA_DESC *y);
+                    const MATDATA_DESC *M, const MATDATA_DESC *N);
+INT dmatmul        (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const MATDATA_DESC *M, const VECDATA_DESC *y);
+INT dmatmul_add    (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const MATDATA_DESC *M, const VECDATA_DESC *y);
+INT dmatmul_minus  (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const MATDATA_DESC *M, const VECDATA_DESC *y);
 
 /* for compatibility only */
 
@@ -233,9 +235,9 @@ INT dmatmul_minus  (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
 #define a_ddot(mg,fl,tl,x,xclass,y,a)      ddotx(mg,fl,tl,ALL_VECTORS,x,y,a)
 #define s_ddot(mg,fl,tl,x,y,a)             ddotx(mg,fl,tl,ON_SURFACE,x,y,a)
 
-#define l_ddot_sv(g,x,xclass,y,b,a)        ddot(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,y,a)
-#define a_ddot_sv(mg,fl,tl,x,xclass,y,b,a) ddot(mg,fl,tl,ALL_VECTORS,x,y,a)
-#define s_ddot_sv(mg,fl,tl,x,y,b,a)        ddot(mg,fl,tl,ON_SURFACE,x,y,a)
+#define l_ddot_sv(g,x,xclass,y,b,a)        ddotw(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,y,b,a)
+#define a_ddot_sv(mg,fl,tl,x,xclass,y,b,a) ddotw(mg,fl,tl,ALL_VECTORS,x,y,b,a)
+#define s_ddot_sv(mg,fl,tl,x,y,b,a)        ddotw(mg,fl,tl,ON_SURFACE,x,y,b,a)
 
 #define l_eunorm(g,x,xclass,a)             dnrm2x(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,a)
 #define a_eunorm(mg,fl,tl,x,xclass,a)      dnrm2x(mg,fl,tl,ALL_VECTORS,x,a)
