@@ -87,14 +87,26 @@ sub gnuplot
 		# command 'write'
         if ($command eq "write")
         {
-			my ($s,$i);
-            if(@_!=3)
+			my ($s,$i,$j);
+			my $n=2;
+            if(@_!=3 && @_!=4)
             {
-                die "ERROR: usage: gnuplot 'write',<filename>,<array-reference>\n";
+                die "ERROR: usage: gnuplot 'write',<filename>,<array-reference>, [<n>]\n";
             }
+			elsif (@_==4)
+			{
+				$n=$_[3];
+			}
 			open(FILE,">$_[1]");
 			$s=$_[2];
-			for ($i=0; $i<@$s; $i+=2) { print FILE "$$s[$i] $$s[$i+1]\n"; }
+			for ($i=0; $i<@$s; $i+=$n) 
+			{
+				for ($j=$i; $j<$i+$n; $j++)
+				{ 
+					print FILE "$$s[$j] "; 
+				}
+				print FILE "\n";
+			}
 			close(FILE);
 			
 			return;
