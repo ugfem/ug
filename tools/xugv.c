@@ -322,7 +322,11 @@ void createGraphics(void)
 
   /* test if true color visual */
   visual = DefaultVisual(display, screen);
+#ifdef __cplusplus
+  true_color = (visual->c_class == TrueColor);
+#else
   true_color = (visual->class == TrueColor);
+#endif
 
   /* get info on pixel structure */
   if (true_color) {
@@ -560,7 +564,7 @@ int RasterizeFile(FILE *stream)
 
 
   /* allocate input buffer */
-  buffer = malloc(blockSize);
+  buffer = (char*)malloc(blockSize);
   if (buffer==NULL) return(1);
 
   /* loop through the blocks */
@@ -1131,7 +1135,7 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
 
 
   /* allocate input buffer */
-  buffer = malloc(blockSize);
+  buffer = (char*)malloc(blockSize);
   if (buffer==NULL) return(1);
 
   /* loop through the blocks */
@@ -2123,9 +2127,7 @@ static Boolean tail_film (void)
 }
 
 /* main */
-main (argc, argv)
-int argc;
-char* argv[];
+int main (int argc, char* argv[])
 {
   XGCValues gcv;            /* GC structure */
   Arg args[10];           /* argument list */
