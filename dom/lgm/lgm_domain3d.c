@@ -2035,6 +2035,10 @@ DOUBLE Check_Surface(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOU
     }
   }
 
+  /* if mi<0, no triangle has been found. hence, lam[] isn't valid! */
+  if (mi==-1)
+    return(1);
+
   if( (lam[0]<0.0) || (lam[1]<0.0) )
   {
     if( (lam[0]<0.0) && (lam[0]>-0.000001) )
