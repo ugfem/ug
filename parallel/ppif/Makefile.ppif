@@ -26,7 +26,7 @@ ppif_all: $(LIBDIR)/libppif.a
 ##############################################################################
 
 PPIF_LCFLAGS  = -D$(ARCH_TYPE) $(ARCH_CFLAGS) $(PPIF_CFLAGS)
-PPIF_LINCLUDE = -I./include $(PPIF_INCLUDES)
+PPIF_LINCLUDE = $(PPIF_INCLUDES)
 PPIF_LOBJ = $(PPIF_PATH)/ppif.o
 
 
