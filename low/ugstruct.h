@@ -71,6 +71,7 @@ typedef struct {                                /* string variable							*/
 /* hierarchical string directory */
 INT      MakeStruct                             (const char *name);
 INT      DeleteStruct                           (char *name);
+INT      DeleteVariable                         (char *name);
 ENVDIR  *ChangeStructDir                        (const char *s);
 ENVDIR  *FindStructDir                          (const char *name, char **lastnameHnd);
 STRVAR  *FindStringVar                          (const ENVDIR *where, const char *name);
@@ -90,8 +91,8 @@ ENVITEM *MakeStructItem                         (ENVDIR *where, const char *name
 INT      CheckStructTree                        (const ENVDIR *theDir);
 INT      CheckIfInStructPath            (const ENVDIR *theDir);
 INT      RemoveStructTree                       (ENVDIR *homeDir, ENVDIR *theDir);
-INT      PrintStructContents            (const char *name, int ropt, char *out);
-INT              PrintCurrentStructContents (int ropt, char *out);
+INT      PrintStructContents            (const char *name, char *buffer, int bufLen, int ropt);
+INT              PrintCurrentStructContents (int flag, char *buffer, int bufLen, int ropt);
 
 /* initialization of this module */
 INT     InitUgStruct                            (void);

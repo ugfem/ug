@@ -68,9 +68,6 @@
 static ENVDIR *path[MAXENVPATH];
 static INT pathIndex;
 
-static int DirOutDepthCounter=0;        /* depth counter for DirOut()			*/
-static char spcStr[81]                  = "                                          "
-                                          "                                      ";
 static INT theStringDirID;                      /* env type for String dirs                     */
 static INT theStringVarID;                      /* env type for String vars                     */
 
@@ -862,6 +859,50 @@ INT DeleteStruct (char *name)
 
 /****************************************************************************/
 /*D
+   DeleteVariable	- Delete an existing string variable
+
+   SYNOPSIS:
+   INT DeleteVariable (char *name);
+
+   PARAMETERS:
+   .  name - variable name
+
+   SEE ALSO:
+   FindStructDir, FindStructure, CheckIfInStructPath, CheckStructTree, RemoveStructTree
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 variable directory not found
+   .n     2 variable does not exist
+   .n     4 variable contains locked objects
+   .n     5 variable could not be removed
+   D*/
+/****************************************************************************/
+
+INT DeleteVariable (char *name)
+{
+  char *lastname;
+  ENVDIR *theDir;
+  STRVAR *myVar;
+
+  if ((theDir=FindStructDir(name,&lastname))==NULL)
+    return(1);                  /* structure directory not found */
+
+  if ((myVar=FindStringVar(theDir,lastname))==NULL)
+    return(2);                  /* variable does not exist */
+
+  if (ENVITEM_LOCKED(myVar))
+    return(4);                  /* variable is locked */
+
+  if (RemoveStructTree(theDir,(ENVDIR *) myVar)!=0)
+    return(5);                  /* variable could not be removed */
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    SetStringVar - Set a string variable to a given string
 
    SYNOPSIS:
@@ -1035,8 +1076,8 @@ INT CheckStructTree (const ENVDIR *theDir)
 {
   INT status;
 
-  if (theDir->locked)
-    return(theDir->locked);
+  if (ENVITEM_LOCKED(theDir))
+    return(1);
 
   if (theDir->type%2!=0)
     for (theDir=(ENVDIR *) theDir->down; theDir!=NULL; theDir=(ENVDIR *) theDir->next)
@@ -1126,74 +1167,214 @@ INT RemoveStructTree (ENVDIR *homeDir, ENVDIR *theDir)
    DirOut - (recursively) print directory contents
 
    SYNOPSIS:
-   static INT DirOut (const ENVDIR *theDir, int ropt, char **out);
+   static INT DirOut (const ENVDIR *theDir, char *buffer, int bufLen, int ropt);
 
    PARAMETERS:
    .  theDir - structure
+   .  buffer - address of buffer
+   .  bufLen - length of buffer
    .  ropt - if set, the contents are printed recursively
-   .  out - address of pointer to buffer
 
    DESCRIPTION:
-   This function (recursively) prints dir contents into a buffer.
+   This function (recursively) prints the contents of theDir into the buffer.
+   It will return the value 4 if the buffer is full and it is not yet ready.
+   In this case it has to be called another time. If it is ready it returns
+   the value 0.
 
    RETURN VALUE:
    INT
-   .n    0 if ok
-   .n    1 if error occured.
+   .n    0 all is done
+   .n    1 buffer too small
+   .n    2 theDir is not a string directory
+   .n    3 false type encountered (should never occur)
+   .n    4 not yet ready with output (this is not an error!)
+   .n    5 directory tree too deeply nested (should never occur)
+   .n    6 this should also never occur
    D*/
 /****************************************************************************/
 
-static INT DirOut (const ENVDIR *theDir, int ropt, char **out)
+static INT DirOut (const ENVDIR *theDir, char *buffer, int bufLen, int ropt)
 {
   INT error;
-  ENVITEM *theItem;
+  int bufPos, i, n;
+  static ENVITEM *theItem;
+  static int status,pathPos;
+  static const ENVDIR *varPath[MAXENVPATH];
+  static char *str;
 
-  spcStr[DirOutDepthCounter*4] = '\0';
+  bufPos=0;             /* the buffer is initially empty */
 
-  if (DirOutDepthCounter>0)
-    spcStr[(DirOutDepthCounter-1)*4] = ' ';
+  if (bufLen<MAXENVPATH+NAMESIZE+10)
+    return(1);                  /* buffer too small */
 
-  theItem = theDir->down;
-  while (theItem!=NULL)
+  if (theDir!=NULL)
   {
-    strcpy(*out,spcStr);                    *out += strlen(*out);
-    strcpy(*out,theItem->v.name);   *out += strlen(*out);
-    strcpy(*out," = ");                     *out += strlen(*out);
-    if (theItem->v.type==theStringVarID)
-    {
-      strcpy(*out,((STRVAR*)theItem)->s); *out += strlen(*out);
-      strcpy(*out,"\n");                                      *out += strlen(*out);
-    }
-    else if (theItem->v.type==theStringDirID)
-    {
-      /* later: output of internal structure if $r-option (recursive call) */
-      if (ropt&&(theItem->d.down!=NULL))
-      {
-        strcpy(*out,"{\n"); *out += strlen(*out);
-        if ((DirOutDepthCounter++)>20)
-          return(1);
-        if ((error=DirOut((ENVDIR*)theItem,ropt,out))!=0)
-          return(error);
-        DirOutDepthCounter--;
+    /* a first call */
+    if (ENVITEM_TYPE(theDir)!=theStringDirID)
+      return(2);                        /* theDir is not a string directory */
+    pathPos=0;
+    varPath[0]=theDir;
+    theItem=ENVITEM_DOWN(theDir);
+    status=0;                   /* means that for theItem all has to be done */
+  }
 
-        spcStr[DirOutDepthCounter*4]=(char) 0;
-        strcpy(*out,spcStr);    *out += strlen(*out);
-        strcpy(*out,"}\n");  *out += strlen(*out);
+  do
+  {
+    switch (status)
+    {
+    case 0 :
+      while (theItem==NULL)
+      {
+        if (pathPos==0)
+        {
+          buffer[bufPos]=(char) 0;
+          return(0);                                    /* ready with output */
+        }
+
+        /* we have to print a terminating "\t...\t}\n\0" and to go back in our path */
+        if (bufLen-bufPos<pathPos+2)
+        {
+          buffer[bufPos]=(char) 0;
+          return(4);                                    /* not yet ready with output */
+        }
+
+        for (i=0; i<pathPos-1; i++)
+          buffer[bufPos++]='\t';
+
+        buffer[bufPos++]='}'; buffer[bufPos++]='\n';
+
+        theItem=NEXT_ENVITEM(varPath[pathPos--]);
+      }
+
+      if ((ENVITEM_TYPE(theItem)!=theStringDirID)&&(ENVITEM_TYPE(theItem)!=theStringVarID))
+        return(3);                              /* false type encountered (should not occur) */
+
+      if (bufLen-bufPos<pathPos+1)
+      {
+        buffer[bufPos]=(char) 0;
+        return(4);                              /* not yet ready with output */
+      }
+
+      for (i=0; i<pathPos; i++)
+        buffer[bufPos++]='\t';
+
+      status=1;
+
+    case 1 :
+      n=strlen(ENVITEM_NAME(theItem));
+      if (bufLen-bufPos<n+7)                    /* "<name> = {}\n\0" */
+      {
+        buffer[bufPos]=(char) 0;
+        return(4);                              /* not yet ready with output */
+      }
+
+      strcpy(buffer+bufPos,ENVITEM_NAME(theItem)); bufPos+=n;
+      strcpy(buffer+bufPos," = "); bufPos+=3;
+      status=2;
+
+    case 2 :
+      if (ENVITEM_TYPE(theItem)==theStringDirID)
+      {
+        if ((ropt==0)||(ENVITEM_DOWN(theItem)==NULL))
+        {
+          strcpy(buffer+bufPos,"{}\n"); bufPos+=3;
+          theItem=NEXT_ENVITEM(theItem);
+        }
+        else
+        {
+          buffer[bufPos++]='{'; buffer[bufPos++]='\n';
+          if (pathPos==MAXENVPATH-1)
+            return(5);                                          /* directory tree too deeply nested: should not occur! */
+
+          varPath[++pathPos]=(ENVDIR *) theItem;
+          theItem=ENVITEM_DOWN(theItem);
+        }
+        break;
       }
       else
       {
-        strcpy(*out,"{}\n");  *out += strlen(*out);
+        str=((STRVAR *)theItem)->s;
+        status=3;
       }
+
+    case 3 :
+      strncpy(buffer+bufPos,str,bufLen-bufPos-2);
+      n=strlen(str);
+      if (bufLen-bufPos-2<n)
+      {
+        str+=bufLen-bufPos-2;
+        buffer[bufLen-2]=(char) 0;
+        return(4);                              /* not yet ready with output */
+      }
+      else
+      {
+        bufPos+=n;
+        buffer[bufPos++]='\n';
+      }
+      theItem=NEXT_ENVITEM(theItem);
     }
-    else
-    {
-      strcpy(*out,spcStr);                                                    *out += strlen(*out);
-      strcpy(*out,"?unknown variable type?\n");               *out += strlen(*out);
-    }
-    theItem = theItem->v.next;
+
+    status=0;
+  } while (TRUE);
+
+  return(6);            /* this should never be reached */
+}
+
+/****************************************************************************/
+/*D
+   VarOut - prints variable = content into a buffer
+
+   SYNOPSIS:
+   static INT VarOut (const STRVAR *StrVar, char *buffer, int bufLen,);
+
+   PARAMETERS:
+   .  StrVar - string variable
+   .  buffer - address of buffer
+   .  bufLen - length of buffer
+
+   DESCRIPTION:
+   This function prints the contents of StrVar into the buffer.
+   It will return the value 4 if the buffer is full and it is not yet ready.
+   In this case it has to be called another time. If it is ready it returns
+   the value 0.
+
+   RETURN VALUE:
+   INT
+   .n    0 all is done
+   .n    1 buffer too small
+   .n    4 not yet ready with output (this is not an error!)
+   D*/
+/****************************************************************************/
+
+static INT VarOut (const STRVAR *StrVar, char *buffer, int bufLen)
+{
+  static char *str;
+
+  if (bufLen<MAXENVPATH+NAMESIZE+10)
+    return(1);                  /* buffer too small */
+
+  if (StrVar!=NULL)
+  {
+    strcpy(buffer,ENVITEM_NAME(StrVar));
+    buffer+=strlen(ENVITEM_NAME(StrVar)); bufLen-=strlen(ENVITEM_NAME(StrVar));
+    strcpy(buffer," = ");
+    buffer+=3; bufLen-=3;
+    str=StrVar->s;
   }
 
-  return(0);
+  if (strlen(str)+2<bufLen)
+  {
+    strcpy(buffer, str);
+    strcat(buffer, "\n");
+    return(0);
+  }
+  else
+  {
+    strncpy(buffer, str, bufLen-1);
+    str+=bufLen-1;
+    buffer[bufLen-1]=(char) 0;
+    return(4);
+  }
 }
 
 /****************************************************************************/
@@ -1201,58 +1382,92 @@ static INT DirOut (const ENVDIR *theDir, int ropt, char **out)
    PrintStructContents - (recursively) print structure contents
 
    SYNOPSIS:
-   INT PrintStructContents (const char *name, int ropt, char *out);
+   INT PrintStructContents (const char *name, char *buffer, int bufLen, int ropt);
 
    PARAMETERS:
    .  name - name of structure(dir)
+   .  buffer - address of buffer
+   .  bufLen - length of buffer
    .  ropt - if set, the contents are printed recursively
-   .  out - address of pointer to buffer
 
    DESCRIPTION:
-   This function (recursively) prints the structure content. Unfortunately, the
-   result is put into a buffer, so it cant handle long structue directories.
+   This function prints the contents of the variable or structure 'name'.
+   More or less it provides a call for the functions DirOut and VarOut.
+   You should take care with error handling when using these function.
 
    SEE ALSO:
-   DirOut, FindStructDir, FindStringVar, FindStructure
+   DirOut, VarOut, FindStructDir, FindStringVar, FindStructure
 
    RETURN VALUE:
    INT
-   .n     0 if ok
-   .n     1 if error occured.
+   .n    0 all is done
+   .n    1 buffer too small
+   .n    2, 3 (should not occur)
+   .n    4 not yet ready with output (this is not an error!)
+   .n    5, 6 (should not occur)
+   .n    7 structure path not found
+   .n    8 structure not found
    D*/
 /****************************************************************************/
 
-INT PrintStructContents (const char *name, int ropt, char *out)
+INT PrintStructContents (const char *name, char *buffer, int bufLen, int ropt)
 {
-  ENVDIR *theDir,*newDir;
-  STRVAR *StrVar;
+  static ENVDIR *theDir;
+  static STRVAR *StrVar;
+  static int status;
   char *lastname;
+  int ret;
 
-  if (strcmp(name,":")==0)
+  buffer[0]=(char) 0;
+
+  if (name!=NULL)
   {
-    /* print root contents */
-    DirOutDepthCounter = 0;
-    return (DirOut(path[0],ropt,&out));
+    /* get variable and/or structure with that name */
+    if (strcmp(name,":")==0)
+    {
+      StrVar=NULL; theDir=path[0];
+    }
+    else
+    {
+      if ((theDir=FindStructDir(name,&lastname))==NULL)
+        return(7);                              /* structure path not found */
+      StrVar=FindStringVar(theDir,lastname);
+      theDir=FindStructure(theDir,lastname);
+    }
+    status=0;
   }
 
-  if ((theDir=FindStructDir(name,&lastname))==NULL)
-    return(1);                  /* structure directory not found */
+  if (status==0)
+    status=(StrVar==NULL) ? 2 : 1;
 
-  if ((StrVar=FindStringVar(theDir,lastname))!=NULL)
+  if (status==1)
   {
-    strcpy(out,StrVar->v.name);     out += strlen(out);
-    strcpy(out," = ");      out += strlen(out);
-    strcpy(out,StrVar->s);  out += strlen(out);
-    strcpy(out,"\n");       out += strlen(out);
-    return (0);
+    ret=VarOut(StrVar, buffer, bufLen);
+    if ((ret!=0)&&(ret!=4))
+      return(ret);
+    if (ret==0)
+      status=2;
+    else
+      StrVar=NULL;
+    return(4);                  /* also return if a variable was printed to clear the buffer */
   }
-  else if ((newDir=FindStructure(theDir,lastname))!=NULL)
+
+  if (status==2)
+    status=(theDir==NULL) ? 4 : 3;
+
+  if (status==3)
   {
-    DirOutDepthCounter = 0;
-    return (DirOut(newDir,ropt,&out));
+    ret=DirOut(theDir, buffer, bufLen, ropt);
+    if ((ret!=0)&&(ret!=4))
+      return(ret);
+    if (ret==4)
+    {
+      theDir=NULL;
+      return(4);
+    }
   }
-  else
-    return (1);
+
+  return(0);
 }
 
 /****************************************************************************/
@@ -1260,32 +1475,37 @@ INT PrintStructContents (const char *name, int ropt, char *out)
    PrintCurrentStructContents - (recursively) print contents of current structure directory
 
    SYNOPSIS:
-   INT PrintCurrentStructContents (int ropt, char *out);
+   INT PrintCurrentStructContents (int flag, char *buffer, int bufLen, int ropt);
 
    PARAMETERS:
-   .  ropt - if set, content is printed recursively
-   .  out - buffer to which is printed
+   .  flag - 1 for the first call, 0 if others are necessary
+   .  buffer - address of buffer
+   .  bufLen - length of buffer
+   .  ropt - if set, the contents are printed recursively
 
    DESCRIPTION:
-   See above and 'PrintStructContents'.
+   This function prints the contents of the of the current working structure.
+   More or less it calls the function DirOut.
 
    SEE ALSO:
-   PrintStructContents, DirOut, FindStructDir, FindStringVar, FindStructure
+   DirOut, PrintStructContents, FindStructDir, FindStringVar, FindStructure
 
    RETURN VALUE:
    INT
-   .n     0 if ok
-   .n     1 if error occured.
+   .n    0 all is done
+   .n    1 buffer too small
+   .n    2, 3 (should not occur)
+   .n    4 not yet ready with output (this is not an error!)
+   .n    5, 6 (should not occur)
    D*/
 /****************************************************************************/
 
-INT PrintCurrentStructContents (int ropt, char *out)
+INT PrintCurrentStructContents (int flag, char *buffer, int bufLen, int ropt)
 {
-  char **optr;
-
-  DirOutDepthCounter = 0;
-  optr = &out;
-  return (DirOut(path[pathIndex],ropt,optr));
+  if (flag)
+    return (DirOut(path[pathIndex], buffer, bufLen, ropt));
+  else
+    return (DirOut(NULL, buffer, bufLen, ropt));
 }
 
 /****************************************************************************/
