@@ -10708,13 +10708,48 @@ static INT RefreshOnCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
-
 static INT RefreshOffCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
 
   SetRefreshState(OFF);
   return(OKCODE);
+}
+
+/****************************************************************************/
+/*
+   SystemCommand - calls system routine
+
+   SYNOPSIS:
+   static INT SystemCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   This function calls a system routine.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT SystemCommand (INT argc, char **argv)
+{
+  char string[128], *p;
+
+  if (strlen(argv[0])<8) return (PARAMERRORCODE);
+  p = argv[0]+7;
+  if (system(p)==-1)
+  {
+    UserWrite("system-error: ");
+    UserWriteF("errno=%d, see <errno.h>\n",(int)errno);
+  }
+
+  return (OKCODE);
 }
 
 /****************************************************************************/
@@ -12205,6 +12240,7 @@ INT InitCommands ()
   if (CreateCommand("keylist",            ListCommandKeysCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("refreshon",          RefreshOnCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("refreshoff",         RefreshOffCommand                               )==NULL) return (__LINE__);
+  if (CreateCommand("system",                     SystemCommand                                   )==NULL) return (__LINE__);
 
   /* debugging */
         #ifdef Debug
