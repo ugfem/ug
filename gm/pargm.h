@@ -57,8 +57,9 @@ enum Priorities
   PrioNone     = 0,
   PrioGhost    = 1,
   PrioVGhost   = 2,
-  PrioBorder   = 3,
-  PrioMaster   = 4
+  PrioVHGhost  = 3,
+  PrioBorder   = 4,
+  PrioMaster   = 5
 };
 
 /* define dynamic lists ids */
@@ -69,26 +70,33 @@ enum Priorities
 
 #ifdef ModelP
 
-/* define the number of priorities for objects */
-#define MAXPRIOS                        8
-#define ELEMENTPRIOS            2
-#define NODEPRIOS                       3
-#define VECTORPRIOS                     3
-#define VERTEXPRIOS                     3
+/* define number of priorities for objects */
+#define ELEMENT_PRIOS                   4
+#define NODE_PRIOS                              5
+#define VECTOR_PRIOS                    5
+#define VERTEX_PRIOS                    5
+
+/* define number of listparts for objects */
+#define MAX_LISTPARTS                   8
+#define ELEMENT_LISTPARTS               2
+#define NODE_LISTPARTS                  3
+#define VECTOR_LISTPARTS                3
+#define VERTEX_LISTPARTS                3
 
 /* define mapping from object priority to position in linked list */
 #define PRIO2LISTPART(listtype,prio) \
   ((listtype == ELEMENT_LIST) ? ((prio == PrioGhost) ? 0 :\
-                                 (prio == PrioVGhost) ? 0 :\
+                                 (prio == PrioVGhost) ? 0 : (prio == PrioVHGhost) ? 0 :\
                                  (prio == PrioMaster) ? 1 : -1) :\
    ((prio == PrioGhost) ? 0 : (prio ==PrioVGhost) ? 0 :\
+      (prio == PrioVHGhost) ? 0 :\
       (prio == PrioBorder) ? 2 : (prio == PrioMaster) ? 2 : -1))
 
 /* define mapping from position in linked list to object priority */
 #define LISTPART2PRIO(listtype,listpart,prios)                               \
   {                                                                        \
     INT Entry;                                                           \
-    for (Entry=0; Entry<MAXPRIOS; Entry++) prios[Entry] = -1;            \
+    for (Entry=0; Entry<MAX_LISTPARTS; Entry++) prios[Entry] = -1;            \
     Entry = 0;                                                           \
     if (listtype == ELEMENT_LIST)                                        \
     {                                                                    \
@@ -96,6 +104,7 @@ enum Priorities
       {                                                                \
         prios[Entry++] = PrioGhost;                                  \
         prios[Entry++] = PrioVGhost;                                 \
+        prios[Entry++] = PrioVHGhost;                                \
       }                                                                \
       else if(listpart == 1) prios[Entry++] = PrioMaster;             \
     }                                                                    \
@@ -105,6 +114,7 @@ enum Priorities
       {                                                                \
         prios[Entry++] = PrioGhost;                                  \
         prios[Entry++] = PrioVGhost;                                 \
+        prios[Entry++] = PrioVHGhost;                                \
       }                                                                \
       else if (listpart == 2)                                          \
       {                                                                \
@@ -116,7 +126,7 @@ enum Priorities
 
 /* define mapping from element priority to index in son array of father */
 #define PRIO2INDEX(prio) \
-  ((prio==PrioGhost || prio==PrioVGhost) ? 1 : \
+  ((prio==PrioGhost || prio==PrioVGhost || prio==PrioVHGhost) ? 1 : \
    (prio == PrioMaster) ? 0 : -1)
 
 /* map pointer to structure onto a pointer to its DDD_HDR */
@@ -125,12 +135,20 @@ enum Priorities
 
 #else   /* not ModelP */
 
-/* define the number of prioities for objects */
-#define MAXPRIOS                        1
-#define ELEMENTPRIOS            1
-#define NODEPRIOS                       1
-#define VECTORPRIOS                     1
-#define VERTEXPRIOS                     1
+/* define number of priorities for objects */
+#define ELEMENT_PRIOS                   4
+#define NODE_PRIOS                              5
+#define VECTOR_PRIOS                    5
+#define VERTEX_PRIOS                    5
+
+/* define number of listparts for objects */
+#define MAX_LISTPARTS                   1
+#define ELEMENT_LISTPARTS               1
+#define NODE_LISTPARTS                  1
+#define VECTOR_LISTPARTS                1
+#define VERTEX_LISTPARTS                1
+
+/* define mapping from object priority to position in linked list */
 
 /* define mapping from object priority to position in linked list */
 #define PRIO2LISTPART(listtype,prio) 0
