@@ -85,12 +85,13 @@ sub ConvertFile	{
 	ReadEdges($gridfile);
 	ReadFaces($gridfile);
 	
-	WriteGnuplotfiles($artbasename);
 		
 	WriteLGMDomain($artbasename);
 	WriteLGMNet($artbasename);
 	WriteBoundaryConditionsMap($artfile);
 
+	WriteGnuplotfiles($artbasename);
+	
 	close(LOG);
 }
 
@@ -723,7 +724,7 @@ sub WriteLGMNet {
 	
 	for ($v=0; $v<$vertices; $v++) {
 		if ( substr($vertex[$v]{nginfo},0,1) eq "B" )	{
-			print LGMNET $vertex[$v]{nginfo},"\n";
+			print LGMNET $vertex[$v]{nginfo},";\n";
 		}
 	}
 	
@@ -732,7 +733,7 @@ sub WriteLGMNet {
 	
 	for ($v=0; $v<$vertices; $v++) {
 		if ( substr($vertex[$v]{nginfo},0,1) ne "B" )	{
-			print LGMNET $vertex[$v]{nginfo},"\n";
+			print LGMNET $vertex[$v]{nginfo},";\n";
 		}
 	}
 	
@@ -742,15 +743,20 @@ sub WriteLGMNet {
 
 		print LGMNET $face[$f]{vertex1}, " ";
 		print LGMNET $face[$f]{vertex2}, " ";
-		print LGMNET $face[$f]{vertex3}, "  ";
-
-		print LGMNET "S ", $edge[ $face[$f]{edge1} ]{from}, " ";
-		print LGMNET       $edge[ $face[$f]{edge1} ]{to},   "  ";
-		print LGMNET "S ", $edge[ $face[$f]{edge2} ]{from}, " ";
-		print LGMNET       $edge[ $face[$f]{edge2} ]{to},   "  ";
-		print LGMNET "S ", $edge[ $face[$f]{edge3} ]{from}, " ";
-		print LGMNET       $edge[ $face[$f]{edge3} ]{to},   ";\n";
-		
+		print LGMNET $face[$f]{vertex3};
+		if ( $edge[ $face[$f]{edge1} ]{id} ne 0 )	{
+			print LGMNET "  S ", $edge[ $face[$f]{edge1} ]{from}, " ";
+			print LGMNET       $edge[ $face[$f]{edge1} ]{to};
+		}
+		if ( $edge[ $face[$f]{edge2} ]{id} ne 0 )	{
+			print LGMNET "  S ", $edge[ $face[$f]{edge2} ]{from}, " ";
+			print LGMNET       $edge[ $face[$f]{edge2} ]{to};
+		}
+		if ( $edge[ $face[$f]{edge3} ]{id} ne 0 )	{
+			print LGMNET "  S ", $edge[ $face[$f]{edge3} ]{from}, " ";
+			print LGMNET       $edge[ $face[$f]{edge3} ]{to};
+		}
+		print LGMNET ";\n";
 	}
 	
 	close(LGMNET)  or die "can't close $lgmnetfile";
@@ -876,6 +882,12 @@ sub WriteGnuplotfiles	{
 	print "    $gnuplotprogram for gnuplot program.\n";
 	open(GPPROG, "> $gnuplotprogram")  or die "can't open gnu plot file $gnuplotprogram.";
 	print GPPROG "plot '$griddata' with lines, '$domaindata' with lines\n";
+	for ($n=0; $n<$faces; $n++)	{
+		print GPPROG "set label ",$n+1," '$n' at ";
+		$x = ($vertex[ $face[$n]{vertex1} ]{x} + $vertex[ $face[$n]{vertex2} ]{x} + $vertex[ $face[$n]{vertex3} ]{x})/3;
+		$y = ($vertex[ $face[$n]{vertex1} ]{y} + $vertex[ $face[$n]{vertex2} ]{y} + $vertex[ $face[$n]{vertex3} ]{y})/3;
+		print GPPROG $x,", ",$y," center\n";
+	}
 	close(GPPROG);
 	
 	print "    $domaindata for domain data.\n";
@@ -895,7 +907,7 @@ sub WriteGnuplotfiles	{
 		$to = $edge[$n]{to};
 		print GPGRID $vertex[$from]{x}," ",$vertex[$from]{y},"\n";
 		print GPGRID $vertex[$to]{x}," ",$vertex[$to]{y},"\n\n";
-	}	
+	}
 	close(GPGRID);
 	
 }
