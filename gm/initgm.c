@@ -49,6 +49,11 @@
 #include "refine.h"
 #include "rm.h"
 
+#ifdef __TWODIM__
+/* grid generator module */
+#include "ggmain.h"
+#endif
+
 /* own header */
 #include "initgm.h"
 
@@ -133,6 +138,18 @@ INT InitGm ()
     SetHiWrd(err,__LINE__);
     return (err);
   }
+
+    #ifdef __TWODIM__
+  /* init the gg module */
+  if ((err=InitGG())!=0)
+  {
+    printf("ERROR in InitUg while InitGG (line %d): called routine line %d\n",
+           (int) HiWrd(err), (int) LoWrd(err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
+    #endif
 
   return (0);
 }
