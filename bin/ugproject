@@ -148,7 +148,7 @@ then
 fi
 if test -d $UGROOT/../df
 then
-	ugmake df clean
+	ugmake df -i clean
 fi
 
 ( ug3 );
