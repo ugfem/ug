@@ -37,6 +37,9 @@
 #include "lgm_domain.h"
 #include "lgm_load.h"
 #include "lgm_transfer.h"
+#ifdef __TWODIM__
+        #include "ng2d.h"
+#endif
 #ifdef __THREEDIM__
         #include "ansys2lgm.h"
         #include "ng.h"
@@ -164,7 +167,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     ReadSubDomain   = LGM_ReadSubDomain;
     ReadLines               = LGM_ReadLines;
     ReadPoints              = LGM_ReadPoints;
-    ReadMesh                = NULL;
+    ReadMesh                = NG_ReadMesh;
   }
   else
   {
