@@ -30,10 +30,10 @@
 /****************************************************************************/
 
 /* standard C library */
-/*
-   #include <stdlib.h>
-   #include <stdio.h>
- */
+#ifdef __SR2201__
+#include <stdlib.h>
+#include <stdio.h>
+#endif
 
 #include "ppif.h"
 #include "compiler.h"
