@@ -128,62 +128,12 @@ void printall(GRID *grid, char *text)
   }
 }
 
-
-INT pamgDoQQQQQQQQ( MULTIGRID *theMG, INT level )
-{
-  GRID *grid = GRID_ON_LEVEL(theMG,level);
-  VECTOR *v;
-  MATRIX *m;
-  int offset=sizeof(MATRIX)-sizeof(DOUBLE);
-
-  DDD_XferBegin();
-  for( v=PFIRSTVECTOR(grid); PRIO(v) != PrioBorder && PRIO(v) != PrioMaster; v = SUCCVC(v))
-  {
-    /* Usually a ghost vector has no matrix. Create a diag matrix for it */
-    if( VSTART(v) == NULL )
-    {
-      if ((m=CreateConnection(grid,v,v))==NULL)
-      {
-        PrintErrorMessage('F',"pamgDo","out of memory for new connection");
-        abort();
-      }
-      memset(m+offset,0,MSIZE(m)-offset);
-    }
-    DDD_XferPrioChange( PARHDR((NODE*)VOBJECT(v)), PrioBorder );                     /* TODO: cancel this line; its only for beauty in checks */
-    DDD_XferPrioChange( PARHDR(v), PrioBorder );
-  }
-  /* elements with old ghostprios cause errors in check; but that's ok */
-  DDD_XferEnd();
-
-#ifndef __OVERLAP2__
-  /* then diagonal matrices must be created also for border vectors */
-  for( /*continue the previous loop*/ ; v!=NULL; v = SUCCVC(v))
-  {
-    /* Usually a border vector has no matrix. Create a diag matrix for it. */
-    if( VSTART(v) == NULL )
-    {
-      assert(PRIO(v)==PrioBorder);                      /* a master has always a matrix */
-      if ((m=CreateConnection(grid,v,v))==NULL)
-      {
-        PrintErrorMessage('F',"pamgDo","out of memory for new connection");
-        abort();
-      }
-      memset(m+offset,0,MSIZE(m)-offset);
-    }
-  }
-
-#endif
-
-  return 0;
-}
-
-/* neuer Versuch */
+/* TODO: remove; this function is not longer used since its work is done in FAMGGrid::ConstructOverlap */
 INT pamgDo( MULTIGRID *theMG, INT level )
 {
   GRID *grid = GRID_ON_LEVEL(theMG,level);
   VECTOR *v;
   MATRIX *m;
-  int offset=sizeof(MATRIX)-sizeof(DOUBLE);
 
   DDD_XferBegin();
   for( v=PFIRSTVECTOR(grid); PRIO(v) != PrioBorder && PRIO(v) != PrioMaster; v = SUCCVC(v))
@@ -193,8 +143,10 @@ INT pamgDo( MULTIGRID *theMG, INT level )
   }
   /* elements with old ghostprios cause errors in check; but that's ok */
   DDD_XferEnd();
+  /* vectors which just become border have not set the VECSKIP flag correctly!
+     this flags will be corrected by a_vector_vecskip */
 
-  assert(!DDD_ConsCheck());
+  ASSERT(!DDD_ConsCheck());
   return 0;
 }
 
