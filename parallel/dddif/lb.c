@@ -70,7 +70,7 @@ static int TransferGridToMaster (MULTIGRID *theMG, INT fl, INT tl)
 }
 
 static int CollectElementsNearSegment(MULTIGRID *theMG,
-                                      int level, int part, int p)
+                                      int level, int part, int dest)
 {
   GRID *theGrid = GRID_ON_LEVEL(theMG,level);
   ELEMENT *theElement;
@@ -84,7 +84,7 @@ static int CollectElementsNearSegment(MULTIGRID *theMG,
           continue;
         BNDS_BndSDesc(ELEM_BNDS(theElement,side),&sid,&nbsid,&dompart);
         if (part == dompart)
-          PARTITION(theElement) = 0;
+          PARTITION(theElement) = dest;
       }
 
   return(0);
@@ -121,7 +121,7 @@ static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes )
 
 void ddd_test (char *argv, MULTIGRID *theMG)
 {
-  int n,mode,param,fromlevel,tolevel,part,hor_boxes,vert_boxes;
+  int n,mode,param,fromlevel,tolevel,part,hor_boxes,vert_boxes,dest;
 
   mode = param = fromlevel = tolevel = 0;
 
@@ -202,11 +202,10 @@ void ddd_test (char *argv, MULTIGRID *theMG)
     }
     break;
 
-  /* dies balanciert ein GRID mit RCB */
   case (5) :
-    if (sscanf(argv,"%d %d",&param,&part) != 2) break;
+    if (sscanf(argv,"%d %d",&param,&part,&dest) != 3) break;
     fromlevel = CURRENTLEVEL(theMG);
-    CollectElementsNearSegment(theMG,fromlevel,part,0);
+    CollectElementsNearSegment(theMG,fromlevel,part,dest);
     break;
 
   /* dies erzeugt eine regelmaessige Domain Decomposition */

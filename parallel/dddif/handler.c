@@ -1449,14 +1449,24 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
     /*    CreateEdge increments the NO_OF_ELEM count       */
     /*    NO_OF_ELEM counter gets wrong if an element      */
     /*    is unpacked several times.                       */
-    if (newness == XFER_NEW)
+    ASSERT(NBNODE(LINK0(ecopy)) != NULL);
+    ASSERT(NBNODE(LINK1(ecopy)) != NULL);
+    if (newness == XFER_NEW) {
       enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)),
                         NBNODE(LINK1(ecopy)), FALSE);
-    else
+    }
+    else {
       enew = GetEdge(NBNODE(LINK0(ecopy)),
                      NBNODE(LINK1(ecopy)));
-
-    PRINTDEBUG(dddif,5,(PFMT " ElemScatterEdge(): elem=" EID_FMTX
+      /* TODO: up to now, DDD does not guarantee the the first call
+         is with XFER_NEW */
+      if (enew == NULL) {
+        enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)),
+                          NBNODE(LINK1(ecopy)), FALSE);
+        DEC_NO_OF_ELEM(enew);
+      }
+    }
+    PRINTDEBUG(dddif,2,(PFMT " ElemScatterEdge(): elem=" EID_FMTX
                         " create edge=%x for n0=" EID_FMTX " n1=" ID_FMTX "\n",
                         me,EID_PRTX(pe),enew,
                         ID_PRTX(NBNODE(LINK0(ecopy))),
