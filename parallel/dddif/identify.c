@@ -62,6 +62,17 @@
 #define NIDENT_HDR(node) ( (CORNERTYPE(node)) ? \
                            PARHDR((NODE *)NFATHER(node)) : PARHDR(node) )
 
+/* mapping of flags used for identification */
+#define NIDENT(p)                     THEFLAG(p)
+#define SETNIDENT(p,n)                SETTHEFLAG(p,n)
+
+#define EDIDENT(p)                    THEFLAG(p)
+#define SETEDIDENT(p,n)               SETTHEFLAG(p,n)
+
+/* strong checking of identification (0=off 1==on) */
+#define NIDENTASSERT    1
+#define EDIDENTASSERT   1
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -88,16 +99,11 @@
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-#define NIDENT(p)                     THEFLAG(p)
-#define SETNIDENT(p,n)                SETTHEFLAG(p,n)
-
-#define EDIDENT(p)                    THEFLAG(p)
-#define SETEDIDENT(p,n)               SETTHEFLAG(p,n)
-
-
 /* this function is called for low level identification */
 static INT (*Ident_FctPtr)(DDD_HDR *IdentObjectHdr, INT nobject,
                            int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident) = NULL;
+
+static int check_nodetype = 0;
 
 #ifdef Debug
 static INT debug = 0;
@@ -1282,7 +1288,7 @@ static int Gather_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pri
 
   ASSERT(identlevel == LEVEL(theNode));
 
-  if (!CORNERTYPE(theNode))
+  if (!(NTYPE(theNode)==check_nodetype))
   {
     *((int *)data) = 0;
     return(0);
@@ -1293,8 +1299,6 @@ static int Gather_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pri
   return(0);
 }
 
-#define NIDENTASSERT 1
-
 static int Scatter_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   NODE    *theNode = (NODE *)obj;
@@ -1302,13 +1306,13 @@ static int Scatter_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
 
   ASSERT(identlevel == LEVEL(theNode));
 
-  if (!CORNERTYPE(theNode)) return(0);
+  if (!(NTYPE(theNode)==check_nodetype)) return(0);
 
   if (NIDENTASSERT) if (NEW_NIDENT(theNode)) assert(NFATHER(theNode) != NULL);
 
   if (nprop)
   {
-    SETNEW_NIDENT(theNode,1);
+    if (0) SETNEW_NIDENT(theNode,1);
     if (NFATHER(theNode) == NULL)
     {
       UserWriteF(PFMT "isolated node=" ID_FMTX "\n",
@@ -1502,7 +1506,7 @@ static int Gather_EdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pri
 
   ASSERT(identlevel == LEVEL(theEdge));
 
-  if (!CORNERTYPE(theNode0) || !CORNERTYPE(theNode1))
+  if (GetFatherEdge(theEdge) == NULL)
   {
     *((int *)data) = 0;
     return(0);
@@ -1513,8 +1517,6 @@ static int Gather_EdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pri
   return(0);
 }
 
-#define EDIDENTASSERT 1
-
 static int Scatter_EdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   EDGE    *theEdge = (EDGE *)obj;
@@ -1524,14 +1526,11 @@ static int Scatter_EdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
 
   ASSERT(identlevel == LEVEL(theEdge));
 
-  if (!CORNERTYPE(theNode0) || !CORNERTYPE(theNode1)) return(0);
-
-  if (EDIDENTASSERT)
-    if (NEW_EDIDENT(theEdge)) assert(GetFatherEdge(theEdge) != NULL);
+  if (!CORNERTYPE(theNode0) && !CORNERTYPE(theNode1)) return(0);
 
   if (nprop)
   {
-    if (EDIDENTASSERT) SETNEW_EDIDENT(theEdge,1);
+    if (0) SETNEW_EDIDENT(theEdge,1);
     if (GetFatherEdge(theEdge) == NULL)
     {
       UserWriteF(PFMT "isolated edge=" ID_FMTX "\n",
@@ -2024,8 +2023,10 @@ INT Identify_SonNodes (GRID *theGrid)
 
   if (UPGRID(theGrid) != NULL)
   {
-    DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(UPGRID(theGrid)),IF_FORWARD,sizeof(int),
-                   Gather_NodeInfo,Scatter_NodeInfo);
+    check_nodetype = CORNER_NODE;
+    if (NIDENTASSERT)
+      DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(UPGRID(theGrid)),IF_FORWARD,sizeof(int),
+                     Gather_NodeInfo,Scatter_NodeInfo);
     if (0)
       DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(UPGRID(theGrid)),IF_FORWARD,sizeof(int),
                      Gather_TestNodeInfo,Scatter_TestNodeInfo);
@@ -2070,14 +2071,18 @@ INT Identify_SonEdges (GRID *theGrid)
   DDD_IFAOnewayX(EdgeSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
                  Gather_NewObjectInfo,Scatter_NewObjectInfo);
 
-  if (0)
-    if (UPGRID(theGrid) != NULL)
-    {
+  if (UPGRID(theGrid) != NULL)
+  {
+    check_nodetype = MID_NODE;
+    DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(UPGRID(theGrid)),IF_FORWARD,sizeof(int),
+                   Gather_NodeInfo,Scatter_NodeInfo);
+    if (EDIDENTASSERT)
       DDD_IFAOnewayX(EdgeSymmVHIF,GRID_ATTR(UPGRID(theGrid)),IF_FORWARD,sizeof(int),
                      Gather_EdgeInfo,Scatter_EdgeInfo);
+    if (0)
       DDD_IFAOnewayX(EdgeSymmVHIF,GRID_ATTR(UPGRID(theGrid)),IF_FORWARD,sizeof(int),
                      Gather_TestEdgeInfo,Scatter_TestEdgeInfo);
-    }
+  }
 
   DDD_IFAOnewayX(EdgeSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
                  Gather_IdentSonObjects,Scatter_IdentSonObjects);
