@@ -34,6 +34,7 @@
 #include <ctype.h>
 
 #include "compiler.h"
+#include "debug.h"
 #include "misc.h"
 #include "ugenv.h"
 #include "cmdline.h"
@@ -439,6 +440,9 @@ INT ExecCommand (char *cmdLine)
     }
         #endif
   }
+
+  REP_ERR_RESET;
+
   error=(*commandItem->cmdProc)(optionCount,options);
   if (error==PARAMERRORCODE)
     UserWrite("ERROR: invalid parameters\n");
