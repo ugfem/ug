@@ -364,7 +364,7 @@ int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 
 int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 {
-  int i,n,line_i,found;
+  int i,n,line_i,found,copy;
   char buffer[256];
 
   /* read subdomain information */
@@ -398,14 +398,20 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
   found = 0;
   while(1)
   {
-    if (fscanf(stream,"name %d:",&i)!=1) break;
-    if (i==subdom_i) found++;
+    copy = 0;
+    if (fscanf(stream,"%s",buffer)!=1) break;
+    if (strcmp(buffer,"name")!=0) break;
     while (fscanf(stream," %d",&i)==1)
-      if (i==subdom_i) found++;
-    if (found>1) return (1);
+      if (i==subdom_i)
+      {
+        copy = 1;
+        found++;
+      }
     if (fscanf(stream,"%s",buffer)!=1) return (1);
-    strcpy(subdom_info->Unit,buffer);
+    if (copy)
+      strcpy(subdom_info->Unit,buffer);
   }
+  if (found!=1) return (1);
   if (fsetpos(stream, &filepos)) return (1);
 
   return (0);
