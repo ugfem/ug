@@ -76,9 +76,12 @@ static INT LGM_DEBUG = 0;
 static INT SAVE_SURFACE;
 static INT SURFACE_ADAPT;
 static DOUBLE LINE_DISTANCE = 0.05;
+
 #define SMALL_FAK 1e-6
 static DOUBLE SMALL;
+
 static INT VAR_H = 1;
+
 #define SMALL1 1e-6
 
 /*static DOUBLE cosAngle = 0.99;		komplex3d */
@@ -5288,6 +5291,25 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   }
 
   return (0);
+}
+
+/* domain interface function: for description see domain.h */
+INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
+{
+  LGM_SURFACE *theSurface;
+  LGM_BNDP *theBndP;
+  DOUBLE global[DOM_PARAM_OFFSET],*local, *g;
+  INT ilocal=0, k;
+
+  /* general */
+  theBndP = BNDP2LGM(aBndP);
+  *n = LGM_BNDP_N(theBndP);
+  if (i<0 || i>=LGM_BNDP_N(theBndP))
+    ilocal = ilocal;
+  assert(i>=0 && i<LGM_BNDP_N(theBndP));
+  theSurface = LGM_BNDP_SURFACE(theBndP,i);
+
+  return LGM_SURFACE_ID(theSurface);
 }
 
 /* domain interface function: for description see domain.h */

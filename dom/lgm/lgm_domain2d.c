@@ -846,6 +846,24 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
 }
 
 /* domain interface function: for description see domain.h */
+INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
+{
+  LGM_LINE *theLine;
+  LGM_BNDP *theBndP;
+  DOUBLE slocal;
+  INT ilocal=0;
+  DOUBLE global[DOM_PARAM_OFFSET];
+
+  /* general */
+  theBndP = BNDP2LGM(aBndP);
+  *n = LGM_BNDP_N(theBndP);
+  assert(i>=0 && i<LGM_BNDP_N(theBndP));
+  theLine = LGM_BNDP_LINE(theBndP,i);
+
+  return LGM_LINE_ID(theLine);
+}
+
+/* domain interface function: for description see domain.h */
 INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
 {
   LGM_LINE *theLine;
