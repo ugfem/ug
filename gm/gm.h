@@ -1429,12 +1429,6 @@ extern CONTROL_ENTRY
 #define CLASS(p)                                        CW_READ(p,CLASS_CE)
 #define SETCLASS(p,n)                           CW_WRITE(p,CLASS_CE,n)
 
-#define NCLASS_CE                                       30
-#define NCLASS_SHIFT                            3
-#define NCLASS_LEN                                      3
-#define NCLASS(p)                                       CW_READ(p,NCLASS_CE)
-#define SETNCLASS(p,n)                          CW_WRITE(p,NCLASS_CE,n)
-
 #define MODIFIED_CE                             31
 #define MODIFIED_SHIFT                          6
 #define MODIFIED_LEN                            1
@@ -1452,6 +1446,12 @@ extern CONTROL_ENTRY
 #define XFERNODE_LEN                            2
 #define XFERNODE(p)                             CW_READ(p,XFERNODE_CE)
 #define SETXFERNODE(p,n)                        CW_WRITE(p,XFERNODE_CE,n)
+
+#define NPROP_CE                    30
+#define NPROP_SHIFT                 11
+#define NPROP_LEN                    4
+#define NPROP(p)                    CW_READ(p,NPROP_CE)
+#define SETNPROP(p,n)               CW_WRITE(p,NPROP_CE,n)
 
 #define PREDN(p)        (p)->pred
 #define SUCCN(p)        (p)->succ
