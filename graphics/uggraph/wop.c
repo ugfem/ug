@@ -4520,9 +4520,11 @@ static INT LineDraw2D (DRAWINGOBJ *q)
 			case DO_LINE:
 				DO_inc(q)
 				DO_inc(q);
-				fprintf (LINE_GnuStream,"%e %e;\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				if (LINE_GnuStream!=NULL) fprintf (LINE_GnuStream,"%e %e;\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				else UserWriteF("%e %e;\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
 				DO_inc_n(q,2);
-				fprintf (LINE_GnuStream,"%e %e;\n\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				if (LINE_GnuStream!=NULL) fprintf (LINE_GnuStream,"%e %e;\n\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				else UserWriteF("%e %e;\n\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
 				DO_inc_n(q,2);
 				break;
 			default:
@@ -6220,9 +6222,16 @@ static INT EW_PreProcess_Line (PICTURE *thePicture, WORK *theWork)
 	if (theLpo->Gnuplot && W_ID(theWork)==DRAW_WORK)
 	{
 		LINE_GnuFile=1;
-		if (gnuplotpathes_set) LINE_GnuStream=FileOpenUsingSearchPaths(theLpo->Gnufilename,"w","gnuplotpaths");
-		else LINE_GnuStream=fileopen(theLpo->Gnufilename,"w");
-		if (LINE_GnuStream==NULL) theLpo->Gnuplot=LINE_GnuFile=0;
+		if (strcmp(theLpo->Gnufilename,"STDOUT")==0)
+		{
+			LINE_GnuStream=NULL;
+		}
+		else
+		{
+			if (gnuplotpathes_set) LINE_GnuStream=FileOpenUsingSearchPaths(theLpo->Gnufilename,"w","gnuplotpaths");
+			else LINE_GnuStream=fileopen(theLpo->Gnufilename,"w");
+			if (LINE_GnuStream==NULL) theLpo->Gnuplot=LINE_GnuFile=0;
+		}
 	}
 
 	return (0);
@@ -6345,7 +6354,7 @@ static INT EW_PostProcess_Line (PICTURE *thePicture, WORK *theWork)
 #ifdef ModelP
 	if (me==master)
 #endif
-	if (LINE_GnuFile  && W_ID(theWork)==DRAW_WORK)
+	if (LINE_GnuFile  && W_ID(theWork)==DRAW_WORK && LINE_GnuStream!=NULL)
 	{
 		if (fclose(LINE_GnuStream)==EOF) return (1);
 	}
