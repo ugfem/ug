@@ -204,7 +204,7 @@ static WINDOWID ppm_OpenWindow(const char *title, INT rename,
 {
   PPM_WINDOW *ppm_window;
   FILE *file;
-  char ppm_path[160], header[32];
+  char ppm_path[BUFFLEN], header[32];
   char white[3] = {255, 255, 255};
   INT i, n;
 
@@ -218,9 +218,9 @@ static WINDOWID ppm_OpenWindow(const char *title, INT rename,
 
   /* open ppm window */
   if (GetDefaultValue(DEFAULTSFILENAME, "ppmfilesdir", ppm_path) == 0)
-    file = FileOpenUsingSearchPath_r(title, "w", ppm_path, rename);
+    file = FileOpenUsingSearchPath_r(title, "wb", ppm_path, rename);
   else
-    file = fileopen(title, "w");
+    file = fileopen(title, "wb");
   if (file == NULL) {
     *error = 1;
     return 0;
