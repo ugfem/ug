@@ -44,7 +44,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define DATA_BASE_CLASS_NAME "data_base"
+#define ORDERED_LIST_CLASS_NAME "ordered_list"
 
 /****************************************************************************/
 /*																			*/
@@ -52,27 +52,33 @@
 /*																			*/
 /****************************************************************************/
 
-struct np_data_base {
+struct np_ordered_list {
   NP_BASE base;                              /* inherits base class             */
 
   /* functions */
   INT (*PreProcess)
-    (struct np_data_base *,                  /* pointer to (derived) object     */
+    (struct np_ordered_list *,               /* pointer to (derived) object     */
     INT *);                                      /* result                          */
-  INT (*GetList)
-    (struct np_data_base *,                  /* pointer to (derived) object     */
-    DOUBLE **,                                   /* ptr to list                     */
-    INT *,                                       /* size of list                    */
+  INT (*GetListEntry_Index)
+    (struct np_ordered_list *,               /* pointer to (derived) object     */
+    INT n,                               /* index of entry                  */
+    DOUBLE *,                                    /* list entry                      */
+    INT *);                                      /* result                          */
+  INT (*GetListEntry_NextHigherEntry)
+    (struct np_ordered_list *,               /* pointer to (derived) object     */
+    DOUBLE,                              /* value                           */
+    DOUBLE *,                                    /* list entry                      */
     INT *);                                      /* result                          */
   INT (*PostProcess)
-    (struct np_data_base *,                  /* pointer to (derived) object     */
+    (struct np_ordered_list *,               /* pointer to (derived) object     */
     INT *);                                      /* result                          */
 };
-typedef struct np_data_base NP_DATA_BASE;
+typedef struct np_ordered_list NP_ORDERED_LIST;
 
-typedef INT (*PreProcessDataBase)(NP_DATA_BASE *, INT *);
-typedef INT (*GetList)(NP_DATA_BASE *, DOUBLE **List, INT *, INT *);
-typedef INT (*PostProcessDataBase)(NP_DATA_BASE *, INT *);
+typedef INT (*PreProcessDataBase)(NP_ORDERED_LIST *, INT *);
+typedef INT (*GetEntry_Index)(NP_ORDERED_LIST *, INT , DOUBLE *, INT *);
+typedef INT (*GetEntry_NextHigherEntry)(NP_ORDERED_LIST *, DOUBLE, DOUBLE *, INT *);
+typedef INT (*PostProcessDataBase)(NP_ORDERED_LIST *, INT *);
 
 /****************************************************************************/
 /*																			*/
@@ -86,10 +92,9 @@ typedef INT (*PostProcessDataBase)(NP_DATA_BASE *, INT *);
 /*																			*/
 /****************************************************************************/
 
-INT     InitDb (void);
-
-INT DB_Init (NP_BASE *theNP, INT argc, char **argv);
-INT DB_Display (NP_BASE *theNP);
+INT     InitOL (void);
+INT OL_Init (NP_BASE *theNP, INT argc, char **argv);
+INT OL_Display (NP_BASE *theNP);
 
 
 #endif

@@ -87,7 +87,7 @@ typedef struct
   DOUBLE t_p1;                                                   /* time t_k+1                                  */
   DOUBLE t_0;                                                        /* time t_k                                        */
   DOUBLE t_m1;                                                   /* time t_k-1                                  */
-  NP_DATA_BASE *TimeControl;             /* list for time steps             */
+  NP_ORDERED_LIST *TimeControl;          /* list for time steps             */
   DOUBLE disabled_timestep;                              /* storage for timestep disabled   */
   /* TimeControl                     */
 
@@ -316,8 +316,9 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
   void *data;
-  INT n,i;
+  INT n,tc_res,i;
   INT indicatorstep;
+  DOUBLE tp;
   ERESULT eresult;
   MULTIGRID *mg;
   char buffer[128];
@@ -337,6 +338,20 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
       return(1);
   bdf->t_0 = bdf->tstart;
   bdf->t_m1 = - bdf->dt;
+
+  /* adjusting timestep, to reach defined points of time, if */
+  if (bdf->TimeControl != NULL)
+  {
+    if ((*bdf->TimeControl->GetListEntry_NextHigherEntry)(bdf->TimeControl,bdf->t_0,&tp,&tc_res)) return(1);
+    if (tc_res && bdf->t_0+bdf->dt>tp)
+    {
+      bdf->disabled_timestep = bdf->dt;
+      bdf->dt = tp - bdf->t_0;
+      bdf->t_p1 = tp;
+    }
+    else
+      bdf->disabled_timestep = -1.0;
+  }
 
   /* set initial values and boundary conditions in y_0 */
   *res = 1;
@@ -397,10 +412,6 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
         break;
     }
 
-
-
-
-
   /* write time to shell */
   sprintf(buffer,"%12.4lE",bdf->t_0);
   SetStringVar("TIME",buffer);
@@ -430,9 +441,9 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
   NP_NL_SOLVER *nlsolve;
-  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1,qfm_dt,dtfactor,dt_old;
+  DOUBLE tp,dt_p1,dt_0,g_p1,g_0,g_m1,qfm_dt,dtfactor,dt_old;
   DOUBLE Factor[MAX_VEC_COMP];
-  INT n_unk;
+  INT n_unk,tc_res;
   INT n,i,k,mg_changed,changed,ret;
   INT low,llow,nlinterpolate,last_number_of_nonlinear_iterations;
   INT verygood,bad;
@@ -441,7 +452,6 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   MULTIGRID *mg;
   char buffer[128];
   static INT qfm;
-  DOUBLE *TimeList;
   char text[DISPLAY_WIDTH+4];                           /* display text					*/
 
   /* get numprocs ... */
@@ -456,31 +466,6 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   /* initialize strategy flags */
   verygood = bad = 0;
   eresult.step = 0.;
-
-  /* adjusting timestep, to reach defined points of time, if */
-  if (bdf->TimeControl != NULL)
-  {
-    if (bdf->disabled_timestep>0.0)
-    {
-      bdf->dt = bdf->disabled_timestep;
-      bdf->t_p1 = bdf->t_0 + bdf->dt;
-    }
-    if ((*bdf->TimeControl->GetList)(bdf->TimeControl,&TimeList,&n,res))
-      return(1);
-    i=n;
-    if (bdf->t_0+bdf->dt>=TimeList[0])
-      for (i=0; i<n; i++)
-        if (bdf->t_0<TimeList[i] && bdf->t_0+bdf->dt>TimeList[i])
-          break;
-    if (i<n)
-    {
-      bdf->disabled_timestep = bdf->dt;
-      bdf->t_p1 = TimeList[i];
-      bdf->dt = bdf->t_p1 - bdf->t_0;
-    }
-    else
-      bdf->disabled_timestep = -1.0;
-  }
 
   /* compute solution at new time step */
   while (1)
@@ -777,9 +762,19 @@ Continue:
     SetStringVar(":BDF:EFF",buffer);
   }
 
+  /* readjust enabled time-step, if */
+  if (bdf->TimeControl != NULL)
+  {
+    if (bdf->disabled_timestep>0.0)
+    {
+      bdf->dt = bdf->disabled_timestep;
+      bdf->t_p1 = bdf->t_0 + bdf->dt;
+    }
+  }
+
   /* chose new dt for next time step */
   dt_old = bdf->dt;
-  if ((bdf->optnlsteps) && (nlresult.converged))
+  if ((bdf->optnlsteps) && (nlresult.converged) && (bdf->TimeControl==NULL || (bdf->TimeControl!=NULL && bdf->disabled_timestep<=0.0)))
   {
     qfm = 0;
     if (bdf->hist>2)
@@ -820,7 +815,7 @@ Continue:
       *res = 0;
     }
   }
-  else
+  else if (bdf->TimeControl==NULL || (bdf->TimeControl!=NULL && bdf->disabled_timestep<=0.0))
   {
     if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
     {
@@ -865,6 +860,20 @@ Continue:
     }
   }
 
+  /* adjusting timestep, to reach defined points of time, if */
+  if (bdf->TimeControl != NULL)
+  {
+    if ((*bdf->TimeControl->GetListEntry_NextHigherEntry)(bdf->TimeControl,bdf->t_0,&tp,&tc_res)) return(1);
+    if (tc_res && bdf->t_0+bdf->dt>tp)
+    {
+      bdf->disabled_timestep = bdf->dt;
+      bdf->dt = tp - bdf->t_0;
+      bdf->t_p1 = tp;
+    }
+    else
+      bdf->disabled_timestep = -1.0;
+  }
+
 output:         /* output */
   if (bdf->displayMode != PCR_NO_DISPLAY)
   {
@@ -873,6 +882,8 @@ output:         /* output */
     UserWriteF("%-4d   Time:           t: %e %s\n",(int)bdf->step,(float)bdf->t_0/bdf->scale,bdf->scaleName);
     UserWriteF("                      dt: %e %s\n",(float)dt_old/bdf->scale,bdf->scaleName);
     UserWriteF("                    s_dt: %e %s\n",(float)bdf->dt/bdf->scale,bdf->scaleName);
+    if (bdf->TimeControl!=NULL && bdf->disabled_timestep>0.0)
+      UserWriteF("          s_dt(disabled): %e %s\n",(float)bdf->disabled_timestep/bdf->scale,bdf->scaleName);
     UserWriteF("\n");
   }
   if (bdf->displayMode == PCR_RED_DISPLAY || bdf->displayMode == PCR_FULL_DISPLAY)
@@ -976,7 +987,7 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   {
     UserWrite("no indicator active\n");
   }
-  bdf->TimeControl = (NP_DATA_BASE *) ReadArgvNumProc(base->mg,"TimeControl",DATA_BASE_CLASS_NAME,argc,argv);
+  bdf->TimeControl = (NP_ORDERED_LIST *) ReadArgvNumProc(base->mg,"TimeControl",ORDERED_LIST_CLASS_NAME,argc,argv);
   bdf->initerror = (NP_ERROR *) ReadArgvNumProc(base->mg,"IE",ERROR_CLASS_NAME,argc,argv);
 
   /* set configuration parameters */
