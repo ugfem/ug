@@ -532,7 +532,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     }
 
     /* if linear solver did not converge, return here */
-    if (!lr.converged) {
+    if (!lr.converged && newton->force_iteration!=2) {
       UserWrite("\nLinear solver did not converge in Newton method\n");
       if (newton->linearRate < 2) {
         res->error_code = 0;                     /* no error but exit */
