@@ -1568,7 +1568,11 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   theMG->elemIdCounter = 0;
   theMG->topLevel = -1;
   MG_BVP(theMG) = theBVP;
+        #if defined(CAD) && defined(__THREEDIM__)
+  MG_NPROPERTY(theMG) = 1;
+        #else
   MG_NPROPERTY(theMG) = BVPD_NSUBDOM(theBVPDesc);
+        #endif
   RESETMGSTATUS(theMG);
 
 
@@ -1586,11 +1590,13 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   }
 
   /* allocate predefined mesh, e. g. corner vertices pointers */
+        #ifndef CAD
   if (InsertMesh(theMG,&mesh))
   {
     DisposeMultiGrid(theMG);
     return(NULL);
   }
+        #endif
 
   ReleaseTmpMem(theHeap);
 
