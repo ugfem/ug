@@ -1320,6 +1320,39 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
   return(0);
 }
 
+#ifdef ModelP
+static int Gather_RefineInfo (DDD_OBJ obj, void *data)
+{
+  ELEMENT *theElement = (ELEMENT *)obj;
+
+  ((int *)data)[0] = REFINECLASS(theElement);
+  ((int *)data)[1] = REFINE(theElement);
+  ((int *)data)[2] = MARKCLASS(theElement);
+  ((int *)data)[3] = MARK(theElement);
+
+  return(GM_OK);
+}
+
+static int Scatter_RefineInfo (DDD_OBJ obj, void *data)
+{
+  ELEMENT *theElement = (ELEMENT *)obj;
+
+  SETREFINECLASS(theElement,((int *)data)[0]);
+  SETREFINE(theElement,((int *)data)[1]);
+  SETMARKCLASS(theElement,((int *)data)[2]);
+  SETMARK(theElement,((int *)data)[3]);
+
+  return(GM_OK);
+}
+
+static INT SpreadRefineInfo(GRID *theGrid)
+{
+  DDD_IFAOneway(ElementIF,GRID_ATTR(theGrid),IF_FORWARD,4*sizeof(INT),
+                Gather_RefineInfo,Scatter_RefineInfo);
+  return(GM_OK);
+}
+#endif
+
 static int Gather_NodeType (DDD_OBJ obj, void *data)
 {
   NODE *theNode = (NODE *)obj;
@@ -1367,6 +1400,11 @@ static INT IO_GridCons(MULTIGRID *theMG)
     for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
       if (!MASTER(theVector))
         DisposeConnectionFromVector(theGrid,theVector);
+
+#ifdef ModelP
+    /* spread element refine info */
+    if (SpreadRefineInfo(theGrid) != GM_OK) RETURN(GM_FATAL);
+#endif
 
     /* spread nodetypes from master to its copies */
     if (SpreadGridNodeTypes(theGrid) != GM_OK) RETURN(GM_FATAL);
