@@ -1922,6 +1922,67 @@ MULTIGRID *MakeMGItem (const char *name)
   return (theMG);
 }
 
+
+INT ClearMultiGridUsedFlags (MULTIGRID *theMG, INT FromLevel, INT ToLevel, INT mask)
+{
+  int i,level,elem,node,edge,vertex,vector,matrix;
+  GRID *theGrid;
+  ELEMENT *theElement;
+  NODE *theNode;
+  EDGE *theEdge;
+  VERTEX *theVertex;
+  VECTOR *theVector;
+  MATRIX *theMatrix;
+
+  elem = mask & MG_ELEMUSED;
+  node = mask & MG_NODEUSED;
+  edge = mask & MG_EDGEUSED;
+  vertex = mask & MG_VERTEXUSED;
+  vector = mask & MG_VECTORUSED;
+  matrix = mask & MG_MATRIXUSED;
+
+  for (level=FromLevel; level<=ToLevel; level++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,level);
+    if (elem || edge)
+      for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      {
+        if (elem) SETUSED(theElement,0);
+        if (edge)
+        {
+          for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+          {
+            theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+                              CORNER_OF_EDGE_PTR(theElement,i,1));
+            SETUSED(theEdge,0);
+          }
+        }
+      }
+    if (node || vertex)
+    {
+      for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+      {
+        if (node) SETUSED(theNode,0);
+        if (vertex) SETUSED(MYVERTEX(theNode),0);
+      }
+    }
+    if (vector || matrix)
+    {
+      for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+      {
+        if (vector) SETUSED(theVector,0);
+        if (matrix)
+          for (theMatrix=VSTART(theVector); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+            SETUSED(theMatrix,0);
+      }
+    }
+
+  }
+
+  return(GM_OK);
+}
+
+
 /****************************************************************************/
 /*D
    GetMultigrid - Find the multigrid environment item with name
@@ -4901,7 +4962,12 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
     #endif
 
   /* init vertices */
-  for (i=0; i<n; i++) Vertex[i] = MYVERTEX(Node[i]);
+  for (i=0; i<n; i++)
+  {
+    PRINTDEBUG(gm,1,("InsertElement(): node[%d]=" ID_FMTX "vertex[%d]=" VID_FMTX "\n",
+                     i,ID_PRTX(Node[i]),i,VID_PRTX(MYVERTEX(Node[i]))))
+    Vertex[i] = MYVERTEX(Node[i]);
+  }
 
     #ifdef __TWODIM__
   /* find orientation */
@@ -5340,7 +5406,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
   if (theMesh == NULL) return(GM_OK);
   if (theMesh->nElements == NULL)
   {
-    assert(theMesh->VertexLevel==NULL && theMesh->VertexPrio==NULL);
+    assert(theMesh->VertexLevel==NULL);
     theGrid = GRID_ON_LEVEL(theMG,0);
     for (i=0; i<theMesh->nBndP; i++)
       if (InsertBoundaryNode(theGrid,theMesh->theBndPs[i]) == NULL)
