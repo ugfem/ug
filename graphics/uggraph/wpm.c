@@ -3271,6 +3271,7 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PlotNodes                       = NO;
     theGpo->PlotRefMarks            = NO;
     theGpo->PlotIndMarks            = NO;
+    theGpo->PlotSubdomain           = NO;
     theGpo->FreeBnd                 = NULL;
   }
 
@@ -4989,6 +4990,7 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SI,"node indices",(int)theGpo->NodeIndex);
   UserWriteF(DISPLAY_PO_FORMAT_SI,"vector markers",(int)theGpo->Vectors);
   UserWriteF(DISPLAY_PO_FORMAT_SI,"vector indices",(int)theGpo->VecIndex);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"plotselection",(int)theGpo->PlotSelection);
   for (i=0; i<MAXVOBJECTS; i++)
   {
     sprintf(buffer,"vobject %s",ObjTypeName[i]);
