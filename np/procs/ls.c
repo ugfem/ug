@@ -148,6 +148,8 @@ typedef struct
 {
   NP_LINEAR_SOLVER ls;
 
+  NP_ITER *Iter;
+
   INT maxiter;
   INT baselevel;
   INT display;
@@ -160,6 +162,7 @@ typedef struct
   VECDATA_DESC *v;
   VECDATA_DESC *s;
   VECDATA_DESC *t;
+  VECDATA_DESC *q;
 
 } NP_BCGS;
 
@@ -1318,12 +1321,14 @@ static INT BCGSInit (NP_BASE *theNP, INT argc , char **argv)
   np->v = ReadArgvVecDesc(theNP->mg,"v",argc,argv);
   np->s = ReadArgvVecDesc(theNP->mg,"s",argc,argv);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  np->q = ReadArgvVecDesc(theNP->mg,"q",argc,argv);
   if (ReadArgvINT("m",&(np->maxiter),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
   if (ReadArgvINT("R",&(np->restart),argc,argv))
     np->restart = 0;
   if (np->restart<0) REP_ERR_RETURN(NP_NOT_ACTIVE);
   np->display = ReadArgvDisplay(argc,argv);
   np->baselevel = 0;
+  np->Iter = (NP_ITER *) ReadArgvNumProc(theNP->mg,"I",ITER_CLASS_NAME,argc,argv);
 
   return (NPLinearSolverInit(&np->ls,argc,argv));
 }
@@ -1335,8 +1340,10 @@ static INT BCGSDisplay (NP_BASE *theNP)
   np = (NP_BCGS *) theNP;
   NPLinearSolverDisplay(&np->ls);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"m",(int)np->maxiter);
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"r",(int)np->restart);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"R",(int)np->restart);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
+  if (np->Iter != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"Iter",ENVITEM_NAME(np->Iter));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"Iter","---");
   if (np->display == PCR_NO_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
   else if (np->display == PCR_RED_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
   else if (np->display == PCR_FULL_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
@@ -1345,6 +1352,7 @@ static INT BCGSDisplay (NP_BASE *theNP)
   if (np->v != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"v",ENVITEM_NAME(np->v));
   if (np->s != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(np->s));
   if (np->t != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->q != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"q",ENVITEM_NAME(np->q));
   if (np->p != NULL) if (sc_disp(np->weight,np->p,"weight")) REP_ERR_RETURN (1);
 
   return (0);
@@ -1357,11 +1365,16 @@ static INT BCGSPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, 
 
   np = (NP_BCGS *) theNP;
 
+  if (np->Iter!=NULL)
+    if (np->Iter->PreProcess != NULL)
+      if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result)) REP_ERR_RETURN(1);
+
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->r)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->p)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->v)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->s)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->t)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->q)) NP_RETURN(1,result[0]);
 
   return(0);
 }
@@ -1376,6 +1389,15 @@ static INT BCGSPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x,
   FreeVD(np->ls.base.mg,np->baselevel,level,np->v);
   FreeVD(np->ls.base.mg,np->baselevel,level,np->s);
   FreeVD(np->ls.base.mg,np->baselevel,level,np->t);
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->q);
+
+  if (np->Iter!=NULL)
+  {
+    if (np->Iter->PostProcess == NULL) return(0);
+    return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
+  }
+  else
+    return (0);
 
   return(0);
 }
@@ -1433,20 +1455,46 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,Factor_One,b)!= NUM_OK) REP_ERR_RETURN (1);
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=-beta*np->omega;
     if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
-    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->v,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
-    if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
-    alpha = rho_new/alpha;
+    if (np->Iter!=NULL)
+    {
+      if (s_dset(theNP->base.mg,np->baselevel,level,np->q,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->s,np->p)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if ((*np->Iter->Iter)(np->Iter,level,np->q,np->p,A,&lresult->error_code)) REP_ERR_RETURN (1);
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->p,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->v,A,np->q,EVERY_CLASS)) REP_ERR_RETURN (1);
+      if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
+      alpha = rho_new/alpha;
+      for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
+      if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
+    }
+    else
+    {
+      if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->v,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
+      if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
+      alpha = rho_new/alpha;
+      for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
+      if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+    }
     if (s_dcopy(theNP->base.mg,np->baselevel,level,np->s,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=-alpha;
     if (s_daxpy (theNP->base.mg,np->baselevel,level,np->s,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
-    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->t,A,np->s,EVERY_CLASS)) REP_ERR_RETURN (1);
+    if (np->Iter!=NULL)
+    {
+      if (s_dset(theNP->base.mg,np->baselevel,level,np->q,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->t,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if ((*np->Iter->Iter)(np->Iter,level,np->q,np->s,A,&lresult->error_code)) REP_ERR_RETURN (1);
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->s,np->t)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    }
+    else
+    {
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->q,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    }
+    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->t,A,np->q,EVERY_CLASS)) REP_ERR_RETURN (1);
     if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->t,np->t,np->weight,&tt)!=NUM_OK) REP_ERR_RETURN (1);
     if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->s,np->t,np->weight,&(np->omega))!=NUM_OK) REP_ERR_RETURN (1);
     np->omega /= tt;
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=np->omega;
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->s)!= NUM_OK) REP_ERR_RETURN (1);
+    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
     if (s_dcopy(theNP->base.mg,np->baselevel,level,b,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=-np->omega;
     if (s_daxpy (theNP->base.mg,np->baselevel,level,b,scal,np->t)!= NUM_OK) REP_ERR_RETURN (1);
