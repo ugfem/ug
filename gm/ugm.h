@@ -42,6 +42,10 @@
 #include "gm.h"
 #endif
 
+#ifndef __DLMGR__
+#include "dlmgr.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
