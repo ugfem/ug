@@ -778,8 +778,8 @@ static INT LmgcInit (NP_BASE *theNP, INT argc , char **argv)
   np->Transfer = (NP_TRANSFER *)
                  ReadArgvNumProc(theNP->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
   for (i=1; i<argc; i++)
-    if (argv[i][0]=='s') {
-      if (sscanf(argv[i],"s %s %s %s",pre,post,base)!=3)
+    if (argv[i][0]=='S') {
+      if (sscanf(argv[i],"S %s %s %s",pre,post,base)!=3)
         continue;
       np->PreSmooth = (NP_ITER *)
                       GetNumProcByName(theNP->mg,pre,ITER_CLASS_NAME);

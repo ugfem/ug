@@ -410,7 +410,7 @@ static INT IndicatorInit (NP_BASE *theNumProc, INT argc, char **argv)
 {
   NP_INDICATOR *theNP;
 
-  theNP = (NP_INDICATOR*)theNP;
+  theNP = (NP_INDICATOR*)theNumProc;
 
   if (ReadArgvINT("from",&(theNP->from),argc,argv))
     theNP->from = 0;
