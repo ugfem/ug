@@ -65,6 +65,7 @@
 /* grid manager module */
 #include "gm.h"
 #include "evm.h"
+#include "formats.h"
 
 /* numerics module */
 #include "num.h"
@@ -1220,6 +1221,8 @@ static INT SetCommand (INT argc, char **argv)
 
   if (rv==0)
     return (OKCODE);
+  else
+    return (CMDERRORCODE);
 }
 
 /****************************************************************************/
@@ -4800,7 +4803,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   GRID *theGrid;
   INT i,res,level,fromLevel,toLevel;
-  INT sign[DIM],order[DIM],xused,yused,zused,error,AlsoOrderMatrices,SpecialTreatSkipVecs;
+  INT sign[DIM],order[DIM],which,xused,yused,zused,error,AlsoOrderMatrices,SpecialTreatSkipVecs;
   char ord[3];
 
   theMG = GetCurrentMultigrid();
@@ -4878,6 +4881,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
 
   /* check options */
   AlsoOrderMatrices = SpecialTreatSkipVecs = FALSE;
+  which = GM_TAKE_SKIP | GM_TAKE_NONSKIP;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -4899,6 +4903,14 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
 
     case 'm' :
       AlsoOrderMatrices = TRUE;
+      break;
+
+    case 'w' :
+      which = 0;
+      if (strchr(argv[i],'s')!=NULL)
+        which |= GM_TAKE_SKIP;
+      if (strchr(argv[i],'n')!=NULL)
+        which |= GM_TAKE_NONSKIP;
       break;
 
     case 's' :
@@ -4929,7 +4941,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
     sprintf(buffer," [%d:",level);
     UserWrite(buffer);
 
-    if (LexOrderVectorsInGrid(theGrid,order,sign,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
+    if (LexOrderVectorsInGrid(theGrid,order,sign,which,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
     {
       PrintErrorMessage('E',"lexorderv","LexOrderVectorsInGrid failed");
       return (CMDERRORCODE);
@@ -7126,6 +7138,29 @@ static INT ClearPictureCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   picframe - toggle framing of pictures
+
+   DESCRIPTION:
+   This command toggles the framing of pictures.
+
+   SYMTAX:
+   'picframe 0|1'
+   D*/
+/****************************************************************************/
+
+static INT PicFrameCommand (INT argc, char **argv)
+{
+  NO_OPTION_CHECK(argc,argv);
+
+  if (strchr(argv[0],'0')!=NULL)
+    SetDoFramePicture (NO);
+  else
+    SetDoFramePicture (YES);
+
+  return (OKCODE);
+}
+/****************************************************************************/
+/*D
    setview - specifies the view on the object
 
    DESCRIPTION:
@@ -8989,6 +9024,388 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   symlist - list contents of vector and matrix symbols
+
+   DESCRIPTION:
+   This command lists the contents of vector and matrix symbols.
+
+   'scnp <num proc name>'
+
+   . <num~proc~name> - name of an existing NumProc
+   D*/
+/****************************************************************************/
+
+static INT SymListCommand (INT argc, char **argv)
+{
+  FORMAT *fmt;
+  SYMBOL *sym;
+  char format[NAMESIZE],name[NAMESIZE];
+  INT found,res;
+
+  if (argc!=2)
+  {
+    PrintErrorMessage('E',"symlist","specify one option with symlist");
+    return (PARAMERRORCODE);
+  }
+
+  switch (argv[1][0])
+  {
+  case 's' :
+    if ((res=sscanf(argv[1],"s %s %s",name,format))<1)
+    {
+      PrintErrorMessage('E',"symlist","specify symbol name with s option");
+      return (PARAMERRORCODE);
+    }
+    if (res==1)
+    {
+      /* loop all formats */
+      found = FALSE;
+      for (fmt=GetFirstFormat(); fmt!=NULL; fmt=GetNextFormat(fmt))
+        if ((sym=GetSymbol(ENVITEM_NAME(fmt),name))!=NULL)
+        {
+          found = TRUE;
+          DisplaySymbol(sym);
+        }
+      if (!found) UserWriteF("no symbol '%s' in any format\n",name);
+      return (OKCODE);
+    }
+    if (format[0]=='*')
+      if (currMG!=NULL)
+        strcpy(format,ENVITEM_NAME(MGFORMAT(currMG)));
+      else
+      {
+        PrintErrorMessage('E',"symlist","no current multigrid");
+        return (PARAMERRORCODE);
+      }
+    /* search in format */
+    if ((sym=GetSymbol(format,name))!=NULL)
+      DisplaySymbol(sym);
+    else
+      UserWriteF("no symbol '%s' in format '%s'%s\n",name,format,(format[0]=='*') ? " of current multigrid" : "");
+    return (OKCODE);
+
+  case 'V' :
+    res = sscanf(argv[1],"V %s",format);
+    if (res!=1)
+    {
+      /* loop all formats */
+      for (fmt=GetFirstFormat(); fmt!=NULL; fmt=GetNextFormat(fmt))
+      {
+        UserWriteF("scanning format '%s'\n",ENVITEM_NAME(fmt));
+        found = FALSE;
+        for (sym=GetFirstSymbol(ENVITEM_NAME(fmt)); sym!=NULL; sym=GetNextSymbol(sym))
+          if (SYM_IS_VEC(sym))
+          {
+            found = TRUE;
+            DisplaySymbol(sym);
+          }
+        if (!found) UserWriteF("   >>> no vector symbol in format '%s'\n",ENVITEM_NAME(fmt));
+      }
+      return (OKCODE);
+    }
+    if (format[0]=='*')
+      if (currMG!=NULL)
+        strcpy(format,ENVITEM_NAME(MGFORMAT(currMG)));
+      else
+      {
+        PrintErrorMessage('E',"symlist","no current multigrid");
+        return (PARAMERRORCODE);
+      }
+    /* search in format */
+    found = FALSE;
+    for (sym=GetFirstSymbol(format); sym!=NULL; sym=GetNextSymbol(sym))
+      if (SYM_IS_VEC(sym))
+      {
+        found = TRUE;
+        DisplaySymbol(sym);
+      }
+    if (!found) UserWriteF("no vector symbol in format '%s'\n",format,(format[0]=='*') ? " of current multigrid" : "");
+    return (OKCODE);
+
+  case 'M' :
+    res = sscanf(argv[1],"M %s",format);
+    if (res!=1)
+    {
+      /* loop all formats */
+      for (fmt=GetFirstFormat(); fmt!=NULL; fmt=GetNextFormat(fmt))
+      {
+        UserWriteF("scanning format '%s'\n",ENVITEM_NAME(fmt));
+        found = FALSE;
+        for (sym=GetFirstSymbol(ENVITEM_NAME(fmt)); sym!=NULL; sym=GetNextSymbol(sym))
+          if (SYM_IS_MAT(sym))
+          {
+            found = TRUE;
+            DisplaySymbol(sym);
+          }
+        if (!found) UserWriteF("   >>> no matrix symbol in format '%s'\n",ENVITEM_NAME(fmt));
+      }
+      return (OKCODE);
+    }
+    if (format[0]=='*')
+      if (currMG!=NULL)
+        strcpy(format,ENVITEM_NAME(MGFORMAT(currMG)));
+      else
+      {
+        PrintErrorMessage('E',"symlist","no current multigrid");
+        return (PARAMERRORCODE);
+      }
+    /* search in format */
+    found = FALSE;
+    for (sym=GetFirstSymbol(format); sym!=NULL; sym=GetNextSymbol(sym))
+      if (SYM_IS_MAT(sym))
+      {
+        found = TRUE;
+        DisplaySymbol(sym);
+      }
+    if (!found) UserWriteF("no matrix symbol in format '%s'\n",format,(format[0]=='*') ? " of current multigrid" : "");
+    return (OKCODE);
+
+  default :
+    sprintf(buffer,"(invalid option '%s')",argv[1]);
+    PrintHelp("symlist",HELPITEM,buffer);
+    return (PARAMERRORCODE);
+  }
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+        newformat - init a format and allocate symbols
+
+        SYNTAX:
+   .vb
+        newformat <format_name> [$V <vec_size>: {<vec_sym_name>}+ [$comp <comp_names> {$sub <sub_sym_name> <comps>}*]]
+                            [$M <mat_size>: {<mat_sym_name>}+ [$comp <comp_names> {$sub <sub_sym_name> <matsizes+comps>}*]
+                            [$d <mtype> <depth>]
+
+      $V            # enrol storage for vector data: the specified size per type is multiplied
+ # by the number of <vec_sym_name> specified. SYMBOLs are allocated with the
+ # specified names, also scalar SYMBOLs are allocated
+
+         <vec_size> := {<tp><size> }+, where <tp> is a char of
+                                               n for NODE
+                                               k for EDGE
+                                               e for ELEM
+                                               s for SIDE (3D only)
+                       and <size> is a integer
+
+
+      $comp         # optionally specify names for the components
+         <comp_names> := one char per component of the symbol (without spaces)
+
+
+      $sub          # if comp names have been specified optionally specify sub symbols for
+ # each of the previously allocated symbols by sppecifying their comps
+
+         <comps> := list of comps as specified in <comp_names>
+
+
+          $M            # enrol storage for matrix data: the specified size per type is multiplied
+ # by the number of <mat_sym_name> specified. SYMBOLs are allocated with the
+ # specified names, also scalar SYMBOLs are allocated
+
+         <mat_size> := {<rtp><rsize>x<ctp><csize> }+, where r and c refer to rows and columns of the matrix
+
+
+      $comp         # optionally specify names for the components
+         <comp_names> := TWO chars per component of the symbol (without spaces)
+
+
+         <matsizes+comps> := {<rsize>x<csize> <comp_names>}+
+
+
+      $d <mtype> <depth>  # set connection depth (default 0)
+
+         <mtype> := <rtp>x<ctp>
+   .ve
+
+        DESCRIPTION:
+        The 'newformat' command enrols a format for multigrid user data and creates symbols for the format.
+        It also creates scalar and possibly other sub symbols.
+
+        EXAMPLE:
+   .vb
+    newformat nsr                                                 # format name
+              $V k2 e1: sol rhs tmp cor                           # 2 components per symbol and edge vector
+ # 1 component per symbol and element vector
+                        $comp uvp                                 # components are named u,v,p
+                              $sub vel u v                        # create a sub symbol for each symbol with components u,v
+              $M k2xk2 k2xe1 e1xk2: MAT                           # 2x2 components in edge-edge matrices
+ # 2x1 components in edge-element matrices
+ # 1x2 components in element-edge matrices
+                        $comp uuuvvuvvupvppupv                    # components are named uu,uv,vu,vv...
+                              $sub mom 2x2 uu uv vu vv 2x1 up vp  # create a sub symbol for each symbol with
+ # components uu,uv,vu,vv in edge-edge matrices and
+ # components up,vp in edge-element matrices
+                              $sub velp 2x1 up vp
+                              $sub off 2x1 up vp 1x2 pu pv
+              $M k2xk2 k2xe1 e1xk2 e1xe1: LU
+                        $comp uuuvvuvvupvppupvpp
+              $d exe 1;                                           # set connection depth for element-element matrices 1
+   .ve
+        This format description will result in
+   .       - 2*4 DOUBLEs in edge vectors
+   .       - 1*4 DOUBLEs in element vectors
+   .       - 4*1+4*1 DOUBLEs in edge-edge matrices
+   .       - 2*1+2*1 DOUBLEs in edge-element matrices
+   .       - 2*1+2*1 DOUBLEs in element-edge matrices
+   .       - 1*1 DOUBLEs in element-element matrices
+   and element-element matrices are connected with depth 1.
+
+   The 'SYMBOL's created are
+   .vb
+   sol
+   usol
+   vsol
+   psol
+   velsol
+   rhs
+   urhs
+   vrhs
+   prhs
+   velrhs
+   tmp
+   utmp
+   vtmp
+   ptmp
+   veltmp
+   cor
+   ucor
+   vcor
+   pcor
+   velcor
+   MAT
+   MATuu
+   MATuv
+   MATvu
+   MATvv
+   MATup
+   MATvp
+   MATpu
+   MATpv
+   MATmom
+   MAToff
+   LU
+   LUuu
+   LUuv
+   LUvu
+   LUvv
+   LUup
+   LUvp
+   LUpu
+   LUpv
+   LUpp
+   LUvelp
+   .ve
+    (To see this list enter 'ls /Formats/nsr' into the shell window after executing the above command.)
+
+    SEE ALSO:
+    'symlist'
+   D*/
+/****************************************************************************/
+
+static INT CreateFormatCommand (INT argc, char **argv)
+{
+  INT err;
+
+  err = CreateFormatCmd(argc,argv);
+
+  switch (err)
+  {
+  case 0 : return (OKCODE);
+  case 1 : PrintHelp("newformat",HELPITEM,NULL);
+    return (PARAMERRORCODE);
+  default : return (CMDERRORCODE);
+  }
+}
+
+/****************************************************************************/
+/*D
+        setpf -  command to change current settings of the data
+                                        listing functions of a format
+
+        SYNTAX:
+        setpf <format_name> [$V{0 | {+|-} {<vecsym_name>}+}]+ [$M{0 | {+|-} {<matsym_name>}+}]+
+
+        DESCRIPTION:
+        For a format previously enroled by use of the 'newformat' command the 'setpf'
+        command specifies the symbols that are displayed when 'vmlist' is called with
+        '$d' (list vector data) or '$d $m' (list vector and matrix data).
+
+        EXAMPLE:
+   .vb
+        newformat ns $V n3: sol rhs tmp cor $M n3xn3: MAT LU;
+
+        open grid $f ns $h 1000000;
+
+ # print sol, rhs vector data and MAT, LU matrix data of vector with index 10
+        setpf ns $V 0 $M 0 $V + sol rhs $M + MAT LU;
+        vmlist $i 10 $m $d;
+
+ # print sol vector data and MAT matrix data of vector with index 12
+        setpf ns $V - rhs $M - LU;
+        vmlist $i 12 $m $d;
+   .ve
+
+        SEE ALSO:
+        showpf
+   D*/
+/****************************************************************************/
+
+static INT SetPrintingFormatCommand (INT argc, char **argv)
+{
+  INT err;
+  char format[NAMESIZE];
+
+  if (sscanf(argv[0],"setpf %s",format)!=1)
+  {
+    if (currMG==NULL)
+    {
+      PrintErrorMessage('E',"setpf","no format specified and no current mg");
+      return (PARAMERRORCODE);
+    }
+    strcpy(format,ENVITEM_NAME(MGFORMAT(currMG)));
+  }
+
+  err = SetPrintingFormatCmd(format,argc,argv);
+
+  switch (err)
+  {
+  case 0 : return (OKCODE);
+  case 1 : PrintHelp("setpf",HELPITEM,NULL);
+    return (PARAMERRORCODE);
+  default : return (CMDERRORCODE);
+  }
+}
+
+/****************************************************************************/
+/*D
+        showpf - command to display current settings of data
+                                        listing functions
+
+        SYNTAX:
+        showpf
+
+        DESCRIPTION:
+        ...
+
+        SEE ALSO:
+        setpf
+   D*/
+/****************************************************************************/
+
+static INT ShowPrintingFormatCommand (INT argc, char **argv)
+{
+  NO_OPTION_CHECK(argc,argv);
+
+  DisplayPrintingFormat();
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    setkey - associate a command key with a ug command
 
    DESCRIPTION:
@@ -9535,6 +9952,7 @@ INT InitCommands ()
   if (CreateCommand("openpicture",        OpenPictureCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("closepicture",       ClosePictureCommand                     )==NULL) return (__LINE__);
   if (CreateCommand("clearpicture",       ClearPictureCommand                     )==NULL) return (__LINE__);
+  if (CreateCommand("picframe",           PicFrameCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("setcurrpicture", SetCurrentPictureCommand            )==NULL) return (__LINE__);
   if (CreateCommand("setview",            SetViewCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("vdisplay",           DisplayViewCommand                              )==NULL) return (__LINE__);
@@ -9561,6 +9979,14 @@ INT InitCommands ()
   if (CreateCommand("npcreate",           NumProcCreateCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("npinit",                     NumProcInitCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("scnp",                       SetCurrentNumProcCommand                )==NULL) return (__LINE__);
+
+  /* symbols */
+  if (CreateCommand("symlist",            SymListCommand                                  )==NULL) return (__LINE__);
+
+  /* formats */
+  if (CreateCommand("newformat",          CreateFormatCommand                     )==NULL) return (__LINE__);
+  if (CreateCommand("setpf",                      SetPrintingFormatCommand        )==NULL) return (__LINE__);
+  if (CreateCommand("showpf",             ShowPrintingFormatCommand       )==NULL) return (__LINE__);
 
   /* miscellaneous commands */
   if (CreateCommand("setkey",             SetCommandKeyCommand                    )==NULL) return (__LINE__);
