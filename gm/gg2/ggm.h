@@ -83,7 +83,6 @@
 #define PREDFC(pfc)             ((pfc)->predfc)
 #define MYFL(pfc)               ((pfc)->myFL)
 #define FRONTN(pfc)             ((pfc)->frontnode)
-#define FCSIDE(pfc)             ((pfc)->theSide)
 #define FCNGB(pfc)              ((pfc)->Neighbor)
 #define FCNGBS(pfc)             ((pfc)->NeighborSide)
 
@@ -99,7 +98,6 @@ struct frontcomp {
   struct frontcomp *succfc,*predfc;      /* double linked list of front comps	*/
   struct frontlist *myFL;                       /* pointer to my front list				*/
   NODE *frontnode;                                      /* ptr to corresponding front node		*/
-  ELEMENTSIDE *theSide;                 /* filled by init and used by MakeElement	*/
   ELEMENT *Neighbor;
   int NeighborSide;        /*nfck*/
 };

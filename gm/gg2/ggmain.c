@@ -44,6 +44,8 @@
 #include "algebra.h"
 #include "ugstruct.h"
 #include "uginterface.h"
+#include "disctools.h"
+#include "evm.h"
 #include "general.h"
 
 #include "memory.h"
@@ -97,7 +99,6 @@ typedef struct {
   INT n;
   NODE *theNode[4];
   VERTEX *theVertex[4];
-  ELEMENTSIDE *theElementside[4];
   ELEMENT *theNeighbour[4];
   INT Neighbourside[4];
   ELEMENT *thenewElement;
@@ -146,12 +147,178 @@ static INT IflObj;
 static INT FlObj;
 static INT FcObj;
 
-
 /****************************************************************************/
 /*                                                                          */
 /* forward declarations of functions used before they are defined           */
 /*                                                                          */
 /*****************************************************************************/
+
+
+/****************************************************************************/
+/*D
+   GenerateBnodes - Generates boundary nodes for the grid generator
+
+   SYNOPSIS:
+   INT GenerateBnodes (MULTIGRID *theMG,COORD RelRasterSize,DOUBLE h_global,
+   INT meshsizecoeffno);
+
+    PARAMETERS:
+   .   theMG - pointer to the multigrid
+   .   RelRasterSize - approximation resolution of the boundary
+   .   h_global - global meshsize
+   .   meshsizecoeffno - defines the adress of the CoeffProcPtr as input for
+   .   the grid generator using a mesh control function
+
+    DESCRIPTION:
+        This function creates boundary nodes for the automatical grid generating.
+
+    RETURN VALUE:
+    INT
+   .n     0 if ok
+   .n     1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
+                     DOUBLE h_global, INT meshsizecoeffno)
+{
+  GRID *theGrid;
+  NODE *theNode;
+  VERTEX **Vertex;
+  VSEGMENT *vs0,*vs1;
+  PATCH *thePatch;
+  COORD *global,*global0,*global1,*lambda0,*lambda1,lambda[DIM-1];
+  DOUBLE diff,step,gstep0,gstep1;
+  INT i,j,k,m,ncorners,found;
+  CoeffProcPtr MeshSize;
+
+  ncorners = MGNOOFCORNERS(theMG);
+  if (    (VIDCNT(theMG) != ncorners)
+          ||      (NIDCNT(theMG) != ncorners)
+          ||      (EIDCNT(theMG) != 0)
+          ||      (TOPLEVEL(theMG) != 0))
+  {
+    PrintErrorMessage('E',"GenerateBnodes",
+                      "command not executable: mg has been edited");
+    return(1);
+  }
+
+  /**************************************************/
+  /* automatically generation of the boundary nodes */
+  /**************************************************/
+
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  MeshSize = MG_GetCoeffFct (theMG,meshsizecoeffno);
+
+  Mark(MGHEAP(theMG),FROM_TOP);
+  Vertex = (VERTEX**) GetMem(MGHEAP(theMG),
+                             ncorners*sizeof(VERTEX*),FROM_TOP);
+
+  i = 0;
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    Vertex[i++] = MYVERTEX(theNode);
+
+  for (i=0; i<ncorners; i++)
+    for (j=0; j<i; j++)
+      for (vs0=VSEG(Vertex[i]); vs0!=NULL; vs0=NEXTSEG(vs0))
+      {
+        thePatch = VS_PATCH(vs0);
+        global0 = CVECT(Vertex[i]);
+        lambda0 = PVECT(vs0);
+        found = 0;
+        for (vs1=VSEG(Vertex[j]); vs1!=NULL; vs1=NEXTSEG(vs1))
+          if (VS_PATCH(vs1) == thePatch)
+          {
+            found++;
+            global1 = CVECT(Vertex[j]);
+            lambda1 = PVECT(vs1);
+            V_DIM_EUKLIDNORM_OF_DIFF(global0,global1,diff);
+            if (MeshSize == NULL)
+            {
+              m = (INT) diff / h_global;
+              if (Vertex[i] == Vertex[j])
+                if (m < 3)
+                  m = 3;
+              if (m>0)
+                step = (lambda1 - lambda0) / m;
+              lambda[0] = lambda0[0];
+              for (k=1; k<m; k++)
+              {
+                lambda0[0] += step;
+                if (InsertBoundaryNodeFromPatch (theMG,
+                                                 thePatch,lambda))
+                  return(1);
+              }
+            }
+            else
+            {
+              m = 1;
+              global = global0;
+              lambda[0] = lambda0[0];
+              MeshSize(global,&gstep0);
+              if (Vertex[i] == Vertex[j])
+              {
+                if (gstep0*3 > diff)
+                {
+                  step = (lambda1 - lambda0) / 3.0;
+                  lambda[0] = lambda0[0];
+                  for (k=1; k<m; k++)
+                  {
+                    lambda0[0] += step;
+                    if (InsertBoundaryNodeFromPatch (theMG,
+                                                     thePatch,lambda))
+                      return(1);
+                  }
+                }
+              }
+              else
+              {
+                MeshSize(global1,&gstep1);
+                while (gstep0 < diff)
+                {
+                  m++;
+                  if (gstep0 + gstep1 > diff)
+                    lambda[0] = (lambda1[0]*gstep1
+                                 +lambda[0]*gstep0) /
+                                (gstep0 + gstep1);
+                  else
+                    lambda[0] += (lambda1[0]-lambda[0])
+                                 * gstep0 / diff;
+                  if (InsertBoundaryNodeFromPatch (theMG,
+                                                   thePatch,lambda))
+                    return(1);
+                  global = CVECT(MYVERTEX(FIRSTNODE(theGrid)));
+                  V_DIM_EUKLIDNORM_OF_DIFF(global,global1,diff);
+                  MeshSize(global,&gstep0);
+                }
+              }
+            }
+          }
+        if (found == 2)
+          if (m<2)
+          {
+            lambda[0] = 0.5*(lambda0[0]+lambda1[0]);
+            if (InsertBoundaryNodeFromPatch (theMG,
+                                             thePatch,lambda))
+              return(1);
+          }
+
+      }
+
+  Release(MGHEAP(theMG),FROM_TOP);
+
+  return (0);
+}
+
+static DOUBLE H_global;
+
+static INT GlobalMeshsize (COORD *in, DOUBLE *out)
+{
+  /* outvalue is just the constant global meshsize */
+  out[0] = H_global;
+
+  return(0);
+}
 
 static INT IsPointLeftOfFC (COORD xP,COORD yP, FRONTCOMP *theFC)
 {
@@ -207,262 +374,6 @@ static INT IsPointLeftOfFC (COORD xP,COORD yP, FRONTCOMP *theFC)
   }
 }
 
-static INT CreateBNodeAndVertex (COORD lambda, PATCH *thePatch, GRID *theGrid)
-{
-  COORD pos[1];
-
-  pos[0] = lambda;
-  return(InsertBoundaryNodeFromPatch (MYMG(theGrid),thePatch,pos));
-}
-
-/****************************************************************************/
-/*D
-   GenerateBnodes - Generates boundary nodes for the grid generator
-
-   SYNOPSIS:
-   INT GenerateBnodes (MULTIGRID *theMG,COORD RelRasterSize,DOUBLE h_global,
-   INT meshsizecoeffno);
-
-    PARAMETERS:
-   .   theMG - pointer to the multigrid
-   .   RelRasterSize - approximation resolution of the boundary
-   .   h_global - global meshsize
-   .   meshsizecoeffno - defines the adress of the CoeffProcPtr as input for
-   .   the grid generator using a mesh control function
-
-    DESCRIPTION:
-        This function creates boundary nodes for the automatical grid generating.
-
-    RETURN VALUE:
-    INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
-/****************************************************************************/
-
-static DOUBLE H_global;
-
-static INT GlobalMeshsize (COORD *in, DOUBLE *out)
-{
-  /* outvalue is just the constant global meshsize */
-  out[0] = H_global;
-
-  return(0);
-}
-
-INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
-                     DOUBLE h_global, INT meshsizecoeffno)
-{
-  GRID *theGrid;
-  NODE *theNode;
-  VERTEX *theVertex;
-  DOUBLE meshsize,meshsize0,meshsize1;
-  COORD pos0[2];
-  COORD dist,mindist,arclength;
-  COORD myLambda,lambda,bestlambda,maxl,lambda0,lambda1,pt0[2],pt1[2],**lambda_incr,delta;
-  COORD x,y;
-  BVP *theBVP;
-  BVP_DESC theBVPDesc;
-  PATCH *thePatch;
-  PATCH_DESC thePatchDesc;
-  INT i,segid,*npoints,nraster,part,oldpart;
-
-  if (    (VIDCNT(theMG) != MGNOOFCORNERS(theMG))
-          ||      (NIDCNT(theMG) != MGNOOFCORNERS(theMG))
-          ||      (EIDCNT(theMG) != 0)
-          ||      (TOPLEVEL(theMG) != 0))
-  {
-    PrintErrorMessage('E',"GenerateBnodes","command not executable: mg has been edited");
-    return(1);
-  }
-
-  /**************************************************/
-  /* automatically generation of the boundary nodes */
-  /**************************************************/
-
-  theGrid = GRID_ON_LEVEL(theMG,0);
-  theBVP = MG_BVP(MYMG(theGrid));
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
-
-  if (meshsizecoeffno == -1)
-  {
-    nominal_h = GlobalMeshsize;
-    H_global = h_global;
-  }
-  else
-  {
-    if (BVPD_NCOEFFF(theBVPDesc) < meshsizecoeffno)
-    {
-      PrintErrorMessage('E',"GenerateBnodes",
-                        "Number of coefficient functions is zero.");
-      return(2);
-    }
-    if (BVP_GetCoeffFct(theBVP,meshsizecoeffno,&nominal_h)) return (1);
-  }
-
-  /* rasterize boundary segments */
-  lambda_incr = (COORD **) GetMem(theMG->theHeap,BVPD_NPATCHES(theBVPDesc)*sizeof(COORD*),FROM_TOP);
-  npoints     = (INT *)    GetMem(theMG->theHeap,BVPD_NPATCHES(theBVPDesc)*sizeof(INT),FROM_TOP);
-
-  /* get storage for lambda_incr */
-  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
-  {
-    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
-    segid = PATCH_ID(thePatchDesc);
-    npoints[segid] = PATCH_RES(thePatchDesc);
-    lambda_incr[segid] = (COORD *) GetMem(theMG->theHeap,npoints[segid]*sizeof(COORD),FROM_TOP);
-  }
-
-  /* calculate lambda_incr */
-  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
-  {
-    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
-    delta = (PATCH_LCVECT(thePatchDesc,1)[0] - PATCH_LCVECT(thePatchDesc,0)[0])/((double) npoints[segid]);
-
-    for (i=0; i<npoints[segid]; i++)
-    {
-      lambda0 = PATCH_LCVECT(thePatchDesc,0)[0] + i*delta;
-      lambda1 = PATCH_LCVECT(thePatchDesc,0)[0] + (i+1)*delta;
-
-      /* euklidian distance of point i and i+1 */
-      if (Patch_local2global(thePatch,&lambda0,pt0)) return(1);
-      (*nominal_h)(pt0,&meshsize0);
-      if (Patch_local2global(thePatch,&lambda1,pt1)) return(1);
-      (*nominal_h)(pt1,&meshsize1);
-      pt1[0] -= pt0[0];
-      pt1[1] -= pt0[1];
-      meshsize = MIN(meshsize0,meshsize1);
-      nraster = floor(sqrt(pt1[0]*pt1[0]+pt1[1]*pt1[1])/(RelRasterSize*meshsize));
-
-      if (nraster<1)
-        lambda_incr[segid][i] = delta;
-      else
-        lambda_incr[segid][i] = delta/((COORD) nraster);
-    }
-  }
-
-  /* create points with approx. distance nominal_h on the boundary */
-  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
-  {
-    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
-    delta = (PATCH_LCVECT(thePatchDesc,1)[0] - PATCH_LCVECT(thePatchDesc,0)[0])/((double) npoints[segid]);
-
-    theNode = TOPNODE(theMG->corners[PATCH_CID(thePatchDesc,0)]);
-    theVertex = MYVERTEX(theNode);
-
-    while (TRUE)
-    {
-      if (MOVE(theVertex) == 0)
-        myLambda = PATCH_LCVECT(thePatchDesc,0)[0];
-      else
-        myLambda = FIRSTLAMBDA(theVertex);
-
-      (*nominal_h)(CVECT(theVertex),&meshsize);
-
-      /* scan raster for best fitting point */
-      oldpart = part = floor((myLambda-PATCH_LCVECT(thePatchDesc,0)[0])/delta);
-      maxl = PATCH_LCVECT(thePatchDesc,1)[0];
-      mindist = MAX_C;
-      pt0[0] = pos0[0] = XC(theVertex);
-      pt0[1] = pos0[1] = YC(theVertex);
-      arclength = 0.0;
-      for (i=0, lambda=myLambda+lambda_incr[segid][part]; lambda<maxl; i++, lambda += lambda_incr[segid][part])
-      {
-        if (Patch_local2global(thePatch,&lambda,pt1)) return(1);
-        x = pt1[0]-pt0[0]; y = pt1[1]-pt0[1];
-        arclength += sqrt(x*x+y*y);
-        dist = fabs(arclength-meshsize);
-        if (arclength>2*meshsize)
-        {
-          if (i<=2)
-          {
-            /* lambda_incr is too large: decrease it and try again */
-            lambda_incr[segid][part] *= 0.5;
-            lambda = myLambda;
-            arclength = 0.0;
-            i = 0;
-            continue;
-          }
-          else
-            break;
-        }
-
-        if (mindist - dist > SMALL_C)                           /* check mindist>dist */
-        {
-          mindist = dist;
-          bestlambda = lambda;
-        }
-        pt0[0] = pt1[0];
-        pt0[1] = pt1[1];
-        part = floor((lambda-PATCH_LCVECT(thePatchDesc,0)[0])/delta);
-      }
-
-      /* are we done with this segment? */
-      if (bestlambda+1.01*lambda_incr[segid][part] >= PATCH_LCVECT(thePatchDesc,1)[0])
-      {
-        if (arclength<0.5*meshsize)
-          if (MOVE(theVertex))
-          {
-            DeleteNode(MYMG(theGrid),theNode);
-          }
-        break;
-      }
-
-      part = floor((bestlambda-PATCH_LCVECT(thePatchDesc,0)[0])/delta);
-      if (part>oldpart)
-        if (delta*(RelRasterSize)/lambda_incr[segid][oldpart]>2)
-        {
-          /* place a node at the begin of oldpart+1 */
-          bestlambda = PATCH_LCVECT(thePatchDesc,0)[0] + (oldpart+1)*delta;
-          if (Patch_local2global(thePatch,&bestlambda,pt1)) return(1);
-          x = pt1[0]-pos0[0]; y = pt1[1]-pos0[1];
-
-          if (sqrt(x*x+y*y)<0.5*meshsize)
-          {
-            /* just shift last node */
-            FIRSTLAMBDA(theVertex) = (COORD) bestlambda;
-            if (Patch_local2global(thePatch,FIRSTPVECT(theVertex),CVECT(theVertex))) return(1);
-            continue;
-          }
-        }
-
-      if (CreateBNodeAndVertex (bestlambda,thePatch,theGrid))
-      {
-        return (3);
-      }
-
-      theVertex = FIRSTVERTEX(theGrid);
-      theNode = FIRSTNODE(theGrid);
-      if (dostep)
-      {
-        sprintf(buffer,"current node (ID=%ld at (%g,%g))\nstep/cont/break?",
-                ID(theNode),XC(theVertex),YC(theVertex));
-        UserWrite(buffer); UserRead(buffer);
-
-        if (buffer[0]=='c')
-          dostep = NO;
-
-        if (buffer[0]=='b')
-          return (4);
-      }
-
-      if (UserInterrupt(NULL))
-      {
-        UserWrite("break here (n/y)? ");
-        UserRead(buffer);
-
-        if (buffer[0]=='y')
-          return (5);
-
-        UserWrite("step (n/y)? "); UserRead(buffer);
-        dostep = (buffer[0]=='y') ? YES : NO;
-      }
-    }
-  }
-
-  return (0);
-}
-
 /****************************************************************************/
 /*                                                                          */
 /* Function:  DetermineOrientation                                                      */
@@ -515,139 +426,6 @@ static INT DetermineOrientation (FRONTLIST *theFL)
   }
 
   FLORIENTATION(theFL) = (anglesum>0) ? MATHPOS : MATHNEG;
-
-  return (0);
-}
-
-/****************************************************************************/
-/*                                                                          */
-/* Function:  TreatSmallHoles                                                           */
-/*                                                                          */
-/* Purpose:   handle holes that are smaller than the local meshsize			*/
-/*                                                                          */
-/* Input:     front components for ordering						            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
-/****************************************************************************/
-
-static INT TreatSmallHoles (FRONTLIST *theFL, FRONTCOMP *lastFC, SEGMENTINFO *closedbInfo, INT nparts)
-{
-  MULTIGRID *theMG;
-  GRID *theGrid;
-  VERTEX *theVertex;
-  FRONTCOMP *theFC;
-  COORD lambda;
-  INT segnum;
-  PATCH_DESC thePatchDesc[2];
-
-  theGrid = MYGRID(theFL);
-  theMG   = MYMG(theGrid);
-
-  sprintf(buffer,"WARNING: segment at node %ld:\n",ID(FRONTN(lastFC)));
-  UserWrite(buffer);
-  UserWrite("list consists of less than 3 FCs\n");
-
-  SmallHoleCompleted = YES;
-
-  /* determine the hole-diameter and compare it with the local meshsize */
-
-  /* compare the circumference with the diameter */
-
-  /* complete this list */
-  if (nparts==2)
-  {
-    /* this closed subboundary consists of 2 segments and has therefore 2 CornerVertices
-       add a node in the middle of the segment with the higher resolution */
-    if (Patch_GetPatchDesc(closedbInfo[0].thePatch,thePatchDesc)) return(1);
-    if (Patch_GetPatchDesc(closedbInfo[1].thePatch,thePatchDesc+1)) return(1);
-
-    if (PATCH_RES(thePatchDesc[0]) > PATCH_RES(thePatchDesc[1]))
-      segnum = 0;
-    else
-      segnum = 1;
-
-    if (CreateBNodeAndVertex (0.5*(PATCH_LCVECT(thePatchDesc[segnum],0)[0]+PATCH_LCVECT(thePatchDesc[segnum],1)[0]),closedbInfo[segnum].thePatch,theGrid))
-      return (3);
-    if (PATCH_LEFT(thePatchDesc[segnum])==closedbInfo[segnum].mySubdomain)
-    {
-      if (FRONTN(lastFC)==TOPNODE(theMG->corners[PATCH_CID(thePatchDesc[segnum],0)]))
-        theFC = lastFC;
-      else
-        theFC = SUCCFC(lastFC);
-    }
-    else
-    {
-      if (FRONTN(lastFC)==TOPNODE(theMG->corners[PATCH_CID(thePatchDesc[segnum],1)]))
-        theFC = lastFC;
-      else
-        theFC = SUCCFC(lastFC);
-    }
-
-    if (CreateFrontComp (theFL, theFC, 1, &FIRSTNODE(theGrid))==NULL)
-      return (3);
-
-    return (0);
-  }
-  else
-  {
-    /* this closed subboundary consists of 1 segment and has therefore 1 CornerVertex */
-
-    if (Patch_GetPatchDesc(closedbInfo[0].thePatch,thePatchDesc)) return(1);
-
-    if (NFC(theFL)==1)
-    {
-      /* create nodes at 1/3 and 2/3 */
-      lambda = (2.0*PATCH_LCVECT(thePatchDesc[0],0)[0] + PATCH_LCVECT(thePatchDesc[0],1)[0])/3.0;
-      if (CreateBNodeAndVertex (lambda,closedbInfo[0].thePatch,theGrid))
-        return (3);
-      if ((lastFC=CreateFrontComp (theFL, lastFC, 1, &FIRSTNODE(theGrid)))==NULL)
-        return (3);
-      lambda = (PATCH_LCVECT(thePatchDesc[0],0)[0] + 2.0*PATCH_LCVECT(thePatchDesc[0],1)[0])/3.0;
-      if (CreateBNodeAndVertex (lambda,closedbInfo[0].thePatch,theGrid))
-        return (3);
-
-      if (PATCH_LEFT(thePatchDesc[0])==closedbInfo[0].mySubdomain)
-        theFC = lastFC;
-      else
-        theFC = SUCCFC(lastFC);
-
-      if (CreateFrontComp (theFL, theFC, 1, &FIRSTNODE(theGrid))==NULL)
-        return (3);
-    }
-    else
-    {
-      /* we have two points on the bnd., move moveable vertex to 1/3 and create one at 2/3 */
-      if (MOVE(MYVERTEX(FRONTN(lastFC))))
-        theFC = lastFC;
-      else
-        theFC = SUCCFC(lastFC);
-
-
-      theVertex = MYVERTEX(FRONTN(theFC));
-      FIRSTLAMBDA(theVertex) = (2.0*PATCH_LCVECT(thePatchDesc[0],0)[0] + PATCH_LCVECT(thePatchDesc[0],1)[0])/3.0;
-      if (Patch_local2global(closedbInfo[0].thePatch,FIRSTPVECT(theVertex),CVECT(theVertex))) return(1);
-
-      lambda = (PATCH_LCVECT(thePatchDesc[0],0)[0] + 2.0*PATCH_LCVECT(thePatchDesc[0],1)[0])/3.0;
-      if (CreateBNodeAndVertex (lambda,closedbInfo[0].thePatch,theGrid))
-        return (3);
-
-      if (PATCH_LEFT(thePatchDesc[0])!=closedbInfo[0].mySubdomain)
-        theFC = SUCCFC(theFC);
-
-      if (CreateFrontComp (theFL, theFC, 1, &FIRSTNODE(theGrid))==NULL)
-        return (3);
-    }
-  }
-
-  if (DetermineOrientation (theFL))
-    return (2);
-
-  UserWrite("...nodes added\n");
-
-  /* for a hole we know that the orientation has to be negative */
-  if (FLORIENTATION(theFL)!=MATHNEG)
-    UserWrite("WARNING: this hole has now wrong (positive) orientation\n");
 
   return (0);
 }
@@ -765,10 +543,6 @@ static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT
       return (1);
     }
   }
-
-  if (NFC(theFL)<3)
-    if (TreatSmallHoles (theFL,lastFC,closedbInfo,nparts))
-      return (1);
 
   return (0);
 }
@@ -931,157 +705,28 @@ static INT AssembleFrontLists (MULTIGRID *theMG)
   return (0);
 }
 
-/****************************************************************************/
-/*                                                                          */
-/* Function:  CreateAllElementSides	                                        */
-/*                                                                          */
-/* Purpose:   create the element sides needed by MakeElement				*/
-/*                                                                          */
-/* Input:     theMG												            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
-/****************************************************************************/
+/*
+   static INT AssembleFrontLists (MULTIGRID *theMG)
+   {
+        GRID *theGrid;
+        INDEPFRONTLIST *theIFL;
+        INT numOfSubdomains,numOfPatches,nSeg,SubdomainID;
+        BVP *theBVP;
+        BVP_DESC theBVPDesc;
 
-static INT CreateAllElementSides  (MULTIGRID *theMG)
-{
-  GRID *theGrid;
-  INDEPFRONTLIST *theIFL;
-  FRONTLIST *theFL;
-  FRONTCOMP *theFC;
-  NODE *aNode,*bNode;
-  VERTEX *aVertex,*bVertex;
-  ELEMENTSIDE *theSide;
-  ELEMENT *theElement;
-  PATCH *aPatch,*bPatch,*thePatch;
-  COORD aLambda,bLambda;
-  INT aID,bID,j;
-  BVP *theBVP;
-  BVP_DESC theBVPDesc;
-  PATCH_DESC aPatchDesc, bPatchDesc, thePatchDesc;
+        theBVP = MG_BVP(theMG);
+        if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
 
-  theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
-  theGrid = GRID_ON_LEVEL(theMG,0);
+        theGrid = GRID_ON_LEVEL(theMG,0);
 
-  /* for each FC create an element side struct and fill data */
-  for (theIFL=STARTIFL(myMGdata); theIFL!=NULL; theIFL=SUCCIFL(theIFL))
-    for (theFL=STARTFL(theIFL); theFL!=NULL; theFL=SUCCFL(theFL))
-      for (theFC=STARTFC(theFL); theFC!=NULL; theFC=SUCCFC(theFC))
-      {
-        aNode = FRONTN(theFC);
-        bNode = FRONTN(SUCCFC(theFC));
+        numOfSubdomains = BVPD_NSUBDOM(theBVPDesc);
 
-        aVertex = MYVERTEX(aNode);
-        bVertex = MYVERTEX(bNode);
+        for (SubdomainID=0; SubdomainID<numOfSubdomains; SubdomainID++)
+          theIFL = CreateIndepFrontList(theGrid);
 
-        aPatch = FIRSTPATCH(aVertex);
-        bPatch = FIRSTPATCH(bVertex);
-
-        if(Patch_GetPatchDesc(aPatch,&aPatchDesc)) return(1);
-        if(Patch_GetPatchDesc(bPatch,&bPatchDesc)) return(1);
-
-        if ((aPatch==bPatch) && !((MOVE(aVertex)==0) || (MOVE(bVertex)==0)))
-        {
-          /* periodic boundary excluded */
-          thePatch = aPatch;
-          if (MOVE(aVertex)==0)
-            aLambda = PATCH_LCVECT(aPatchDesc,0)[0];
-          else
-            aLambda = FIRSTLAMBDA(aVertex);
-          if (MOVE(bVertex)==0)
-            bLambda = PATCH_LCVECT(aPatchDesc,1)[0];
-          else
-            bLambda = FIRSTLAMBDA(bVertex);
-        }
-        else if ((MOVE(aVertex)==0) && (MOVE(bVertex)==0))
-        {
-          /* find corresponding corner vertices */
-          for (j=0; j<theMG->numOfCorners ; j++)
-            if (aVertex==theMG->corners[j])
-              break;
-          aID = j;
-
-          for (j=0; j<theMG->numOfCorners ; j++)
-            if (bVertex==theMG->corners[j])
-              break;
-          bID = j;
-
-          /* find segment */
-          for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
-          {
-            if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
-            if (PATCH_CID(thePatchDesc,0)==aID && PATCH_CID(thePatchDesc,1)==bID)
-            {
-              aLambda = PATCH_LCVECT(thePatchDesc,0)[0];
-              bLambda = PATCH_LCVECT(thePatchDesc,1)[0];
-              break;
-            }
-            else if (PATCH_CID(thePatchDesc,1)==aID && PATCH_CID(thePatchDesc,0)==bID)
-            {
-              aLambda = PATCH_LCVECT(thePatchDesc,1)[0];
-              bLambda = PATCH_LCVECT(thePatchDesc,0)[0];
-              break;
-            }
-          }
-        }
-        else if (MOVE(aVertex)==0)
-        {
-          if (PATCH_CID(bPatchDesc,0)!=PATCH_CID(bPatchDesc,1))
-          {
-            if (theMG->corners[PATCH_CID(bPatchDesc,0)]==aVertex)
-              aLambda = PATCH_LCVECT(bPatchDesc,0)[0];
-            else
-              aLambda = PATCH_LCVECT(bPatchDesc,1)[0];
-          }
-          else
-          {
-            /* periodic boundary: take succ of b for decision */
-            if (FIRSTLAMBDA(MYVERTEX(FRONTN(SUCCFC(SUCCFC(theFC)))))>FIRSTLAMBDA(bVertex))
-              aLambda = PATCH_LCVECT(bPatchDesc,0)[0];
-            else
-              aLambda = PATCH_LCVECT(bPatchDesc,1)[0];
-          }
-
-          thePatch = bPatch;
-          bLambda = FIRSTLAMBDA(bVertex);
-        }
-        else
-        {
-          if (PATCH_CID(aPatchDesc,0)!=PATCH_CID(aPatchDesc,1))
-          {
-            if (theMG->corners[PATCH_CID(aPatchDesc,0)]==bVertex)
-              bLambda = PATCH_LCVECT(aPatchDesc,0)[0];
-            else
-              bLambda = PATCH_LCVECT(aPatchDesc,1)[0];
-          }
-          else
-          {
-            /* periodic boundary: take pred of a for decision */
-            if (FIRSTLAMBDA(MYVERTEX(FRONTN(PREDFC(theFC))))>FIRSTLAMBDA(aVertex))
-              bLambda = PATCH_LCVECT(aPatchDesc,0)[0];
-            else
-              bLambda = PATCH_LCVECT(aPatchDesc,1)[0];
-          }
-
-          thePatch = aPatch;
-          aLambda = FIRSTLAMBDA(aVertex);
-        }
-
-        /* create side and fill data */
-        theSide = NULL;
-
-        /* linkinfo_disposed */
-        FCSIDE(theFC) = theSide;
-        FCNGB(theFC) = NULL;
-        FCNGBS(theFC) = -1;
-
-        if (theFC==LASTFC(theFL))
-          break;
-      }
-
-  return (0);
-}
+        return (0);
+   }
+ */
 
 /****************************************************************************/
 /*                                                                          */
@@ -1355,7 +1000,7 @@ static FRONTCOMP *CutNeighbour (FRONTCOMP *theFC, COORD xt[3], COORD yt[3])
 
 /*****************************************************************************/
 /*                                                                           */
-/* Function:  PointInTriangle		                                                 */
+/* Function:  Point_In_Triangle		                                                 */
 /*                                                                           */
 /* Purpose:   check if a point of the AF lies inside the new created triangle*/
 /*                                                                                           */
@@ -1367,7 +1012,7 @@ static FRONTCOMP *CutNeighbour (FRONTCOMP *theFC, COORD xt[3], COORD yt[3])
 /*                                                                           */
 /*****************************************************************************/
 
-static INT PointInTriangle (COORD pt[DIM], COORD x[3], COORD y[3])
+static INT Point_In_Triangle (COORD pt[DIM], COORD x[3], COORD y[3])
 {
   INT i,index;
   COORD sx,sy,hlp;
@@ -1441,7 +1086,7 @@ static INT PointInTriangle (COORD pt[DIM], COORD x[3], COORD y[3])
   return (YES);
 }
 
-static INT PointInCircle (COORD pt[DIM], COORD x, COORD y, COORD searchrad2)
+static INT Point_In_Circle (COORD pt[DIM], COORD x, COORD y, COORD searchrad2)
 {
   COORD dx,dy;
 
@@ -1483,8 +1128,8 @@ static INT AssemblePointsInTriangleOrCircle (INDEPFRONTLIST *theIFL,
     for (thecompFC=STARTFC(theFL); thecompFC != NULL; thecompFC=SUCCFC(thecompFC))
     {
       theVertex = MYVERTEX(FRONTN(thecompFC));
-      if (    PointInTriangle (CVECT(theVertex),x,y)
-              ||      PointInCircle   (CVECT(theVertex),x[2],y[2],rad2))
+      if (    Point_In_Triangle       (CVECT(theVertex),x,y)
+              ||      Point_In_Circle (CVECT(theVertex),x[2],y[2],rad2))
       {
         if ( ++foundpoints >= MAXNPOINTS)
         {
@@ -1766,7 +1411,7 @@ static INT FCinsideOrNear (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC,FRONTCOMP *th
 
   if (thenewFC!=NULL)
     if (!(checkoptions&CHECKNEAR))                      /* check only inside */
-      if (!PointInTriangle (CVECT(MYVERTEX(FRONTN(thenewFC))),xt,yt))
+      if (!Point_In_Triangle (CVECT(MYVERTEX(FRONTN(thenewFC))),xt,yt))
         thenewFC = NULL;
 
   *newFChandle = thenewFC;
@@ -2451,7 +2096,6 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
   }
 
   /* necessary  thenewdoubledFC muss Nb, Sd und Nbsd von thenewFC uebernehmen.  */
-  FCSIDE(thenewdoubledFC) = FCSIDE(thenewFC);
   FCNGB(thenewdoubledFC)  = FCNGB(thenewFC);
   FCNGBS(thenewdoubledFC) = FCNGBS(thenewFC);
 
@@ -2597,7 +2241,6 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
 static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
 {
   INT i,n,found,NeighborSide[4];
-  ELEMENTSIDE *theElemSide[4];
   NODE *Node[3];
   ELEMENT *theElement,*Neighbor[4];
   EDGE *theEdge;
@@ -2611,16 +2254,12 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   Node[1] = theElementContext->theNode[1];
   Node[2] = theElementContext->theNode[2];
 
-  /* find neighboring elements and side information (theElemSide[i]==NULL) means inner side */
+  /* find neighboring elements */
   found = 0;
   for (i=0; i<n; i++)
   {
-    theElemSide[i]  = theElementContext->theElementside[i];
     Neighbor[i]     = theElementContext->theNeighbour[i];
     NeighborSide[i] = theElementContext->Neighbourside[i];
-
-    if (theElemSide[i]!=NULL)
-      found++;
   }
 
   InsertElement (MYMG(theGrid),n,Node,NULL);
@@ -2914,9 +2553,6 @@ static int FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContex
     theElementContext->theNeighbour[0] = FCNGB(theFC);
     theElementContext->theNeighbour[1] = NULL;
     theElementContext->theNeighbour[2] = NULL;
-    theElementContext->theElementside[0] = FCSIDE(theFC);
-    theElementContext->theElementside[1] = NULL;
-    theElementContext->theElementside[2] = NULL;
     theElementContext->Neighbourside[0] = FCNGBS(theFC);
     theElementContext->Neighbourside[1] = -1;
     theElementContext->Neighbourside[2] = -1;
@@ -2926,9 +2562,6 @@ static int FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContex
     theElementContext->theNeighbour[0] = FCNGB(theFC);
     theElementContext->theNeighbour[1] = NULL;
     theElementContext->theNeighbour[2] = FCNGB(PREDFC(theFC));
-    theElementContext->theElementside[0] = FCSIDE(theFC);
-    theElementContext->theElementside[1] = NULL;
-    theElementContext->theElementside[2] = FCSIDE(PREDFC(theFC));
     theElementContext->Neighbourside[0] = FCNGBS(theFC);
     theElementContext->Neighbourside[1] = -1;
     theElementContext->Neighbourside[2] = FCNGBS(PREDFC(theFC));
@@ -2938,9 +2571,6 @@ static int FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContex
     theElementContext->theNeighbour[0] = FCNGB(theFC);
     theElementContext->theNeighbour[1] = FCNGB(the_old_succ);
     theElementContext->theNeighbour[2] = NULL;
-    theElementContext->theElementside[0] = FCSIDE(theFC);
-    theElementContext->theElementside[1] = FCSIDE(the_old_succ);
-    theElementContext->theElementside[2] = NULL;
     theElementContext->Neighbourside[0] = FCNGBS(theFC);
     theElementContext->Neighbourside[1] = FCNGBS(the_old_succ);
     theElementContext->Neighbourside[2] = -1;
@@ -2950,9 +2580,6 @@ static int FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContex
     theElementContext->theNeighbour[0] = FCNGB(theFC);
     theElementContext->theNeighbour[1] = NULL;
     theElementContext->theNeighbour[2] = NULL;
-    theElementContext->theElementside[0] = FCSIDE(theFC);
-    theElementContext->theElementside[1] = NULL;
-    theElementContext->theElementside[2] = NULL;
     theElementContext->Neighbourside[0] = FCNGBS(theFC);
     theElementContext->Neighbourside[1] = -1;
     theElementContext->Neighbourside[2] = -1;
@@ -2962,9 +2589,6 @@ static int FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContex
     theElementContext->theNeighbour[0] = FCNGB(theFC);
     theElementContext->theNeighbour[1] = FCNGB(the_old_succ);
     theElementContext->theNeighbour[2] = FCNGB(PREDFC(theFC));
-    theElementContext->theElementside[0] = FCSIDE(theFC);
-    theElementContext->theElementside[1] = FCSIDE(the_old_succ);
-    theElementContext->theElementside[2] = FCSIDE(PREDFC(theFC));
     theElementContext->Neighbourside[0] = FCNGBS(theFC);
     theElementContext->Neighbourside[1] = FCNGBS(the_old_succ);
     theElementContext->Neighbourside[2] = FCNGBS(PREDFC(theFC));
@@ -2997,23 +2621,14 @@ static int FrontcomponentUpdate(INT FlgForAccel, FRONTCOMP* theFC, FRONTCOMP* th
 {
   /* 1.) theFC : */
   FCNGB(theFC) = theElementContext->thenewElement;
-  FCSIDE(theFC) = NULL;
   FCNGBS(theFC) = 2;
-
-  /* 2.) the_old_succ : */
-  /* FCNGB(the_old_succ)  : unchanged !; */
-  /* FCSIDE(the_old_succ) : unchanged !; */
-  /* FCNGBS(the_old_succ) : unchanged !; */
 
   /* 3.) thenewFC : */
   if(FlgForAccel != RIGHTNEIGHBOURCASE)       /*special case*/
   {
     FCNGB(thenewFC) = theElementContext->thenewElement;
-    FCSIDE(thenewFC) = NULL;
     FCNGBS(thenewFC) = 1;
   }
-
-
 
   if(theFC == NULL) return(1);
   return(0);
@@ -3132,21 +2747,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
     return (5);
   }
 
-  if (SmallHoleCompleted)
-  {
-    UserWrite("WARNING: small holes have been completed. Proceed (y/n)?");
-    UserRead(buffer);
-    if (buffer[0]=='n')
-    {
-      return (6);
-    }
-  }
-
-
   /* now we can create all element sides that will be needed by the MakeElement fct. */
-
-  if (CreateAllElementSides (theMG)!=0)
-    return (7);
 
   if (doAngle || doEdge)
     if (AccelInit(theGrid, doAngle, doEdge, myPars)!=0) return(1);

@@ -226,14 +226,9 @@ FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE
     if (pfc==NULL) return(NULL);
 
     /* initialize data */
-    CTRL(pfc) = 0;
     SETOBJT(pfc,FcObj);
     FRONTN(pfc) = *NodeHandle;
     MYFL(pfc) = mylist;
-    FCSIDE(pfc) = NULL;
-    FCNGB(pfc) = NULL;
-    FCNGBS(pfc) = NULL;
-
 
     /* insert in (cyclic!) front comp list */
     if (after==NULL)
@@ -283,7 +278,6 @@ FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE
     SETOBJT(&(FChandle[i]),FcObj);
     FRONTN(&(FChandle[i])) = NodeHandle[i];
     MYFL(&(FChandle[i])) = mylist;
-    FCSIDE(&(FChandle[i])) = NULL;
     FCNGB(&(FChandle[i])) = NULL;
     FCNGBS(&(FChandle[i])) = NULL;
   }
