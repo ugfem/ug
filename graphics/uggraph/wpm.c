@@ -1677,6 +1677,7 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
       V3_COPY(VO_PXD(theViewedObj),DefaultPXD)
       V3_COPY(VO_PYD(theViewedObj),DefaultPYD)
       DefaultPJ = VO_PERSPECTIVE(theViewedObj);
+      V3_COPY(VO_SCALE(theViewedObj),DefaultScale)
     }
 
     /* modify values */
