@@ -1,32 +1,32 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  scan.c	                                                                                                */
-/*																			*/
-/* Purpose:   tools for reading script arguments                                */
-/*																			*/
-/*																			*/
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
-/* History:   November 23, 1996                                                                         */
-/*			  low part of former np/udm/scan.c, 15.5.97						*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                          */
+/* File:      scan.c                                                        */
+/*                                                                          */
+/* Purpose:   tools for reading script arguments                            */
+/*                                                                          */
+/*                                                                          */
+/* Author:    Christian Wieners                                             */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
+/* History:   November 23, 1996                                             */
+/*            low part of former np/udm/scan.c, 15.5.97                     */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* include files															*/
-/*			  system include files											*/
-/*			  application include files                                                                     */
-/*																			*/
+/*                                                                          */
+/* include files                                                            */
+/* system include files                                                     */
+/* application include files                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #include <string.h>
@@ -63,22 +63,22 @@ USING_UG_NAMESPACES
 #define VALUELENSTR                     "63"
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
-/*		  in the corresponding include file!)								*/
-/*																			*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
+/* in the corresponding include file!)                                      */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 REP_ERR_FILE;
@@ -87,32 +87,26 @@ REP_ERR_FILE;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*																			*/
-/* forward declarations of functions used before they are defined			*/
-/*																			*/
+/*                                                                          */
+/* forward declarations of functions used before they are defined           */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
-   ReadArgvDOUBLE - Read command strings
+/** \brief Read command line doubles
 
-   SYNOPSIS:
-   INT ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv);
+   \param name - name of the argument
+   \param a - DOUBLE value
+   \param argc - argument counter
+   \param argv - argument vector
 
-   PARAMETERS:
-   .  name - name of the argument
-   .  a - DOUBLE value
-   .  argc - argument counter
-   .  argv - argument vector
-
-   DESCRIPTION:
    This function reads command strings and returns a DOUBLE value.
 
-   RETURN VALUE:
-   INT
-   .n    0 if the argument was found and a DOUBLE value could be read
-   .n    1 else.
-   D*/
+   \return <ul>
+   <li>  0 if the argument was found and a DOUBLE value could be read </li>
+   <li>  1 else. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv)
@@ -137,26 +131,20 @@ INT NS_PREFIX ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv
 }
 
 /****************************************************************************/
-/*D
-   ReadArgvINT - Read command strings
+/** \brief Read command line integers
 
-   SYNOPSIS:
-   INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv);
+   \param name - name of the argument
+   \param j - integer value
+   \param argc - argument counter
+   \param argv - argument vector
 
-   PARAMETERS:
-   .  name - name of the argument
-   .  j - integer value
-   .  argc - argument counter
-   .  argv - argument vector
-
-   DESCRIPTION:
    This function reads command strings and returns an integer value in 'j'.
 
-   RETURN VALUE:
-   INT
-   .n    0 if the argument was found and a value could be read
-   .n    1 else.
-   D*/
+   \return <ul>
+   <li>  0 if the argument was found and a value could be read </li>
+   <li>  1 else. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
@@ -181,28 +169,22 @@ INT NS_PREFIX ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*D
-   ReadArgvDOUBLE_INT - Read DOUBLE and INT from an option
+/** \brief Read DOUBLE and INT from an option
 
-   SYNOPSIS:
-   INT ReadArgvDOUBLE_INT (const char *name, DOUBLE *a, INT *j, INT argc, char **argv);
+   \param name - name of the argument
+   \param a - DOUBLE value
+   \param m - INT value
+   \param argc - argument counter
+   \param argv - argument vector
 
-   PARAMETERS:
-   .  name - name of the argument
-   .  a - DOUBLE value
-   .  m - INT value
-   .  argc - argument counter
-   .  argv - argument vector
-
-   DESCRIPTION:
    This function reads command strings and sets a DOUBLE value and an
    optional INT-Value.
 
-   RETURN VALUE:
-   INT
-   .n    0 - !!!! no argument was found !!!!
-   .n    1,2 - number of arguments
-   D*/
+   \return <ul>
+   <li>  0 - !!!! no argument was found !!!! </li>
+   <li>  1,2 - number of arguments </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ReadArgvDOUBLE_INT (const char *name, DOUBLE *a, INT *j, INT argc, char **argv)
@@ -229,26 +211,20 @@ INT NS_PREFIX ReadArgvDOUBLE_INT (const char *name, DOUBLE *a, INT *j, INT argc,
 }
 
 /****************************************************************************/
-/*D
-   ReadArgvChar - Read command strings
+/** \brief Read command strings
 
-   SYNOPSIS:
-   INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv);
+   \param name - name of the argument
+   \param buffer - string
+   \param argc - argument counter
+   \param argv - argument vector
 
-   PARAMETERS:
-   .  name - name of the argument
-   .  buffer - string
-   .  argc - argument counter
-   .  argv - argument vector
-
-   DESCRIPTION:
    This function reads command strings and returns an string value in 'buffer'.
 
-   RETURN VALUE:
-   INT
-   .n    0 if the argument was found and a value could be read
-   .n    1 else.
-   D*/
+   \return <ul>
+   <li>  0 if the argument was found and a value could be read </li>
+   <li>  1 else. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ReadArgvChar (const char *name, char *buffer, INT argc, char **argv)
@@ -274,19 +250,13 @@ INT NS_PREFIX ReadArgvChar (const char *name, char *buffer, INT argc, char **arg
 }
 
 /****************************************************************************/
-/*D
-   ReadArgvMEM - Read command strings for (memory) size specification
+/** \brief Read command strings for (memory) size specification
 
-   SYNOPSIS:
-   INT ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv);
+   \param name - name of the argument
+   \param mem_size - integer value
+   \param argc - argument counter
+   \param argv - argument vector
 
-   PARAMETERS:
-   .  name - name of the argument
-   .  mem_size - integer value
-   .  argc - argument counter
-   .  argv - argument vector
-
-   DESCRIPTION:
    This function reads command strings and returns an MEM value in 'mem_size'.
    It converts a (memory)size specification from String to
    type MEM (an integer type).
@@ -300,14 +270,14 @@ INT NS_PREFIX ReadArgvChar (const char *name, char *buffer, INT argc, char **arg
    EXAMPLE:
       "10M" is converted to 10485760 (10 mega byte).
 
-   RETURN VALUE:
-   INT
-   .n    0 ok (the argument was found and a value could be read)
-   .n    1 integer could not be read or invalid unit specifier
+   \return <ul>
+   <li>  0 ok (the argument was found and a value could be read) </li>
+   <li>  1 integer could not be read or invalid unit specifier </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
       MEM
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv)
@@ -336,26 +306,20 @@ INT NS_PREFIX ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **arg
 }
 
 /****************************************************************************/
-/*D
-   ReadArgvOption - Read command strings
+/** \brief Read command line options
 
-   SYNOPSIS:
-   INT ReadArgvOption (const char *name, INT argc, char **argv);
+   \param name - name of the argument
+   \param argc - argument counter
+   \param argv - argument vector
 
-   PARAMETERS:
-   .  name - name of the argument
-   .  argc - argument counter
-   .  argv - argument vector
-
-   DESCRIPTION:
    This function reads command strings and returns an integer value.
 
-   RETURN VALUE:
-   INT
-   .n    0 if the option is not set
-   .n    n if an integer n is given with the option
-   .n    1 else.
-   D*/
+   \return <ul>
+   <li>  0 if the option is not set </li>
+   <li>  n if an integer n is given with the option </li>
+   <li>  1 else. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ReadArgvOption (const char *name, INT argc, char **argv)
