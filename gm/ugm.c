@@ -7545,7 +7545,7 @@ static INT QualityElement (INT type, ELEMENT *element, DOUBLE *angle)
     angle[i] /= 4*PI;
   }
   if (TetraSideNormals (element,x,theNormal)) return (2);
-  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+  for (i=0; i<EDGES_OF_ELEM(element); i++)
   {
     V3_SCALAR_PRODUCT(theNormal[SIDE_WITH_EDGE(element,i,0)],theNormal[SIDE_WITH_EDGE(element,i,1)],help);
     help = MAX(help,-1.0);
