@@ -415,9 +415,7 @@ INT WriteLogFile (const char *text)
                 #endif
     return 1;
   }
-        #ifdef Debug
   fflush(logFile);
-        #endif
 
   return(0);
 }
