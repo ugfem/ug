@@ -454,6 +454,87 @@ INT AddElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
 
 /****************************************************************************/
 /*D
+   GetVlistVecskip - get list of vecskip flags
+
+   SYNOPSIS:
+   INT GetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
+   INT *vecskip);
+
+   PARAMETERS:
+   .  cnt - number of vectors
+   .  theVec - vector list
+   .  theVD - type vector descriptor
+   .  vecskip - set 1 for DIRICHLET boundary, 0 else
+
+   DESCRIPTION:
+   This function gets vecskip flags for a vector set.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT GetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
+                     INT *vecskip)
+{
+  INT i,j,m,vtype;
+
+  m = 0;
+  for (i=0; i<cnt; i++) {
+    vtype = VTYPE(theVec[i]);
+    for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++) {
+      vecskip[m++] = ((VECSKIP(theVec[i]) & (1<<j))!=0);
+    }
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   SetVlistVecskip - get list of vecskip flags
+
+   SYNOPSIS:
+   INT SetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
+   INT *vecskip);
+
+   PARAMETERS:
+   .  cnt - number of vectors
+   .  theVec - vector list
+   .  theVD - type vector descriptor
+   .  vecskip - set 1 for DIRICHLET boundary, 0 else
+
+   DESCRIPTION:
+   This function sets vecskip flags for a vector set.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT SetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
+                     INT *vecskip)
+{
+  INT i,j,m,vtype;
+
+  m = 0;
+  for (i=0; i<cnt; i++) {
+    vtype = VTYPE(theVec[i]);
+    for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++) {
+      if (vecskip[m++] == 1)
+        VECSKIP(theVec[i]) |= (1<<j);
+    }
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
    GetVlistVValue - get list of DOUBLE values for vectors
 
    SYNOPSIS:

@@ -179,6 +179,10 @@ INT GetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theVD,
                                  INT *vecskip);
 INT SetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theVD,
                                  INT *vecskip);
+INT GetVlistVecskip             (INT cnt, VECTOR **theVec,
+                                 const VECDATA_DESC *theVD, INT *vecskip);
+INT SetVlistVecskip             (INT cnt, VECTOR **theVec,
+                                 const VECDATA_DESC *theVD, INT *vecskip);
 
 /* modifications in Dirichlet dofs */
 INT ModifyDirichletMatrix               (GRID *theGrid, const MATDATA_DESC *Mat);
