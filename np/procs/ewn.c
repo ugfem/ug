@@ -536,7 +536,7 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
   MULTIGRID *theMG = theNP->base.mg;
   INT i,j,k,l,PrintID,iter,done,result,DoLS;
   char text[DISPLAY_WIDTH+4],format2[64],format3[64],formatr1[64],formatr2[64],formats[64];
-  DOUBLE a[2],rq,s,min,shift,shift_old,norm_max,cnorm[MAX_NUMBER_EW],norm_x1x2,norm_yx2,norm_yx1;
+  DOUBLE a[2],rq,s,min,shift,shift_old,norm_max,cnorm[MAX_NUMBER_EW],norm_x1x2,norm_yx2,norm_yx1,ss,max_additional,max_wanted,help;
   DOUBLE A[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE B[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE BL[MAX_NUMBER_EW*MAX_NUMBER_EW];
@@ -741,18 +741,38 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
     for (i=0; i<New; i++)
       if (FreeVD(theMG,bl,level,np->e[i])) NP_RETURN(1,ewresult->error_code);
 
+    /* calculate shift
+       shift=0.5*(shift+ew_re[0]);
+       min=0;
+       for (i=1; i<New; i++)
+       {
+            min=2.0*ew_re[0]-ew_re[i];
+            if (min<ew_re[0]) break;
+       }
+       shift=MIN(shift,min);
+       shift=MAX(shift,np->shift_min);
+       shift=MIN(shift,np->shift_max);
+       DoLS=0; if (shift!=shift_old) DoLS=1; shift_old=shift; */
+
     /* calculate shift */
-    shift=0.5*(shift+ew_re[0]);
-    min=0;
-    for (i=1; i<New; i++)
+    shift=np->shift_min-1.0;
+    for (ss=np->shift_min; ss<=np->shift_max; ss+=0.01*(np->shift_max-np->shift_min))
     {
-      min=2.0*ew_re[0]-ew_re[i];
-      if (min<ew_re[0]) break;
+      max_wanted=0.0;
+      for (i=0; i<np->c_n; i++)
+      {
+        help=(ew_re[i]-shift)*(ew_re[i]-shift)+ew_im[i]*ew_im[i];
+        max_wanted=MAX(max_wanted,sqrt(help));
+      }
+      max_additional=10.0*max_wanted;
+      for (i=np->c_n+1; i<np->ew.nev; i++)
+      {
+        help=(ew_re[i]-shift)*(ew_re[i]-shift)+ew_im[i]*ew_im[i];
+        max_additional=MAX(max_additional,sqrt(help));
+      }
+      if (max_wanted<=0.5*max_additional) shift=ss;
     }
-    shift=MIN(shift,min);
-    shift=MAX(shift,np->shift_min);
-    shift=MIN(shift,np->shift_max);
-    DoLS=0; if (shift!=shift_old) DoLS=1;shift_old=shift;
+    assert(shift>=np->shift_min);
 
     /* postprocess if */
     if (done || iter==np->maxiter-1 || DoLS)
