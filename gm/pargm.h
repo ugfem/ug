@@ -351,7 +351,7 @@ enum Priorities
 extern DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
               ElementVHIF, ElementSymmVHIF;
 extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
-              NodeIF;
+              NodeIF, NodeAllIF;
 extern DDD_IF BorderVectorIF, BorderVectorSymmIF,
               OuterVectorIF, OuterVectorSymmIF,
               VectorVIF, VectorVAllIF;
