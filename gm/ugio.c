@@ -1034,7 +1034,6 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *c
       nhe=0;
       if (nHierElements (theElement,&nhe)) return (1);
       hr_max = MAX(hr_max,nhe);
-      printf(PFMT " e=" EID_FMTX "nhe=%d\n",me,EID_PRTX(theElement),nhe);
       cge->nhe = nhe;
       for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
         cge->cornerid[j] = ID(CORNER(theElement,j));
@@ -1778,11 +1777,8 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     theMesh.ElementLevel[i] = NULL;
   }
   theMesh.nElements[1] = cg_general.nElement;
-  if (MGIO_PARFILE)
-  {
-    theMesh.ElementLevel[1] = (char*)GetTmpMem(theHeap,cg_general.nElement*sizeof(char));
-    if (theMesh.ElementLevel[1]==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for theMesh.ElementLevel[1]\n",(int)cg_general.nElement*sizeof(char)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-  }
+  theMesh.ElementLevel[1] = (char*)GetTmpMem(theHeap,cg_general.nElement*sizeof(char));
+  if (theMesh.ElementLevel[1]==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for theMesh.ElementLevel[1]\n",(int)cg_general.nElement*sizeof(char)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (i=0; i<cg_general.nInnerPoint; i++)
     theMesh.Position[i] = Positions+MGIO_DIM*i;
   for (i=0; i<cg_general.nInnerPoint; i++)
@@ -1808,10 +1804,8 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     Element_corner_uniq_subdom[i] = ge_element[cge->ge].nCorner;
     max = MAX(max,ge_element[cge->ge].nCorner);
     max = MAX(max,ge_element[cge->ge].nSide);
-    if (MGIO_PARFILE)
-    {
-      theMesh.ElementLevel[1][i] = cge->level;
-    }
+    if (MGIO_PARFILE) theMesh.ElementLevel[1][i] = cge->level;
+    else theMesh.ElementLevel[1][i] = 0;
   }
   Ecusdp[1] = Element_corner_uniq_subdom;
   theMesh.Element_corners = Ecusdp;
