@@ -7671,6 +7671,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
       break;
 
     default :
+      PrintErrorMessage('E',"openppic","unknown option");
       return (PARAMERRORCODE);
     }
 
