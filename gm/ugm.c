@@ -1167,7 +1167,8 @@ NODE *GetCenterNode (ELEMENT *theElement)
       theNode = CORNER(theSon,j);
       if (NTYPE(theNode) == CENTER_NODE)
       {
-        assert(VFATHER(MYVERTEX(theNode)) == theElement);
+        if (EMASTER(theElement))
+          assert(VFATHER(MYVERTEX(theNode)) == theElement);
         return (theNode);
       }
     }
