@@ -3566,8 +3566,8 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
 
    'bn <Id> <s> [<t>]'
 
-   .  <Id>                   - insert a boundary node on the boundary segment with <Id>
-   .  <s>~[<t>]                - specify as much boundary segment coordinates as the boundary has dimensions
+   .  <Id>                   - insert a boundary node on the patch with <Id>
+   .  <s>~[<t>]                - specify as much patch coordinates as the boundary has dimensions
    D*/
 /****************************************************************************/
 
@@ -3586,10 +3586,10 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
    This function inserts a boundary node+vertex.
    It inserts a boundary node into a multigrid with only level 0.
 
-   bn <Id> <s> <t>
+   bn <Id> <s> [<t>]
 
-   .  <Id>                   - insert a boundary node on the boundary segment with <Id>
-   .  <s> <t>                - specify as much boundary segment coordinates as the boundary has dimensions
+   .  <Id>                   - insert a boundary node on the pach with <Id>
+   .  <s>~[<t>]                - specify as much patch coordinates as the boundary has dimensions
 
    RETURN VALUE:
    INT
@@ -3606,7 +3606,7 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
 
   /* following variables: keep type for sscanf */
   float x[DIM_OF_BND_MAX];
-  int segid;
+  int patch_id;
 
   NO_OPTION_CHECK(argc,argv);
 
@@ -3617,7 +3617,7 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (sscanf(argv[0],"bn %d %f %f",&segid,x,x+1)!=1+DIM_OF_BND)
+  if (sscanf(argv[0],"bn %d %f %f",&patch_id,x,x+1)!=1+DIM_OF_BND)
   {
     sprintf(buffer,"specify %d coordinates for a boundary node",(int)DIM);
     PrintErrorMessage('E',"bn",buffer);
@@ -3627,7 +3627,7 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
     xc[i] = x[i];
 
   /* NB: toplevel=0 is checked by InsertBoundaryNode() */
-  if (InsertBoundaryNode(theMG,segid,xc)!=GM_OK)
+  if (InsertBoundaryNode(theMG,patch_id,xc)!=GM_OK)
   {
     PrintErrorMessage('E',"bn","inserting a boundary node failed");
     return (CMDERRORCODE);
@@ -6132,7 +6132,50 @@ static INT BnodesCommand  (INT argc, char **argv)
 
   return (OKCODE);
 }
+#endif
 
+#ifdef __THREEDIM__
+static INT BnodesCommand  (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  float val;
+  DOUBLE h;
+  SYMBOL *sym;
+  FILE *inp;
+  INT i,debug;
+  char datafile[NAMESIZE];
+
+  h = -1.0;
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"bnodes","no current multigrid");
+    return(CMDERRORCODE);
+  }
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'h' :
+      if (sscanf(argv[i],"h %f",&val)!=1)
+      {
+        PrintErrorMessage('E',"bnodes","specify h");
+        return (PARAMERRORCODE);
+      }
+      h = val;
+      break;
+    }
+
+  if (h < 0.0)
+  {
+    PrintErrorMessage('E',"bnodes","specify h");
+    return (PARAMERRORCODE);
+  }
+
+  if (GenerateBoundaryNodes3d (theMG,h))
+    return(CMDERRORCODE);
+
+  return(OKCODE);
+}
 #endif
 
 /****************************************************************************/
@@ -6181,7 +6224,6 @@ static INT BnodesCommand  (INT argc, char **argv)
 /****************************************************************************/
 
 #ifdef __TWODIM__
-
 static INT MakeGridCommand  (INT argc, char **argv)
 {
   long ElemID;
@@ -6282,7 +6324,19 @@ static INT MakeGridCommand  (INT argc, char **argv)
 
   return (OKCODE);
 }
+#endif
 
+#ifdef __THREEDIM__
+static INT MakeGridCommand  (INT argc, char **argv)
+{
+  if (GenerateGrid3d())
+  {
+    PrintErrorMessage('E',"makegrid","execution failed");
+    return (CMDERRORCODE);
+  }
+
+  return (OKCODE);
+}
 #endif
 
 /****************************************************************************/
@@ -10157,10 +10211,8 @@ INT InitCommands ()
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("gridscript",         GridScriptCommand                               )==NULL) return(__LINE__);
-    #ifdef __TWODIM__
   if (CreateCommand("bnodes",                 BnodesCommand                                       )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
-    #endif
 
   /* commands for grape */
         #ifdef __GRAPE_TRUE__

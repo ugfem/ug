@@ -17,6 +17,7 @@ include ug.conf
 
 # the following list may be extended
 MODULES = LOW DEV DOM GM NUMERICS GRAPH GRAPE UI GG 
+UGMODULES = LOW GM NUMERICS GRAPH GRAPE UI GG 
 
 # dimension dependent targets
 version = $(DIM)Dversion
@@ -31,6 +32,10 @@ OBJECTS = initug.o
 all: $(MODULES) $(OBJECTS)
 	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
 	echo "ug 3 compiled"
+
+uglib: $(UGMODULES) $(OBJECTS)
+	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
+	echo "uglib compiled"
 
 LOW:
 	cd low; make -f Makefile.low; cd ..;
@@ -58,6 +63,7 @@ UI:
 
 GG:
 	cd gg; make -f Makefile.gg $(version); cd ..;
+	cd gg3d; make -f Makefile.gg3d $(version); cd ..;
 	
 # default rule
 .c.o:
@@ -73,6 +79,7 @@ clean:
 	cd graph; make -f Makefile.graph clean; cd ..;
 	cd ui; make -f Makefile.ui clean; cd ..;
 	cd gg; make -f Makefile.gg clean; cd ..;
+	cd gg3d; make -f Makefile.gg clean; cd ..;
 
 ifdef:
 	cd gm; make -f Makefile.gm clean; cd ..;
