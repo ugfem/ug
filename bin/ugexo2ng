@@ -23,15 +23,15 @@ $real = '[+-]?\d+(?:\.\d+)?';   # (?:\.\d+)? means: optional .nnnn part
 $exp = '[+-]?\d+(?:\.\d+(?:e[+-]?\d+)?)?';
 $string = '[a-z"_]\w*';
 
-%cdf = ();
-%lgm = ();
-%map = ();
-
 if ($#ARGV != 3)
 {
 	print "usage: ugexo2ng <exo2filename> <lgmfilename> <mapfilename> <ngfilename>\n";
  	exit;
 }
+
+%cdf = ();
+%lgm = ();
+%map = ();
 
 $exo2 = "$ARGV[0]";
 $lgm = "$ARGV[1]";
@@ -819,6 +819,9 @@ sub GetLocalCoordinates
 	   }
 	}
 
+	$$xi = $lambda[1];
+	$$eta = $lambda[0];
+
 	return 1;
 }
 
@@ -838,14 +841,14 @@ sub Tri_Callback
 {
 	my($x,$obj)=@_;
 	my(@p0,@p1,@p2,@a,@b,@c,@p,$i,$ma,$mb,$mc,@tmp,@cp,$mcp,@n,$d,$md,@dist);
-	my($tmp,$dummy);
+	my($tmp,$xi,$eta);
 
 	$tmp = $obj->{p0}; @p0 = @$tmp;
 	$tmp = $obj->{p1}; @p1 = @$tmp;
 	$tmp = $obj->{p2}; @p2 = @$tmp;
 
 	## point lies not inside extruded triangle area
-	if(!(GetLocalCoordinates(\@p0,\@p1,\@p2,$x,$dummy,$dummy))){
+	if(!(GetLocalCoordinates(\@p0,\@p1,\@p2,$x,\$xi,\$eta))){
 		return $HUGE;
 	}
 	
@@ -913,11 +916,13 @@ sub Tri_Callback
 	for($i=0;$i<$DIM;$i++){
 		$dist[$i]=(-$d)*$n[$i];	
 		$obj->{p_proj}->[$i] = $x->[$i] + $dist[$i];
-		#print"dist[$i]=$dist[$i] ";
+		printf "dist[$i]=%.16e",$dist[$i] ;
 		#print"Triangle_Callback: $obj->{p_proj}->[$i] ";
 	}
 
 	# compute local coordinates
+if (0)
+{
 	for($i=0;$i<$DIM;$i++){
 		$p01[$i]=$obj->{p1}[$i]-$obj->{p0}[$i];
 		$p02[$i]=$obj->{p2}[$i]-$obj->{p0}[$i];
@@ -935,6 +940,12 @@ sub Tri_Callback
 	$local1 = $loc1;
  	$obj->{loc0} = $loc0;
  	$obj->{loc1} = $loc1;
+}
+	$local0 = $xi;
+	$local1 = $eta;
+ 	$obj->{loc0} = $xi;
+ 	$obj->{loc1} = $eta;
+
 #	$obj->{test} = $loc1;
 #	printf ("Tri_Callback loc0=%lf loc1=%lf\n",$loc0,$loc1);
 	printf ("Tri_Callback loc0=%lf loc1=%lf\n",$obj->{loc0},$obj->{loc1});
@@ -1196,12 +1207,15 @@ sub write_nodes
 #	printf "%d\n",$cdf{num_nodes};
 #	printf "%s %s\n", $cdf{coord}{0},$cdf{coord}{1};
 #	printf "%s\n", $cdf{coord};
+
+#   write boundary nodes
+	$nid = 0;
 	foreach $nc (1 .. $cdf{num_nodes})
 	{
 #    		printf "%lf, %lf, %lf\n",$cdf{coord}{$nc-1},$cdf{coord}{2*$nc-1},$cdf{coord}{3*$nc-1};
 			if (defined($cdf{bndcoord}{$nc}{bnd}))
 			{
-				printf NG "# %d\n",$nc-1;
+				printf NG "# %d %d\n",$nid,$nc;
     			printf NG "B %s %s %s\n",
 					$cdf{coord}{$nc},$cdf{coord}{$nc+$cdf{num_nodes}},$cdf{coord}{$nc+2*$cdf{num_nodes}}; 
 
@@ -1229,23 +1243,65 @@ sub write_nodes
 					}
 				}
     			printf NG ";\n";
+				$cdf{nodemap}{$nc} = $nid;
+				$nid++;
 			}
 	}	
+#   write inner nodes
 	foreach $nc (1 .. $cdf{num_nodes})
 	{
 #    		printf "%lf, %lf, %lf\n",$cdf{coord}{$nc-1},$cdf{coord}{2*$nc-1},$cdf{coord}{3*$nc-1};
 			if (!defined($cdf{bndcoord}{$nc}{bnd}))
 			{
+				printf NG "# %d %d\n",$nid,$nc;
     			printf NG "I %s %s %s;\n",
 					$cdf{coord}{$nc},$cdf{coord}{$nc+$cdf{num_nodes}},$cdf{coord}{$nc+2*$cdf{num_nodes}}; 
+				$cdf{nodemap}{$nc} = $nid;
+				$nid++;
 			}
 	}	
 	print NG "\n";
+
+	if ($nid != $cdf{num_nodes})
+	{
+		printf "nid=%d and num_nodes=%d\n",$nid,$cdf{num_nodes}-1;
+		die;
+	}
+}
+
+sub element_offsets()
+{
+	# print the connect blocks with volume elements
+	$offset = 0;
+	LOOP: foreach $nconnect (1 .. $cdf{num_el_blk})
+	{
+		if ( $cdf{eb_prop1}{$nconnect} =~/\A2($int)/ )
+		{
+			print "# elementoffset of volume $nconnect is $offset\n";
+
+			# number of elements in block $ncon
+			$numne = sprintf "num_el_in_blk%d",$nconnect; 
+
+			$cdf{elem_offset}{$nconnect} = $offset;
+			$offset += $cdf{$numne}{1};
+		}
+	}
+
+	return;
+}
+
+sub nmap
+{
+	my $nc = $_[0];
+
+	$nid = $cdf{nodemap}{$nc};
+
+	return ($nid);
 }
 
 sub write_bnd_side
 {
-	my $co = $_[0];
+	my $connect = $_[0];
 	my $ne = $_[1];
 	my $nn = $_[2];
 	my $neid = $_[3];
@@ -1254,32 +1310,33 @@ sub write_bnd_side
 #	printf NG " F %d", $cdf{bnd_elem_side}{$neid}{$ns};
 	printf NG " F";
 	$side = $cdf{bnd_elem_side}{$neid}{$ns};
+
 	# tetrahedral case
 	if ($nn == 4)
 	{
 		if ($side == 1)
 		{
-				$n0 = $cdf{$connect}{4*$ne-3}-1;
-				$n1 = $cdf{$connect}{4*$ne-2}-1;
-				$n2 = $cdf{$connect}{4*$ne-0}-1;
+				$n0 = nmap($cdf{$connect}{4*$ne-3});
+				$n1 = nmap($cdf{$connect}{4*$ne-2});
+				$n2 = nmap($cdf{$connect}{4*$ne-0});
 		}
 		elsif ($side == 2)
 		{
-				$n0 = $cdf{$connect}{4*$ne-2}-1;
-				$n1 = $cdf{$connect}{4*$ne-1}-1;
-				$n2 = $cdf{$connect}{4*$ne-0}-1;
+				$n0 = nmap($cdf{$connect}{4*$ne-2});
+				$n1 = nmap($cdf{$connect}{4*$ne-1});
+				$n2 = nmap($cdf{$connect}{4*$ne-0});
 		}
 		elsif ($side == 3)
 		{
-				$n0 = $cdf{$connect}{4*$ne-3}-1;
-				$n1 = $cdf{$connect}{4*$ne-1}-1;
-				$n2 = $cdf{$connect}{4*$ne-0}-1;
+				$n0 = nmap($cdf{$connect}{4*$ne-3});
+				$n1 = nmap($cdf{$connect}{4*$ne-1});
+				$n2 = nmap($cdf{$connect}{4*$ne-0});
 		}
 		elsif ($side == 4)
 		{
-				$n0 = $cdf{$connect}{4*$ne-3}-1;
-				$n1 = $cdf{$connect}{4*$ne-1}-1;
-				$n2 = $cdf{$connect}{4*$ne-2}-1;
+				$n0 = nmap($cdf{$connect}{4*$ne-3});
+				$n1 = nmap($cdf{$connect}{4*$ne-1});
+				$n2 = nmap($cdf{$connect}{4*$ne-2});
 		}
 		else
 		{
@@ -1299,6 +1356,8 @@ sub write_elements
 {
 	print NG "# Elements\n";
 
+	element_offsets();
+
 	# print the connect blocks with volume elements
 	$ncon = 0;
 	$volume = 1;
@@ -1316,24 +1375,27 @@ sub write_elements
 			printf("nconnect=$nconnect numne=$numne connect=$connect\n");
 			foreach $ne (1 .. $cdf{$numne}{1})
 			{
+				# compute global element number
+				$neid = $ne + $cdf{elem_offset}{$nconnect};
+
 				# print element node ids
 				# TODO: implement other element types
+				printf NG "# %d\n",$neid-1;
 				printf NG "E %d",$volume;
-				printf NG " %d", $cdf{$connect}{4*$ne-3}-1;
-				printf NG " %d", $cdf{$connect}{4*$ne-2}-1;
-				printf NG " %d", $cdf{$connect}{4*$ne-1}-1;
-				printf NG " %d", $cdf{$connect}{4*$ne-0}-1;
+				printf NG " %d", nmap($cdf{$connect}{4*$ne-3});
+				printf NG " %d", nmap($cdf{$connect}{4*$ne-2});
+				printf NG " %d", nmap($cdf{$connect}{4*$ne-1});
+				printf NG " %d", nmap($cdf{$connect}{4*$ne-0});
 
 				# print boundary side
 				$nn = 4;
-				if (defined($cdf{bnd_elem_nside}{$ne}))
+				if (defined($cdf{bnd_elem_nside}{$neid}))
 				{
-					foreach $ns (0 .. $cdf{bnd_elem_nside}{$ne}-1)
+					foreach $ns (0 .. $cdf{bnd_elem_nside}{$neid}-1)
 					{
-  						write_bnd_side($connect,$ne,$nn,$ne,$ns)
+  						write_bnd_side($connect,$ne,$nn,$neid,$ns)
 					}
 				}
-				$neid++;
 				print NG ";\n";
 			}
 			print NG "\n";
