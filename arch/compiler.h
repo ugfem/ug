@@ -365,7 +365,7 @@ extern "C" {
 /*                                                                          */
 /****************************************************************************/
 
-#define ARCH_VERSION "$Header$"
+#define ARCH_VERSION "$Id$"
 
 /* limits of the basic types */
 #define MAX_S            SHRT_MAX
