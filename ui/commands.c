@@ -3773,7 +3773,7 @@ static INT ConvertCommand (INT argc, char **argv)
   int n,nn,*ia,*ja,inc;
   double *a,*r;
   char name[32];
-  INT i,j,MarkKey,symmetric;
+  INT i,j,MarkKey,symmetric,ncomp;
 
   theMG = GetCurrentMultigrid();
   if (theMG==NULL) {
@@ -3789,6 +3789,8 @@ static INT ConvertCommand (INT argc, char **argv)
   MarkTmpMem(theHeap,&MarkKey);
   symmetric = ReadArgvOption("symmetric",argc,argv);
   inc = ReadArgvOption("inc",argc,argv);
+  if (ReadArgvINT("ncomp",&ncomp,argc,argv))
+    ncomp = 1;
   if (ReadArgvChar("r",name,argc,argv) == 0) {
     if (ReadMatrixDimensions(name,&n,&nn)) {
       PrintErrorMessage('E',"convert",
@@ -6905,12 +6907,14 @@ static INT MakeGridCommand  (INT argc, char **argv)
 
   if (CreateNewLevel(theMG,0)==NULL)
   {
+    UserWriteF("makegrid: cannot create new level\n");
     DisposeMultiGrid(theMG);
     return (CMDERRORCODE);
   }
   mesh = BVP_GenerateMesh (MGHEAP(theMG),MG_BVP(theMG),argc,argv,MarkKey);
   if (mesh == NULL)
   {
+    UserWriteF("makegrid: cannot generate boundary mesh\n");
     ReleaseTmpMem(MGHEAP(theMG),MarkKey);
     return (CMDERRORCODE);
   }
