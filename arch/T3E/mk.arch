@@ -8,6 +8,7 @@ ARCH_TYPE     = __T3E__
 
 ARCH_MAKE     = make
 ARCH_CC       = cc
+ARCH_C++      = CC
 ARCH_LINK     = cc
 ARCH_F77      = f90
 ARCH_AR       = ar
@@ -20,7 +21,7 @@ ARCH_FLIBS    =
 #-hinline2,scalar2 or -hinline3,scalar3 or -g -or -O2, -happrentice
 ARCH_CFLAGS   = -g
 ARCH_FFLAGS   = -g
-ARCH_C++FLAGS =
+ARCH_C++FLAGS = -g
 #ARCH_LFLAGS   = -L /opt/ctl/mpt/mpt/lib # -g
 ARCH_LFLAGS   =  -L /opt/ctl/mpt/mpt/lib -L/opt/ctl/craylibs/craylibs -lsma -g #sma
 #ARCH_LFLAGS   =  -g
