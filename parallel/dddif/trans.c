@@ -98,6 +98,24 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 
+
+/****************************************************************************/
+/*
+   AMGAgglomerate -
+
+   SYNOPSIS:
+   void AMGAgglomerate(MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  theMG
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 void AMGAgglomerate(MULTIGRID *theMG)
 {
   INT level,Size;
@@ -127,12 +145,50 @@ void AMGAgglomerate(MULTIGRID *theMG)
 
 /****************************************************************************/
 
+
+/****************************************************************************/
+/*
+   Gather_ElemDest -
+
+   SYNOPSIS:
+   static int Gather_ElemDest (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+   .  obj
+   .  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int Gather_ElemDest (DDD_OBJ obj, void *data)
 {
   ELEMENT *theElement = (ELEMENT *)obj;
 
   *(DDD_PROC *)data = PARTITION(theElement);
 }
+
+
+/****************************************************************************/
+/*
+   Scatter_ElemDest -
+
+   SYNOPSIS:
+   static int Scatter_ElemDest (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+   .  obj
+   .  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 static int Scatter_ElemDest (DDD_OBJ obj, void *data)
 {
@@ -141,6 +197,23 @@ static int Scatter_ElemDest (DDD_OBJ obj, void *data)
   PARTITION(theElement) = *(DDD_PROC *)data;
 }
 
+
+/****************************************************************************/
+/*
+   UpdateGhostDests -
+
+   SYNOPSIS:
+   static int UpdateGhostDests (MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  theMG
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 static int UpdateGhostDests (MULTIGRID *theMG)
 {
@@ -157,6 +230,26 @@ static int UpdateGhostDests (MULTIGRID *theMG)
 
 /****************************************************************************/
 
+
+/****************************************************************************/
+/*
+   Gather_GhostCmd -
+
+   SYNOPSIS:
+   static int Gather_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+   .  obj
+   .  data
+   .  proc
+   .  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 static int Gather_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
@@ -195,6 +288,26 @@ static int Gather_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pri
 }
 
 
+/****************************************************************************/
+/*
+   Scatter_GhostCmd -
+
+   SYNOPSIS:
+   static int Scatter_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+   .  obj
+   .  data
+   .  proc
+   .  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int Scatter_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   ELEMENT *theElement = (ELEMENT *)obj;
@@ -232,6 +345,27 @@ static int Scatter_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
 
   return(0);
 }
+
+
+/****************************************************************************/
+/*
+   Gather_VHGhostCmd -
+
+   SYNOPSIS:
+   static int Gather_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+   .  obj
+   .  data
+   .  proc
+   .  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 static int Gather_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
@@ -274,6 +408,27 @@ static int Gather_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO p
   return(1);
 }
 
+
+/****************************************************************************/
+/*
+   Scatter_VHGhostCmd -
+
+   SYNOPSIS:
+   static int Scatter_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+   .  obj
+   .  data
+   .  proc
+   .  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int Scatter_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   ELEMENT *theElement = (ELEMENT *)obj;
@@ -304,6 +459,24 @@ static int Scatter_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
   return(1);
 }
 
+
+/****************************************************************************/
+/*
+   ComputeGhostCmds -
+
+   SYNOPSIS:
+   static int ComputeGhostCmds (MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  theMG
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int ComputeGhostCmds (MULTIGRID *theMG)
 {
   DDD_IFOnewayX(ElementVHIF, IF_FORWARD, sizeof(int),
@@ -316,19 +489,21 @@ static int ComputeGhostCmds (MULTIGRID *theMG)
 
 
 /****************************************************************************/
-/*                                                                          */
-/* Function:  XferGridWithOverlap                                           */
-/*                                                                          */
-/* Purpose:   send elements to other procs, keep overlapping region of one  */
-/*            element, maintain correct priorities at interfaces.           */
-/*                                                                          */
-/*            the destination procs have been computed by theRCB function   */
-/*            and put into the elements' PARTITION-entries.                 */
-/*                                                                          */
-/* Input:     -                                                             */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
+/*
+   XferGridWithOverlap - send elements to other procs, keep overlapping region of one element, maintain correct priorities at interfaces.
+
+   SYNOPSIS:
+   static void XferGridWithOverlap (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid
+
+   DESCRIPTION:
+   This function sends elements to other procs, keeps overlapping region of one element and maintains correct priorities at interfaces. The destination procs have been computed by theRCB function and put into the elements' PARTITION-entries.
+
+   RETURN VALUE:
+   void
+ */
 /****************************************************************************/
 
 static void XferGridWithOverlap (GRID *theGrid)
@@ -442,6 +617,24 @@ static void XferGridWithOverlap (GRID *theGrid)
 
 /****************************************************************************/
 
+
+/****************************************************************************/
+/*
+   InheritPartitionBottomTop -
+
+   SYNOPSIS:
+   static void InheritPartitionBottomTop (ELEMENT *e);
+
+   PARAMETERS:
+   .  e
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 static void InheritPartitionBottomTop (ELEMENT *e)
 {
   int i;
@@ -462,6 +655,24 @@ static void InheritPartitionBottomTop (ELEMENT *e)
 
 /****************************************************************************/
 
+
+/****************************************************************************/
+/*
+   TransferGridFromLevel -
+
+   SYNOPSIS:
+   int TransferGridFromLevel (MULTIGRID *theMG, INT level);
+
+   PARAMETERS:
+   .  theMG
+   .  level
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 int TransferGridFromLevel (MULTIGRID *theMG, INT level)
 {
@@ -519,6 +730,24 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
 
   return 0;
 }
+
+
+/****************************************************************************/
+/*
+   TransferGrid -
+
+   SYNOPSIS:
+   int TransferGrid (MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  theMG
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 int TransferGrid (MULTIGRID *theMG)
 {

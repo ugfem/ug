@@ -89,6 +89,23 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 
+/****************************************************************************/
+/*
+   sort_rcb_x -
+
+   SYNOPSIS:
+   static int sort_rcb_x (const void *e1, const void *e2);
+
+   PARAMETERS:
+   .  e1
+   .  e2
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 static int sort_rcb_x (const void *e1, const void *e2)
 {
@@ -113,6 +130,24 @@ static int sort_rcb_x (const void *e1, const void *e2)
   return(0);
 }
 
+
+/****************************************************************************/
+/*
+   sort_rcb_y -
+
+   SYNOPSIS:
+   static int sort_rcb_y (const void *e1, const void *e2);
+
+   PARAMETERS:
+   .  e1
+   .  e2
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 static int sort_rcb_y (const void *e1, const void *e2)
 {
@@ -139,6 +174,26 @@ static int sort_rcb_y (const void *e1, const void *e2)
 
 
 #ifdef __THREEDIM__
+
+
+/****************************************************************************/
+/*
+   sort_rcb_z -
+
+   SYNOPSIS:
+   static int sort_rcb_z (const void *e1, const void *e2);
+
+   PARAMETERS:
+   .  e1
+   .  e2
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int sort_rcb_z (const void *e1, const void *e2)
 {
   LB_INFO *t1, *t2;
@@ -161,22 +216,29 @@ static int sort_rcb_z (const void *e1, const void *e2)
 }
 #endif
 
+
 /****************************************************************************/
-/*                                                                          */
-/* Function:  theRCB                                                        */
-/*                                                                          */
-/* Purpose:   simple load balancing algorithm,                              */
-/*            balances all local triangles using                            */
-/*            a 'recursive coordinate bisection' scheme,                    */
-/*                                                                          */
-/* Input:     theItems:  LB_INFO array                                      */
-/*            nItems:    length of array                                    */
-/*            px,py:     bottom left position in 2D processor array         */
-/*            dx,dy:     size of 2D processor array                         */
-/*            dim:       sort dimension 0=x, 1=y, 2=z                       */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
+/*
+   theRCB - balance all local triangles
+
+   SYNOPSIS:
+   static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int dy, int dim);
+
+   PARAMETERS:
+   .  theItems - LB_INFO array
+   .  nItems - length of array
+   .  px - bottom left position in 2D processor array
+   .  py - bottom left position in 2D processor array
+   .  dx - size of 2D processor array
+   .  dy - size of 2D processor array
+   .  dim - sort dimension 0=x, 1=y, 2=z
+
+   DESCRIPTION:
+   This function, a simple load balancing algorithm, balances all local triangles using a 'recursive coordinate bisection' scheme,
+
+   RETURN VALUE:
+   void
+ */
 /****************************************************************************/
 
 static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int dy, int dim)
@@ -250,6 +312,25 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
 
 /****************************************************************************/
 
+
+/****************************************************************************/
+/*
+   CenterOfMass -
+
+   SYNOPSIS:
+   static void CenterOfMass (ELEMENT *e, DOUBLE *pos);
+
+   PARAMETERS:
+   .  e
+   .  pos
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 static void CenterOfMass (ELEMENT *e, DOUBLE *pos)
 {
   int i;
@@ -269,6 +350,23 @@ static void CenterOfMass (ELEMENT *e, DOUBLE *pos)
 /****************************************************************************/
 
 
+/****************************************************************************/
+/*
+   InheritPartition -
+
+   SYNOPSIS:
+   static void InheritPartition (ELEMENT *e);
+
+   PARAMETERS:
+   .  e
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 static void InheritPartition (ELEMENT *e)
 {
   int i;
@@ -284,6 +382,23 @@ static void InheritPartition (ELEMENT *e)
 }
 
 
+/****************************************************************************/
+/*
+   BalanceGridRCB -
+
+   SYNOPSIS:
+   int BalanceGridRCB (MULTIGRID *theMG, int level);
+
+   PARAMETERS:
+   .  theMG
+   .  level
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 int BalanceGridRCB (MULTIGRID *theMG, int level)
 {

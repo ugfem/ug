@@ -146,6 +146,23 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 */
 
 
+/****************************************************************************/
+/*
+   ComputeNodeBorderPrios - 
+
+   SYNOPSIS:
+   static int ComputeNodeBorderPrios (DDD_OBJ obj);
+
+   PARAMETERS:
+.  obj -
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
+
 static int ComputeNodeBorderPrios (DDD_OBJ obj)
 {
 	NODE    *node  = (NODE *)obj;
@@ -168,6 +185,24 @@ static int ComputeNodeBorderPrios (DDD_OBJ obj)
 	if (me!=min_proc)
 		SETPRIO(node, PrioBorder);
 }
+
+
+/****************************************************************************/
+/*
+   ComputeVectorBorderPrios - 
+
+   SYNOPSIS:
+   static int ComputeVectorBorderPrios (DDD_OBJ obj);
+
+   PARAMETERS:
+.  obj -
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
 
 static int ComputeVectorBorderPrios (DDD_OBJ obj)
 {
@@ -193,6 +228,25 @@ static int ComputeVectorBorderPrios (DDD_OBJ obj)
 }
 
 #ifdef __THREEDIM__
+
+
+/****************************************************************************/
+/*
+   ComputeEdgeBorderPrios - 
+
+   SYNOPSIS:
+   static int ComputeEdgeBorderPrios (DDD_OBJ obj);
+
+   PARAMETERS:
+.  obj -
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void 
+*/
+/****************************************************************************/
+
 static int ComputeEdgeBorderPrios (DDD_OBJ obj)
 {
 	EDGE	*edge  =	(EDGE *)obj;
@@ -216,6 +270,24 @@ static int ComputeEdgeBorderPrios (DDD_OBJ obj)
 		SETPRIO(edge, PrioBorder);
 }
 #endif
+
+
+/****************************************************************************/
+/*
+   SetGhostObjectPriorities - 
+
+   SYNOPSIS:
+   void SetGhostObjectPriorities (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
 
 void SetGhostObjectPriorities (GRID *theGrid)
 {
@@ -434,6 +506,23 @@ void SetGhostObjectPriorities (GRID *theGrid)
 }
 
 
+/****************************************************************************/
+/*
+   SetBorderPriorities - 
+
+   SYNOPSIS:
+   INT SetBorderPriorities (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
 INT SetBorderPriorities (GRID *theGrid)
 {
 	DDD_IFAExecLocal(BorderNodeSymmIF,GRID_ATTR(theGrid),
@@ -450,6 +539,25 @@ INT SetBorderPriorities (GRID *theGrid)
 	return(GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+   SetGridBorderPriorities - 
+
+   SYNOPSIS:
+   INT SetGridBorderPriorities (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
+
 INT SetGridBorderPriorities (GRID *theGrid)
 {
 	/* set border priorities on next higher level */
@@ -457,6 +565,24 @@ INT SetGridBorderPriorities (GRID *theGrid)
 
 	return(GM_OK);
 }
+
+
+/****************************************************************************/
+/*
+   ConstructConsistentGrid - 
+
+   SYNOPSIS:
+   void ConstructConsistentGrid (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
 
 void ConstructConsistentGrid (GRID *theGrid)
 {
@@ -657,6 +783,25 @@ void ConstructConsistentGrid (GRID *theGrid)
 	}
 }
 
+
+/****************************************************************************/
+/*
+   CheckProcListCons - 
+
+   SYNOPSIS:
+   INT CheckProcListCons (int *proclist, int uniqueTag);
+
+   PARAMETERS:
+.  proclist
+.  uniqueTag
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
 INT CheckProcListCons (int *proclist, int uniqueTag)
 {
 	int nunique = 0;
@@ -674,6 +819,26 @@ INT CheckProcListCons (int *proclist, int uniqueTag)
 	return (nunique);
 }
 
+
+
+/****************************************************************************/
+/*
+   ListProcList - 
+
+   SYNOPSIS:
+   INT ListProcList (int *proclist, int uniqueTag);
+
+   PARAMETERS:
+.  proclist
+.  uniqueTag
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
 INT ListProcList (int *proclist, int uniqueTag)
 {
 	while (*proclist != -1)
@@ -684,6 +849,25 @@ INT ListProcList (int *proclist, int uniqueTag)
 	}
 	return(0);
 }
+
+
+/****************************************************************************/
+/*
+   CheckVectorPrio - 
+
+   SYNOPSIS:
+   INT CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector);
+
+   PARAMETERS:
+.  theElement
+.  theVector
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
 
 INT CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
 {
@@ -705,6 +889,25 @@ INT CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
 
 	return(nerrors);
 }
+
+
+/****************************************************************************/
+/*
+   CheckNodePrio - 
+
+   SYNOPSIS:
+   INT CheckNodePrio (ELEMENT *theElement, NODE *theNode);
+
+   PARAMETERS:
+.  theElement
+.  theNode
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
 
 INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
 {
@@ -732,6 +935,24 @@ INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
 }
 
 
+/****************************************************************************/
+/*
+   CheckEdgePrio - 
+
+   SYNOPSIS:
+   INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge);
+
+   PARAMETERS:
+.  theElement
+.  theEdge
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
 INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
 {
 	INT nmaster;
@@ -758,6 +979,24 @@ INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
 
 	return(nerrors);
 }
+
+
+/****************************************************************************/
+/*
+   CheckElementPrio - 
+
+   SYNOPSIS:
+   INT CheckElementPrio (ELEMENT *theElement);
+
+   PARAMETERS:
+.  theElement
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
 
 INT CheckElementPrio (ELEMENT *theElement)
 {
@@ -868,6 +1107,24 @@ INT CheckElementPrio (ELEMENT *theElement)
 
 	return (nerrors);
 }
+
+
+/****************************************************************************/
+/*
+   CheckInterfaces - 
+
+   SYNOPSIS:
+   INT CheckInterfaces (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
 
 INT CheckInterfaces(GRID *theGrid)
 {

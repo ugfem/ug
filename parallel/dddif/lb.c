@@ -15,6 +15,24 @@
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
+/****************************************************************************/
+/*
+    TransferGridComplete-
+
+   SYNOPSIS:
+   static int TransferGridComplete (MULTIGRID *theMG, INT level);
+
+   PARAMETERS:
+   .  theMG
+   .  level
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int TransferGridComplete (MULTIGRID *theMG, INT level)
 {
   ELEMENT *e;
@@ -44,6 +62,25 @@ static int TransferGridComplete (MULTIGRID *theMG, INT level)
 }
 
 
+/****************************************************************************/
+/*
+   TransferGridToMaster -
+
+   SYNOPSIS:
+   static int TransferGridToMaster (MULTIGRID *theMG, INT fl, INT tl);
+
+   PARAMETERS:
+   .  theMG
+   .  fl
+   .  tl
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int TransferGridToMaster (MULTIGRID *theMG, INT fl, INT tl)
 {
   ELEMENT *e;
@@ -69,6 +106,27 @@ static int TransferGridToMaster (MULTIGRID *theMG, INT fl, INT tl)
   return(0);
 }
 
+
+/****************************************************************************/
+/*
+   CollectElementsNearSegment -
+
+   SYNOPSIS:
+   static int CollectElementsNearSegment(MULTIGRID *theMG, int level, int part, int dest);
+
+   PARAMETERS:
+   .  theMG
+   .  level
+   .  part
+   .  dest
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int CollectElementsNearSegment(MULTIGRID *theMG,
                                       int level, int part, int dest)
 {
@@ -89,6 +147,26 @@ static int CollectElementsNearSegment(MULTIGRID *theMG,
 
   return(0);
 }
+
+
+/****************************************************************************/
+/*
+   CreateDD -
+
+   SYNOPSIS:
+   static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes );
+
+   PARAMETERS:
+   .  theGrid
+   .  hor_boxes
+   .  vert_boxes
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes )
 {
@@ -118,6 +196,25 @@ static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes )
 
   return(0);
 }
+
+
+/****************************************************************************/
+/*
+   ddd_test -
+
+   SYNOPSIS:
+   void ddd_test (char *argv, MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  argv
+   .  theMG
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void ddd_test (char *argv, MULTIGRID *theMG)
 {

@@ -56,6 +56,23 @@ void ddd_DisplayContext (void)
 }
 
 
+/****************************************************************************/
+/*
+   dddif_DisplayMemoryUsage -
+
+   SYNOPSIS:
+   static void dddif_DisplayMemoryUsage (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 static void dddif_DisplayMemoryUsage (void)
 {
   int i;
@@ -71,6 +88,23 @@ static void dddif_DisplayMemoryUsage (void)
              );
 }
 
+
+/****************************************************************************/
+/*
+   ddd_pstat -
+
+   SYNOPSIS:
+   void ddd_pstat (char *arg);
+
+   PARAMETERS:
+   .  arg
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 
 void ddd_pstat (char *arg)
@@ -147,6 +181,24 @@ void ddd_pstat (char *arg)
 
 /****************************************************************************/
 
+
+/****************************************************************************/
+/*
+   buggy_ShowCopies -
+
+   SYNOPSIS:
+   static void buggy_ShowCopies (DDD_HDR hdr);
+
+   PARAMETERS:
+   .  hdr -
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 static void buggy_ShowCopies (DDD_HDR hdr)
 {
   int   *p, i;
@@ -161,6 +213,24 @@ static void buggy_ShowCopies (DDD_HDR hdr)
 
 
 
+/****************************************************************************/
+
+
+/****************************************************************************/
+/*
+   buggy_ElemShow -
+
+   SYNOPSIS:
+   static void buggy_ElemShow (ELEMENT *e);
+
+   PARAMETERS:
+   .  e -
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
 /****************************************************************************/
 
 static void buggy_ElemShow (ELEMENT *e)
@@ -206,6 +276,23 @@ static void buggy_ElemShow (ELEMENT *e)
 }
 
 
+/****************************************************************************/
+/*
+   buggy_NodeShow -
+
+   SYNOPSIS:
+   static void buggy_NodeShow (NODE *n);
+
+   PARAMETERS:
+   .  n -
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 static void buggy_NodeShow (NODE *n)
 {
   int i;
@@ -237,7 +324,23 @@ static void buggy_NodeShow (NODE *n)
 }
 
 
+/****************************************************************************/
+/*
+   buggy_Search -
 
+   SYNOPSIS:
+   static void buggy_Search (MULTIGRID *theMG, DDD_GID gid);
+
+   PARAMETERS:
+   .  the MG -
+   .  gid -
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
 {
@@ -381,6 +484,22 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
  */
 
 
+/****************************************************************************/
+/*
+   buggy_help -
+
+   SYNOPSIS:
+   static void buggy_help (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 /****************************************************************************/
 
@@ -400,6 +519,24 @@ static void buggy_help (void)
 
 
 
+/****************************************************************************/
+
+
+/****************************************************************************/
+/*
+   buggy -
+
+   SYNOPSIS:
+   void buggy (MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  the MG
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
 /****************************************************************************/
 
 void buggy (MULTIGRID *theMG)
@@ -487,10 +624,6 @@ void buggy (MULTIGRID *theMG)
   }
   while (proc>=0);
 }
-
-
-/****************************************************************************/
-
 
 
 /****************************************************************************/

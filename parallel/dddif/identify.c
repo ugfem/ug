@@ -140,6 +140,25 @@ static INT identlevel = 0;
    D*/
 /****************************************************************************/
 
+
+/****************************************************************************/
+/*
+   compare_gid -
+
+   SYNOPSIS:
+   INT compare_gid (const void *e0, const void *e1);
+
+   PARAMETERS:
+   .  e0
+   .  e1
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 INT compare_gid (const void *e0, const void *e1)
 {
   INT num0, num1;
@@ -151,6 +170,24 @@ INT compare_gid (const void *e0, const void *e1)
   if (num0 > num1) return(-1);
   return(0);
 }
+
+
+/****************************************************************************/
+/*
+   ResetIdentFlags -
+
+   SYNOPSIS:
+   static void ResetIdentFlags (GRID *UpGrid);
+
+   PARAMETERS:
+   .  UpGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 static void ResetIdentFlags (GRID *Grid)
 {
@@ -174,6 +211,31 @@ static void ResetIdentFlags (GRID *Grid)
 }
 
 #ifdef Debug
+
+
+/****************************************************************************/
+/*
+   Print_Identify_ObjectList -
+
+   SYNOPSIS:
+   static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
+                                int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident);
+
+   PARAMETERS:
+   .  IdentObjectHdr
+   .  nobject
+   .  proclist
+   .  skiptag
+   .  IdentHdr
+   .  nident
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
                                       int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
 {
@@ -230,6 +292,29 @@ static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
 #endif
 
 #ifdef Debug
+
+
+/****************************************************************************/
+/*
+   Print_Identified_ObjectList -
+
+   SYNOPSIS:
+   static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident);
+
+   PARAMETERS:
+   .  IdentObjectHdr
+   .  nobject
+   .  proclist
+   .  skiptag
+   .  IdentHdr
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
                                         int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
 {
@@ -280,6 +365,31 @@ static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
   return(0);
 }
 #endif
+
+
+
+/****************************************************************************/
+/*
+   Identify_by_ObjectList -
+
+   SYNOPSIS:
+   static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
+                                int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident);
+
+   PARAMETERS:
+   .  IdentObjectHdr
+   .  nobject
+   .  proclist
+   .  skiptag
+   .  IdentHdr
+   .  nident
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
 
 static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
                                    int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
@@ -332,6 +442,29 @@ static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
 }
 
 #ifdef __THREEDIM__
+
+
+/****************************************************************************/
+/*
+   IdentifySideVector -
+
+   SYNOPSIS:
+   static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
+                                ELEMENT *Son, INT SonSide) ;
+
+   PARAMETERS:
+   .  theElement
+   .  theNeighbor
+   .  theSon
+   .  SonSide
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
                                ELEMENT *Son, INT SonSide)
 {
@@ -363,6 +496,30 @@ static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
 
 }
 #endif
+
+
+/****************************************************************************/
+/*
+   IdentifyNode -
+
+   SYNOPSIS:
+   static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
+                                NODE *Nodes[MAX_SIDE_NODES], INT node, INT ncorners, INT Vec);
+
+   PARAMETERS:
+   .  theNeighbor
+   .  theNode
+   .  Nodes[MAX_SIDE_NODES]
+   .  node
+   .  ncorners
+   .  Vec
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
                           NODE *Nodes[MAX_SIDE_NODES], INT node, INT ncorners, INT Vec)
@@ -523,6 +680,33 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
   return;
 }
 
+
+
+/****************************************************************************/
+/*
+   IdentifyEdge -
+
+   SYNOPSIS:
+   static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
+                        NODE **SideNodes, INT ncorners, ELEMENT *Son, INT SonSide, INT edgeofside, INT Vec);
+
+   PARAMETERS:
+   .  theElement
+   .  theNeighbor
+   .  SideNodes
+   .  ncorners
+   .  Son
+   .  SonSide
+   .  edgeofside
+   .  Vec
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 static INT IdentifyEdge (GRID *theGrid,
                          ELEMENT *theElement, ELEMENT *theNeighbor,
                          NODE **SideNodes, INT ncorners, ELEMENT *Son,
@@ -650,6 +834,27 @@ static INT IdentifyEdge (GRID *theGrid,
 }
 
 
+/****************************************************************************/
+/*
+   IdentifyObjectsOfElementSide -
+
+   SYNOPSIS:
+   static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
+                                                INT i, ELEMENT *theNeighbor);
+
+   PARAMETERS:
+   .  theGrid
+   .  theElement
+   .  i
+   .  theNeighbor
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
                                         INT i, ELEMENT *theNeighbor)
 {
@@ -722,6 +927,27 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
   return(GM_OK);
 }
 
+
+
+/****************************************************************************/
+/*
+   IdentifyDistributedObjects -
+
+   SYNOPSIS:
+   INT	IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
+
+   PARAMETERS:
+   .  theMG
+   .  FromLevel
+   .  ToLevel
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 {
   INT l,i,j,prio;
@@ -777,6 +1003,26 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
   return(GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+   IdentifyGridLevels -
+
+   SYNOPSIS:
+   INT	IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
+
+   PARAMETERS:
+   .  theMG
+   .  FromLevel
+   .  ToLevel
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 {
         #ifdef Debug
@@ -822,6 +1068,27 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
    */
 }
 
+
+/****************************************************************************/
+/*
+   Gather_SonNodeInfo -
+
+   SYNOPSIS:
+   static int Gather_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+   .  obj
+   .  data
+   .  proc
+   .  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int Gather_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   NODE *theNode = (NODE *)obj;
@@ -836,6 +1103,27 @@ static int Gather_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 
   return(0);
 }
+
+
+/****************************************************************************/
+/*
+   Scatter_SonNodeInfo -
+
+   SYNOPSIS:
+   static int Scatter_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+   .  obj
+   .  data
+   .  proc
+   .  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 static int Scatter_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
@@ -868,6 +1156,28 @@ static int Scatter_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO
 }
 
 #ifdef __THREEDIM__
+
+
+/****************************************************************************/
+/*
+   Gather_SonEdgeInfo  -
+
+   SYNOPSIS:
+   static int Gather_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+   .  obj
+   .  data
+   .  proc
+   .  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int Gather_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   EDGE *theEdge = (EDGE *)obj;
@@ -885,6 +1195,27 @@ static int Gather_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 
   return(0);
 }
+
+
+/****************************************************************************/
+/*
+   Scatter_SonEdgeInfo -
+
+   SYNOPSIS:
+   static int Scatter_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+   .  obj
+   .  data
+   .  proc
+   .  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 static int Scatter_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
@@ -919,6 +1250,24 @@ static int Scatter_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO
 }
 #endif
 
+
+/****************************************************************************/
+/*
+   Identify_SonNodesAndSonEdges -
+
+   SYNOPSIS:
+   INT Identify_SonNodesAndSonEdges (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 INT Identify_SonNodesAndSonEdges (GRID *theGrid)
 {
         #ifdef Debug
@@ -935,6 +1284,26 @@ INT Identify_SonNodesAndSonEdges (GRID *theGrid)
         #endif
   return(GM_OK);
 }
+
+
+/****************************************************************************/
+/*
+   Identify_Objects_of_ElementSide -
+
+   SYNOPSIS:
+   INT Identify_Objects_of_ElementSide(GRID *theGrid, ELEMENT *theElement, INT i);
+
+   PARAMETERS:
+   .  theGrid
+   .  theElement
+   .  i
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
 
 INT Identify_Objects_of_ElementSide(GRID *theGrid, ELEMENT *theElement, INT i)
 {
@@ -954,6 +1323,24 @@ INT Identify_Objects_of_ElementSide(GRID *theGrid, ELEMENT *theElement, INT i)
 
   return(GM_OK);
 }
+
+
+/****************************************************************************/
+/*
+    IdentifyInit-
+
+   SYNOPSIS:
+   void IdentifyInit (MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  theMG
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void IdentifyInit (MULTIGRID *theMG)
 {
@@ -981,6 +1368,24 @@ void IdentifyInit (MULTIGRID *theMG)
   Ident_FctPtr = Identify_by_ObjectList;
 
 }
+
+
+/****************************************************************************/
+/*
+   IdentifyExit -
+
+   SYNOPSIS:
+   void IdentifyExit (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void IdentifyExit (void)
 {

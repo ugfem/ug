@@ -142,6 +142,26 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 enum ElemTypeFlag { Inside, Boundary };
 
+
+/****************************************************************************/
+/*
+   void ddd_InitGenericElement -
+
+   SYNOPSIS:
+   static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype);
+
+   PARAMETERS:
+   .  tag
+   .  dddType
+   .  etype
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
 {
   struct generic_element  *ge=0;
@@ -255,6 +275,25 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
 /*																			*/
 /****************************************************************************/
 
+
+/****************************************************************************/
+/*
+   void ddd_DeclareTypes - declare ug data structures as DDD_TYPES
+
+   SYNOPSIS:
+   static void ddd_DeclareTypes (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function declares ug data structures as DDD_TYPES
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 static void ddd_DeclareTypes (void)
 {
   /* NOTE: (960410 KB)
@@ -340,18 +379,22 @@ static void ddd_DeclareTypes (void)
 
 
 /****************************************************************************/
-/*																			*/
-/* Function:  ddd_DefineTypes												*/
-/*																			*/
-/* Purpose:   define previously declared DDD_TYPES							*/
-/*            Note: this function depends on previous definition of all		*/
-/*                  necessary ug-generic-elements.				                        */
-/*																			*/
-/* Input:     void                                                              */
-/*																			*/
-/* Output:    void                                                                                                              */
-/*																			*/
-/*																			*/
+/*
+   ddd_DefineTypes - define previously declared DDD_TYPES
+
+   SYNOPSIS:
+   static void ddd_DefineTypes (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function defines previously declared DDD_TYPES
+   Note: this function depends on previous definition of all necessary ug-generic-elements.
+
+   RETURN VALUE:
+   void
+ */
 /****************************************************************************/
 
 static void ddd_DefineTypes (void)
@@ -598,17 +641,21 @@ static void ddd_DefineTypes (void)
 
 
 /****************************************************************************/
-/*																			*/
-/* Function:  ddd_IfInit                                                                                                        */
-/*																			*/
-/* Purpose:   defines the communication interfaces needed in ug for             */
-/*		      management by DDD                                             */
-/*																			*/
-/* Input:     void                                                              */
-/*																			*/
-/* Output:    void                                                                                                              */
-/*																			*/
-/*																			*/
+/*
+   ddd_IfInit - define the communication interfaces needed in ug for management by DDD
+
+   SYNOPSIS:
+   static void ddd_IfInit (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function defines the communication interfaces needed in ug for management by DDD
+
+   RETURN VALUE:
+   void
+ */
 /****************************************************************************/
 
 static void ddd_IfInit (void)
@@ -775,25 +822,23 @@ static void ddd_IfInit (void)
 }
 
 
-
 /****************************************************************************/
-/*																			*/
-/* Function:  InitDDDTypes                                                                                              */
-/*																			*/
-/* Purpose:   define DDD_TYPEs. this function must be called once before	*/
-/*            creation of DDD-objects. It depends on correct and complete	*/
-/*            initialization of all ug-generic-elements, therefore it must	*/
-/*            must be called after completion of InitElementTypes().		*/
-/*            As InitElementTypes() will be called whenever new Multigrids	*/
-/*            are created/opened, an execution guard prevents this function */
-/*            from multiple execution.										*/
-/*																			*/
-/* Input:     void															*/
-/*																			*/
-/* Output:    void															*/
-/*																			*/
-/****************************************************************************/
+/*
+   InitDDDTypes - define DDD_TYPEs
 
+   SYNOPSIS:
+   void InitDDDTypes (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function must be called once before creation of DDD-objects. It depends on correct and complete initialization of all ug-generic-elements, therefore it must be called after completion of InitElementTypes(). As InitElementTypes() will be called whenever new Multigrids are created/opened, an execution guard prevents this function from multiple execution.
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void InitDDDTypes (void)
 {
@@ -844,17 +889,23 @@ void InitDDDTypes (void)
 }
 
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  InitCurrMG													*/
-/*																			*/
-/* Purpose:   initialize the current multigrid which is handled by DDD		*/
-/*																			*/
-/* Input:	  MULTIGRID *MG:	the multigrid to handle						*/
-/*																			*/
-/* Output:	  void															*/
-/*																			*/
-/*																			*/
+/*
+   InitCurrMG - initialize the current multigrid which is handled by DDD
+
+   SYNOPSIS:
+   void InitCurrMG (MULTIGRID *MG);
+
+   PARAMETERS:
+   .  MG
+
+   DESCRIPTION:
+   This function initializes the current multigrid which is handled by DDD
+
+   RETURN VALUE:
+   void
+ */
 /****************************************************************************/
 
 void InitCurrMG (MULTIGRID *MG)
@@ -868,18 +919,23 @@ void InitCurrMG (MULTIGRID *MG)
 }
 
 
-
 /****************************************************************************/
-/*																			*/
-/* Function:  CheckInitParallel												*/
-/*																			*/
-/* Purpose:   performs checks for correct initialization of dddif subsystem */
-/*																			*/
-/* Input:     -                                                                 */
-/*																			*/
-/* Output:    int:   error value											*/
-/*																			*/
-/*																			*/
+/*
+   CheckInitParallel - check for correct initialization of dddif subsystem
+
+   SYNOPSIS:
+   static int CheckInitParallel (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function performs checks for correct initialization of dddif subsystem
+
+   RETURN VALUE:
+   int
+     error value
+ */
 /****************************************************************************/
 
 
@@ -918,24 +974,25 @@ static int CheckInitParallel (void)
 }
 
 
-/****************************************************************************/
-/*																			*/
-/* Function:  InitParallel                                                                                              */
-/*																			*/
-/* Purpose:   initializes the ddd library by defining the ug internal       */
-/*            issues:                                                       */
-/*                      - format of handled structs                         */
-/*                      - description of handlers                           */
-/*						- definition of interfaces							*/
-/*																			*/
-/* Input:     int    *argc: pointer to number of arguments                      */
-/*		      char ***argv: pointer to list of argument pointers			*/
-/*																			*/
-/* Output:    int:   error value											*/
-/*																			*/
-/*																			*/
-/****************************************************************************/
 
+/****************************************************************************/
+/*
+   InitParallel - initialize the ddd library
+
+   SYNOPSIS:
+   int InitParallel (int *argc, char ***argv);
+
+   PARAMETERS:
+   .  argc - pointer to number of arguments
+   .  argv - pointer to list of argument pointers
+
+   DESCRIPTION:
+   This function initializes the ddd library by defining the ug internal issues: format of handled structs, description of handlers, definition of interfaces
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
 
 int InitParallel (void)
 {
@@ -1004,17 +1061,24 @@ int InitParallel (void)
 }
 
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  ExitParallel                                                                                              */
-/*																			*/
-/* Purpose:   exit the parallel application on ddd level                    */
-/*																			*/
-/* Input:     void                                                              */
-/*																			*/
-/* Output:    void                                                                                                              */
-/*																			*/
-/*																			*/
+/*
+   ExitParallel - exit the parallel application on ddd level
+
+   SYNOPSIS:
+   int ExitParallel (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function exits the parallel application on ddd level
+
+   RETUR
+   N VALUE:
+   void
+ */
 /****************************************************************************/
 
 int ExitParallel (void)

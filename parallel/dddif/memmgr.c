@@ -162,6 +162,25 @@ int nHashEntries;
 /* (from ddd/memmgrs/memmgr_ctrl.c)                   */
 
 
+/****************************************************************************/
+/*
+   NewHashEntry -
+
+   SYNOPSIS:
+   static HASH_ENTRY *NewHashEntry (void *ptr, size_t size, char info);
+
+   PARAMETERS:
+   .  ptr
+   .  size
+   .  info
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   HASH_ENTRY
+ */
+/****************************************************************************/
+
 static HASH_ENTRY *NewHashEntry (void *ptr, size_t size, char info)
 {
   HASH_ENTRY *he;
@@ -182,6 +201,24 @@ static HASH_ENTRY *NewHashEntry (void *ptr, size_t size, char info)
   return(he);
 }
 
+
+/****************************************************************************/
+/*
+   FreeHashEntry -
+
+   SYNOPSIS:
+   static void FreeHashEntry (HASH_ENTRY *he);
+
+   PARAMETERS:
+   .  he
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 static void FreeHashEntry (HASH_ENTRY *he)
 {
   /*
@@ -192,6 +229,24 @@ static void FreeHashEntry (HASH_ENTRY *he)
   free(he);
 }
 
+/****************************************************************************/
+/*
+   PushHash -
+
+   SYNOPSIS:
+   static void PushHash (void *ptr, size_t size, char info);
+
+   PARAMETERS:
+   .  ptr
+   .  size
+   .  info
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 static void PushHash (void *ptr, size_t size, char info)
 {
@@ -222,6 +277,24 @@ static void PushHash (void *ptr, size_t size, char info)
   }
 }
 
+
+/****************************************************************************/
+/*
+   PopHash -
+
+   SYNOPSIS:
+   static size_t PopHash (void *ptr, char info);
+
+   PARAMETERS:
+   .  ptr
+   .  info
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   size_t
+ */
+/****************************************************************************/
 
 static size_t PopHash (void *ptr, char info)
 {
@@ -263,6 +336,22 @@ static size_t PopHash (void *ptr, char info)
 }
 
 
+/****************************************************************************/
+/*
+   HashMarkAll -
+
+   SYNOPSIS:
+   static void HashMarkAll (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 static void HashMarkAll (void)
 {
@@ -276,6 +365,23 @@ static void HashMarkAll (void)
   }
 }
 
+
+/****************************************************************************/
+/*
+   HashShowMarks -
+
+   SYNOPSIS:
+   static void HashShowMarks (char info);
+
+   PARAMETERS:
+   .  info
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 static void HashShowMarks (char info)
 {
@@ -301,6 +407,23 @@ static void HashShowMarks (char info)
 /****************************************************************************/
 
 
+/****************************************************************************/
+/*
+   memmgr_Report -
+
+   SYNOPSIS:
+   void memmgr_Report (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 void memmgr_Report (void)
 {
         #ifdef WITH_HASH_CONTROL
@@ -320,6 +443,25 @@ void memmgr_Report (void)
 /****************************************************************************/
 
 
+/****************************************************************************/
+/*
+   memmgr_AllocOMEM -
+
+   SYNOPSIS:
+   void *memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr);
+
+   PARAMETERS:
+   .  size
+   .  ddd_type
+   .  prio
+   .  attr
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void *memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr)
 {
@@ -336,6 +478,25 @@ void *memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr)
 }
 
 
+/****************************************************************************/
+/*
+   memmgr_FreeOMEM -
+
+   SYNOPSIS:
+   void memmgr_FreeOMEM (void *buffer, size_t size, int ddd_type);
+
+   PARAMETERS:
+   .  buffer
+   .  size
+   .  ddd_type
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 void memmgr_FreeOMEM (void *buffer, size_t size, int ddd_type)
 {
   /*
@@ -346,7 +507,22 @@ void memmgr_FreeOMEM (void *buffer, size_t size, int ddd_type)
 }
 
 
+/****************************************************************************/
+/*
+   memmgr_AllocPMEM -
 
+   SYNOPSIS:
+   void *memmgr_AllocPMEM (unsigned long size);
+
+   PARAMETERS:
+   .  size
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void *memmgr_AllocPMEM (unsigned long size)
 {
@@ -369,6 +545,23 @@ void *memmgr_AllocPMEM (unsigned long size)
 }
 
 
+/****************************************************************************/
+/*
+   memmgr_FreePMEM -
+
+   SYNOPSIS:
+   void memmgr_FreePMEM (void *buffer);
+
+   PARAMETERS:
+   .  buffer
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 void memmgr_FreePMEM (void *buffer)
 {
         #ifdef WITH_HASH_CONTROL
@@ -388,6 +581,22 @@ void memmgr_FreePMEM (void *buffer)
 
 
 
+/****************************************************************************/
+/*
+   memmgr_AllocAMEM -
+
+   SYNOPSIS:
+   void *memmgr_AllocAMEM (unsigned long size);
+
+   PARAMETERS:
+   .  size
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void *memmgr_AllocAMEM (unsigned long size)
 {
@@ -410,6 +619,23 @@ void *memmgr_AllocAMEM (unsigned long size)
 }
 
 
+/****************************************************************************/
+/*
+   memmgr_FreeAMEM -
+
+   SYNOPSIS:
+   void memmgr_FreeAMEM (void *buffer);
+
+   PARAMETERS:
+   .  buffer
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
+
 void memmgr_FreeAMEM (void *buffer)
 {
         #ifdef WITH_HASH_CONTROL
@@ -427,6 +653,23 @@ void memmgr_FreeAMEM (void *buffer)
         #endif
 }
 
+
+/****************************************************************************/
+/*
+   memmgr_AllocTMEM -
+
+   SYNOPSIS:
+   void *memmgr_AllocTMEM (unsigned long size);
+
+   PARAMETERS:
+   .  size
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void *memmgr_AllocTMEM (unsigned long size)
 {
@@ -448,6 +691,23 @@ void *memmgr_AllocTMEM (unsigned long size)
   return(buffer);
 }
 
+
+/****************************************************************************/
+/*
+   memmgr_FreeTMEM -
+
+   SYNOPSIS:
+   void memmgr_FreeTMEM (void *buffer);
+
+   PARAMETERS:
+   .  buffer
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void memmgr_FreeTMEM (void *buffer)
 {
@@ -493,8 +753,10 @@ void memmgr_ReleaseHMEM (void)
 }
 
 
-
 /****************************************************************************/
+
+#define MAX_MALLOCS 256
+
 
 /*
         DetectAllocatableMemory()
@@ -544,10 +806,22 @@ static size_t DetectAllocatableMemory (void)
 }
 
 
-
-
 /****************************************************************************/
+/*
+   memmgr_Init -
 
+   SYNOPSIS:
+   void memmgr_Init (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+ */
+/****************************************************************************/
 
 void memmgr_Init (void)
 {
