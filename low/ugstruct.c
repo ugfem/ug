@@ -345,7 +345,7 @@ STRVAR *FindStringVar (const ENVDIR *where, const char *name)
    ENVDIR *FindStructure (const ENVDIR *where, const char *name)
 
    PARAMETERS:
-   .  where - the directory to be searched
+   .  where - the directory to be searched (if NULL then search is in root)
    .  name - the name to be searched
 
    RETURN VALUE:
@@ -357,6 +357,8 @@ STRVAR *FindStringVar (const ENVDIR *where, const char *name)
 ENVDIR *FindStructure (const ENVDIR *where, const char *name)
 {
   ENVDIR *theDir;
+
+  if (where==NULL) where=path[0];
 
   /* find variable */
   theDir = (ENVDIR *) where->down;              /* search directory */
