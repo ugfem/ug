@@ -38,6 +38,13 @@ $lgm = "$ARGV[1]";
 $map = "$ARGV[2]";
 $ng = "$ARGV[3]";
 
+$EPS_POINT = 10e-6;
+$EPS_LOC   = 10e-6;
+$DIM = 3;
+
+$HUGE = 9999999999999.9;
+$EPS_PROJ = 100;
+
 ###############################################################################
 # read exodusII file
 ###############################################################################
@@ -419,7 +426,7 @@ sub scan_surfaces
 					$lgm{$surface}{triangles}{$triangle} = $1; $triangle++;
 					$lgm{$surface}{ntriangles} = $triangle; 
 #  					$triangles = 0; 
-  					printf "ntri=%d tri=%d\n",$lgm{$surface}{ntriangles}, $lgm{$surface}{triangles}{$triangle-1};
+#  					printf "ntri=%d tri=%d\n",$lgm{$surface}{ntriangles}, $lgm{$surface}{triangles}{$triangle-1};
 				}
 			}
 			elsif (/($int)/)
@@ -574,10 +581,6 @@ sub read_map
 # bulid bound box tree
 ###############################################################################
 
-$EPS_POINT = 10e-6;
-$EPS_LOC   = 10e-6;
-$DIM = 3;
-
 sub Mod
 {
 	my (@a) = @_;
@@ -607,7 +610,7 @@ sub bbb_tree
 	{
    		$count = 0;
  		$line = sprintf("line%d",$j);
- 		printf("ltree %s\n",$line);
+# 		printf("ltree %s\n",$line);
 		for ($n=0; $n<$lgm{$line}{npoints}-1; $n++)
 		{
 			my(@ur,@ll,%obj,@p0,@p1);
@@ -626,8 +629,8 @@ sub bbb_tree
 				$d[$i] = $ur[$i] - $ll[$i];
 #				printf("dim=%d ll=%lf ur=%lf d=%lf\n",$i,$ll[$i],$ur[$i],$d[$i]); 
 			}
-			printf("p0 %lf %lf %lf\n",$p0[0],$p0[1],$p0[2]);
-			printf("p1 %lf %lf %lf\n",$p1[0],$p1[1],$p1[2]);
+#			printf("p0 %lf %lf %lf\n",$p0[0],$p0[1],$p0[2]);
+#			printf("p1 %lf %lf %lf\n",$p1[0],$p1[1],$p1[2]);
 			if (Mod(@d) < $EPS_POINT)
 			{
 				die "Length of a segment is smaller than EPS_POINT $!\n";
@@ -640,11 +643,11 @@ sub bbb_tree
 			$obj{alpha} = 2.0;
 			$lgm{lobjects}[$j][$count] = \%obj;
 			$lgm{lboxes}[$j][$count] = BBT_NewBBox($DIM,\@ll,\@ur,$lgm{lobjects}[$j][$count]);
-			print "newbox $lgm{lboxes}[$j][$count]\n";
+#			print "newbox $lgm{lboxes}[$j][$count]\n";
 			$count++;
 		}
   		$ltree = sprintf("ltree%d",$j);
- 		printf("NewTree=%s count=%d\n",$ltree,$count);
+# 		printf("NewTree=%s count=%d\n",$ltree,$count);
  		$lgm{$ltree} = BBT_NewTree(\@{$lgm{lboxes}[$j]},$count,$DIM);
 	}
 
@@ -654,7 +657,7 @@ sub bbb_tree
 	{
    		$count = 0;
  		$surface = sprintf("surface%d",$j);
- 		printf("stree %s tris=%d\n",$surface,$lgm{$surface}{ntriangles});
+# 		printf("stree %s tris=%d\n",$surface,$lgm{$surface}{ntriangles});
 		for ($n=0; $n<$lgm{$surface}{ntriangles}/3; $n++)
 		{
 			my (@p0,@p1,@p2,@ur,@ll,%obj);
@@ -676,14 +679,14 @@ sub bbb_tree
 				$ur[$i] = max($ur[$i],$p1[$i]);
 				$ur[$i] = max($ur[$i],$p2[$i]);
 				$d[$i] = $ur[$i] - $ll[$i];
- 				printf("dim=%d ll=%lf ur=%lf d=%lf\n",$i,$ll[$i],$ur[$i],$d[$i]); 
+# 				printf("dim=%d ll=%lf ur=%lf d=%lf\n",$i,$ll[$i],$ur[$i],$d[$i]); 
 			}
 #			printf("p0 %lf %lf %lf\n",$p0[0],$p0[1],$p0[2]);
 #			printf("p1 %lf %lf %lf\n",$p1[0],$p1[1],$p1[2]);
 #			printf("p2 %lf %lf %lf\n",$p2[0],$p2[1],$p2[2]);
 			if (Mod(@d) < $EPS_POINT)
 			{
-				die "Length of a segment is smaller than EPS_POINT $!\n";
+				die "Length of a triangle is smaller than EPS_POINT $!\n";
 			}
 #			$obj{p1} = \$lgm{point}{$point0};
 #			$obj{p2} = \$lgm{point}{$point1};
@@ -700,7 +703,7 @@ sub bbb_tree
 			$count++;
 		}
   		$ttree = sprintf("ttree%d",$j);
- 		printf("NewTree=%s count=%d\n",$ttree,$count);
+# 		printf("NewTree=%s count=%d\n",$ttree,$count);
  		$lgm{$ttree} = BBT_NewTree(\@{$lgm{tboxes}[$j]},$count,$DIM);
 	}
 }
@@ -709,10 +712,6 @@ sub bbb_tree
 ###############################################################################
 # compute boundary data
 ###############################################################################
-
-$HUGE = 9999999999999.9;
-$EPS_LOC = 1e-6;
-$EPS_PROJ = 2.2;
 
 sub Mod2
 {
@@ -791,36 +790,39 @@ sub GetLocalCoordinates
 
 	## TODO: not needed
 	## check, whether point lies inside triangle ##
-	#for($i=0;$i<3;$i++){
-	#	if( ($sp[$i]/$mcp) < (0-$EPS_LOC) ){
-	#		return 0;
-	#	}
-	#}
+	 for($i=0;$i<3;$i++){
+	 	if( ($sp[$i]/$mcp) < (0-$EPS_LOC) ){
+#			printf "outside triangle\n";
+#	 		return 0;
+	 	}
+	 }
 	
 	## Get relationship vol of one triangle/vol of whole triangle ##
 	$sum=0;
 	for($i=0;$i<3;$i++){
 		$lambda[$i]=$sp[$i]/$mcp;
 		$sum+=$lambda[$i];
-		#print"lambda[$i]=$lambda[$i]\n";
+#		print"lambda[$i]=$lambda[$i]\n";
 	}
 
 	## check sum params must be 1 ##
 	if(($sum<= (1-$EPS_LOC)) || ($sum>=1+$EPS_LOC) ){
-		return 0;
-		#die "Sum of parameters must be 1 ! $!\n";
+		printf "Sum of parameters must be 1 ! $!\n";
+#		return 0;
+ 		 die "Sum of parameters must be 1 ! $!\n";
 	}
+#	printf "sum=$sum\n";
 		
 	## last check ##	
 	for($i=0;$i<3;$i++){
 		if( ($lambda[$i] > (1.0+$EPS_LOC)) || ($lambda[$i] < (0-$EPS_LOC)) ){
-			#die "lambda[$i]=$lambda[$i] <0 || > 1 $!\n";
-			return 0;	
+# 			print "lambda[$i]=$lambda[$i] <0 || > 1 $!\n";
+ 			return 0;	
 	   }
 	}
 
-	$$xi = $lambda[1];
-	$$eta = $lambda[0];
+	$$xi = $lambda[0];
+	$$eta = $lambda[1];
 
 	return 1;
 }
@@ -847,12 +849,20 @@ sub Tri_Callback
 	$tmp = $obj->{p1}; @p1 = @$tmp;
 	$tmp = $obj->{p2}; @p2 = @$tmp;
 
+if (0)
+{
+	printf ("x %lf %lf %lf\n",$x->[0],$x->[1],$x->[2]);
+	printf ("	t0 %lf %lf %lf\n",$p0[0],$p0[1],$p0[2]);
+	printf ("	t1 %lf %lf %lf\n",$p1[0],$p1[1],$p1[2]);
+	printf ("	t2 %lf %lf %lf\n",$p2[0],$p2[1],$p2[2]);
+}
+
 	## point lies not inside extruded triangle area
 	if(!(GetLocalCoordinates(\@p0,\@p1,\@p2,$x,\$xi,\$eta))){
+# 		printf ("error1 in GetLocalCoordinates()\n");
 		return $HUGE;
 	}
 	
-
 	for($i=0; $i<$DIM; $i++){
 		$a[$i]=$x->[$i]-$p0[$i];
 		$b[$i]=$x->[$i]-$p1[$i];
@@ -908,6 +918,7 @@ sub Tri_Callback
 	## point is too far from plane axb ##
 	$md=sqrt($d*$d);
 	if($md>$EPS_PROJ){
+		printf ("error: md=%lf greater EPS_PROJ=%lf\n",$md,$EPS_PROJ);
 		return $HUGE;
 	}
 	
@@ -916,8 +927,8 @@ sub Tri_Callback
 	for($i=0;$i<$DIM;$i++){
 		$dist[$i]=(-$d)*$n[$i];	
 		$obj->{p_proj}->[$i] = $x->[$i] + $dist[$i];
-		printf "dist[$i]=%.16e",$dist[$i] ;
-		#print"Triangle_Callback: $obj->{p_proj}->[$i] ";
+# 		printf "dist[$i]=%.16e\n",$dist[$i] ;
+#		printf"Triangle_Callback: $obj->{p_proj}->[$i]\n";
 	}
 
 	# compute local coordinates
@@ -928,32 +939,48 @@ if (0)
 		$p02[$i]=$obj->{p2}[$i]-$obj->{p0}[$i];
 		$pp[$i] = $obj->{p_proj}->[$i]-$obj->{p0}[$i];
 	}
-	$mp01 = Mod(@p01);
-	$mp02 = Mod(@p02);
-	for($i=0;$i<$DIM;$i++){
-		$np01[$i] = $p01[$i]/$mp01; 
-		$np02[$i] = $p02[$i]/$mp02; 
-	}
-	$loc0 = DotProduct(\@np01,\@pp);
-	$loc1 = DotProduct(\@np02,\@pp);	
+	$loc0 = DotProduct(\@p01,\@pp)/DotProduct(\@p01,\@p01);
+	$loc1 = DotProduct(\@p02,\@pp)/DotProduct(\@p02,\@p02);	
 	$local0 = $loc0;
 	$local1 = $loc1;
+
  	$obj->{loc0} = $loc0;
  	$obj->{loc1} = $loc1;
 }
+else
+{
+if (0) 
+{
+	if (!GetLocalCoordinates(\@p0,\@p1,\@p2,$obj->{p_proj},\$xi,\$eta))
+	{
+		printf ("error2 in GetLocalCoordinates()\n");
+		return $HUGE;
+	}
+}
+
 	$local0 = $xi;
 	$local1 = $eta;
  	$obj->{loc0} = $xi;
  	$obj->{loc1} = $eta;
+}
+
+if (0)
+{
+	printf ("	l %lf %lf\n",$obj->{loc0},$obj->{loc1});
+	printf ("	d %lf\n",$md);
+}
+
+#	if ($md > 0.0) {die "md invalid $md\n";}
 
 #	$obj->{test} = $loc1;
 #	printf ("Tri_Callback loc0=%lf loc1=%lf\n",$loc0,$loc1);
-	printf ("Tri_Callback loc0=%lf loc1=%lf\n",$obj->{loc0},$obj->{loc1});
+#	printf ("Tri_Callback loc0=%lf loc1=%lf\n",$obj->{loc0},$obj->{loc1});
 	
 	#print"\n";
 	#print"md=$md\n";
 	#print"Mod(dist)=",Mod(@dist),"\n";
-	return(Mod(@dist));
+#	return(Mod(@dist));
+ 	return($md);
 }
 
 
@@ -999,7 +1026,7 @@ sub Line_Callback
 		$tmp=$alpha[$i];
 		if(defined($tmp)){
 			if( ($alpha[$i]<-$EPS_LOC) || ($alpha[$i]>1.0+$EPS_LOC) ){
-				printf"Line_Callback: alpha=%e return Huge\n",$alpha[$i];
+#				printf"Line_Callback: alpha=%e return Huge\n",$alpha[$i];
 				return $HUGE;}
 		}
 	}
@@ -1057,6 +1084,10 @@ LOOP:		foreach $np (1 .. $cdf{$numns}{1})
 				{
 					my ($robj,%obj);
 
+					if (!defined($map{surfacemap}{$id}))
+					{
+						die "no newid for surface id $id\n";
+					}
 					$newid = $map{surfacemap}{$id}; 
 
 					if (!defined($cdf{bndcoord}{$node}{nsurf}))
@@ -1067,43 +1098,52 @@ LOOP:		foreach $np (1 .. $cdf{$numns}{1})
 						{$cdf{bndcoord}{$node}{nsurf}} = $newid;
 
 
-#					printf("projecting node=%d onto lgm-surf %d\n",$node,$newid);
+# 					printf("projecting node=%d onto lgm-surf %d\n",$node,$newid);
 					for ($i=0; $i<$DIM; $i++)
 					{
 						$p[$i] = $cdf{coord}{$node+$i*$cdf{num_nodes}};
 					}
-#					printf("node=%d coord %lf %lf %lf\n",$node,$p[0],$p[1],$p[2]);
+# 					printf("node=%d coord %lf %lf %lf\n",$node,$p[0],$p[1],$p[2]);
    					$ttree = sprintf("ttree%d",$newid);
-# 					printf("ttree=%s ttree=%s count=%d huge=$HUGE\n",$lgm{$ttree},$ttree,$count,$HUGE);
+#  					printf("ttree=%s ttree=%s count=%d huge=$HUGE\n",$lgm{$ttree},$ttree,$count,$HUGE);
 
 					$local0 = $local1 = 2.0;
  					$d = BBT_TreePointDistance($lgm{$ttree},\@p,\$robj,\&Tri_Callback,$HUGE);
 
-#					printf ("node=%d surfdist=%lf\n",$node,$d);
+# 					printf ("node=%d surfdist=%lf\n",$node,$d);
 					if ($d < $HUGE)
 					{
 						%obj = %$robj;
-						printf("node=%d sprojection %.16e %.16e %.16e %d %d loc0=%e loc1=%e test=%e\n",
-							$node,$obj{p_proj}->[0],$obj{p_proj}->[1],$obj{p_proj}->[2],
-							$newid,$obj{tri},$obj{loc0}),$obj{loc1},$obj{test};
-						printf ("local0=%e local1=%e\n",$local0,$local1);
+#						printf("node=%d sprojection %.16e %.16e %.16e %d %d loc0=%e loc1=%e test=%e\n",
+#							$node,$obj{p_proj}->[0],$obj{p_proj}->[1],$obj{p_proj}->[2],
+#							$newid,$obj{tri},$obj{loc0}),$obj{loc1},$obj{test};
+#						printf ("local0=%e local1=%e\n",$local0,$local1);
 					}
 					else
 					{
 # 						printf "Surf projection failed node=$node surf=$newid\n";
  						die "Surf projection failed node=$node surf=$newid\n";
 					}
-					printf("\n");
+#					printf("\n");
 
 					$cdf{bndcoord}{$node}{tri}
 						{$cdf{bndcoord}{$node}{nsurf}} = $obj{tri};
+if (0)
+{
 					$cdf{bndcoord}{$node}{loc0}
 						{$cdf{bndcoord}{$node}{nsurf}} = $local0; # $obj{loc0};
 					$cdf{bndcoord}{$node}{loc1}
 						{$cdf{bndcoord}{$node}{nsurf}} = $local1; # $obj{loc1};
-					$cdf{bndcoord}{$node}{dist}
+}
+else
+{
+					$cdf{bndcoord}{$node}{loc0}
+						{$cdf{bndcoord}{$node}{nsurf}} = $obj{loc0};
+					$cdf{bndcoord}{$node}{loc1}
+						{$cdf{bndcoord}{$node}{nsurf}} = $obj{loc1};
+}
+					$cdf{bndcoord}{$node}{sdist}
 						{$cdf{bndcoord}{$node}{nsurf}} = $d;
-
 
 					$cdf{bndcoord}{$node}{nsurf}++;
 				}
@@ -1133,13 +1173,13 @@ LOOP:		foreach $np (1 .. $cdf{$numns}{1})
 
  					$d = BBT_TreePointDistance($lgm{$ltree},\@p,\$robj,\&Line_Callback,$HUGE);
 
-#					printf ("node=%d linedist=%lf\n",$node,$d);
+# 					printf ("node=%d linedist=%lf\n",$node,$d);
 					if ($d < $HUGE)
 					{
 						%obj = %$robj;
-						printf("node=%d lprojection %.16e %.16e %.16e %d %d alpha=%lf\n",
-							$node,$obj{p_proj}->[0],$obj{p_proj}->[1],$obj{p_proj}->[2],
-							$newid,$obj{seg},$obj{alpha});
+#						printf("node=%d lprojection %.16e %.16e %.16e %d %d alpha=%lf\n",
+#							$node,$obj{p_proj}->[0],$obj{p_proj}->[1],$obj{p_proj}->[2],
+#							$newid,$obj{seg},$obj{alpha});
 					}
 					else
 					{
@@ -1151,7 +1191,7 @@ LOOP:		foreach $np (1 .. $cdf{$numns}{1})
 						{$cdf{bndcoord}{$node}{nline}} = $obj{seg};
 					$cdf{bndcoord}{$node}{alpha}
 						{$cdf{bndcoord}{$node}{nline}} = $obj{alpha};
-					$cdf{bndcoord}{$node}{dist}
+					$cdf{bndcoord}{$node}{ldist}
 						{$cdf{bndcoord}{$node}{nline}} = $d;
 					
 					$cdf{bndcoord}{$node}{nline}++;
@@ -1226,7 +1266,7 @@ sub write_nodes
 #						printf NG " L %d %.16lf # d=%.16lf",
  						printf NG " L %d %s # d=%s",
 							$cdf{bndcoord}{$nc}{line}{$nl},$cdf{bndcoord}{$nc}{seg}{$nl}+
-							$cdf{bndcoord}{$nc}{alpha}{$nl},$cdf{bndcoord}{$nc}{dist}{$nl};
+							$cdf{bndcoord}{$nc}{alpha}{$nl},$cdf{bndcoord}{$nc}{ldist}{$nl};
     					printf NG "\n";
 					}
 				}
@@ -1234,11 +1274,12 @@ sub write_nodes
 				{
 					foreach $ns (0 .. $cdf{bndcoord}{$nc}{nsurf}-1)
 					{
-# 						printf NG " S %d %d %.16lf %.16lf # d=%.16lf",
- 						printf NG " S %d %d %s %s # d=%e",
+#  						printf NG " S %d %d %.16lf %.16lf # d=%.16lf",
+# 						printf NG " S %d %d 0 0 # d=%e",
+  						printf NG " S %d %d %lf %lf # d=%lf",
 							$cdf{bndcoord}{$nc}{surf}{$ns},$cdf{bndcoord}{$nc}{tri}{$ns},
-							$cdf{bndcoord}{$nc}{loc0}{$ns},$cdf{bndcoord}{$nc}{loc1}{$ns};
-							$cdf{bndcoord}{$nc}{dist}{$ns};
+							$cdf{bndcoord}{$nc}{loc1}{$ns},$cdf{bndcoord}{$nc}{loc0}{$ns},
+							$cdf{bndcoord}{$nc}{sdist}{$ns};
     					printf NG "\n";
 					}
 				}
@@ -1366,13 +1407,13 @@ sub write_elements
 	{
 		if ( $cdf{eb_prop1}{$nconnect} =~/\A2($int)/ )
 		{
-			print NG "# elements of volume $volume \n";
+			print NG "# elements of volume $volume ($1)\n";
 
 			# number of elements in block $ncon
 			$numne = sprintf "num_el_in_blk%d",$nconnect; 
 			# hash of elements
 			$connect = sprintf "connect%d",$nconnect; 
-			printf("nconnect=$nconnect numne=$numne connect=$connect\n");
+			printf("nconnect=$nconnect numne=$cdf{$numne}{1} connect=$connect\n");
 			foreach $ne (1 .. $cdf{$numne}{1})
 			{
 				# compute global element number
@@ -1409,8 +1450,11 @@ sub write_elements
 
 sub write_ng()
 {
+	my $s = localtime;
+
 	print "writing ng geometry file $ng\n";
 	open(NG, ">$ng") || die "can't open $ng\n";
+	printf NG "# created at %s\n",$s;
 
   	write_nodes();
   	write_elements();
