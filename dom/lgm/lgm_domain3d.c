@@ -80,9 +80,10 @@ static DOUBLE LINE_DISTANCE = 0.05;
 #define SMALL_FAK 1e-6
 static DOUBLE SMALL;
 
-static INT VAR_H = 1;
+//static INT VAR_H = 1; /* OS_CHANGED: not used */
 
-#define SMALL1 1e-6
+//#define SMALL1 1e-6 OS_CHANGED
+#define SMALL1 SMALL_FAK
 
 /*static DOUBLE cosAngle = 0.99;		komplex3d */
 /*static DOUBLE cosAngle = 0.99999;	*/
@@ -316,7 +317,7 @@ LGM_LINE *NextLine (LGM_DOMAIN *theDomain)
   return (theLine);
 }
 
-INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond)
+INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond)
 {
   INT i,k;
   LGM_SUBDOMAIN *theSubdom;
@@ -329,7 +330,7 @@ INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond)
     {
       theSurface = LGM_SUBDOMAIN_SURFACE(theSubdom,k);
       if (LGM_SURFACE_LEFT(theSurface)*LGM_SURFACE_RIGHT(theSurface)!=0)
-        LGM_SURFACE_BNDCOND(theSurface) = NULL;
+        LGM_SURFACE_BNDCOND(theSurface) = InnerBndCond;
       else
         LGM_SURFACE_BNDCOND(theSurface) = BndCond;
     }
@@ -539,7 +540,7 @@ INT Line_Global2Local (LGM_LINE *theLine, DOUBLE *global, DOUBLE *local)
     {
       if(sqrt( (end[j] - start[j])*(end[j] - start[j]) ) <SMALL)
       {
-        if(sqrt( (end[j] - global[j])*(end[j] - global[j]) ) <SMALL)
+        if(sqrt( (end[j] - global[j])*(end[j] - global[j]) ) < SMALL)
           id[j] = 1;
       }
       else
@@ -549,15 +550,15 @@ INT Line_Global2Local (LGM_LINE *theLine, DOUBLE *global, DOUBLE *local)
         {
           r = j;
           id[j] = 1;
-          l = j;
+          // OS_CHANGED		l = j;
           lambda_counter++;
         }
       }
     }
     if(id[0]+id[1]+id[2] == 3)
     {
-      d =     ((lambda[0]+lambda[1]+lambda[2])/lambda_counter - lambda[l])
-          * ((lambda[0]+lambda[1]+lambda[2])/lambda_counter - lambda[l]);
+      d =     ((lambda[0]+lambda[1]+lambda[2])/lambda_counter - lambda[r])
+          * ((lambda[0]+lambda[1]+lambda[2])/lambda_counter - lambda[r]);
       if(sqrt(d)<SMALL)
       {
         /* lokale Koordinaten gefunden */
@@ -2698,6 +2699,326 @@ static INT Get_NBNDP (LGM_DOMAIN *theDomain, INT *nBND, DOUBLE h)
   return (0);
 }
 
+
+/* OS_CHANGED **********************************************************************************/
+#ifdef NEW_LGM
+#define SPAT(x,y,z)                     (((x[1])*(y[2])-(x[2])*(y[1]))*z[0] + \
+                                         ((x[2])*(y[0])-(x[0])*(y[2]))*z[1] + \
+                                         ((x[0])*(y[1])-(x[1])*(y[0]))*z[2])
+
+static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE *p1, DOUBLE *p2, DOUBLE *x, DOUBLE *l)
+{
+  DOUBLE a0[3], a1[3], n[3], p[3], xmp2[3], mag, invmag, dist;
+
+  /* two edges */
+  V3_SUBTRACT(p0,p2,a0);
+  V3_SUBTRACT(p1,p2,a1);
+
+  /* normal and half triangle area (mag) */
+  V3_VECTOR_PRODUCT(a0,a1,n);
+  V3_EUKLIDNORM(n,mag);
+  invmag = 1.0/mag;
+  V3_SCALE(invmag,n);
+
+  /* project x onto triangle plane */
+  V3_SUBTRACT(x,p2,xmp2);
+  V3_SCALAR_PRODUCT(n,xmp2,dist);
+  V3_SCALESET(-dist,n,p);
+  V3_ADD1(xmp2,p);
+
+  /* local co-ordinates */
+  l[0] = SPAT(p,a1,n)*invmag;
+  l[1] = SPAT(a0,p,n)*invmag;
+  l[2] = 1.0 - l[1] - l[0];
+
+  return fabs(dist);
+}
+
+#ifdef LGM_ACCELERATE
+static DOUBLE PointLGMTriangleDistance(DOUBLE *x, void *obj)
+{
+  LGM_TRIANGLE *theTriangle;
+  DOUBLE d, dmin, d_vec[3],  alpha, lambda[3], a[3], b[3], new_x[3];
+  DOUBLE *p0, *p1, *p2;
+  INT i, found = 0;
+
+  theTriangle = (LGM_TRIANGLE *) obj;
+  dmin = DBL_MAX;
+
+  /* Check if point is close to its orthog. projection onto this triangle */
+  p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,0);
+  p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,1);
+  p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,2);
+  d = Calc_Local_Coord(p0,p1,p2,x,lambda);
+  if ((lambda[0]>=-SMALL1) && (lambda[1]>=-SMALL1) && (lambda[2]>=-SMALL1))
+    dmin = d;
+  else
+  {
+    /* Check if point is close to its orthog. prj. onto one of the edges */
+    for (i=0; i<3; i++)
+    {
+      p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,i);
+      p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,(i+1)%3);
+      V3_SUBTRACT(x,p0,a);
+      V3_SUBTRACT(p1,p0,b);
+      alpha = V3_SCAL_PROD(a,b)/V3_SCAL_PROD(b,b);
+      if (alpha >= 0.0 && alpha <= 1.0)
+      {
+        found = 1;
+        V3_SCALESET(alpha,b,new_x);
+        V3_ADD1(p0,new_x);
+        V3_SUBTRACT(x,new_x,d_vec);
+        V3_EUKLIDNORM(d_vec,d);
+        dmin = MIN(dmin,d);
+      }
+    }
+
+    if (!found)
+    {
+      /* Get distance to closest node */
+      for (i=0; i<3; i++)
+      {
+        p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,i);
+        V3_SUBTRACT(x,p0,d_vec);
+        V3_EUKLIDNORM(d_vec,d);
+        dmin = MIN(dmin,d);
+      }
+    }
+  }
+
+  return dmin;
+}
+
+INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *dummy)
+{
+  LGM_TRIANGLE *theTriangle;
+  DOUBLE dist, min_dist, lambda[3], *p0, *p1, *p2, new_global[3];
+  DOUBLE dist_vec[3], min_global[3], a[3], b[3], alpha;
+  INT tri, i, found;
+
+  dist = BBT_TreePointDistance(theSurface->bbtree,global,(void **)&theTriangle,
+                               PointLGMTriangleDistance);
+  if (dist == DBL_MAX) return -1;
+
+  tri = theTriangle - LGM_SURFACE_TRIANGLE(theSurface,0);       /* Get triangle ID */
+  assert(LGM_SURFACE_TRIANGLE(theSurface,tri)==theTriangle);
+  found = 0;
+  min_dist = DBL_MAX;
+
+  /* Check if point is close to its orthog. projection onto this triangle */
+  p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,0);
+  p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,1);
+  p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,2);
+  dist = Calc_Local_Coord(p0,p1,p2,global,lambda);
+
+  if (!((lambda[0]>=-SMALL1) && (lambda[1]>=-SMALL1) && (lambda[2]>=-SMALL1)))
+  {
+    /* Check if point is close to its orthog. prj. onto one of the edges */
+    for (i=0; i<3; i++)
+    {
+      p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,i);
+      p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,(i+1)%3);
+      V3_SUBTRACT(global,p0,a);
+      V3_SUBTRACT(p1,p0,b);
+      alpha = V3_SCAL_PROD(a,b)/V3_SCAL_PROD(b,b);
+      if (alpha >= 0.0 && alpha <= 1.0)
+      {
+        found = 1;
+        V3_SCALESET(alpha,b,new_global);
+        V3_ADD1(p0,new_global);
+        V3_SUBTRACT(global,new_global,dist_vec);
+        V3_EUKLIDNORM(dist_vec,dist);
+        if (dist < min_dist)                         /* Currently the nearest */
+        {
+          min_dist = dist;
+          V3_COPY(new_global,min_global);
+        }
+      }
+    }
+
+    if (!found)
+    {
+      /* Take closest node of the triangle as new point */
+      for (i=0; i<3; i++)
+      {
+        p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,i);
+        V3_SUBTRACT(global,p0,dist_vec);
+        V3_EUKLIDNORM(dist_vec,dist);
+        if (dist < min_dist)                         /* Currently the nearest */
+        {
+          min_dist = dist;
+          V3_COPY(p0,min_global);
+        }
+      }
+    }
+
+    /* Compute local */
+    p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,0);
+    p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,1);
+    p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,2);
+    dist = Calc_Local_Coord(p0,p1,p2,min_global,lambda);
+
+  }
+
+  if (lambda[0] < 0.0) lambda[0] = 0.0;
+  if (lambda[1] < 0.0) lambda[1] = 0.0;
+
+  local[0] = lambda[0] + tri;
+  local[1] = lambda[1] + tri;
+
+#if 0 //OS_DEBUG
+  {
+    printf("# lambda =(%f,%f,%f) \n",lambda[0],lambda[1],lambda[1]);
+    printf("  x      =(%f,%f,%f)\n",global[0],global[1],global[2]);
+    dist = Calc_Local_Coord(p0,p1,p2,min_global,lambda);
+    printf("  dist   = %f, tri=%d\n",dist,tri);
+    printf("  lambda =(%f,%f,%f) \n",lambda[0],lambda[1],lambda[1]);
+    printf("  xmin   =(%f,%f,%f)\n",min_global[0],min_global[1],min_global[2]);
+    printf("  p0     =(%f,%f,%f)\n",p0[0],p0[1],p0[2]);
+    printf("  p1     =(%f,%f,%f)\n",p1[0],p1[1],p1[2]);
+    printf("  p2     =(%f,%f,%f)\n",p2[0],p2[1],p2[2]);
+  }
+#endif
+
+  return(tri);
+}
+
+#else /* no LGM acceleration */
+INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *dummy)
+{
+  LGM_TRIANGLE *theTriangle;
+  DOUBLE dist, min_dist, lambda[3], min_lambda[3], *p0, *p1, *p2, new_global[3];
+  DOUBLE dist_vec[3], min_global[3], a[3], b[3], alpha;
+  INT tri, min_tri, i, found;
+  enum {none,triangle,edge,node} obj;
+
+  min_dist = DBL_MAX;       /* Largest value possible */
+  min_tri = -1;
+  obj = none;
+
+  for(tri=0; tri<LGM_SURFACE_NTRIANGLE(theSurface); tri++)
+  {
+    found = 0;
+    theTriangle = LGM_SURFACE_TRIANGLE(theSurface,tri);
+
+    /* Check if point is close to its orthog. projection onto this triangle */
+    p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,0);
+    p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,1);
+    p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,2);
+
+    dist = Calc_Local_Coord(p0,p1,p2,global,lambda);
+    if ((lambda[0]>=-SMALL1) && (lambda[1]>=-SMALL1) && (lambda[2]>=-SMALL1))
+    {
+      if (0 && dist < SMALL1)                   /* The point is already on the triangle OS_TODO: use global citerium, not SMALL1, which is local*/
+      {
+        if (lambda[0] < 0.0) lambda[0] = 0.0;
+        if (lambda[1] < 0.0) lambda[1] = 0.0;
+        local[0] = lambda[0] + tri;
+        local[1] = lambda[1] + tri;
+        return(tri);
+      }
+      found = 1;
+      if (dist < min_dist)                   /* Currently the nearest */
+      {
+        min_dist = dist;
+        min_tri = tri;
+        obj = triangle;
+        V3_COPY(lambda,min_lambda);
+      }
+    }
+
+    if (!found)
+    {
+      /* Check if point is close to its orthog. prj. onto one of the edges */
+      for (i=0; i<3; i++)
+      {
+        p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,i);
+        p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,(i+1)%3);
+        V3_SUBTRACT(global,p0,a);
+        V3_SUBTRACT(p1,p0,b);
+        alpha = V3_SCAL_PROD(a,b)/V3_SCAL_PROD(b,b);
+        if (alpha >= 0.0 && alpha <= 1.0)
+        {
+          found = 1;
+          V3_SCALESET(alpha,b,new_global);
+          V3_ADD1(p0,new_global);
+          V3_SUBTRACT(global,new_global,dist_vec);
+          V3_EUKLIDNORM(dist_vec,dist);
+          if (dist < min_dist)                               /* Currently the nearest */
+          {
+            min_dist = dist;
+            min_tri = tri;
+            obj = edge;
+            V3_COPY(new_global,min_global);
+          }
+        }
+      }
+    }
+
+    if (!found)
+    {
+      /* Check if point is close to one of the nodes */
+      for (i=0; i<3; i++)
+      {
+        p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,i);
+        V3_SUBTRACT(global,p0,dist_vec);
+        V3_EUKLIDNORM(dist_vec,dist);
+        if (dist < min_dist)                         /* Currently the nearest */
+        {
+          min_dist = dist;
+          min_tri = tri;
+          obj = node;
+          V3_COPY(p0,min_global);
+        }
+      }
+    }
+
+  }
+
+  /* Compute local */
+  if (obj != triangle)
+  {
+    theTriangle = LGM_SURFACE_TRIANGLE(theSurface,min_tri);
+    p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,0);
+    p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,1);
+    p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(theTriangle,2);
+    Calc_Local_Coord(p0,p1,p2,min_global,min_lambda);
+  }
+
+  if (min_lambda[0] < 0.0) min_lambda[0] = 0.0;
+  if (min_lambda[1] < 0.0) min_lambda[1] = 0.0;
+  local[0] = min_lambda[0] + min_tri;
+  local[1] = min_lambda[1] + min_tri;
+
+#if 0   //OS_DEBUG
+  {
+    dist = Calc_Local_Coord(p0,p1,p2,min_global,min_lambda);
+    if (obj == triangle) printf("triangle case\n");
+    else if (obj == edge) printf("edge case\n");
+    else if (obj == node) printf("node case\n");
+    else printf("????? case\n");
+
+    printf("# lambda =(%f,%f,%f) \n",,min_lambda[0],min_lambda[1],min_lambda[1]);
+    printf("  x      =(%f,%f,%f)\n",global[0],global[1],global[2]);
+    dist = Calc_Local_Coord(p0,p1,p2,min_global,lambda);
+    printf("  dist   = %f, tri=%d\n",dist,tri);
+    printf("  lambda =(%f,%f,%f) \n",lambda[0],lambda[1],lambda[1]);
+    printf("  xmin   =(%f,%f,%f)\n",min_global[0],min_global[1],min_global[2]);
+    printf("  p0     =(%f,%f,%f)\n",p0[0],p0[1],p0[2]);
+    printf("  p1     =(%f,%f,%f)\n",p1[0],p1[1],p1[2]);
+    printf("  p2     =(%f,%f,%f)\n",p2[0],p2[1],p2[2]);
+    printf("  mindist = %f, tri=%d\n",min_dist,tri);
+  }
+#endif
+
+  assert(min_tri != -1);
+  return(min_tri);
+}
+#endif
+
+/* OS_CHANGED **********************************************************************************/
+#else /* use old LGM */
+
 static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global, DOUBLE *lam)
 {
   INT i,j;
@@ -3034,7 +3355,7 @@ static INT CASE2(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam, DOUBLE *n
   return(-1);
 }
 
-INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n)
+int GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n)
 {
   INT i,j,test,min,mi, dist_i;
   DOUBLE *p0,*p1,*p2,e0[3],e1[3],e2[3],eps;
@@ -3063,12 +3384,12 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE
   }
   if(lam[0]<0.0) lam[0] = 0.0;
   if(lam[1]<0.0) lam[1] = 0.0;
-
   local[0] = lam[0] + mi;
   local[1] = lam[1] + mi;
 
   return(mi);
 }
+#endif
 
 INT Project2Surface(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n)
 {
@@ -5157,6 +5478,14 @@ INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local
   DOUBLE slocal[2],sloc;
   LGM_LINE *theLine;
 
+  /* OS_CHANGED: Changed by Andreas */
+  for (i=0; i<2; i++)
+    if(floor(local[i] + SMALL_FAK) != floor(local[i]))
+    {
+      local[i] += SMALL_FAK;
+      local[i] = floor(local[i]);
+    }
+
   if(local[0]<0.0)
   {
     /* point is on the boundary of the surface */
@@ -5361,12 +5690,10 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   LGM_BNDS *theBndS;
   DOUBLE loc1[2], loc2[2], loc3[2], local[2], slocal[2], nv[3];
   DOUBLE globalp0[3],globalp1[3],globalp2[3], globalp3[3], global[3], globalnew[3];
-  DOUBLE small, sp, d, min_d, l, l1;
-  DOUBLE p0[3], p1[3], p2[3], m1[3], m2[3], m3[3], area, g[3];
+  double small, sp, d, min_d, l, l1;
+  DOUBLE p0[3], p1[3], p2[3], m1[3], m2[3], m3[3], g[3];
   DOUBLE A[3], B[3], BNDP_NV[3], Surface_NV[3];
   INT mi;
-
-  small = 0.000001;
 
   if(n!=3 && n!=4)
   {
@@ -5383,13 +5710,6 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   BNDP_Global(aBndP[2],globalp2);
   if (n==4) BNDP_Global(aBndP[3],globalp3);
 
-  /*
-          printf("%s\n", "THEbnds");
-          printf("%lf %lf %lf\n", globalp0[0], globalp0[1], globalp0[2]);
-          printf("%lf %lf %lf\n", globalp1[0], globalp1[1], globalp1[2]);
-          printf("%lf %lf %lf\n", globalp2[0], globalp2[1], globalp2[2]);
-          printf("%lf %lf %lf\n", globalp3[0], globalp3[1], globalp3[2]);
-   */
 
   A[0] = globalp2[0] - globalp0[0];
   A[1] = globalp2[1] - globalp0[1];
@@ -5398,25 +5718,25 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   B[1] = globalp2[1] - globalp1[1];
   B[2] = globalp2[2] - globalp1[2];
   LGM_VECTOR_PRODUCT(A, B, BNDP_NV);
-  V_DIM_SCALE(1.0/sqrt(V_DIM_SCAL_PROD(BNDP_NV, BNDP_NV)),BNDP_NV);
+  // This is wrong. OS_CHANGED
+  //	V_DIM_SCALE(1.0/sqrt(V_DIM_SCAL_PROD(BNDP_NV, BNDP_NV)),BNDP_NV);
 
-  /* check */
-  for(i=0; i<3; i++)
-    m1[i] = globalp2[i]-globalp0[i];
-  for(i=0; i<3; i++)
-    m2[i] = globalp1[i]-globalp0[i];
-  m3[0] = m1[1]*m2[2] - m1[2]*m2[1];
-  m3[1] = m1[2]*m2[0] - m1[0]*m2[2];
-  m3[2] = m1[0]*m2[1] - m1[1]*m2[0];
-
-  area = 0.0;
-  for(i=0; i<3; i++)
-    area = area + m3[i]*m3[i];
-  area = sqrt(area);
-  if(area<0.0)
-    area = - area;
-  /*	if(area<0.01)
-                  printf("%s\n", "area");*/
+  // We don't need this. OS_CHANGED
+  //	  /* check */
+  //	  for(i=0;i<3;i++)
+  //		  m1[i] = globalp2[i]-globalp0[i];
+  //	  for(i=0;i<3;i++)
+  //		  m2[i] = globalp1[i]-globalp0[i];
+  //	  m3[0] = m1[1]*m2[2] - m1[2]*m2[1];
+  //	  m3[1] = m1[2]*m2[0] - m1[0]*m2[2];
+  //	  m3[2] = m1[0]*m2[1] - m1[1]*m2[0];
+  //
+  //	  area = 0.0;
+  //	  for(i=0;i<3;i++)
+  //		  area = area + m3[i]*m3[i];
+  //	  area = sqrt(area);
+  //	  if(area<0.0)
+  //		  area = - area;
 
   if(E_Distance(globalp2, globalp0)<SMALL)
     assert(E_Distance(globalp2, globalp0)>SMALL);
@@ -5446,10 +5766,10 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
     global[1] = ( globalp0[1] + globalp1[1] +  globalp2[1]  +  globalp3[1]) / 4.0;
     global[2] = ( globalp0[2] + globalp1[2] +  globalp2[2]  +  globalp3[2]) / 4.0;
   }
-
-  count = 0;
-  min_d = 1000000.0;
-  d =  1000000.0;
+  // We don't need this. OS_CHANGED
+  //	  count = 0;
+  //	  min_d = 1000000.0;
+  //	  d =  1000000.0;
 
   count = 0;
   min_d = DBL_MAX;
@@ -5488,7 +5808,12 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
             }
           }
 
-  if (count==0) return(NULL);
+
+  if (count==0)
+  {
+    UserWrite("BNDP_CreateBndS(): No common surface found.\n");
+    return(NULL);
+  }
   if(count>1 && n==3)
   {
     count = 0;
@@ -5570,6 +5895,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   theSurface = LGM_BNDP_SURFACE(theBndP1,i0);
 
   theBndS = (LGM_BNDS *)GetFreelistMemory(Heap,sizeof(LGM_BNDS));
+  assert(theBndS!=NULL);
   LGM_BNDS_SURFACE(theBndS) = theSurface;
 
         #ifdef NO_PROJECT
@@ -6717,4 +7043,46 @@ INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
   }
 
   return(maxLineId);
+}
+
+/* OS_CHANGED: an new auxiliary function to mark surface_IDs of the domain boundary */
+INT OuterBndSurfaceIDs (LGM_DOMAIN *theDomain, INT *sf)
+{
+  INT nSubDom, i, l;
+
+  nSubDom = LGM_DOMAIN_NSUBDOM(theDomain);
+  for(i=1; i<=nSubDom; i++)
+  {
+    LGM_SUBDOMAIN *subdom = LGM_DOMAIN_SUBDOM(theDomain,i);
+
+    for(l=0; l<LGM_SUBDOMAIN_NSURFACE(subdom); l++)
+    {
+      INT id = LGM_SURFACE_ID(LGM_SUBDOMAIN_SURFACE(subdom,l));
+      if ((LGM_SURFACE_LEFT(LGM_SUBDOMAIN_SURFACE(subdom,l)) == 0) ||
+          (LGM_SURFACE_RIGHT(LGM_SUBDOMAIN_SURFACE(subdom,l)) == 0))
+        sf[id] = 1;
+      else
+        sf[id] = 0;
+    }
+  }
+
+  return 0;
+}
+
+/* OS_CHANGED: an new auxiliary function to get surface_IDs of a subdomain,
+ * return value is the number of surfaces of the subdomain i
+ */
+INT SurfaceIDsOfSubdomain (LGM_DOMAIN *theDomain, INT *sf, INT i)
+{
+  INT nsf, l;
+
+  LGM_SUBDOMAIN *subdom;
+  if (i>LGM_DOMAIN_NSUBDOM(theDomain)) return 0;
+
+  subdom = LGM_DOMAIN_SUBDOM(theDomain,i);
+  nsf = LGM_SUBDOMAIN_NSURFACE(subdom);
+  for(l=0; l<nsf; l++)
+    sf[l] = LGM_SURFACE_ID(LGM_SUBDOMAIN_SURFACE(subdom,l));
+
+  return nsf;
 }
