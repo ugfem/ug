@@ -1,0 +1,6 @@
+# this file is for internal ug configuration. don't change it!
+
+UG_DOMSUFFIX = S$(UG_LIBSUFFIX)
+
+
+

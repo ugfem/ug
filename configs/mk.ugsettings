@@ -13,9 +13,7 @@
 ENV_CFLAGS = $(MODEL_ENV_CFLAGS)
 ENV_LFLAGS = $(MODEL_ENV_LFLAGS) $(GRAPE_ENV_LFLAGS)
 
-
 # library name suffixes
-UG_DOMSUFFIX = $(DIM)
 UG_LIBSUFFIX = $(DIM)
 
 # default linker (replaced if C++ is used)
@@ -32,6 +30,9 @@ include $(UGROOT)/configs/mk.model.$(MODEL)
 
 # include macro definitions for remote interface
 include $(UGROOT)/configs/mk.rif.$(REMOTE_IF)
+
+# include macro definitions for domain interface
+include $(UGROOT)/configs/mk.dom.$(DOM_MODULE)
 
 # include macro definitions for debugging
 include $(UGROOT)/configs/mk.debug.$(DEBUG_MODE)
