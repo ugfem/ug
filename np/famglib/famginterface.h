@@ -116,7 +116,7 @@ int FAMGSolveSystem(struct FAMG_Interface*,struct FAMG_Parameter*);
 void **FAMG_GetExtraPtr(int level);
 int FAMG_GetN(int level);
 int FAMG_GetNF(int level);
-FAMG_MatrixPtr  *FAMG_GetMatrixPtr(int level,int i);
+FAMG_MatrixPtr FAMG_GetMatrixPtr(int level,int i);
 double * FAMG_GetVector(int level, int i);
 int FAMG_GetMaxLevel();
 FAMG_TransferEntry  *FAMG_GetTransferEntry(int level,int i);

@@ -169,14 +169,14 @@ int FAMG_GetNF(int level)
     return nf;
 }
 
-FAMG_MatrixPtr  *FAMG_GetMatrixPtr(int level,int i)
+FAMG_MatrixPtr FAMG_GetMatrixPtr(int level,int i)
 {
     FAMGMatrix *matrix;
     FAMGMatrixPtr mat;
     
     matrix = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetMatrix();
     mat = matrix->GetStart(i);
-    return ((FAMG_MatrixPtr *) &mat);
+    return (*((FAMG_MatrixPtr *)&mat));
 }
 
 FAMG_TransferEntry  *FAMG_GetTransferEntry(int level,int i)

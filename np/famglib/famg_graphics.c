@@ -130,7 +130,7 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 static INT EvalFAMGGraph (DRAWINGOBJ *theDO, INT *end)
 {
   VERTEX *vertex, *nbvertex;
-  FAMG_MatrixPtr mat, *matptr;
+  FAMG_MatrixPtr mat;
   FAMG_TransferEntry *trans;
   DOUBLE_VECTOR mypos,nbpos;
   int j;
@@ -141,8 +141,7 @@ static INT EvalFAMGGraph (DRAWINGOBJ *theDO, INT *end)
 
   vertex = (VERTEX *) GlobalNodePtr[GlobalCounter];
   V_DIM_COPY(CVECT(vertex),mypos);
-  matptr = FAMG_GetMatrixPtr(GlobalLevel,GlobalCounter);
-  mat = *matptr;
+  mat = FAMG_GetMatrixPtr(GlobalLevel,GlobalCounter);
 
   if((mat.index)->type)
   {
