@@ -942,11 +942,13 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
       for (n=0; n<POINT_PATCH_N(corners[i]); n++)
         for (m=0; m<POINT_PATCH_N(corners[j]); m++)
           if (POINT_PATCH_PID(corners[i],n) ==
-              POINT_PATCH_PID(corners[j],m))
-          {
-            LINE_PATCH_PID(thePatch,k) = POINT_PATCH_PID(corners[i],n);
-            LINE_PATCH_CID0(thePatch,k) = POINT_PATCH_CID(corners[i],n);
-            LINE_PATCH_CID1(thePatch,k) = POINT_PATCH_CID(corners[j],m);
+              POINT_PATCH_PID(corners[j],m)) {
+            LINE_PATCH_PID(thePatch,k) =
+              POINT_PATCH_PID(corners[i],n);
+            LINE_PATCH_CID0(thePatch,k) =
+              POINT_PATCH_CID(corners[i],n);
+            LINE_PATCH_CID1(thePatch,k) =
+              POINT_PATCH_CID(corners[j],m);
             k++;
           }
       LINE_PATCH_N(thePatch) = k;
@@ -1460,13 +1462,39 @@ static BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
       local1[1] = PARAM_PATCH_RANGE(pp)[1][1];
       break;
     }
+
+    /* TODO: Why this? */
+    if ((LINE_PATCH_CID0(p,l) == 2) && (LINE_PATCH_CID1(p,l) == 3))
+      lcoord = 1.0 - lcoord;
+    if ((LINE_PATCH_CID0(p,l) == 1) && (LINE_PATCH_CID1(p,l) == 0))
+      lcoord = 1.0 - lcoord;
+    if ((LINE_PATCH_CID0(p,l) == 3) && (LINE_PATCH_CID1(p,l) == 0))
+      lcoord = 1.0 - lcoord;
+    if ((LINE_PATCH_CID0(p,l) == 2) && (LINE_PATCH_CID1(p,l) == 1))
+      lcoord = 1.0 - lcoord;
+
     bp->local[l][0] = (1.0-lcoord)*local0[0]+lcoord*local1[0];
     bp->local[l][1] = (1.0-lcoord)*local0[1]+lcoord*local1[1];
 
-    PRINTDEBUG(dom,1,(" Create bndp %d line %d l %d %f %f\n",
+    if ((LINE_PATCH_CID0(p,l) == 2) && (LINE_PATCH_CID1(p,l) == 3))
+      lcoord = 1.0 - lcoord;
+    if ((LINE_PATCH_CID0(p,l) == 1) && (LINE_PATCH_CID1(p,l) == 0))
+      lcoord = 1.0 - lcoord;
+    if ((LINE_PATCH_CID0(p,l) == 3) && (LINE_PATCH_CID1(p,l) == 0))
+      lcoord = 1.0 - lcoord;
+    if ((LINE_PATCH_CID0(p,l) == 2) && (LINE_PATCH_CID1(p,l) == 1))
+      lcoord = 1.0 - lcoord;
+
+
+    PRINTDEBUG(dom,1,(" Create bndp %d line %d  C0 %d C1 %d l %d %f %f\n",
                       bp->patch_id,
-                      LINE_PATCH_PID(p,l),l,
+                      LINE_PATCH_PID(p,l),
+                      LINE_PATCH_CID0(p,l),
+                      LINE_PATCH_CID1(p,l),
+                      l,
                       bp->local[l][0],bp->local[l][1]));
+    PRINTDEBUG(dom,1,(" lcoord %f\n",
+                      lcoord));
   }
 
   return((BNDP *)bp);
