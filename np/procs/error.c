@@ -199,66 +199,66 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
 
   if (np->x == NULL) {
     PrintErrorMessage('E',"NPErrorExecute","no vector x");
-    return (1);
+    REP_ERR_RETURN(1);
   }
 
   if (ReadArgvOption("i",argc,argv)) {
     if (np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
-      return (1);
+      REP_ERR_RETURN(1);
     }
     if ((*np->PreProcess)(np,level,&result)) {
       UserWriteF("NPErrorExecute: PreProcess failed, error code %d\n",
                  result);
-      return (1);
+      REP_ERR_RETURN(1);
     }
   }
 
   if (ReadArgvOption("e",argc,argv)) {
     if (np->Error == NULL) {
-      PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
-      return (1);
+      PrintErrorMessage('E',"NPErrorExecute","no Error");
+      REP_ERR_RETURN(1);
     }
     if ((*np->Error)(np,level,np->x,&eresult)) {
       UserWriteF("NPErrorExecute: Error failed, error code %d\n",
                  eresult.error_code);
-      return (1);
+      REP_ERR_RETURN(1);
     }
   }
 
   if (ReadArgvOption("t",argc,argv)) {
     if (np->TimeError == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
-      return (1);
+      REP_ERR_RETURN(1);
     }
     if (np->o == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no vector o");
-      return (1);
+      REP_ERR_RETURN(1);
     }
     if (ReadArgvDOUBLE("t",&Time,argc,argv)) {
       PrintErrorMessage('E',"NPErrorExecute","no time");
-      return (1);
+      REP_ERR_RETURN(1);
     }
     if (ReadArgvDOUBLE("s",&step,argc,argv)) {
       PrintErrorMessage('E',"NPErrorExecute","no time step");
-      return (1);
+      REP_ERR_RETURN(1);
     }
     if ((*np->TimeError)(np,level,Time,&step,np->x,np->o,np->ts,&eresult)) {
       UserWriteF("NPErrorExecute: PreProcess failed, error code %d\n",
                  eresult.error_code);
-      return (1);
+      REP_ERR_RETURN(1);
     }
   }
 
   if (ReadArgvOption("p",argc,argv)) {
     if (np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PostProcess");
-      return (1);
+      REP_ERR_RETURN(1);
     }
     if ((*np->PostProcess)(np,level,&result)) {
       UserWriteF("NPErrorExecute: PostProcess failed, error code %d\n",
                  result);
-      return (1);
+      REP_ERR_RETURN(1);
     }
   }
 
@@ -569,7 +569,7 @@ static INT IndicatorExecute (NP_BASE *theNumProc, INT argc, char **argv)
   if (Indicator(&theNP->error,CURRENTLEVEL(theNumProc->mg),
                 theNP->error.x,&eresult)) {
     UserWriteF("Indicator failed, error code %d\n",eresult.error_code);
-    return (1);
+    REP_ERR_RETURN(1);
   }
 
   return (NUM_OK);
