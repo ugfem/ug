@@ -70,13 +70,8 @@
 #include "debug.h"
 #endif
 
-#ifndef __DOMAIN__
 #include "domain.h"
-#endif
-
-#ifndef __PARGM_H__
 #include "pargm.h"
-#endif
 
 /****************************************************************************/
 /*                                                                          */
