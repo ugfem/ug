@@ -961,6 +961,46 @@ INT V3_Orthogonalize (const COORD *a, const COORD *b, COORD *r)
 
 /****************************************************************************/
 /*D
+   V3_Project - Project a vector onto another vector.
+
+   SYNOPSIS:
+   INT V3_Project (const COORD *a, const COORD *b, COORD *r);
+
+   PARAMETERS:
+   .  a - vector to project
+   .  b - vector onto project
+   .  r - resulting vector
+
+   DESCRIPTION:
+   This function projects vector 'a' onto 'b' store in 'r'.
+
+   RETURN VALUE:
+   INT
+   .n    0 if o.k.
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT V3_Project (const COORD *a, const COORD *b, COORD *r)
+{
+  COORD normb, scprd;
+
+  normb = b[0]*b[0]+b[1]*b[1]+b[2]*b[2];
+  if (normb==0.0)
+    return (1);
+  else
+  {
+    V3_SCALAR_PRODUCT(a,b,scprd)
+    scprd /= normb;
+    V3_COPY(b,r)
+    V3_SCALE(scprd,r)
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    M4_Invert - Invert a 4X4 Matrix
 
    SYNOPSIS:

@@ -312,6 +312,7 @@ INT 		V3_NormVectorProduct				(const COORD *a, const COORD *b, COORD *result);
 INT 		V3_Rotate							(COORD *vector, const COORD *axis, COORD alpha);
 INT 		V3_Angle							(const COORD *a, const COORD *b, COORD *result);
 INT 		V3_Orthogonalize					(const COORD *a, const COORD *b, COORD *r);
+INT 		V3_Project 							(const COORD *a, const COORD *b, COORD *r);
 
 
 /* 4D routines */
