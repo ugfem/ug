@@ -19,7 +19,7 @@ include ../ug.conf
 LCFLAGS = -I../low -I../dev
 
 # object files for both dimensions
-OBJECTS = algebra.o enrol.o evm.o ugio.o ugm.o cw.o initgm.o elements.o shapes.o
+OBJECTS = algebra.o enrol.o evm.o ugio.o ugm.o cw.o initgm.o elements.o shapes.o evalproc.o 
 
 # objects for 2D version
 OBJECTS2 = shapes2d.o ugm2d.o ugrefine2d.o
