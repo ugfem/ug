@@ -6809,6 +6809,90 @@ void ListGrids (const MULTIGRID *theMG)
              "---",(long)nn,(long)ne,(long)nt,
              (long)ns,(long)nvec,(long)nc,(float)hmin,(float)hmax);
 
+    #ifdef ModelP
+  /* surface grid up to current level */
+  minl = cl;
+  hmin = MAX_C;
+  hmax = 0.0;
+  nn = ne = nt = ns = nvec = nc = 0;
+  for (l=0; l<=cl; l++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,l);
+
+    /* reset USED flags in all objects to be counted */
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    {
+      SETUSED(theNode,0);
+      for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+        SETUSED(MYEDGE(theLink),0);
+    }
+    /* count vectors and connections */
+    for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
+      if ((l==cl) || (VNCLASS(vec)<1))
+        if (PRIO(vec) == PrioMaster) nvec++;
+
+    /* count other objects */
+    for (theElement=FIRSTELEMENT(theGrid);
+         theElement!=NULL; theElement=SUCCE(theElement))
+      if (EstimateHere(theElement))
+      {
+        nt++;
+
+        minl = MIN(minl,l);
+
+        coe = CORNERS_OF_ELEM(theElement);
+        for (i=0; i<coe; i++)
+        {
+          theNode = CORNER(theElement,i);
+          if (USED(theNode)) continue;
+          SETUSED(theNode,1);
+
+          if ((SONNODE(theNode)==NULL) || (l==cl))
+            if (PRIO(theNode) == PrioMaster) nn++;
+        }
+
+        soe = SIDES_OF_ELEM(theElement);
+        for (side=0; side<soe; side++)
+        {
+          if (OBJT(theElement)==BEOBJ)
+            if (ELEM_BNDS(theElement,side)!=NULL) ns++;
+
+          /* check neighbour element */
+          if (l<cl)
+            if ((NBElem=NBELEM(theElement,side))!=NULL)
+              if (NSONS(NBElem)>0)
+                continue;                                                       /* objects of this side will be counted by the neighbour */
+
+          eos = EDGES_OF_SIDE(theElement,side);
+          for (i=0; i<eos; i++)
+          {
+            e  = EDGE_OF_SIDE(theElement,side,i);
+            n0 = CORNER(theElement,CORNER_OF_EDGE(theElement,e,0));
+            v0 = MYVERTEX(n0);
+            n1 = CORNER(theElement,CORNER_OF_EDGE(theElement,e,1));
+            v1 = MYVERTEX(n1);
+            V_DIM_EUKLIDNORM_OF_DIFF(CVECT(v0),CVECT(v1),h);
+            hmin = MIN(hmin,h);
+            hmax = MAX(hmax,h);
+          }
+        }
+      }
+  }
+  nn = UG_GlobalSumINT(nn);
+  ne = UG_GlobalSumINT(ne);
+  nt = UG_GlobalSumINT(nt);
+  ns = UG_GlobalSumINT(ns);
+  nvec = UG_GlobalSumINT(nvec);
+  nc = UG_GlobalSumINT(nc);
+  hmin = UG_GlobalMinDOUBLE(hmin);
+  hmax = UG_GlobalMaxDOUBLE(hmax);
+  UserWrite("\nsurface of all processors up to current level:\n");
+  UserWriteF("%c %3d %8d %8s %8ld %8s %8ld %8ld %8ld %8s %9.3e %9.3e\n",
+             ' ',minl,(int)cl,
+             "---",(long)nn,"        ",(long)nt,
+             (long)ns,(long)nvec,"        ",(float)hmin,(float)hmax);
+        #endif
+
   /* storage */
   heap = HeapFreelistUsed(MGHEAP(theMG));
   used = HeapUsed(MGHEAP(theMG)) - heap;
