@@ -6553,6 +6553,11 @@ if (1)
 	if (MG_MakePeriodicMarksConsistent(theMG)) REP_ERR_RETURN(1);
 	#endif
 	
+	/* The matrices for the calculation are removed, to remember the
+	   recalculating the MGSTATUS is set to 1 */
+  
+	MGSTATUS(theMG) = 1 ;
+
 	return(0);
 }
 
