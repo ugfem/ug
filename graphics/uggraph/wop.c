@@ -5712,8 +5712,7 @@ static INT PlotMatrixEntry (
 	
 	Color = (long)(MAT_factor*value+MAT_offset);
 	Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-	if (Color<WOP_OutputDevice->spectrumStart)
-		return (0);
+	Color = MAX(Color,WOP_OutputDevice->spectrumStart);
 	
 	/* draw */
 	DO_2c(*DOhandle) = DO_POLYGON; DO_inc(*DOhandle) 
@@ -5798,14 +5797,12 @@ static PlotPointBlockMatrixEntry (
 		{
 			printvalue = value = values[i*nc+j];
 			
+			if (fabs(value)<=MAT_thresh) continue;
+			if (MAT_log) value = log(fabs(value));
+			
 			/* store range */
 			*max = MAX(*max,value);
 			*min = MIN(*min,value);
-			
-			if (fabs(value)<=MAT_thresh)
-				continue;
-			if (MAT_log)
-				value = log(fabs(value));
 			
 			PlotMatrixEntry(rowi,coli,row+1-(i+1)*h,col+j*w,w,h,value,printvalue,DOhandle);
 		}
