@@ -321,14 +321,14 @@ void SetGhostObjectPriorities (GRID *theGrid)
 			}
 	}
 	/* to reset also nodes which are at corners of the boundary */
-	/* reset nodes through the node list                        */
+	/* reset of nodes need to be done through the node list     */
 	for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
 	{
 		SETUSED(theNode,0); SETTHEFLAG(theNode,0);
 		SETMODIFIED(theNode,0);
 	}
 
-	/* set FLAG for objects of vertical overlap */
+	/* set FLAG for objects of horizontal and vertical overlap */
 	for (theElement=PFIRSTELEMENT(theGrid);
 		 theElement!=NULL;
 		 theElement=SUCCE(theElement))
@@ -501,6 +501,13 @@ void SetGhostObjectPriorities (GRID *theGrid)
 			/* this is a node of the boundary without connection to master elements */
 			NODE_PRIORITY_SET(theGrid,theNode,PrioHGhost)
 		}
+		/* this is needed only for consistency after refinement */
+		/* ghost nodes which belong after refinement to master  */
+		/* elements have to be upgraded explicitly (980126 s.l.)*/
+		else if (MODIFIED(theNode) == 1)
+		{
+			NODE_PRIORITY_SET(theGrid,theNode,PrioMaster)
+		}
 	}
 
 }
@@ -578,6 +585,9 @@ INT SetGridBorderPriorities (GRID *theGrid)
 .  theGrid
 
    DESCRIPTION:
+   Provide a consistent grid. Do not call for a single grid level, but 
+   always for the whole multigrid from bottom to top, since otherwise
+   consistency is not ensured!
 
    RETURN VALUE:
    void
@@ -626,8 +636,16 @@ void ConstructConsistentGrid (GRID *theGrid)
 	DEBUG_TIME(0);
 
     #ifdef __TWODIM__
+	/* this is the simplest fix for VFATHER zombies  */
+	/* just reset all VFATHER pointers and set them  */
+	/* only by master nodes of this or upper levels. */
+	/* A more complicated fix would be to set the    */
+	/* priorities of the vertices correctly.         */
+	/* (980126 s.l.)                                 */
 	for (theVertex = PFIRSTVERTEX(theGrid); theVertex != NULL;
 		 theVertex = SUCCV(theVertex)) {
+		VFATHER(theVertex) = NULL;
+/*
 	    if (VXGHOST(theVertex)) 
 		    VFATHER(theVertex) = NULL;
 		else if (OBJT(theVertex) == BVOBJ) 
@@ -643,25 +661,33 @@ void ConstructConsistentGrid (GRID *theGrid)
 				UG_GlobalToLocal(n,(const DOUBLE **)x,
 								 CVECT(theVertex),LCVECT(theVertex));
 			}
+*/
 	}
 	#endif
 
 	/* reconstruct VFATHER pointers */
-	for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement = PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
+		theFather = EFATHER(theElement);
+
+		/* no reconstruction of VFATHER possible */
+		if (theFather == NULL) continue;
+
 		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 		{
 			theNode = CORNER(theElement,i);
 			if (CORNERTYPE(theNode)) continue;
 
 			theVertex = MYVERTEX(theNode);
-			theFather = EFATHER(theElement);
 
 /* this is too few for arbitrary load balancing, since 
 	VFATHER pointer may have changed (970828 s.l.)
    			if (VFATHER(theVertex)==NULL || EPRIO(VFATHER(theVertex))==PrioHGhost)
 */
+/* this is too few for arbitrary load balancing, since
+	VFATHER pointer be already a zombie pointer (980126 s.l.)
    			if (VFATHER(theVertex)==NULL || EPRIO(theFather)!=PrioHGhost)
+*/
 			{
 				switch (NTYPE(theNode))
 				{
@@ -686,7 +712,7 @@ void ConstructConsistentGrid (GRID *theGrid)
 							  theEdge = GetEdge(CORNER(theFather,CORNER_OF_EDGE(theFather,j,0)),
 												CORNER(theFather,CORNER_OF_EDGE(theFather,j,1)));
 							  if (theEdge->midnode != NULL)
-							  PRINTDEBUG(dddif,0,
+							  PRINTDEBUG(dddif,1,
 										 (PFMT " ConstructConsistentGrid(): elem=" EID_FMTX 
 										  " i=%d n1=" ID_FMTX " n2=" ID_FMTX " midnode= " ID_FMTX  "\n",
 										  me,theFather,EID_PRTX(theFather),j,
@@ -697,14 +723,16 @@ void ConstructConsistentGrid (GRID *theGrid)
 
 
 
-							PRINTDEBUG(dddif,0,
+							PRINTDEBUG(dddif,1,
 									   ("ConstructConsistentGrid(): WARN "
 										" theNode= " ID_FMTX 
 										" vertex= " VID_FMTX 
 										" recalculation of VFATHER impossible\n",
 										ID_PRTX(NBNODE(LINK0(theEdge))),
 										VID_PRTX(theVertex)));
-						  break;
+							/* if it couldn't  be recalculated reset it */
+							VFATHER(theVertex) = NULL;
+							break;
 						}
 
 							
@@ -767,6 +795,9 @@ void ConstructConsistentGrid (GRID *theGrid)
 						assert(0);
 						break;
 				}
+				#ifdef Debug
+				if (theFather != NULL) HEAPFAULT(theFather);
+				#endif
 				VFATHER(theVertex) = theFather;
 
 				if (OBJT(theVertex) == BVOBJ) 
