@@ -6424,7 +6424,7 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
 	VM_Connections				= theVmo->Connections;
 	VM_MColor					= theOD->red;
 	VM_MExtra					= theVmo->Extra;
-	VM_MExtraColor				= theOD->cyan;
+	VM_MExtraColor				= theOD->black;
 	VM_Idx						= theVmo->Idx;
 	VM_IdxColor					= theOD->blue;
 	VM_Order					= theVmo->Order;
