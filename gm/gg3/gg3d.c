@@ -600,10 +600,10 @@ static INT Angle_of_Element(INT *Id, DOUBLE *max_a, DOUBLE *min_a)
 static INT Read_VolumeMesh(MESH *mesh, MULTIGRID *theMG, INT MarkKey)
 {
   char buff[3], name[6], name1[14];
-  INT i, j, k, sid, buflen, iv;
+  INT i, j, k, sid, buflen, id[6];
   FILE *stream;
   char buffer[256];
-  int nelements, npoints, d0, d1, d2, d3, id[6];
+  int nelements, npoints, d0, d1, d2, d3, iv;
   double g0, g1, g2;
   DOUBLE max_angle, min_angle, max_a, min_a;
 
