@@ -606,7 +606,7 @@ FIFOSTART:
 
       /* switch green class red class? */
       if (MARKCLASS(theElement)!=RED_CLASS && SWITCHCLASS(CLASS_OF_RULE(MARK2RULEADR(theElement,Mark)))) {
-        IFDEBUG(gm,0)
+        IFDEBUG(gm,1)
         UserWriteF("   Switching MARKCLASS=%d for MARK=%d of EID=%d to RED_CLASS\n",
                    MARKCLASS(theElement),Mark,ID(theElement));
         ENDDEBUG
@@ -3550,7 +3550,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
             }
             if (f) break;
           }
-          ASSERT(f=1);
+          ASSERT(f==1);
           for (pp=0; pp<CORNERS_OF_SIDE(SonList[side],ss); pp++)
             UserWriteF(" %2d",ID(CORNER(SonList[side],CORNER_OF_SIDE(SonList[side],ss,pp))));
         }
