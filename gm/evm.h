@@ -110,6 +110,9 @@
 #define MT2_TIMES_V2(M,A,B)			   {(B)[0] = (M)[0][0]*(A)[0] + (M)[1][0]*(A)[1];\
 										(B)[1] = (M)[0][1]*(A)[0] + (M)[1][1]*(A)[1];}
 
+#define MD2_TIMES_V2(M,A,B)			   {(B)[0] = (M)[0]*(A)[0];\
+										(B)[1] = (M)[1]*(A)[1];}
+
 /* macros for matrix operations */
 #define M2_SCALE(c,M)				   {(M)[0] = (c)*(M)[0];\
 										(M)[1] = (c)*(M)[1];\
@@ -119,6 +122,8 @@
 										(C)[1] = (A)[1]+(B)[1];\
 										(C)[2] = (A)[2]+(B)[2];\
 										(C)[3] = (A)[3]+(B)[3];}
+#define M2_COPY(A,C) {(C)[0] = (A)[0]; (C)[1] = (A)[1];\
+	(C)[2] = (A)[2]; (C)[3] = (A)[3];}
 #define M2_LINCOMB(a,A,b,B,C)		   {(C)[0] = (a)*(A)[0]+(b)*(B)[0];\
 										(C)[1] = (a)*(A)[1]+(b)*(B)[1]);\
 										(C)[2] = (a)*(A)[2]+(b)*(B)[2]);\
@@ -188,6 +193,10 @@
 										(B)[1] = (M)[0][1]*(A)[0] + (M)[1][1]*(A)[1] + (M)[2][1]*(A)[2];\
 										(B)[2] = (M)[0][2]*(A)[0] + (M)[1][2]*(A)[1] + (M)[2][2]*(A)[2];}
 
+#define MD3_TIMES_V3(M,A,B)			   {(B)[0] = (M)[0]*(A)[0];\
+										(B)[1] = (M)[1]*(A)[1];\
+										(B)[2] = (M)[2]*(A)[2];}
+
 /* macros for matrix operations */
 #define M3_SCALE(c,M)				   {(M)[0] = (c)*(M)[0];\
 										(M)[1] = (c)*(M)[1];\
@@ -198,7 +207,7 @@
 										(M)[6] = (c)*(M)[6];\
 										(M)[7] = (c)*(M)[7];\
 										(M)[8] = (c)*(M)[8];}
-#define M3_ADDMATRIX(A,B,C) 		   {(C)[0] = (A)[0]+(B)[0];\
+#define M3_ADD(A,B,C) 		   {(C)[0] = (A)[0]+(B)[0];\
 										(C)[1] = (A)[1]+(B)[1];\
 										(C)[2] = (A)[2]+(B)[2];\
 										(C)[3] = (A)[3]+(B)[3];\
@@ -207,6 +216,9 @@
 										(C)[6] = (A)[6]+(B)[6];\
 										(C)[7] = (A)[7]+(B)[7];\
 										(C)[8] = (A)[8]+(B)[8];}
+#define M3_COPY(A,C) {(C)[0] = (A)[0]; (C)[1] = (A)[1]; (C)[2] = (A)[2];\
+(C)[3] = (A)[3]; (C)[4] = (A)[4]; (C)[5] = (A)[5];\
+(C)[6] = (A)[6]; (C)[7] = (A)[7]; (C)[8] = (A)[8];}
 #define M3_LINCOMB(a,A,b,B,C)		   {(C)[0] = (a)*(A)[0]+(b)*(B)[0];\
 										(C)[1] = (a)*(A)[1]+(b)*(B)[1];\
 										(C)[2] = (a)*(A)[2]+(b)*(B)[2];\
@@ -296,6 +308,7 @@
 #define M_TIMES_V_DIM(M,A,B)	        M2_TIMES_V2(M,A,B)
 #define MM_TIMES_V_DIM(M,A,B)	      	MM2_TIMES_V2(M,A,B)
 #define MT_TIMES_V_DIM(M,A,B)	      	MT2_TIMES_V2(M,A,B)
+#define MD_TIMES_V_DIM(M,A,B)	      	MD2_TIMES_V2(M,A,B)
 #define M_DIM_ADD(A,B,C)			    M2_ADD(A,B,C)
 #define M_DIM_COPY(A,C)				    M2_COPY(A,C)
 #define M_DIM_SCALE(c,M)			    M2_SCALE(c,M)
@@ -326,7 +339,8 @@
 #define M_TIMES_V_DIM(M,A,B)			M3_TIMES_V3(M,A,B)
 #define MM_TIMES_V_DIM(M,A,B)			MM3_TIMES_V3(M,A,B)
 #define MT_TIMES_V_DIM(M,A,B)			MT3_TIMES_V3(M,A,B)
-#define M_DIM_ADD(A,B,C) 		   	    M3_ADDMATRIX(A,B,C)
+#define MD_TIMES_V_DIM(M,A,B)			MD3_TIMES_V3(M,A,B)
+#define M_DIM_ADD(A,B,C) 		   	    M3_ADD(A,B,C)
 #define M_DIM_COPY(A,C)				    M3_COPY(A,C)
 #define M_DIM_SCALE(c,M)			    M3_SCALE(c,M)
 #define V_DIM_Normalize(a)			    V3_Normalize(a)

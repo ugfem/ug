@@ -285,7 +285,7 @@ INT InitRuleManager (void);
 INT Patterns2Rules(ELEMENT *theElement,INT pattern);
 
 #ifdef __THREEDIM__
-INT SetAlignementPtr (MULTIGRID *theMG, EVECTOR *direction);
+INT SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction);
 #endif
 
 #endif

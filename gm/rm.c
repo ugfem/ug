@@ -2528,7 +2528,7 @@ static INT InitRuleManager3D (void)
   return (GM_OK);
 }
 
-INT SetAlignementPtr (MULTIGRID *theMG, EVECTOR *direction)
+INT SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction)
 {
   if (direction != NULL)
   {

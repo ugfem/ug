@@ -10,8 +10,9 @@
 # include configuration and all makefile macro definitions
 include ../ug.conf
 
-OBJECTS = algebra.o enrol.o evm.o ugio.o ugm.o cw.o initgm.o \
-          elements.o shapes.o evalproc.o rm.o refine.o
+OBJECTS = algebra.o enrol.o evm.o ugio.o\
+		 ugm.o cw.o initgm.o elements.o\
+		 shapes.o evalproc.o rm.o refine.o
 
 # local C compiler flags
 LCFLAGS = -I../include
@@ -27,8 +28,14 @@ GG:
 
 
 clean:
+	rm -f *.o
 	cd gg2; make -f Makefile.gg2 clean; cd ..;
 	cd gg3; make -f Makefile.gg3 clean; cd ..;
-	rm -f $(OBJECTS)
 
+extract:
+	$(ARCH_AR) $(ARCH_EXFLAGS) ../lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+	cd gg$(DIM); make -f Makefile.gg$(DIM) extract; cd ..;
+
+xmc: extract all
+	cd gg$(DIM); make -f Makefile.gg$(DIM) clean; cd ..;
 
