@@ -135,6 +135,7 @@
 #ifdef ModelP
 static VECDATA_DESC *ConsVector;
 static MATDATA_DESC *ConsMatrix;
+static GRID *ConsGrid;
 static INT MaximumInconsMatrices;
 static MATRIX *MatArrayLocal[MATARRAYSIZE];
 static MATRIX *MatArrayRemote[MATARRAYSIZE];
@@ -1078,8 +1079,7 @@ static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
 
 	if (MD_IS_SCALAR(ConsMatrix)) {
 		if (MD_SCAL_RTYPEMASK(ConsMatrix) & VDATATYPE(pv)) 
-		    if (!VECSKIP(pv))
-		    	*((DOUBLE *)data) = MVALUE(VSTART(pv),MD_SCALCMP(ConsMatrix));
+		    *((DOUBLE *)data) = MVALUE(VSTART(pv),MD_SCALCMP(ConsMatrix));
 		return (NUM_OK);
 	}
 
@@ -1128,6 +1128,34 @@ static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
 	return (NUM_OK);
 }
 
+static int Scatter_GhostDiagMatrixComp (DDD_OBJ obj, void *data)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	MATRIX *m;
+	INT mc,i,j,vtype,mtype,ncomp,vecskip;
+	const SHORT *Comp;	
+
+	m = VSTART(pv);
+	if (m == NULL) 
+	    m = CreateExtraConnection(ConsGrid,pv,pv);
+	if (m == NULL)
+	    return(1);
+
+	if (MD_IS_SCALAR(ConsMatrix)) {
+		if (MD_SCAL_RTYPEMASK(ConsMatrix) & VDATATYPE(pv)) 
+		    MVALUE(m,MD_SCALCMP(ConsMatrix)) = *((DOUBLE *)data); 
+		return (NUM_OK);
+	}
+
+	vtype = VTYPE(pv);
+	mtype = MTP(vtype,vtype);
+	Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+	for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
+		   *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
+	    MVALUE(m,Comp[i]) = ((DOUBLE *)data)[i];
+
+	return (NUM_OK);
+}
 
 static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 									 DDD_PROC proc, DDD_PRIO prio)
@@ -1527,6 +1555,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 	  MaxBlockSize = MAX(MaxBlockSize,MD_COLS_IN_MTYPE(ConsMatrix,mt)
 						 *MD_ROWS_IN_MTYPE(ConsMatrix,mt));
 
+	PRINTDEBUG(np,1,("%2d: l_matrix_consistent mode\n",me,mode));
+
 	/* TODO: make consistency of diags and off-diags in one communication! */
 
 	DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), MaxBlockSize*sizeof(DOUBLE),
@@ -1534,7 +1564,13 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
     if (mode == MAT_DIAG_CONS) return (NUM_OK);
 
-	PRINTDEBUG(np,1,("%2d: l_matrix_consistent mode\n",me,mode));
+    if (mode == MAT_GHOST_DIAG_CONS) {
+	    ConsGrid = g;
+	    DDD_IFAOneway(VectorVIF, GLEVEL(g), IF_FORWARD, 
+					  MaxBlockSize * sizeof(DOUBLE),
+					  Gather_DiagMatrixComp, Scatter_GhostDiagMatrixComp);
+		return (NUM_OK);
+	}
 
 	/* now make off-diagonal entries consistent */
 	MaximumInconsMatrices=0;
