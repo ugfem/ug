@@ -189,9 +189,9 @@ enum Priorities
 #define ID_FMTE     "%ld/%08x/%d"
 #define ID_FFMTE    "%9ld/%08x/%02d"
 #define ID_PRTE(x)  ((long)ID(x)),GID(x),PRIO(x)
-#define ID_FMTX     "%x/%ld/%08x/%d"
+#define ID_FMTX     "%d/%ld/%08x/%d"
 #define ID_FFMTX    "%x/%9ld/%08x/%02d"
-#define ID_PRTX(x)  x,((long)ID(x)),GID(x),PRIO(x)
+#define ID_PRTX(x)  KeyForObject((SELECTION_OBJECT *)x),((long)ID(x)),GID(x),PRIO(x)
 
 #define VID_FMT     ID_FMT
 #define VID_FFMT    ID_FFMT
@@ -211,7 +211,7 @@ enum Priorities
 #define EID_PRTE(x) ((long)ID(x)),EGID(x),EPRIO(x)
 #define EID_FMTX    ID_FMTX "/%d/%d"
 #define EID_FFMTX   ID_FFMTX "/%d"
-#define EID_PRTX(x) x,((long)ID(x)),EGID(x),EPRIO(x),TAG(x),LEVEL(x)
+#define EID_PRTX(x) KeyForObject((SELECTION_OBJECT *)x),((long)ID(x)),EGID(x),EPRIO(x),TAG(x),LEVEL(x)
 
 #define VINDEX_FMT     ID_FMT
 #define VINDEX_FFMT    ID_FFMT
@@ -221,7 +221,7 @@ enum Priorities
 #define VINDEX_PRTE(x) ((long)VINDEX(x)),GID(x),PRIO(x)
 #define VINDEX_FMTX    ID_FMTX
 #define VINDEX_FFMTX   ID_FFMTX
-#define VINDEX_PRTX(x) x,((long)VINDEX(x)),GID(x),PRIO(x)
+#define VINDEX_PRTX(x) KeyForObject((SELECTION_OBJECT *)x),((long)VINDEX(x)),GID(x),PRIO(x)
 
 #ifdef __TWODIM__
 #define EDID_FMT     "%08x"
