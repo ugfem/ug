@@ -1646,7 +1646,7 @@ INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 	famgtrans->tvT = ReadArgvVecDesc(theNP->mg, "tvT", argc, argv);
 #endif
 
-	//famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
+	famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
 
 	famgtrans->smooth_sol = NULL;	// default to detect errors
 	famgtrans->smooth_def = NULL;	// default to detect errors
