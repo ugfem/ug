@@ -817,8 +817,14 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
     }
     *new_desc = CreateVecDesc(theMG,NULL,template_desc->compNames,
                               template_desc->NCmpInType);
-    if (*new_desc == NULL) return(1);
-    return (AllocVecDesc(theMG,fl,tl,*new_desc));
+    if (*new_desc == NULL) {
+      UserWrite("AllocVDFromVD: cannot create VecDesc\n");
+      return(1);
+    }
+    if (AllocVecDesc(theMG,fl,tl,*new_desc)) {
+      UserWrite("AllocVDFromVD: cannot allocate VecDesc\n");
+      return(1);
+    }
   }
 
   return(0);
@@ -961,8 +967,14 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
       }
     }
     *new_desc = CreateMatDesc(theMG,NULL,NULL,RowsInType,ColsInType);
-    if (*new_desc == NULL) return(1);
-    return (AllocMatDesc(theMG,fl,tl,*new_desc));
+    if (*new_desc == NULL) {
+      UserWrite("AllocMDFromVD: cannot create MatDesc\n");
+      return(1);
+    }
+    if (AllocMatDesc(theMG,fl,tl,*new_desc)) {
+      UserWrite("AllocMDFromVD: cannot allocate MatDesc\n");
+      return(1);
+    }
   }
 
   return(0);
@@ -1015,8 +1027,14 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
     *new_desc = CreateMatDesc(theMG,NULL,template_desc->compNames,
                               template_desc->RowsInType,
                               template_desc->ColsInType);
-    if (*new_desc == NULL) return(1);
-    return (AllocMatDesc(theMG,fl,tl,*new_desc));
+    if (*new_desc == NULL) {
+      UserWrite("AllocMDFromMD: cannot create MatDesc\n");
+      return(1);
+    }
+    if (AllocMatDesc(theMG,fl,tl,*new_desc)) {
+      UserWrite("AllocMDFromMD: cannot allocate MatDesc\n");
+      return(1);
+    }
   }
 
   return(0);
