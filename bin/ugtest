@@ -5,6 +5,6 @@ simple simple.scr
 cd $UGROOT/../diff2d/appl
 diff2da square.scr
 cd $UGROOT/../cd/appl
-cda cd.init
+cd3d cd.init
 cd $UGROOT/../fem/appl
 fema cook.scr

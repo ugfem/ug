@@ -4,26 +4,28 @@
 set -e
 ugclean
 ugconf save
+
 ugconf 2
 ugmake ug uglib
 ugmake dev
 ugmake dom
+
+ugmake simple
+ugmake diff2da
+ugmake ns2da 
+ugmake fema nd
+ugmake cda 
+ugmake fema ifdef
+ugmake fema ed
+
 ugconf 3
 ugmake ug -i ifdef
 ugmake ug uglib
 ugmake dom
 
-ugmake simple
-ugmake diff2d 
-ugmake diff2da
-ugmake ns2d 
-ugmake ns2da 
-ugmake fema nd
-ugmake cda 2d
 ugmake cda ifdef
-ugmake cda 3d
-ugmake fema ifdef
-ugmake fema ed
+ugmake cda 
+
 ugconf restore
 ugmake ug -i ifdef
-echo "simple, diff2da, ns2da, cda, cd2d, fema, femn created"
+echo "simple, diff2da, ns2da, cd2d, cd3d, fema, femn created"
