@@ -14,7 +14,7 @@ endif
 
 noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
-SOURCES = wpm.c graph.c wop.c initgraph.c plotproc.c placer.c bullet.c bullet.h graph.h initgraph.h plotproc.h wop.h wpm.h
+SOURCES = wpm.c graph.c wop.c initgraph.c plotproc.c placer.c bullet.c bullet.h graph.h initgraph.h plotproc.h wop.h wpm.h iso.c
 
 libuggraph2_la_SOURCES = $(SOURCES)
 libuggraph2_la_CPPFLAGS = $(UG_2DFLAGS)
