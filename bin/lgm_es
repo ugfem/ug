@@ -1,0 +1,170 @@
+#!/usr/bin/perl -w
+
+# input
+@ARGV==3 or die "usage: lgm_es <geometry> <ts-sep> <sb-sep>\n";
+$geometry=$ARGV[0];
+-e $geometry or die "ERROR: file $geometry not existing\n";
+$ts_sep=$ARGV[1]; $sb_sep=$ARGV[2];
+$ts_sep>$sb_sep or die "ERROR: ts_sep=$ts_sep < sb_sep=$sb_sep\n";
+
+# subs
+sub float
+{
+    my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
+    my (@list,$f,$s,$in);
+
+    if (@_==1) { @list=grep /$real/,split /($real)/,$_[0]; }
+    elsif (@_==2)
+    {
+        $in=' '.$_[1];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+    }
+    else
+    {
+        $in=' '.$_[2];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+        if ($_[1]>=@list || $_[1]<0) { return undef;}
+        for ($s=0; $s<$_[1]; $s++) { shift @list; }
+    }
+    return wantarray ? @list : $list[0];
+}
+
+sub diff
+{
+	my (@a,@b,@c);
+	my $a=shift; @a=float $a;
+	my $b=shift; @b=float $b;
+	$c[0]=$a[0]-$b[0]; $c[1]=$a[1]-$b[1]; $c[2]=$a[2]-$b[2];
+
+	return join ' ',@c;
+}
+
+sub vp
+{
+	my (@a,@b,@c);
+	my $a=shift; @a=float $a;
+	my $b=shift; @b=float $b;
+	$c[0]=$a[1]*$b[2]-$a[2]*$b[1]; 
+	$c[1]=$a[2]*$b[0]-$a[0]*$b[2]; 
+	$c[2]=$a[0]*$b[1]-$a[1]*$b[0];
+
+	return join ' ',@c;
+}
+
+sub sp
+{
+	my (@a,@b);
+    my $a=shift; @a=float $a;
+    my $b=shift; @b=float $b;
+	
+	return ($a[0]*$b[0]+$a[1]*$b[1]+$a[2]*$b[2]);
+}
+
+sub normalize
+{
+    my $a=shift; @a=float $a;
+	my $n2=sp($a,$a); $n2=1/sqrt($n2);
+	$a[0]*=$n2; $a[1]*=$n2; $a[2]*=$n2;
+
+	return join ' ',@a;
+}
+
+sub getzc
+{
+	my ($d1,$d2);
+	my $p0=shift;
+	my $p1=shift;
+	my $p2=shift;
+	my $left=shift;
+	my $ez='0 0 1';
+
+	$p0=$p[$p0]; $p1=$p[$p1]; $p2=$p[$p2];
+	$d1=diff($p1,$p0);
+	$d2=diff($p2,$p0);
+	if ($left) { $n=vp($d1,$d2); }
+	else { $n=vp($d2,$d1); }
+	$n=normalize($n);
+
+	return sp($n,$ez);
+}
+
+# scan geometry
+open(GEO,$geometry);
+while($line=<GEO>) { if ($line=~/^\s*#\s*Surface-Info/) { last; } }
+$ns=0;
+while($line=<GEO>) 
+{
+	# run until point-section
+	if ($line=~/^\s*#\s*Point-Info/) { last; }
+
+	# extract surface information
+	if ($line!~/surface/) { next; }
+	$line=~/left\s*=\s*(\d+).*right\s*=\s*(\d+)/;
+	if ($1!=0 && $2!=0) { $surf[$ns++]=''; next; }
+	$left[$ns]=0; if ($1==0) { $left[$ns]=1; }
+	($a,$a)=split 'triangles:',$line; 
+	$surf[$ns++]=join ' ', float $a; 
+}
+
+# scan points
+$np=0;
+while($line=<GEO>)
+{
+	$tmp=join ' ',float $line;
+	if (!$tmp) { next; }
+	$p[$np++]=join ' ',float $line;
+}
+
+# run surfaces
+$top=$side=$bottom='';
+for ($s=0; $s<$ns; $s++)
+{
+	if (!$surf[$s]) { next; }
+	@sp=float $surf[$s];
+	$tn=@sp/3;
+	
+	# run triangles
+	$tt=$ss=$bb=0;
+	for ($t=0; $t<$tn; $t++)
+	{
+		$p0=$sp[3*$t]; $p1=$sp[3*$t+1]; $p2=$sp[3*$t+2];
+		$zc=getzc($p0,$p1,$p2,$left[$s]);
+		if ($zc>=$ts_sep) { $tt++; }
+		elsif ($zc<=$sb_sep) { $bb++; }
+		else { $ss++; }
+	}
+	if ($tt>=1 && $ss==0 && $bb==0) { $top.="$s "; }
+	elsif ($tt==0 && $ss>=1 && $bb==0) { $side.="$s "; }
+	elsif ($tt==0 && $ss==0 && $bb>=1) { $bottom.="$s "; }
+	else
+	{
+		print "ERROR: cannot identify surface $s: "; 
+	    for ($t=0; $t<$tn; $t++)
+	    {
+	        $p0=$sp[3*$t]; $p1=$sp[3*$t+1]; $p2=$sp[3*$t+2];
+	        $zc=getzc($p0,$p1,$p2,$left[$s]);
+			print "$zc ";
+    	}
+		die "\n";
+	}
+}
+
+print "top $top\nside $side\nbottom $bottom\n";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
