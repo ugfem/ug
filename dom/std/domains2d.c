@@ -2542,6 +2542,34 @@ static INT kreisBoundaryLower1 (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
+static INT kreisBoundaryUpper1a (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+
+  result[0] = 0.6 * rad1 * cos(PI*lambda);
+  result[1] = 0.6 * rad1 * sin(PI*lambda);
+
+  return(0);
+}
+
+static INT kreisBoundaryLower1a (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+
+  result[0] = 0.6 * rad1 * cos(PI+PI*lambda);
+  result[1] = 0.6 * rad1 * sin(PI+PI*lambda);
+
+  return(0);
+}
+
 static INT kreisBoundaryUpper2 (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda;
@@ -2755,6 +2783,44 @@ static INT InitRings2 (void)
   if (CreateBoundarySegment2D("ring2 inner bnd lower",
                               2,1,3,3,2,20,0.0,1.0,
                               kreisBoundaryLower1,NULL)==NULL)
+    return(1);
+
+  return(0);
+}
+
+static INT InitRings3 (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  MidPoint[0] = MidPoint[1] = 0.0;
+  radius = 1.05;
+
+  if (CreateDomain("Rings3",MidPoint,radius,6,6,YES)
+      ==NULL) return(1);
+
+  if (CreateBoundarySegment2D("ring2 bnd upper",
+                              1,0,0,0,1,20,0.0,1.0,
+                              kreisBoundaryUpper,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 bnd lower",
+                              1,0,1,1,0,20,0.0,1.0,
+                              kreisBoundaryLower,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 inner bnd upper",
+                              2,1,2,2,3,20,0.0,1.0,
+                              kreisBoundaryUpper1,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 inner bnd lower",
+                              2,1,3,3,2,20,0.0,1.0,
+                              kreisBoundaryLower1,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring3 inner bnd upper",
+                              3,2,4,4,5,20,0.0,1.0,
+                              kreisBoundaryUpper1a,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring3 inner bnd lower",
+                              3,2,5,5,4,20,0.0,1.0,
+                              kreisBoundaryLower1a,NULL)==NULL)
     return(1);
 
   return(0);
@@ -5053,6 +5119,17 @@ INT STD_BVP_Configure (INT argc, char **argv)
       alpha = 0.0;
     }
   }
+  else if (strcmp(DomainName,"Rings3") == 0) {
+    if (ReadArgvDOUBLE("r",&rad1,argc,argv)) {
+      rad1 = INNER_RADIUS2;
+    }
+    if (ReadArgvDOUBLE("dalpha",&dalpha,argc,argv) == 0) {
+      alpha += dalpha;
+    }
+    else if (ReadArgvDOUBLE("alpha",&alpha,argc,argv)) {
+      alpha = 0.0;
+    }
+  }
   else if (strcmp(DomainName,"Skin") == 0) {
     if (ReadArgvDOUBLE("L",&L,argc,argv))
     {
@@ -5215,6 +5292,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Rings2") == 0)
     {
       if (InitRings2())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Rings3") == 0)
+    {
+      if (InitRings3())
         return(1);
     }
     else if (strcmp(DomainName,"Holes") == 0)
