@@ -1453,6 +1453,72 @@ static INT DisplayCutPlane (const CUT *theCut)
    D*/
 /****************************************************************************/
 
+static INT SetDefaultVP3D (PLOTOBJ *thePO, DOUBLE *DefaultVP)
+{
+  GRID *theGrid;
+  NODE *theNode;
+  DOUBLE_VECTOR d,xmax1,xmax2,xmin1,xmin2,xmed;
+  DOUBLE M[DIM*DIM],MInv[DIM*DIM],diff, scpr, norm;
+  INT i,j;
+
+  if (thePO==NULL) return (1);
+  theGrid=GRID_ON_LEVEL(PO_MG(thePO),0);
+  for (i=0; i<DIM; i++)
+    for (j=0; j<DIM; j++)
+      M[i+DIM*j]=0.0;
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  {
+    V_DIM_SUBTRACT(CVECT(MYVERTEX(theNode)),PO_MIDPOINT(thePO),d);
+    for (i=0; i<DIM; i++)
+      for (j=0; j<DIM; j++)
+        M[i+DIM*j]+=d[i]*d[j];
+  }
+
+  /* get maximum eigenvector */
+  xmax1[0]=3.141529; xmax1[1]=2.7182818; xmax1[2]=0.577216;
+  for (i=0; i<200; i++)
+  {
+    M3_TIMES_V3(M,xmax1,xmax2);
+    V3_EUKLIDNORM(xmax2,norm);
+    if (norm==0.0) return (1);
+    V3_SCALE(1.0/norm,xmax2);
+    M3_TIMES_V3(M,xmax2,xmax1);
+    V3_EUKLIDNORM(xmax1,norm);
+    if (norm==0.0) return (1);
+    V3_SCALE(1.0/norm,xmax1);
+    V3_EUKLIDNORM_OF_DIFF(xmax1,xmax2,diff);
+    if (diff<1e-6) break;
+  }
+
+  /* get minimum eigenvector */
+  if (M3_Invert(MInv,M)) return (1);
+  xmin1[0]=3.141529; xmin1[1]=2.7182818; xmin1[2]=0.577216;
+  for (i=0; i<200; i++)
+  {
+    M3_TIMES_V3(MInv,xmin1,xmin2);
+    V3_EUKLIDNORM(xmin2,norm);
+    if (norm==0.0) return (1);
+    V3_SCALE(1.0/norm,xmin2);
+    M3_TIMES_V3(MInv,xmin2,xmin1);
+    V3_EUKLIDNORM(xmin1,norm);
+    if (norm==0.0) return (1);
+    V3_SCALE(1.0/norm,xmin1);
+    V3_EUKLIDNORM_OF_DIFF(xmin1,xmin2,diff);
+    if (diff<1e-6) break;
+  }
+
+  /* get medium eigenvector */
+  V3_VECTOR_PRODUCT(xmin1,xmax1,xmed);
+
+  /* set default view-point */
+  V3_LINCOMB(1.0,xmin1,1.0,xmed,DefaultVP);
+  V3_LINCOMB(1.0,DefaultVP,1.0,xmax1,DefaultVP);
+  V3_SCALE(1.5*PO_RADIUS(thePO),DefaultVP);
+  V3_ADD(DefaultVP,PO_MIDPOINT(thePO),DefaultVP);
+
+  return (0);
+}
+
 INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective,
              INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal, DOUBLE *scale)
 {
@@ -1554,11 +1620,14 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
       /* set default values 3D */
       if (viewPoint==NULL)
       {
-        DefaultVP[_X_] = 1.;
-        DefaultVP[_Y_] = 2.;
-        DefaultVP[_Z_] = 4.;
-        V3_SCALE(PO_RADIUS(thePlotObj),DefaultVP)
-        V3_ADD(DefaultVP,PO_MIDPOINT(thePlotObj),DefaultVP)
+        if (SetDefaultVP3D(thePlotObj,DefaultVP))
+        {
+          DefaultVP[_X_] = 1.;
+          DefaultVP[_Y_] = 2.;
+          DefaultVP[_Z_] = 4.;
+          V3_SCALE(PO_RADIUS(thePlotObj),DefaultVP)
+          V3_ADD(DefaultVP,PO_MIDPOINT(thePlotObj),DefaultVP)
+        }
       }
       else
       {
@@ -1579,6 +1648,10 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
         /* ViewDirection is zero */
         V3_COPY(ey,DefaultPYD);
       }
+      if (DefaultPYD[2]<0.0)
+        if (RotateProjectionPlane(thePicture,PI))
+          return (1);
+
       if (CanvasRatio >= 1.0)
       {
         V3_SCALE(PO_RADIUS(thePlotObj),DefaultPXD)
