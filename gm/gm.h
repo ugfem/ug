@@ -57,6 +57,7 @@
 #include "debug.h"
 #include "domain.h"
 #include "pargm.h"
+#include "cw.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -436,14 +437,6 @@ namespace UG3d {
 #define SIDE_NODE       2
 #define CENTER_NODE     3
 #define LEVEL_0_NODE    4
-/*@}*/
-
-/** @name Macros for the control word management */
-/*@{*/
-/** \brief maximum number of control words              */
-#define MAX_CONTROL_WORDS       20
-/** \brief max number of entries                                */
-#define MAX_CONTROL_ENTRIES 100
 /*@}*/
 
 /** @name Macros for the multigrid user data space management */
@@ -1776,11 +1769,11 @@ enum LV_ID_TYPES {
 /* VCUSED        |4     |*| | flag for general use                          */
 /* VCOUNT        |5-6   |*| |                                               */
 /* VECTORSIDE|7 - 9 |*| | nb of side the side vect corr. to (in object elem)*/
-/* VCLASS        |11-12 |*| | class of v. (3: if corr. to red/green elem)
-   /*                                        (2: if corr. to first algebraic nb.)
-   /*                                        (1: if corr. to second algebraic nb.)
-   /* VDATATYPE |13-16 |*| | data type used bitwise
-   /* VNCLASS       |17-18 |*| | type of elem on finer grid the v. lies geom. in:  */
+/* VCLASS        |11-12 |*| | class of v. (3: if corr. to red/green elem) */
+/*                                        (2: if corr. to first algebraic nb.) */
+/*                                        (1: if corr. to second algebraic nb.) */
+/* VDATATYPE |13-16 |*| | data type used bitwise */
+/* VNCLASS       |17-18 |*| | type of elem on finer grid the v. lies geom. in:  */
 /*                                                      0: no elem on finer grid                                                */
 /*                                                      1: elem of 'second alg. nbhood' only                    */
 /*                                                      2: elem of 'first alg. nbhood' only                     */
@@ -3026,8 +3019,8 @@ extern INT ce_NO_DELETE_OVERLAP2;
 /****************************************************************************/
 /*                                                                          */
 /* interface functions for module grid manager                              */
-/*                                                                          *
-   /****************************************************************************/
+/*                                                                          */
+/****************************************************************************/
 
 /** @name Return values for functions returning an INT. The usual rule is: 0 ok, >0 error */
 /*@{*/
