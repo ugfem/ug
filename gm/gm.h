@@ -775,6 +775,10 @@ struct multigrid {
   /* pointers */
   struct grid *grids[MAXLEVEL];         /* pointers to the grids				*/
 
+  /* NodeElementPointerArray used for an O(n) InsertElement               */
+  union element ***ndelemptrarray;                      /* pointer to the node element blocks   */
+  INT ndelemptrarrayflag;                       /* pointer to the node element blocks   */
+
   /* selection */
   INT NbOfSelections;                           /* number of selected objects			*/
   INT SelectionMode;                                    /* selectionmode (see above)			*/
@@ -2055,6 +2059,16 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MGHEAP(p)                               ((p)->theHeap)
 #define MG_NPROPERTY(p)                 ((p)->nProperty)
 #define GRID_ON_LEVEL(p,i)              ((p)->grids[i])
+/* macros for the NodeElementsBlockArray . . .  */
+#define ELEMS_OF_NODE_MAX               75
+#define NDELEM_BLKS_MAX                 100
+#define NO_NODES_OF_BLK                 1000
+#define MGNDELEMPTRARRAYFLAG(p) ((p)->ndelemptrarrayflag)
+#define MGNDELEMPTRARRAY(p)             ((p)->ndelemptrarray)
+#define MGNDELEMBLK(p,i)                (*(((p)->ndelemptrarray)+i))
+#define MGNDELEMOFFS(i,o)               (i*ELEMS_OF_NODE_MAX+o)
+#define MGNDELEMBLKENTRY(p,b,i) (*((*(((p)->ndelemptrarray)+b))+i))
+/* . . . macros for the NodeElementsBlockArray  */
 #define SELECTIONSIZE(p)                ((p)->NbOfSelections)
 #define SELECTIONMODE(p)                ((p)->SelectionMode)
 #define SELECTIONOBJECT(p,i)    ((p)->Selection[(((i)<MAXSELECTION) ? (i) : (MAXSELECTION-1))])
