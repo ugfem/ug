@@ -80,7 +80,7 @@ typedef DOUBLE DOUBLE_VECTOR[DIM];
 /****************************************************************************/
 
 static DOUBLE_VECTOR x_quad[9];
-static DOUBLE alpha,left,top,rad1,L,D,h,form;
+static DOUBLE alpha,left,top,rad1,L,D,glob_h,form;
 
 static DOUBLE Rand[54][2] = {
   {189,22.5},
@@ -2675,7 +2675,7 @@ static INT south0skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = L * lambda;
-  result[1] = 2 * h + D * 1.5;
+  result[1] = 2 * glob_h + D * 1.5;
 
   return(0);
 }
@@ -2687,7 +2687,7 @@ static INT east0skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = L;
-  result[1] = 2 * h + (1.5*D) + (D *0.5)* lambda;
+  result[1] = 2 * glob_h + (1.5*D) + (D *0.5)* lambda;
 
   return(0);
 }
@@ -2699,7 +2699,7 @@ static INT north0skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = L * (1.0-lambda);
-  result[1] = 2 * (D + h);
+  result[1] = 2 * (D + glob_h);
 
   return(0);
 }
@@ -2711,7 +2711,7 @@ static INT west0skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = 0;
-  result[1] = 2 * h + (1.5 * D) + (D * 0.5) * (1 - lambda);
+  result[1] = 2 * glob_h + (1.5 * D) + (D * 0.5) * (1 - lambda);
 
   return(0);
 }
@@ -2722,8 +2722,8 @@ static INT south1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h + (L*0.5 * lambda);
-  result[1] = 2 * h + 1.5 * D;
+  result[0] = L + glob_h + (L*0.5 * lambda);
+  result[1] = 2 * glob_h + 1.5 * D;
 
   return(0);
 }
@@ -2734,8 +2734,8 @@ static INT east1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = 3*0.5 * L + h;
-  result[1] = 2 * h + (1.5 * D) + (D * 0.5) * lambda;
+  result[0] = 3*0.5 * L + glob_h;
+  result[1] = 2 * glob_h + (1.5 * D) + (D * 0.5) * lambda;
 
   return(0);
 }
@@ -2746,8 +2746,8 @@ static INT north1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h + (L*0.5 * (1 - lambda));
-  result[1] = 2 *(D + h);
+  result[0] = L + glob_h + (L*0.5 * (1 - lambda));
+  result[1] = 2 *(D + glob_h);
 
   return(0);
 }
@@ -2758,8 +2758,8 @@ static INT west1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h;
-  result[1] = 2 * h + (1.5 * D) + (D * 0.5) * (1 - lambda);
+  result[0] = L + glob_h;
+  result[1] = 2 * glob_h + (1.5 * D) + (D * 0.5) * (1 - lambda);
 
   return(0);
 }
@@ -2772,7 +2772,7 @@ static INT south2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = L*0.5 * lambda;
-  result[1] = D * 0.5 + h;
+  result[1] = D * 0.5 + glob_h;
 
   return(0);
 }
@@ -2784,7 +2784,7 @@ static INT east2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = L*0.5;
-  result[1] = (D * 0.5 + h) + (D * lambda);
+  result[1] = (D * 0.5 + glob_h) + (D * lambda);
 
   return(0);
 }
@@ -2796,7 +2796,7 @@ static INT north2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = L*0.5 * (1.0-lambda);
-  result[1] = (D * 0.5 + h) + D;
+  result[1] = (D * 0.5 + glob_h) + D;
 
   return(0);
 }
@@ -2808,7 +2808,7 @@ static INT west2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = 0;
-  result[1] = (D * 0.5 + h) + D * (1.0-lambda);
+  result[1] = (D * 0.5 + glob_h) + D * (1.0-lambda);
 
   return(0);
 }
@@ -2820,8 +2820,8 @@ static INT south3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (L*0.5 + h) + L * lambda;
-  result[1] = (D * 0.5 + h);
+  result[0] = (L*0.5 + glob_h) + L * lambda;
+  result[1] = (D * 0.5 + glob_h);
 
   return(0);
 }
@@ -2832,8 +2832,8 @@ static INT east3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (L*0.5 + h) + L;
-  result[1] = (D * 0.5 + h) + D * lambda;
+  result[0] = (L*0.5 + glob_h) + L;
+  result[1] = (D * 0.5 + glob_h) + D * lambda;
 
   return(0);
 }
@@ -2844,8 +2844,8 @@ static INT north3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (L*0.5 + h) + L * (1 - lambda);
-  result[1] = (D * 0.5 + h) + D;
+  result[0] = (L*0.5 + glob_h) + L * (1 - lambda);
+  result[1] = (D * 0.5 + glob_h) + D;
 
   return(0);
 }
@@ -2856,8 +2856,8 @@ static INT west3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (L*0.5 + h);
-  result[1] = (D * 0.5 + h) + D * (1 - lambda);
+  result[0] = (L*0.5 + glob_h);
+  result[1] = (D * 0.5 + glob_h) + D * (1 - lambda);
 
   return(0);
 }
@@ -2918,7 +2918,7 @@ static INT south5skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (L + h) + L*0.5 *lambda;
+  result[0] = (L + glob_h) + L*0.5 *lambda;
   result[1] = 0.0;
 
   return(0);
@@ -2930,7 +2930,7 @@ static INT east5skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (L + h) + L*0.5 ;
+  result[0] = (L + glob_h) + L*0.5 ;
   result[1] = (D * 0.5) * lambda;
 
   return(0);
@@ -2942,7 +2942,7 @@ static INT north5skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (L + h) + L*0.5 * (1 - lambda);
+  result[0] = (L + glob_h) + L*0.5 * (1 - lambda);
   result[1] = D * 0.5;
 
   return(0);
@@ -2954,7 +2954,7 @@ static INT west5skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = (L + h) ;
+  result[0] = (L + glob_h) ;
   result[1] = (D * 0.5) * (1 - lambda);
 
   return(0);
@@ -2966,8 +2966,8 @@ static INT north6_11skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h  + L * 0.5 * (1 - lambda);
-  result[1] = 0.5 * D + h ;
+  result[0] = L + glob_h  + L * 0.5 * (1 - lambda);
+  result[1] = 0.5 * D + glob_h ;
 
   return(0);
 }
@@ -2978,8 +2978,8 @@ static INT north6_12skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h * (1 - lambda);
-  result[1] = 0.5 * D + h ;
+  result[0] = L + glob_h * (1 - lambda);
+  result[1] = 0.5 * D + glob_h ;
 
   return(0);
 }
@@ -2990,8 +2990,8 @@ static INT north6_13skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L * 0.5 + h + (0.5 * L - h) * (1 - lambda);
-  result[1] = 0.5 * D + h ;
+  result[0] = L * 0.5 + glob_h + (0.5 * L - glob_h) * (1 - lambda);
+  result[1] = 0.5 * D + glob_h ;
 
   return(0);
 }
@@ -3002,8 +3002,8 @@ static INT south6_31skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L * 0.5 + h  + (L * 0.5 - h) * lambda ;
-  result[1] = 0.5 * D + h + D ;
+  result[0] = L * 0.5 + glob_h  + (L * 0.5 - glob_h) * lambda ;
+  result[1] = 0.5 * D + glob_h + D ;
 
   return(0);
 }
@@ -3014,8 +3014,8 @@ static INT south6_32skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h * lambda ;
-  result[1] = 0.5 * D + h + D ;
+  result[0] = L + glob_h * lambda ;
+  result[1] = 0.5 * D + glob_h + D ;
 
   return(0);
 }
@@ -3026,8 +3026,8 @@ static INT south6_33skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h + 0.5 * L * lambda ;
-  result[1] = 0.5 * D + h + D ;
+  result[0] = L + glob_h + 0.5 * L * lambda ;
+  result[1] = 0.5 * D + glob_h + D ;
 
   return(0);
 }
@@ -3038,8 +3038,8 @@ static INT north6_41skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L * 0.5 + h  + (L * 0.5 - h ) * (1 - lambda);
-  result[1] = 0.5 * D + h + D + h;
+  result[0] = L * 0.5 + glob_h  + (L * 0.5 - glob_h ) * (1 - lambda);
+  result[1] = 0.5 * D + glob_h + D + glob_h;
 
   return(0);
 }
@@ -3050,8 +3050,8 @@ static INT north6_42skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L * 0.5 + h * (1 - lambda);
-  result[1] = 0.5 * D + h + D + h ;
+  result[0] = L * 0.5 + glob_h * (1 - lambda);
+  result[1] = 0.5 * D + glob_h + D + glob_h ;
 
   return(0);
 }
@@ -3063,7 +3063,7 @@ static INT north6_43skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = L * 0.5 * (1 - lambda);
-  result[1] = 0.5 * D + h + D + h ;
+  result[1] = 0.5 * D + glob_h + D + glob_h ;
 
   return(0);
 }
@@ -3086,7 +3086,7 @@ static INT south6_52skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L * 0.5 + h * lambda ;
+  result[0] = L * 0.5 + glob_h * lambda ;
   result[1] = 0.5 * D ;
 
   return(0);
@@ -3098,7 +3098,7 @@ static INT south6_53skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L * 0.5 + h + (0.5 * L - h ) * lambda ;
+  result[0] = L * 0.5 + glob_h + (0.5 * L - glob_h ) * lambda ;
   result[1] = 0.5 * D ;
 
   return(0);
@@ -3110,8 +3110,8 @@ static INT north6_3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h * (1 - lambda);
-  result[1] = 2 * (D + h);
+  result[0] = L + glob_h * (1 - lambda);
+  result[1] = 2 * (D + glob_h);
 
   return(0);
 }
@@ -3123,7 +3123,7 @@ static INT west6_2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = 0.0;
-  result[1] = (D * 0.5 + h) + D + h * (1.0-lambda);
+  result[1] = (D * 0.5 + glob_h) + D + glob_h * (1.0-lambda);
 
   return(0);
 }
@@ -3134,8 +3134,8 @@ static INT east6_4skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h + L*0.5 ;
-  result[1] = 1.5*D + h + h * lambda ;
+  result[0] = L + glob_h + L*0.5 ;
+  result[1] = 1.5*D + glob_h + glob_h * lambda ;
 
   return(0);
 }
@@ -3147,7 +3147,7 @@ static INT west6_4skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = 0 ;
-  result[1] = 0.5 * D + (1 - lambda) * h ;
+  result[1] = 0.5 * D + (1 - lambda) * glob_h ;
 
   return(0);
 }
@@ -3158,8 +3158,8 @@ static INT east6_2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + h + L*0.5 ;
-  result[1] = 0.5 * D + h * lambda ;
+  result[0] = L + glob_h + L*0.5 ;
+  result[1] = 0.5 * D + glob_h * lambda ;
 
   return(0);
 }
@@ -3170,7 +3170,7 @@ static INT south6_1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
-  result[0] = L + lambda * h ;
+  result[0] = L + lambda * glob_h ;
   result[1] = 0 ;
 
   return(0);
@@ -3196,8 +3196,8 @@ static INT InitSkin (void)
 {
   DOUBLE radius,MidPoint[2];
 
-  MidPoint[0] = L*0.75 + h*0.5 ;
-  MidPoint[1] = h + D ;
+  MidPoint[0] = L*0.75 + glob_h*0.5 ;
+  MidPoint[1] = glob_h + D ;
   radius = sqrt(MidPoint[0] * MidPoint[0] + MidPoint[1] * MidPoint[1]) ;
 
   if (CreateDomainWithParts("Skin",MidPoint,radius,52,52,YES,3,&skin_dpi)
@@ -3343,8 +3343,8 @@ static INT InitSkin1 (void)
 {
   DOUBLE radius,MidPoint[2];
 
-  MidPoint[0] = L*0.75 + h*0.5 ;
-  MidPoint[1] = h + D ;
+  MidPoint[0] = L*0.75 + glob_h*0.5 ;
+  MidPoint[1] = glob_h + D ;
   radius = sqrt(MidPoint[0] * MidPoint[0] + MidPoint[1] * MidPoint[1]) ;
 
   if (CreateDomainWithParts("Skin1",MidPoint,radius,52,52,YES,3,&skin1_dpi)
@@ -4709,9 +4709,9 @@ INT STD_BVP_Configure (INT argc, char **argv)
     {
       D = 5.0 ;
     }
-    if (ReadArgvDOUBLE("h",&h,argc,argv))
+    if (ReadArgvDOUBLE("h",&glob_h,argc,argv))
     {
-      h = 0.5 ;
+      glob_h = 0.5 ;
     }
   }
   else if (strcmp(DomainName,"Skin1") == 0) {
@@ -4723,9 +4723,9 @@ INT STD_BVP_Configure (INT argc, char **argv)
     {
       D = 5.0 ;
     }
-    if (ReadArgvDOUBLE("h",&h,argc,argv))
+    if (ReadArgvDOUBLE("h",&glob_h,argc,argv))
     {
-      h = 0.5 ;
+      glob_h = 0.5 ;
     }
   }
   else if (strcmp(DomainName,"Beam") == 0) {
