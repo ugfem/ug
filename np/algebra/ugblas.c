@@ -2583,6 +2583,23 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #include "vecfunc.ct"
 
+#define T_FUNCNAME      dm0add
+#define T_ARGS          ,const MATDATA_DESC *A
+#define T_PR_DBG                (" A=%s",ENVITEM_NAME(A))
+#define T_CONFIG        DEFINE_MD_CMPS(m)
+#define T_PREP_SCAL     assert(0);
+#define T_MOD_SCAL      assert(0);
+#define T_PREP_1        SET_MD_CMP_11(m,A,vtype,vtype);
+#define T_MOD_VECTOR_1  MVALUE(VSTART(v),m00)+=VVALUE(v,cx0);
+#define T_PREP_2        SET_MD_CMP_22(m,A,vtype,vtype);
+#define T_MOD_VECTOR_2  MVALUE(VSTART(v),m10)+=VVALUE(v,cx1);
+#define T_PREP_3        SET_MD_CMP_33(m,A,vtype,vtype);
+#define T_MOD_VECTOR_3  MVALUE(VSTART(v),m20)+=VVALUE(v,cx2);
+#define T_PREP_N
+#define T_MOD_VECTOR_N  assert(0);
+
+#include "vecfunc.ct"
+
 /****************************************************************************/
 /*D
    dsub - x minus y
