@@ -11717,7 +11717,7 @@ static INT LBCommand (INT argc, char **argv)
                 #endif
                 #ifndef CHACOT
   sprintf(levelarg,"%d",minlevel);
-  ddd_test(levelarg, theMG);
+  lbs(levelarg, theMG);
                 #endif
 
   return(OKCODE);
