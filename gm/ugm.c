@@ -1580,11 +1580,24 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
     theMG->grids[i] = NULL;
 
   /* CAD */
-  theMG->ndelemptrarray = GetMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),FROM_TOP);
+  /*
+          theMG->ndelemptrarray = GetMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),FROM_TOP);
+   */
+  theMG->ndelemptrarray = malloc(NDELEM_BLKS_MAX*sizeof(ELEMENT**));
+  assert(theMG->ndelemptrarray != NULL);
+
   for (i=0; i<NDELEM_BLKS_MAX; i++)
   {
     MGNDELEMBLK(theMG,i) = NULL;
   }
+  IFDEBUG(gm,2)
+  printf("theMG=%x delemptrarray=%x\n",theMG,theMG->ndelemptrarray);
+  for (i=0; i<NDELEM_BLKS_MAX; i++)
+  {
+    printf("i=%d ndblk=%x\n",i,MGNDELEMBLK(theMG,i));
+    fflush(stdout);
+  }
+  ENDDEBUG
   MGNDELEMPTRARRAYFLAG(theMG) = 1;       /*by default the NoDeELEMentPoinTeRARRAY is used */
   /* CAD */
 
@@ -3475,6 +3488,14 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
       MIndex[j] = Index;
       MBlock[j] = cornerID[IndexOfDivPart];
     }
+                #ifdef Debug
+    else
+    {
+      printf("FATAL1!!!\n");
+      fflush(stdout);
+    }
+                #endif
+
     if (MGNDELEMPTRARRAYFLAG(theMG) == 0)
       j = CORNERS_OF_REF(n);
   }
@@ -3522,7 +3543,10 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
 
         while (j <= c_ID[IndexOfDivPart])
         {
-          MGNDELEMBLK(theMG,j) = GetMem(theMG->theHeap,maxi,FROM_TOP);
+          /*
+                                                  MGNDELEMBLK(theMG,j) = GetMem(theMG->theHeap,maxi,FROM_TOP);
+           */
+          MGNDELEMBLK(theMG,j) = malloc(maxi);
           if ( MGNDELEMBLK(theMG,j) == NULL )
           {
             PrintErrorMessage('E',"InsertElement","  ==> NdElPtrArray_GetMemAndCheckIDs( ) ERROR: No memory for MGNDELEMBLK(theMG,j)");
@@ -3765,6 +3789,17 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
         PrintErrorMessage('E',"InsertElement"," ERROR by calling NdElPtrArray_GetMemAndCheckIDs()");
         return(NULL);
       }
+      IFDEBUG(gm,2)
+      {
+        INT i;
+
+        for (i=0; i<NDELEM_BLKS_MAX; i++)
+        {
+          printf("i=%d blk=%08x\n",i,MGNDELEMBLK(theMG,i));
+          fflush(stdout);
+        }
+      }
+      ENDDEBUG
       if ( (rv = NdElPtrArray_evalIndexes(n, cornerID, theMG, MIndex, MBlock, Node, theGrid, NeighborSide, Neighbor))  == 1)
       {
         PrintErrorMessage('E',"InsertElement"," ERROR by calling NdElPtrArray_evalIndexes()");
@@ -6604,7 +6639,7 @@ static INT GetAngle(DOUBLE *angle,DOUBLE *n1, DOUBLE *n2)
   if ((norm1<SMALL_D)||(norm2<SMALL_D))
     return(1);
 
-  s=V_DIM_SP(n1,n2)/(norm1*norm2);
+
   s=MIN(1,s); s=MAX(-1,s);
 
   *angle=acos(s);
