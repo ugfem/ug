@@ -1895,19 +1895,19 @@ static INT InitBodensee (void)
   DOUBLE radius,MidPoint[2];
 
   /* allocate new domain structure */
-  MidPoint[0] =25;
+  MidPoint[0] =7;
   MidPoint[1] =10;
-  radius =60;
+  radius =70;
   if (CreateDomain("Bodensee",MidPoint,radius,4,4,NO)==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("bodensee_lower",0,1,0,0,1,100,0.0,100.0,
+  if (CreateBoundarySegment2D("bodensee_lower",1,0,0,0,1,100,0.0,100.0,
                               bodensee_lower,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("bodensee_right",0,1,1,1,2,100,100.0,200.0,
+  if (CreateBoundarySegment2D("bodensee_right",1,0,1,1,2,100,100.0,200.0,
                               bodensee_right,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("bodensee_upper",0,1,2,2,3,100,200.0,300.0,
+  if (CreateBoundarySegment2D("bodensee_upper",1,0,2,2,3,100,200.0,300.0,
                               bodensee_upper,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("bodensee_left" ,0,1,3,3,0,91,300.0,390.0,
+  if (CreateBoundarySegment2D("bodensee_left" ,1,0,3,3,0,90,300.0,390.0,
                               bodensee_left,NULL)==NULL) return(1);
 
   return(0);
