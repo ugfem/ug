@@ -36,7 +36,6 @@ GSF:
 	cd gsf; make -f Makefile.gsf; cd ..;
 
 clean:
-	rm -f *.o
 	cd std;  make -f Makefile.std clean; cd ..;
 	cd gsf;  make -f Makefile.gsf clean; cd ..;
 
