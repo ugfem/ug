@@ -54,6 +54,22 @@ void ddd_DisplayContext (void)
 }
 
 
+static void dddif_DisplayMemoryUsage (void)
+{
+  int i;
+
+  memmgr_Report();
+
+  UserWriteF("mem for interfaces:  %8ld bytes\n",
+             (unsigned long) DDD_IFInfoMemoryAll()
+             );
+
+  UserWriteF("mem for couplings:   %8ld bytes\n",
+             (unsigned long) DDD_InfoCplMemory()
+             );
+}
+
+
 
 void ddd_pstat (char *arg)
 {
@@ -66,6 +82,12 @@ void ddd_pstat (char *arg)
 
   switch (cmd)
   {
+  case 'm' :
+    SYNC_CONTEXT;
+    dddif_DisplayMemoryUsage();
+    SYNC_END;
+    break;
+
   case 'c' :
     DDD_ConsCheck();
     UserWrite("\n");
