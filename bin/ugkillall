@@ -27,7 +27,7 @@ fi
 echo killing processes:
 #echo `ps -edalf | grep $1 | grep -v grep `
 echo `ps -edalf | grep $1 | grep -v grep | awk '{ print $4 }' -`
-kill `ps -edalf | grep $1 | grep -v grep | awk '{ print $4 }' -`
+kill -9 `ps -edalf | grep $1 | grep -v grep | awk '{ print $4 }' -`
 
 fi
 
