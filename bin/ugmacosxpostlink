@@ -14,7 +14,13 @@
 # Only needed for MacOS X
 #
 
-if ( ($ENV{'OSTYPE'} ne 'rhapsody') && ($ENV{'OSTYPE'} ne 'darwin') )
+if ( $ENV{'OSTYPE'} eq 'darwin' )
+{
+	print "postlinking not needed for MacOS X 10.0 or later.\n";
+	exit 0;
+}
+
+if ( ($ENV{'OSTYPE'} ne 'rhapsody') )
 {
     print "ugmacosxpostlink is only needed for MacOS X systems\n";
     exit 0;
