@@ -315,12 +315,20 @@ int filetype (const char *fname)
   if (stat(fname, &fstat)<0)
     return(FT_UNKNOWN);
 
-  switch (fstat.st_mode & S_IFMT)
+  switch (fstat.st_mode & _S_IFMT)
   {
+#ifdef __CC__
+  case _S_IFREG :   return FT_FILE;
+  case _S_IFDIR :   return FT_DIR;
+#ifdef S_IFLNK
+  case _S_IFLNK :   return FT_LINK;
+#endif
+#else
   case S_IFREG :   return FT_FILE;
   case S_IFDIR :   return FT_DIR;
 #ifdef S_IFLNK
   case S_IFLNK :   return FT_LINK;
+#endif
 #endif
   }
   return(FT_UNKNOWN);
@@ -445,12 +453,12 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
     if ((error=mkdir(fname,mode))!=0) return (1);
 
   if ((thePaths=GetPaths(paths))==NULL)
-    return (NULL);
+    return (0);
 
   for (i=0; i<thePaths->nPaths; i++)
   {
     if (strlen(thePaths->path[i])+fnamelen>MAXPATHLENGTH)
-      return (NULL);
+      return (0);
 
     strcpy(fullname,thePaths->path[i]);
     strcat(fullname,"/");
@@ -610,12 +618,12 @@ int FileTypeUsingSearchPaths (const char *fname, const char *paths)
   fnamelen = strlen(fname);
 
   if ((thePaths=GetPaths(paths))==NULL)
-    return (NULL);
+    return (0);
 
   for (i=0; i<thePaths->nPaths; i++)
   {
     if (strlen(thePaths->path[i])+fnamelen>MAXPATHLENGTH)
-      return (NULL);
+      return (0);
 
     strcpy(fullname,thePaths->path[i]);
     strcat(fullname,"/");
