@@ -188,13 +188,23 @@ void prv( int level, int x_nr )
 		VectorPosition(v,pos);
 #ifdef ModelP 
 		printf(PFMT"(P%d)",me,PRIO(v));
-#endif		
-		printf("x=%5.2f y=%5.2f ",pos[0],pos[1]);
-#ifdef __THREEDIM__
-		printf("z=%5.2f ",pos[2]);
 #endif
+		if(VOBJECT(v)==NULL)
+		{
+			printf("x= ---- y= ---- ");
+#ifdef __THREEDIM__
+			printf("z= ---- ");
+#endif
+		}
+		else
+		{
+			printf("x=%5.2f y=%5.2f ",pos[0],pos[1]);
+#ifdef __THREEDIM__
+			printf("z=%5.2f ",pos[2]);
+#endif
+		}
 		printf("  index = %d %c ", VINDEX( v ) , VCCOARSE(v)?'C':'F' );
-		printf("u[%d]=%15.8f ",x_nr,VVALUE(v,x_nr));
+		printf("u[%d]=%15.8f GID %08x",x_nr,VVALUE(v,x_nr), GID(v));
 		/*printf("   cl %d %d sk ",VCLASS(v),VNCLASS(v));*/
 		/*for (j=0; j<ncomp; j++)
 			printf("%d ",((VECSKIP(v) & (1<<j))!=0));*/

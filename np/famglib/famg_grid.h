@@ -146,6 +146,7 @@ public:
   void SetConsMatrix(FAMGMatrixAlg *cm);
 #ifdef ModelP
   void CommunicateNodeStatus();
+  void ConstructOverlap();
 #endif
 
 private:

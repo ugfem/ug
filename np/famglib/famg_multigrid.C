@@ -84,9 +84,20 @@ int FAMGMultiGrid::Construct()
     FAMGMarkHeap(FAMG_FROM_TOP); // release in Deconstruct
     for(level = 0; level < FAMGMAXGRIDS-1; level++)
     {
-        g->Stencil();
         nn = g->GetN();
-        if ((nn <= cgnodes || level>=cglevels) && (gamma > 0)) break;
+#ifdef ModelP
+		nn = UG_GlobalMinINT(nn);
+#endif
+        if ((nn <= cgnodes || level>=cglevels) && (gamma > 0))
+		{
+			g->Stencil();
+			break;
+		}
+
+#ifdef ModelP
+		g->ConstructOverlap();
+#endif
+        g->Stencil();
 
 #ifdef FAMG_ILU
         if(ilu)
@@ -112,8 +123,7 @@ int FAMGMultiGrid::Construct()
         g = cg;
         n++;
 //printf("after Galerkin:\n");
-//prm(0,0);
-//prm(0,1);
+//prm(0,0);prm(0,1); prim(0);
 //prm(-1,0);
         if(nnc > nn*mincoarse)
 			break;

@@ -198,6 +198,14 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	// first step: create the coarse grid vectors and the transfer matrix to them
 	while( fg_iter(fg_ve) )
 	{
+		IFDEBUG(np,3)
+		ugfg_vec = ((FAMGugVectorEntryRef*)fg_ve.GetPointer())->myvector();
+		PRINTDEBUG(np,3,("%d: ind %d gid %08x prio %d n %d\n",me,VINDEX(ugfg_vec),
+						 DDD_InfoGlobalId(PARHDR(ugfg_vec)),
+						 DDD_InfoPriority(PARHDR(ugfg_vec)),
+						 DDD_InfoNCopies(PARHDR(ugfg_vec))));
+		ENDDEBUG
+		
 		if( fg_gridvec.IsCG(fg_ve) )
 		{	
 			// create coarse vector on coarse grid as in np/algebra/amgtools.c/GenerateNewGrid()
@@ -231,7 +239,7 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 				while (*proclist != -1) {
 				    // if (!GHOSTPRIO(proclist[1])) original changed!
 					{ 
-					    PRINTDEBUG(np,3,("%d: pl %d\n",me,*proclist));
+					    PRINTDEBUG(np,3,("%d: to pe %d with prio %d\n",me,proclist[0],proclist[1]));
 						DDD_IdentifyObject(PARHDR(ugnew_vec),*proclist,
 										   PARHDR(ugfg_vec));
 					}

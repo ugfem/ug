@@ -37,6 +37,7 @@ extern "C"
 {
 #include "gm.h"
 #include "ugm.h"
+#include "disctools.h" // for AssembleDirichletBoundary
 #include "commands.h" // nur zum testen fuer GetCurrentMultigrid()
 }
 #endif
@@ -583,7 +584,7 @@ void FAMGGrid::GetSmoother()
     else
     {
         ostrstream ostr;
-        ostr << __FILE__ << __LINE__ <<  "cgsmoother = ilut" << endl;
+        ostr << __FILE__ << ", line " << __LINE__ << ": cgsmoother = ilut" << endl;
         FAMGWarning(ostr);
     }
 
@@ -614,7 +615,7 @@ void FAMGGrid::GetSmoother()
     else
     {
         ostrstream ostr;
-        ostr << __FILE__ << __LINE__ <<  "presmoother = fgs" << endl;
+        ostr << __FILE__ << ", line " << __LINE__ <<  ": presmoother = fgs" << endl;
         FAMGWarning(ostr);
     }
 
@@ -645,7 +646,7 @@ void FAMGGrid::GetSmoother()
     else
     {
         ostrstream ostr;
-        ostr << __FILE__ << __LINE__ <<  "postsmoother = bgs" << endl;
+        ostr << __FILE__ << ", line " <<  __LINE__ <<  "postsmoother = bgs" << endl;
         FAMGWarning(ostr);
     }
 
@@ -842,7 +843,7 @@ int FAMGGrid::Construct(FAMGGrid *fg)
 	if(fg->GetTransfer()->SetDestinationToCoarse(*fg,*this))
     {
         ostrstream ostr;
-        ostr << __FILE__ << __LINE__  << "can not bend transfer entries to coarse grid" << endl;
+        ostr << __FILE__ << ", line " <<  __LINE__  << ": can not bend transfer entries to coarse grid" << endl;
         FAMGError(ostr);
         assert(0);
     }
@@ -867,7 +868,7 @@ int FAMGGrid::Construct(FAMGGrid *fg)
     if (j != GetN())
     {
         ostrstream ostr;
-        ostr << __FILE__ << __LINE__  << "number of coarse grid node doesn't match" << endl;
+        ostr << __FILE__ << ", line " <<  __LINE__  << ": j="<<j<<" cg->N="<<GetN()<<" number of coarse grid node doesn't match" << endl;
         FAMGError(ostr);
         assert(0);
     }
@@ -889,7 +890,7 @@ int FAMGGrid::Construct(FAMGGrid *fg)
 	
     if(GetMatrix()->ConstructGalerkinMatrix(*fg)) 
 		return 1;
-
+	
     return 0;
 }
 
@@ -1175,6 +1176,172 @@ int FAMGGrid::Reorder()
 // *****************************************************************************
 // *********** parallel extensions *********************************************
 // *****************************************************************************
+
+
+///////////////////////////////////////////////////////////////////////////////
+// ConstructOverlap
+///////////////////////////////////////////////////////////////////////////////
+
+#ifdef ModelP
+int SendToMaster( DDD_OBJ obj)
+{
+	VECTOR *vec = (VECTOR *)obj, *w;
+	MATRIX *mat;
+	DDD_PROC masterPe;
+	int *proclist, i, found, size;
+	
+	if( IS_FAMG_MASTER(vec) )
+		return 0;		// we want only border vectors here
+	
+	PRINTDEBUG(np,1,("%d: SendToMaster: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+	
+	for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+		if( IS_FAMG_MASTER(MDEST(mat)) )
+			break;	// now vec is in overlap1 without core partition
+	
+	if( mat==NULL )
+		return 0;	// vec has no master neighbor; hence is not in overlap1
+	
+	proclist = DDD_InfoProcList(PARHDR(vec));
+	masterPe = (DDD_PROC)me;	// init with an unpossible value
+	for( i=0; proclist[i]!=-1; i+=2 )
+		if( proclist[i+1] == PrioMaster )
+		{
+			masterPe = proclist[i];
+			break;
+		}
+	assert(masterPe!=(DDD_PROC)me);	// a master copy must exist on an other processor
+
+	// It seems to be necessary to send also the vec itself to let new 
+	// connection be constructed from both (vec and its neighbor)
+	size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
+	DDD_XferCopyObjX(PARHDR(vec), masterPe, PrioMaster, size);
+	PRINTDEBUG(np,1,("%d: SendToMaster %d: myself "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(vec)));
+	
+	for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+	{
+		w = MDEST(mat);
+		
+		// search whether w has a copy on masterPe
+		proclist = DDD_InfoProcList(PARHDR(w));
+		found = FALSE;
+		for( i=0; proclist[i]!=-1; i+=2 )
+			if( masterPe == proclist[i] )
+			{
+				found = TRUE;
+				break;
+			}
+		
+		if( !found )	// if it has no copy send w to masterPe
+		{
+			size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
+			DDD_XferCopyObjX(PARHDR(w), masterPe, PrioBorder, size);
+			PRINTDEBUG(np,1,("%d: SendToMaster %d:     -> "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
+		}
+		else
+			PRINTDEBUG(np,1,("%d: SendToMaster %d:     is "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
+	}
+	
+	return 0;
+}
+
+int SendToOverlap1( DDD_OBJ obj)
+// every master sends itself to each processor where a neighbor has a border copy
+{
+	VECTOR *vec = (VECTOR *)obj, *w, *wn;
+	MATRIX *mat, *matw;
+	int *proclist_vec, *proclist_w, i, found, size;
+	
+	if( !IS_FAMG_MASTER(vec) )
+		return 0;		// we want only border vectors here
+
+	PRINTDEBUG(np,1,("%d: SendToOverlap1: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+
+	proclist_vec = DDD_InfoProcList(PARHDR(vec));
+	
+	for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+	{
+		w = MDEST(mat);
+		
+		proclist_w = DDD_InfoProcList(PARHDR(w));
+		for( ; proclist_w[0]!=-1; proclist_w += 2 )
+		{		
+			// send only to all not-master copies
+			if( proclist_w[1] == PrioMaster )
+				continue;
+			
+			// don't send info to myself
+			if(proclist_w[0]==me)
+				continue;
+			
+			// search whether vec has already a copy on the PE of the neighbor border copy
+			found = FALSE;
+			for( i=0; proclist_vec[i]!=-1; i+=2 )
+				if( proclist_w[0] == proclist_vec[i] )
+				{
+					found = TRUE;
+					break;
+				}
+		
+		//temp weg if( !found )	// if it has no copy send vec
+			{
+				size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
+				DDD_XferCopyObjX(PARHDR(vec), proclist_w[0], PrioBorder, size);
+				// s.u. size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
+				// wird unten mit gemacht DDD_XferCopyObjX(PARHDR(w), proclist_w[0], proclist_w[1], size);
+				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(w)));
+			}
+
+			for( matw=VSTART(w); matw!=NULL; matw=MNEXT(matw) )
+			{
+				wn = MDEST(matw);
+                size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(wn));
+				DDD_XferCopyObjX(PARHDR(wn), proclist_w[0], PrioBorder, size);
+				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(wn)));
+			}
+		}
+	}
+}
+
+void FAMGGrid::ConstructOverlap()
+// extend the overlap as far as necessary; at least 2 links deep
+// the vectorlist will be renumbered
+{
+	VECTOR *vec;
+	INT i;
+	
+	DDD_XferBegin();
+		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToMaster );
+	DDD_XferEnd();
+	
+	DDD_XferBegin();
+	//		DDD_IFAExecLocal( VectorIF, GRID_ATTR(mygrid), SendToOverlap1 );
+		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToOverlap1 );
+	DDD_XferEnd();
+	
+	for( i=0,vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
+		VINDEX(vec) = i++;
+	
+	// set number of vectors
+	n = NVEC(mygrid);
+	assert(i==n);	// otherwise the vectorlist became inconsistent
+	
+	if(GLEVEL(mygrid)==0)
+	{	// do modifications for dirichlet vectors (as coarsegrid solver)
+		// communicate vecskip flags and dirichlet values
+		if (a_vector_vecskip(MYMG(mygrid),0,0,((FAMGugVector*)GetVector(FAMGUNKNOWN))->GetUgVecDesc()) != NUM_OK)
+			abort();
+		// set dirichlet modification in the matrix
+		if (AssembleDirichletBoundary (mygrid,((FAMGugMatrix*)GetMatrix())->GetMatDesc(),((FAMGugVector*)GetVector(FAMGUNKNOWN))->GetUgVecDesc(),((FAMGugVector*)GetVector(FAMGDEFECT))->GetUgVecDesc()))
+			abort();
+	}	
+}
+#endif
+
+
+///////////////////////////////////////////////////////////////////////////////
+// CommunicateNodeStatus
+///////////////////////////////////////////////////////////////////////////////
 
 #ifdef ModelPQQQQQQQQQQQQQQQQQQQQQ
 
@@ -1534,10 +1701,12 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 		// check that the state of the node is consistent with the message
 		if( msgtype == FAMG_TYPE_COARSE )
 		{
+			PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse for already coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 			assert(node->IsCGNode());
 		}
 		else if( msgtype == FAMG_TYPE_FINE )
 		{
+			PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine for already fine "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 			assert(node->IsFGNode());
 			// check wether the parents are identical
 			MATRIX *imat;
