@@ -2134,9 +2134,9 @@ static INT LogOffCommand (INT argc, char **argv)
 static INT NewCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char Multigrid[NAMESIZE],Domain[NAMESIZE],Problem[NAMESIZE],Format[NAMESIZE];
+  char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
   unsigned long heapSize;
-  INT i,dopt,popt,fopt,hopt;
+  INT i,bopt,fopt,hopt;
 
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" new %",NAMELENSTR,"[ -~]")),Multigrid)!=1) || (strlen(Multigrid)==0))
@@ -2144,26 +2144,17 @@ static INT NewCommand (INT argc, char **argv)
 
   /* get problem, domain and format */
   heapSize = 0;
-  dopt = popt = fopt = hopt = FALSE;
+  bopt = fopt = hopt = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
-    case 'p' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("p %",NAMELENSTR,"[ -~]")),Problem)!=1)
+    case 'b' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("b %",NAMELENSTR,"[ -~]")),BVPName)!=1)
       {
-        PrintHelp("new",HELPITEM," (cannot read problem specification)");
+        PrintHelp("new",HELPITEM," (cannot read BndValProblem specification)");
         return(PARAMERRORCODE);
       }
-      popt = TRUE;
-      break;
-
-    case 'd' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("d %",NAMELENSTR,"[ -~]")),Domain)!=1)
-      {
-        PrintHelp("new",HELPITEM," (cannot read domain specification)");
-        return(PARAMERRORCODE);
-      }
-      dopt = TRUE;
+      bopt = TRUE;
       break;
 
     case 'f' :
@@ -2190,14 +2181,14 @@ static INT NewCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if (!(dopt && popt && fopt && hopt))
+  if (!(bopt && fopt && hopt))
   {
     PrintHelp("new",HELPITEM," (the d, p, f and h arguments are mandatory)");
     return(PARAMERRORCODE);
   }
 
   /* allocate the multigrid structure */
-  theMG = CreateMultiGrid(Multigrid,Domain,Problem,Format,heapSize);
+  theMG = CreateMultiGrid(Multigrid,BVPName,Format,heapSize);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"new","could not create multigrid");
@@ -8486,50 +8477,35 @@ static INT ClearCommand (INT argc, char **argv)
 static INT ReInitCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  PROBLEM *theProblem;
-  INT i,popt,dopt;
-  char Problem[NAMESIZE],Domain[NAMESIZE];
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+  INT i,bopt;
+  char BVPName[NAMESIZE];
 
   /* check options */
-  dopt = popt = FALSE;
+  bopt = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
-    case 'p' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("p %",NAMELENSTR,"[0-9a-zA-Z/_ ]")),Problem)!=1)
+    case 'b' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("b %",NAMELENSTR,"[0-9a-zA-Z/_ ]")),BVPName)!=1)
       {
-        PrintErrorMessage('E',"reinit","could not read problem string");
+        PrintErrorMessage('E',"reinit","could not read BndValProblem string");
         return(PARAMERRORCODE);
       }
-      popt = TRUE;
-      break;
-
-    case 'd' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("d %",NAMELENSTR,"[0-9a-zA-Z/_ ]")),Domain)!=1)
-      {
-        PrintErrorMessage('E',"reinit","could not read domain string");
-        return(PARAMERRORCODE);
-      }
-      dopt = TRUE;
+      bopt = TRUE;
       break;
 
       /* no default because param list is passed to reinit function */
     }
 
-  /* specify EITHER popt&&dopt OR none */
-  if (popt+dopt==1)
-  {
-    PrintHelp("reinit",HELPITEM,"specify domain AND problem names");
-    return (PARAMERRORCODE);
-  }
-
   /* set the document */
-  if (popt)
+  if (bopt)
   {
-    theProblem = GetProblem(Domain,Problem);
-    if(theProblem==NULL)
+    theBVP = GetBVP(BVPName);
+    if(theBVP==NULL)
     {
-      sprintf(buffer,"could not interpret '%s' as a problems name",Problem);
+      sprintf(buffer,"could not interpret '%s' as a BVP name",BVPName);
       PrintErrorMessage('E',"reinit",buffer);
       return (CMDERRORCODE);
     }
@@ -8542,16 +8518,17 @@ static INT ReInitCommand (INT argc, char **argv)
       PrintErrorMessage('E',"reinit","no open multigrid (specify problem and domain instead)");
       return (CMDERRORCODE);
     }
-    theProblem = theMG->theProblem;
+    theBVP = MG_BVP(theMG);
   }
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (CMDERRORCODE);
 
   /* reconfigure the problem */
-  if (theProblem->ConfigProblem==NULL)
+  if (BVPD_CONFIG(theBVPDesc)==NULL)
   {
     PrintErrorMessage('E',"reinit","the problem has no reinit\n");
     return(CMDERRORCODE);
   }
-  (*theProblem->ConfigProblem)(argc,argv);
+  (*BVPD_CONFIG (theBVPDesc))(argc,argv);
 
   return(OKCODE);
 }
