@@ -608,7 +608,7 @@ namespace UG2d {
   else if ((n) == 8) {TRANSFORMATION_OF_HEXAHEDRON((x),(local),(M));}}
 
 #define SIDE_NORMAL_3D(n,i,x,normal)                                \
-  { DOUBLE s; DOUBLE_VECTOR a,b; ELEMENT e;                      \
+  { DOUBLE s; DOUBLE_VECTOR a,b;                                 \
         V3_SUBTRACT(x[CORNER_OF_SIDE_REF((n),(i),1)],                \
                 x[CORNER_OF_SIDE_REF((n),(i),0)],a);             \
         V3_SUBTRACT(x[CORNER_OF_SIDE_REF((n),(i),2)],                \
