@@ -121,8 +121,6 @@ INT InitFAMGGraph (void);
 
 static void FAMGReadArgvParameter(INT argc, char **argv)
 {
-    char *str;
-	
 	if (ReadArgvINT("h",&(famg_parameter.heap),argc,argv))
         famg_parameter.heap = (int)1e+7;
 	if (ReadArgvINT("n1",&(famg_parameter.n1),argc,argv))
@@ -135,7 +133,11 @@ static void FAMGReadArgvParameter(INT argc, char **argv)
 		famg_parameter.cgnodes = 1;
 	if (ReadArgvINT("cgl",&(famg_parameter.cglevels),argc,argv))
 		famg_parameter.cglevels = 100;
-
+}
+	
+static void FAMGReadStringParameter(void)
+{
+    char *str;
 	
     famg_parameter.ilut = 1e+10;
     GetStringValueDouble(":famg:ilut",&(famg_parameter.ilut));
@@ -758,6 +760,7 @@ static INT FAMGIterInit (NP_BASE *theNP, INT argc, char **argv)
 	np = (NP_FAMG_ITER *) theNP;
 
 	FAMGReadArgvParameter(argc, argv);
+	FAMGReadStringParameter();
 
     np->heap = famg_parameter.heap;
     np->n1 = famg_parameter.n1;
@@ -1429,6 +1432,7 @@ INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 	NP_FAMG_TRANSFER *famgtrans = (NP_FAMG_TRANSFER *)theNP;
 	
 	FAMGReadArgvParameter(argc, argv);
+	FAMGReadStringParameter();
 
 	if (ReadArgvINT("coarsegridsolver",&(famgtrans->coarsegridsolver),argc,argv))
         famgtrans->coarsegridsolver = 1;
@@ -1462,6 +1466,8 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	if( GRID_ON_LEVEL(mg,-1) != NULL )		// remove AMG grids if not done
 		if( DisposeAMGLevels(mg) )
 			NP_RETURN(1,result[0]);
+	
+	FAMGReadStringParameter();	// reread to be able to configure each solver call individually
 	
 #ifdef ModelP
 	// check assumptions for IS_FAMG_MASTER and IS_FAMG_GHOST
