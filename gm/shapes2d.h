@@ -38,6 +38,46 @@
 /*																			*/
 /****************************************************************************/
 
+#define DNDS(n,i,s,t,r)                 if (n==3)\
+  {\
+    switch (i)\
+    {\
+    case 0 : r=-1.0; break;\
+    case 1 : r=1.0; break;\
+    case 2 : r=0.0; break;\
+    }\
+  }\
+  else if (n==4)\
+  {\
+    switch (i)\
+    {\
+    case 0 : r=-0.25*(1-t); break;\
+    case 1 : r=0.25*(1-t); break;\
+    case 2 : r=0.25*(1+t); break;\
+    case 3 : r=-0.25*(1+t); break;\
+    }\
+  }
+
+#define DNDT(n,i,s,t,r)             if (n==3)\
+  {\
+    switch (i)\
+    {\
+    case 0 : r=-1; break;\
+    case 1 : r=0; break;\
+    case 2 : r=1; break;\
+    }\
+  }\
+  else if (n==4)\
+  {\
+    switch (i)\
+    {\
+    case 0 : r=-0.25*(1-s); break;\
+    case 1 : r=-0.25*(1+s); break;\
+    case 2 : r=0.25*(1+s); break;\
+    case 3 : r=0.25*(1-s); break;\
+    }\
+  }
+
 
 
 /****************************************************************************/
