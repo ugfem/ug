@@ -3453,7 +3453,7 @@ static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
 
 static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
 {
-  INT IND1,IND2;;
+  INT IND1,IND2;
 
   IND1 = INDEX(MDEST(*MatHandle1));
   IND2 = INDEX(MDEST(*MatHandle2));
@@ -3495,7 +3495,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
 {
   MULTIGRID *theMG;
   VECTOR **table,*theVec;
-  MATRIX *theMat,*MatTable[MATTABLESIZE];
+  MATRIX *theMat,**MatTable;
   BVP *theBVP;
   BVP_DESC theBVPDesc;
   INT i,entries,nm;
@@ -3521,7 +3521,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   if (entries < 2) return(0);
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap);
-  if ((table=GetTmpMem(theHeap,entries*sizeof(VECTOR *)))==NULL)
+  if ((table = (VECTOR **)GetTmpMem(theHeap,entries*sizeof(VECTOR *)))==NULL)
   {
     ReleaseTmpMem(theHeap);
     PrintErrorMessage('E',"LexOrderVectorsInGrid",
@@ -3552,23 +3552,20 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
     GRID_LINK_VECTOR(theGrid,table[i],PrioMaster);
             #endif
   }
-  ReleaseTmpMem(theHeap);
-
-  if (!AlsoOrderMatrices)
+  if (!AlsoOrderMatrices) {
+    ReleaseTmpMem(theHeap);
     return (0);
-
-  /* now we also order the matrices of each vector the same way (just using the new INDICES) */
+  }
+  MatTable = (MATRIX **) table;
+  /* now we also order the matrices of each vector the same way
+     (just using the new INDICES) */
   /* but leaving the diag at its place of course */
   for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
   {
     /* fill array for qsort */
     for (nm=0, theMat=VSTART(theVec); theMat!=NULL; theMat=MNEXT(theMat))
-    {
-      if (nm>=MATTABLESIZE)
-        return (1);
-
       MatTable[nm++] = theMat;
-    }
+    if (nm < 2) continue;
     qsort(MatTable+1,nm-1,sizeof(*MatTable),
           (int (*)(const void *, const void *))MatrixCompare);
 
@@ -3581,6 +3578,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
     }
     VSTART(theVec) = MatTable[0];
   }
+  ReleaseTmpMem(theHeap);
 
   return (0);
 }
