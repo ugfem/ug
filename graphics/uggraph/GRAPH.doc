@@ -22,8 +22,7 @@ EVALUES *CreateElementValuePlotProc (const char *name, PreprocessingProcPtr PreP
 
 .  'EVALUES~*GetElementValuePlotProc~(const~char~*name)' - gets the 'name'
     from ug environment and associates it with plot procedure. Available
-    names of data (procedures)  to plot: 'solution', 'correction', 'defect', 'temporary',
-    see also 'cdtools.doc'.
+    names of data (procedures)  to plot: 'solution', 'correction', 'defect', 'temporary'.
             
 .vb  
 EVECTOR *CreateElementVectorPlotProc (const char *name, PreprocessingProcPtr PreProc,
@@ -37,8 +36,7 @@ EVECTOR *CreateElementVectorPlotProc (const char *name, PreprocessingProcPtr Pre
 
 .  'EVECTOR~*GetElementVectorPlotProc~(const~char~*name)' - gets the 'name'
     from ug environment and associates it with plot procedure. 
-    Available names (procedures) of data to plot: 'gradientvector', see also
-    'cdtools.doc'.
+    Available names (procedures) of data to plot: 'gradientvector'.
 
    MATRIX DATA:
 .vb
@@ -65,9 +63,6 @@ static DOUBLE NodeIndex (const ELEMENT *theElement, const COORD **CornersCoord,
 .ve
 
 .n    plot function for NodeVector Order.
-  
-   SEE ALSO:
-   'cdtools.doc' 
 D*/
 /**************************************************************************/
 
