@@ -11433,6 +11433,8 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
   EE3D_Elem2Plot[PLOT_IRR]                = 1;
   EE3D_Elem2Plot[PLOT_REG]                = 1;
 
+  EE3D_ShrinkFactor                               = 1.0;
+
   /* build cut trafo */
   if (BuildCutTrafo(&(theEspo->theCut),OBS_ViewDirection)) return (1);
 
@@ -11550,6 +11552,8 @@ static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
   EE3D_Elem2Plot[PLOT_COPY]               = 1;
   EE3D_Elem2Plot[PLOT_IRR]                = 1;
   EE3D_Elem2Plot[PLOT_REG]                = 1;
+
+  EE3D_ShrinkFactor                               = 1.0;
 
   /* build cut trafo */
   if (BuildCutTrafo(&(theEvpo->theCut),OBS_ViewDirection)) return (1);
