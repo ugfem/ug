@@ -1360,9 +1360,10 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 
 INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
 {
+  char buffer[256];
   VECTOR *v;
   DOUBLE_VECTOR pos;
-  INT comp,ncomp,j;
+  INT comp,ncomp,i,j;
 
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
   {
@@ -1372,15 +1373,17 @@ INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
     if (ncomp == 0) continue;
     comp = VD_CMP_OF_TYPE(X,VTYPE(v),0);
     VectorPosition(v,pos);
-    UserWriteF("x=%5.2f y=%5.2f ",pos[0],pos[1]);
+    i=0;
+    i += sprintf(buffer,"x=%5.2f y=%5.2f ",pos[0],pos[1]);
     if (DIM == 3)
-      UserWriteF("z=%5.2f ",pos[2]);
+      i += sprintf(buffer+i,"z=%5.2f ",pos[2]);
     for (j=0; j<ncomp; j++)
-      UserWriteF("u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
-    UserWriteF("   cl %d %d sk ",VCLASS(v),VNCLASS(v));
+      i += sprintf(buffer+i,"u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
+    i += sprintf(buffer+i,"   cl %d %d sk ",VCLASS(v),VNCLASS(v));
     for (j=0; j<ncomp; j++)
-      UserWriteF("%d ",((VECSKIP(v) & (1<<j))!=0));
-    UserWriteF("n %d\n",VNEW(v));
+      i += sprintf(buffer+i,"%d ",((VECSKIP(v) & (1<<j))!=0));
+    i += sprintf(buffer+i,"n %d\n",VNEW(v));
+    UserWrite(buffer);
   }
 
   return(NUM_OK);
