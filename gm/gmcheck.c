@@ -1706,12 +1706,12 @@ static INT CheckElementList (GRID *theGrid)
 		ELEMENT *Father	= EFATHER(theElement);
 PAR(	INT 	prio 	= EPRIO(theElement);               )ENDPAR
 
-		if (Father == NULL)  
+		if (EMASTER(theElement) && Father==NULL)  
 		{
 			UserWriteF(PFMT "ERROR: element=" EID_FMTX " has no father\n",
 				me,EID_PRTX(theElement));
-			continue;
 		}
+		if (Father == NULL) continue;
 		if (theElement == SON(Father,PRIO2INDEX(prio)))
 		{
 			if (PREDE(theElement) != NULL)
