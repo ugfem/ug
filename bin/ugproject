@@ -13,19 +13,19 @@ ugmake dom
 ugmake simple
 ugmake diff2da
 ugmake ns2da 
-ugmake fema nd
+ugmake fema 
 ugmake cda 
-ugmake fema ifdef
-ugmake fema ed
 
 ugconf 3
 ugmake ug -i ifdef
 ugmake ug uglib
 ugmake dom
 
-ugmake cda ifdef
+ugmake cda -i ifdef
 ugmake cda 
+ugmake fema - ifdef
+ugmake fema 
 
 ugconf restore
 ugmake ug -i ifdef
-echo "simple, diff2da, ns2da, cd2d, cd3d, fema, femn created"
+echo "simple, diff2da, ns2da, cd2d, cd3d, fem2d, fem3d created"

@@ -7,6 +7,6 @@ diff2da square.scr
 cd $UGROOT/../cd/appl
 cd3d cd.init
 cd $UGROOT/../fem/appl
-fema cook.scr
+fem2d cook.scr
 cd $UGROOT/../ns2d/appl
 ns2da main.scr

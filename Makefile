@@ -28,7 +28,7 @@ all: include $(OBJECTS) $(MODULES)
 	$(ARCH_AR) $(ARCH_ARFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 	echo "libug, libdom and libdev compiled"
 
-uglib: $(OBJECTS) $(UGMODULES)
+uglib: include $(OBJECTS) $(UGMODULES)
 	$(ARCH_AR) $(ARCH_ARFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 	echo "libug compiled"
 
@@ -102,13 +102,3 @@ ifdef: $(MODEL_TARGET)_clean
 	cd dom; make -f Makefile.dom clean; cd ..;
 	cd ui; rm commands.o ; cd ..;
 	rm -f initug.o;
-
-
-
-
-
-
-
-
-
-

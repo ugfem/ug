@@ -79,7 +79,7 @@ then
 		cd $UGROOT/../cd/pclib;
 		;;
 	cda)
-		cd $UGROOT/../cda/appl;
+		cd $UGROOT/../cd/appl;
 		;;
 	fem)
 		cd $UGROOT/../fem/pclib;
