@@ -97,7 +97,7 @@ void Meshing2 :: EndMesh ()
                << " times used rule " << rules[i] -> Name() << endl;
 }
 
-double Meshing2 :: CalcLocalH (const Point3d & /* p */, int /* surfind */,
+double Meshing2 :: CalcLocalH (const Point3d &  p, int /* surfind */,
                                double gh) const
 {
   return gh;
