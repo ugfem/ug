@@ -141,7 +141,7 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
     strcpy(FileName,DataFileName);
     if (number!=-1)
     {
-      sprintf(NumberString,".%04d",(int)number);
+      sprintf(NumberString,".%06d",(int)number);
       strcat(FileName,NumberString);
     }
     strcat(FileName,".ug.data.");
@@ -149,7 +149,7 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
     nparfiles = 1;
     if (DTIO_filetype(FileName) == FT_DIR)
     {
-      sprintf(buf,"/data.%04d",(int)me);
+      sprintf(buf,"/data.%06d",(int)me);
       strcat(FileName,buf);
       if (Read_OpenDTFile (FileName))                                                                         {nparfiles = -1;}
       else
@@ -252,7 +252,7 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   strcpy(FileName,name);
   if (number!=-1)
   {
-    sprintf(NumberString,".%04d",(int)number);
+    sprintf(NumberString,".%06d",(int)number);
     strcat(FileName,NumberString);
   }
   strcat(FileName,".ug.data.");
@@ -491,7 +491,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   strcpy(FileName,name);
   if (number!=-1)
   {
-    sprintf(NumberString,".%04d",(int)number);
+    sprintf(NumberString,".%06d",(int)number);
     strcat(FileName,NumberString);
   }
   strcat(FileName,".ug.data.");
@@ -521,7 +521,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   }
   if (DTIO_PARFILE)
   {
-    sprintf(buf,"/data.%04d",(int)me);
+    sprintf(buf,"/data.%06d",(int)me);
     strcat(FileName,buf);
   }
 #endif
