@@ -68,7 +68,7 @@
 /****************************************************************************/
 
 /* online help mechenism */
-INT     InitHelpMsg                     (char *helpfiles);
+INT             InitHelpMsg                             (void);
 INT     PrintHelp                               (const char *HelpFor,int mode, const char *addText);
 INT     CheckHelp                               (void);
 
