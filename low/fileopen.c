@@ -27,9 +27,17 @@
 /*																			*/
 /****************************************************************************/
 
+
 /* standard C library */
 #include <stdio.h>
 #include <string.h>
+
+/* includes for filesize(), filetype(), also on Macintosh?? (TODO) */
+#if (! ((defined __MWCW__) || (defined __MPW32__)))
+#include <sys/stat.h>
+#include <sys/types.h>
+#endif
+
 
 /* low module */
 #include "compiler.h"
@@ -218,6 +226,7 @@ FILE *fileopen (const char *fname, const char *mode)
   return (fopen(fullpath,mode));
 }
 
+
 #else
 
 /* UNIX machines */
@@ -228,6 +237,131 @@ FILE *fileopen (const char *fname, const char *mode)
 }
 
 #endif
+
+
+
+/****************************************************************************/
+/*D
+        filesize - get size of a file with given name
+
+        SYNOPSIS:
+        size_t filesize (const char *fname)
+
+    PARAMETERS:
+   .   fname - filename with path convention in UNIX-style
+
+        DESCRIPTION:
+        If '__MWCW__' or '__MPW32__' are defined (Macintosh compilers),
+    this function will currently return zero. On all other systems
+    (non-Macintosh), it will return the size of the given file
+    or 0 if an error occurs.
+
+        RETURN VALUE:
+        size_t
+   .n      file size (0 if error)
+
+        SEE ALSO:
+        fopen, fileopen, filetype
+   D*/
+/****************************************************************************/
+
+#if (defined __MWCW__) || (defined __MPW32__)
+
+/* Macintosh computers */
+
+
+size_t filesize (const char *fname)
+{
+  /* TODO: this is a dummy, must be implemented later! */
+  return(0);
+}
+
+
+#else
+
+/* UNIX machines */
+
+
+size_t filesize (const char *fname)
+{
+  size_t fsize;
+  struct stat fstat;
+
+  /* get Unix file descriptor */
+  if (stat(fname, &fstat)<0)
+    return(0);
+
+  return((size_t)fstat.st_size);
+}
+
+#endif
+
+
+
+/****************************************************************************/
+/*D
+        filetype - get type of a file with given name
+
+        SYNOPSIS:
+        int filetype (const char *fname)
+
+    PARAMETERS:
+   .   fname - filename with path convention in UNIX-style
+
+        DESCRIPTION:
+        If '__MWCW__' or '__MPW32__' are defined (Macintosh compilers),
+    this function will currently return FT_UNKNOWN. On all other systems
+    (non-Macintosh), it will return the type of the given file
+    or FT_UNKNOWN if an error occurs.
+
+        RETURN VALUE:
+        int
+   .n      file type (one of FT_UNKNOWN, FT_FILE, FT_DIR, FT_LINK)
+
+        SEE ALSO:
+        fopen, fileopen, filesize
+   D*/
+/****************************************************************************/
+
+#if (defined __MWCW__) || (defined __MPW32__)
+
+/* Macintosh computers */
+
+
+int filetype (const char *fname)
+{
+  /* TODO: this is a dummy, must be implemented later! */
+  return(FT_UNKNOWN);
+}
+
+
+#else
+
+/* UNIX machines */
+
+
+int filetype (const char *fname)
+{
+  struct stat fstat;
+
+  /* get Unix file descriptor */
+  if (stat(fname, &fstat)<0)
+    return(FT_UNKNOWN);
+
+  switch (fstat.st_mode & S_IFMT)
+  {
+  case S_IFREG :   return FT_FILE;
+  case S_IFDIR :   return FT_DIR;
+#ifdef S_IFLNK
+  case S_IFLNK :   return FT_LINK;
+#endif
+  }
+  return(FT_UNKNOWN);
+}
+
+#endif
+
+
 
 /****************************************************************************/
 /*D

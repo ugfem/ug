@@ -43,6 +43,9 @@
 /****************************************************************************/
 
 
+/* return constants for filetype() */
+enum FileTypes { FT_UNKNOWN, FT_FILE, FT_DIR, FT_LINK };
+
 
 /****************************************************************************/
 /*																			*/
@@ -63,6 +66,8 @@
 /****************************************************************************/
 
 FILE    *fileopen                                       (const char *fname, const char *mode);
+size_t  filesize                    (const char *fname);
+int     filetype                    (const char *fname);
 INT             ReadSearchingPaths                      (const char *filename, const char *pathsvar);
 FILE    *FileOpenUsingSearchPaths       (const char *fname, const char *mode, const char *pathsvar);
 FILE    *FileOpenUsingSearchPath        (const char *fname, const char *mode, const char *path);
