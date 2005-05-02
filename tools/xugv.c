@@ -36,7 +36,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <math.h>
+#ifndef __MACOSX__
 #include <malloc.h>
+#endif
 #include <X11/Intrinsic.h>
 #include <X11/IntrinsicP.h>
 #include <X11/Vendor.h>
