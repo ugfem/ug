@@ -8564,7 +8564,7 @@ void NS_DIM_PREFIX ListGrids (const MULTIGRID *theMG)
     UserWriteF("\n%llu ( %llu + %llu ) bytes used out of %llu allocated\n",used+heap,used,heap,used+free);
     #else
   if (heap == 0)
-    UserWriteF("\n%lu bytes used out of %d allocated\n",used,used+free);
+    UserWriteF("\n%lu bytes used out of %lu allocated\n",used,used+free);
   else
     UserWriteF("\n%lu ( %lu + %lu ) bytes used out of %lu allocated\n",
                used+heap,used,heap,used+free);
