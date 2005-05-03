@@ -266,7 +266,7 @@ INT NS_DIM_PREFIX NPAssembleDisplay (NP_BASE *theNP)
   return(0);
 }
 
-INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ASSEMBLE *np;
   INT result,level;
