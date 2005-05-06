@@ -19275,6 +19275,8 @@ static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 
 	EE3D_PlotCut                    = 1;
 
+	EE3D_Property                   = 0;
+
 	/* build cut trafo */
 	theCut = VO_CUT(PIC_VO(thePicture));
 	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
