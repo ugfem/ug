@@ -1143,7 +1143,7 @@ INT NS_DIM_PREFIX DisposeVector (GRID *theGrid, VECTOR *theVector)
 
 #ifdef __PERIODIC_BOUNDARY__
   SETPVCOUNT(theVector,PVCOUNT(theVector)-1);
-  if (PVCOUNT(theVector) > 0)
+  if (((INT)PVCOUNT(theVector)) > 0)
   {
     PRINTDEBUG(gm,1,(PFMT "DisposeVector: v=" VINDEX_FMTX
                      " NOT disposed count=%d\n",
