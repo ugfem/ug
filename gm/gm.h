@@ -366,8 +366,7 @@ enum {nodeSelection=1,         /**< Objects selected are nodes */
       vectorSelection=3        /**< Objects selected are vectors */
 };
 
-/** @name Possible values for rule in MarkForRefinement */
-/*@{*/
+/** \brief Possible values for rule in MarkForRefinement */
 enum RefinementRule
 {NO_REFINEMENT = 0,
  COPY = 1,
@@ -408,7 +407,6 @@ enum RefinementRule
 
 #endif
 };
-/*@}*/
 
 /** \brief Values for element class */
 enum {NO_CLASS,
@@ -2521,14 +2519,6 @@ enum GM_OBJECTS {
 /* macros for elements                                                      */
 /*                                                                          */
 /****************************************************************************/
-
-/* TAG values */
-/* #define TRIANGLE        3 */
-/* #define QUADRILATERAL   4 */
-/* #define TETRAHEDRON     4 */
-/* #define PYRAMID         5 */
-/* #define PRISM           6 */
-/* #define HEXAHEDRON      7 */
 
 enum {TRIANGLE = 3,
       QUADRILATERAL = 4};
