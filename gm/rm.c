@@ -679,7 +679,7 @@ static REFRULE TetrahedronRules[MAX_TET_RULES] =
 
   /* TET_RED equals TET_RED_2_4 */
   {TETRAHEDRON,2,RED_CLASS|SWITCH_CLASS,8,
-   {1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0},1<<7-1,
+   {1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0},1<<6-1,
 
    /* sonandnode */
    {{0,1},{1,1},{0,2},{0,3},{1,2},{2,2},
@@ -727,7 +727,7 @@ static REFRULE TetrahedronRules[MAX_TET_RULES] =
 
   /* TET_RED_0_5 */
   {TETRAHEDRON,3,RED_CLASS|SWITCH_CLASS,8,
-   {1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0},1<<7-1,
+   {1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0},1<<6-1,
 
    /* sonandnode */
    {{1,0},{0,0},{0,1},{2,0},{1,2},{0,2},
@@ -775,7 +775,7 @@ static REFRULE TetrahedronRules[MAX_TET_RULES] =
 
   /* TET_RED_1_3 */
   {TETRAHEDRON,4,RED_CLASS|SWITCH_CLASS,8,
-   {1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0},1<<7-1,
+   {1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0},1<<6-1,
 
    /* sonandnode */
    {{1,1},{1,1},{2,2},{0,0},{0,1},{0,2},
@@ -823,7 +823,7 @@ static REFRULE TetrahedronRules[MAX_TET_RULES] =
 
   /* TET_RED_HEX */
   {TETRAHEDRON,5,RED_CLASS|SWITCH_CLASS,4,
-   {1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0},1<<12-1,
+   {1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0},1<<11-1,
 
    /* sonandnode */
    {{0,2},{1,3},{0,0},{0,5},{3,6},{3,4},
@@ -937,7 +937,7 @@ static REFRULE PyramidRules[MAX_PYR_RULES] =
 
   /* PYR_RED */
   {PYRAMID,2,RED_CLASS|SWITCH_CLASS,10,
-   {1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},1<<13-1,
+   {1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},1<<9-1,
 
    /* sonandnode */
    {{0,1},{1,2},{2,3},{0,3},{0,4},{1,4},
@@ -987,7 +987,7 @@ static REFRULE PyramidRules[MAX_PYR_RULES] =
 
   /* PYR_bisect_0_1 */
   {PYRAMID,3,RED_CLASS|SWITCH_CLASS,2,
-   {1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},1<<13-1,
+   {1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},5,
 
    /* sonandnode */
    {{0,1},{1,2},{2,3},{0,3},{0,4},{1,4},
@@ -1029,7 +1029,7 @@ static REFRULE PyramidRules[MAX_PYR_RULES] =
 
   /* PYR_bisect_0_2 */
   {PYRAMID,4,RED_CLASS|SWITCH_CLASS,2,
-   {0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},1<<13-1,
+   {0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},10,
 
    /* sonandnode */
    {{0,1},{1,2},{2,3},{0,3},{0,4},{1,4},
@@ -1238,7 +1238,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
   /* PRI_bisect_0_1 */
   {PRISM,4,RED_CLASS|SWITCH_CLASS,2,
    {1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
-   1<<9-1+1<<10+1<<11+1<<12,
+   1 + 1<<6,
 
    /* sonandnode */
    {{0,1},{1,1},{0,2},{0,3},{1,4},{2,5},
@@ -1281,7 +1281,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
   /* PRI_bisect_0_2 */
   {PRISM,5,RED_CLASS|SWITCH_CLASS,2,
    {0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
-   1<<9-1+1<<10+1<<11+1<<12,
+   1<<1 + 1<<7,
 
    /* sonandnode */
    {{0,1},{1,1},{0,2},{0,3},{1,4},{2,5},
@@ -1324,7 +1324,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
   /* PRI_bisect_0_3 */
   {PRISM,6,RED_CLASS|SWITCH_CLASS,2,
    {0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
-   1<<9-1+1<<10+1<<11+1<<12,
+   1<<2 + 1<<8,
 
    /* sonandnode */
    {{0,1},{1,1},{0,2},{0,3},{1,4},{2,5},
@@ -1367,7 +1367,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
   /* PRI_bisect_1_2 */
   {PRISM,7,RED_CLASS|SWITCH_CLASS,2,
    {0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
-   1<<9-1+1<<10+1<<11+1<<12,
+   1<<3 + 1<<4 + 1<<5,
 
    /* sonandnode */
    {{-1,-1},{-1,-1},{-1,-1},{0,0},{0,0},{0,0},
@@ -1539,7 +1539,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
   /* PRI_trisect_0_4 */
   {PRISM,11,RED_CLASS|SWITCH_CLASS,3,
    {1,1,1,0,0,0,1,1,1,1,0,0,0,1,0,0,0,0,0},
-   1<<9-1+1<<10+1<<11+1<<12,
+   1<<3-1 + 1<<6 + 1<<7 + 1<<8 + 1<<9 + 1<<13,
 
    /* sonandnode */
    {{0,1},{1,1},{0,2},{0,3},{1,4},{2,5},
@@ -1650,7 +1650,9 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
 
   /* PRI_quadsect_hexpri0 */
   {PRISM,14,RED_CLASS,4,
-   {1,1,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,0,0},0,
+   {1,1,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,0,0},
+   3 + 1<<3 + 1<<4 + 1<<5 + 1<<6 + 1<<7 + 1<<10 + 1<<11,
+
    {{0,1},{0,2},{-1,-1},{0,4},{1,5},{0,7},
                     {3,5},{3,6},{-1,-1},{-1,-1},{0,5},{0,6},
                     {-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
@@ -1810,7 +1812,8 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 
   /* HEX_bisect_0_1 */
   {HEXAHEDRON,3,RED_CLASS|SWITCH_CLASS,2,
-   {1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0},(1<<19)-1,
+   {1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0},
+   1 + 1<<2 + 1<<8 + 1<<10,
 
    /* sonandnode */
    {{0,0},{-1,-1},{0,0},{-1,-1},{-1,-1},{-1,-1},
@@ -1856,7 +1859,8 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 
   /* HEX_bisect_0_2 */
   {HEXAHEDRON,4,RED_CLASS|SWITCH_CLASS,2,
-   {0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0},(1<<19)-1,
+   {0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0},
+   1<<1 + 1<<3 + 1<<9 + 1<<11,
 
    /* sonandnode */
    {{-1,-1},{0,0},{-1,-1},{0,0},{-1,-1},{-1,-1},
@@ -1902,7 +1906,8 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 
   /* HEX_bisect_1_2 */
   {HEXAHEDRON,5,RED_CLASS|SWITCH_CLASS,2,
-   {0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0},(1<<19)-1,
+   {0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
+   1<<4 + 1<<5 + 1<<6 + 1<<7,
 
    /* sonandnode */
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{0,0},{0,0},
@@ -1948,7 +1953,8 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 
   /* HEX_quadsect_0 */
   {HEXAHEDRON,6,RED_CLASS|SWITCH_CLASS,4,
-   {1,1,1,1,0,0,0,0,1,1,1,1,1,0,0,0,0,1,0},(1<<19)-1,
+   {1,1,1,1,0,0,0,0,1,1,1,1,1,0,0,0,0,1,0},
+   (1<<4)-1 + 1<<8 + 1<<9 + 1<<10 + 1<<11 + 1<<12 + 1<<17,
 
    /* sonandnode */
    {{0,1},{1,2},{2,3},{3,0},
@@ -1996,7 +2002,8 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 
   /* HEX_quadsect_1 */
   {HEXAHEDRON,7,RED_CLASS|SWITCH_CLASS,4,
-   {1,0,1,0,1,1,1,1,1,0,1,0,0,1,0,1,0,0,0},(1<<19)-1,
+   {1,0,1,0,1,1,1,1,1,0,1,0,0,1,0,1,0,0,0},
+   1 + 1<<2 + 1<<4 + 1<<5 + 1<<6 + 1<<7 + 1<<8 + 1<<10 + 1<<13 + 1<<15,
 
    /* sonandnode */
    {{0,1},{-1,-1},{0,2},{-1,-1},
@@ -2044,7 +2051,8 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 
   /* HEX_quadsect_2 */
   {HEXAHEDRON,8,RED_CLASS|SWITCH_CLASS,4,
-   {0,1,0,1,1,1,1,1,0,1,0,1,0,0,1,0,1,0,0},(1<<19)-1,
+   {0,1,0,1,1,1,1,1,0,1,0,1,0,0,1,0,1,0,0},
+   1<<1 + 1<<3 + 1<<4 + 1<<5 + 1<<6 + 1<<7 + 1<<9 + 1<<11 + 1<<14 + 1<<16,
 
    /* sonandnode */
    {{-1,-1},{0,2},{-1,-1},{0,3},
@@ -2139,7 +2147,8 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 
   /* HEX_trisect_5 */
   {HEXAHEDRON,9,RED_CLASS|SWITCH_CLASS,3,
-   {0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0},(1<<19)-1,
+   {0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0},
+   1<<8 + 1<<10,
 
    /* sonandnode */
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},
@@ -2186,7 +2195,8 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 
   /* HEX_bisect_hexpri0 */
   {HEXAHEDRON,10,RED_CLASS|SWITCH_CLASS,2,
-   {0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},(1<<19)-1,
+   {0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
+   1<<3 + 1<<11,
 
    /* sonandnode */
    {{-1,-1},{-1,-1},{-1,-1},{0,3},
@@ -2233,7 +2243,8 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 
   /* HEX_bisect_hexpri1 */
   {HEXAHEDRON,11,RED_CLASS|SWITCH_CLASS,2,
-   {1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},(1<<19)-1,
+   {1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+   1 + 1<<8,
 
    /* sonandnode */
    {{0,0},{-1,-1},{-1,-1},{-1,-1},
