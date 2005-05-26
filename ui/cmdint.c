@@ -57,7 +57,7 @@
 #include "uginterface.h"
 #include "cmdline.h"
 
-/* TODO: conflict with hierarchy */
+/** \todo conflict with hierarchy */
 #include "initug.h"
 
 #ifdef __GUI__
@@ -158,13 +158,13 @@ typedef union Operand OPERAND;
 /*                                                                          */
 /****************************************************************************/
 
-INT cmdintbufsize=CMDINTBUFSIZE;
+INT NS_DIM_PREFIX cmdintbufsize=CMDINTBUFSIZE;
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 static int doneFlag;
@@ -204,24 +204,14 @@ static INT GetEquation(OPERAND *result);
 static INT GetCondition(DOUBLE *result);
 
 /****************************************************************************/
-/*D
-   SkipBlanks - skip "blanks" in a command string
+/** \brief Skip "blanks" in a command string
 
-   SYNOPSIS:
-   static char SkipBlanks();
-
-   PARAMETERS:
-   .  none
-
-   DESCRIPTION:
    This function moves the command pointer `cmdPtr` until it encounters the first
    non-blank. Here `blank` means space, tab and `\n`-character
    as well as comments of the form '#....EOL'.
 
-   RETURN VALUE:
-   char
-   .n The final non-blank character.
-   D*/
+   \return The final non-blank character.
+ */
 /****************************************************************************/
 
 static char SkipBlanks (void)
@@ -249,21 +239,11 @@ static char SkipBlanks (void)
 }
 
 /****************************************************************************/
-/*
-   SkipAll - skip all text up to the next seperator
+/** \brief Skip all text up to the next seperator
 
-   SYNOPSIS:
-   char SkipAll();
-
-   PARAMETERS:
-   .  none
-
-   DESCRIPTION:
    Skips the program text until it encounters the first seperator (i.e. one of ";{}").
 
-   RETURN VALUE:
-   char
-   .n The final seperator.
+   \return The final separator.
  */
 /****************************************************************************/
 
@@ -303,17 +283,11 @@ static char SkipAll (void)
 }
 
 /****************************************************************************/
-/*
-   GetAnItem - Reads an item (number, token) into a buffer
+/** \brief Reads an item (number, token) into a buffer
 
-   SYNOPSIS:
-   static INT GetAnItem (int *itemType,char *buffer);
+   \param itemType - address where type of item is written to
+   \param buffer - buffer where item is written to
 
-   PARAMETERS:
-   .  itemType - address where type of item is written to
-   .  buffer - buffer where item is written to
-
-   DESCRIPTION:
    This function skips blanks and reads the following number or token
    in the memory pointed to by 'buffer'. It understands also names
    like '..:variable' and computes indices of the form [`expression`].
@@ -323,12 +297,10 @@ static char SkipAll (void)
    prints an error message and terminates. So take care that your buffer
    has at least that size!
 
-   SEE ALSO:
+   \sa
    SkipBlanks, GetEquation, PrintErrorMessage
 
-   RETURN VALUE:
-   INT
-   .n Error code, if not equal zero.
+   \return Error code, if not equal zero.
  */
 /****************************************************************************/
 
@@ -501,20 +473,14 @@ static INT GetAnItem (int *itemType,char *buffer)
 }
 
 /****************************************************************************/
-/*
-   ConvertStringToDouble - converts a string into a double
+/** \brief Converts a string to a double
 
-   SYNOPSIS:
-   static INT ConvertStringToDouble(char *strAdr, int maxLen, char **endAdr, INT *type, DOUBLE *valuePtr)
+   \param strAdr - address of string or lstring
+   \param maxLen - 0 if normal string, length of string if lstring
+   \param endAdr - memory where the end address is stored
+   \param type - address for type of string
+   \param valuePtr - address where value is store
 
-   PARAMETERS:
-   .  strAdr - address of string or lstring
-   .  maxLen - 0 if normal string, length of string if lstring
-   .  endAdr - memory where the end address is stored
-   .  type - address for type of string
-   .  valuePtr - address where value is store
-
-   DESCRIPTION:
    This function converts the string at location 'strAdr' to a number if it is
    possible. It skips blanks at the beginning (and end), and tries
    to locate a floating point number at the beginning. If
@@ -644,17 +610,11 @@ static INT ConvertStringToDouble(char *strAdr, int maxLen, char **endAdr, INT *t
 }
 
 /****************************************************************************/
-/*
-   GetValueOfOperand - evaluates an OPERAND
+/** \brief Evaluates an OPERAND
 
-   SYNOPSIS:
-   static INT GetValueOfOperand (DOUBLE *t, OPERAND *term);
+   \param t - location where the value is put
+   \param term - the operand to be evaluated
 
-   PARAMETERS:
-   .  t - location where the value is put
-   .  term - the operand to be evaluated
-
-   DESCRIPTION:
    This routine sets *t to the arithmetic value of the given operand.
 
    An error is reported if the operand is a string which does not contain a number.
@@ -702,21 +662,15 @@ static INT GetValueOfOperand (DOUBLE *t, OPERAND *term)
 }
 
 /****************************************************************************/
-/*
-   StringCompare - compares two strings (normal or lstring)
+/** \brief Compares two strings (normal or lstring)
 
-   SYNOPSIS:
-   static INT StringCompare(DOUBLE *Diff, char *str1, char *str2, int maxLen1, int maxLen2);
-
-   PARAMETERS:
-   .  Diff - at this location the difference `val(string1)-val(string2)`
+   \param Diff - at this location the difference `val(string1)-val(string2)`
    is stored if both strings are numbers (if not the result of a string comparison).
-   .  str1 - address of first string
-   .  str2 - address of second string
-   .  maxLen1 - should be 0 if str1 is a normal string and its length if it is an lstring
-   .  maxLen2 - should be 0 if str2 is a normal string and its length if it is an lstring
+   \param str1 - address of first string
+   \param str2 - address of second string
+   \param maxLen1 - should be 0 if str1 is a normal string and its length if it is an lstring
+   \param maxLen2 - should be 0 if str2 is a normal string and its length if it is an lstring
 
-   DESCRIPTION:
    This routine compares two strings. If both can be evaluated to floating point
    numbers, their values are compared. The result is placed at position '*Diff'.
 
@@ -759,16 +713,10 @@ static INT StringCompare(DOUBLE *Diff, char *str1, char *str2, int maxLen1, int 
 }
 
 /****************************************************************************/
-/*
-   GetToken - Reads a token from cmdPtr into a buffer
+/** \brief Reads a token from cmdPtr into a buffer
 
-   SYNOPSIS:
-   static INT GetToken (char *buffer);
+   \param buffer - the buffer for the token
 
-   PARAMETERS:
-   .  buffer - the buffer for the token
-
-   DESCRIPTION:
    This command reads a variable name or a command into a buffer.
    and returns an error if it encounters something different. The buffer
    should have at least length 'MAXTOKENLENGTH'.
@@ -796,16 +744,10 @@ static INT GetToken (char *buffer)
 }
 
 /****************************************************************************/
-/*
-   GetFactor - Evaluates a given term a, -a, @a, "...", `simple_function`(a) or (`expression`)
+/** \brief Evaluates a given term a, -a, @a, "...", `simple_function`(a) or (`expression`)
 
-   SYNOPSIS:
-   static INT GetFactor (OPERAND *result)
+   \param result - pointer where the result is to be stored
 
-   PARAMETERS:
-   .  result - pointer where the result is to be stored
-
-   DESCRIPTION:
    This function reads in the term addressed by the global pointer 'cmdPtr'.
    It handles (multiple) minus signs,
    substitution of variable values (including modification of variable names via the "@"-operator),
@@ -1084,16 +1026,10 @@ static INT GetFactor (OPERAND *result)
 }
 
 /****************************************************************************/
-/*
-   GetProduct - Evaluates a given term of the form a*b/c*d...
+/** \brief  Evaluates a given term of the form a*b/c*d...
 
-   SYNOPSIS:
-   static INT GetProduct(OPERAND *result);
+   \param result - memory address for the result
 
-   PARAMETERS:
-   .  result - memory address for the result
-
-   DESCRIPTION:
    This function evaluates a product (consisting of factors) in the program text.
 
    SEE ALSO:
@@ -1226,16 +1162,10 @@ static INT GetProduct(OPERAND *result)
 
 
 /****************************************************************************/
-/*
-   GetSum - Evaluates a given term of the form a+b-c+d...
+/** \brief Evaluates a given term of the form a+b-c+d...
 
-   SYNOPSIS:
-   static INT GetSum(OPERAND *result);
+   \param result - memory address for the result
 
-   PARAMETERS:
-   .  result - memory address for the result
-
-   DESCRIPTION:
    This function evaluates a sum (consisting of products) in the program text.
 
    SEE ALSO:
@@ -1354,16 +1284,10 @@ static INT GetSum(OPERAND *result)
 
 
 /****************************************************************************/
-/*
-   GetEquation - Evaluates a term of the form a or a `rel` b with `rel` in ==, !=, <, >
+/** \brief Evaluates a term of the form a or a `rel` b with `rel` in ==, !=, <, >
 
-   SYNOPSIS:
-   static INT GetEquation(OPERAND *result);
+   \param result - memory address for the result
 
-   PARAMETERS:
-   .  result - memory address for the result
-
-   DESCRIPTION:
    This function evaluates a relation (between sums) in the program text.
    Also string comparisons are handled.
 
@@ -1559,16 +1483,10 @@ static INT GetEquation (OPERAND *result)
 }
 
 /****************************************************************************/
-/*
-   GetCondition - Evaluates an condition enclosed in ()
+/** \brief Evaluates an condition enclosed in ()
 
-   SYNOPSIS:
-   static INT GetCondition(DOUBLE *result);
+   \param result - memory address for the result
 
-   PARAMETERS:
-   .  result - memory address for the result
-
-   DESCRIPTION:
    This function checks for enclosing brackets "(...)" and calls
    'GetEquation' for the term in between.
    The result of the "equation" is converted to a double and stored in '*result'.
@@ -1616,16 +1534,10 @@ static INT GetCondition (DOUBLE *result)
 }
 
 /****************************************************************************/
-/*
-   EvaluateExpression - Evaluates an expression
+/** \brief Evaluates an expression
 
-   SYNOPSIS:
-   static INT EvaluateExpression(OPERAND *result);
+   \param result - memory address for the result
 
-   PARAMETERS:
-   .  result - memory address for the result
-
-   DESCRIPTION:
    This function is a call of 'SkipBlanks' and 'GetEquation'.
 
    SEE ALSO:
@@ -1651,16 +1563,10 @@ static INT EvaluateExpression(OPERAND *result)
 }
 
 /****************************************************************************/
-/*
-   GetFullPathName - Reads a full path name for the execute command
+/** \brief Reads a full path name for the execute command
 
-   SYNOPSIS:
-   static INT GetFullPathName (char *buffer);
+   \param buffer - memory address for the name
 
-   PARAMETERS:
-   .  buffer - memory address for the name
-
-   DESCRIPTION:
    This function reads a long path name including "/~."-signs from the program text
    into a buffer. This buffer should have at least length 'MAXTOKENLENGTH'.
 
@@ -1726,7 +1632,7 @@ static INT GetFullPathName (char *buffer)
   }
 }
 
-FILE *FOpenScript (const char *script, const char *mode)
+FILE* NS_DIM_PREFIX FOpenScript (const char *script, const char *mode)
 {
   if (scriptpaths_set)
     return FileOpenUsingSearchPaths(script,mode,"scriptpaths");
@@ -1735,16 +1641,10 @@ FILE *FOpenScript (const char *script, const char *mode)
 }
 
 /****************************************************************************/
-/*D
-   InterpretCommand - Interprets a sequence of commands terminated by (char) 0.
+/** \brief Interprets a sequence of commands terminated by (char) 0.
 
-   SYNOPSIS:
-   INT InterpretCommand (char *cmds);
+   \param cmds - start of program string
 
-   PARAMETERS:
-   .  cmds - start of program string
-
-   DESCRIPTION:
    This command is a call to the routine 'InterpretString'. This subdivision has the purpose
    of making recursive calls possible by buffering the global variable 'cmdPtr'.
 
@@ -1757,10 +1657,10 @@ FILE *FOpenScript (const char *script, const char *mode)
    RETURN VALUE:
    INT
    .n Error code, if not zero.
-   D*/
+ */
 /****************************************************************************/
 
-INT InterpretCommand (char *cmds)
+INT NS_DIM_PREFIX InterpretCommand (char *cmds)
 {
   int pLength;
   INT error;
@@ -1822,16 +1722,8 @@ INT InterpretCommand (char *cmds)
 }       /* InterpretCommand */
 
 /****************************************************************************/
-/*D
-   InterpretString - Interprets a string at address '*cmdPtr'.
+/** \brief Interprets a string at address '*cmdPtr'.
 
-   SYNOPSIS:
-   static INT InterpretString();
-
-   PARAMETERS:
-   .  none
-
-   DESCRIPTION:
    This function is the heart of the interpreter. It moves the program counter
    given by the global variable 'cmdPtr' around in the program text, thereby
    executing the program.
@@ -1859,7 +1751,7 @@ INT InterpretCommand (char *cmds)
    RETURN VALUE:
    INT
    .n Error code, if not zero.
-   D*/
+ */
 /****************************************************************************/
 
 static INT InterpretString (void)
@@ -2511,21 +2403,11 @@ static INT InterpretString (void)
 
 
 /****************************************************************************/
-/*D
-   PrintVersionString - Generate version string and print it
+/** \brief Generate version string and print it
 
-   SYNOPSIS:
-   void PrintVersionString (void);
-
-   PARAMETERS:
-   .  none
-
-   DESCRIPTION:
    This function generates the version string and prints it.
 
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 static void PrintVersionString (void)
@@ -2570,22 +2452,15 @@ static INT NonInteractiveCommand(INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*D
-   ParCommandLoop - Get next command to execute from master
+/** \brief Get next command to execute from master
 
-   SYNOPSIS:
-   void ParCommandLoop (char *inpLine);
-
-   DESCRIPTION:
    This function receives the next command which should be
    executed from master processor, unitl QUITCODE is returned.
 
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
-void ParCommandLoop (char *inpLine)
+void NS_DIM_PREFIX ParCommandLoop (char *inpLine)
 {
   INT error;
   char dummy[256];
@@ -2602,26 +2477,18 @@ void ParCommandLoop (char *inpLine)
 #endif
 
 /****************************************************************************/
-/*D
-   CommandLoop - Read commands from user interface
+/** \brief Read commands from user interface
 
-   SYNOPSIS:
-   void CommandLoop (int argc, char **argv);
+   \param argc - argument counter
+   \param argv - argument vector
 
-   PARAMETERS:
-   .  argc - argument counter
-   .  argv - argument vector
-
-   DESCRIPTION:
    This function reads commands from user interface and
    executes them until  QUITCODE is returned.
 
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
-void CommandLoop (int argc, char **argv)
+void NS_DIM_PREFIX CommandLoop (int argc, char **argv)
 {
   INT error;
   int i,kerr;
@@ -2845,7 +2712,7 @@ else
    void SetDoneFlag (void); void ResetDoneFlag (void);
 
    PARAMETERS:
-   .  none
+   \param none
 
    DESCRIPTION:
    Sets done flag to TRUE/FALSE
@@ -2855,33 +2722,25 @@ else
  */
 /****************************************************************************/
 
-void SetDoneFlag (void)
+void NS_DIM_PREFIX SetDoneFlag (void)
 {
   doneFlag = TRUE;
 }
 
-void ResetDoneFlag (void)
+void NS_DIM_PREFIX ResetDoneFlag (void)
 {
   doneFlag = FALSE;
 }
 
-int GetDoneFlag (void)
+int NS_DIM_PREFIX GetDoneFlag (void)
 {
   return(doneFlag);
 }
 
 
 /****************************************************************************/
-/*D
-   InitCommandInterpreter - initializes interpreter
+/** \brief Initializes interpreter
 
-   SYNOPSIS:
-   INT InitCommandInterpreter (void);
-
-   PARAMETERS:
-   .  none
-
-   DESCRIPTION:
    Allocates `execute` and `program` buffer, reads in `scriptpaths` from the defaults file,
    sets back the flag 'dontexit'.
 
@@ -2895,7 +2754,7 @@ int GetDoneFlag (void)
 /****************************************************************************/
 
 
-INT InitCommandInterpreter (INT argc, char **argv)
+INT NS_DIM_PREFIX InitCommandInterpreter (INT argc, char **argv)
 {
   char size[256];
   int i,ival;

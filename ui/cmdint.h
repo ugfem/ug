@@ -36,17 +36,13 @@
 #define __CMDINT__
 
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __UGENV__
 #include "ugenv.h"
-#endif
-
-#ifndef __CMDLINE__
 #include "cmdline.h"
-#endif
+
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -92,5 +88,7 @@ FILE   *FOpenScript                             (const char *script, const char 
 INT     InterpretCommand                (char *cmds);
 
 INT     InitCommandInterpreter  (INT argc, char **argv);
+
+END_NAMESPACE
 
 #endif
