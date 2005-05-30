@@ -20650,7 +20650,8 @@ static INT EW_Isosurface3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	/* plot domain boundary back sides iff */
 	if (Isosurface3D_DomainBackFaces && OBJT(theElement)==BEOBJ)
 		for (i = 0; i < SIDES_OF_ELEM(theElement); i++)
-			if (!INNER_SIDE(theElement,i) && !VIEWABLE(theElement,i)) {
+			if (!INNER_SIDE(theElement,i) && NBELEM(theElement,i)==NULL &&
+				!VIEWABLE(theElement,i)) {
 				DO_2c(theDO) = DO_SHADED_POLYGON; DO_inc(theDO);
 				DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO);
 				DO_2l(theDO) = Isosurface3D_backcolor; DO_inc(theDO);
