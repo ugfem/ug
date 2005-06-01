@@ -2,7 +2,7 @@
 #
 # ug_dart_tree
 #
-# purpose: creates the directories needed by dart on the server
+# purpose: creates the needed directories on the server instaed of checkout UG
 
 cd $DART_HOME/Source/Server/UG
 mkdir Testing
