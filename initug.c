@@ -342,6 +342,29 @@ ExitUg (void)
     return (1);
   }
 
+  /* exit ui module */
+  PRINTDEBUG (init, 1, ("%d:     ExitUi()...\n", me))
+  if ((err = ExitUi ()) != 0)
+  {
+    printf
+      ("ERROR in ExitUg while ExitUi (line %d): called routine line %d\n",
+      (int) HiWrd (err), (int) LoWrd (err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
+
+  /* exit gm module */
+  PRINTDEBUG (init, 1, ("%d:     ExitGm()...\n", me))
+  if ((err = ExitGm ()) != 0)
+  {
+    printf
+      ("ERROR in ExitUg while ExitGm (line %d): called routine line %d\n",
+      (int) HiWrd (err), (int) LoWrd (err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
 
   /* exit devices module */
   PRINTDEBUG (init, 1, ("%d:     ExitDevices()...\n", me))
@@ -377,6 +400,17 @@ ExitUg (void)
 
 #endif
 
+  /* exit low module */
+  PRINTDEBUG (init, 1, ("%d:     ExitLow()...\n", me))
+  if ((err = ExitLow ()) != 0)
+  {
+    printf
+      ("ERROR in ExitUg while ExitLow (line %d): called routine line %d\n",
+      (int) HiWrd (err), (int) LoWrd (err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
 
   return (0);
 }

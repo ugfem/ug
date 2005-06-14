@@ -128,4 +128,31 @@ INT NS_PREFIX InitLow ()
   return (0);
 }
 
+
+
+/****************************************************************************/
+/** \brief Call the exits for the low module
+ *
+ * This function calls the exit methods for the low module.
+ *
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error occured </li>
+ * </ul>
+ */
+/****************************************************************************/
+INT NS_PREFIX ExitLow ()
+{
+  INT err;
+
+  /* exit env */
+  if ((err=ExitUgEnv())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  return (0);
+}
+
 /** @} */

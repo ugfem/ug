@@ -108,6 +108,9 @@ typedef union envitem ENVITEM;
 /* initialize environment with following heapSize */
 INT      InitUgEnv        (INT heapSize);
 
+/* Free all memory allocated for the environment */
+INT      ExitUgEnv();
+
 /* change directory allows /, .., etc */
 ENVDIR    *ChangeEnvDir    (const char *s);
 

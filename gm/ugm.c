@@ -12851,6 +12851,13 @@ INT NS_DIM_PREFIX InitUGManager ()
   return (GM_OK);
 }
 
+INT NS_DIM_PREFIX ExitUGManager ()
+{
+  free(theGenMGUDM);
+
+  return 0;
+}
+
 /* nur temporaer zum Debuggen drin (Christian Wrobel): */
 /* TODO: entfernen nach Debuggphase */
 char *PrintElementInfo (ELEMENT *theElement,INT full)

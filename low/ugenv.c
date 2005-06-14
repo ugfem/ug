@@ -66,21 +66,17 @@ static int pathIndex;                   /* entry to path array              */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*D
-   InitUgEnv - Initialize the Environment and the heap
+/** \brief Initialize the Environment and the heap
 
-   PARAMETERS:
  * @param   heapSize - size of the heap in bytes
 
-   DESCRIPTION:
    This function initializes the Environment and the heap.
 
    @return <ul>
-   INT
  *   <li>     0 if OK
  *   <li>     '__LINE__' if not enough memory, error in initializing or allocating a
       heap structure
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX InitUgEnv (INT heapSize)
@@ -108,25 +104,25 @@ INT NS_PREFIX InitUgEnv (INT heapSize)
   return(0);
 }
 
+INT NS_PREFIX ExitUgEnv()
+{
+  free(envHeap);
+  return 0;
+}
+
 
 /****************************************************************************/
-/*D
-   ChangeEnvDir    - Change environment directory
+/** \brief Change environment directory
 
-   SYNOPSIS:
-   ENVDIR *ChangeEnvDir (const char *s);
+   @param   s - pointer to char (const)
 
-   PARAMETERS:
- * @param   s - pointer to char (const)
-
-   DESCRIPTION:
    This function changes environment directory.
 
    @return <ul>
-   ENVDIR *
  *   <li>       pointer to new environment directory
  *   <li>       NULL if directory not found.
-   D*/
+   </ul>
+ */
 /****************************************************************************/
 
 ENVDIR * NS_PREFIX ChangeEnvDir (const char *s)

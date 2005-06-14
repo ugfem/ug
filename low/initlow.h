@@ -53,6 +53,7 @@ START_UG_NAMESPACE
 /** \brief Initialisation of the low module */
 INT InitLow (void);
 
+INT ExitLow();
 
 END_NAMESPACE
 

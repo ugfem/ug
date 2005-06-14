@@ -47,8 +47,11 @@ START_UGDIM_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-/* initialisation of the low module */
+/* initialisation of the gm module */
 INT InitGm ();
+
+/* Clean up of the gm module */
+INT ExitGm ();
 
 END_NAMESPACE
 

@@ -94,6 +94,7 @@ START_UGDIM_NAMESPACE
 
 /* init */
 INT              InitUGManager                  (void);
+INT              ExitUGManager ();
 
 /* object handling */
 INT              GetFreeOBJT                    (void);

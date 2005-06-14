@@ -176,3 +176,18 @@ INT NS_DIM_PREFIX InitGm ()
 
   return (0);
 }
+
+
+INT NS_DIM_PREFIX ExitGm()
+{
+  INT err;
+
+  /* ugm.c */
+  if ((err=ExitUGManager())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  return 0;
+}
