@@ -185,3 +185,18 @@ INT NS_DIM_PREFIX InitUi (INT argc, char **argv)
   /* return to application */
   return(0);
 }
+
+
+INT NS_DIM_PREFIX ExitUi()
+{
+  INT err;
+
+  /* shut down command interpreter */
+  if ((err=ExitCommandInterpreter())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  return 0;
+}

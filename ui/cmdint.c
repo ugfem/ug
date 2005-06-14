@@ -2824,3 +2824,13 @@ INT NS_DIM_PREFIX InitCommandInterpreter (INT argc, char **argv)
   /* return to application */
   return(0);
 }
+
+
+INT NS_DIM_PREFIX ExitCommandInterpreter()
+{
+  free(cmdBuffer);
+  free(executeBuffer);
+  free(programBuffer);
+
+  return 0;
+}

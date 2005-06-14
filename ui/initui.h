@@ -83,6 +83,7 @@ START_UGDIM_NAMESPACE
 /****************************************************************************/
 
 INT     InitUi  (INT argc, char **argv);
+INT     ExitUi  ();
 
 END_NAMESPACE
 

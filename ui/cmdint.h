@@ -88,6 +88,7 @@ FILE   *FOpenScript                             (const char *script, const char 
 INT     InterpretCommand                (char *cmds);
 
 INT     InitCommandInterpreter  (INT argc, char **argv);
+INT     ExitCommandInterpreter       ();
 
 END_NAMESPACE
 
