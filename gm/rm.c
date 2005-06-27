@@ -3019,7 +3019,7 @@ static INT YAlignment (ELEMENT *theElement)
    MarkForRefinement - mark an element for refinement
 
    SYNOPSIS:
-   INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data);
+   INT MarkForRefinement (ELEMENT *theElement, INT rule, INT data);
 
    PARAMETERS:
    \param theElement - for that element
@@ -3035,7 +3035,7 @@ static INT YAlignment (ELEMENT *theElement)
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, enum RefinementRule rule, void *data)
+INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, enum RefinementRule rule, INT data)
 {
         #ifdef __TWODIM__
   INT side;
@@ -3061,8 +3061,7 @@ INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, enum RefinementRule ru
                 #ifdef __TWODIM__
   /* 2D case */
   case (2) :
-    /* TODO: this is ugly, but preserves compatibility */
-    side = (INT) data;
+    side = data;
     switch (TAG(theElement))
     {
     case (TRIANGLE) :
@@ -3381,7 +3380,7 @@ INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, enum RefinementRule ru
   return(GM_OK);
 }
 
-INT NS_DIM_PREFIX MarkForRefinementX (ELEMENT *e, INT fl, INT tl, enum RefinementRule rule, void *data)
+INT NS_DIM_PREFIX MarkForRefinementX (ELEMENT *e, INT fl, INT tl, enum RefinementRule rule, INT data)
 {
   ELEMENT *t = ELEMENT_TO_MARK(e);
 
@@ -3442,7 +3441,7 @@ INT NS_DIM_PREFIX ClearMarksOnLevel (GRID *theGrid, INT ClearType)
     {
       MarkType = GetRefinementMarkType(theElement);
       if (ClearType*MarkType>=0)
-        if (MarkForRefinement (theElement,NO_REFINEMENT,NULL)==GM_ERROR)
+        if (MarkForRefinement (theElement,NO_REFINEMENT,0)==GM_ERROR)
           return(GM_ERROR);
     }
 

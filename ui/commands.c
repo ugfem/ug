@@ -4642,7 +4642,7 @@ static INT AdaptCommand (INT argc, char **argv)
       for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); theElement!=NULL; theElement=SUCCE(theElement))
       {
         if (EstimateHere(theElement))
-          if ((rv = MarkForRefinement(theElement,RED,NULL))!=0)
+          if ((rv = MarkForRefinement(theElement,RED,0))!=0)
           {
             l = TOPLEVEL(theMG);
             break;
@@ -4815,7 +4815,7 @@ static INT MarkCommand (INT argc, char **argv)
       for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
            theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
-          MarkForRefinement(theElement,NO_REFINEMENT,NULL);
+          MarkForRefinement(theElement,NO_REFINEMENT,0);
 
     UserWrite("all refinement marks removed\n");
 
@@ -4830,7 +4830,7 @@ static INT MarkCommand (INT argc, char **argv)
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
             if (XC(MYVERTEX(CORNER(theElement,j))) < x)
-              MarkForRefinement(theElement,Rule,NULL);
+              MarkForRefinement(theElement,Rule,0);
 
     UserWriteF("all elements in x < %f marked for refinement\n",
                (float) x);
@@ -4846,7 +4846,7 @@ static INT MarkCommand (INT argc, char **argv)
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
             if (XC(MYVERTEX(CORNER(theElement,j))) > x)
-              MarkForRefinement(theElement,Rule,NULL);
+              MarkForRefinement(theElement,Rule,0);
 
     UserWriteF("all elements in x > %f marked for refinement\n",
                (float) x);
@@ -4862,7 +4862,7 @@ static INT MarkCommand (INT argc, char **argv)
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
             if (YC(MYVERTEX(CORNER(theElement,j))) < y)
-              MarkForRefinement(theElement,Rule,NULL);
+              MarkForRefinement(theElement,Rule,0);
 
     UserWriteF("all elements in y < %f marked for refinement\n",
                (float) y);
@@ -4878,7 +4878,7 @@ static INT MarkCommand (INT argc, char **argv)
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
             if (YC(MYVERTEX(CORNER(theElement,j))) > y)
-              MarkForRefinement(theElement,Rule,NULL);
+              MarkForRefinement(theElement,Rule,0);
 
     UserWriteF("all elements in y > %f marked for refinement\n",
                (float) y);
@@ -4901,7 +4901,7 @@ static INT MarkCommand (INT argc, char **argv)
             if ((xc<0.9*x)||(xc>2.1*x)) flag=0;
           }
           if(flag)
-            MarkForRefinement(theElement,Rule,NULL);
+            MarkForRefinement(theElement,Rule,0);
         }
     UserWriteF("stripes %f\n", (float) x);
 
@@ -4916,7 +4916,7 @@ static INT MarkCommand (INT argc, char **argv)
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
             if (SUBDOMAIN(theElement) == sid)
-              MarkForRefinement(theElement,Rule,NULL);
+              MarkForRefinement(theElement,Rule,0);
 
     UserWriteF("all elements in subdomain %d marked for refinement\n",sid);
 
@@ -4942,7 +4942,7 @@ static INT MarkCommand (INT argc, char **argv)
                 (YC(MYVERTEX(CORNER(theElement,j))) > y) &&
                 (ZC(MYVERTEX(CORNER(theElement,j))) < Z) &&
                 (ZC(MYVERTEX(CORNER(theElement,j))) > z))
-              MarkForRefinement(theElement,Rule,NULL);
+              MarkForRefinement(theElement,Rule,0);
 
     UserWriteF("all elements in box marked for refinement\n");
 
@@ -4957,7 +4957,7 @@ static INT MarkCommand (INT argc, char **argv)
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
             if (ZC(MYVERTEX(CORNER(theElement,j))) < z)
-              MarkForRefinement(theElement,Rule,NULL);
+              MarkForRefinement(theElement,Rule,0);
 
     UserWriteF("all elements in z < %f marked for refinement\n",
                (float) z);
@@ -4973,7 +4973,7 @@ static INT MarkCommand (INT argc, char **argv)
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
             if (ZC(MYVERTEX(CORNER(theElement,j))) > z)
-              MarkForRefinement(theElement,Rule,NULL);
+              MarkForRefinement(theElement,Rule,0);
 
     UserWriteF("all elements in z > %f marked for refinement\n",
                (float) z);
@@ -4999,7 +4999,7 @@ static INT MarkCommand (INT argc, char **argv)
               V_DIM_EUKLIDNORM_OF_DIFF(global,
                                        CVECT(MYVERTEX(CORNER(theElement,j))),dist);
               if (dist <= r) {
-                MarkForRefinement(theElement,Rule,NULL);
+                MarkForRefinement(theElement,Rule,0);
                 break;
               }
             }
@@ -5010,7 +5010,7 @@ static INT MarkCommand (INT argc, char **argv)
     }
     theElement = FindElementOnSurface(theMG,global);
     if (theElement != NULL) {
-      MarkForRefinement(theElement,Rule,NULL);
+      MarkForRefinement(theElement,Rule,0);
         #ifdef ModelP
       j = (INT) UG_GlobalSumDOUBLE(1.0);
       i = DDD_InfoGlobalId(PARHDRE(theElement));
@@ -5103,7 +5103,7 @@ static INT MarkCommand (INT argc, char **argv)
            theElement!=NULL; theElement=SUCCE(theElement)) {
         if (EstimateHere(theElement))
           if ((rv = MarkForRefinement(theElement,
-                                      Rule,(void *)Side))!=0)
+                                      Rule,Side))!=0)
           {
             l = TOPLEVEL(theMG);
             break;
@@ -5127,7 +5127,7 @@ static INT MarkCommand (INT argc, char **argv)
 
       if (EstimateHere(theElement))
         if ((rv = MarkForRefinement(theElement,
-                                    Rule,(void *)Side))!=0)
+                                    Rule,Side))!=0)
           break;
         else
           nmarked++;
@@ -5142,7 +5142,7 @@ static INT MarkCommand (INT argc, char **argv)
         if (EstimateHere(theElement))
         {
           if ((rv = MarkForRefinement(theElement,
-                                      Rule,(void *)Side))!=0)
+                                      Rule,Side))!=0)
             break;
           else
             nmarked++;
