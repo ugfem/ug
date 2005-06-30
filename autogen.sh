@@ -1,7 +1,7 @@
 #!/bin/sh
 # $Id$
 
-#### barf on errors
+# barf on errors
 set -e
 
 # may be used to force a certain automake-version e.g. 1.7
@@ -28,8 +28,7 @@ usage () {
 
 # no compiler set yet
 COMPSET=0
-for OPT in $* ; do
-
+for OPT in "$@"; do
     set +e
     # stolen from configure...
     # when no option is set, this returns an error code
@@ -53,11 +52,11 @@ for OPT in $* ; do
 	-o|--optim)   OPTIM=1 ;;
 	-h|--help) usage ; exit 0 ;;
 	# pass unknown opts to ./configure
-	*) CONFOPT="$CONFOPT $OPT" ;;
+	*) CONFOPT="$CONFOPT \"$OPT\"" ;;
     esac
 done
 
-# set default compiler
+# use the free compiler as default
 if [ "$COMPSET" != "1" ] ; then
     echo "No compiler set, using GNU compiler as default"
     . ./gcc.opts
@@ -83,17 +82,18 @@ if test "x$AMVERS" != x ; then
   AMVERS="-$AMVERS"
 fi
 
-#### create all autotools-files
+## run autotools
 
 echo "--> libtoolize..."
-# force to write new versions of files, otherwise upgrading libtools
-# doesn't do anything...
+# this script won't rewrite the files if they already exist. This is a
+# PITA when you want to upgrade libtool, thus I'm setting --force
 libtoolize --force
-# for plugin-stuff later: --ltdl
 
+# prepare everything
 echo "--> aclocal..."
 aclocal$AMVERS -I m4
 
+# applications should provide a config.h for now
 echo "--> autoheader..."
 autoheader
 
@@ -112,5 +112,4 @@ export CPP="$COMP -E"
 export CFLAGS="$COMPFLAGS"
 export CXXFLAGS="$COMPFLAGS"
 
-./configure $DEFAULTCONFOPT $CONFOPT
-
+eval ./configure $DEFAULTCONFOPT $CONFOPT
