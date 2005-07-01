@@ -260,7 +260,7 @@ int FreeHashTable (HASH_TABLE **hth)
 HASH_TABLE *ResizeHashTable (HASH_TABLE *ht, int add_obj)
 {
   HASH_TABLE *nht;
-  int i,ncol,nmerge;
+  int i;
 
   nht=CreateHashTable(&ht,ht->n_obj+add_obj);
   if (nht==NULL) return (NULL);
@@ -371,7 +371,7 @@ int PushHashEntry (HASH_TABLE **hth, int *key, void *obj)
 
 void *PopHashEntry (HASH_TABLE *ht, int *key)
 {
-  int skey,i,rkey;
+  int skey,rkey;
 
   if (ht==NULL) return (NULL);
   skey = HashFunc(ht,key);
@@ -442,7 +442,6 @@ int EndHashGet (HASH_TABLE *ht)
 int LocalIndexHash (HASH_TABLE *ht, int *key, int *lid)
 {
   int skey,i,rkey;
-  void *obj;
 
   *lid=-1;
   if (ht==NULL) return (0);
@@ -734,7 +733,7 @@ static int MGSTAT_nhle;
 static MGIO_RR_RULE *MGSTAT_rr_rules;
 int MgStatistic (MERGE_REFINEMENT *ref)
 {
-  int i,key[2];
+  int i;
 
   for (i=0; i<MGSTAT_rr_rules[ref->ref.refrule].nsons; i++)
   {
@@ -778,9 +777,9 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
   MERGE_REFINEMENT ***refinement;
   MGIO_REFINEMENT loc_ref,*ref;
   BNDP ***BndPList,**BndPList_out;
-  char prefix[128],appdix[128],tmp[128],tmp2[28],*p;
-  int i,j,k,l,s,t,non,foid,tag,*vidlist,key[MGIO_MAX_CORNERS_OF_ELEM+1],*ncge,n_ref_tot,nref_read,level;
-  int nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS],*o_element_im,out_blid_offset,out_ilid_offset,nid_l0_max,vid_l0_max,vid_bl0_max,lid,error;
+  char tmp[128],tmp2[28],*p;
+  int i,j,k,l,s,t,non,foid,tag,*vidlist,key[MGIO_MAX_CORNERS_OF_ELEM+1],*ncge,nref_read,level;
+  int nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS],*o_element_im,nid_l0_max,vid_l0_max,vid_bl0_max,lid;
   int found,n_bn_l0,n_in_l0,id,gecid[MGIO_MAX_CORNERS_OF_ELEM],crosscheck_nref_tot;
   void *object;
 
