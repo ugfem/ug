@@ -79,11 +79,7 @@ USING_UGDIM_NAMESPACE
 /****************************************************************************/
 
 static INT nodeid;
-static INT triangleid;
-static INT left;
-static INT right;
 static MULTIGRID *currMG;
-static double h_global;
 static INT subdomain;
 static INT *transfer, *newId, *oldId, point, element_;
 static MESH *currmesh;
@@ -195,7 +191,6 @@ int AddInnerNode (double x, double y, double z)
 
 int AllMemElements(int nelements)
 {
-  INT i;
   char buff[3], name[6];
   FILE *stream;
 
@@ -263,9 +258,6 @@ int AllMemElements(int nelements)
 int AddElement (int nnodes, int node0, int node1, int node2, int node3, int node4, int node5)
 {
   INT Id[6], i;
-  char buff[3], name[6];
-  FILE *stream;
-  ELEMENT *theElement;
 
   if(nnodes==4)
   {
@@ -389,12 +381,9 @@ static INT AddBoundaryElement (INT n, INT *nodelist, INT prism_flag)
 /* only for debug */
 static INT Write_SurfaceMesh(MESH *mesh, MULTIGRID *theMG)
 {
-  char buff[3], name[10], name1[14];
-  INT i, j, k, sid, nnodes, nsides, nodelist[4];
+  INT i, j, k, nodelist[4];
   FILE *stream;
-  DOUBLE local[3], global[3], newglobal[3];
-  NODE *theNode;
-  VERTEX *theVertex;
+  DOUBLE global[3], newglobal[3];
 
 
   /* write mesh-information to file */
@@ -442,12 +431,10 @@ static INT Write_SurfaceMesh(MESH *mesh, MULTIGRID *theMG)
 
 static INT Write_VolumeMesh(MESH *mesh, MULTIGRID *theMG)
 {
-  char buff[3], name[6], name1[14];
-  INT i, j, k, sid, nnodes, nsides, nodelist[6], id[6];
+  char buff[3], name[6];
+  INT i, j, k, id[6];
   FILE *stream;
-  DOUBLE local[3], global[3];
-  NODE *theNode;
-  VERTEX *theVertex;
+  DOUBLE global[3];
 
   name[0] = 'v';
   name[1] = 'o';
@@ -509,7 +496,7 @@ static INT Write_VolumeMesh(MESH *mesh, MULTIGRID *theMG)
 
 static INT Get_NV(DOUBLE *n, INT i, INT j, INT k)
 {
-  DOUBLE n0[3], n1[3], n2[3];
+  DOUBLE n0[3], n1[3];
   DOUBLE p0[3], p1[3], p2[3];
 
   p0[0] = Position[subdomain][i][0];
@@ -532,7 +519,7 @@ static INT Get_NV(DOUBLE *n, INT i, INT j, INT k)
   return(0);
 }
 
-static INT Get_Ang(DOUBLE *n0, DOUBLE *n1)
+static DOUBLE Get_Ang(DOUBLE *n0, DOUBLE *n1)
 {
   DOUBLE s, angle;
 
@@ -552,8 +539,7 @@ static INT Get_Ang(DOUBLE *n0, DOUBLE *n1)
 
 static INT Angle_of_Element(INT *Id, DOUBLE *max_a, DOUBLE *min_a)
 {
-  INT i, j, k;
-  DOUBLE n0[3], n1[3], n2[3], n3[3], s, angle;
+  DOUBLE n0[3], n1[3], n2[3], n3[3], angle;
 
   *max_a = 0.0;
   *min_a = 3.141592654;
@@ -603,13 +589,12 @@ static INT Angle_of_Element(INT *Id, DOUBLE *max_a, DOUBLE *min_a)
 
 static INT Read_VolumeMesh(MESH *mesh, MULTIGRID *theMG, INT MarkKey)
 {
-  char buff[3], name[6], name1[14];
-  INT i, j, k, sid, buflen, id[6];
+  char buff[3], name[6];
+  INT i, j, k, buflen, id[6];
   FILE *stream;
   char buffer[256];
-  int nelements, npoints, d0, d1, d2, d3, iv;
+  int nelements, npoints, iv;
   double g0, g1, g2;
-  DOUBLE max_angle, min_angle, max_a, min_a;
 
   buflen = 256;
 
@@ -721,7 +706,7 @@ static INT MAX_ELE = 150;
 
 static INT Search_Neighbours(MULTIGRID *theMG, MESH *mesh, INT MarkKey)
 {
-  INT sid, np, i, j, k, l, m, n, a1, a2, a3, b1, b2, b3, npoints, corner_of_elem, flag;
+  INT sid, np, i, j, k, l, m, n, npoints, corner_of_elem, flag;
   INT **pointlist, sides_i, sides_j, corners_i, corners_j, corner_i, corner_j, element_type_i, element_type_j;
 
   nbElement = (INT ***) GetTmpMem(MGHEAP(theMG),(mesh->nSubDomains+1)*sizeof(INT**), MarkKey);
@@ -1023,7 +1008,7 @@ static INT Check_Volume(MESH *mesh, INT sid)
 
 static INT Allocate_Mem(MESH *mesh, INT from, INT to)
 {
-  int i, j, npoint, nelem;
+  int i, npoint, nelem;
 
   npoint = mesh->nBndP;
   nelem = 0;
@@ -1067,7 +1052,7 @@ static INT Allocate_Mem(MESH *mesh, INT from, INT to)
 
 static INT Write_Domain(MESH *mesh)
 {
-  INT i, j, nelem, npoint, sid, Id[6];
+  INT i, j, nelem, sid;
   FILE *file;
   DOUBLE global[3];
 
@@ -1142,8 +1127,6 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
                     INT display, INT coeff, INT from, INT to, INT prism, INT save,
                     INT argc, char **argv)
 {
-  NODE *theNode;
-  VERTEX *theVertex;
   INT Scaling,sid,i,j, k, nodelist[6], Id[6], bnds_flag[6], k1, k2;
   char rulefilename[128];
   DOUBLE global[3], newglobal[3], det, vec[3], a1, a2, a3, n1[3], n2[3], n3[3], n[3], m[3], lam1, lam2, lam3, scal;
