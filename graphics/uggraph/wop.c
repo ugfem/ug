@@ -66,6 +66,7 @@
 #include "iso.h"
 #endif
 
+
 USING_UG_NAMESPACES
 
 /****************************************************************************/
@@ -481,11 +482,6 @@ static INT                  OE_nGlobalCGelems;
 static DOUBLE               *OE_Buffer[WOP_DOWN_CHANNELS_MAX+1][CGG_BUFFER_SLOTS];
 #endif
 
-/*---------- variables use by GetFirst/NextElement... ----------------------*/
-static MULTIGRID					*GE_MG; 						
-static INT							GE_fromLevel,GE_toLevel;		
-
-
 /*---------- input variables of 'EW_ElementEval2D/3D' ----------------------*/
 /* defines for 2D/3D */
 #define PLOT_COPY			YELLOW_CLASS		/* values for 'Elem2Plot'		*/
@@ -545,10 +541,13 @@ static long EE2D_PropertyColor[EE_MAX_PROP+1];	/* colors used			    */
 
 /* 3D */
 static INT	EE3D_Elem2Plot[10];	/* 1 if element has to be plotted			*/
+#ifdef __THREEDIM__
 static long EE3D_NoColor[10];	/* 1 if no color (background color) used	*/
 static long EE3D_Color[10];		/* colors used								*/
 static INT	EE3D_MaxLevel;		/* level considered to be the top level 	*/
+#endif
 static INT 	EE3D_PlotSelection;	/* 1 to plot only selection */
+#ifdef __THREEDIM__
 static INT 	EE3D_EdgeColor;		/* 1 to color edges like elements */
 static DOUBLE EE3D_ShrinkFactor;/* shrink factor, 1.0 if normal plot		*/
 static DOUBLE EE3D_AmbientLight;/* ...          , 1.0 if normal plot        */
@@ -573,6 +572,7 @@ static INT EE3D_PlotCut;        /* 1 if cut (if any) should be plotted      */
 static DOUBLE EE3D_PartShrinkFactor;
 								/* part. shrink factor, 1.0 if normal plot	*/
 static DOUBLE_VECTOR EE3D_PartMidPoint;
+#endif
 #endif
 
 /* FindNode3D */
@@ -687,7 +687,6 @@ static long MAT_red;			/* red for point block frames				*/
 static long MAT_white;			/* white for frames and values				*/
 static long MAT_dark;			/* indicate dark colors (color>MAT_dark)	*/
 static INT MAT_frame;			/* frame colored squares					*/
-static INT MAT_printsize;		/* minimal square size for printing values	*/
 static INT MAT_print;			/* print values								*/
 static DOUBLE MAT_offset;		/* color spectrum offset					*/
 static INT MAT_log;				/* take log of absolute values				*/
@@ -852,7 +851,6 @@ static DOUBLE		GEN_FR_max;
 /*---------- working variables of 'WorkOnPicture' routines -----------------*/
 static OUTPUTDEVICE 				*WOP_OutputDevice;
 static PICTURE						*WOP_Picture;					
-static PLOTOBJ						*WOP_PlotObj;
 static VIEWEDOBJ					*WOP_ViewedObj;
 static WORK 						*WOP_Work;
 static PLOTOBJHANDLING				*WOP_PlotObjHandling;
@@ -1942,8 +1940,11 @@ static ELEMENT *EW_GetFirstElement_hor_bw_down (MULTIGRID *theMG, INT fromLevel,
 
 static ELEMENT *EW_GetFirstElement_vert_fw_up (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 {
-	ELEMENT *theElement, *next;
+        ELEMENT *theElement;
+#ifdef ModelP
+        ELEMENT *next;
 	INT i;
+#endif
 	
 	if (theMG==NULL)
 		return (NULL);
@@ -4364,7 +4365,7 @@ static INT BulletDraw2D (DRAWINGOBJ *q)
 {
 	INT j, n, end;
 	DOUBLE a[2], b[2], points[2*MAX_POINTS_OF_POLY], *pp;
-	DOUBLE p1[2], p2[2], norm;
+	DOUBLE p1[2], p2[2];
 	long color, color2;
 	
 	end = 0;
@@ -9117,8 +9118,7 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	long edgecolor = -1;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM],Element_Z,intensity;
 	DOUBLE_VECTOR MidPoint,help;
-	INT coe,rule;
-	void *data;
+	INT coe;
 #	ifdef ModelP
 	DOUBLE_VECTOR help1;
 #	endif
@@ -20695,7 +20695,6 @@ static INT EW_Isosurface3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 #ifdef ModelP
 	WOP_DObjPnt = theDO;
 #endif
-
 	return 0;
 }
 
@@ -23007,7 +23006,7 @@ static INT VirtSphereRotObsTrafo3d (const DOUBLE *mid,
 			sp;		/* scalar product								*/
 	DOUBLE	rab[9],	/* rotation matrix defined by alpha and beta	*/
 			mat[9];	/* resulting total rotation						*/
-	static COORD_POINT a={-1,-1},b;/* begin and end of a line						*/
+	/*static COORD_POINT a={-1,-1},b;*//* begin and end of a line						*/
 	char buffer[64];/* for info box text							*/
 	
 	/* mouse pos (x,y) corresponds to (r,phi) wrt mid as origin */

@@ -128,7 +128,7 @@ static int XDR_Read_mint (int n, int *intList)
 
 static int XDR_Write_mint (int n, int *intList)
 {
-  int i,m;
+  int i;
 
   for (i=0; i<n; i++)
   {
@@ -151,7 +151,7 @@ static int XDR_Read_mdouble (int n, double *doubleList)
 
 static int XDR_Write_mdouble (int n, double *doubleList)
 {
-  int i,m;
+  int i;
 
   for (i=0; i<n; i++)
   {

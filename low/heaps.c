@@ -111,8 +111,11 @@ INT NS_PREFIX check_of_putcallstack = 0;
 void NS_PREFIX HeapStat (const HEAP *theHeap)
 {
   INT i;
-  INT usedfreelistentries,size,found;
+  INT usedfreelistentries,size;
+#ifdef Debug
+  INT found;
   void ** ptr;
+#endif
 
   usedfreelistentries = 0;
 

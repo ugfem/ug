@@ -651,7 +651,7 @@ INT DPrintVector (MULTIGRID *mg, VECDATA_DESC *x)
 {
   VECTOR *v;
   DOUBLE_VECTOR pos;
-  INT vtype,comp,ncomp,j,lev;
+  INT vtype,comp,ncomp;
   FILE *f;
 
   f=fopen("logfiles/x","w");
@@ -988,7 +988,6 @@ static INT CopyDiagMatrix (GRID *theGrid, MATDATA_DESC *A, VECDATA_DESC *diag)
   }
   for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v))
   {
-    MATRIX *m = START(v);
     INT tp = VTYPE(v);
     INT i;
     INT n = VD_NCMPS_IN_TYPE(diag,tp);
@@ -2171,10 +2170,6 @@ NP_ITER *currNP;
 
 #ifdef __MWCW__
 static DOUBLE matr[MAX_PATCH][MAX_PATCH];
-static DOUBLE lmat[MAX_PATCH];
-static DOUBLE imatr[MAX_PATCH];
-static DOUBLE cor[MAX_PATCH];
-static DOUBLE def[MAX_PATCH];
 static VECTOR *w[MAX_VPATCH];
 static INT ucomp[MAX_VPATCH];
 static INT utype[MAX_VPATCH];
@@ -2193,8 +2188,6 @@ INT l_block_collect (GRID *theGrid,
                      double s4)
 {
   VECTOR *v;
-  int v_cnt = 0;
-  int level = GLEVEL(theGrid);
 
   INT nmax = NDATA_DEF_IN_GRID(theGrid) / 8;
   DOUBLE *ndata;
@@ -2210,19 +2203,14 @@ INT l_block_collect (GRID *theGrid,
     INT pcomp = VD_NCMPS_IN_TYPE(pb,ptype);
             #ifndef __MWCW__
     DOUBLE matr[MAX_PATCH][MAX_PATCH];
-    DOUBLE lmat[MAX_PATCH];
-    DOUBLE imatr[MAX_PATCH];
-    DOUBLE cor[MAX_PATCH];
-    DOUBLE def[MAX_PATCH];
     VECTOR *w[MAX_VPATCH];
     INT ucomp[MAX_VPATCH];
     INT utype[MAX_VPATCH];
                 #endif
-    DOUBLE s = 0.0;
     MATRIX *m;
     INT n = pcomp;
     INT cnt = 0;
-    INT i,j,k,l;
+    INT i,j;
 
     if (pcomp == 0) continue;
     ASSERT(ptype==NODEVEC);
@@ -2352,12 +2340,10 @@ INT l_block (GRID *theGrid,
 {
   VECTOR *v;
   int v_cnt = 0;
-  int level = GLEVEL(theGrid);
 
-  INT nmax = NDATA_DEF_IN_GRID(theGrid) / 8;
   DOUBLE *ndata;
 
-  ASSERT(nmax >= MAX_PATCH);
+  ASSERT((NDATA_DEF_IN_GRID(theGrid) / 8) >= MAX_PATCH);
 
   for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v))
   {
@@ -2365,14 +2351,13 @@ INT l_block (GRID *theGrid,
     INT pcomp = VD_NCMPS_IN_TYPE(pb,ptype);
     DOUBLE cor[MAX_PATCH];
     DOUBLE def[MAX_PATCH];
-    DOUBLE s = 0.0;
     VECTOR *w[MAX_VPATCH];
     MATRIX *m;
     INT ucomp[MAX_VPATCH];
     INT utype[MAX_VPATCH];
     INT n = pcomp;
     INT cnt = 0;
-    INT i,j,k,l;
+    INT i,j;
 
     if (pcomp == 0)
     {
@@ -2919,8 +2904,6 @@ static INT II_MultiplySchurComplement (MULTIGRID *theMG, INT level,
                                        VECDATA_DESC *c, VECDATA_DESC *d,
                                        INT *result)
 {
-  DOUBLE eunorm;
-
   if (dmatmul(theMG,level,level,ALL_VECTORS,II_t,II_upA,c) != NUM_OK)
     NP_RETURN(1,result[0]);
     #ifdef ModelP
@@ -2947,10 +2930,7 @@ static INT II_Iter (NP_ITER *theNP, INT level,
 {
   NP_II *np = (NP_II *) theNP;
   MULTIGRID *theMG = NP_MG(theNP);
-  GRID *theGrid = GRID_ON_LEVEL(theMG,level);
-  LRESULT lresult;
   INT i;
-  DOUBLE eunorm;
   INT iter = np->nu1;
 
   if (AllocVDFromVD(theMG,level,level,c,&np->t)) NP_RETURN(1,result[0]);
@@ -3577,7 +3557,6 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
   DOUBLE rho,lambda;
   INT i,PrintID;
   char text[DISPLAY_WIDTH+4],text1[DISPLAY_WIDTH];
-  DOUBLE eunorm;
   LRESULT lresult;
 
   np = (NP_TS *) theNP;
@@ -4084,9 +4063,6 @@ static INT APPreProcess  (NP_ITER *theNP, INT level,
                           MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   NP_TS *np = (NP_TS *) theNP;
-  GRID *theGrid = NP_GRID(theNP,level);
-
-  DOUBLE a = 0;
 
   if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
     NP_RETURN(1,result[0]);
@@ -4246,7 +4222,6 @@ static INT APConstruct (NP_BASE *theNP)
 static INT BHRInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_TS *np;
-  INT i;
 
   np = (NP_TS *) theNP;
 
@@ -4351,10 +4326,6 @@ static INT BHRSmoother (NP_ITER *theNP, INT level,
 {
   NP_TS *np;
   MULTIGRID *theMG;
-  VEC_SCALAR defect2reach,defect;
-  DOUBLE rho,lambda;
-  INT i,PrintID;
-  char text[DISPLAY_WIDTH+4],text1[DISPLAY_WIDTH];
 
   np = (NP_TS *) theNP;
   theMG = NP_MG(theNP);
@@ -4476,7 +4447,7 @@ static INT GetSpec (DOUBLE *m, DOUBLE *l)
 
 static INT SetAutoDamp_SSpec (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
 {
-  INT n,comp,rtype;
+  INT n,comp;
   SHORT *advcomp;
   VECTOR *v;
   MATRIX *m;
@@ -4513,7 +4484,7 @@ static INT SetAutoDamp_SSpec (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECD
 
 static INT SetAutoDamp_WSpec (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
 {
-  INT n,comp,rtype;
+  INT n,comp;
   SHORT *advcomp;
   VECTOR *v;
   MATRIX *m;
@@ -4549,7 +4520,7 @@ static INT SetAutoDamp_WSpec (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECD
 
 static INT SetAutoDamp_Scalar (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
 {
-  INT i,n,comp,rtype;
+  INT i,n,comp;
   SHORT *advcomp;
   VECTOR *v;
   MATRIX *m;
@@ -4574,11 +4545,11 @@ static INT SetAutoDamp_Scalar (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VEC
 
 static INT SetAutoDamp_Test (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
 {
-  INT n,comp,rtype;
+  INT n,comp;
   SHORT *advcomp;
   VECTOR *v;
   MATRIX *m;
-  DOUBLE diag,sum,a,b,c;
+  DOUBLE diag,sum;
 
   advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
   assert(n==2);
@@ -4616,7 +4587,7 @@ static INT SetAutoDamp_Test (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDA
 
 static INT SetAutoDamp_HZ (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
 {
-  INT i,n,comp,rtype;
+  INT i,n,comp;
   SHORT *advcomp;
   VECTOR *v;
   MATRIX *m;
@@ -5594,7 +5565,7 @@ INT l_bdpreprocess2 (GRID *g, VECDATA_DESC *x,
     DOUBLE rmat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
                 #endif
     INT m = GetVlistMValues(cnt,v,A,mat);
-    INT i,j,k;
+    INT i;
 
     /*
        for (i=0; i<m; i++)
@@ -5817,9 +5788,9 @@ static INT BDStep (NP_SMOOTHER *theNP, INT level,
                    MATDATA_DESC *L,
                    INT *result)
 {
+    #ifdef ModelP
   GRID *theGrid = NP_GRID(theNP,level);
 
-    #ifdef ModelP
   if (theNP->cons_mode == MAT_MASTER_CONS) {
     if (l_vector_collect(theGrid,b)!=NUM_OK)
       NP_RETURN(1,result[0]);
@@ -8548,7 +8519,9 @@ static INT EXCopyMatrixDOUBLE (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, 
   VECTOR *theV,*theW;
   MATRIX *theM;
   SHORT *comp;
+#ifdef _SPARSE_
   SPARSE_MATRIX *sm;
+#endif
 
         #ifdef ModelP
   if (FIRSTVECTOR(theGrid) == NULL)
@@ -9967,7 +9940,7 @@ static INT MIConstruct (NP_BASE *theNP)
 static INT SPInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_SP *np = (NP_SP *) theNP;
-  char option[16],buffer[256];
+  char buffer[256];
   INT ret;
 
   /* base class initialization */
@@ -10003,7 +9976,6 @@ static INT SPInit (NP_BASE *theNP, INT argc , char **argv)
 
 static INT SPDisplay (NP_BASE *theNP)
 {
-  char option[16];
   NP_SP *np = (NP_SP *) theNP;
 
   NPIterDisplay(&np->iter);
@@ -10257,7 +10229,6 @@ INT IMExecute (NP_BASE *theNP, INT argc , char **argv)
   GRID *g;
   HEAP *Heap;
   DOUBLE *Mat;
-  char buffer[128];
   FILE *file;
 
   level = CURRENTLEVEL(theNP->mg);
