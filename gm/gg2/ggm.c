@@ -74,8 +74,6 @@ USING_UG_NAMESPACES
 /*                                                                          */
 /****************************************************************************/
 
-static MULTIGRID *MG;
-static INT ggMGUDid;
 static MG_GGDATA MGdata;
 static MG_GGDATA *myMGdata;
 

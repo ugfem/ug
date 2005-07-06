@@ -158,11 +158,13 @@ static INT theFindCutVarID;                     /* env type for FIND_CUT vars   
 
 static FindCutProcPtr FindCutSet;       /* pointer to find cut procedure		*/
 
+#ifdef __TWODIM__
 static MULTIGRID *GBNV_mg;                      /* multigrid							*/
+static INT GBNV_MarkKey;                        /* key for Mark/Release					*/
+#endif
 static INT GBNV_n;                                      /* list items							*/
 static INT GBNV_curr;                           /* curr pos								*/
 static VECTOR **GBNV_list=NULL;         /* list pointer							*/
-static INT GBNV_MarkKey;                        /* key for Mark/Release					*/
 
 /****************************************************************************/
 /*                                                                          */
@@ -2943,12 +2945,18 @@ INT NS_DIM_PREFIX CreateAlgebra (MULTIGRID *theMG)
 {
   GRID *g;
   FORMAT *fmt;
-  VECTOR *vec,*nbvec;
-  ELEMENT *elem,*nbelem;
+  VECTOR *vec;
+#ifdef __THREEDIM__
+  VECTOR *nbvec;
+  ELEMENT *nbelem;
+  INT j,n;
+#endif
+  ELEMENT *elem;
   NODE *nd;
   LINK *li;
   EDGE *ed;
-  INT side,i,j,n;
+  INT side,i;
+
 
   if (MG_COARSE_FIXED(theMG) == FALSE) {
     for (i=0; i<=TOPLEVEL(theMG); i++) {
@@ -4138,9 +4146,6 @@ static INT PropagateVectorClassX (GRID *theGrid, INT vclass)
 /****************************************************************************/
 INT NS_DIM_PREFIX PropagateVectorClasses (GRID *theGrid)
 {
-  VECTOR *theVector;
-  MATRIX *theMatrix;
-
 #if defined(_SCHALE_X_) && !defined(DYNAMIC_MEMORY_ALLOCMODEL)
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses():"
@@ -4414,9 +4419,6 @@ static INT PropagatePeriodicNextVectorClass (GRID *theGrid)
 /****************************************************************************/
 INT NS_DIM_PREFIX PropagateNextVectorClasses (GRID *theGrid)
 {
-  VECTOR *theVector;
-  MATRIX *theMatrix;
-
 #if defined(_SCHALE_X_) && !defined(DYNAMIC_MEMORY_ALLOCMODEL)
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 0. communication\n",me))
@@ -7747,7 +7749,7 @@ MATRIX *NS_DIM_PREFIX GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector)
 
 INT NS_DIM_PREFIX InitAlgebra (void)
 {
-  INT i, j, n;
+  INT i;
 
   /* install the /Alg Dep directory */
   if (ChangeEnvDir("/")==NULL)

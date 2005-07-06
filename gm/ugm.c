@@ -1000,7 +1000,7 @@ static NODE *GetSideNodeX (ELEMENT *theElement, INT side, INT n,
   VERTEX *theVertex;
   LINK *theLink0,*theLink1,*theLink2,*theLink3;
   DOUBLE fac,*local;
-  INT i,m;
+  INT i;
 
   if (n == 4) {
     for (theLink0=START(MidNodes[0]); theLink0!=NULL;
@@ -1163,13 +1163,12 @@ static NODE *GetSideNodeX (ELEMENT *theElement, INT side, INT n,
 
 NODE * NS_DIM_PREFIX GetSideNode (ELEMENT *theElement, INT side)
 {
-  ELEMENT *theFather;
   NODE *theNode;
   NODE *MidNodes[MAX_EDGES_OF_SIDE];
-  VERTEX *theVertex;
-  LINK *theLink0,*theLink1,*theLink2,*theLink3;
-  DOUBLE fac,*local;
-  INT i,k,n;
+  INT i,n;
+#ifdef ModelP
+  INT k
+#endif
 
   n = 0;
   for (i=0; i<EDGES_OF_SIDE(theElement,side); i++) {
@@ -1257,7 +1256,10 @@ static int CountSideNodes (ELEMENT *e)
 
 int GetSideIDFromScratchSpecialRule17Pyr (ELEMENT *theElement, NODE *theNode)
 {
-  int i,k,l,nodes,cnodes,snodes;
+  int i,k,l,nodes;
+#ifdef Debug
+  INT cnodes,snodes;
+#endif
   ELEMENT *f = EFATHER(theElement);
   NODE *fnode,*enode;
   int side = SIDES_OF_ELEM(f);
@@ -1302,7 +1304,10 @@ int GetSideIDFromScratchSpecialRule17Pyr (ELEMENT *theElement, NODE *theNode)
 
 int GetSideIDFromScratchSpecialRule22Tet (ELEMENT *theElement, NODE *theNode)
 {
-  int i,k,l,nodes,cnodes,mnodes,snodes,midnodes;
+  int i,k,l,nodes,midnodes;
+#ifdef Debug
+  INT cndodes, snodes, mnodes;
+#endif
   ELEMENT *f = EFATHER(theElement);
   NODE *fnode,*enode;
   EDGE *edge;
@@ -1357,7 +1362,7 @@ int GetSideIDFromScratchSpecialRule22Tet (ELEMENT *theElement, NODE *theNode)
 
 INT GetSideIDFromScratchSpecialRule (ELEMENT *theElement, NODE *theNode)
 {
-  int j,l,side;
+  int j,l;
   ELEMENT *f = EFATHER(theElement);
 
   assert(TAG(f)==HEXAHEDRON);
@@ -1464,7 +1469,6 @@ INT NS_DIM_PREFIX GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
     if (l < 4)
     {
       INT l1 = (l+1) % 4;
-      INT l2 = (l+3) % 4;
 
       for (i=0; i<SIDES_OF_ELEM(theFather); i++) {
         if (3 == CORNERS_OF_SIDE(theFather,i)) continue;
@@ -1565,7 +1569,6 @@ INT GetSideIDFromScratchOld (ELEMENT *theElement, NODE *theNode)
     if (l < 4)
     {
       INT l1 = (l+1) % 4;
-      INT l2 = (l+3) % 4;
 
       for (i=0; i<SIDES_OF_ELEM(theFather); i++) {
         if (3 == CORNERS_OF_SIDE(theFather,i)) continue;
@@ -3624,9 +3627,6 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
   DOUBLE *local,fac;
   INT k,m,o,l;
         #endif
-        #ifndef ModelP
-  INT edge;
-        #endif
 
   HEAPFAULT(theElement);
 
@@ -3985,7 +3985,9 @@ INT NS_DIM_PREFIX Collapse (MULTIGRID *theMG)
   NODE *theNode;
   EDGE *theEdge;
   VERTEX *theVertex;
+#ifdef ModelP
   VECTOR *vec;
+#endif
   INT tl = TOPLEVEL(theMG);
   INT l,i;
 
@@ -7313,7 +7315,6 @@ DOUBLE NS_DIM_PREFIX DistanceFromSide(const DOUBLE *global, const ELEMENT *theEl
 #ifdef __THREEDIM__
 INT NS_DIM_PREFIX FindFlippedElements(MULTIGRID *theMG, INT verbose)
 {
-  GRID *theGrid;
   ELEMENT *e;
   INT l,n,i,j,fn,found,bfound,bfather;
   DOUBLE *x[MAX_CORNERS_OF_ELEM],*fx[MAX_CORNERS_OF_ELEM],a,b,c,vol;
@@ -9808,8 +9809,8 @@ INT NS_DIM_PREFIX MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 
 static INT MinMaxEdge (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 {
-  INT error,i,s1,s2,tag;
-  DOUBLE angle,*x[MAX_CORNERS_OF_SIDE],l,n1[DIM],n2[DIM],min,max;
+  INT error,i,s1,tag;
+  DOUBLE *x[MAX_CORNERS_OF_SIDE],l,min,max;
 
   error=GM_OK;
   tag=TAG(theElement);
@@ -10265,9 +10266,6 @@ static INT PropagateNodeClassX (GRID *theGrid, INT nclass)
 
 INT NS_DIM_PREFIX PropagateNodeClasses (GRID *theGrid)
 {
-  NODE *theNode;
-  MATRIX *theMatrix;
-
 #ifdef _SCHALE_X_
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNodeClasses():"
@@ -10553,9 +10551,6 @@ static INT PropagateNextNodeClassX (GRID *theGrid, INT nnclass)
 
 INT NS_DIM_PREFIX PropagateNextNodeClasses (GRID *theGrid)
 {
-  NODE *theNode;
-  MATRIX *theMatrix;
-
 #ifdef _SCHALE_X_
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextNodeClasses(): 0. communication\n",me))

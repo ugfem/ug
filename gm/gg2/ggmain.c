@@ -1693,7 +1693,6 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
   FRONTLIST *myfoundFL,*thenewFL,*theFL;
   FRONTCOMP  *thenewdoubledFC,*thelistFC,*thesuccFC,*thememsuccFC;
   INT numofFC,totalnumofFC;
-  INT n = 3;
 
   theMG = MYMG(theGrid);
 
@@ -2258,7 +2257,6 @@ static INT CheckNewElement(FRONTLIST *theFL,  DOUBLE xt[3], DOUBLE yt[3])
   VERTEX *theVertex;
   DOUBLE xM, yM, xR, yR, xQ, yQ, lambda1, lambda2;
   DOUBLE denominator;
-  DOUBLE lambdacomp = MAX_C;
   INT i;
 
   xM = 0.5*(xt[0] + xt[1]);
