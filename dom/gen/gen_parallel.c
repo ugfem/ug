@@ -51,6 +51,8 @@
 
 #include "gen.h"
 
+#include "namespace.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -91,7 +93,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-void SetBVPType(INT type)
+void NS_DIM_PREFIX SetBVPType(INT type)
 {
   BVP_type = type;
 }
