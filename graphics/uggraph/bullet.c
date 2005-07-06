@@ -100,7 +100,9 @@ static INT MarkKey;                  /* for MarkTmpMem                      */
 static OUTPUTDEVICE *OutputDevice;   /* current pictures output device      */
 static void *PBuffer;                /* pixel buffer                        */
 static void *ZBuffer;                /* z buffer                            */
+#ifdef ModelP
 static void *ABuffer;                /* auxiliary buffer                    */
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -303,7 +305,9 @@ static void FramePicture(void)
 
 void NS_DIM_PREFIX BulletPlot(void)
 {
+#ifdef ModelP
   INT son;
+#endif
   void *scratch;
 
   /* reuse z buffer if possible */
