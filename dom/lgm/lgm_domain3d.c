@@ -82,8 +82,6 @@ extern OCC_GEOM occ_geom;
 #endif
 
 
-static char buffer[LGM_BUFFERLEN];
-
 /* global mark key for temp mem */
 static INT LGM_MarkKey;
 
@@ -544,8 +542,8 @@ INT NS_DIM_PREFIX Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBL
 
 INT Line_Global2Local (LGM_LINE *theLine, DOUBLE *global, DOUBLE *local)
 {
-  DOUBLE slocal, start[3], end[3], lambda[3], globalnew[3], d, n[3], len, lam, p[3], gl[3], _new[3], dist, min_dist;
-  INT i, j, ilocal, id[3], r, l, lambda_counter;
+  DOUBLE start[3], end[3], lambda[3], globalnew[3], d;
+  INT i, j, id[3], r, lambda_counter;
 
   *local = -1.0;
   for(i=0; i<LGM_LINE_NPOINT(theLine)-1; i++)
@@ -1594,10 +1592,10 @@ static INT Count_Points(LGM_DOMAIN *theDomain)
 
 static INT Write_Line(LGM_LINE *theLine)
 {
-  char buff[5], name[12], name1[16];
-  INT i, j, id;
+  char buff[5], name[12];
+  INT i, id;
   FILE *stream;
-  DOUBLE local[3], global[3];
+  DOUBLE global[3];
   LINEPOINT *help;
 
   id = LGM_LINE_ID(theLine);
@@ -1642,8 +1640,7 @@ static INT Write_Line(LGM_LINE *theLine)
 
 static INT Write_Surface(LGM_SURFACE *theSurface, char *name, char *name1)
 {
-  char buff[5];
-  INT i, j, id;
+  INT i, id;
   FILE *stream;
   DOUBLE local[3], global[3];
 
@@ -1723,7 +1720,7 @@ static DOUBLE Calc_Angle_to_Normal(LGM_SURFACE *theSurface, INT i, DOUBLE *n)
 
 static INT Surface_Plane(LGM_SURFACE *theSurface)
 {
-  INT i, j, plain1, plain2;
+  INT i, plain1, plain2;
   DOUBLE sp;
 
   plain1 = 1;
@@ -1745,14 +1742,11 @@ static INT Surface_Plane(LGM_SURFACE *theSurface)
 
 static INT Read_Line(HEAP *Heap, LGM_LINE *theLine, INT MarkKey, char name[12])
 {
-  char buff[5];
-  INT d,i, j, id, buflen;
+  INT d,i;
   FILE *stream;
-  DOUBLE local[3], global[3];
+  DOUBLE global[3];
   LINEPOINT *help;
-  char buffer[256];
 
-  buflen = 256;
   stream = fopen(name,"r+");
   if (stream==NULL)
   {
@@ -1785,15 +1779,11 @@ static INT Read_Line(HEAP *Heap, LGM_LINE *theLine, INT MarkKey, char name[12])
 
 static INT Read_Surface(HEAP *Heap, LGM_SURFACE *theSurface, INT MarkKey, char name[12])
 {
-  char buff[5];
-  INT i, j, k, buflen, a, b, dummy, mi;
+  INT i;
   int d, d1, d2, d3;
   FILE *stream;
-  DOUBLE local[3], global[3];
   double local0, local1;
-  char buffer[256];
 
-  buflen = 256;
   stream = fopen(name,"r+");
   if (stream==NULL)
   {
@@ -1868,9 +1858,8 @@ static INT Generate_Basis_Mesh(LGM_DOMAIN *theDomain, DOUBLE h, HEAP *Heap, INT 
 {
   INT i, j, size;
   DOUBLE min[3], max[3];
-  char name[11], name1[15], buff[5];
+  char name[11], name1[15];
   LGM_LINE *theLine;
-  LGM_POINT *thePoint;
   FILE *stream;
 
   min[0]=min[1]=min[2]=MAX_C;
@@ -2312,7 +2301,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
   float fValue;
   int iValue, D;
   DOUBLE h;
-  INT i, j, k, *BNDS_Per_Subdom, *p, coeff, old, surf_id[3], xy_id[3], npoints,npsurface, norp, np;
+  INT i, j, k, *BNDS_Per_Subdom, *p, coeff, old, surf_id[3], xy_id[3], norp, np;
   char buff[5], name[12], name1[16];
   FILE *stream;
 
@@ -3412,9 +3401,9 @@ int GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE
 
 INT Project2Surface(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n)
 {
-  INT i,j,min,mi;
+  INT i,mi;
   DOUBLE *p0,*p1,*p2;
-  DOUBLE lam[3], dist, min_dist;
+  DOUBLE lam[3], dist;
 
   dist = DBL_MAX;
   mi = -1;
@@ -3512,9 +3501,11 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
   LGM_LINE *theLine;
   INT i,j;
   INT *nRef, *newID, *nRefLines;
-  INT size,a,flag, dummy;
-  DOUBLE global[3],local[2], line_local, local_left, local_right, local1, local2, g[3], g1[3];
+  INT flag, dummy;
+  DOUBLE global[3],local[2], line_local, local_left, local_right, local1, local2;
+#ifdef NO_PROJECT
   DOUBLE global_left[3], global_right[3];
+#endif
   LGM_POINT *PointList, Point;
   INT npoints, npsurface, nPointList, nbndpoints, ID;
   LINEPOINT *help;
@@ -4320,7 +4311,6 @@ static INT DiscretizeLine (HEAP *Heap, LGM_LINE *theLine, DOUBLE h, LGM_POINT *p
 
 static INT AddPoint2Line(HEAP *Heap, LGM_LINE *theLine, DOUBLE local, INT k, INT MarkKey)
 {
-  INT i;
   LINEPOINT *help, *help1;
 
   if(k==0)
@@ -4727,7 +4717,7 @@ static INT RefineLine(HEAP *Heap, LGM_LINE *theLine, INT Index, DOUBLE h, INT Ma
 
 static INT DiscretizeLineNew (HEAP *Heap, LGM_LINE *theLine, DOUBLE h, LGM_POINT *pointlist, INT norp, INT MarkKey)
 {
-  INT i, j, k, np, npoints, folds, StartIndex, EndIndex, Disc_nPoints, resolve, flag;
+  INT i, j, resolve, flag;
   DOUBLE scalarprodukt, local, len, in[4], lh, lh1, lh2;
   LGM_POINT p;
   LINEPOINT *help;
@@ -4819,9 +4809,8 @@ static INT DiscretizeLineNew (HEAP *Heap, LGM_LINE *theLine, DOUBLE h, LGM_POINT
 
 static INT TransferSurfaces2Mesh (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h)
 {
-  INT i,j,id;
-  DOUBLE global[3],globalbndp[3],local[2];
-  INT *newId,newpoints,oldpoints,size;
+  INT i,id;
+  INT *newId;
 
   /* find id's of the trianglecorners */
   newId = (INT*)GetTmpMem(Heap,(LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))+1)*sizeof(INT),LGM_MarkKey);
@@ -5474,8 +5463,8 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
 INT TEST(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 {
-  INT i, ilocal,ilocal1,id;
-  DOUBLE slocal[2],sloc;
+  INT i, ilocal,id;
+  DOUBLE sloc;
   LGM_LINE *theLine;
   if(local[0]<0.0)
   {
@@ -5550,8 +5539,11 @@ INT NS_DIM_PREFIX BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE *local, *g;
+  DOUBLE *local;
+#ifdef NO_PROJECT
+  DOUBLE *g;
   INT k;
+#endif
 
   theBndP = BNDP2LGM(aBndP);
   theSurface = LGM_BNDP_SURFACE(theBndP,0);
@@ -5575,8 +5567,11 @@ static INT BNDP_Globali (BNDP *aBndP, DOUBLE *global, INT i)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE *local, *g;
+  DOUBLE *local;
+#ifdef NO_PROJECT
+  DOUBLE *g;
   INT k;
+#endif
 
   theBndP = BNDP2LGM(aBndP);
   theSurface = LGM_BNDP_SURFACE(theBndP,i);
@@ -5598,8 +5593,12 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE global[DOM_PARAM_OFFSET],*local, *g;
-  INT ilocal=0, k;
+  DOUBLE global[DOM_PARAM_OFFSET],*local;
+  INT ilocal=0;
+#ifdef NO_PROJECT
+  DOUBLE *g;
+  INT k;
+#endif
 
   /* general */
   theBndP = BNDP2LGM(aBndP);
@@ -5646,8 +5645,7 @@ INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE global[DOM_PARAM_OFFSET],*local, *g;
-  INT ilocal=0, k;
+  INT ilocal=0;
 
   /* general */
   theBndP = BNDP2LGM(aBndP);
@@ -5705,14 +5703,13 @@ static INT Check_Local_Coord(LGM_SURFACE *theSurface, DOUBLE *local)
 
 BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
-  INT i,j,k,q,i0,j0,k0,q0,count, count_old, ilocal,ilocal1, found, direction, loop, flag, id, iold, jold, kold;
+  INT i,j,k,q,i0,j0,k0,q0,count, ilocal,ilocal1;
   LGM_BNDP *theBndP1, *theBndP2, *theBndP3, *theBndP4;
-  LGM_SURFACE *theSurface, *theSurface1;
+  LGM_SURFACE *theSurface;
   LGM_BNDS *theBndS;
-  DOUBLE loc1[2], loc2[2], loc3[2], local[2], slocal[2], nv[3];
+  DOUBLE local[2], nv[3];
   DOUBLE globalp0[3],globalp1[3],globalp2[3], globalp3[3], global[3], globalnew[3];
-  double small, sp, d, min_d, l, l1;
-  DOUBLE p0[3], p1[3], p2[3], m1[3], m2[3], m3[3], g[3];
+  double sp, d, min_d;
   DOUBLE A[3], B[3], BNDP_NV[3], Surface_NV[3];
   INT mi;
 
@@ -6016,7 +6013,7 @@ static int Find_Midpoint(LGM_LINE *theLine, DOUBLE *globalp1, DOUBLE *globalp2, 
 {
   int i, start_i, end_i, help_i;
   DOUBLE length_of_segment, start_s, end_s, help_s;
-  DOUBLE mid_p[3], len, line_p[3], mid_i, mid_local, local, dist, *help, *help_local;
+  DOUBLE mid_p[3], len, mid_i, mid_local, local, dist, *help, *help_local;
 
   for(i=0; i<3; i++)
     mid_p[i] = 0.5 * (globalp1[i] + globalp2[i]);
@@ -6125,7 +6122,7 @@ static INT Points_in_Line(LGM_LINE *theLine, DOUBLE *globalp1, DOUBLE *globalp2)
 static DOUBLE Nearest_Surface(LGM_SURFACE **Surfaces, LGM_SURFACE **theNewSurface, INT count, DOUBLE *global)
 {
   DOUBLE min_d, d, nv[3], local[2], globalnew[3];
-  INT i, j, mi;
+  INT i, mi;
   LGM_SURFACE *theSurface;
 
   min_d = DBL_MAX;
@@ -6201,9 +6198,8 @@ BNDP *BNDP_InsertBndP (HEAP *Heap, BVP *aBVP, double *global)
   LGM_DOMAIN *theDomain;
   LGM_SURFACE *theSurface;
   LGM_LINE *theLine;
-  int i,id, nline, nsurf;
-  double local[2], left, right;
-  LGM_BNDP *theBndP;
+  int nline;
+  double local[2];
 
   theDomain = BVP2LGM(aBVP);
 
@@ -6253,11 +6249,14 @@ BNDP *BNDP_InsertBndP (HEAP *Heap, BVP *aBVP, double *global)
 BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   LGM_BNDP *theBndP1, *theBndP2, *theBndP;
-  LGM_SURFACE *theSurface,*s, *Surfaces[MAX_SURFACES], *theNewSurface;
-  LGM_LINE *theLine, *Lines[MAX_LINES], *l1, *l2;
-  INT i,j, k,count,size, max, ilocal, ilocal1, flag, flag1, nlines, found, iold, jold, mi;
-  DOUBLE globalp1[3],globalp2[3],global[3],global1[3],g[3],local[2], slocal[2], nv[3], local1, local2, min_d, globalnew[3], d, midp[3], newlocal;
-  DOUBLE localp1, localp2, av, bv, cv, dv, ev, fv, gv, hv, aw, bw, cw, dw, n[3], len, value;
+  LGM_SURFACE *Surfaces[MAX_SURFACES], *theNewSurface;
+  LGM_LINE *theLine;
+  INT i,j, count, max, found, iold, jold, mi;
+  DOUBLE globalp1[3],globalp2[3],global[3], local[2], nv[3], local1, local2, globalnew[3], midp[3], newlocal;
+  DOUBLE localp1, localp2;
+#ifdef NO_PROJECT
+  DOUBLE len, value;
+#endif
 
   theBndP1 = BNDP2LGM(aBndP0);
   theBndP2 = BNDP2LGM(aBndP1);
@@ -6547,7 +6546,10 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   INT i;
   LGM_BNDP *theBndP;
   int n;
-  double d[3], e, *global;
+  double d[3], e;
+#ifdef NO_PROJECT
+  double *global;
+#endif
 
   theBndP = BNDP2LGM(aBndP);
   /* the lines */
@@ -6598,7 +6600,10 @@ INT BNDP_SaveBndP_Ext (BNDP *aBndP)
   INT i;
   LGM_BNDP *theBndP;
   int n;
-  double d[3], e, *global;
+  double d[3], e;
+#ifdef NO_PROJECT
+  double *global;
+#endif
 
   theBndP = BNDP2LGM(aBndP);
   /* the lines */
@@ -6651,8 +6656,11 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   LGM_SURFACE *theSurface;
   LGM_LINE *theLine;
   int i,id, nline, nsurf;
-  double local[2], global[3], left, right;
+  double local[2], left, right;
   LGM_BNDP *theBndP;
+#ifdef NO_PROJECT
+  double global[3];
+#endif
 
   theDomain = BVP2LGM(theBVP);
 
@@ -6721,8 +6729,11 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 BNDP *BNDP_LoadBndP_Ext (void)
 {
   int i,id, nline, nsurf;
-  double local[2], global[3], left, right;
+  double local[2], left, right;
   LGM_BNDP *theBndP;
+#ifdef NO_PROJECT
+  double global[3];
+#endif
 
   if (Bio_Read_mint(1,&nline)) return (NULL);
   if (Bio_Read_mint(1,&nsurf)) return (NULL);
@@ -6798,7 +6809,6 @@ INT LGM_BNDS_SurfId (BNDS *aBndS)
 INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   LGM_BNDS *theBndS;
-  LGM_BNDP *theBndP1, *theBndP2, *theBndP3;
   LGM_SURFACE *theSurface;
   INT mi;
   DOUBLE nv[3], loc0[2], loc1[2], loc2[2], loc3[2], global0[3], global1[3], global2[3], global3[3];
@@ -6897,7 +6907,6 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   LGM_SURFACE *theSurface;
   DOUBLE global[DOM_PARAM_OFFSET];
   DOUBLE global0[3],global1[3],global2[3],global3[3],new_global[DIM+1];
-  DOUBLE bnds_local[2],new_local[2];
   DOUBLE loc0[2],loc1[2],loc2[2],loc3[2],loc[2], nv[3];
 
   theBndS = BNDS2LGM(aBndS);

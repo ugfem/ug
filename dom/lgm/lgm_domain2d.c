@@ -71,7 +71,6 @@ USING_UGDIM_NAMESPACE
 /*																			*/
 /****************************************************************************/
 
-static char buffer[LGM_BUFFERLEN];
 static INT LGM_MarkKey;
 
 /****************************************************************************/
@@ -854,9 +853,6 @@ INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
 {
   LGM_LINE *theLine;
   LGM_BNDP *theBndP;
-  DOUBLE slocal;
-  INT ilocal=0;
-  DOUBLE global[DOM_PARAM_OFFSET];
 
   /* general */
   theBndP = BNDP2LGM(aBndP);
@@ -1049,7 +1045,6 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 
 BNDP *BNDP_LoadBndP_Ext (void)
 {
-  LGM_LINE *theLine;
   int i,n,id;
   double local;
   LGM_BNDP *theBndP;

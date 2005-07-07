@@ -124,8 +124,6 @@ int ngparse (void);
 
 static int CheckElem (NG_ELEMENT *Elem)
 {
-  int i;
-
   /* check element */
   if (Elem->subdom<=0) return (1);
 
@@ -205,7 +203,7 @@ int OrientateElem (NG_ELEMENT *Elem)
 
 int PutBndNode (BND_NODE *BndNode)
 {
-  int i,j,line_id;
+  int i,line_id;
 
   switch (mode)
   {
@@ -326,7 +324,6 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
 {
   int i,j,error;
   char ngname[128];
-  char *p;
   char *tmp;
 
   /* init */
