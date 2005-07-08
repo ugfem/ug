@@ -2570,115 +2570,115 @@ static INT InitHoles (void)
 
   for (i=0; i<52; i++) vert[i] = i;
 
-  if (CreateBoundarySegment2D("start1" ,1,0,0,vert[0],vert[1],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start1" ,1,0,0,vert[0],vert[1],1,0.0,1.0,
                               Start1Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2" ,1,0,1,vert[1],vert[2],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2" ,1,0,1,vert[1],vert[2],1,0.0,1.0,
                               Start2Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start3" ,1,0,2,vert[2],vert[3],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start3" ,1,0,2,vert[2],vert[3],1,0.0,1.0,
                               Start3Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start4" ,1,0,3,vert[3],vert[0],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start4" ,1,0,3,vert[3],vert[0],1,0.0,1.0,
                               Start4Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5" ,1,0,4,vert[4],vert[5],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5" ,1,0,4,vert[4],vert[5],1,0.0,1.0,
                               Start5Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start6" ,1,0,5,vert[5],vert[6],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start6" ,1,0,5,vert[5],vert[6],1,0.0,1.0,
                               Start6Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start7" ,1,0,6,vert[6],vert[7],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start7" ,1,0,6,vert[6],vert[7],1,0.0,1.0,
                               Start7Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start8" ,1,0,7,vert[7],vert[4],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start8" ,1,0,7,vert[7],vert[4],1,0.0,1.0,
                               Start8Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start9" ,1,0,8,vert[8],vert[9],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start9" ,1,0,8,vert[8],vert[9],1,0.0,1.0,
                               Start9Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start10",1,0,9,vert[9],vert[10],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start10",1,0,9,vert[9],vert[10],1,0.0,1.0,
                               Start10Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start11",1,0,10,vert[10],vert[11],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start11",1,0,10,vert[10],vert[11],1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start12",1,0,11,vert[11],vert[8],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start12",1,0,11,vert[11],vert[8],1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start13",1,0,12,vert[12],vert[13],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start13",1,0,12,vert[12],vert[13],1,0.0,1.0,
                               Start13Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start14",1,0,13,vert[13],vert[14],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start14",1,0,13,vert[13],vert[14],1,0.0,1.0,
                               Start14Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start15",1,0,14,vert[14],vert[15],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start15",1,0,14,vert[14],vert[15],1,0.0,1.0,
                               Start15Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start16",1,0,15,vert[15],vert[12],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start16",1,0,15,vert[15],vert[12],1,0.0,1.0,
                               Start16Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start17",1,0,16,vert[16],vert[17],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start17",1,0,16,vert[16],vert[17],1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start18",1,0,17,vert[17],vert[18],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start18",1,0,17,vert[17],vert[18],1,0.0,1.0,
                               Start18Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start19",1,0,18,vert[18],vert[19],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start19",1,0,18,vert[18],vert[19],1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start20",1,0,19,vert[19],vert[16],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start20",1,0,19,vert[19],vert[16],1,0.0,1.0,
                               Start20Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start21",1,0,20,vert[20],vert[21],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start21",1,0,20,vert[20],vert[21],1,0.0,1.0,
                               Start21Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start22",1,0,21,vert[21],vert[22],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start22",1,0,21,vert[21],vert[22],1,0.0,1.0,
                               Start22Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start23",1,0,22,vert[22],vert[23],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start23",1,0,22,vert[22],vert[23],1,0.0,1.0,
                               Start23Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start24",1,0,23,vert[23],vert[20],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start24",1,0,23,vert[23],vert[20],1,0.0,1.0,
                               Start24Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start25",1,0,24,vert[24],vert[25],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start25",1,0,24,vert[24],vert[25],1,0.0,1.0,
                               Start25Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start26",1,0,25,vert[25],vert[26],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start26",1,0,25,vert[25],vert[26],1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start27",1,0,26,vert[26],vert[27],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start27",1,0,26,vert[26],vert[27],1,0.0,1.0,
                               Start27Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start28",1,0,27,vert[27],vert[24],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start28",1,0,27,vert[27],vert[24],1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start29",1,0,28,vert[28],vert[29],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start29",1,0,28,vert[28],vert[29],1,0.0,1.0,
                               Start29Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start30",1,0,29,vert[29],vert[30],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start30",1,0,29,vert[29],vert[30],1,0.0,1.0,
                               Start30Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start31",1,0,30,vert[30],vert[31],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start31",1,0,30,vert[30],vert[31],1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start32",1,0,31,vert[31],vert[28],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start32",1,0,31,vert[31],vert[28],1,0.0,1.0,
                               Start32Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start33",1,0,32,vert[32],vert[33],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start33",1,0,32,vert[32],vert[33],1,0.0,1.0,
                               Start33Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start34",1,0,33,vert[33],vert[34],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start34",1,0,33,vert[33],vert[34],1,0.0,1.0,
                               Start34Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start35",1,0,34,vert[34],vert[35],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start35",1,0,34,vert[34],vert[35],1,0.0,1.0,
                               Start35Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start36",1,0,35,vert[35],vert[32],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start36",1,0,35,vert[35],vert[32],1,0.0,1.0,
                               Start36Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start37",1,0,36,vert[36],vert[37],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start37",1,0,36,vert[36],vert[37],1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start38",1,0,37,vert[37],vert[38],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start38",1,0,37,vert[37],vert[38],1,0.0,1.0,
                               Start38Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start39",1,0,38,vert[38],vert[39],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start39",1,0,38,vert[38],vert[39],1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start40",1,0,39,vert[39],vert[36],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start40",1,0,39,vert[39],vert[36],1,0.0,1.0,
                               Start40Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start41",1,0,40,vert[40],vert[41],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start41",1,0,40,vert[40],vert[41],1,0.0,1.0,
                               Start41Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start42",1,0,41,vert[41],vert[42],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start42",1,0,41,vert[41],vert[42],1,0.0,1.0,
                               Start42Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start43",1,0,42,vert[42],vert[43],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start43",1,0,42,vert[42],vert[43],1,0.0,1.0,
                               Start43Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start44",1,0,43,vert[43],vert[40],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start44",1,0,43,vert[43],vert[40],1,0.0,1.0,
                               Start44Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start45",1,0,44,vert[44],vert[45],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start45",1,0,44,vert[44],vert[45],1,0.0,1.0,
                               Start45Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start46",1,0,45,vert[45],vert[46],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start46",1,0,45,vert[45],vert[46],1,0.0,1.0,
                               Start46Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start47",1,0,46,vert[46],vert[47],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start47",1,0,46,vert[46],vert[47],1,0.0,1.0,
                               Start47Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start48",1,0,47,vert[47],vert[44],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start48",1,0,47,vert[47],vert[44],1,0.0,1.0,
                               Start48Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start49",1,0,48,vert[48],vert[49],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start49",1,0,48,vert[48],vert[49],1,0.0,1.0,
                               Start49Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start50",1,0,49,vert[49],vert[50],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start50",1,0,49,vert[49],vert[50],1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start51",1,0,50,vert[50],vert[51],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start51",1,0,50,vert[50],vert[51],1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start52",1,0,51,vert[51],vert[48],1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start52",1,0,51,vert[51],vert[48],1,0.0,1.0,
                               Start52Boundary,NULL)==NULL) return(1);
 
   return(0);
 }
 
-static INT InitHoles2 (void)
+static INT InitHoles2 ()
 {
   DOUBLE radius,MidPoint[2];
 
@@ -2689,58 +2689,58 @@ static INT InitHoles2 (void)
   if (CreateDomain("Holes2",MidPoint,radius,24,24,NO)==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("start2_1" ,1,0,0,0,1,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_1" ,1,0,0,0,1,1,0.0,1.0,
                               Start1Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_2" ,1,0,1,1,2,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_2" ,1,0,1,1,2,1,0.0,1.0,
                               Start13Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_3" ,1,0,2,2,3,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_3" ,1,0,2,2,3,1,0.0,1.0,
                               Start21Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_4" ,1,0,3,3,4,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_4" ,1,0,3,3,4,1,0.0,1.0,
                               Start33Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_5" ,1,0,4,4,5,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_5" ,1,0,4,4,5,1,0.0,1.0,
                               Start41Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_6" ,1,0,5,5,6,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_6" ,1,0,5,5,6,1,0.0,1.0,
                               Start42Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_7" ,1,0,6,6,7,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_7" ,1,0,6,6,7,1,0.0,1.0,
                               Start46Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_8" ,1,0,7,7,8,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_8" ,1,0,7,7,8,1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_9" ,1,0,8,8,9,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_9" ,1,0,8,8,9,1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_10",1,0,9,9,10,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_10",1,0,9,9,10,1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_11",1,0,10,10,11,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_11",1,0,10,10,11,1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_12",1,0,11,11,12,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_12",1,0,11,11,12,1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_13",1,0,12,12,13,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_13",1,0,12,12,13,1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_14",1,0,13,13,14,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_14",1,0,13,13,14,1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_15",1,0,14,14,15,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_15",1,0,14,14,15,1,0.0,1.0,
                               Start8Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_16",1,0,15,15,0,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_16",1,0,15,15,0,1,0.0,1.0,
                               Start4Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_17",1,0,16,16,17,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_17",1,0,16,16,17,1,0.0,1.0,
                               Start15Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_18",1,0,17,17,18,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_18",1,0,17,17,18,1,0.0,1.0,
                               Start6Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_19",1,0,18,18,19,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_19",1,0,18,18,19,1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_20",1,0,19,19,16,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_20",1,0,19,19,16,1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_21",1,0,20,20,21,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_21",1,0,20,20,21,1,0.0,1.0,
                               Start35Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_22",1,0,21,21,22,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_22",1,0,21,21,22,1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_23",1,0,22,22,23,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_23",1,0,22,22,23,1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_24",1,0,23,23,20,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_24",1,0,23,23,20,1,0.0,1.0,
                               Start48Boundary,NULL)==NULL) return(1);
   return(0);
 }
 
-static INT InitHoles3 (void)
+static INT InitHoles3 ()
 {
   DOUBLE radius,MidPoint[2];
 
@@ -2751,59 +2751,59 @@ static INT InitHoles3 (void)
   if (CreateDomain("Holes3",MidPoint,radius,24,24,NO)==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("start2_1" ,1,0,0,0,1,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_1" ,1,0,0,0,1,1,0.0,1.0,
                               Start1Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_2" ,1,0,1,1,2,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_2" ,1,0,1,1,2,1,0.0,1.0,
                               Start13Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_3" ,1,0,2,2,3,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_3" ,1,0,2,2,3,1,0.0,1.0,
                               Start21Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_4" ,1,0,3,3,4,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_4" ,1,0,3,3,4,1,0.0,1.0,
                               Start33Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_5" ,1,0,4,4,5,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_5" ,1,0,4,4,5,1,0.0,1.0,
                               Start41Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_6" ,1,0,5,5,6,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_6" ,1,0,5,5,6,1,0.0,1.0,
                               Start42Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_7" ,1,0,6,6,20,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_7" ,1,0,6,6,20,1,0.0,1.0,
                               Start43Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_8" ,1,0,7,7,8,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_8" ,1,0,7,7,8,1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_9" ,1,0,8,8,9,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_9" ,1,0,8,8,9,1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_10",1,0,9,9,10,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_10",1,0,9,9,10,1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_11",1,0,10,10,11,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_11",1,0,10,10,11,1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_12",1,0,11,11,12,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_12",1,0,11,11,12,1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_13",1,0,12,12,13,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_13",1,0,12,12,13,1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_14",1,0,13,13,14,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_14",1,0,13,13,14,1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_15",1,0,14,14,15,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_15",1,0,14,14,15,1,0.0,1.0,
                               Start8Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_16",1,0,15,15,0,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_16",1,0,15,15,0,1,0.0,1.0,
                               Start4Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_17",1,0,16,16,17,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_17",1,0,16,16,17,1,0.0,1.0,
                               Start15Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_18",1,0,17,17,18,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_18",1,0,17,17,18,1,0.0,1.0,
                               Start6Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_19",1,0,18,18,19,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_19",1,0,18,18,19,1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_20",1,0,19,19,16,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_20",1,0,19,19,16,1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_21",1,0,20,20,21,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_21",1,0,20,20,21,1,0.0,1.0,
                               Start35Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_22",1,0,21,21,22,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_22",1,0,21,21,22,1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_23",1,0,22,22,23,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_23",1,0,22,22,23,1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_24",0,1,23,7,23,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_24",0,1,23,7,23,1,0.0,1.0,
                               Start47Boundary,NULL)==NULL) return(1);
 
   return(0);
 }
 
-static INT InitHoles4 (void)
+static INT InitHoles4 ()
 {
   DOUBLE radius,MidPoint[2];
 
@@ -2814,60 +2814,60 @@ static INT InitHoles4 (void)
   if (CreateDomain("Holes4",MidPoint,radius,24,24,NO)==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("start2_1" ,1,0,0,0,1,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_1" ,1,0,0,0,1,1,0.0,1.0,
                               Start1Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_2" ,1,0,1,1,2,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_2" ,1,0,1,1,2,1,0.0,1.0,
                               Start13Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_3" ,1,0,2,2,3,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_3" ,1,0,2,2,3,1,0.0,1.0,
                               Start21Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_4" ,1,0,3,3,4,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_4" ,1,0,3,3,4,1,0.0,1.0,
                               Start33Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_5" ,1,0,4,4,5,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_5" ,1,0,4,4,5,1,0.0,1.0,
                               Start41Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_6" ,1,0,5,5,6,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_6" ,1,0,5,5,6,1,0.0,1.0,
                               Start42Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_7" ,1,0,6,6,20,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_7" ,1,0,6,6,20,1,0.0,1.0,
                               Start43Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_8" ,1,0,7,7,8,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_8" ,1,0,7,7,8,1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_9" ,1,0,8,8,9,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_9" ,1,0,8,8,9,1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_10",1,0,9,9,10,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_10",1,0,9,9,10,1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_11",1,0,10,10,11,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_11",1,0,10,10,11,1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_12",1,0,11,11,12,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_12",1,0,11,11,12,1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_13",1,0,12,12,13,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_13",1,0,12,12,13,1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_14",1,0,13,13,14,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_14",1,0,13,13,14,1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_16",1,0,15,15,0,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_16",1,0,15,15,0,1,0.0,1.0,
                               Start4Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_17",1,0,16,16,17,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_17",1,0,16,16,17,1,0.0,1.0,
                               Start15Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_19",1,0,18,18,19,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_19",1,0,18,18,19,1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_20",1,0,19,19,16,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_20",1,0,19,19,16,1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_21",1,0,20,20,21,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_21",1,0,20,20,21,1,0.0,1.0,
                               Start35Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_22",1,0,21,21,22,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_22",1,0,21,21,22,1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_23",1,0,22,22,23,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_23",1,0,22,22,23,1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_24",0,1,23,7,23,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_24",0,1,23,7,23,1,0.0,1.0,
                               Start47Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_18",1,0,17,17,15,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_18",1,0,17,17,15,1,0.0,1.0,
                               Start3Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start2_15",1,0,14,14,18,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start2_15",1,0,14,14,18,1,0.0,1.0,
                               Start9Boundary,NULL)==NULL) return(1);
 
   return(0);
 }
 
 
-static INT InitHoles5 (void)
+static INT InitHoles5 ()
 {
   DOUBLE radius,MidPoint[2];
 
@@ -2878,52 +2878,52 @@ static INT InitHoles5 (void)
   if (CreateDomain("Holes5",MidPoint,radius,20,20,NO)==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("start5_1" ,1,0,0,0,1,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_1" ,1,0,0,0,1,1,0.0,1.0,
                               Start1Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_2" ,1,0,1,1,2,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_2" ,1,0,1,1,2,1,0.0,1.0,
                               Start13Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_3" ,1,0,2,2,3,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_3" ,1,0,2,2,3,1,0.0,1.0,
                               Start21Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_8" ,1,0,7,7,8,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_8" ,1,0,7,7,8,1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_9" ,1,0,8,8,9,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_9" ,1,0,8,8,9,1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_10",1,0,9,9,10,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_10",1,0,9,9,10,1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_11",1,0,10,10,11,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_11",1,0,10,10,11,1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_12",1,0,11,11,12,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_12",1,0,11,11,12,1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_13",1,0,12,12,13,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_13",1,0,12,12,13,1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_14",1,0,13,13,14,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_14",1,0,13,13,14,1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_15",1,0,14,14,18,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_15",1,0,14,14,18,1,0.0,1.0,
                               Start9Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_16",1,0,15,15,0,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_16",1,0,15,15,0,1,0.0,1.0,
                               Start4Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_17",1,0,16,16,17,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_17",1,0,16,16,17,1,0.0,1.0,
                               Start15Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_18",1,0,17,17,15,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_18",1,0,17,17,15,1,0.0,1.0,
                               Start3Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_19",1,0,18,18,19,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_19",1,0,18,18,19,1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_20",1,0,19,19,16,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_20",1,0,19,19,16,1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("start5_4" ,1,0,3,3,4,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_4" ,1,0,3,3,4,1,0.0,1.0,
                               Start22Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_5" ,1,0,4,4,5,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_5" ,1,0,4,4,5,1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_6" ,1,0,5,5,6,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_6" ,1,0,5,5,6,1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_7" ,1,0,6,6,7,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_7" ,1,0,6,6,7,1,0.0,1.0,
                               Start49Boundary,NULL)==NULL) return(1);
 
   return(0);
 }
 
-static INT InitHoles6 (void)
+static INT InitHoles6 ()
 {
   DOUBLE radius,MidPoint[2];
 
@@ -2934,39 +2934,39 @@ static INT InitHoles6 (void)
   if (CreateDomain("Holes6",MidPoint,radius,16,16,NO)==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("start5_3" ,1,0,2,2,3,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_3" ,1,0,2,2,3,1,0.0,1.0,
                               Start21Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_8" ,1,0,7,7,8,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_8" ,1,0,7,7,8,1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_9" ,1,0,8,8,9,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_9" ,1,0,8,8,9,1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_10",1,0,9,9,10,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_10",1,0,9,9,10,1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_11",1,0,10,10,11,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_11",1,0,10,10,11,1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_12",1,0,11,11,12,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_12",1,0,11,11,12,1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_13",1,0,12,12,13,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_13",1,0,12,12,13,1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_14",1,0,13,13,14,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_14",1,0,13,13,14,1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_15",1,0,14,14,15,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_15",1,0,14,14,15,1,0.0,1.0,
                               Start9Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_16",1,0,15,15,0,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_16",1,0,15,15,0,1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("start5_4" ,1,0,3,3,4,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_4" ,1,0,3,3,4,1,0.0,1.0,
                               Start22Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_5" ,1,0,4,4,5,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_5" ,1,0,4,4,5,1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_6" ,1,0,5,5,6,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_6" ,1,0,5,5,6,1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_7" ,1,0,6,6,7,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_7" ,1,0,6,6,7,1,0.0,1.0,
                               Start49Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("start5_1" ,1,0,0,0,1,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_1" ,1,0,0,0,1,1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("start5_2" ,1,0,1,1,2,1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("start5_2" ,1,0,1,1,2,1,0.0,1.0,
                               Start24Boundary,NULL)==NULL) return(1);
   return(0);
 }
@@ -4488,7 +4488,7 @@ static const INT c1_pt2p[24] =
 {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 static const DOMAIN_PART_INFO c1_dpi = {c1_sd2p,c1_sg2p,c1_pt2p};
 
-static INT InitComposed1 (void)
+static INT InitComposed1 ()
 {
   DOUBLE radius,MidPoint[2];
 
@@ -4500,61 +4500,61 @@ static INT InitComposed1 (void)
       ==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1,0.0,1.0,
                               Start5Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1,0.0,1.0,
                               Start6Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left3"  ,1,0, 2, 2,3, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left3"  ,1,0, 2, 2,3, 1,0.0,1.0,
                               Start7Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left4"  ,1,0, 3, 3,0, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left4"  ,1,0, 3, 3,0, 1,0.0,1.0,
                               Start8Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1,0.0,1.0,
                               Start25Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle3",1,0, 6, 6,7, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle3",1,0, 6, 6,7, 1,0.0,1.0,
                               Start27Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle4",1,0, 7, 7,4, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle4",1,0, 7, 7,4, 1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("right1" ,1,0, 8, 8,9, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("right1" ,1,0, 8, 8,9, 1,0.0,1.0,
                               Start45Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("right2" ,1,0, 9, 9,10, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("right2" ,1,0, 9, 9,10, 1,0.0,1.0,
                               Start46Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("right3" ,1,0, 10, 10,11, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("right3" ,1,0, 10, 10,11, 1,0.0,1.0,
                               Start47Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("right4" ,1,0, 11, 11,8, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("right4" ,1,0, 11, 11,8, 1,0.0,1.0,
                               Start48Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppersouth1",1,0, 12, 12,13, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth1",1,0, 12, 12,13, 1,0.0,1.0,
                               Start9Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth2",1,0, 13, 13,14, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 13, 13,14, 1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth3",1,0, 14, 14,15, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth3",1,0, 14, 14,15, 1,0.0,1.0,
                               Start29Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth4",1,0, 15, 15,16, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 15, 15,16, 1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth5",1,0, 16, 16,17, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 16, 16,17, 1,0.0,1.0,
                               Start49Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppereast",1,0, 17, 17,18, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppereast",1,0, 17, 17,18, 1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth1",1,0, 18, 18,19, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 18, 18,19, 1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppernorth2",1,0, 19, 19,20, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 19, 19,20, 1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth3",1,0, 20, 20,21, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 20, 20,21, 1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth4",1,0, 21, 21,22, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 21, 21,22, 1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth5",1,0, 22, 22,23, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 22, 22,23, 1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("upperwest",1,0, 23, 23,12, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("upperwest",1,0, 23, 23,12, 1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
 
   return(0);
 }
 
-static INT InitComposed1a (void)
+static INT InitComposed1a ()
 {
   DOUBLE radius,MidPoint[2];
 
@@ -4565,46 +4565,46 @@ static INT InitComposed1a (void)
   if (CreateDomain("Composed1a",MidPoint,radius,18,18,NO)==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1,0.0,1.0,
                               Start5Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1,0.0,1.0,
                               Start6Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppersouth2",1,0, 2, 2,3, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 2, 2,3, 1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("middle4",1,0, 3, 3,4, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle4",1,0, 3, 3,4, 1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1,0.0,1.0,
                               Start25Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppersouth4",1,0, 6, 6,7, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 6, 6,7, 1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("right4" ,1,0, 7, 7,8, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("right4" ,1,0, 7, 7,8, 1,0.0,1.0,
                               Start48Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("right1" ,1,0, 8, 8,9, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("right1" ,1,0, 8, 8,9, 1,0.0,1.0,
                               Start45Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("right2" ,1,0, 9, 9,10, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("right2" ,1,0, 9, 9,10, 1,0.0,1.0,
                               Start46Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppereast",1,0, 10, 10,11, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppereast",1,0, 10, 10,11, 1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth1",1,0, 11, 11,12, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 11, 11,12, 1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth2",1,0, 12, 12,13, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 12, 12,13, 1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth3",1,0, 13, 13,14, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 13, 13,14, 1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth4",1,0, 14, 14,15, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 14, 14,15, 1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth5",1,0, 15, 15,16, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 15, 15,16, 1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("upperwest",1,0, 16, 16,17, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("upperwest",1,0, 16, 16,17, 1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left4"  ,1,0, 17, 17,0, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left4"  ,1,0, 17, 17,0, 1,0.0,1.0,
                               Start8Boundary,NULL)==NULL) return(1);
 
   return(0);
@@ -4640,47 +4640,47 @@ static INT InitComposed2 (void)
       ==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1,0.0,1.0,
                               Start5Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1,0.0,1.0,
                               Start6Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left3"  ,1,0, 2, 2,3, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left3"  ,1,0, 2, 2,3, 1,0.0,1.0,
                               Start7Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left4"  ,1,0, 3, 3,0, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left4"  ,1,0, 3, 3,0, 1,0.0,1.0,
                               Start8Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1,0.0,1.0,
                               Start25Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle3",1,0, 6, 6,7, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle3",1,0, 6, 6,7, 1,0.0,1.0,
                               Start27Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle4",1,0, 7, 7,4, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle4",1,0, 7, 7,4, 1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppersouth1",1,0, 8, 8,9, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth1",1,0, 8, 8,9, 1,0.0,1.0,
                               Start9Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth2",1,0, 9, 9,10, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 9, 9,10, 1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth3",1,0, 10, 10,11, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth3",1,0, 10, 10,11, 1,0.0,1.0,
                               Start29Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth4",1,0, 11, 11,12, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 11, 11,12, 1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth5",1,0, 12, 12,13, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 12, 12,13, 1,0.0,1.0,
                               Start49Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppereast",1,0, 13, 13,14, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppereast",1,0, 13, 13,14, 1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth1",1,0, 14, 14,15, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 14, 14,15, 1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppernorth2",1,0, 15, 15,16, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 15, 15,16, 1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth3",1,0, 16, 16,17, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 16, 16,17, 1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth4",1,0, 17, 17,18, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 17, 17,18, 1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth5",1,0, 18, 18,19, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 18, 18,19, 1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("upperwest",1,0, 19, 19,8, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("upperwest",1,0, 19, 19,8, 1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
 
   return(0);
@@ -4697,41 +4697,41 @@ static INT InitComposed2a (void)
   if (CreateDomain("Composed2a",MidPoint,radius,16,16,NO)==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1,0.0,1.0,
                               Start5Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1,0.0,1.0,
                               Start6Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppersouth2",1,0, 2, 2,3, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 2, 2,3, 1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("middle4",1,0, 3, 3,4, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle4",1,0, 3, 3,4, 1,0.0,1.0,
                               Start28Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle1",1,0, 4, 4,5, 1,0.0,1.0,
                               Start25Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("middle2",1,0, 5, 5,6, 1,0.0,1.0,
                               Start26Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppersouth4",1,0, 6, 6,7, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 6, 6,7, 1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth5",1,0, 7, 7,8, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 7, 7,8, 1,0.0,1.0,
                               Start49Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppereast",1,0, 8, 8,9, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppereast",1,0, 8, 8,9, 1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth1",1,0, 9, 9,10, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 9, 9,10, 1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth2",1,0, 10, 10,11, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 10, 10,11, 1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth3",1,0, 11, 11,12, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 11, 11,12, 1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth4",1,0, 12, 12,13, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 12, 12,13, 1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth5",1,0, 13, 13,14, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 13, 13,14, 1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("upperwest",1,0, 14, 14,15, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("upperwest",1,0, 14, 14,15, 1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left4"  ,1,0, 15, 15,0, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left4"  ,1,0, 15, 15,0, 1,0.0,1.0,
                               Start8Boundary,NULL)==NULL) return(1);
 
   return(0);
@@ -4767,39 +4767,39 @@ static INT InitComposed3 (void)
       ==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1,0.0,1.0,
                               Start5Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1,0.0,1.0,
                               Start6Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left3"  ,1,0, 2, 2,3, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left3"  ,1,0, 2, 2,3, 1,0.0,1.0,
                               Start7Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left4"  ,1,0, 3, 3,0, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left4"  ,1,0, 3, 3,0, 1,0.0,1.0,
                               Start8Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppersouth1",1,0, 4, 4,5, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth1",1,0, 4, 4,5, 1,0.0,1.0,
                               Start9Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth2",1,0, 5, 5,6, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 5, 5,6, 1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth3",1,0, 6, 6,7, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth3",1,0, 6, 6,7, 1,0.0,1.0,
                               Start29Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth4",1,0, 7, 7,8, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 7, 7,8, 1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth5",1,0, 8, 8,9, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 8, 8,9, 1,0.0,1.0,
                               Start49Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppereast",1,0, 9, 9,10, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppereast",1,0, 9, 9,10, 1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth1",1,0, 10, 10,11, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 10, 10,11, 1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppernorth2",1,0, 11, 11,12, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 11, 11,12, 1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth3",1,0, 12, 12,13, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 12, 12,13, 1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth4",1,0, 13, 13,14, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 13, 13,14, 1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth5",1,0, 14, 14,15, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 14, 14,15, 1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("upperwest",1,0, 15, 15,4, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("upperwest",1,0, 15, 15,4, 1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
 
   return(0);
@@ -4816,35 +4816,35 @@ static INT InitComposed3a (void)
   if (CreateDomain("Composed3a",MidPoint,radius,14,14,NO)==NULL)
     return(1);
 
-  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left1"  ,1,0, 0, 0,1, 1,0.0,1.0,
                               Start5Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left2"  ,1,0, 1, 1,2, 1,0.0,1.0,
                               Start6Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppersouth2",1,0, 2, 2,3, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth2",1,0, 2, 2,3, 1,0.0,1.0,
                               Start17Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth3",1,0, 3, 3,4, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth3",1,0, 3, 3,4, 1,0.0,1.0,
                               Start29Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth4",1,0, 4, 4,5, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth4",1,0, 4, 4,5, 1,0.0,1.0,
                               Start37Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppersouth5",1,0, 5, 5,6, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppersouth5",1,0, 5, 5,6, 1,0.0,1.0,
                               Start49Boundary,NULL)==NULL) return(1);
 
-  if (CreateBoundarySegment2D("uppereast",1,0, 6, 6,7, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppereast",1,0, 6, 6,7, 1,0.0,1.0,
                               Start50Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth1",1,0, 7, 7,8, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth1",1,0, 7, 7,8, 1,0.0,1.0,
                               Start51Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth2",1,0, 8, 8,9, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth2",1,0, 8, 8,9, 1,0.0,1.0,
                               Start39Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth3",1,0, 9, 9,10, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth3",1,0, 9, 9,10, 1,0.0,1.0,
                               Start31Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth4",1,0, 10, 10,11, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth4",1,0, 10, 10,11, 1,0.0,1.0,
                               Start19Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("uppernorth5",1,0, 11, 11,12, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("uppernorth5",1,0, 11, 11,12, 1,0.0,1.0,
                               Start11Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("upperwest",1,0, 12, 12,13, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("upperwest",1,0, 12, 12,13, 1,0.0,1.0,
                               Start12Boundary,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("left4"  ,1,0, 13, 13,0, 1.0,0.0,1.0,
+  if (CreateBoundarySegment2D("left4"  ,1,0, 13, 13,0, 1,0.0,1.0,
                               Start8Boundary,NULL)==NULL) return(1);
 
   return(0);
