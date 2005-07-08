@@ -163,7 +163,7 @@ static INT Marc_Extended;
 static int
 ExpandLine (char *theLine)
 {
-  int i, j, k, l;
+  unsigned int i, j, k, l;
 
   if (Marc_Extended)
   {
@@ -247,8 +247,7 @@ file_readline (FILE * f, char *key)
 static INT
 file_elements (FILE * f)
 {
-  char *buffer;
-  int id, n, i, c[8];
+  int id, n, c[8];
 
   nElem = 0;
   nPri = 0;
@@ -357,7 +356,7 @@ file_elements (FILE * f)
 static INT
 file_corners (FILE * f)
 {
-  int N, n, id, i, j, k;
+  int N, n, id, i;
   double c[3];
 
   fgets (theLine, MAX_LEN, f);
@@ -431,8 +430,7 @@ file_contact (FILE * f)
 static INT
 file_triangles (FILE * f)
 {
-  char *buffer;
-  int id, n, i, c[3];
+  int id, n, c[3];
 
   nTPatch = 0;
   do
@@ -456,12 +454,11 @@ file_triangles (FILE * f)
 static INT
 file_positions (FILE * f)
 {
-  char *buffer;
-  int id, j, k;
+  int id;
   double c[3];
 
   fgets (theLine, MAX_LEN, f);
-  /* printf("%s",theLine); */
+
   nPPatch = 0;
   do
   {
@@ -742,7 +739,7 @@ static INT
 file_corners_fill (FILE * f, HEAP * Heap, MESH * Mesh, INT MarkKey,
                    DOUBLE * radius, DOUBLE * midpoint)
 {
-  int N, n, id, i, j, k;
+  int N, n, id, i, j;
   double c[3], s;
 
   fgets (theLine, MAX_LEN, f);
@@ -875,7 +872,6 @@ file_contact_fill (FILE * f, HEAP * Heap, MESH * Mesh, INT MarkKey)
 static INT
 file_triangles_fill (FILE * f, HEAP * Heap, MESH * Mesh, INT MarkKey)
 {
-  char *buffer;
   int id, n, i, c[3];
 
   nTPatch = 0;
@@ -909,12 +905,11 @@ file_triangles_fill (FILE * f, HEAP * Heap, MESH * Mesh, INT MarkKey)
 static INT
 file_positions_fill (FILE * f, HEAP * Heap, MESH * Mesh, INT MarkKey)
 {
-  char *buffer;
-  int id, j, k;
+  int id, j;
   double c[3];
   M0_PATCH *p;
 
-  /* TODO: adapt for surface mesh */
+  /** \todo adapt for surface mesh */
   return (0);
 
   fgets (theLine, MAX_LEN, f);
@@ -1606,7 +1601,6 @@ M_BNDS_CreateBndP (HEAP * Heap, BNDS * theBndS, DOUBLE * local)
 {
   M_BNDS *ps = (M_BNDS *) theBndS;
   M_BNDP *p = (M_BNDP *) GetFreelistMemory (Heap, sizeof (M_BNDP));
-  INT i;
 
   ASSERT (ps != NULL);
   /*	ASSERT(ps->n == 4); */
@@ -4079,7 +4073,10 @@ AddBoundaryElements (INT n, INT m,
   return (0);
 }
 
-static INT nc, nodeid;
+#ifdef __THREEDIM__
+static INT nc;
+#endif
+static INT nodeid;
 
 /****************************************************************************/
 /** \brief Decompose a patch into stripes
@@ -5518,9 +5515,6 @@ INT
 BNDP_SurfaceId (BNDP * aBndP, INT * n, INT i)
 {
   BND_PS *ps;
-  PATCH *p;
-  DOUBLE global[DOM_N_IN_PARAMS];
-  DOUBLE *local;
 
   if (i < 0)
     return (1);

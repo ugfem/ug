@@ -780,7 +780,10 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
   char tmp[128],tmp2[28],*p;
   int i,j,k,l,s,t,non,foid,tag,*vidlist,key[MGIO_MAX_CORNERS_OF_ELEM+1],*ncge,nref_read,level;
   int nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS],*o_element_im,nid_l0_max,vid_l0_max,vid_bl0_max,lid;
-  int found,n_bn_l0,n_in_l0,id,gecid[MGIO_MAX_CORNERS_OF_ELEM],crosscheck_nref_tot;
+  int found,n_bn_l0,n_in_l0,id,gecid[MGIO_MAX_CORNERS_OF_ELEM];
+#ifdef MERGE_DEBUG
+  int crosscheck_nref_tot;
+#endif
   void *object;
 
   if (map->init!=0)                                                               {printf("ERROR in 'MergeMultigrid': map is already initialized\n");return (1);}

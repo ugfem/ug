@@ -405,8 +405,8 @@ MULTIGRID * NS_DIM_PREFIX OpenMGFromDataFile (MULTIGRID *theMG, INT number, char
 
 INT NS_DIM_PREFIX LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList)
 {
-  INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,nvec,id,nparfiles;
-  unsigned long m;
+  INT i,*entry,copied_until,copy_until,still_to_read,read,nvec,id,nparfiles;
+  unsigned long ncomp, j, m, s;
   DIO_GENERAL dio_general;
 #ifdef ModelP
   DIO_GENERAL temp_dio_general;

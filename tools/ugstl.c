@@ -76,7 +76,7 @@ int Marc_Extended = 0;
 
 static int ExpandLine (char *theLine)
 {
-  int i,j,k,l;
+  unsigned int i,j,k,l;
 
   if (Marc_Extended) {
     i = 76;
@@ -174,7 +174,7 @@ int main (int argc, char **argv)
 {
   FILE *file;
   char line[MAX_LEN],name[MAX_LEN];
-  int i,j,k,nv,nf,nc;
+  int i,j,k,nf,nc;
   int f[4*MAX_FACES];
   int n[MAX_FACES];
   double c[MAX_CORNERS];

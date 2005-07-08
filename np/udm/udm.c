@@ -2598,7 +2598,7 @@ static MATDATA_DESC *CreateMatDesc_General (MULTIGRID *theMG, const char *name, 
   SHORT off, offset[NMATOFFSETS], smcharoff[NMATOFFSETS];
   SHORT Comp[MAX_MAT_COMP];
   char buffer[NAMESIZE];
-  INT i,j,k,tp,ncmp,size,size1,sparseFlag;
+  INT i,j,k,tp,ncmp,size,sparseFlag;
   SHORT N, Nred;
 
   if (theMG == NULL)

@@ -90,12 +90,6 @@ USING_UG_NAMESPACES
 
 static char default_type_names[MAXVECTORS];
 
-/** @name Printing routine pointers */
-/*@*/
-static ConversionProcPtr PrintVectorDataPtr[NVECTYPES];
-static ConversionProcPtr PrintMatrixDataPtr[NMATTYPES];
-/*@}*/
-
 /** @name Print symbol counters and lists */
 /*@{*/
 static INT NPrintVectors=0;
@@ -587,7 +581,7 @@ MATDATA_DESC * NS_DIM_PREFIX CreateMatDescOfTemplate (MULTIGRID *theMG,
   MATDATA_DESC *md,*smd;
   MAT_TEMPLATE *mt;
   SUBMAT *subm;
-  SHORT *CmpsInType[NMATTYPES],SubComp[MAX_MAT_COMP],*offset;
+  SHORT *CmpsInType[NMATTYPES],SubComp[MAX_MAT_COMP];
   INT i,j,k,nc,cmp,type;
   char SubName[2*MAX_MAT_COMP];
   char buffer[NAMESIZE];
@@ -962,8 +956,6 @@ INT NS_DIM_PREFIX VDsubDescFromVS (const VECDATA_DESC *vd, const SUBVEC *subv, V
 
 INT NS_DIM_PREFIX CompMDwithMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt)
 {
-  INT a,b,i,n,off,tp;
-
   return (CompMatDesc(md,MT_RCOMPS(mt),MT_CCOMPS(mt),mt->CmpsInType));
 }
 
@@ -1170,7 +1162,7 @@ INT NS_DIM_PREFIX MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *v
 {
   FORMAT *fmt;
   SUBVEC *subv;
-  SHORT *CmpsInType[NMATTYPES],SubComp[MAX_MAT_COMP];
+  SHORT SubComp[MAX_MAT_COMP];
   SHORT RComp[NMATTYPES];
   SHORT CComp[NMATTYPES];
   INT i,j,k,l,rt,ct,mt,nr,nc,NC,nn,cmp;

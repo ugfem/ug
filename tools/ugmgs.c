@@ -157,7 +157,7 @@ int PrintMGFileInfo (char *filename, int *magic_cookie)
 
 int PrintDataFileInfo (char *filename, int *magic_cookie)
 {
-  int i,j;
+  int i;
   DIO_GENERAL dio_general;
 
   if (Read_OpenDTFile (filename))
@@ -223,7 +223,7 @@ int PrintDataFileInfo (char *filename, int *magic_cookie)
 int main (int argc, char **argv)
 {
   int i,ret,j;
-  int mgmc[20], datamc[20], mglist[20], datalist[20], nmg, ndata, mc;
+  int mgmc[20], datamc[20], mglist[20], datalist[20], nmg, ndata;
 
   if (argc<2 || argc>20)
   {

@@ -295,7 +295,6 @@ void IF_ShadedPolygon (short n, short shd, short *x, short *y)
 static void IF_Marker (short n, short s, short x, short y)
 {
   short top, left, bottom, right;
-  short r,g,b;
   short xx[10],yy[10];
 
   s = s/2;
@@ -543,13 +542,11 @@ int ConvertFile (FILE *stream)
   short fx,fy;                                                  /* file screen size					*/
   int i,error,j,size;
   char opCode;
-  short x,y,r,g,b,n,lw,ts,m,ms,w,x1,y1,x2,y2,shd;
+  short x,y,r,g,b,n,lw,ts,m,ms,x1,y1,x2,y2,shd;
   short xx[SIZE],yy[SIZE];
   short rr[COLORS],gg[COLORS],bb[COLORS];
   char s[CSIZE];
   unsigned char c;
-  long l;
-  short vector[2];
 
   /* get file parameters */
   rewind(stream);
@@ -962,7 +959,7 @@ int GetFileScreen (FILE *stream, short *fx, short *fy)
 
 int main (int argc, char **argv)
 {
-  int i,j,error;
+  int i,j;
   int sizeopt,origopt,outopt;
   FILE *stream;
   short fx,fy;
