@@ -171,7 +171,8 @@ AC_DEFINE_UNQUOTED(ARCH_OS, "$build_os", [OS type])
 # defines above)
 AC_DEFINE_UNQUOTED(ARCHNAME, "$build", [obsolete architecture string])
 
-AC_DEFINE(DYNAMIC_MEMORY_ALLOCMODEL, 1, [UG memory allocation model])
+# !!! maybe make this configurable later (also defined in low/heaps.h)
+# AC_DEFINE(DYNAMIC_MEMORY_ALLOCMODEL, 1, [UG memory allocation model])
 
 # a special define to tell compiler.h to use the autoconf-stuff so
 # that we can keep both build systems compatible for a while
