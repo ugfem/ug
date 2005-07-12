@@ -14,3 +14,9 @@
 #ifdef ModelP
 #define TET_RULESET
 #endif
+
+
+/* define this to use DYNAMIC_MEMORY_ALLOCMODEL */
+/* matrices and vectors (for amg) are allocated */
+/* using Mark/Release                           */
+#define DYNAMIC_MEMORY_ALLOCMODEL

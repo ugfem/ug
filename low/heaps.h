@@ -64,10 +64,7 @@ START_UG_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-/* define this to use DYNAMIC_MEMORY_ALLOCMODEL */
-/* matrices and vectors (for amg) are allocated */
-/* using Mark/Release                           */
-#define DYNAMIC_MEMORY_ALLOCMODEL
+/* Definition of DYNAMIC_MEMORY_ALLOCMODEL moved to config.h */
 
 /****************************************************************************/
 /* defines for the simple and general heap management                       */
