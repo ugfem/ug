@@ -113,7 +113,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    'StandardIntCorNodeVector'.
    First, it resets all components to zero. It considers the VECSKIP-flags.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -231,7 +231,7 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
    using linear resp. bilinear interpolation.
    First, it resets all components to zero. It considers the VECSKIP-flags.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -350,7 +350,7 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
    to new vectors, using linear resp. bilinear interpolation and
    considering the VECSKIP-flags.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -458,7 +458,7 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
    considers the VECSKIP-flags.
    It calls 'StandardRestrictNodeVector'.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -525,7 +525,7 @@ INT NS_DIM_PREFIX StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, cons
    considers the VECSKIP-flags.
    It calls 'StandardIntCorNodeVector'.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -589,7 +589,7 @@ INT NS_DIM_PREFIX StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_D
    to new vectors, considering the VECSKIP-flags.
    It calls 'StandardIntNewNodeVector'.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -650,7 +650,7 @@ INT NS_DIM_PREFIX StandardInterpolateNewVectors (GRID *FineGrid, const VECDATA_D
    This function projects node values to the father node resp. to
    edge values (depending on the format).
 
-   RETURN VALUE:
+   \return
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
@@ -740,7 +740,7 @@ INT NS_DIM_PREFIX StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
    This function sets all interpolation matrix entries to 0 and
    sets VINDEX to 0 for all vectors.
 
-   RETURN VALUE:
+   \return
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR 1 if error occured.
@@ -789,7 +789,7 @@ INT NS_DIM_PREFIX ClearIMatrix (GRID *g, VECDATA_DESC *theVD)
    This function scales all interpolation matrix entries by 1 / VINDEX
    resets the VINDEX for all vectors.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR 1 if error occured.
  */
@@ -844,7 +844,7 @@ INT NS_DIM_PREFIX ScaleIMatrix (GRID *g, VECDATA_DESC *theVD)
 
    This function sets VINDEX to 0 for all vectors.
 
-   RETURN VALUE:
+   \return
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR 1 if error occured.
@@ -870,7 +870,7 @@ INT NS_DIM_PREFIX ClearIVector (GRID *g)
    This function scales all interpolation matrix entries by 1 / VINDEX
    resets the VINDEX for all vectors.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR 1 if error occured.
  */
@@ -923,7 +923,7 @@ INT NS_DIM_PREFIX ScaleIVector (GRID *g, VECDATA_DESC *theVD)
    This function gets the local interpolation matrix from the global
    interpolation matrix.
 
-   RETURN VALUE:
+   \return
    .n    m    number of values in the father element
  */
 /****************************************************************************/
@@ -1024,7 +1024,7 @@ static INT CheckBlock(INT me, INT ke, INT kf, INT ncf, INT nce, DOUBLE *IntMat)
    This function adds the local interpolation matrix to the global
    interpolation matrix.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR 1 if error occured.
  */
@@ -1250,7 +1250,7 @@ static INT RestrictByMatrix_General (GRID *FineGrid, const VECDATA_DESC *to,
    considers the VECSKIP-flags. It uses the transposed of the assembled
    interpolation matrix.
 
-   RETURN VALUE:
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -1287,7 +1287,7 @@ INT NS_DIM_PREFIX RestrictByMatrix_s (GRID *FineGrid, const VECDATA_DESC *to,
    considers the VECSKIP-flags.
    It uses the transposed of the assembled interpolation matrix.
 
-   RETURN VALUE:
+   \return
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
@@ -1410,25 +1410,18 @@ INT NS_DIM_PREFIX InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VE
 
 
 /****************************************************************************/
-/** \brief
-   InterpolateNewVectorsByMatrix  - Interpolates the correction of the coarse grids
+/** \brief Interpolates the correction of the coarse grids
 
-   SYNOPSIS:
-   INT InterpolateNewVectorsByMatrix (GRID *FineGrid, const VECDATA_DESC *sol);
-
-   PARAMETERS:
    \param FineGrid - pointer to grid
    \param to - type vector descriptor
    \param from  - type vector descriptor
    \param damp - damping factor for every component
 
-   DESCRIPTION:
    This function interpolates correction from coarse edge vectors,
    considers the VECSKIP-flags.
    It uses the transposed of the assembled interpolation matrix.
 
-   RETURN VALUE:
-   INT
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -1523,29 +1516,6 @@ INT NS_DIM_PREFIX InterpolateNewVectorsByMatrix (GRID *FineGrid, const VECDATA_D
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/** \brief
-   AssembleGalerkinByMatrix - Galerkin assembling of the stiffness matrix
-
-   SYNOPSIS:
-   INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric);
-
-   PARAMETERS:
-   \param FineGrid - pointer to grid
-   \param Mat - matrix descriptor
-   \param symmetric - flag for symmetry
-
-   DESCRIPTION:
-   This function computes the Galerkin stiffness matrix for the given
-   stiffness matrix on the fine grid and the interpolation matrix.
-   The restriction matrix is the transposed matrix of the interpolation.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_ERROR if error occured.
- */
-/****************************************************************************/
 
 INT NS_DIM_PREFIX ClearGhostMatrix (GRID *g, MATDATA_DESC *Mat)
 {
@@ -1590,6 +1560,22 @@ INT NS_DIM_PREFIX ClearGhostMatrix (GRID *g, MATDATA_DESC *Mat)
 
   return (NUM_OK);
 }
+/****************************************************************************/
+/** \brief Galerkin assembling of the stiffness matrix
+
+   \param FineGrid - pointer to grid
+   \param Mat - matrix descriptor
+   \param symmetric - flag for symmetry
+
+   This function computes the Galerkin stiffness matrix for the given
+   stiffness matrix on the fine grid and the interpolation matrix.
+   The restriction matrix is the transposed matrix of the interpolation.
+
+   \return
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured.
+ */
+/****************************************************************************/
 
 INT NS_DIM_PREFIX AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
 {
@@ -1962,27 +1948,19 @@ INT NS_DIM_PREFIX AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, I
 }
 
 /****************************************************************************/
-/** \brief
-   ScaledMGRestrictNodeVector - restriction for diagonally scaled mg
+/** \brief Restriction for diagonally scaled mg
 
-   SYNOPSIS:
-   static INT ScaledMGRestrictNodeVector (GRID *FineGrid, const VEC_DESC *to,
-   const VEC_DESC *from, const MAT_DESC *Amat, const DOUBLE *damp);
-
-   PARAMETERS:
    \param FineGrid - pointer to grid
    \param to - type vector descriptor
    \param from  - type vector descriptor
    \param Amat - matrix to compute weights
    \param damp - damping factor for every component
 
-   DESCRIPTION:
    This function restricts defect of fine node vectors with NEWDEFECT_CLASS
    to the next coarser grid.
    First, it resets all components to zero. It considers the VECSKIP-flags.
 
-   RETURN VALUE:
-   INT
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -2035,26 +2013,18 @@ static INT ScaledMGRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
 
 
 /****************************************************************************/
-/** \brief
-   ScaledMGRestrict - Matrix dependent restriction of fine vectors with NEWDEFECT_CLASS
+/** \brief Matrix dependent restriction of fine vectors with NEWDEFECT_CLASS
 
-   SYNOPSIS:
-   INT ScaledMGRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from,
-   const MATDATA_DESC *Mat, const DOUBLE *damp);
-
-   PARAMETERS:
    \param FineGrid - pointer to grid
    \param to - type vector descriptor
    \param from  - type vector descriptor
    \param Mat - fine grid matrix
    \param damp - damping factor for every component
 
-   DESCRIPTION:
    This function restricts defect of fine vectors with NEWDEFECT_CLASS,
    considers the VECSKIP-flags.
 
-   RETURN VALUE:
-   INT
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -2099,22 +2069,15 @@ INT NS_DIM_PREFIX ScaledMGRestrict (GRID *FineGrid, const VECDATA_DESC *to, cons
 
 
 /****************************************************************************/
-/** \brief
-   InstallScaledRestrictionMatrix - compute restriction matrix for scaled mg
+/** \brief Compute restriction matrix for scaled mg
 
-   SYNOPSIS:
-   INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat);
-
-   PARAMETERS:
    \param FineGrid - pointer to fine grid equations
    \param Mat - matrix to be computed
 
-   DESCRIPTION:
    This function computes the modified restriction matrix used in diagonally
    scaled multigrid algorithm.
 
-   RETURN VALUE:
-   INT
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -2288,22 +2251,15 @@ INT NS_DIM_PREFIX InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_
 }
 
 /****************************************************************************/
-/** \brief
-   DiagonalScaleSystem - scale system of equations by point-block-diagonal
+/** \brief Scale system of equations by point-block-diagonal
 
-   SYNOPSIS:
-   INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const VECDATA_DESC *rhs);
-
-   PARAMETERS:
    \param FineGrid - pointer to grid
    \param Mat - matrix
    \param rhs - right hand side
 
-   DESCRIPTION:
    Scales Ax=b to DAx=Db, where D is the inverse of the diagonal blocks of A.
 
-   RETURN VALUE:
-   INT
+   \return
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured.
  */
@@ -2403,27 +2359,6 @@ INT NS_DIM_PREFIX DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, 
   return(NUM_OK);
 }
 
-/****************************************************************************/
-/** \brief
-   DiagonalScaleSystem - scale system of equations by point-block-diagonal
-
-   SYNOPSIS:
-   INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const VECDATA_DESC *rhs);
-
-   PARAMETERS:
-   \param FineGrid - pointer to grid
-   \param Mat - matrix
-   \param rhs - right hand side
-
-   DESCRIPTION:
-   Scales Ax=b to DAx=Db, where D is the inverse of the diagonal blocks of A.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_ERROR if error occured.
- */
-/****************************************************************************/
 
 INT NS_DIM_PREFIX CreateStandardNodeRestProl (GRID *FineGrid, INT ncomp)
 {
