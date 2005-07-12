@@ -6546,7 +6546,7 @@ static INT ElementGS (GRID *g, const VECDATA_DESC *v,
                       INT depth, INT mode, DOUBLE vdamp)
 {
   ELEMENT *theElement;
-  VECTOR *vec,*vlist[MAX_DEPTH],*w;
+  VECTOR *vlist[MAX_DEPTH],*w;
   MATRIX *mat;
   DOUBLE vval[LOCAL_DIM],dval[LOCAL_DIM];
   DOUBLE check,nrm;
@@ -6646,20 +6646,14 @@ static INT ElementJAC (GRID *g, const VECDATA_DESC *v,
                        DOUBLE vdamp)
 {
   ELEMENT *theElement;
-  VECTOR *vec,*vlist[MAX_DEPTH],*w;
-  MATRIX *mat;
+  VECTOR *vlist[MAX_DEPTH];
   DOUBLE vval[LOCAL_DIM],dval[LOCAL_DIM];
-  DOUBLE check,nrm;
-  INT cnt,m,i,j,k,l,ncomp,vcnt,vtype,wtype,wncomp,n,mm;
-  const SHORT *Comp,*VComp;
+  INT cnt,m,i,j,k,l,n,mm;
         #ifndef macintosh
   DOUBLE A[LOCAL_DIM*LOCAL_DIM];
   DOUBLE AI[LOCAL_DIM*LOCAL_DIM];
   DOUBLE B[LOCAL_DIM*LOCAL_DIM];
   DOUBLE C[LOCAL_DIM*LOCAL_DIM];
-  DOUBLE S[LOCAL_DIM*LOCAL_DIM];
-  DOUBLE BAIB[LOCAL_DIM*LOCAL_DIM];
-  DOUBLE K[LOCAL_DIM*LOCAL_DIM];
         #endif
   DOUBLE omega = 1.0 - 1.0 / vdamp;
 
@@ -7044,7 +7038,7 @@ INT NS_DIM_PREFIX l_pgs (GRID *g, const VECDATA_DESC *v,
 
 static INT InvertSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat, DOUBLE *invmat)
 {
-  DOUBLE det,invdet,lrmat[MAX_SINGLE_MAT_COMP],sum,piv;
+  DOUBLE invdet,lrmat[MAX_SINGLE_MAT_COMP],sum,piv;
   INT n,size,i,j,k;
 
   n=sm->nrows;
