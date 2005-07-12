@@ -9,3 +9,8 @@
 
    $Id$
  */
+
+/* Define this if you want to use the full refinement rule set for tetrahedra */
+#ifdef ModelP
+#define TET_RULESET
+#endif

@@ -55,13 +55,8 @@ START_UGDIM_NAMESPACE
 /*                                                                                                                                                      */
 /****************************************************************************/
 
+/* Declaration of TET_RULESET has been moved to config.h */
 /* uncomment this if you want to use the full rule set for tetrahedra */
-/* -> recompile rm.c refine.c ugm.c gmcheck.c ../ui/commands.c        */
-/* touch rm.c refine.c ugm.c gmcheck.c ../ui/commands.c; ugmake gm; ugmake ui */
-
-#ifdef ModelP
-#define TET_RULESET
-#endif
 
 /* defines for edge types */
 #define INNER_EDGE          1
