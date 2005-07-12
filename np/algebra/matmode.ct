@@ -77,11 +77,11 @@ if (MD_SUCC_COMP(M)
     dset(mg,fl,tl,mode,x,0.0);
 	#endif
 
-    #define T_RTYPE	VTYPE(v)==rtype
+    #define T_RTYPE	VTYPE(v)==(UINT)rtype
     #ifdef T_USE_Y
-    #define T_CTYPE	VTYPE(w)==ctype
+    #define T_CTYPE	VTYPE(w)==(UINT)ctype
     #else
-    #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+    #define T_CTYPE	VTYPE(MDEST(mat))==(UINT)ctype
     #endif
 
 	for (rtype=0; rtype<NVECTYPES; rtype++) 
@@ -338,11 +338,11 @@ else
     dset(mg,fl,tl,mode,x,0.0);
 	#endif
 
-    #define T_RTYPE	VTYPE(v)==rtype
+    #define T_RTYPE	VTYPE(v)==(UINT)rtype
     #ifdef T_USE_Y
-    #define T_CTYPE	VTYPE(w)==ctype
+    #define T_CTYPE	VTYPE(w)==(UINT)ctype
     #else
-    #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+    #define T_CTYPE	VTYPE(MDEST(mat))==(UINT)ctype
     #endif
 
 	for (rtype=0; rtype<NVECTYPES; rtype++) 
