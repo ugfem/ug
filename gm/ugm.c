@@ -1167,7 +1167,7 @@ NODE * NS_DIM_PREFIX GetSideNode (ELEMENT *theElement, INT side)
   NODE *MidNodes[MAX_EDGES_OF_SIDE];
   INT i,n;
 #ifdef ModelP
-  INT k
+  INT k;
 #endif
 
   n = 0;
