@@ -831,7 +831,8 @@ if (0)
 					{
 						INT err,id,nbid,id_nb,nbid_nb,part;
 						
-						if (err = BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid,&part))
+						err = BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid,&part);
+						if (err)
 						{
 							bserror |= (1<<i);
 							UserWriteF(PFMT "elem=" EID_FMTX " ERROR BNDS_BndSDesc(%d) returned err=%d\n",
@@ -1090,7 +1091,7 @@ if (0)
 				")element is not in SonList NSONS=%d\n",
 				me,EID_PRTX(theElement),EID_PRTX(theFather),
 				NSONS(theFather));
-/* TODO: activate if NSONS is consistent */
+                        /** \todo activate if NSONS is consistent */
 if (0)			nerrors++;
 		}
 	}
@@ -1241,12 +1242,11 @@ INT CheckSubdomains (MULTIGRID *theMG)
 
 static INT CheckElementSubdomains (GRID *theGrid, ELEMENT *theElement, INT *NodeError, INT *EdgeError, INT *NbError, INT *FatherError, INT *errors)
 {
-	INT		side,found,i,j,k,l,n,nsons,bserror,nerrors,sdid,sc;
+	INT	side,found,i,j,k,bserror,nerrors,sdid,sc;
 	NODE	*theNode,*n1,*n2,*nbn1,*nbn2,*nbn3,*nbn4;
 	EDGE	*theEdge,*father_edge;
-	ELEMENT *NbElement,*theFather;
-	ELEMENT *SonList[MAX_SONS];
-	VERTEX	*theVertex,*Vertices[MAX_CORNERS_OF_ELEM];
+	ELEMENT *theFather;
+	VERTEX	*theVertex;
 	
 	*NodeError = 0;
 	*EdgeError = 0; 
@@ -1561,7 +1561,7 @@ static INT CheckGeometry (GRID *theGrid)
 	EDGE *theEdge;
 	LINK *theLink;
 	int i,j;
-	INT FatherError, sd_errors, SideError, EdgeError, NbError, NodeError, ESonError, NSonError, count;
+	INT SideError, EdgeError, NodeError, ESonError, NSonError, count;
 	INT errors = 0;
 
 	/* reset used flags */
@@ -1904,8 +1904,6 @@ PAR(				&& EPRIO(theElement)==EPRIO(PREDE(theElement)) )ENDPAR )
 
 INT NS_DIM_PREFIX CheckLists (GRID *theGrid)
 {
-	int objs = 0;
-
 	/* perform gm dependent check */
 	CheckElementList(theGrid);
 

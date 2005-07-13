@@ -365,7 +365,6 @@ INT NS_DIM_PREFIX DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Da
 {
   INT i;
   AVECTOR *avect;
-  MATRIX *mat;
 
   while ((avect=*La)!=NULL)
   {
@@ -1170,9 +1169,8 @@ static INT subset (INT n, INT m, INT *k,
 
 static INT FindCoarseVectors (INT n, VECTOR *v, VECTOR **w, DOUBLE *s)
 {
-  VECTOR *theW,*w1[DIM+1];
+  VECTOR *w1[DIM+1];
   DOUBLE_VECTOR y[LEN_MAX],x;
-  MATRIX *theM;
   INT j,k[DIM+2],l;
 
   compVec = v;
@@ -1206,7 +1204,7 @@ static INT SearchCoarse (VECTOR *theV, INT *m)
 {
   VECTOR *theW,*w[LEN_MAX];
   MATRIX *theM;
-  DOUBLE_VECTOR x,y[LEN_MAX];
+  DOUBLE_VECTOR x;
   DOUBLE s[LEN_MAX];
   INT i,n = 0;
 
@@ -1277,8 +1275,7 @@ static int compIndex (const void *e1, const void *e2)
 static INT CoarsenAverageCycle (GRID *theGrid, INT n,
                                 FIFO myfifo, VECTOR **vlist)
 {
-  VECTOR *theV,*theW;
-  MATRIX *theM;
+  VECTOR *theV;
   INT failed_old;
   INT i,m = 0;
 
@@ -1348,7 +1345,7 @@ INT NS_DIM_PREFIX CoarsenAverage (GRID *theGrid)
   VECTOR *theV,*theW,**vlist;
   MATRIX *theM;
   INT MarkKey;
-  INT i,n,m,d,dmin,dmax;
+  INT i,n,m;
 
   /* reorder vector-list */
   n = 0;

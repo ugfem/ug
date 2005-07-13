@@ -93,8 +93,6 @@ static INT theMatrixValVarID;
 static INT theVEvalProcDirID;
 static INT theElemVectorVarID;
 
-static INT nodecomp;
-
 /* variables used for CoeffProcElemEval */
 static struct Coubling_CoeffProc_Name Couple_for_ElemValue;
 static struct Coubling_CoeffProc_Name Couple_for_ElemVector;

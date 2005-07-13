@@ -852,7 +852,7 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
                           INT *RefRuleOffset)
 {
   MGIO_RR_RULE *theRule;
-  INT i,j,n,sonRefined,sonex,nex,refined;
+  INT i,j,n,sonRefined,sonex,nex;
   /* ELEMENT *SonSonList[MAX_SONS]; */
 
   refinement->refclass = REFINECLASS(theElement);

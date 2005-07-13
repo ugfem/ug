@@ -131,14 +131,17 @@ USING_UGDIM_NAMESPACE
 /****************************************************************************/
 
 /* local midpoints */
-static DOUBLE_VECTOR_2D LMP_Triangle 		= {0.333333333333333333, 
-											   0.333333333333333333};
+#ifdef __TWODIM__
+static DOUBLE_VECTOR_2D LMP_Triangle 		= {0.333333333333333333, 0.333333333333333333};
 static DOUBLE_VECTOR_2D LMP_Quadrilateral	= {0.5, 0.5};
+#endif
+#ifdef __THREEDIM__
 static DOUBLE_VECTOR_3D LMP_Tetrahedron		= {0.25, 0.25, 0.25};
 static DOUBLE_VECTOR_3D LMP_Pyramid   		= {0.5, 0.5, 0.33333333333333333};
 static DOUBLE_VECTOR_3D LMP_Prism    		= {0.333333333333333333,
                                                0.333333333333333333,0.5};
 static DOUBLE_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
+#endif
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -1859,40 +1862,19 @@ static INT  CornerOfSide[4][3] = {{0,2,1}, {1,2,3}, {2,0,3}, {3,0,1}};
 /* gives the position of specified corner on specified side or -1 if it does not ly on that side */
 INT  CornerOfSideInv[4][4]  = {{0,2,1,-1}, {-1,0,1,2}, {1,-1,0,2}, {1,2,-1,0}};
 
-/* The indices of the corner opposite to three corners. */
-static INT  CornerOppCorners[4][4][4] =
-				{ {{-1,-1,-1,-1}, {-1,-1, 3, 2}, {-1, 3,-1, 1}, {-1, 2, 1,-1}}, 
-				  {{-1,-1, 3, 2}, {-1,-1,-1,-1}, { 3,-1,-1, 0}, { 2,-1, 0,-1}},
-				  {{-1, 3,-1, 1}, { 3,-1,-1, 0}, {-1,-1,-1,-1}, { 1, 0,-1,-1}},
-				  {{-1, 2, 1,-1}, { 2,-1, 0,-1}, { 1, 0,-1,-1}, {-1,-1,-1,-1}} };
-
 /* The indices of the corners of each edge and its opposite edge */
 /* dont change order !											 */
 static INT  CornerOfEdge[6][2]	 = {{0,1},{1,2},{0,2},{0,3},{1,3},{2,3}};
-static INT  CornerOfOppEdge[6][2] = {{2,3},{0,3},{3,1},{1,2},{2,0},{0,1}};
 
 /* the indices of the edges between two corners */
 static INT  EdgeWithCorners[4][4] = {{-1,0,2,3},{0,-1,1,4},
 												  {2,1,-1,5},{3,4,5,-1}};
 
-/* the indices of the sides around each edge */
-static INT  SideWithEdge[6][MAX_SIDES_OF_EDGE] = {{0,3},{0,1},{0,2},{2,3},{1,3},{1,2}};
-
-/* the index of the side having to specified edges */
-static INT  SideOf2Edges[6][6] = {{-1,0,0,3,3,-1},{0,-1,0,-1,1,1},{0,0,-1,2,-1,2},{3,-1,2,-1,3,2},{3,1,-1,3,-1,1},{-1,1,2,2,1,-1}};
-
 /* the index of the edge having to specified sides */
 static INT  EdgeOf2Sides[4][4] = {{-1,1,2,0},{1,-1,5,4},{2,5,-1,3},{0,4,3,-1}};
 
-/* the indices of the edges of each side */
-static INT  EdgeOfSide[4][3] = {{0,1,2},{1,5,4},{2,3,5},{0,4,3}};
-static INT  CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
-
 /* the indices of opposite corners for each side */
 static INT OppositeCorner[4] = {3,0,1,2};
-
-/* the indices of opposite sides for each corner */
-static INT OppositeSide[4] = {1,2,3,0};
 
 INT  NS_DIM_PREFIX FV_AliTetInfo (const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[6], DOUBLE_VECTOR conv, DOUBLE_VECTOR GIP[6], DOUBLE_VECTOR LIP[6])
 {

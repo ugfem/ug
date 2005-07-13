@@ -2226,7 +2226,6 @@ static INT CheckElementInfo (GRID *theGrid)
 static int GridClosure (GRID *theGrid)
 {
 	INT cnt;
-	INT level = 0;
 
 	/* initialize used control word entries */
 	if (PrepareGridClosure(theGrid) != GM_OK)	RETURN(GM_ERROR);
@@ -4997,7 +4996,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 						case 2:
 						{
 							INT node,k;
-							INT maxedge=-1;
+							/*INT maxedge=-1;*/
 							#ifdef ModelP
 							unsigned int maxid = 0;
 							#else

@@ -603,7 +603,7 @@ static HRID GetRuleID
   for (s=0; s<ER_NSONS(er); s++)
     key += oco[s];
 
-  /* TODO (HRR 971211): use tag also for key? */
+  /** \todo (HRR 971211): use tag also for key? */
 
   h = HASH_ADDRESS(key);
 
@@ -1907,14 +1907,8 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
         int soe                         = SIDES_OF_TAG(tag);
         NODE *nodes[MAX_REFINED_CORNERS_DIM];
         NODE **newnodes         = nodes+coe;
-        NODE **midnodes         = newnodes;
-                                #ifdef __THREEDIM__
-        NODE **sidenodes        = newnodes+eoe;
-                                #endif
-        NODE **centernode       = newnodes+CENTER_NODE_INDEX(elem);
         INT maxsonex            = 0;
         ELEMENT *sons[MAX_SONS];
-        int some_path_wrong = FALSE;
         int error = 0;
         int s,i;
 
@@ -2231,7 +2225,7 @@ INT NS_DIM_PREFIX ResetRefineTagsBeyondRuleManager (MULTIGRID *mg)
   ELEMENT *elem;
   int l,n=0;
 
-  /* TODO (HRR 971211): don't include TOPLEVEL (no elem refined there) */
+  /** \todo (HRR 971211): don't include TOPLEVEL (no elem refined there) */
   for (l=0; l<=TOPLEVEL(mg); l++)
     for (elem=PFIRSTELEMENT(GRID_ON_LEVEL(mg,l)); elem!=NULL; elem=SUCCE(elem))
       if (BEYOND_UG_RULES(elem))

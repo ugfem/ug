@@ -1485,7 +1485,7 @@ mark1:
 static INT SplineCompute(DOUBLE *midnode, DOUBLE *node0, DOUBLE *node1, DOUBLE *node2,
                          DOUBLE *node3, DOUBLE *newPos)
 {
-  DOUBLE dfx1,dfxn,dfy1,dfyn,fx,fy,alpha,c;
+  DOUBLE dfx1,dfxn,dfy1,dfyn,fx,fy,c;
   DOUBLE ha[5],xa[5],ya[5],fx2[5],fy2[5];
   DOUBLE len1,len2;
   INT i;
@@ -1524,7 +1524,6 @@ static INT SplineSmooth(NODE *theNode, DOUBLE *newPos)
   EDGE    *theEdge;
   NODE *node0, *node1, *node2, *node3;
   INT i,co,co0, co1, edge;
-  DOUBLE_VECTOR newPos1;
   DOUBLE diff0, diff1;
 
   if (NTYPE(theNode)!=MID_NODE) return(-1);
