@@ -81,10 +81,6 @@ USING_UGDIM_NAMESPACE
 #define TRU 1
 
 
-static INT ansysfilespathes_set;
-static INT ANSYS_DEBUG = 0;
-
-
 static EXCHNG_TYP1 ExchangeVar_1;
 static EXCHNG_TYP1 *ExchangeVar_1_Pointer;
 static EXCHNG_TYP2 ExchangeVar_2;
@@ -177,7 +173,6 @@ static INT ANS_MarkKey;
 static INT ansysfilepathes_set;
 
 
-static INT numberofSFEs;
 static INT triangle_found; /*used in Create_RealSurfaces and Find_SFE_Triangle*/
 
 static char *TmpMemArray;
@@ -343,12 +338,8 @@ INT ReadLine(char *linebuffer, INT mxln, FILE *filePtr)
 /************************************************************************************/
                                                 int ZoomFct(char *linebuffer,char axis)
 {
-  INT z,w,u;
   INT index,elem_surf_cond;
   char *endp,*s;
-
-  INT help,ind,already,i,offset,stop;
-  DOUBLE aid;
 
   index = 1;
   elem_surf_cond = 0;
@@ -406,12 +397,10 @@ INT ReadLine(char *linebuffer, INT mxln, FILE *filePtr)
 /************************************************************************************/
 int KomponentFct(char *linebuffer)
 {
-  INT z,w,u;
   INT index,elem_surf_cond;
   char *endp,*s;
 
-  INT help,ind,already,i,offset,stop;
-  DOUBLE aid;
+  INT i,offset,stop;
 
   index = 1;
   elem_surf_cond = 0;
@@ -469,8 +458,6 @@ int KomponentFct(char *linebuffer)
 INT ProbNameFct(char *linebuffer)
 {
   INT index,xyz,i,stop;
-  char *endp,*s;
-
 
   index = 0;
   xyz = 0;
@@ -617,11 +604,11 @@ int ElementLineFct(INT *ez,INT *el_array,INT *node_element_matrix,char *linebuff
 /************************************************************************************/
 int SurfaceLoadFct(INT sz,INT *statistik, INT *condition_array,BND_SFE_TYP *bndseg_array,INT *nodeflag_array,INT *elemflag_array,INT *el_array,char *linebuffer)
 {
-  INT z,w,u;
+  INT w,u;
   INT index,elem_surf_cond;
   char *endp,*s;
 
-  INT help,ind,already;
+  INT help;
   DOUBLE aid;
   help = sz;
 
@@ -938,54 +925,27 @@ INT ReadCADFile(char *CADOutputFileName, INT *statistik, DOUBLE *abx,INT *condit
 /*MULTIGRID *ConvertCADGrid  (char *theFormat,char *CADOutputFileName,unsigned long heapSize)*/
 INT ReadAnsysFile(char *filename)
 {
-  /* NEW : static pointer theHeap, which is set in LGM_ANSYS_ReadDomain
-     HEAP *theHeap;*/
-
   FILE *filePtr;
 
-  /*MULTIGRID *theMG;*/
-
-  char *Multigridname;
-  char *Problemname;
   char linebuffer[80];
-  char cndname[10],segname[10],s[5],t[5],c[5];
-  char *retv;
-  char *cndnameptr,*segnameptr,*tptr;
-  char chosenbc;
-
+  char s[5];
 
   INT point[CORNERS_OF_BND_SEG];
   INT linebufferlength;
-  INT surfacenumber;
   INT totalels;
-  INT offset;
   INT offsSGI;
   INT offsHP;
-  INT offsMac;
   INT nbofelms;
   INT cntbnodes,cntinodes;
-  INT idlist[4];
 
-  INT ii,jj,rv,iminus1;
+  INT ii,rv,iminus1;
 
   INT ppp;
   DOUBLE nnnn;
 
-  NODE* ndlist[4];
-
-  ELEMENT* theElem;
-
-  NODE *node;
-  VERTEX *vertex;
-
-
   /* abutmentbox */
   DOUBLE abx[6];
   DOUBLE radius,MidPoint[3];
-
-  DOUBLE alpha[DIM_OF_BND], beta[DIM_OF_BND];
-  DOUBLE out[3];
-  DOUBLE pos[DIM];
 
   unsigned long memforif;
 
@@ -1038,7 +998,7 @@ INT ReadAnsysFile(char *filename)
   /********************************************************************************/
 
 
-  INT help1,ofs0,ofs1,ofs2,ofs3,i,helpi,intwert,helpint,h,h2,j,indize,nnn,dummy, nmofnds,ug_side_offset;
+  INT help1,ofs0,ofs1,ofs2,ofs3,i,dummy, nmofnds,ug_side_offset;
 
   if(ansysfilepathes_set != 1)       /*wenn noch nicht gesetzt*/
   {
@@ -1455,7 +1415,7 @@ INT ReadAnsysFile(char *filename)
 /****************************************************************************/
 INT The_SFE_hashfunction(INT val1, INT val2, INT val3)
 {
-  unsigned int hash_value, help, bits;
+  unsigned int hash_value, help;
   /*  beste Hasfunktion :*/
   /*  beste Hashfunktion: Fuellgrad bei m = 2 * #SFEs == 30 bis 40 Prozent
       je mehr CAD-Flaechen aufeinander liegen, desto niedriger ist der
@@ -1534,7 +1494,7 @@ INT The_SFE_hashfunction(INT val1, INT val2, INT val3)
 INT the_LI_hashfunction(INT val1, INT val2)
 {
   unsigned int hash_value;
-  unsigned int help, bits;
+  /*unsigned int help, bits;*/
   /*  beste Hashfunktion: Fuellgrad bei m = 3 * #LIs == 30 bis 40 Prozent
       je mehr CAD-Flaechen aufeinander liegen, desto niedriger ist der
       Fuellgrad .
@@ -1692,10 +1652,8 @@ INT NextGoodPrimeNumber(INT *TheNumber)
 
   int nmbofoprimzahls,i;
   int *primzahlarray;
-  int *usedprimenumbers;      /*hier werden die verwendeten Primzahlen*/
   int primzahl,index;
   int index_used;
-  int *test;
   int wurzel,wurzel2;
   int newindex;
 
@@ -2772,7 +2730,7 @@ SF_TYP *GetMemandFillNewSF(DOUBLE *surfacename)
 
   if((Surface = (SF_TYP *)GetTmpMem(theHeap,sizeof(SF_TYP),ANS_MarkKey))== NULL)
   {
-    PrintErrorMessage('E',"GetMemandFillNewSF","got  no memory  for a new Surface !???!");
+    PrintErrorMessage('E',"GetMemandFillNewSF","got  no memory  for a new Surface !?!");
     return(NULL);
   }
   SF_NEXT(Surface) = NULL;
@@ -2823,7 +2781,7 @@ SF_TYP *GetMemandFillNewSF(DOUBLE *surfacename)
 /****************************************************************************/
 SF_TYP *CreateOrFetchSurface(DOUBLE *surfacename)
 {
-  SF_TYP *theSurface,*merk_sfc,*lf_sfc;
+  SF_TYP *merk_sfc,*lf_sfc;
   int gibtsschon;
 
   /*wenn es noch keine einzige Surface in der SF-Liste gibt ...*/
@@ -3034,7 +2992,6 @@ SFC_TYP *CreateAndConnectSfceEntryWithSbd(SD_TYP *sbdm, SF_TYP *theSurface)
 /****************************************************************************/
 SF_TYP *ConnectSdWithSfce(SFE_KNOTEN_TYP *sfe_ptr, SD_TYP *sbdm0, SD_TYP *sbdm1)
 {
-  INT gibtsschon;
   DOUBLE surfacename[2];
   SF_TYP *theSurface;
   SFC_TYP *Sfce_Ret_Val;
@@ -4732,7 +4689,6 @@ INT GetMemAndFillNewPlz(SFPL_TYP **anfang,SFPL_TYP **rechtesMuster,SF_TYP *theSu
   PLZ_TYP *merkeplzptr,*neuerPolylinezyk;
   SFPL_TYP *lauf_PLZ,*endeabgespSF_PLs;
   INT anzbersorPLs;
-  INT rv;
   PL_LINE_TYP *last_Line_of_idl2, *last_Line_of_endeabgespSF_PLs;
 
   anzbersorPLs = 1;
@@ -4865,7 +4821,6 @@ INT Create_PLZN(SF_TYP *theSurface)
 
   INT predlinefound;       /*Flag, das angibt, ob eine Partner- bzw. VorgaengerPolyline gefunden wurde.*/
   INT succlinefound;       /*Flag, das angibt, ob eine Partner- bzw. NachfolgerPolyline RECHTS gefunden wurde.*/
-  INT merkeID;
   INT rv;
   INT lff;
   PL_LINE_TYP *polylinelinesofidl;
@@ -5186,7 +5141,7 @@ INT TriangleNeighbourSearcher(SFE_KNOTEN_TYP *SFE_search,SFE_KNOTEN_TYP *SFE_des
   SFE_KNOTEN_TYP *Nachbar_SFE;
   INT kante;       /*Laufvariable ueber die 3 Kanten eines Dreiecks*/
   INT neubesetzt[3];
-  INT rv,rgbwrt;
+  INT rgbwrt;
 
 
   neubesetzt[0] = F; neubesetzt[1] = F; neubesetzt[2] = F;
@@ -5264,8 +5219,6 @@ INT GetMemAndFillNewRlSfc(PLZ_TYP **anfang,PLZ_TYP **rechtesMuster,SF_TYP *theSu
   RS_TYP *merkeplzptr,*neueRealSurface;
   PLZ_TYP *lauf_PLZ,*endeabgespSF_PLZs;
   INT anzbersorPLZs;
-  INT rv;
-
 
   anzbersorPLZs = 1;
 
@@ -5470,11 +5423,7 @@ INT Create_RealSurfaces(SF_TYP *theOrigSfce)
                                       rechtesMuster steht immer vor anfang*/
 
   INT predplzfound;       /*Flag, das angibt, ob ein Partner- bzw. VorgaengerPolylineZyklus gefunden wurde.*/
-  INT succplzfound;       /*Flag, das angibt, ob ein Partner- bzw. NachfolgerPolylineZyklus RECHTS gefunden wurde.*/
-  INT merkeID;
   INT rv,rw;
-  INT lff;
-  PL_LINE_TYP *polylinelinesofidl;
 
   LI_KNOTEN_TYP *erste_line_von_idl,*erste_line_von_idl2;
   SFE_KNOTEN_TYP *SFE_destination,*SFE_search;
@@ -5681,7 +5630,7 @@ INT FetchAllTriangles(SFE_KNOTEN_TYP *dasDreieck)
   SFE_KNOTEN_TYP *Nachbar_SFE;
   INT kante;       /*Laufvariable ueber die 3 Kanten eines Dreiecks*/
   INT neubesetzt[3];
-  INT rv,rgbwrt;
+  INT rgbwrt;
   TRIANGLE_TYP *merke_triangle_pointer;
 
   neubesetzt[0] = F; neubesetzt[1] = F; neubesetzt[2] = F;
@@ -5699,7 +5648,7 @@ INT FetchAllTriangles(SFE_KNOTEN_TYP *dasDreieck)
         merke_triangle_pointer = New_Triangle_List;
         if((New_Triangle_List = (TRIANGLE_TYP *)GetTmpMem(theHeap,sizeof(TRIANGLE_TYP),ANS_MarkKey))== NULL)
         {
-          PrintErrorMessage('E',"SplitSurface","got  no memory  for  New_Triangle_List !???!");
+          PrintErrorMessage('E',"SplitSurface","got  no memory  for  New_Triangle_List !?!");
           return(1);
         }
         TRIA_SFE_KN(New_Triangle_List) = Nachbar_SFE;
@@ -5864,7 +5813,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
     merkeSurface = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
     if((newSurface = (SF_TYP *)GetTmpMem(theHeap,sizeof(SF_TYP),ANS_MarkKey))== NULL)
     {
-      PrintErrorMessage('E',"SplitSurface","got  no memory  for  newSurface !???!");
+      PrintErrorMessage('E',"SplitSurface","got  no memory  for  newSurface !?!");
       return(1);
     }
     SF_NEXT(newSurface) = merkeSurface;
@@ -5959,7 +5908,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
     /*New_Triangle_List ist global und wird in der Funktion FetchAllTriangles weiter gefuellt*/
     if((New_Triangle_List = (TRIANGLE_TYP *)GetTmpMem(theHeap,sizeof(TRIANGLE_TYP),ANS_MarkKey))== NULL)
     {
-      PrintErrorMessage('E',"SplitSurface","got  no memory  for  New_Triangle_List !???!");
+      PrintErrorMessage('E',"SplitSurface","got  no memory  for  New_Triangle_List !?!");
       return(1);
     }
     TRIA_SFE_KN(New_Triangle_List) = erstesdreieck;
@@ -6022,7 +5971,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
     /* the_sbd->NMBsurfaces ++*/
     if((neue_sfc_of_sbd = (SFC_TYP *)GetTmpMem(theHeap,sizeof(SFC_TYP),ANS_MarkKey))== NULL)
     {
-      PrintErrorMessage('E',"SplitSurface","got  no SFC_TYP memory  for  neue_sfc_of_sbd !???!");
+      PrintErrorMessage('E',"SplitSurface","got  no SFC_TYP memory  for  neue_sfc_of_sbd !?!");
       return(1);
     }
     SFC_SURF(neue_sfc_of_sbd) = newSurface;
@@ -6038,7 +5987,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
       /* the_sbd_Double->NMBsurfaces ++*/
       if((neue_sfc_of_sbd_Double = (SFC_TYP *)GetTmpMem(theHeap,sizeof(SFC_TYP),ANS_MarkKey)) == NULL)
       {
-        PrintErrorMessage('E',"SplitSurface","got  no SFC_TYP memory  for  neue_sfc_of_sbd_Double !???!");
+        PrintErrorMessage('E',"SplitSurface","got  no SFC_TYP memory  for  neue_sfc_of_sbd_Double !?!");
         return(1);
       }
       SFC_SURF(neue_sfc_of_sbd_Double) = newSurface;
@@ -6204,7 +6153,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 /****************************************************************************/
 INT Ansys2lgmSurfaceDetecting()
 {
-  SF_TYP *sf_lfv, *sf_lfv2, *pred_sf_lfv;
+  SF_TYP *sf_lfv, *pred_sf_lfv;
   INT rw, nmb_of_plzs_polylines, llf;
   PLZ_TYP *lauf_plz;
 
@@ -6574,14 +6523,9 @@ INT TriangleIDOrientations(SFE_KNOTEN_TYP *Muster_SFE)
 /****************************************************************************/
 INT Ansys2lgmCreateTriaOrientations()
 {
-  SFE_KNOTEN_TYP *sfeptr, *firstOFD;
-  TRIANGLE_TYP *triangle;
-  INT lff;
+  SFE_KNOTEN_TYP *firstOFD;
   SF_TYP *sf_lfv;
   INT rv;
-
-
-
 
   /****************************************
      Pruefung der Dreiecksorientierungen
@@ -6723,7 +6667,7 @@ INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
 {
   DOUBLE II[3],JJ[3],KK[3],VV[3];
   DOUBLE A[3],B[3],C[3],V[3];
-  DOUBLE alpha,cos_alpha,Laenge_C,Laenge_V;
+  DOUBLE cos_alpha,Laenge_C,Laenge_V;
   INT offs;
   INT imal3,jmal3,kmal3,vmal3;
 
@@ -6755,7 +6699,6 @@ INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
   /*Berechnung des Winkels zwischen C und V*/
   Laenge_C = sqrt( C[0]*C[0] + C[1]*C[1] + C[2]*C[2] );
   Laenge_V = sqrt( V[0]*V[0] + V[1]*V[1] + V[2]*V[2] );
-  /*alpha = acos( ( C[0]*V[0] + C[1]*V[1] + C[2]*V[2] ) / (Laenge_C) / (Laenge_V) );*/
   cos_alpha = ( ( C[0]*V[0] + C[1]*V[1] + C[2]*V[2] ) / (Laenge_C) / (Laenge_V) );
 
   if(cos_alpha > 0.0)
@@ -6792,7 +6735,6 @@ INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
 /****************************************************************************/
 INT EvalLeftRightOfSfcs()
 {
-  INT rw;
   SF_TYP *lauf_sf;
   SFE_KNOTEN_TYP *sfe;
   INT i,j,k,v;
@@ -7124,7 +7066,6 @@ INT Ansys2lgmUpdateSbdmIDs()
 
   /*DIRKS NEU*/
   char TheString[20];
-  char *stringpointer;
 
   int cad_id[2];
   /*ALT	int lf;
@@ -7665,7 +7606,7 @@ int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_in
 /****************************************************************************/
 int LGM_ANSYS_ReadSizes (LGM_SIZES *lgm_sizes)
 {
-  int i,line_i,surface_i,i0,i1,i2;
+  int i;
   PL_TYP *plyln;
   SD_TYP *sbdmn;
   SF_TYP *srfce;
@@ -8189,7 +8130,7 @@ int LGM_ANSYS_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 /****************************************************************************/
 int FillPositionInformations(LGM_MESH_INFO *theMesh)
 {
-  int bndpindex, innpindex, h, h2;
+  int bndpindex, innpindex, h;
 
   /*Anzahl der BoundaryPoints*/
   theMesh->nBndP = statistik[1];
@@ -8503,7 +8444,7 @@ int SearchAllTetrahedronsOfThisSbd(int Muster_tetra_el, int sbdname)
 {
   int Nachbar_Tetra, stelle;
   int tetraside;       /*Laufvariable ueber die 4 Tetraederseiten */
-  int rv,rgbwrt;
+  int rgbwrt;
   int neubesetzt[4];
 
   neubesetzt[0] = F; neubesetzt[1] = F; neubesetzt[2] = F; neubesetzt[3] = F;
@@ -8944,7 +8885,7 @@ int     EvalBndPointInformations(LGM_MESH_INFO *theMesh)
   int *boundary_point_surface_array;      /*beinhaltet Surfaces für jeden BndPoint*/
   int *boundary_point_case_array;      /*beinhaltet die Fallzahl <1,2 oder3> für jede BNDPSFC-Rel.*/
   int *boundary_point_corresp_TriaID_array;      /*beinhaltet zu jeder BNDP-Sfce Relation die zugeh. TriaID*/
-  int Sfc_ID, Tria_ID, i, BndPID, BndPID_UG, stelle, maxstelle,einfuegestellegefunden, gibtsschon ;
+  int Sfc_ID, Tria_ID, i, BndPID_UG, stelle, maxstelle,einfuegestellegefunden, gibtsschon ;
   SF_TYP *Surface;
   TRIANGLE_TYP *Triangle;
   int cad_id;
@@ -9015,7 +8956,6 @@ int     EvalBndPointInformations(LGM_MESH_INFO *theMesh)
       for(i=0; i<3; i++)
       {
         BndPID_UG = (TRIA_SFE_KN(Triangle))->nodeid[i];
-        /*BndPID_UG =	point_array[BndPID];*/
 
         /*laufe beginnend bei boundary_point_surface_array[BndPID_UG*NU_SFCES_BNDP]
            bis zum ersten unbesetzten Feld <-1 !> und prüfe dabei, ob es
@@ -9800,7 +9740,7 @@ int     EvalBndPoint_Line_Informations(LGM_MESH_INFO *theMesh)
 int LGM_ANSYS_ReadMesh (char *name, HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) /* DIRKS NEU MarkKey*/
 {
   SD_TYP *sbd;
-  int i,TetraederelementID, ll, stelle, SbdName,elem_lf;
+  int i,TetraederelementID, SbdName,elem_lf;
 
   /* DIRKS NEU :*/
   theHeap = Heappointer;
