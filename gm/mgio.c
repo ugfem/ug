@@ -116,7 +116,6 @@ int NS_DIM_PREFIX mgpathes_set;                         /* pathes used in ug			*
 /****************************************************************************/
 
 static FILE *stream;                            /* file                                                 */
-static int rw_mode;                                     /* ASCII or ... (see header)	*/
 static char buffer[MGIO_BUFFERSIZE]; /* general purpose buffer		*/
 static int intList[MGIO_INTSIZE];       /* general purpose integer list */
 static double doubleList[MGIO_DOUBLESIZE]; /* general purpose double list*/
@@ -940,8 +939,8 @@ int NS_DIM_PREFIX Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
 int NS_DIM_PREFIX Read_pinfo (int ge, MGIO_PARINFO *pinfo)
 {
   int i,m,s,np;
-  char buffer[28];
 #if (MGIO_DEBUG>0)
+  char buffer[28];
   static int nb=0;
 
   if (Bio_Read_string(buffer)) return (1);
@@ -1218,9 +1217,9 @@ int NS_DIM_PREFIX Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 {
   int j,k,s,tag;
   unsigned int ctrl;
-  char buffer[128];
 
 #if (MGIO_DEBUG>0)
+  char buffer[128];
   if (Bio_Read_string(buffer)) assert(0);                                                  /*return (1);*/
   if(strcmp(buffer,"REFINEMENT_BEGIN")!=0) assert(0);                              /*return (1);*/
   if (Bio_Read_mint(1,intList)) assert(0);       /*return (1);*/
@@ -1354,9 +1353,9 @@ int NS_DIM_PREFIX Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 int NS_DIM_PREFIX Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 {
   int j,k,s,t,tag;
-  static int g_count;
 
 #if (MGIO_DEBUG>0)
+  static int g_count;
   if (Bio_Write_string("REFINEMENT_BEGIN")) return (1);
   if (Bio_Write_mint(1,&g_count)) return (1);
   g_count++;
