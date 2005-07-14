@@ -67,18 +67,10 @@
 
 USING_UGDIM_NAMESPACE
 
-
-
-#define T 1
-#define F 0
-
 #define NUOFCLMS 70
 #define NU_SFCES_BNDP 9
 /*LINE_NEU*/
 #define NU_LINES_BNDP 7
-
-#define FALS 0
-#define TRU 1
 
 
 static EXCHNG_TYP1 ExchangeVar_1;
@@ -625,7 +617,7 @@ int SurfaceLoadFct(INT sz,INT *statistik, INT *condition_array,BND_SFE_TYP *bnds
   BND_SFE_SIDEID((&(bndseg_array[help])))=(INT)(strtol(s,&endp,10));
 
   /* mark element in elemflag_array :  */
-  elemflag_array[BND_SFE_ELEMENTID((&(bndseg_array[help])))] = TRU;
+  elemflag_array[BND_SFE_ELEMENTID((&(bndseg_array[help])))] = TRUE;
 
   do
     endp++;
@@ -687,24 +679,24 @@ int SurfaceLoadFct(INT sz,INT *statistik, INT *condition_array,BND_SFE_TYP *bnds
   switch(w)
   {
   case 1 :              /*ijk012*/
-    nodeflag_array[el_array[u]]=TRU;
-    nodeflag_array[el_array[1+u]]=TRU;
-    nodeflag_array[el_array[2+u]]=TRU;
+    nodeflag_array[el_array[u]]=TRUE;
+    nodeflag_array[el_array[1+u]]=TRUE;
+    nodeflag_array[el_array[2+u]]=TRUE;
     break;
   case 2 :              /*ijl013*/
-    nodeflag_array[el_array[u]]=TRU;
-    nodeflag_array[el_array[1+u]]=TRU;
-    nodeflag_array[el_array[3+u]]=TRU;
+    nodeflag_array[el_array[u]]=TRUE;
+    nodeflag_array[el_array[1+u]]=TRUE;
+    nodeflag_array[el_array[3+u]]=TRUE;
     break;
   case 3 :              /*jkl123*/
-    nodeflag_array[el_array[1+u]]=TRU;
-    nodeflag_array[el_array[2+u]]=TRU;
-    nodeflag_array[el_array[3+u]]=TRU;
+    nodeflag_array[el_array[1+u]]=TRUE;
+    nodeflag_array[el_array[2+u]]=TRUE;
+    nodeflag_array[el_array[3+u]]=TRUE;
     break;
   case 4 :              /*ikl023*/
-    nodeflag_array[el_array[u]]=TRU;
-    nodeflag_array[el_array[2+u]]=TRU;
-    nodeflag_array[el_array[3+u]]=TRU;
+    nodeflag_array[el_array[u]]=TRUE;
+    nodeflag_array[el_array[2+u]]=TRUE;
+    nodeflag_array[el_array[3+u]]=TRUE;
   }
 
   return(0);
@@ -1646,7 +1638,7 @@ INT NextGoodPrimeNumber(INT *TheNumber)
   /*vermutlich schnellere Alternative : SAtz des Eratostenes
      siehe DTV-Atlas der Mathematik von C Wrobel
      Prinzip : Man beginnt mit einem boolschen Feld, das bei allen Zahlen
-     auf TRU- gesetzt ist . Anschliessend streicht mal (beginnend von klein nach
+     auf TRUE- gesetzt ist . Anschliessend streicht mal (beginnend von klein nach
      gross die Vielfachen von Primzahel aus (False)*/
 
 
@@ -8247,7 +8239,7 @@ INT FindElNeighbours(INT ne)
       /*concerning <-1 * Vorkommanzahl der zugewiesenen CADLastzahl>
          see ReadAnsysFile*/
       {
-        gefunden = FALS;                         /*noch keinen Nachbar gefunden*/
+        gefunden = FALSE;                         /*noch keinen Nachbar gefunden*/
         switch(nbijkl)
         {
         /*TODO : Die nunfolgende Fallunterscheidung realisiert die UG-Reihenfolge fuer
@@ -8276,25 +8268,25 @@ INT FindElNeighbours(INT ne)
         a = el_array[realelind + kna];
         elaindex = NUOFCLMS * a;
         ela = node_element_matrix[elaindex];                         /*first element of node a*/
-        while ((ela != 0)  && (gefunden == FALS))
+        while ((ela != 0)  && (gefunden == FALSE))
         {
           if(ela != elind)
           {
             b = el_array[realelind + knb];
             elbindex = NUOFCLMS * b;
             elb = node_element_matrix[elbindex];                                     /*first element of node b*/
-            while ((elb != 0) && (gefunden == FALS))
+            while ((elb != 0) && (gefunden == FALSE))
             {
               if(ela == elb)
               {
                 c = el_array[realelind + knc];
                 elcindex = NUOFCLMS * c;
                 elc = node_element_matrix[elcindex];                                                 /*first element of node c*/
-                while ((elc != 0) && (gefunden == FALS))
+                while ((elc != 0) && (gefunden == FALSE))
                 {
                   if(elb == elc)
                   {
-                    gefunden = TRU;                                                             /*neighbour found*/
+                    gefunden = TRUE;                                                             /*neighbour found*/
                     el_array[realelemsurf] = elc;                                                             /* forward connenction */
                     elgefstartindex = 8 * elc;
                     /*the four nodes of the found element: ...*/
@@ -8302,7 +8294,7 @@ INT FindElNeighbours(INT ne)
                     n[1] = el_array[elgefstartindex+1];
                     n[2] = el_array[elgefstartindex+2];
                     n[3] = el_array[elgefstartindex+3];
-                    indexn = -1; found = FALS;
+                    indexn = -1; found = FALSE;
                     /*Welcher der 4 Knoten des gef. Tetraeders ist nicht betroffen*/
                     do
                     {
@@ -8310,7 +8302,7 @@ INT FindElNeighbours(INT ne)
                       /* a,b,c : die 3 KnotenIDs der Sideflaeche, die hier betroffen ist*/
                       if(     (n[indexn] != a) &&
                               (n[indexn] != b) &&
-                              (n[indexn] != c) ) found =TRU;
+                              (n[indexn] != c) ) found =TRUE;
                     } while(found == 0);
                     switch (indexn)                                                             /*indexn is misser!*/
                     {
@@ -8328,24 +8320,24 @@ INT FindElNeighbours(INT ne)
                     elcindex++;
                     elc = node_element_matrix[elcindex];                                                             /*next element of node c*/
                   }
-                }                                                /*"while ((elc != 0) && (gefunden == FALS))"*/
+                }                                                /*"while ((elc != 0) && (gefunden == FALSE))"*/
               }                                          /*"if(ela == elb)"*/
-              if(gefunden == FALS)
+              if(gefunden == FALSE)
               {
                 elbindex++;
                 elb = node_element_matrix[elbindex];                                                 /*next element of node a*/
               }
-            }                                    /*"while ((elb != 0) && (gefunden == FALS))"*/
+            }                                    /*"while ((elb != 0) && (gefunden == FALSE))"*/
           }                              /*"if(ela != elind)"*/
-          if(gefunden == FALS)
+          if(gefunden == FALSE)
           {
             elaindex++;
             ela = node_element_matrix[elaindex];                                     /*next element of node a*/
           }
-        }                        /*"while ((ela != 0)  && (gefunden == FALS))"*/
+        }                        /*"while ((ela != 0)  && (gefunden == FALSE))"*/
 
         /*wenn kein Nachbar geunden wurde . . .*/
-        if(found != TRU)
+        if(found != TRUE)
         {
           PrintErrorMessage('E',"FindElNeighbours","no neighbour found");
           return(1);
@@ -8392,15 +8384,15 @@ int FetchATetrahedronOfThisSbd(SD_TYP *sbd)
 
   lff = 12;       /*da kommt der erste Nachbareintrag des ersten Elements*/
   maxwert = (statistik[6] * 8) + 8;
-  gefunde = FALS;
-  while((gefunde == FALS)&&(lff < maxwert))
+  gefunde = FALSE;
+  while((gefunde == FALSE)&&(lff < maxwert))
   {
     for (i=0; i<4; i++)
     {
       /* DIRKS NEU, sbd_name oben  mit bisherige_ID_array modifiziert da el_array CAD IDs hat*/
       if(sbd_name == el_array[lff])
       {
-        gefunde = TRU;
+        gefunde = TRUE;
         gefTetraederelementID = lff / 8;                        /* DIV !!!*/
         return(gefTetraederelementID);
       }
