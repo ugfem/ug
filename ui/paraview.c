@@ -8,8 +8,8 @@
 /*                                                                          */
 /* History:   25.02.2005 begin	                                            */
 /*                                                                          */
-/* Usage:     paraview <filename> $a sol                                    +/
-   /*                                                                          */
+/* Usage:     paraview <filename> $a <sol>                                  */
+/*                                                                          */
 /*                                                                          */
 /****************************************************************************/
 
@@ -89,6 +89,147 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 
+#ifdef ModelP
+
+static INT WriteMetaFile(char* filename, VECDATA_DESC* vd)
+{
+
+  /*counters*/
+  int p, level, counterEquations, numEquations;
+
+  /*file stuff*/
+  char buffer[1024];          /*buffer for outputfile*/
+  char* c_ptr;                /*for searching patterns in strings, resp. a dot in filename*/
+  FILE* metaOutputFile;       /*file pointer for output file*/
+
+  /*ug topology*/
+  MULTIGRID* mg;              /*our multigrid*/
+  GRID* g;                    /*the grid*/
+
+
+  /*************************************************************************/
+  /*GET CURRENT MULTIGRID                                                  */
+  /*************************************************************************/
+
+
+  mg = GetCurrentMultigrid();
+  if (mg==NULL)
+  {
+    PrintErrorMessage('W',"dataexplorer","no multigrid open\n");
+    return (OKCODE);
+  }
+
+
+  /*************************************************************************/
+  /*GET FILENAME AND OPEN METAOUTPUTFILE                                       */
+  /*************************************************************************/
+
+
+  c_ptr = strrchr(filename, '.');
+  if (c_ptr != NULL) memset(c_ptr, '\0', 1);
+
+  strcat(filename, ".MetaFile.pvtu");
+
+  metaOutputFile = fopen(filename, "w");
+
+  if(metaOutputFile == NULL)
+  {
+    PrintErrorMessage('E', "paraview", "could not open output file");
+    return(PARAMERRORCODE);
+  }
+
+
+  /**************************************************************************/
+  /*TITLE                                                                   */
+  /**************************************************************************/
+
+
+  sprintf(buffer, "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n");
+  fputs(buffer, metaOutputFile);
+
+  sprintf(buffer, "\t<PUnstructuredGrid Ghostlevel=\"0\">\n");
+  fputs(buffer, metaOutputFile);
+
+
+  /****************************************************************************/
+  /*WRITE PPOINTS                                                              */
+  /****************************************************************************/
+
+
+  sprintf(buffer, "\t\t\t<PPoints>\n");
+  fputs(buffer, metaOutputFile);
+
+  sprintf(buffer, "\t\t\t\t<PDataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\"/>\n\t\t\t\t\t");
+  fputs(buffer, metaOutputFile);
+
+  sprintf(buffer, "\n\t\t\t</PPoints>\n");
+  fputs(buffer, metaOutputFile);
+
+
+  /****************************************************************************/
+  /*WRITE PPOINT DATA                                                          */
+  /****************************************************************************/
+
+  /*vector data*/
+
+  sprintf(buffer, "\t\t\t<PPointData>\n");
+  fputs(buffer, metaOutputFile);
+
+  for (level=0; level<=TOPLEVEL(mg); level++)
+  {
+    g = GRID_ON_LEVEL(mg,level);
+    numEquations = VD_NCMPS_IN_TYPE(vd,VTYPE(FIRSTVECTOR(g)));
+
+    for (counterEquations=0; counterEquations<numEquations; counterEquations++)
+    {
+      sprintf(buffer, "\t\t\t\t<PDataArray type=\"Float64\" Name=\"%c\" format=\"ascii\"/>\n\t\t\t\t\t", VM_COMP_NAME(vd,counterEquations));
+      fputs(buffer, metaOutputFile);
+    }
+  }
+
+  sprintf(buffer, "\n\t\t\t</PPointData>\n");
+  fputs(buffer, metaOutputFile);
+
+
+  /****************************************************************************/
+  /*WRITE PIECES (SOURCES)                                                    */
+  /****************************************************************************/
+
+
+  c_ptr = strrchr(filename, '.');
+  if (c_ptr != NULL) memset(c_ptr, '\0', 1);
+
+  c_ptr = strrchr(filename, '.');
+  if (c_ptr != NULL) memset(c_ptr, '\0', 1);
+
+  for(p=0; p<procs; p++)
+  {
+    sprintf(buffer, "\t\t\t<Piece Source=\"%s.%d.vtu\"/>\n", filename, p);
+    fputs(buffer, metaOutputFile);
+  }
+
+
+  /****************************************************************************/
+  /*WRITE END OF FILE AND CLOSE FILE                                          */
+  /****************************************************************************/
+
+
+  sprintf(buffer, "\t</PUnstructuredGrid>\n");
+  fputs(buffer, metaOutputFile);
+
+  sprintf(buffer, "</VTKFile>");
+  fputs(buffer, metaOutputFile);
+
+
+  fclose(metaOutputFile);
+
+
+  return(0);
+}
+
+#endif
+
+
 static INT ParaViewCommand (INT argc, char **argv)
 {
 
@@ -96,7 +237,7 @@ static INT ParaViewCommand (INT argc, char **argv)
   int i, counterCorners, level, counterEquations, numVertices, numElements, offset, numEquations;
 
   /*file stuff*/
-  char buffer[1024];          /*buffer for outputfile*/
+  char buffer[1024], it[5];   /*buffers for outputfile*/
   char filename[NAMESIZE];    /*filename for output file*/
   char* c_ptr;                /*for searching patterns in strings, resp. a dot in filename*/
   FILE *outputFile;           /*file pointer for output file*/
@@ -135,6 +276,35 @@ static INT ParaViewCommand (INT argc, char **argv)
   /*************************************************************************/
 
 
+#ifdef ModelP
+
+  if (sscanf(argv[0],expandfmt(CONCAT3(" paraview %",NAMELENSTR,"[ -~]")),
+             filename)!=1)
+  {
+    PrintErrorMessage('E',"paraview","could not read name of output file");
+    return(PARAMERRORCODE);
+  }
+
+  c_ptr = strrchr(filename, '.');
+  if (c_ptr != NULL) memset(c_ptr, '\0', 1);
+
+  sprintf(it, ".%d", me); /*process id*/
+  strcat(filename, it);
+
+  strcat(filename, ".vtu");
+
+  outputFile = fopen(filename, "w");
+
+  if(outputFile == NULL)
+  {
+    PrintErrorMessage('E', "paraview", "could not open output file");
+    return(PARAMERRORCODE);
+  }
+
+#endif
+
+#ifndef ModelP
+
   if (sscanf(argv[0],expandfmt(CONCAT3(" paraview %",NAMELENSTR,"[ -~]")),
              filename)!=1)
   {
@@ -154,6 +324,9 @@ static INT ParaViewCommand (INT argc, char **argv)
     return(PARAMERRORCODE);
   }
 
+#endif
+
+
   /**************************************************************************/
   /*TITLE                                                                   */
   /**************************************************************************/
@@ -162,7 +335,7 @@ static INT ParaViewCommand (INT argc, char **argv)
   sprintf(buffer, "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n");
   fputs(buffer, outputFile);
 
-  sprintf(buffer, "\t<UnstructuredGrid>\n");
+  sprintf(buffer, "\t<UnstructuredGrid Ghostlevel=\"0\">\n");
   fputs(buffer, outputFile);
 
 
@@ -446,6 +619,23 @@ static INT ParaViewCommand (INT argc, char **argv)
 
 
   fclose(outputFile);
+
+
+
+  /****************************************************************************/
+  /*WRITE METAFILE                                                            */
+  /****************************************************************************/
+
+
+#ifdef ModelP
+
+  if(me == master)
+  {
+    WriteMetaFile(filename, vd);
+  }
+
+#endif
+
 
   return(0);
 
