@@ -49,6 +49,9 @@
 /* UG namespaces: */
 USING_UG_NAMESPACES
 
+/* PPIF namespaces: */
+  USING_PPIF_NAMESPACE
+
 /****************************************************************************/
 /*                                                                          */
 /* macros                                                                   */

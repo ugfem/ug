@@ -148,9 +148,19 @@ START_UG_NAMESPACE
 extern int UG_math_error;
 
 #ifndef ModelP
+
+#ifdef __cplusplus
+END_NAMESPACE
+namespace PPIF {
+#endif
 extern int me;          /* to have in the serial case this variable as a dummy */
 extern int master;  /* to have in the serial case this variable as a dummy */
 extern int procs;       /* to have in the serial case this variable as a dummy */
+#ifdef __cplusplus
+}  /* end namespace PPIF */
+START_UG_NAMESPACE
+#endif
+
 extern int _proclist_; /* to have in the serial case this variable as a dummy*/
 extern int _partition_; /* to have in the serial case this variable as a dummy*/
 #endif

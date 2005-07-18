@@ -35,6 +35,7 @@
 #include "dddi.h"
 #include "xfer.h"
 
+USING_PPIF_NAMESPACE
 
 /* #define DebugAllPointers */
 

@@ -17,6 +17,8 @@
 
 #include "ppif.h"
 
+USING_PPIF_NAMESPACE
+
 #define XBCMAX 32768
 
 static char buffer[XBCMAX];

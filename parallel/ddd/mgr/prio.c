@@ -36,6 +36,9 @@
 
 USING_UG_NAMESPACE
 
+/* PPIF namespace: */
+USING_PPIF_NAMESPACE
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */

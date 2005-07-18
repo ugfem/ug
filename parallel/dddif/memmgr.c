@@ -52,6 +52,9 @@
 /* UG namespaces */
 USING_UG_NAMESPACES
 
+/* PPIF namespace */
+  USING_PPIF_NAMESPACE
+
 /****************************************************************************/
 
 /* define this to protocol all alloc/free requests via hashtable */

@@ -43,6 +43,9 @@
 
 USING_UG_NAMESPACE
 
+/* PPIF namespace: */
+USING_PPIF_NAMESPACE
+
 /****************************************************************************/
 /*                                                                          */
 /* variables global to this source file (static)                            */

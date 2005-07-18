@@ -52,6 +52,8 @@
 #include "misc.h"
 #include "heaps.h"
 
+#include "ppif_namespace.h"
+
 USING_UG_NAMESPACE
 
 /****************************************************************************/
@@ -81,9 +83,9 @@ USING_UG_NAMESPACE
 
 int NS_PREFIX UG_math_error = 0; /* This will be non zero after a math error occured  */
 #ifndef ModelP
-int NS_PREFIX me = 0;                   /* to have in the serial case this variable as a dummy */
-int NS_PREFIX master = 0;               /* to have in the serial case this variable as a dummy */
-int NS_PREFIX procs = 1;                /* to have in the serial case this variable as a dummy */
+int PPIF_NS_PREFIX me = 0;                      /* to have in the serial case this variable as a dummy */
+int PPIF_NS_PREFIX master = 0;          /* to have in the serial case this variable as a dummy */
+int PPIF_NS_PREFIX procs = 1;           /* to have in the serial case this variable as a dummy */
 int NS_PREFIX _proclist_ = -1; /* to have in the serial case this variable as a dummy */
 int NS_PREFIX _partition_ = 0; /* to have in the serial case this variable as a dummy */
 #endif

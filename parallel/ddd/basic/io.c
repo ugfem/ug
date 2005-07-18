@@ -32,6 +32,10 @@
 #include "include/dddio.h"
 #include "dddi.h"
 
+/* PPIF namespace: */
+USING_PPIF_NAMESPACE
+
+
 
 void (*DDD_UserLineOutFunction)(char *s);
 

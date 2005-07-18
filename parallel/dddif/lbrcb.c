@@ -39,6 +39,7 @@
 #include "namespace.h"
 
 USING_UG_NAMESPACES
+  USING_PPIF_NAMESPACE
 
 /****************************************************************************/
 /*																			*/

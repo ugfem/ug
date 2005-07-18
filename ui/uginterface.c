@@ -47,6 +47,10 @@
 
 USING_UG_NAMESPACES
 
+#ifdef ModelP
+USING_PPIF_NAMESPACE
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/

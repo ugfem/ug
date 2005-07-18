@@ -70,6 +70,9 @@
 
 USING_UG_NAMESPACES
 
+/* PPIF namespace: */
+  USING_PPIF_NAMESPACE
+
 #define DebugLowComm  10  /* 0 is all, 10 is off */
 
 

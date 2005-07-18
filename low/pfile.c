@@ -41,6 +41,7 @@
 
 #ifdef ModelP
 #include "pargm.h"
+USING_PPIF_NAMESPACE
 #endif
 
 #include "pfile.h"

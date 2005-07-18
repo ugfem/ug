@@ -36,7 +36,7 @@
 #include "if.h"
 #include "basic/notify.h"
 
-
+USING_PPIF_NAMESPACE
 
 /* general error string */
 #define ERRSTR "    DDD-IFC Warning: "
