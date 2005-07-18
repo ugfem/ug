@@ -280,7 +280,6 @@ static INT SCITER_Iter (NP_EITER *theNP, INT level, EVECDATA_DESC *c, EVECDATA_D
   DOUBLE s[EXTENSION_MAX];
   NP_SCITER *np = (NP_SCITER *) theNP;
   VECDATA_DESC *tmp=NULL;
-  DOUBLE norm;
 
   /* inner iteration */
   if (AllocVDFromVD(NP_MG(theNP),level,level,c->vd,&tmp)) NP_RETURN(1,result[0]);
@@ -476,7 +475,6 @@ static INT ELmgc (NP_EITER *theNP, INT level, EVECDATA_DESC *c, EVECDATA_DESC *b
   GRID *theGrid;
   ELRESULT lresult;
   INT i;
-  DOUBLE eunorm;
 
   /* admin */
   NPEIT_A(theNP) = A;
@@ -591,7 +589,7 @@ static INT ELmgcConstruct (NP_BASE *theNP)
 
 static INT EEXCopyMatrix (GRID *theGrid, EVECDATA_DESC *x, EMATDATA_DESC *A, INT n, DOUBLE *mat)
 {
-  INT ment,index,rindex,rtype,rcomp,cindex,ctype,ccomp,i,j;
+  INT rindex,rtype,rcomp,cindex,ctype,ccomp,i,j;
   VECTOR *theV,*theW;
   MATRIX *theM;
   SHORT *comp;
@@ -647,10 +645,7 @@ static INT EEXInit (NP_BASE *theNP, INT argc , char **argv)
 
 static INT EEXDisplay (NP_BASE *theNP)
 {
-  NP_EEX *np;
-  char name [32];
-
-  np = (NP_EEX *) theNP;
+  NP_EEX *np = (NP_EEX *) theNP;
   NPEIterDisplay(&np->eiter);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)np->n);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"count",(int)np->count);
@@ -660,7 +655,7 @@ static INT EEXDisplay (NP_BASE *theNP)
 
 void WriteScilabVector (char *name, INT n, DOUBLE *vec)
 {
-  INT i,j;
+  INT i;
   FILE *f=fopen(name,"w");
 
   for (i=0; i<n; i++)
@@ -717,7 +712,6 @@ static INT EEXPreProcess  (NP_EITER *theNP, INT level, EVECDATA_DESC *x, EVECDAT
   GRID *theGrid = NP_GRID(theNP,level);
   HEAP *theHeap=MGHEAP(NP_MG(theNP));
   VECTOR *theV;
-  MATRIX *theM;
   INT n;
 
   /* admin */

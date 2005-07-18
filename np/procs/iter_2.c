@@ -665,7 +665,7 @@ static INT OBGS_PrintMatrix (DOUBLE *Mat, INT n, INT bw)
 
 static INT OBGS_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
-  INT i,j,n,bl,max,max_comp_in_type,k,index,bw,rindex,rtype,rcomp,cindex,ctype,ccomp,nb_max,n_Mat,n_Mat_max,MarkKey,fifo_buffer_size,LocalMarkKey;
+  INT i,j,n,bl,max,max_comp_in_type,k,index,bw,rindex,rtype,rcomp,cindex,ctype,ccomp,n_Mat,n_Mat_max,MarkKey,fifo_buffer_size,LocalMarkKey;
   SHORT *comp;
   NP_OBGS *np=(NP_OBGS *)theNP;
   GRID *theGrid=NP_GRID(theNP,level);

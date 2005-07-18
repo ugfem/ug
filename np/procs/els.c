@@ -448,10 +448,9 @@ static INT ELinearResiduum (NP_ELINEAR_SOLVER *theNP, INT bl, INT level, EVECDAT
 
 static INT EnergyResiduum (NP_ELINEAR_SOLVER *theNP, INT bl, INT level, EVECDATA_DESC *x, EVECDATA_DESC *b, EMATDATA_DESC *A, ELRESULT *lresult)
 {
-  NP_ELS *np = (NP_ELS *) theNP;
   EVEC_SCALAR err;
   EVECDATA_DESC *temp;
-  INT i,n;
+  INT i;
 
         #ifdef ModelP
   if (a_vector_collect(theNP->base.mg,bl,level,b->vd)) NP_RETURN(1,lresult->error_code);

@@ -223,7 +223,7 @@ static INT SPS_ENLAssembleDefect (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA
   INT i;
   NP_SPS *sps;
   NP_T_ASSEMBLE *tass;
-  DOUBLE a,r;
+  DOUBLE r;
   VECDATA_DESC *x,*p,*t;
   NP_REINIT *reinit;
   REINIT_RESULT reinit_res;
@@ -292,7 +292,6 @@ static INT SPS_ENLAssembleMatrix (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA
   NP_SPS *sps;
   NP_T_ASSEMBLE *tass;
   NP_REINIT *reinit;
-  DOUBLE parameter,old_parameter;
   REINIT_RESULT reinit_res;
 
   /* get tass numproc */
@@ -377,7 +376,7 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
   ENLRESULT enlresult;
   DOUBLE Factor[MAX_VEC_COMP];
   INT do_nls,n0,n1;
-  char buffer[128],text[128];
+  char text[128];
   DOUBLE s,nt,diff;
 
   /* check */
@@ -449,15 +448,15 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
               EVDD_E(sol_p1,level,i)=EVDD_E(sps->pstep.sol_p0,level,i)-sps->last_nls_dp[i];
             if (sps->raster>0.0 && EVDD_E(sol_p1,level,i)>EVDD_E(sps->pstep.sol_p0,level,i))
             {
-              n0=floor(EVDD_E(sps->pstep.sol_p0,level,i)/sps->raster_size[i]);
-              n1=floor(EVDD_E(sol_p1,level,i)/sps->raster_size[i]+0.5);
+              n0=(INT)floor(EVDD_E(sps->pstep.sol_p0,level,i)/sps->raster_size[i]);
+              n1=(INT)floor(EVDD_E(sol_p1,level,i)/sps->raster_size[i]+0.5);
               if (n0>=n1) n1=n0+1;
               EVDD_E(sol_p1,level,i)=n1*sps->raster_size[i];
             }
             else if (sps->raster>0.0 && EVDD_E(sol_p1,level,i)<EVDD_E(sps->pstep.sol_p0,level,i))
             {
-              n0=ceil(EVDD_E(sps->pstep.sol_p0,level,i)/sps->raster_size[i]);
-              n1=ceil(EVDD_E(sol_p1,level,i)/sps->raster_size[i]+0.5);
+              n0=(INT)ceil(EVDD_E(sps->pstep.sol_p0,level,i)/sps->raster_size[i]);
+              n1=(INT)ceil(EVDD_E(sol_p1,level,i)/sps->raster_size[i]+0.5);
               if (n0<=n1) n1=n0-1;
               EVDD_E(sol_p1,level,i)=n1*sps->raster_size[i];
             }

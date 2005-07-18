@@ -406,7 +406,6 @@ INT BE_TimePostProcess (NP_T_STEP *tstep, INT level, INT *res)
 INT BE_Init (NP_BASE *base, INT argc, char **argv)
 {
   NP_BE *be;
-  VECDATA_DESC *tmp;
   INT ret;
   MULTIGRID *mg;
 

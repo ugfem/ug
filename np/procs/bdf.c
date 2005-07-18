@@ -250,8 +250,7 @@ INT NS_DIM_PREFIX BDFTimeInit (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
-  void *data;
-  INT n,tc_res,i;
+  INT tc_res,i;
   INT indicatorstep;
   DOUBLE tp;
   ERESULT eresult;
@@ -392,7 +391,7 @@ static INT BDFTimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   DOUBLE tp,dt_p1,dt_0,g_p1,g_0,g_m1,qfm_dt,dtfactor,dt_old;
   DOUBLE Factor[MAX_VEC_COMP];
   INT n_unk,tc_res;
-  INT n,i,k,mg_changed,changed,ret;
+  INT i,k,mg_changed,changed,ret;
   INT low,llow,nlinterpolate,last_number_of_nonlinear_iterations;
   INT verygood,bad;
   NLRESULT nlresult;
@@ -845,7 +844,6 @@ Continue:
       bdf->disabled_timestep = -1.0;
   }
 
-output:         /* output */
   if (bdf->displayMode != PCR_NO_DISPLAY)
   {
     UserWriteF("\n");

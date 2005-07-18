@@ -782,7 +782,6 @@ static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
   VECTOR *theV,**vlist;
   MATRIX *theM,*theM0;
   INT i,cnt,comp,ncut,n,MarkKey,fno,fni,lno,lni;
-  DOUBLE pos[2];
 
   np = (NP_ORDER_SO *) theNP;
   np->ncut = np->ncyc = 0;

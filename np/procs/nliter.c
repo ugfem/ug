@@ -144,9 +144,6 @@ INT l_nlgs (NP_NLGS *nlgs, NP_NL_ASSEMBLE *ass, GRID *grid, const DOUBLE *damp,
 /*                                                                          */
 /****************************************************************************/
 
-/* general purpose text buffer */
-static char buffer[BUFFER_SIZE];
-
 /* for daxpy */
 static DOUBLE Factor_One[MAX_VEC_COMP];
 
@@ -158,8 +155,7 @@ static DOUBLE Factor_One[MAX_VEC_COMP];
 
 static INT cy0,cy1,cy2;
 static INT m00,m01,m02,m10,m11,m12,m20,m21,m22;
-static DOUBLE s0,s1,s2;
-static DOUBLE a0,a1,a2;
+static DOUBLE s0,s1;
 
 static INT MySetYComp (const SHORT *cmp, SHORT n)
 {
@@ -570,14 +566,12 @@ INT l_nlgs (NP_NLGS *nlgs, NP_NL_ASSEMBLE *ass, GRID *grid, const DOUBLE *damp,
   INT level;
   INT rtype,ctype,myindex,error;
   register MATRIX *mat;
-  register SHORT vc,dc,mc,xc,mask;
-  register SHORT *tmpptr,*mcomp,*wcomp,*dcomp,*xcomp,*vcomp;
-  register SHORT i,j,l;
-  register SHORT n,nc;
-  register DOUBLE sum;
+  register SHORT *tmpptr,*dcomp,*xcomp,*vcomp;
+  register SHORT i;
+  register SHORT n;
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
-  DOUBLE r[MAX_SINGLE_VEC_COMP],*wmat;
+  DOUBLE r[MAX_SINGLE_VEC_COMP];
 
   mg = nlgs->smoother.iter.base.mg;
   level = GLEVEL(grid);
@@ -640,11 +634,7 @@ INT l_nlgs (NP_NLGS *nlgs, NP_NL_ASSEMBLE *ass, GRID *grid, const DOUBLE *damp,
 
 static INT NLGS_Init (NP_BASE *base, INT argc , char **argv)
 {
-  NP_NLGS *nlgs;
-  INT j,nopt,Dopt;
-  char option[OPTIONLEN],value[VALUELEN];
-
-  nlgs = (NP_NLGS*) base;
+  NP_NLGS* nlgs = (NP_NLGS*) base;
 
   /* set configuration parameters */
   if (ReadArgvINT("n",&(nlgs->niter),argc,argv))

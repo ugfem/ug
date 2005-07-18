@@ -446,7 +446,8 @@ char * NS_PREFIX StrTok (char *s, const char *ct)
 {
   static char *e;
   char *b;
-  INT i, flag;
+  UINT i;
+  INT flag;
 
   if (s != NULL)
     b = s-1;
@@ -748,16 +749,16 @@ INT NS_PREFIX ReadMemSizeFromString (const char *s, MEM *mem_size )
   switch( s[strlen(s)-1] )
   {
   case 'k' : case 'K' :             /* check for [kK]ilobyte-notation */
-    *mem_size = floor(mem * KBYTE);
+    *mem_size = (MEM)floor(mem * KBYTE);
     return(0);
   case 'm' : case 'M' :             /* check for [mM]egabyte-notation */
-    *mem_size = floor(mem * MBYTE);
+    *mem_size = (MEM)floor(mem * MBYTE);
     return(0);
   case 'g' : case 'G' :             /* check for [gG]igabyte-notation */
-    *mem_size = floor(mem * GBYTE);
+    *mem_size = (MEM)floor(mem * GBYTE);
     return(0);
-  case '0' : case '1' : case '2' : case '3' : case '4' : case '5' : case '6' : case '7' : case '8' : case '9' :     /* no recognized mem unit character recognized */
-    *mem_size = floor(mem * 1);
+  case '0' : case '1' : case '2' : case '3' : case '4' : case '5' : case '6' : case '7' : case '8' : case '9' :     /* no mem unit character recognized */
+    *mem_size = (MEM)floor(mem);
     return(0);
   default :              /* unknown mem unit character */
     return(2);

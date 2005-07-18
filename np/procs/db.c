@@ -264,9 +264,8 @@ static INT Table_Init (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_LIST *np = (NP_LIST *)theNP;
   FILE *file;
-  INT i,le,cmp;
+  INT i;
   float a;
-  char buffer[NAMESIZE];
 
   np = (NP_LIST *)theNP;
   if (ReadArgvINT("n",&(np->n),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);

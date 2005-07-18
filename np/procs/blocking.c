@@ -144,8 +144,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 static INT ELEM_BLOCK_Init (NP_BASE *theNP, INT argc , char **argv)
 {
-  NP_ELEM_BLOCK *np=(NP_ELEM_BLOCK *)theNP;
-
   return (NP_ACTIVE);
 }
 
@@ -156,7 +154,6 @@ static INT ELEM_BLOCK_Display (NP_BASE *theNP)
 
 static INT ELEM_BLOCK_Blocking (NP_BLOCKING *theNP, GetMemProcPtr GetMem, INT level, MATDATA_DESC *A, BLOCKING_STRUCTUR *bs, INT *result)
 {
-  NP_ELEM_BLOCK *np=(NP_ELEM_BLOCK *)theNP;
   GRID *theGrid=NP_GRID(theNP,level);
   INT i,n,nt;
   ELEMENT *theElement;
@@ -291,8 +288,7 @@ static INT SAB_Blocking (NP_BLOCKING *theNP, GetMemProcPtr GetMem, INT level, MA
 {
   NP_SAB *np=(NP_SAB *)theNP;
   GRID *theGrid=NP_GRID(theNP,level);
-  VECTOR **vl,*theV,*theW;
-  MATRIX *theM;
+  VECTOR **vl,*theV;
   INT n,i,nt;
 
   bs->n=NVEC(theGrid);

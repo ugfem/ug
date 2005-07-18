@@ -155,13 +155,10 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level, VECDATA_DESC *x);
 static INT RestrictSolNodeVector (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
 {
   GRID *CoarseGrid;
-  ELEMENT *theElement;
-  VERTEX *theVertex;
   NODE *theNode;
   VECTOR *v,*vc;
-  DOUBLE c[MAX_CORNERS_OF_ELEM],s[MAX_SINGLE_VEC_COMP];
   const SHORT *toComp,*fromComp;
-  INT i,j,n,ncomp,vecskip,dt;
+  INT i,ncomp,vecskip,dt;
 
   CoarseGrid = DOWNGRID(FineGrid);
 
@@ -256,7 +253,7 @@ static INT RestrictSolNodeVector (GRID *FineGrid, const VECDATA_DESC *to, const 
 INT RestrictValue (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
 {
   FORMAT *fmt;
-  INT vtype,rv,otype;
+  INT vtype,otype;
   const SHORT *offset;
 
   if (DOWNGRID(FineGrid)==NULL)
@@ -520,7 +517,7 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 {
   NP_FAS *fas;
   MULTIGRID *mg;
-  INT i,j, PrintID;
+  INT i, PrintID;
   VEC_SCALAR defect, defect2reach;
   char text[DISPLAY_WIDTH+4];
   INT n_unk;
@@ -674,8 +671,6 @@ exit:
 INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
              VECDATA_DESC *x)
 {
-  VECTOR *theVector;
-  NODE *theNode;
   MULTIGRID *mg;
   GRID *g;
   DOUBLE damp_factor[MAX_VEC_COMP];
@@ -770,7 +765,7 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
 static INT FasSolverInit (NP_BASE *base, INT argc, char **argv)
 {
   NP_FAS *fas;
-  INT i,j;
+  INT i;
 
   fas = (NP_FAS *) base;
 

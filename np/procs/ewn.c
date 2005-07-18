@@ -401,7 +401,7 @@ static INT EWExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_EWN *np;
   EWRESULT ewresult;
-  INT i,result,level,nev,m;
+  INT result,level,nev,m;
 
   np = (NP_EWN *) theNP;
   level = CURRENTLEVEL(theNP->mg);
@@ -538,20 +538,16 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
 {
   NP_EWN     *np    = (NP_EWN *) theNP;
   MULTIGRID *theMG = theNP->base.mg;
-  INT i,j,k,l,PrintID,iter,done,result,DoLS;
+  INT i,j,iter,done,result,DoLS;
   char text[DISPLAY_WIDTH+4],format2[64],format3[64],formatr1[64],formatr2[64],formats[64];
-  DOUBLE a[2],rq,s,min,shift,shift_old,norm_max,cnorm[MAX_NUMBER_EW],norm_x1x2,norm_yx2,norm_yx1,delta;
+  DOUBLE shift,shift_old,cnorm[MAX_NUMBER_EW],norm_x1x2,norm_yx2,norm_yx1,delta;
   DOUBLE A[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE B[MAX_NUMBER_EW][MAX_NUMBER_EW];
-  DOUBLE BL[MAX_NUMBER_EW*MAX_NUMBER_EW];
-  DOUBLE L[MAX_NUMBER_EW*MAX_NUMBER_EW];
-  DOUBLE G[MAX_NUMBER_EW][MAX_NUMBER_EW];
-  DOUBLE GL[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE E[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE ew_re[MAX_NUMBER_EW],ew_im[MAX_NUMBER_EW];
   DOUBLE ew_re_out,ew_im_out;
   DOUBLE tmp_re[MAX_NUMBER_EW],tmp_im[MAX_NUMBER_EW];
-  DOUBLE old_re[MAX_NUMBER_EW],old_im[MAX_NUMBER_EW],norm,diff,sign;
+  DOUBLE old_re[MAX_NUMBER_EW],old_im[MAX_NUMBER_EW],norm;
   DOUBLE* table[MAX_NUMBER_EW];
   INT index[MAX_NUMBER_EW];
   INT bl = 0;
@@ -826,8 +822,6 @@ static INT EWNConstruct (NP_BASE *theNP)
 
 INT NS_DIM_PREFIX InitEWN ()
 {
-  INT i;
-
   if (CreateClass(EW_SOLVER_CLASS_NAME ".ewn",sizeof(NP_EWN),EWNConstruct)) return (__LINE__);
 
   return (0);

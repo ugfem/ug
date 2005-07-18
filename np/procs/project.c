@@ -177,7 +177,6 @@ static INT Prj_Display (NP_BASE *theNP)
 static INT ProjectionVectorLN (NP_PROJECT *theNP, INT fl, INT tl,
                                INT index, VECDATA_DESC *t, INT *result)
 {
-  NP_PRJ    *np    = (NP_PRJ *) theNP;
   MULTIGRID *theMG = theNP->base.mg;
 
   if (index != 0)
@@ -197,7 +196,6 @@ static INT ProjectionVectorLN (NP_PROJECT *theNP, INT fl, INT tl,
 static INT ProjectionVectorPL1 (NP_PROJECT *theNP, INT fl, INT tl,
                                 INT index, VECDATA_DESC *t, INT *result)
 {
-  NP_PRJ    *np    = (NP_PRJ *) theNP;
   MULTIGRID *theMG = theNP->base.mg;
   VECTOR *v;
   DOUBLE_VECTOR pos;
@@ -272,7 +270,6 @@ static INT Normale(INT n, INT i, DOUBLE **x, DOUBLE_VECTOR normal)
 static INT ProjectionVectorPL (NP_PROJECT *theNP, INT fl, INT tl,
                                INT index, VECDATA_DESC *t, INT *result)
 {
-  NP_PRJ    *np    = (NP_PRJ *) theNP;
   MULTIGRID *theMG = theNP->base.mg;
   ELEMENT *theElement;
   VECTOR *v;
@@ -359,7 +356,6 @@ static INT ProjectionVectorPL (NP_PROJECT *theNP, INT fl, INT tl,
 static INT ProjectionVectorEL (NP_PROJECT *theNP, INT fl, INT tl,
                                INT index, VECDATA_DESC *t, INT *result)
 {
-  NP_PRJ    *np    = (NP_PRJ *) theNP;
   MULTIGRID *theMG = theNP->base.mg;
   VECTOR *v;
   DOUBLE_VECTOR pos;

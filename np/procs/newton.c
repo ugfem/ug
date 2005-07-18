@@ -333,8 +333,6 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   LRESULT lr;                                                           /* result of linear solver				*/
   DOUBLE lambda_old;                    /* last accepted lamda                  */
   DOUBLE lambda_min;                    /* minimal lamda                        */
-  DOUBLE mu;                            /* guess for lambda                     */
-  DOUBLE s_tmp;                         /* tmp norm                             */
   INT use_second;
 
   /* get status */

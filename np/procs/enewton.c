@@ -191,7 +191,6 @@ static INT ENonLinearDefect (MULTIGRID *mg, INT level, INT init, EVECDATA_DESC *
 static INT ENewtonPreProcess  (NP_ENL_SOLVER *solve, INT level, EVECDATA_DESC *x, INT *result)
 {
   NP_ENEWTON *newton;
-  INT i;
 
   newton = (NP_ENEWTON *) solve;
   if (AllocEMDFromEVD(solve->base.mg,0,level,x,x,&newton->J)) NP_RETURN(1,result[0]);
@@ -250,7 +249,6 @@ static INT ENewtonPreProcess  (NP_ENL_SOLVER *solve, INT level, EVECDATA_DESC *x
 static INT ENewtonPostProcess (NP_ENL_SOLVER *solve, INT level, EVECDATA_DESC *x, INT *result)
 {
   NP_ENEWTON *newton;
-  INT i;
 
   newton = (NP_ENEWTON *) solve;
   if (FreeEMD(solve->base.mg,0,level,newton->J)) REP_ERR_RETURN(1);
@@ -263,7 +261,7 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
   NP_ENEWTON *newton;                                           /* object pointer						*/
   MULTIGRID *mg;                                                /* multigrid from base class			*/
   INT r;                                                                /* iteration counter			                */
-  INT i,j,kk;                                                           /* some loop counters					*/
+  INT i,j;                                                              /* some loop counters					*/
   char text[DISPLAY_WIDTH+4];                           /* display text in PCR					*/
   INT PrintID;                                                  /* print id for PCR						*/
   EVEC_SCALAR defect, defect2reach;             /* component--wise norm					*/
@@ -271,12 +269,10 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
   INT n_unk;                                                    /* number of components in solution		*/
   EVEC_SCALAR linred;                                           /* parameters for linear solver			*/
   EVEC_SCALAR red_factor;                               /* convergence factor for linear iter	*/
-  DOUBLE la;                                                            /* damping factor in line search		*/
   INT bl;                                                               /* baselevel returned by preprocess		*/
   INT error;                                                            /* for return value						*/
   LRESULT lr;                                                           /* result of linear solver				*/
   ELRESULT elr;                                                 /* result of ext. linear solver			*/
-  DOUBLE s_tmp;                         /* tmp norm                             */
   INT use_second;
   DOUBLE eh[EXTENSION_MAX];                 /* extension help vector                */
   DOUBLE sc[EXTENSION_MAX*EXTENSION_MAX];       /* schur complement                 */
@@ -290,7 +286,7 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
   /* fill result variable with error condition */
   res->error_code = 0;
   res->converged = 0;
-  res->rho_first = 0.0;
+  res->rho_first = 0;
   res->number_of_nonlinear_iterations = 0;
   res->number_of_line_searches = 0;
   res->total_linear_iterations = 0;

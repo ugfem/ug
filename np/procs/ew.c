@@ -1182,7 +1182,7 @@ static INT SmallEWSolver(INT nev, DOUBLE G[MAX_NUMBER_EW][MAX_NUMBER_EW],
   DOUBLE beta[MAX_NUMBER_EW];
   DOUBLE w, s, c, h, d, x, y, z, sigma;
   INT i,j,k,m;
-  INT l,iter2,p,ii, sym=1, debug=0;
+  INT iter2,p,ii, sym=1;
   DOUBLE temp1, temp2;
 
   /* Givens rotation */
@@ -1340,7 +1340,7 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
   INT i,j,k,l,PrintID,iter;
   char text[DISPLAY_WIDTH+4];
   VEC_SCALAR defect, defect2reach;
-  DOUBLE a[2],rq,s;
+  DOUBLE a[2];
   DOUBLE A[MAX_NUMBER_EW*MAX_NUMBER_EW];
   DOUBLE B[MAX_NUMBER_EW*MAX_NUMBER_EW];
   DOUBLE L[MAX_NUMBER_EW*MAX_NUMBER_EW];
