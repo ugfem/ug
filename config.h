@@ -20,3 +20,7 @@
 /* matrices and vectors (for amg) are allocated */
 /* using Mark/Release                           */
 #define DYNAMIC_MEMORY_ALLOCMODEL
+
+/* enables use of Athena Text Widget in libXaw, libXt */
+/* undefine USE_XAW, if you want pure X (only libX11) */
+#define USE_XAW
