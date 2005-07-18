@@ -64,6 +64,7 @@
 #include <mpi.h>
 
 #include "../ppif_general.h"
+#include "../ppif.h"
 
 /*#include "compiler.h"*/
 
@@ -72,6 +73,8 @@
 #ifdef _PV3
 #include <pV3.h>
 #endif
+
+USING_PPIF_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -121,9 +124,9 @@ typedef struct {
   int used;
   int p;
   int chanid;
-} VChannel;
+} MPIVChannel;
 
-typedef VChannel *VChannelPtr;
+typedef MPIVChannel *MPIVChannelPtr;
 typedef void     *msgid;
 
 
@@ -144,21 +147,23 @@ typedef void     *msgid;
 /****************************************************************************/
 
 /* id's */
-int me;                         /* my processor id                          */
-int master;                     /* id of master processor                   */
-int procs;                      /* number of processors in the network      */
+int PPIF_NS_PREFIX me;                          /* my processor id                          */
+int PPIF_NS_PREFIX master;                      /* id of master processor                   */
+int PPIF_NS_PREFIX procs;                       /* number of processors in the network      */
 
 /* 3D array structure */
-int arrayid;                    /* compact format of position, 8 bits each  */
-int MyX, MyY, MyZ;              /* 3D array coordinates                     */
-int DimX, DimY, DimZ;           /* 3D array dimensions, may be 1 !          */
-VChannelPtr nn[6];              /* nearest neighbors in 3D array            */
+int PPIF_NS_PREFIX arrayid;                     /* compact format of position, 8 bits each  */
+/* 3D array coordinates                     */
+int PPIF_NS_PREFIX MyX, PPIF_NS_PREFIX MyY, PPIF_NS_PREFIX MyZ;
+/* 3D array dimensions, may be 1 !          */
+int PPIF_NS_PREFIX DimX, PPIF_NS_PREFIX DimY, PPIF_NS_PREFIX DimZ;
+VChannelPtr PPIF_NS_PREFIX nn[6];               /* nearest neighbors in 3D array            */
 
 /* Tree structure */
-int degree;                     /* degree of downtree nodes                 */
-VChannelPtr uptree;             /* channel uptree                           */
-VChannelPtr downtree[MAXT];     /* channels downtree (may be empty)         */
-int slvcnt[MAXT];               /* number of processors in subtree          */
+int PPIF_NS_PREFIX degree;                      /* degree of downtree nodes                 */
+VChannelPtr PPIF_NS_PREFIX uptree;              /* channel uptree                           */
+VChannelPtr PPIF_NS_PREFIX downtree[MAXT];      /* channels downtree (may be empty)         */
+int PPIF_NS_PREFIX slvcnt[MAXT];                /* number of processors in subtree          */
 
 /****************************************************************************/
 /*                                                                          */
@@ -166,11 +171,9 @@ int slvcnt[MAXT];               /* number of processors in subtree          */
 /*                                                                          */
 /****************************************************************************/
 
-static VChannel *VChan;
+static MPIVChannel *VChan;
 static int vc_count=0;          /* number of used VChan                     */
 static int vc_free=0;           /* rotating pointer to find free VChan      */
-
-static char buf[100];           /* string buffer for debugging              */
 
 #ifdef _PV3
 static MPI_Comm Comm;
@@ -187,15 +190,15 @@ int RecvSync (void* v, void *data, int size);
 
 /****************************************************************************/
 /*                                                                          */
-/* routines for handling virtual channels                                                           */
+/* routines for handling virtual channels                                   */
 /*                                                                          */
 /****************************************************************************/
 
-static long InitVChan (void)
+static long InitVChan ()
 {
   int i;
 
-  if (VChan = (VChannel *) malloc(sizeof(VChannel)*MAXVCHAN) )
+  if (VChan = (MPIVChannel *) malloc(sizeof(MPIVChannel)*MAXVCHAN) )
   {
     for (i=0; i<MAXVCHAN; i++) VChan[i].used = FALSE;
 
@@ -210,8 +213,7 @@ static long InitVChan (void)
 static VChannelPtr NewVChan (int p, int id)
 
 {
-  int i;
-  VChannelPtr myChan;
+  MPIVChannelPtr myChan;
 
   if (vc_count < MAXVCHAN)
   {
@@ -244,7 +246,7 @@ static VChannelPtr NewVChan (int p, int id)
 static void DeleteVChan (VChannelPtr myChan)
 
 {
-  myChan->used = FALSE;
+  ((MPIVChannel*)myChan)->used = FALSE;
 
   vc_count -= 1;
 }
@@ -264,7 +266,7 @@ static void DeleteVChan (VChannelPtr myChan)
 /*                                                                          */
 /****************************************************************************/
 
-int aid_to_pid (int x, int y, int z)
+int PPIF_NS_PREFIX aid_to_pid (int x, int y, int z)
 
 {
   if ((x<0)||(x>=DimX)) return (-1);
@@ -274,7 +276,7 @@ int aid_to_pid (int x, int y, int z)
   return ( (z*DimY+y)*DimX+x);
 }
 
-int pid_to_aid (int p)
+int PPIF_NS_PREFIX pid_to_aid (int p)
 
 {
   int x, y, z;
@@ -293,11 +295,11 @@ int pid_to_aid (int p)
    Factor N into two integers that are as close together as possible
  */
 
-void Factor (int N, int *pn, int *pm)
+static void Factor (int N, int *pn, int *pm)
 
 {
-  int n = ceil (sqrt ((double) N));
-  int m = floor (sqrt ((double) N));
+  int n = (int)ceil (sqrt ((double) N));
+  int m = (int)floor (sqrt ((double) N));
 
   while (n*m != N)
   {
@@ -313,7 +315,7 @@ void Factor (int N, int *pn, int *pm)
 static int PPIFBeganMPI=0; /* remember that PPIF started MPI */
 
 
-int InitPPIF (int *argcp, char ***argvp)
+int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
 {
   int i, succ, sonr, sonl, aid;
   MPI_Status status;
@@ -443,7 +445,8 @@ int InitPPIF (int *argcp, char ***argvp)
   succ=1;
   for(i=0; i<degree; i++)
   {
-    MPI_Recv ((void *) &(slvcnt[i]), (int) sizeof(int), MPI_BYTE, downtree[i]->p, ID_TREE, COMM, &status);
+    MPI_Recv ((void *) &(slvcnt[i]), (int) sizeof(int), MPI_BYTE,
+              ((MPIVChannel*)downtree[i])->p, ID_TREE, COMM, &status);
     succ += slvcnt[i];
   }
   if (me>0)
@@ -455,7 +458,7 @@ int InitPPIF (int *argcp, char ***argvp)
 }
 
 
-void ExitPPIF (void)
+int PPIF_NS_PREFIX ExitPPIF ()
 {
   int mpierror;
 
@@ -468,6 +471,8 @@ void ExitPPIF (void)
     if (mpierror) MPI_Abort(MPI_COMM_WORLD, mpierror);
     PPIFBeganMPI = 0;
   }
+
+  return PPIF_SUCCESS;
 }
 
 
@@ -477,7 +482,7 @@ void ExitPPIF (void)
 /*                                                                          */
 /****************************************************************************/
 
-int Broadcast (void *data, int size)
+int PPIF_NS_PREFIX Broadcast (void *data, int size)
 
 {
   if (MPI_SUCCESS != MPI_Bcast (data, size, MPI_BYTE, master, COMM) )
@@ -486,7 +491,7 @@ int Broadcast (void *data, int size)
   return (PPIF_SUCCESS);
 }
 
-int Concentrate (void *data, int size)
+int PPIF_NS_PREFIX Concentrate (void *data, int size)
 
 {
   if (me != master)
@@ -495,18 +500,16 @@ int Concentrate (void *data, int size)
   return (PPIF_SUCCESS);
 }
 
-int GetConcentrate (int slave, void *data, int size)
+int PPIF_NS_PREFIX GetConcentrate (int slave, void *data, int size)
 
 {
-  VChannel *chan;
-
   if (slave < degree)
     if (RecvSync (downtree[slave], data, size) < 0) return (PPIF_FAILURE);
 
   return (PPIF_SUCCESS);
 }
 
-int Spread (int slave, void *data, int size)
+int PPIF_NS_PREFIX Spread (int slave, void *data, int size)
 
 {
   if (slave < degree)
@@ -515,7 +518,7 @@ int Spread (int slave, void *data, int size)
   return (PPIF_SUCCESS);
 }
 
-int GetSpread (void *data, int size)
+int PPIF_NS_PREFIX GetSpread (void *data, int size)
 
 {
   if (me!=master)
@@ -524,7 +527,7 @@ int GetSpread (void *data, int size)
   return (PPIF_SUCCESS);
 }
 
-int Synchronize (void)
+int PPIF_NS_PREFIX Synchronize ()
 
 {
   if (MPI_SUCCESS != MPI_Barrier (COMM) ) return (PPIF_FAILURE);
@@ -539,13 +542,13 @@ int Synchronize (void)
 /*                                                                          */
 /****************************************************************************/
 
-VChannelPtr ConnSync (int p, int id)
+VChannelPtr PPIF_NS_PREFIX ConnSync (int p, int id)
 
 {
   return (NewVChan (p, id) );
 }
 
-int DiscSync (void* v)
+int PPIF_NS_PREFIX DiscSync (void* v)
 
 {
   VChannelPtr vc = (VChannelPtr)v;
@@ -554,24 +557,24 @@ int DiscSync (void* v)
   return (0);
 }
 
-int SendSync (void* v, void *data, int size)
+int PPIF_NS_PREFIX SendSync (void* v, void *data, int size)
 
 {
-  VChannelPtr vc = (VChannelPtr)v;
-  if (MPI_SUCCESS == MPI_Ssend (data, size, MPI_BYTE, vc->p, vc->chanid, COMM) )
+  if (MPI_SUCCESS == MPI_Ssend (data, size, MPI_BYTE,
+                                ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM) )
     return (size);
   else
     return (-1);
 }
 
-int RecvSync (void* v, void *data, int size)
+int PPIF_NS_PREFIX RecvSync (void* v, void *data, int size)
 
 {
-  VChannelPtr vc = (VChannelPtr)v;
   int count = -1;
   MPI_Status status;
 
-  if (MPI_SUCCESS == MPI_Recv (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, &status) )
+  if (MPI_SUCCESS == MPI_Recv (data, size, MPI_BYTE,
+                               ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM, &status) )
     MPI_Get_count (&status, MPI_BYTE, &count);
 
   return (count);
@@ -584,29 +587,27 @@ int RecvSync (void* v, void *data, int size)
 /*                                                                          */
 /****************************************************************************/
 
-VChannelPtr ConnASync (int p, int id)
+VChannelPtr PPIF_NS_PREFIX ConnASync (int p, int id)
 
 {
   return (NewVChan (p,id) );
 }
 
-int InfoAConn (void* v)
+int PPIF_NS_PREFIX InfoAConn (void* v)
 
 {
-  VChannelPtr vc = (VChannelPtr)v;
-  return (vc ? 1 : -1);
+  return (v ? 1 : -1);
 }
 
 
-int DiscASync (void* v)
+int PPIF_NS_PREFIX DiscASync (void* v)
 
 {
-  VChannelPtr vc = (VChannelPtr)v;
-  DeleteVChan (vc);
+  DeleteVChan ((MPIVChannel*)v);
   return (PPIF_SUCCESS);
 }
 
-int InfoADisc (void* v)
+int PPIF_NS_PREFIX InfoADisc (void* v)
 
 {
   return (TRUE);
@@ -614,16 +615,16 @@ int InfoADisc (void* v)
 
 #define REQUEST_HEAP
 
-msgid SendASync (void* v, void *data, int size, int *error)
+msgid PPIF_NS_PREFIX SendASync (void* v, void *data, int size, int *error)
 
 {
-  VChannelPtr vc = (VChannelPtr)v;
 #  ifdef REQUEST_HEAP
   MPI_Request *req;
 
   if (req = (MPI_Request*)malloc (sizeof (MPI_Request) ) )
   {
-    if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, req) )
+    if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE,
+                                  ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM, req) )
     {
       *error = FALSE;
       return ((msgid) req);
@@ -632,7 +633,8 @@ msgid SendASync (void* v, void *data, int size, int *error)
 
 #  else
   MPI_Request Req;
-  if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, &Req) )
+  if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE,
+                                ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM, &Req) )
   {
     *error = FALSE;
     return ((msgid) Req);
@@ -644,16 +646,16 @@ msgid SendASync (void* v, void *data, int size, int *error)
 }
 
 
-msgid RecvASync (void* v, void *data, int size, int *error)
+msgid PPIF_NS_PREFIX RecvASync (void* v, void *data, int size, int *error)
 
 {
-  VChannelPtr vc = (VChannelPtr)v;
 #  ifdef REQUEST_HEAP
   MPI_Request *req;
 
   if (req = (MPI_Request*)malloc (sizeof (MPI_Request) ) )
   {
-    if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, req) )
+    if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE,
+                                  ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM, req) )
     {
       *error = FALSE;
       return ((msgid) req);
@@ -663,7 +665,8 @@ msgid RecvASync (void* v, void *data, int size, int *error)
 #  else
   MPI_Request Req;
 
-  if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, &Req) )
+  if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE,
+                                ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM, &Req) )
   {
     *error = FALSE;
     return ((msgid) Req);
@@ -676,10 +679,9 @@ msgid RecvASync (void* v, void *data, int size, int *error)
 }
 
 
-int InfoASend (void* v, msgid m)
+int PPIF_NS_PREFIX InfoASend (void* v, msgid m)
 
 {
-  VChannelPtr vc = (VChannelPtr)v;
   MPI_Status status;
   int complete;
 
@@ -708,9 +710,8 @@ int InfoASend (void* v, msgid m)
 }
 
 
-int InfoARecv (void* v, msgid m)
+int PPIF_NS_PREFIX InfoARecv (void* v, msgid m)
 {
-  VChannelPtr vc = (VChannelPtr)v;
   MPI_Status status;
   int complete;
 
@@ -745,7 +746,7 @@ int InfoARecv (void* v, msgid m)
 /*                                                                          */
 /****************************************************************************/
 
-int SendMail (int destId, int reqId, void *data, int size)
+int PPIF_NS_PREFIX SendMail (int destId, int reqId, void *data, int size)
 
 {
   if (MPI_SUCCESS == MPI_Send (data, size, MPI_BYTE, destId, ID_MAIL, COMM) )
@@ -754,7 +755,7 @@ int SendMail (int destId, int reqId, void *data, int size)
   return (PPIF_FAILURE);
 }
 
-int GetMail (int *sourceId, int *reqId, void *data, int *size)
+int PPIF_NS_PREFIX GetMail (int *sourceId, int *reqId, void *data, int *size)
 
 {
   MPI_Status status;
@@ -785,25 +786,25 @@ int GetMail (int *sourceId, int *reqId, void *data, int *size)
 /*                                                                          */
 /****************************************************************************/
 
-int UsedSpace (void)
+int PPIF_NS_PREFIX UsedSpace ()
 
 {
   return ((int)(100.0*((float)vc_count)/((float)MAXVCHAN)));
 }
 
-void PrintHostMessage (char *s)
+void PPIF_NS_PREFIX PrintHostMessage (char *s)
 
 {
   printf ("%s", s);
 }
 
-double CurrentTime (void)
+double PPIF_NS_PREFIX CurrentTime ()
 
 {
   return(((float)(clock())/((float)CLOCKS_PER_SEC)));
 }
 
-int Distance (int p, int q)
+int PPIF_NS_PREFIX Distance (int p, int q)
 
 {
   int pX,pY,pZ,qX,qY,qZ;
