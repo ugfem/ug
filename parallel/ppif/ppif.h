@@ -67,6 +67,14 @@
 /* #error ****    CurrentTime defined before **** */
 #endif
 
+/****************************************************************************/
+/*                                                                          */
+/* Put ppif into its own namespace if it is compiled as c++                 */
+/*                                                                          */
+/****************************************************************************/
+
+#include "ppif_namespace.h"
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -79,6 +87,10 @@ typedef void *msgid;         /* dummy definition, any pointer type is ok    */
 
 #define NO_MSGID ((msgid)-1L) /* a special value that should never be re-   */
                               /* turned as a msgid, like NULL for pointers  */
+
+#ifdef __cplusplus
+namespace PPIF {
+#endif
 
 enum directions {north,east,south,west,up,down};
 
@@ -109,7 +121,6 @@ extern int degree;                 /* degree of downtree nodes              */
 extern VChannelPtr uptree;         /* channel uptree                        */
 extern VChannelPtr downtree[];     /* channels downtree (may be empty)      */
 extern int slvcnt[];                   /* number of processors in subtree       */
-
 
 /****************************************************************************/
 /*                                                                          */
@@ -320,6 +331,10 @@ template<class T> void PPIF_ReduceMin (T * val)
   Broadcast(val, sizeof(T));
 }
 
+#endif
+
+#ifdef __cplusplus
+}  // end namespace PPIF
 #endif
 
 
