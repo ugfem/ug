@@ -467,6 +467,179 @@ int CompareSurface (int i, int k)
 }
 #endif
 
+INT Accel_With_Hash( LGM_DOMAIN_INFO theDomInfo,  LGM_SURFACE **SurfacePtrList ,  LGM_POINT_INFO *piptr, INT MarkKey, HEAP *theHeap)
+{
+  int i,j,k,l,tria,corner,surface,Adressei,Hashgroesse,weiter;
+  double x,y,z,Adressed;
+  int ** Tria_Pos;
+  double ** Koordinaten;
+  double zahl2;
+  int zaehler = 0;
+  double Nachkommastellen;
+  int Kollisionengesamt1;
+  int Kollisionengesamt2;
+  /*int kollisionen1;*/
+  /*int kollisionen2;*/
+  int zugriffe1;
+  int zugriffe2;
+
+  /*Baue Hashtabelle auf */
+  zugriffe1 = 0;
+  zugriffe2 = 0;
+  Kollisionengesamt1 = 0;
+  Kollisionengesamt2 = 0;
+
+  /*  goon hier erhalet x einen vernuenftigen wert .... wielange haelt er ? stimmt er denn noch in Zeile */
+
+  Hashgroesse = FACTOR_FOR_HASHSIZE * theDomInfo.nPoint;
+  if ((Tria_Pos = (int **) GetTmpMem(theHeap,Hashgroesse*sizeof(int *),MarkKey))==NULL)
+    return(1);
+  if ((Koordinaten = (double **) GetTmpMem(theHeap,Hashgroesse*sizeof(double *),MarkKey))==NULL)
+    return(1);
+
+  /*  Initializations for hash */
+  for(i=0; i < Hashgroesse; i++)
+  {
+    if ((Tria_Pos[i] = (int *) GetTmpMem(theHeap,4*sizeof(int),MarkKey))==NULL)
+      return(1);
+    Tria_Pos[i][0] = -1;
+    Tria_Pos[i][1] = -1;
+    Tria_Pos[i][2] = -1;
+    Tria_Pos[i][3] = -1;
+
+    if ((Koordinaten[i] = (double *) GetTmpMem(theHeap,3*sizeof(double),MarkKey))==NULL)
+      return(1);
+    Koordinaten[i][0] = -99999999.999;
+    Koordinaten[i][1] = -99999999.999;
+    Koordinaten[i][2] = -99999999.999;
+  }
+
+
+  /* Fill Hash . . .  */
+  for (i=0; i<theDomInfo.nSurface; i++)
+  {
+    for (j=0; j<LGM_SURFACE_NTRIANGLE(SurfacePtrList[i]); j++)
+    {
+      for (k=0; k<3; k++)
+      {
+        x = piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[0];
+        y = piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[1];
+        z = piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[2];
+        tria = j;
+        corner = k;
+        surface = i;
+
+        /* Berechne Hashadresse */
+        /* goon : Multipliziere Hashgroesse mit 0.Nachkommastellen) und ergebnis casten auf int, gar kein modulo .... */
+
+        Nachkommastellen = modf(sqrt(x*x + y*y + z*z), &zahl2);                         /*modf liefer nachkommastellen in zahl2 Vork.st.*/
+        Adressei = (int) floor( Nachkommastellen * (double) (Hashgroesse -1));
+
+
+        while (1)
+        {
+          /*kollisionen1 = 0;*/
+          /*wenn an der Adresse der gleiche Punkt mit x,y,z schon liegt und die gleiche Surface vorliegt und es das letzte Vorkommen
+                  dieses Punktes ist ... Aktualisierung*/
+          if (Koordinaten[Adressei][0] == piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[0]
+              && Koordinaten[Adressei][1] == piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[1]
+              && Koordinaten[Adressei][2] == piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[2]
+              && Tria_Pos[Adressei][2] == surface && Tria_Pos[Adressei][3] == 1)
+          {
+            Tria_Pos[Adressei][3] = -1;
+          }
+          if (Tria_Pos[Adressei][0] == -1)
+          {
+            /* hier erfolgt der Eintrag */
+            Koordinaten[Adressei][0] = piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[0];
+            Koordinaten[Adressei][1] = piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[1];
+            Koordinaten[Adressei][2] = piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[2];
+            Tria_Pos[Adressei][0] = tria;
+            Tria_Pos[Adressei][1] = corner;
+            Tria_Pos[Adressei][2] = surface;
+            Tria_Pos[Adressei][3] = 1;
+            break;
+          }
+          else {
+            Kollisionengesamt1 ++ ;
+            Adressei++;
+            Adressei = Adressei % Hashgroesse;
+          }
+        }
+        zugriffe1++;
+      }
+    }
+  }
+  /* . . . End of filling hash */
+
+
+  /*  Use Hash for accelaration . .. */
+  /* ueberarbeiteter alter Teil unter verwendung der hashtabelle  ...*/
+  for (i=0; i<theDomInfo.nSurface; i++)
+  {
+    /*if (LGM_VERBOSE) UserWriteF("  Processing surface: %d/%d\r",i+1,theDomInfo.nSurface);*/
+    for(l=0; l<LGM_SURFACE_NPOINT(SurfacePtrList[i]); l++)
+    {
+
+      x = LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[0];
+      y = LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[1];
+      z = LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[2];
+
+      Nachkommastellen = modf(sqrt(x*x + y*y + z*z), &zahl2);
+      Adressei = (int) floor( Nachkommastellen * (double) (Hashgroesse -1));
+      surface = i;
+
+      /* standard input files global id's for the triangles*/
+
+      weiter = 1;
+      zaehler = 0;
+      while (weiter)
+      {
+        /*kollisionen2=0;*/
+        if(Koordinaten[Adressei][0] == LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[0]
+           && Koordinaten[Adressei][1] == LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[1]
+           && Koordinaten[Adressei][2] == LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[2]
+           && Tria_Pos[Adressei][2] == surface)
+        {
+          j = Tria_Pos[Adressei][0];
+          k = Tria_Pos[Adressei][1];
+
+          LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k) =
+            LGM_SURFACE_POINT(SurfacePtrList[i],l);
+
+          if (Tria_Pos[Adressei][3] == 1)
+          {
+            weiter = 0;
+          }
+          Adressei++;
+          Adressei = Adressei % Hashgroesse;
+        }
+        else if (zaehler > Hashgroesse)
+        {
+          weiter = 0;
+          printf("%s\n","mein E R R O R 1");                                /* d.h. Wert wurde nicht mehr in Hashtabelle gefunden */
+        }
+        else {
+          Kollisionengesamt2 ++;
+          Adressei++;
+          Adressei = Adressei % Hashgroesse;
+          zaehler++;
+        }
+      }
+      zugriffe2++;
+    }
+  }
+  /* . . .  End of Use of Hash  */
+
+  /* Statistics of use of Hash */
+
+  printf("Hashstatistik Aufbau : %d Kollisionen (inkl. Sek.koll.) bei %d Zugriffen \n",Kollisionengesamt1,zugriffe1);        /* d.h. Wert wurde nicht mehr in Hashtabelle gefunden */
+  printf("Hashstatistik Nutzung: %d Kollisionen (inkl. Sek.koll.)  bei %d Zugriffen \n",Kollisionengesamt2,zugriffe2);        /* d.h. Wert wurde nicht mehr in Hashtabelle gefunden */
+  return(0);
+}
+
+
+
 
 LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
 {
@@ -781,31 +954,40 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
 
   /*  :-(    This is an O(n^2)-algorithm, n=#LGM_POINTS on surface */
   if (LGM_VERBOSE) UserWrite("Linking triangle corners to points.\n");
-  for (i=0; i<theDomInfo.nSurface; i++)
+
+
+  if (ACCEL_WITH_HASH == 0)
   {
-    if (LGM_VERBOSE) UserWriteF("  Processing surface: %d/%d\r",i+1,theDomInfo.nSurface);
-    for (j=0; j<LGM_SURFACE_NTRIANGLE(SurfacePtrList[i]); j++)
+    for (i=0; i<theDomInfo.nSurface; i++)
     {
-      for (k=0; k<3; k++)
+      if (LGM_VERBOSE) UserWriteF("  Processing surface: %d/%d\r",i+1,theDomInfo.nSurface);
+      for (j=0; j<LGM_SURFACE_NTRIANGLE(SurfacePtrList[i]); j++)
       {
-        for(l=0; l<LGM_SURFACE_NPOINT(SurfacePtrList[i]); l++)
+        for (k=0; k<3; k++)
         {
-          /* standard input files global id's for the triangles*/
-          if(
-            (piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[0]
-             ==LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[0])
-            &&
-            (piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[1]
-             ==LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[1])
-            &&
-            (piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[2]
-             ==LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[2])
-            )
-            LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k) =
-              LGM_SURFACE_POINT(SurfacePtrList[i],l);
+          for(l=0; l<LGM_SURFACE_NPOINT(SurfacePtrList[i]); l++)
+          {
+            /* standard input files global id's for the triangles*/
+            if(
+              (piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[0]
+               ==LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[0])
+              &&
+              (piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[1]
+               ==LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[1])
+              &&
+              (piptr[LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k)].position[2]
+               ==LGM_POINT_POS(LGM_SURFACE_POINT(SurfacePtrList[i],l))[2])
+              )
+              LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(SurfacePtrList[i],j),k) =
+                LGM_SURFACE_POINT(SurfacePtrList[i],l);
+          }
         }
       }
     }
+  }
+
+  else {
+    if (Accel_With_Hash(theDomInfo, SurfacePtrList, piptr, MarkKey,theHeap)!=0) return (NULL);
   }
 
         #ifdef OCC_GEOMETRY

@@ -65,7 +65,8 @@ START_UGDIM_NAMESPACE
 /*	defines for basic configuration											*/
 /*																			*/
 /****************************************************************************/
-
+#define  ACCEL_WITH_HASH        1
+#define  FACTOR_FOR_HASHSIZE    20
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
