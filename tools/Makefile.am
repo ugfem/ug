@@ -7,7 +7,8 @@ AM_CFLAGS = $(UG_CPPFLAGS)
 # !!! dynamic options should be global or so... or in the lib?
 # AM_LDFLAGS = -dlopen self
 
-if X11
+# xugv needs X11 and XAW, the latter includes the first
+if XAW
  XUGV = xugv
 else
  XUGV =

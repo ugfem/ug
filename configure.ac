@@ -58,15 +58,26 @@ AC_PATH_XTRA
 if test x$have_x = xyes ; then
   save_LIBS="$LIBS"
   LIBS="$X_PRE_LIBS $X_LIBS $X_EXTRA_LIBS"
+
+  # the usual collection of X-libs without Xaw which is checked seperately
+  UG_XLIBS="$X_PRE_LIBS $X_LIBS -lX11 $X_EXTRA_LIBS -lXt"
+
   AC_CHECK_LIB([Xaw], [XawTextGetInsertionPoint],
   [have_xaw=yes],[have_xaw=no])
 
-  # !!! find out if UG without Xaw really works (deactivate define in xmain.c)
-  if test x$have_xaw != xyes ; then
-     AC_MSG_ERROR([You need to have libXaw installed!])
+  # !!! reverse sense
+  if test x$have_xaw = xyes ; then
+     AC_DEFINE(USE_XAW, 1, [use the Athena Text Widget])
+     UG_XLIBS="$UG_XLIBS -lXaw"
+  else
+     AC_MSG_WARN([You have the X11 libs installed but not Xaw (the Athena Widgets): X-output will use archaic code!])
   fi
+  AM_CONDITIONAL(XAW, test x$have_xaw = xyes)
 
-  AC_DEFINE(USE_XAW, 1, [use the Athena Text Widget])
+  # already expand variable (no obvious drawback and we can insert the
+  # value into libug.pc
+  AC_SUBST(UG_XLIBS)
+
   LIBS="$save_LIBS"
 fi
 AM_CONDITIONAL(X11, test x$have_x = xyes)
@@ -157,11 +168,6 @@ AC_SUBST(UG_LDFLAGS, '-L$(top_srcdir)/lib')
 plugindir=${libdir}/ug/
 AC_SUBST(plugindir)
 AC_SUBST(UG_PLUGINDIR, '-DPLUGINDIR=\"$(plugindir)\"')
-
-# already expand variable (no obvious drawback and we can insert the
-# value into libug.pc
-UG_XLIBS="$X_PRE_LIBS $X_LIBS -lX11 $X_EXTRA_LIBS -lXt -lXaw"
-AC_SUBST(UG_XLIBS)
 
 # move architecture-parts into header to still allow crude tricks :(
 AC_DEFINE_UNQUOTED(ARCH_CPU, "$build_cpu", [CPU type])
