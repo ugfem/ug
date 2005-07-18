@@ -78,8 +78,11 @@
 
 #include "cw.h"
 
+#include "ppif_namespace.h"
+
 USING_UG_NAMESPACE
-  USING_UGDIM_NAMESPACE
+USING_UGDIM_NAMESPACE
+  USING_PPIF_NAMESPACE
 
 /****************************************************************************/
 /*																			*/

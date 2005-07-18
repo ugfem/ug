@@ -43,8 +43,10 @@
 #endif
 
 #include "npcheck.h"
+#include "ppif_namespace.h"
 
 USING_UG_NAMESPACES
+  USING_PPIF_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */

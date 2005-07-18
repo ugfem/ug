@@ -72,6 +72,10 @@
 USING_UGDIM_NAMESPACE
   USING_UG_NAMESPACE
 
+#ifdef ModelP
+  USING_PPIF_NAMESPACE
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */

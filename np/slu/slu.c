@@ -59,6 +59,10 @@
 
 USING_UG_NAMESPACES
 
+#ifdef ModelP
+USING_PPIF_NAMESPACE
+#endif
+
 extern void    SLU_GetStat (float *ftime, float *fflops, float *stime, float *sflops);
 extern int     lsame_ (char *, char *);
 extern int     sp_ienv (int);

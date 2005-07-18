@@ -42,6 +42,7 @@
 
 #ifdef ModelP
 #include "ppif.h"
+USING_PPIF_NAMESPACE
 #endif
 
 USING_UG_NAMESPACES

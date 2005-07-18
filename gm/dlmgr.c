@@ -45,11 +45,13 @@
 #include "parallel.h"
 #endif
 
+#include "ppif_namespace.h"
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 USING_UG_NAMESPACES
+  USING_PPIF_NAMESPACE
 
 /* element */
 #define OTYPE  ELEMENT

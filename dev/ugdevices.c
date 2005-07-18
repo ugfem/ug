@@ -21,7 +21,7 @@
 
 /****************************************************************************/
 /*                                                                          */
-/* include files															*/
+/* include files                                                            */
 /*			  system include files											*/
 /*			  application include files                                                                     */
 /*                                                                          */
@@ -52,6 +52,7 @@
 /* dddif module */
 #ifdef ModelP
 #include "ppif.h"
+USING_PPIF_NAMESPACE
 #endif
 
 USING_UG_NAMESPACE

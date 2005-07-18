@@ -47,11 +47,14 @@
 #include "ff_gen.h"
 #include "ff.h"
 
+#include "ppif_namespace.h"
+
 #ifdef T
 #undef T
 #endif
 
 USING_UG_NAMESPACES
+USING_PPIF_NAMESPACE
 
 /****************************************************************************/
 /*																			*/

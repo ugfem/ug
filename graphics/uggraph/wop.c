@@ -61,6 +61,7 @@
 #include "parallel.h"
 #include "ppif.h"
 #include "xbc.h"
+USING_PPIF_NAMESPACE
 #endif
 #ifdef __THREEDIM__
 #include "iso.h"

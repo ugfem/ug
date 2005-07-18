@@ -53,6 +53,7 @@
 #include "defaults.h"
 #ifdef ModelP
 #include "parallel.h"
+USING_PPIF_NAMESPACE
 #endif
 
 USING_UG_NAMESPACES
