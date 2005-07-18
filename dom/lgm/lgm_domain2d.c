@@ -393,7 +393,7 @@ static INT InnerPointsPerLineSegment (LGM_LINE *theLine, DOUBLE h, INT i, INT *n
 
   if (i<0 || i>LGM_LINE_NPOINT(theLine)-2 || h<=0.0) return (1);
   d = LGM_LINE_POINTDIST(theLine,i,i+1);
-  *n = floor(d/h);
+  *n = (INT)floor(d/h);
 
   return (0);
 }
@@ -778,7 +778,7 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 
   theBndP = BNDP2LGM(aBndP);
   theLine = LGM_BNDP_LINE(theBndP,0);
-  ilocal = floor(LGM_BNDP_LOCAL(theBndP,0));
+  ilocal = (INT)floor(LGM_BNDP_LOCAL(theBndP,0));
   slocal = LGM_BNDP_LOCAL(theBndP,0)-ilocal;
   assert(slocal>=0.0);
   assert(ilocal<LGM_LINE_NPOINT(theLine) && ilocal>=0);
@@ -804,7 +804,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   LGM_LINE *theLine;
   LGM_BNDP *theBndP;
   DOUBLE slocal;
-  INT ilocal=0;
+  INT ilocal;
   DOUBLE global[DOM_PARAM_OFFSET];
 
   /* general */
@@ -815,7 +815,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   if (LGM_LINE_BNDCOND(theLine)==NULL) return (2);
 
   /* global coordinates */
-  ilocal = floor(LGM_BNDP_LOCAL(theBndP,i));
+  ilocal = (INT)floor(LGM_BNDP_LOCAL(theBndP,i));
   slocal = LGM_BNDP_LOCAL(theBndP,i)-ilocal;
   assert(slocal>=0.0);
   assert(ilocal<LGM_LINE_NPOINT(theLine) && ilocal>=0);
@@ -874,7 +874,7 @@ INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
   part[0] = 0;
   theBndP = BNDP2LGM(aBndP);
   theLine = LGM_BNDP_LINE(theBndP,0);
-  ilocal = floor(LGM_BNDP_LOCAL(theBndP,0));
+  ilocal = (INT)floor(LGM_BNDP_LOCAL(theBndP,0));
   slocal = LGM_BNDP_LOCAL(theBndP,0)-ilocal;
   assert(slocal>=0.0);
   assert(ilocal<LGM_LINE_NPOINT(theLine) && ilocal>=0);
@@ -912,7 +912,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
         i0=i; j0=j;
       }
   if (count!=1) return (NULL);
-  k = (loc1<loc2) ? floor(loc1) : floor(loc2);
+  k = (loc1<loc2) ? (INT)floor(loc1) : (INT)floor(loc2);
   if (loc1-k>1.0 || loc2-k>1.0) return (NULL);
   if ((theBndS = (LGM_BNDS *)GetFreelistMemory(Heap,sizeof(LGM_BNDS)))==NULL)
     return (NULL);
@@ -944,7 +944,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
           count++;
           loc1 = LGM_BNDP_LOCAL(theBndP1,i);
           loc2 = LGM_BNDP_LOCAL(theBndP2,j);
-          k = (loc1<loc2) ? floor(loc1) : floor(loc2);
+          k = (loc1<loc2) ? (INT)floor(loc1) : (INT)floor(loc2);
           if (loc1-k>1.0 || loc2-k>1.0) return (NULL);
           loc = 0.5*(loc1+loc2);
         }
@@ -1083,7 +1083,7 @@ INT NS_DIM_PREFIX BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
   theLine = LGM_BNDS_LINE(theBndS);
   loc = (1.0-local[0])*LGM_BNDS_LOCAL(theBndS,0)+local[0]*LGM_BNDS_LOCAL(theBndS,1);
 
-  ilocal = floor(loc);
+  ilocal = (INT)floor(loc);
   slocal = loc-ilocal;
   assert(slocal>=0.0);
   assert(ilocal<LGM_LINE_NPOINT(theLine) && ilocal>=0);

@@ -5822,7 +5822,7 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
 
   /* init fifos */
   MarkTmpMem(MGHEAP(MYMG(theGrid)),&MarkKey);
-  fifosize = 30*floor(sqrt(NVEC(theGrid)))*sizeof(VECTOR*);
+  fifosize = 30*(INT)floor(sqrt(NVEC(theGrid)))*sizeof(VECTOR*);
   fifo_init(&FFifo,GetTmpMem(MGHEAP(MYMG(theGrid)),fifosize,MarkKey),fifosize);
   fifo_init(&LFifo,GetTmpMem(MGHEAP(MYMG(theGrid)),fifosize,MarkKey),fifosize);
 

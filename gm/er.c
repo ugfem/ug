@@ -1903,7 +1903,6 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
         long id                         = ID(elem);
         int nsons                       = mr->nsons;
         int coe                         = CORNERS_OF_TAG(tag);
-        int eoe                         = EDGES_OF_TAG(tag);
         int soe                         = SIDES_OF_TAG(tag);
         NODE *nodes[MAX_REFINED_CORNERS_DIM];
         NODE **newnodes         = nodes+coe;

@@ -135,7 +135,6 @@ static INT currSubdom, currSurface, currLine;
 static CoeffProcPtr Coefficients[8];
 static CoeffProcPtr LOCAL_H;
 
-static LGM_SURFACE *Surf;
 static LGM_SURFACE *xy_Surface;
 static LGM_LINE *xy_Line[4];
 static LGM_POINT *xy_Point[4];
