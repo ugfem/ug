@@ -28,6 +28,8 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
+
 /* X11 includes */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -35,9 +37,6 @@
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
 #include <X11/keysym.h>
-
-#define USE_XAW     /* enables use of Athena Text Widget  (libXaw, libXt) */
-/* undefine USE_XAW, if you want pure X (only libX11) */
 
 #ifdef USE_XAW
 /* Xt & Xaw includes */
