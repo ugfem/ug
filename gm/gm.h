@@ -3060,20 +3060,13 @@ enum {GM_OK                       = 0,
       GM_OUT_OF_MEM               = 5,
       GM_OUT_OF_RANGE             = 6,
       GM_NOT_FOUND                = 7,
-      GM_INCONSISTANCY            = 8,
+      GM_INCONSISTENCY            = 8,
       GM_COARSE_NOT_FIXED         = 9,
       GM_FATAL                    = 999};
 
 
 /** @name Some constants passed as parameters */
 /*@{*/
-/*
-   #define GM_KEEP_BOUNDARY_NODES          0
-   #define GM_MOVE_BOUNDARY_NODES          1
-   #define GM_REFINE_TRULY_LOCAL           2
-   #define GM_COPY_ALL                             3
-   #define GM_REFINE_NOT_CLOSED            4
- */
 enum {GM_KEEP_BOUNDARY_NODES,
       GM_MOVE_BOUNDARY_NODES,
       GM_REFINE_TRULY_LOCAL,
@@ -3084,22 +3077,25 @@ enum {GM_REFINE_PARALLEL, GM_REFINE_SEQUENTIAL};
 
 enum {GM_REFINE_NOHEAPTEST, GM_REFINE_HEAPTEST};
 
-#define GM_FCFCLL                                       1
-#define GM_FFCCLL                                       2
-#define GM_FFLLCC                                       3
-#define GM_FFLCLC                                       4
-#define GM_CCFFLL                                       5
-#define GM_LOV_BEGIN                            1
-#define GM_LOV_END                                      2
-#define GM_GEN_FIRST                            0
-#define GM_GEN_LAST                                     1
-#define GM_GEN_CUT                                      2
-#define GM_ALL_LEVELS                           1
-#define GM_CURRENT_LEVEL                        2
-#define GM_ORDER_IN_COLS                        0
-#define GM_ORDER_IN_ROWS                        1
-#define GM_PUT_AT_BEGIN                         1               /* put skip vectors at begin of the list */
-#define GM_PUT_AT_END                           2               /* put skip vectors at end of the list */
+enum {GM_FCFCLL = 1,
+      GM_FFCCLL = 2,
+      GM_FFLLCC = 3,
+      GM_FFLCLC = 4,
+      GM_CCFFLL = 5};
+
+enum {GM_LOV_BEGIN = 1,
+      GM_LOV_END = 2};
+
+enum {GM_GEN_FIRST, GM_GEN_LAST, GM_GEN_CUT};
+
+enum {GM_ALL_LEVELS = 1,
+      GM_CURRENT_LEVEL = 2};
+
+enum {GM_ORDER_IN_COLS, GM_ORDER_IN_ROWS};
+
+enum {GM_PUT_AT_BEGIN = 1,               /*!< put skip vectors at begin of the list */
+      GM_PUT_AT_END = 2                  /*!< put skip vectors at end of the list */
+};
 #define GM_TAKE_SKIP                            (1<<0)
 #define GM_TAKE_NONSKIP                         (1<<1)
 /*@}*/
@@ -3159,7 +3155,7 @@ INT             DeleteElementWithID     (MULTIGRID *theMG, INT id);
 INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theElement);
 
 /* refinement */
-/* !!! should be moved to rm.h [Thimo] */
+/** \todo !!! should be moved to rm.h [Thimo] */
 INT             EstimateHere                    (ELEMENT *theElement);
 INT         MarkForRefinement       (ELEMENT *theElement, enum RefinementRule rule, INT data);
 INT         MarkForRefinementX      (ELEMENT *theElement,
@@ -3173,7 +3169,6 @@ INT             ClearMarksOnLevel               (GRID *theGrid, INT ClearType);
 
 
 NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT side);
-/*INT                   GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
 /* moving nodes */
 INT         GetMidNodeParam         (NODE * theNode, DOUBLE *lambda);

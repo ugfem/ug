@@ -6822,7 +6822,7 @@ void NS_DIM_PREFIX SetLevelnumberBV( BLOCKVECTOR *bv, INT level )
    This blockvectors are
    numbered beginning from 0 along the construction. If the vector-list
    is not long enough, the function will not be troubled but construct
-   as far as possible the structure and GM_INCONSISTANCY is returned.
+   as far as possible the structure and GM_INCONSISTENCY is returned.
 
    REQUIREMENTS:
    The macro '__BLOCK_VECTOR_DESC__' must be defined in 'gm.h' to enable
@@ -6846,7 +6846,7 @@ void NS_DIM_PREFIX SetLevelnumberBV( BLOCKVECTOR *bv, INT level )
  * @return <ul>
  *   <li>GM_OK if ok </li>
  *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors </li>
- *   <li>GM_INCONSISTANCY if the vector-list was too short </li>
+ *   <li>GM_INCONSISTENCY if the vector-list was too short </li>
    </ul>
  * \sa
    BLOCKVECTOR, CreateBVStripe2D, CreateBVStripe3D, CreateBVDomainHalfening
@@ -6924,7 +6924,7 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
 
   /* the for loop exited premature because of v == NULL */
   if ( (i < stripes) || (j != 0) )
-    return GM_INCONSISTANCY;
+    return GM_INCONSISTENCY;
 
   return GM_OK;
 }
@@ -6949,7 +6949,7 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
    This blockvectors are
    numbered beginning from 0 along the construction. If the vector-list
    is shorter than 'vectors', the function will not be troubled
-   and GM_INCONSISTANCY is returned. If the vector-list
+   and GM_INCONSISTENCY is returned. If the vector-list
    is longer than 'vectors', these vectors are covered in a seperate
    blockvector with number 1 (this overlapping vectors might be for
    example dirichlet boundary vectors).
@@ -6976,7 +6976,7 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
 
  *   <li>GM_OK if ok </li>
  *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors </li>
- *   <li>GM_INCONSISTANCY if the vector-list was too short </li>
+ *   <li>GM_INCONSISTENCY if the vector-list was too short </li>
    </ul>
  * \sa
    BLOCKVECTOR, CreateBVStripe3D, CreateBVDomainHalfening
@@ -7069,7 +7069,7 @@ INT NS_DIM_PREFIX CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_str
    inner vectors. The blockvectors in each list are
    numbered beginning from 0 along the construction. If the vector-list
    is shorter than 'inner_vectors', the function will not be troubled
-   and GM_INCONSISTANCY is returned. If the vector-list
+   and GM_INCONSISTENCY is returned. If the vector-list
    is longer than 'vectors', these vectors are covered in a seperate
    blockvector with number 1 (this overlapping vectors might be for
    example dirichlet boundary vectors).
@@ -7087,7 +7087,7 @@ INT NS_DIM_PREFIX CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_str
  * @return <ul>
  *   <li>GM_OK if ok </li>
  *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors </li>
- *   <li>GM_INCONSISTANCY if the vector-list was too short </li>
+ *   <li>GM_INCONSISTENCY if the vector-list was too short </li>
  * </ul>
  * \sa
    BLOCKVECTOR, CreateBVStripe2D, CreateBVDomainHalfening
@@ -7197,7 +7197,7 @@ INT NS_DIM_PREFIX CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_p
     return ret;
 
   if ( BVNUMBEROFVECTORS(bv_inner) != nr_planes*stripes_per_plane*vectors_per_stripe )
-    return GM_INCONSISTANCY;
+    return GM_INCONSISTENCY;
 
   SetLevelnumberBV( bv_inner, 0 );
 
