@@ -55,6 +55,7 @@ AM_CONDITIONAL(NETGEN, false)
 
 # Checks for header files.
 AC_PATH_XTRA
+have_xaw=no
 if test x$have_x = xyes ; then
   save_LIBS="$LIBS"
   LIBS="$X_PRE_LIBS $X_LIBS $X_EXTRA_LIBS"
@@ -72,7 +73,6 @@ if test x$have_x = xyes ; then
   else
      AC_MSG_WARN([You have the X11 libs installed but not Xaw (the Athena Widgets): X-output will use archaic code!])
   fi
-  AM_CONDITIONAL(XAW, test x$have_xaw = xyes)
 
   # already expand variable (no obvious drawback and we can insert the
   # value into libug.pc
@@ -80,6 +80,7 @@ if test x$have_x = xyes ; then
 
   LIBS="$save_LIBS"
 fi
+AM_CONDITIONAL(XAW, test x$have_xaw = xyes)
 AM_CONDITIONAL(X11, test x$have_x = xyes)
 AC_FUNC_ALLOCA
 AC_HEADER_DIRENT
