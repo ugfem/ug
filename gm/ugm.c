@@ -1309,7 +1309,7 @@ int GetSideIDFromScratchSpecialRule22Tet (ELEMENT *theElement, NODE *theNode)
 {
   int i,k,l,nodes,midnodes;
 #ifdef Debug
-  INT cndodes, snodes, mnodes;
+  INT cnodes, snodes, mnodes;
 #endif
   ELEMENT *f = EFATHER(theElement);
   NODE *fnode,*enode;
