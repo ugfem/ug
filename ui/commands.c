@@ -11178,44 +11178,7 @@ static INT ShowConfigCommand (INT argc, char **argv)
   UserWrite("    Model:        sequential\n");
 #endif
 
-#ifdef __AIX__
-  UserWrite("    Architecture: AIX");
-#elif defined __C90__
-  UserWrite("    Architecture: Cray_C90");
-#elif defined __CC__
-  UserWrite("    Architecture: Parsytec_CC");
-#elif defined __DEC__
-  UserWrite("    Architecture: DEC");
-#elif defined __HP__
-  UserWrite("    Architecture: HP");
-#elif defined __NECSX4__
-  UserWrite("    Architecture: NECSX4");
-#elif defined __PARAGON__
-  UserWrite("    Architecture: PARAGON");
-#elif defined __PC__
-  UserWrite("    Architecture: Linux_PC");
-#elif defined __POWERGC__
-  UserWrite("    Architecture: Parsytec_PowerGC");
-#elif defined __SGI__
-  UserWrite("    Architecture: SGI");
-#elif defined __SUN__
-  UserWrite("    Architecture: SUN_Solaris");
-#elif defined __SUN4GCC__
-  UserWrite("    Architecture: SUN_OS");
-#elif defined __T3D__
-  UserWrite("    Architecture: Cray_T3D");
-#elif defined __T3E__
-  UserWrite("    Architecture: Cray_T3E");
-#elif defined __MPW32__
-  UserWrite("    Architecture: Mac_MPW");
-#elif defined __MWCW__
-  UserWrite("    Architecture: Mac_CodeWarrior");
-#elif defined __PARIX__
-  UserWrite("    Architecture: PARIX");
-#else
-  UserWrite("    Architecture: unknown");
-#endif
-  UserWriteF(" (%s)\n",ARCHNAME);
+  UserWriteF("   Architecture: %s\n",ARCHNAME);
 
 #ifdef Debug
   UserWrite("    Debugging:    ON\n");
