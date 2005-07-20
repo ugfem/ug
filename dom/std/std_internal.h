@@ -28,16 +28,16 @@ START_UGDIM_NAMESPACE
 
 typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 
-#define BVP_STANDARD                     0
-#define BVP_MARC                         1
+enum {BVP_STANDARD,
+      BVP_MARC};
 
-#define POINT_PATCH_TYPE                 0
-#define LINE_PATCH_TYPE                  1
-#define LINEAR_PATCH_TYPE                2
-#define PARAMETRIC_PATCH_TYPE            3
-#define MARC_0_PATCH_TYPE                4
-#define MARC_1_PATCH_TYPE                5
-#define MARC_2_PATCH_TYPE                6
+enum PatchType {POINT_PATCH_TYPE,
+                LINE_PATCH_TYPE,
+                LINEAR_PATCH_TYPE,
+                PARAMETRIC_PATCH_TYPE,
+                MARC_0_PATCH_TYPE,
+                MARC_1_PATCH_TYPE,
+                MARC_2_PATCH_TYPE};
 
 /** @name  Macros for DOMAIN_PART_INFO */
 /*@{*/
