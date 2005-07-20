@@ -3808,7 +3808,6 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   DOUBLE xc[DIM];
-  INT i;
 
         #ifdef ModelP
   if (me!=master) return (OKCODE);
@@ -3847,7 +3846,6 @@ static INT NGInsertInnerNodeCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   DOUBLE xc[DIM];
-  INT i;
   static int n;
 
         #ifdef ModelP
@@ -9088,7 +9086,7 @@ static INT ClearCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   VECDATA_DESC *theVD;
   VECTOR *v;
-  INT i,l,fl,tl,n,skip,xflag,yflag,zflag;
+  INT i,l,fl,tl,n,skip,xflag;
   int j;
   double value;
 
