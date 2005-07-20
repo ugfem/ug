@@ -208,8 +208,7 @@ static INT TecplotCommand (INT argc, char **argv)
   DOUBLE LocalCoord[DIM];               /* is one of the corners local coordinates	*/
   DOUBLE local[DIM];                            /* local coordinate in DOUBLE				*/
   DOUBLE value;                                 /* returned by user eval proc				*/
-  INT maxCorners;                               /* dimension dependent                                          */
-  INT oe,on,n;
+  INT oe,on;
 
   INT saveGeometry;                             /* save geometry flag						*/
 

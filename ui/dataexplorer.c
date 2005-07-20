@@ -249,8 +249,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
   INT ic=0;                                             /* item length								*/
   VERTEX *vx;                                           /* a vertex pointer							*/
   ELEMENT *el;                                  /* an element pointer						*/
-  NODE *no1, *no2;                  /* two node pointers                        */
-  LINK *li;                         /* a link pointer                           */
 
   MULTIGRID *mg;                                /* our multigrid							*/
   HEAP *heap;
@@ -291,7 +289,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
   INT numVerticesTot;                           /* total number of data points locally		*/
   INT numElements;                              /* number of elements locally				*/
   INT gnumVertices;                             /* number of data points globally			*/
-  INT gnumVerticesTot;              /* total number of data points globally		*/
   INT gnumElements;                             /* number of elements globallay				*/
 
   PreprocessingProcPtr pre;             /* pointer to prepare function				*/
@@ -320,7 +317,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
   INT *subdom=NULL;                             /* which subdomains to draw					*/
   INT subdomains=0;                             /* flag: draw only some subdomains			*/
   INT sdkey;
-  char inex;
   time_t ltime;
 
   INT oe,ov;
@@ -701,7 +697,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
 #ifdef ModelP
   gnumVertices = UG_GlobalSumINT(numVertices);
-  gnumVerticesTot = UG_GlobalSumINT(numVerticesTot);
   gnumElements = UG_GlobalSumINT(numElements);
   /*    LocallyUniqueIDs(mg); */
   ov = get_offset(numVertices);
@@ -734,7 +729,9 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
   /* write vertex coordinates */
   {
+#ifdef ModelP
     INT count_rest = 0;
+#endif
 
     counter=ov;
     for (k=0; k<=TOPLEVEL(mg); k++) {

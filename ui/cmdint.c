@@ -171,7 +171,9 @@ INT NS_DIM_PREFIX cmdintbufsize=CMDINTBUFSIZE;
 /****************************************************************************/
 
 static int doneFlag;
+#ifdef ModelP
 static int interactiveFlag=0;
+#endif
 
 /* variables for command interpreter */
 static char *cmdPtr,*cmdStart;
