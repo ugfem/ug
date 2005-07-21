@@ -459,7 +459,7 @@ struct generic_patch {
 
 
   /** \brief Patch type */
-  INT type;
+  enum PatchType type;
 
   /** \brief Fixed/bnd of free/free */
   INT state;
@@ -484,7 +484,7 @@ struct point_on_patch {
 struct point_patch {
 
   /** \brief Patch type */
-  INT type;
+  enum PatchType type;
 
   /** \brief Fixed/bnd of free/free */
   INT state;
@@ -516,7 +516,7 @@ struct line_on_patch {
 struct line_patch {
 
   /** \brief Patch type */
-  INT type;
+  enum PatchType type;
 
   /** \brief Fixed/bnd of free/free */
   INT state;
@@ -544,7 +544,7 @@ struct line_patch {
 struct linear_patch {
 
   /** \brief Patch type */
-  INT type;
+  enum PatchType type;
 
   /** \brief Fixed/bnd of free/free */
   INT state;
@@ -571,7 +571,7 @@ struct linear_patch {
 struct parameter_patch {
 
   /** \brief Patch type */
-  INT type;
+  enum PatchType type;
 
   /** \brief Fixed/bnd of free/free */
   INT state;
@@ -614,7 +614,7 @@ struct parameter_patch {
 struct marc_0_patch {
 
   /** \brief Patch type                           */
-  INT type;
+  enum PatchType type;
 
   /** \brief Fixed/bnd of free/free               */
   INT state;
@@ -633,7 +633,7 @@ struct marc_0_patch {
 struct marc_1_patch {
 
   /** \brief Patch type                           */
-  INT type;
+  enum PatchType type;
 
   /** \brief Fixed/bnd of free/free               */
   INT state;
@@ -652,7 +652,7 @@ struct marc_1_patch {
 struct marc_2_patch {
 
   /** \brief Patch type                           */
-  INT type;
+  enum PatchType type;
 
   /** \brief Fixed/bnd of free/free               */
   INT state;
