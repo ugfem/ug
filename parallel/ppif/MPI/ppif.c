@@ -118,8 +118,6 @@ USING_PPIF_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-enum directions {north, east, south, west, up, down};
-
 typedef struct {
   int used;
   int p;
@@ -127,7 +125,6 @@ typedef struct {
 } MPIVChannel;
 
 typedef MPIVChannel *MPIVChannelPtr;
-typedef void     *msgid;
 
 
 /****************************************************************************/
