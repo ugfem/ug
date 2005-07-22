@@ -192,6 +192,7 @@ START_UGDIM_NAMESPACE
 #define LGM_BNDP_N(p)                                           ((p)->n)
 #define LGM_BNDP_LINES(p,i)                                     ((p)->Line[(i)])
 #define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].theLine)
+#define LGM_BNDP_ID(p,i)                                        ((p)->Line[(i)].theLineID)
 #define LGM_BNDP_LOCAL(p,i)                                     ((p)->Line[(i)].local)
 #define LGM_BNDP_LINE_GLINE(p)                          ((p).theLine)
 #define LGM_BNDP_LINE_LOCAL(p)                          ((p).local)
@@ -300,6 +301,7 @@ START_UGDIM_NAMESPACE
 #define LGM_BNDP_NLINE(p)                                       ((p)->nlines)
 #define LGM_BNDP_LINES(p,i)                                     ((p)->Line[(i)])
 #define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].theLine)
+#define LGM_BNDP_ID(p,i)                                        ((p)->Line[(i)].theLineID)
 #ifndef NO_PROJECT
 #define LGM_BNDP_LINE_LEFT(p,i)                         ((p)->Line[(i)].local_left)
 #define LGM_BNDP_LINE_RIGHT(p,i)                        ((p)->Line[(i)].local_right)
@@ -318,6 +320,7 @@ START_UGDIM_NAMESPACE
 #define LGM_BNDP_N(p)                                           ((p)->nsurf)
 #define LGM_BNDP_SURFACES(p,i)                          ((p)->Surf[(i)])
 #define LGM_BNDP_SURFACE(p,i)                           ((p)->Surf[(i)].theSurf)
+#define LGM_BNDP_SURFACEID(p,i)                           ((p)->Surf[(i)].theSurfID)
 #define LGM_BNDP_SURFACEPTR(p)                          ((p)->Surf)
 #define LGM_BNDP_LINEPTR(p)                                     ((p)->Line)
 
@@ -444,8 +447,10 @@ struct lgm_domain {
 };
 
 struct lgm_bndp_line {
-
-  struct lgm_line *theLine;                             /* line                                                                                 */
+  union {
+    struct lgm_line *theLine;   /* real line data                */
+    INT theLineID;              /* used by Load_Ext and Save_Ext */
+  };
   DOUBLE local;                                                 /* local coordinate                                                             */
 };
 
@@ -632,7 +637,12 @@ struct lgm_domain {
 
 struct lgm_bndp_line {
 
-  struct lgm_line *theLine;                             /* line                                                                         */
+  union
+  {
+    struct lgm_line *theLine;  /* either pointer to line data ...  */
+    INT theLineID;             /* ... or just an ID (for Save_Ext/Load_Ext) */
+  };
+
         #ifdef NO_PROJECT
   DOUBLE global_left[3];                                /* global coordinate of the left neighbor       */
   DOUBLE global_right[3];                               /* global coordinate of the right neighbor      */
@@ -644,8 +654,13 @@ struct lgm_bndp_line {
 
 struct lgm_bndp_surf {
 
-  struct lgm_surface *theSurf;                  /* surface                                                                              */
-        #ifdef NO_PROJECT
+  union
+  {
+    struct lgm_surface *theSurf;  /* surface... */
+    INT theSurfID;                /* ... or just ID */
+  };
+
+    #ifdef NO_PROJECT
   DOUBLE global[3];                                                     /* global coordinate                                                            */
         #else
   DOUBLE local[2];                                                      /* local coordinate                                                             */

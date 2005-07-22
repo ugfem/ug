@@ -6614,7 +6614,8 @@ INT BNDP_SaveBndP_Ext (BNDP *aBndP)
   /* the lines */
   for (i=0; i<LGM_BNDP_NLINE(theBndP); i++)
   {
-    n = (int)LGM_BNDP_LINE(theBndP,i);
+    /* store only an id, no line data */
+    n = LGM_BNDP_ID(theBndP,i);
     if (Bio_Write_mint(1,&n)) return (1);
                 #ifdef NO_PROJECT
     global =  LGM_BNDP_LINE_GLOBALLEFT(theBndP,i);
@@ -6632,7 +6633,7 @@ INT BNDP_SaveBndP_Ext (BNDP *aBndP)
   /* the surfaces */
   for (i=0; i<LGM_BNDP_N(theBndP); i++)
   {
-    n = (int)LGM_BNDP_SURFACE(theBndP,i);
+    n = LGM_BNDP_SURFACEID(theBndP,i);
     if (Bio_Write_mint(1,&n)) return (1);
                 #ifdef NO_PROJECT
     d[0] = LGM_BNDP_GLOBAL(theBndP,i)[0];
@@ -6759,11 +6760,11 @@ BNDP *BNDP_LoadBndP_Ext (void)
     LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i)[0] = global[0];
     LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i)[1] = global[1];
     LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i)[2] = global[2];
-    LGM_BNDP_LINE(theBndP,i) = (LGM_LINE*)id;
+    LGM_BNDP_ID(theBndP,i) = id;
                 #else
     if (Bio_Read_mdouble(1,&left)) return (NULL);
     if (Bio_Read_mdouble(1,&right)) return (NULL);
-    LGM_BNDP_LINE(theBndP,i) = (LGM_LINE*)id;
+    LGM_BNDP_ID(theBndP,i) = id;
     LGM_BNDP_LINE_LEFT(theBndP,i) = left;
     LGM_BNDP_LINE_RIGHT(theBndP,i) = right;
                 #endif
@@ -6774,13 +6775,13 @@ BNDP *BNDP_LoadBndP_Ext (void)
     if (Bio_Read_mint(1,&id)) return (NULL);
                 #ifdef NO_PROJECT
     if (Bio_Read_mdouble(3,global)) return (NULL);
-    LGM_BNDP_SURFACE(theBndP,i) = (LGM_SURFACE*)id;
+    LGM_BNDP_SURFACEID(theBndP,i) = id;
     LGM_BNDP_GLOBAL(theBndP,i)[0] = global[0];
     LGM_BNDP_GLOBAL(theBndP,i)[1] = global[1];
     LGM_BNDP_GLOBAL(theBndP,i)[2] = global[2];
                 #else
     if (Bio_Read_mdouble(2,local)) return (NULL);
-    LGM_BNDP_SURFACE(theBndP,i) = (LGM_SURFACE*)id;
+    LGM_BNDP_SURFACEID(theBndP,i) = id;
     LGM_BNDP_LOCAL(theBndP,i)[0] = local[0];
     LGM_BNDP_LOCAL(theBndP,i)[1] = local[1];
                 #endif

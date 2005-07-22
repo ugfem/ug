@@ -1007,7 +1007,8 @@ INT BNDP_SaveBndP_Ext (BNDP *aBndP)
   if (Bio_Write_mint(1,&n)) return (1);
   for (i=0; i<LGM_BNDP_N(theBndP); i++)
   {
-    n = (int)LGM_BNDP_LINE(theBndP,i);
+    /* just store an id, no real data */
+    n = LGM_BNDP_ID(theBndP,i);
     if (Bio_Write_mint(1,&n)) return (1);
     d = LGM_BNDP_LOCAL(theBndP,i);
     if (Bio_Write_mdouble(1,&d)) return (1);
@@ -1056,7 +1057,8 @@ BNDP *BNDP_LoadBndP_Ext (void)
   {
     if (Bio_Read_mint(1,&id)) return (NULL);
     if (Bio_Read_mdouble(1,&local)) return (NULL);
-    LGM_BNDP_LINE(theBndP,i) = (LGM_LINE*)id;
+    /* just read in an id, no real data */
+    LGM_BNDP_ID(theBndP,i) = id;
     LGM_BNDP_LOCAL(theBndP,i) = local;
   }
 
