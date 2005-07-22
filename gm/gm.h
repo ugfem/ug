@@ -1561,60 +1561,6 @@ typedef struct {
 #define CE_INIT_UNUSED                                          {CE_FREE, 0, 0, 0, 0, 0, 0}
 /*@}*/
 
-#if 0
-/** \brief Description of a control word */
-typedef struct {
-
-  /** \brief this struct is used */
-  INT used;
-
-  /** \brief name string */
-  char *name;
-
-  /** \brief where in object is it ? */
-  UINT offset_in_object;
-
-  /** \brief bitwise object ID */
-  INT objt_used;
-
-  /** \brief used bits */
-  UINT used_mask;
-
-} CONTROL_WORD;
-
-/** \brief Manage part of a control word */
-typedef struct {
-
-  /** \brief this struct is used                          */
-  INT used;
-
-  /** \brief name string */
-  char *name;
-
-  /** \brief pointer to corresponding control word */
-  INT control_word;
-
-  /** \brief shift in control word */
-  INT offset_in_word;
-
-  /** \brief number of bits used */
-  INT length;
-
-  /** \brief bitwise object ID  */
-  INT objt_used;
-
-  /** \brief copy from control word (faster)      */
-  UINT offset_in_object;
-
-  /** \brief 1 where bits are used                        */
-  UINT mask;
-
-  /** \brief 0 where bits are used                        */
-  UINT xor_mask;
-
-} CONTROL_ENTRY;
-#endif
-
 /* general query macros */
 
 /* dynamic control words */
