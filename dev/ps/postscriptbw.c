@@ -525,7 +525,7 @@ static void PSFlush (void)
 
 static void InitPSPort (OUTPUTDEVICE *thePort)
 {
-  short r,g,b,delta,i,j,max,res;
+  short i;
 
   /* init pointers to basic drawing functions */
   thePort->Move                   = PSMoveTo;
