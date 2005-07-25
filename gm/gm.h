@@ -834,12 +834,20 @@ struct elementlist {
 /** \brief Level-dependent part of a vertex */
 struct node {
 
-  /* variables */
   /** \brief Object identification, various flags */
   UINT control;
 
   /** \brief Unique id used for load/store                */
   INT id;
+
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+#endif
 
 #ifdef ModelP
   DDD_HEADER ddd;
@@ -923,6 +931,19 @@ struct generic_element {            /* no difference between inner and bndel*/
   /* unique id used for load/store        */
   INT id;
 
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+
+  /** \brief An index hat is unique and consecutive on the grid surface.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
   /* additional flags for elements        */
   UINT flag;
 
@@ -955,6 +976,20 @@ struct triangle {
   /* variables */
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
+
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+
+  /** \brief An index hat is unique and consecutive on the grid surface.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
   UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
@@ -998,6 +1033,20 @@ struct quadrilateral {
   /* variables */
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
+
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+
+  /** \brief An index hat is unique and consecutive on the grid surface.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
   UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
@@ -1041,6 +1090,20 @@ struct tetrahedron {
   /* variables */
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
+
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+
+  /** \brief An index hat is unique and consecutive on the grid surface.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
   UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
@@ -1087,6 +1150,20 @@ struct pyramid {
   /* variables */
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
+
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+
+  /** \brief An index hat is unique and consecutive on the grid surface.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
   UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
@@ -1133,6 +1210,20 @@ struct prism {
   /* variables */
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
+
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+
+  /** \brief An index hat is unique and consecutive on the grid surface.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
   UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
@@ -1179,6 +1270,20 @@ struct hexahedron {
   /* variables */
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
+
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+
+  /** \brief An index hat is unique and consecutive on the grid surface.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
   UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
