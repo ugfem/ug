@@ -60,7 +60,7 @@ if test x$have_x = xyes ; then
   save_LIBS="$LIBS"
   LIBS="$X_PRE_LIBS $X_LIBS $X_EXTRA_LIBS"
 
-  # the usual collection of X-libs without Xaw which is checked seperately
+  # the usual collection of X-libs without Xaw which is checked separately
   UG_XLIBS="$X_PRE_LIBS $X_LIBS -lX11 $X_EXTRA_LIBS -lXt"
 
   AC_CHECK_LIB([Xaw], [XawTextGetInsertionPoint],
@@ -117,7 +117,20 @@ AC_ARG_ENABLE([parallel],AC_HELP_STRING([--enable-parallel],[enable parallel com
 
 if test x$parallel = xyes ; then
   # set define
-  UG_EXTRAFLAGS='-DModelP '
+  UG_EXTRAFLAGS="-DModelP"
+fi
+
+#
+## Support for DUNE.  Building with --enable-dune sets the compiler flag -DFOR_DUNE
+## which controls several small adjustments in the UG data structures which where
+## unavoidable for the use as a DUNE grid implementation.
+#
+
+AC_ARG_ENABLE([dune],AC_HELP_STRING([--enable-dune],[compile for use with the DUNE system (default is NO)]),[dune=$enableval],[dune=no])
+
+if test x$dune = xyes ; then
+  # set define
+  UG_EXTRAFLAGS="$UG_EXTRAFLAGS -DFOR_DUNE"
 fi
 
 # debugging
@@ -126,7 +139,7 @@ AC_ARG_ENABLE([debug],AC_HELP_STRING([--enable-debug],[enable UG debugging (defa
 
 if test x$debug = xyes ; then
   # set define
-  UG_EXTRAFLAGS='-DDebug '
+  UG_EXTRAFLAGS="$UG_EXTRAFLAGS -DDebug"
 fi
 
 # the DUNE-test for MPI-package and parameters
