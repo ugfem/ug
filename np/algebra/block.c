@@ -104,7 +104,7 @@ INT SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
 {
   DOUBLE BlockMat[MAX_SINGLE_MAT_COMP],BlockSol[MAX_SINGLE_VEC_COMP], det;
   DOUBLE aux,M3div0,M6div0;
-  register DOUBLE dinv,piv,sum;
+  register DOUBLE piv;
   register SHORT i,j,k;
   INT pivrow;
   DOUBLE factor;
@@ -270,7 +270,7 @@ INT SolveInverseSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
 INT InvertSmallBlock (SHORT n, const SHORT *mcomp,
                       const DOUBLE *mat, DOUBLE *invmat)
 {
-  DOUBLE det,invdet,BlockMat[MAX_SINGLE_MAT_COMP],sum,piv;
+  DOUBLE det,invdet,BlockMat[MAX_SINGLE_MAT_COMP],piv;
   INT i,j,k;
   INT pivrow;
   DOUBLE factor;
@@ -840,7 +840,6 @@ INT SolveFullMatrix2 (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
 INT InvertFullMatrix_gen (INT n, DOUBLE *mat, DOUBLE *inv,
                           DOUBLE *rhs, INT *ipv)
 {
-  MULTIGRID *theMG;
   register DOUBLE dinv,piv,sum;
   register INT i,j,k;
 
