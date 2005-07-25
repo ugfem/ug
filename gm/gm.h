@@ -409,11 +409,11 @@ enum RefinementRule
 };
 
 /** \brief Values for element class */
-enum {NO_CLASS,
-      YELLOW_CLASS,
-      GREEN_CLASS,
-      RED_CLASS,
-      SWITCH_CLASS};
+enum MarkClass {NO_CLASS,
+                YELLOW_CLASS,
+                GREEN_CLASS,
+                RED_CLASS,
+                SWITCH_CLASS};
 
 /** \brief Values for node types (relative to the father element of the vertex) */
 enum {CORNER_NODE,

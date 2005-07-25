@@ -3685,7 +3685,8 @@ INT NS_DIM_PREFIX Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *S
 							 ELEMENT *SonList[MAX_SONS], INT *SonSides, 
 							 INT NeedSons, INT ioflag)
 {
-	INT i,j,nsons,markclass;
+	INT i,j,nsons;
+        enum MarkClass markclass;
 
 	/* reset soncount */
 	*Sons_of_Side = 0;
@@ -3710,7 +3711,7 @@ INT NS_DIM_PREFIX Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *S
 	markclass = RED_CLASS;
 	#endif
 	#ifdef __THREEDIM__
-	markclass = MARKCLASS(theElement);
+	markclass = (enum MarkClass)MARKCLASS(theElement);
 	#endif
 
         /** \todo quick fix */
