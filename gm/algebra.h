@@ -70,11 +70,10 @@ START_UGDIM_NAMESPACE
 /****************************************************************************/
 
 /** @name Vector classes */
-/*@{*/
-#define EVERY_CLASS     0       /*!< Class of all vectors */
-#define NEWDEF_CLASS    2       /*!< Class of the vectors where defect needed  */
-#define ACTIVE_CLASS    3       /*!< Class of the active vectors */
-/*@}*/
+enum VectorClass {EVERY_CLASS = 0,       /*!< Class of all vectors */
+                  NEWDEF_CLASS = 2,       /*!< Class of the vectors where defect needed  */
+                  ACTIVE_CLASS = 3       /*!< Class of the active vectors */
+};
 
 #define GET_MATRIX(v,w,m)                                                   \
   { register MATRIX *theMatrix0;                                              \
