@@ -293,6 +293,8 @@ int GetFileScreen (FILE *stream, short *fx, short *fy)
     printf("blockSize=%d fx=%d fy=%d\n",blockSize,*fx,*fy);
     printf("blockSize=%x fx=%x fy=%x\n",blockSize,*fx,*fy);
   }
+
+  return (0);
 }
 
 int get_component_shift(unsigned long mask)
