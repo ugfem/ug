@@ -96,28 +96,28 @@ enum TRACE_BLAS {
 
 #define L_VLOOP__TYPE_CLASS(v,first_v,t,c)                                                                      \
   for (v=first_v; v!= NULL; v=SUCCVC(v))                          \
-    if ((VTYPE(v)==t) && (VCLASS(v)>=c))
+    if ((VTYPE(v)==t) && ((enum VectorClass)VCLASS(v)>=c))
 
 #define L_VLOOP__TYPE_CLASS2(v,first_v,end_v,t,c)                                                                       \
   for (v=first_v; v!= end_v; v=SUCCVC(v))                         \
-    if ((VTYPE(v)==t) && (VCLASS(v)>=c))
+    if ((VTYPE(v)==t) && ((enum VectorClass)VCLASS(v)>=c))
 
 #define L_REVERSE_VLOOP__TYPE_CLASS(v,last_v,t,c)                                                       \
   for (v=last_v; v!= NULL; v=PREDVC(v))                           \
-    if ((VTYPE(v)==t) && (VCLASS(v)>=c))
+    if ((VTYPE(v)==t) && ((enum VectorClass)VCLASS(v)>=c))
 
 #define L_REVERSE_VLOOP__CLASS(v,last_v,c)                                                                      \
   for (v=last_v; v!= NULL; v=PREDVC(v))                           \
-    if (VCLASS(v)>=c)
+    if ((enum VectorClass)VCLASS(v)>=c)
 
 #define L_REVERSE_VLOOP__CLASS(v,last_v,c)                                                              \
   for (v=last_v; v!= NULL; v=PREDVC(v))                       \
-    if (VCLASS(v)>=c)
+    if ((enum VectorClass)VCLASS(v)>=c)
 
 #define A_VLOOP__TYPE_CLASS(l,fl,tl,v,mg,t,c)                                                           \
   for (l=fl; l<=tl; l++)                                                          \
     for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,l)); v!= NULL; v=SUCCVC(v)) \
-      if ((VTYPE(v)==t) && (VCLASS(v)>=c))
+      if ((VTYPE(v)==t) && ((enum VectorClass)VCLASS(v)>=c))
 
 #define S_BELOW_VLOOP__TYPE(l,fl,tl,v,mg,t)                                                                     \
   for (l=fl; l<tl; l++)                                                           \
