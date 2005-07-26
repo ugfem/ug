@@ -365,18 +365,18 @@ INT dematset       (MULTIGRID *mg, INT fl, INT tl, INT mode, EMATDATA_DESC *M, D
 
 
 
-INT l_dsetnonskip       (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE a);
-INT a_dsetnonskip       (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a);
+INT l_dsetnonskip       (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE a);
+INT a_dsetnonskip       (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE a);
 INT s_dsetnonskip       (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a);
 
-INT l_dsetskip          (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE a);
+INT l_dsetskip          (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE a);
 
-INT l_dsetrandom        (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE a);
-INT l_dsetrandom2       (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE from, DOUBLE to, INT skip);
+INT l_dsetrandom        (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE a);
+INT l_dsetrandom2       (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE from, DOUBLE to, INT skip);
 
-INT l_dsetfunc          (GRID *g,                                               const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc);
+INT l_dsetfunc          (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, SetFuncProcPtr SetFunc);
 
-INT l_mean                      (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp);
+INT l_mean                      (const GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE *sp);
 
 /* blas level 1 (BLOCKVECTOR operations) on one gridlevel */
 INT dsetBS                      (const BLOCKVECTOR *bv, INT xc, DOUBLE a);
@@ -403,9 +403,9 @@ INT d3matmulBS          (const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, co
 DOUBLE CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, INT f_comp, INT K_comp, INT u_comp );
 
 /* blas level 1 (Simple BLOCKVECTOR operations) on one gridlevel */
-INT l_dcopy_SB          (BLOCKVECTOR *bv,                               const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
-INT l_dscale_SB         (BLOCKVECTOR *bv,                               const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
-INT l_daxpy_SB          (BLOCKVECTOR *theBV,                    const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
+INT l_dcopy_SB          (BLOCKVECTOR *bv, const VECDATA_DESC *x, enum VectorClass xclass, const VECDATA_DESC *y);
+INT l_dscale_SB         (BLOCKVECTOR *bv, const VECDATA_DESC *x, enum VectorClass xclass, const DOUBLE *a);
+INT l_daxpy_SB          (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum VectorClass xclass, const DOUBLE *a, const VECDATA_DESC *y);
 
 /* blas level 2 (matrix (vector) operations) */
 INT l_dmattranspose (GRID *g,                                           const MATDATA_DESC *M1, const MATDATA_DESC *M2);

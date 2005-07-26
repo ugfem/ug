@@ -4068,13 +4068,13 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
+INT NS_DIM_PREFIX l_dsetrandom (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE a)
 {
   VECTOR *first_v;
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype;
+  register UINT vtype;
   DOUBLE scale;
   DEFINE_VD_CMPS(cx);
 
@@ -4124,13 +4124,13 @@ INT NS_DIM_PREFIX l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUB
   return (NUM_OK);
 }
 
-INT NS_DIM_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE from, DOUBLE to, INT skip)
+INT NS_DIM_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE from, DOUBLE to, INT skip)
 {
   VECTOR *first_v;
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype;
+  register UINT vtype;
   DOUBLE scale;
   DEFINE_VD_CMPS(cx);
   INT vskip;
@@ -4263,13 +4263,14 @@ INT NS_DIM_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, INT xclass, DOU
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
+INT NS_DIM_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE a)
 {
   VECTOR *first_v;
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype,vskip;
+  register INT vskip;
+  register UINT vtype;
   DEFINE_VD_CMPS(cx);
 
   first_v = FIRSTVECTOR(g);
@@ -4342,12 +4343,13 @@ INT NS_DIM_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOU
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a)
+INT NS_DIM_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE a)
 {
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype,vskip;
+  register INT vskip;
+  register UINT vtype;
   INT lev;
   DEFINE_VD_CMPS(cx);
 
@@ -4422,7 +4424,8 @@ INT NS_DIM_PREFIX s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DE
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype,vskip;
+  register INT vskip;
+  register UINT vtype;
   INT lev;
   DEFINE_VD_CMPS(cx);
 
@@ -4508,13 +4511,14 @@ INT NS_DIM_PREFIX s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DE
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
+INT NS_DIM_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE a)
 {
   VECTOR *first_v;
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype,vskip;
+  register INT vskip;
+  register UINT vtype;
   DEFINE_VD_CMPS(cx);
 
   first_v = FIRSTVECTOR(g);
@@ -4590,7 +4594,7 @@ INT NS_DIM_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc)
+INT NS_DIM_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, SetFuncProcPtr SetFunc)
 {
   VECTOR *first_v;
   DOUBLE val[MAX_SINGLE_VEC_COMP];
@@ -4599,7 +4603,7 @@ INT NS_DIM_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFun
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype;
+  register UINT vtype;
   DEFINE_VD_CMPS(cx);
 
 #ifndef NDEBUG
@@ -4669,13 +4673,14 @@ INT NS_DIM_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFun
   return (NUM_OK);
 }
 
-INT NS_DIM_PREFIX l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y)
+INT NS_DIM_PREFIX l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum VectorClass xclass, const VECDATA_DESC *y)
 {
   VECTOR *first_v,*end_v;
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype,err;
+  register INT err;
+  register UINT vtype;
   DEFINE_VD_CMPS(cx);
   DEFINE_VD_CMPS(cy);
 
@@ -4727,14 +4732,14 @@ INT NS_DIM_PREFIX l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xcl
   return (NUM_OK);
 }
 
-INT NS_DIM_PREFIX l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOUBLE *a)
+INT NS_DIM_PREFIX l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum VectorClass xclass, const DOUBLE *a)
 {
   VECTOR *first_v,*end_v;
   const DOUBLE *value;
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype;
+  register UINT vtype;
   const SHORT *aoff;
   DEFINE_VS_CMPS(a);
   DEFINE_VD_CMPS(cx);
@@ -4783,14 +4788,15 @@ INT NS_DIM_PREFIX l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xc
   return (NUM_OK);
 }
 
-INT NS_DIM_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y)
+INT NS_DIM_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum VectorClass xclass, const DOUBLE *a, const VECDATA_DESC *y)
 {
   VECTOR *first_v,*end_v;
   const DOUBLE *value;
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register INT vtype,err;
+  register INT err;
+  register UINT vtype;
   const SHORT *aoff;
   DEFINE_VS_CMPS(a);
   DEFINE_VD_CMPS(cx);
@@ -4874,13 +4880,13 @@ INT NS_DIM_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xcl
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX l_mean (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp)
+INT NS_DIM_PREFIX l_mean (const GRID *g, const VECDATA_DESC *x, enum VectorClass xclass, DOUBLE *sp)
 {
   DOUBLE *value;
   VECTOR *v,*first_v;
   register SHORT i;
   register SHORT ncomp;
-  INT vtype;
+  UINT vtype;
   const SHORT *spoff;
   DEFINE_VD_CMPS(cx);
 
