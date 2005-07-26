@@ -2126,12 +2126,11 @@ INT NS_DIM_PREFIX CoarsenVanek(GRID *theGrid)
 
 INT NS_DIM_PREFIX IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  INT ncomp,i,j,k,n,nmax,cnt;
-  DOUBLE s[LEN_MAX],sum;
+  INT ncomp,i,j,k,n;
+  DOUBLE s[LEN_MAX];
   GRID *newGrid;
   VECTOR *vect,*dest,*newVect,*w[LEN_MAX];
   MATRIX *mat,*imat;
-  DOUBLE_VECTOR y[LEN_MAX],x,loc;
 
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
     if (VCCOARSE(vect)) {
@@ -2142,7 +2141,7 @@ INT NS_DIM_PREFIX IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
     }
 
   newGrid=theGrid->coarser;
-  PRINTDEBUG(np,3,("%d:Ip nmax %d\n",me,nmax));
+
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
     if (VCCOARSE(vect) == 0) {
       ncomp = MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(vect));
