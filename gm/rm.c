@@ -3408,7 +3408,7 @@ INT NS_DIM_PREFIX MarkForRefinementX (ELEMENT *e, INT fl, INT tl, enum Refinemen
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX EstimateHere (ELEMENT *theElement)
+INT NS_DIM_PREFIX EstimateHere (const ELEMENT *theElement)
 {
         #ifdef ModelP
   if (EGHOST(theElement)) return(0);

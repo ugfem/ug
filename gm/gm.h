@@ -3207,7 +3207,7 @@ INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theE
 
 /* refinement */
 /** \todo !!! should be moved to rm.h [Thimo] */
-INT             EstimateHere                    (ELEMENT *theElement);
+INT             EstimateHere                    (const ELEMENT *theElement);
 INT         MarkForRefinement       (ELEMENT *theElement, enum RefinementRule rule, INT data);
 INT         MarkForRefinementX      (ELEMENT *theElement,
                                      INT fl, INT tl, enum RefinementRule rule, INT data);
