@@ -931,9 +931,15 @@ struct generic_element {            /* no difference between inner and bndel*/
   /* unique id used for load/store        */
   INT id;
 
+  /* additional flags for elements        */
+  UINT flag;
+
+  /* to store NodeOrder for hexahedrons   */
+  INT property;
+
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
-     a few more indices per node */
+     a few more indices per element */
 
   /** \brief An index hat is unique and consecutive per level.
       Controlled by DUNE */
@@ -943,12 +949,6 @@ struct generic_element {            /* no difference between inner and bndel*/
       Controlled by DUNE */
   int leafIndex;
 #endif
-
-  /* additional flags for elements        */
-  UINT flag;
-
-  /* to store NodeOrder for hexahedrons   */
-  INT property;
 
 #ifdef ModelP
   DDD_HEADER ddd;
@@ -977,9 +977,12 @@ struct triangle {
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
 
+  UINT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
+
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
-     a few more indices per node */
+     a few more indices per element */
 
   /** \brief An index hat is unique and consecutive per level.
       Controlled by DUNE */
@@ -989,9 +992,6 @@ struct triangle {
       Controlled by DUNE */
   int leafIndex;
 #endif
-
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -1034,9 +1034,12 @@ struct quadrilateral {
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
 
+  UINT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
+
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
-     a few more indices per node */
+     a few more indices per element */
 
   /** \brief An index hat is unique and consecutive per level.
       Controlled by DUNE */
@@ -1047,10 +1050,7 @@ struct quadrilateral {
   int leafIndex;
 #endif
 
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
-
-        #ifdef ModelP
+#ifdef ModelP
   DDD_HEADER ddd;
   INT lb1;                                      /* stores partition information         */
   INT lb2;                                      /* stores cluster pointer               */
@@ -1091,9 +1091,12 @@ struct tetrahedron {
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
 
+  UINT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
+
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
-     a few more indices per node */
+     a few more indices per element */
 
   /** \brief An index hat is unique and consecutive per level.
       Controlled by DUNE */
@@ -1103,9 +1106,6 @@ struct tetrahedron {
       Controlled by DUNE */
   int leafIndex;
 #endif
-
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -1151,9 +1151,12 @@ struct pyramid {
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
 
+  UINT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
+
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
-     a few more indices per node */
+     a few more indices per element */
 
   /** \brief An index hat is unique and consecutive per level.
       Controlled by DUNE */
@@ -1163,9 +1166,6 @@ struct pyramid {
       Controlled by DUNE */
   int leafIndex;
 #endif
-
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -1211,9 +1211,12 @@ struct prism {
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
 
+  UINT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
+
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
-     a few more indices per node */
+     a few more indices per element */
 
   /** \brief An index hat is unique and consecutive per level.
       Controlled by DUNE */
@@ -1223,9 +1226,6 @@ struct prism {
       Controlled by DUNE */
   int leafIndex;
 #endif
-
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -1271,9 +1271,12 @@ struct hexahedron {
   UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
 
+  UINT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
+
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
-     a few more indices per node */
+     a few more indices per element */
 
   /** \brief An index hat is unique and consecutive per level.
       Controlled by DUNE */
@@ -1283,9 +1286,6 @@ struct hexahedron {
       Controlled by DUNE */
   int leafIndex;
 #endif
-
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
