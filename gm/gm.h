@@ -288,10 +288,10 @@ START_UGDIM_NAMESPACE
 /** \todo Please doc me! */
 #define DIAGMATRIXTYPE(rt)  (MAXMATRICES+rt)
 
-enum {NODEVEC,       /**< Vector associated to a node */
-      EDGEVEC,       /**< Vector associated to an edge */
-      ELEMVEC,       /**< Vector associated to an element */
-      SIDEVEC        /**< Vector associated to an element side */
+enum VectorType {NODEVEC,   /**< Vector associated to a node */
+                 EDGEVEC,   /**< Vector associated to an edge */
+                 ELEMVEC,   /**< Vector associated to an element */
+                 SIDEVEC    /**< Vector associated to an element side */
 };
 
 /** @name Some constants for abstract vector type names */
