@@ -147,7 +147,7 @@ USING_UGDIM_NAMESPACE
 REP_ERR_FILE;
 static INT gridpaths_set=FALSE;
 static MGIO_RR_RULE *rr_rules;
-INT rr_rule_offsets[TAGS];
+static INT rr_rule_offsets[TAGS];
 static unsigned short *ProcList, *ActProcListPos;
 static int foid,non;
 static NODE **nid_n;                                            /* mapping: orphan-node-id  -->  orphan node */
