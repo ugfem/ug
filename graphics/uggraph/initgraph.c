@@ -76,7 +76,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-INT InitUGGraph (void)
+INT NS_DIM_PREFIX InitUGGraph (void)
 {
   INT err;
 

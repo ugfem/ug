@@ -24,6 +24,10 @@
    $Header$
  */
 
+#ifndef __INITGRAPH__
+#define __INITGRAPH__
+
+#include "namespace.h"
 
 /****************************************************************************/
 /*																			*/
@@ -31,5 +35,11 @@
 /*																			*/
 /****************************************************************************/
 
-/* initialisation of the low module */
+START_UGDIM_NAMESPACE
+
+/* initialisation of the UGGraph module */
 INT InitUGGraph (void);
+
+END_NAMESPACE
+
+#endif
