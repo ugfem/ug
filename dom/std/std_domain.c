@@ -5515,7 +5515,7 @@ NS_DIM_PREFIX BNDP_BndCond (BNDP * aBndP, INT * n, INT i, DOUBLE * in, DOUBLE * 
 }
 
 /* domain interface function: for description see domain.h */
-INT
+INT NS_DIM_PREFIX
 BNDP_SurfaceId (BNDP * aBndP, INT * n, INT i)
 {
   BND_PS *ps;
