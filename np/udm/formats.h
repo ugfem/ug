@@ -124,7 +124,7 @@ START_UGDIM_NAMESPACE
 typedef struct
 {
 
-  char Name[NAMESIZE];          /*!<  prefix for sub vector name   */
+  char Name[NS_PREFIX NAMESIZE];          /*!<  prefix for sub vector name   */
   SHORT Comp[NVECTYPES];        /*!< number of comps per type             */
   SHORT Comps[NVECTYPES][MAX_VEC_COMP];         /*!< subsequent comps rel to tplt */
 
@@ -151,7 +151,7 @@ typedef struct
 typedef struct
 {
 
-  char Name[NAMESIZE];          /*!< prefix for sub matrix name   */
+  char Name[NS_PREFIX NAMESIZE];          /*!< prefix for sub matrix name   */
   SHORT RComp[NMATTYPES];       /*!< number of row comps per type */
   SHORT CComp[NMATTYPES];       /*!< number of col comps per type */
   SHORT *CmpsInType[NMATTYPES];         /*!< pointers to SHORT vectors    */

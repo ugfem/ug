@@ -391,10 +391,10 @@ struct std_BoundaryValueProblem
   struct problem *Problem;
 
   /** \brief File name for boundary infos        */
-  char bnd_file[NAMESIZE];
+  char bnd_file[NS_PREFIX NAMESIZE];
 
   /** \brief File name for meshinfos             */
-  char mesh_file[NAMESIZE];
+  char mesh_file[NS_PREFIX NAMESIZE];
 
   /** @name Domain part */
   /*@{*/

@@ -85,14 +85,12 @@ enum DOM_IN_PARAMS {
 /** \brief Boundary types */
 enum BoundaryType {FIXED, FREE, PERIODIC, NON_PERIODIC};
 
-/** @name Status for mesh */
-/*@{*/
-#define MESHSTAT_NOTINIT     0
-#define MESHSTAT_EMPTY       1
-#define MESHSTAT_CNODES      2
-#define MESHSTAT_SURFMESH    3
-#define MESHSTAT_MESH        4
-/*@}*/
+/** \brief Status for mesh */
+enum MeshStatus {MESHSTAT_NOTINIT,
+                 MESHSTAT_EMPTY,
+                 MESHSTAT_CNODES,
+                 MESHSTAT_SURFMESH,
+                 MESHSTAT_MESH};
 
 /** @name Function formats */
 /*@{*/
@@ -132,7 +130,7 @@ struct BVP_Descriptor
   /** @name General part */
   /*@{*/
   /** \brief Name of the BVP */
-  char name[NAMELEN];
+  char name[NS_PREFIX NAMELEN];
   /*@}*/
 
   /** @name Domain part */

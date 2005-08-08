@@ -305,7 +305,7 @@ typedef struct {
   INT locked;                                  /* may not be changed or deleted            */
   union envitem *next;
   union envitem *previous;                     /* double linked list of environment items  */
-  char name[NAMESIZE];                         /* name of that item (view)                 */
+  char name[NS_PREFIX NAMESIZE];                         /* name of that item (view)                 */
 
   /* full ref rule spezific stuff */
   FULLREFRULEPTR theFullRefRule;               /* the best full refrule                    */

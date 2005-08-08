@@ -223,7 +223,7 @@ struct PlotObjHead {                                            /* head of all P
   DOUBLE theMidPoint[3];                                        /* MidPoint of covering 2/3D sphere                     */
   DOUBLE theRadius;                                                     /* radius of covering 2/3D sphere                               */
   INT clearBeforeDraw;                                          /* YES or NO                                                                    */
-  char name[NAMESIZE];
+  char name[NS_PREFIX NAMESIZE];
   INT UsesCut;                                                          /* YES or NO                                                                    */
 };
 
@@ -266,7 +266,7 @@ struct LinePlotObj {
   DOUBLE xmin;                                                          /* min intersection between grid and line           */
   DOUBLE xmax;                                                          /* max intersection between grid and line           */
   INT Gnuplot;                                  /* 1 for gnuplot-output                         */
-  char Gnufilename[NAMELEN];                    /* filename for gnuplot-output                  */
+  char Gnufilename[NS_PREFIX NAMELEN];                    /* filename for gnuplot-output                  */
 };
 
 struct ExternPlotObject {
@@ -293,7 +293,7 @@ struct ElemScalarPlotObj2D {
   INT numOfContours;                                                    /* nb of contourlines if used                                   */
   DOUBLE contValues[PO_MAXCONTOURS];                    /* contour values if used                                               */
   INT Gnuplot;                                  /* 1 for gnuplot-output, only for COUNTOURS     */
-  char Gnufilename[NAMELEN];                    /* filename for gnuplot-output                  */
+  char Gnufilename[NS_PREFIX NAMELEN];                    /* filename for gnuplot-output                  */
 };
 
 struct ElemVectorPlotObj2D {
@@ -559,12 +559,12 @@ struct PlotObjType {
 struct placement_task {
 
   /* window specification */
-  char win_name[NAMESIZE];                      /* name of the window                       */
+  char win_name[NS_PREFIX NAMESIZE];                      /* name of the window                       */
   INT winLL[2], winUR[2];                       /* size of UgWindow                         */
 
   /* picture specification */
   INT n;                                        /* number of pictures                       */
-  char pic_name[NAMESIZE][WPM_PLM_PMAX];        /* name of the pictures                     */
+  char pic_name[NS_PREFIX NAMESIZE][WPM_PLM_PMAX];        /* name of the pictures                     */
   DOUBLE aspect_ratio[WPM_PLM_PMAX];            /* aspect ratios                            */
   DOUBLE rel_size[WPM_PLM_PMAX];                /* relative sizes of the pictures           */
 };

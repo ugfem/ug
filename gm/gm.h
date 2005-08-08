@@ -62,6 +62,7 @@
 #include "domain.h"
 #include "pargm.h"
 #include "cw.h"
+#include "namespace.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -1374,11 +1375,11 @@ struct grid {
   INT attribut;                                         /* level + 32; needed for controll word check not detecting HEAPFAULT   */
   INT status;                                           /* possible values see defines above    */
   INT level;                                                    /* level of that grid                                   */
-  INT nVert[MAX_PRIOS];                         /* number of vertices                                   */
-  INT nNode[MAX_PRIOS];                         /* number of nodes                                              */
-  INT nElem[MAX_PRIOS];                         /* number of elements                                   */
+  INT nVert[NS_PREFIX MAX_PRIOS];                         /* number of vertices                                   */
+  INT nNode[NS_PREFIX MAX_PRIOS];                         /* number of nodes                                              */
+  INT nElem[NS_PREFIX MAX_PRIOS];                         /* number of elements                                   */
   INT nEdge;                                                    /* number of edges                                              */
-  INT nVector[MAX_PRIOS];                       /* number of vectors                                    */
+  INT nVector[NS_PREFIX MAX_PRIOS];                       /* number of vectors                                    */
   INT nCon;                                                     /* number of Connections                                */
 #ifdef __INTERPOLATION_MATRIX__
   INT nIMat;                        /* number of interpolation matrices     */
@@ -1386,14 +1387,14 @@ struct grid {
   DATA_STATUS data_status;          /* memory management for vectors|matrix */
                                     /* status for consistent and collect    */
   /* pointers */
-  union  element *elements[ELEMENT_LISTPARTS];       /* pointer to first element*/
-  union  element *lastelement[ELEMENT_LISTPARTS];      /*pointer to last element*/
-  union  vertex *vertices[VERTEX_LISTPARTS];            /* pointer to first vertex      */
-  union  vertex *lastvertex[VERTEX_LISTPARTS];      /* pointer to last vertex   */
-  struct node *firstNode[NODE_LISTPARTS];       /* pointer to first node                */
-  struct node *lastNode[NODE_LISTPARTS];        /* pointer to last node                 */
-  VECTOR *firstVector[VECTOR_LISTPARTS];        /* pointer to first vector              */
-  VECTOR *lastVector[VECTOR_LISTPARTS];         /* pointer to last vector               */
+  union  element *elements[NS_PREFIX ELEMENT_LISTPARTS];       /* pointer to first element*/
+  union  element *lastelement[NS_PREFIX ELEMENT_LISTPARTS];      /*pointer to last element*/
+  union  vertex *vertices[NS_PREFIX VERTEX_LISTPARTS];            /* pointer to first vertex      */
+  union  vertex *lastvertex[NS_PREFIX VERTEX_LISTPARTS];      /* pointer to last vertex   */
+  struct node *firstNode[NS_PREFIX NODE_LISTPARTS];       /* pointer to first node                */
+  struct node *lastNode[NS_PREFIX NODE_LISTPARTS];        /* pointer to last node                 */
+  VECTOR *firstVector[NS_PREFIX VECTOR_LISTPARTS];        /* pointer to first vector              */
+  VECTOR *lastVector[NS_PREFIX VECTOR_LISTPARTS];         /* pointer to last vector               */
   BLOCKVECTOR *firstblockvector;        /* pointer to the first blockvector             */
   BLOCKVECTOR *lastblockvector;         /* pointer to the last blockvector              */
   struct grid *coarser, *finer;         /* coarser and finer grids                              */
@@ -1497,7 +1498,7 @@ struct multigrid {
   INT saved;
 
   /** \brief filename if saved                                    */
-  char filename[NAMESIZE];
+  char filename[NS_PREFIX NAMESIZE];
 
   /** \brief coarse grid complete                                 */
   INT CoarseGridFixed;

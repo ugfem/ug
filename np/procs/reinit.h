@@ -73,7 +73,7 @@ struct np_reinit {
 
   /* things to be initialized for being executable */
   INT n;                                     /* number of parameters            */
-  char name[NAMESIZE][PARAMETER_MAX];        /* name of parameters              */
+  char name[NS_PREFIX NAMESIZE][PARAMETER_MAX];        /* name of parameters              */
   DOUBLE parameter[PARAMETER_MAX];           /* parameters                      */
 
   /* functions */

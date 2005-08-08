@@ -98,7 +98,7 @@ typedef struct
   DOUBLE list_dt[50];
   DOUBLE list_work[50];
   INT displayMode;
-  char scaleName[NAMELEN];
+  char scaleName[NS_PREFIX NAMELEN];
   DOUBLE scale;
 
   /* statistics */
