@@ -653,7 +653,7 @@ static INT EEXDisplay (NP_BASE *theNP)
   return (0);
 }
 
-void WriteScilabVector (char *name, INT n, DOUBLE *vec)
+static void WriteScilabVector (char *name, INT n, DOUBLE *vec)
 {
   INT i;
   FILE *f=fopen(name,"w");
@@ -664,7 +664,7 @@ void WriteScilabVector (char *name, INT n, DOUBLE *vec)
   fclose(f);
 }
 
-void WriteScilabMatrix (char *name, INT n, DOUBLE *mat)
+static void WriteScilabMatrix (char *name, INT n, DOUBLE *mat)
 {
   INT i,j;
   FILE *f=fopen(name,"w");

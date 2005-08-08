@@ -497,7 +497,7 @@ typedef struct {
 
 } MORDER;
 
-int WH_mcmp (const void* x, const void *y)
+static int WH_mcmp (const void* x, const void *y)
 {
   MORDER *mx,*my;
 
