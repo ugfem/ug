@@ -1992,8 +1992,8 @@ static INT PGSConstruct (NP_BASE *theNP)
 #define MAX_PATCH 100
 #define MAX_VPATCH 100
 
-INT SolveFullMatrix3 (INT n, DOUBLE *sol, DOUBLE mat[MAX_PATCH][MAX_PATCH],
-                      DOUBLE *rhs)
+static INT SolveFullMatrix3 (INT n, DOUBLE *sol, DOUBLE mat[MAX_PATCH][MAX_PATCH],
+                             DOUBLE *rhs)
 {
   register DOUBLE dinv,piv,sum;
   register int i,j,k;
@@ -2168,8 +2168,6 @@ static INT InvertFullMatrix3 (INT n, DOUBLE mat[MAX_PATCH][MAX_PATCH],
 
   return (0);
 }
-
-NP_ITER *currNP;
 
 #ifdef __MWCW__
 static DOUBLE matr[MAX_PATCH][MAX_PATCH];
@@ -2680,7 +2678,6 @@ static INT BLOCKSmoother (NP_ITER *theNP, INT level,
   NPIT_A(theNP) = A;
   NPIT_c(theNP) = x;
   NPIT_b(theNP) = b;
-  currNP = theNP;
 
   if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
     NP_RETURN(1,result[0]);
