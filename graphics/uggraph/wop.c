@@ -92,46 +92,40 @@ USING_UG_NAMESPACES
 #define DEP_COS 					   -0.94
 
 /* definitions for pulling frames by mouse */
-#define MOUSE_NOT_MOVED					0
-#define MOUSE_MOVED						1
-#define REJECTED						2
+enum {MOUSE_NOT_MOVED, MOUSE_MOVED, REJECTED};
 
 /* ctrl entries of element ctrl */
-INT ce_VSIDES;
+static INT ce_VSIDES;
 #define VSIDES_LEN						6
 #define VSIDES(p)						CW_READ(p,ce_VSIDES)
 #define SETVSIDES(p,n)					CW_WRITE(p,ce_VSIDES,n)
 #define VIEWABLE(p,i)					(VSIDES(p) & (1<<i))
 
-INT ce_NORDER;
+static INT ce_NORDER;
 #define NORDER_LEN						5
 #define NORDER(p)						CW_READ(p,ce_NORDER)
 #define SETNORDER(p,n)					CW_WRITE(p,ce_NORDER,n)
 
-INT ce_COUNT;
+static INT ce_COUNT;
 #define COUNT_LEN						4
 #define COUNT(p)						CW_READ(p,ce_COUNT) 
 #define SETCOUNT(p,n)					CW_WRITE(p,ce_COUNT,n)
 
-INT ce_CUTMODE;
+static INT ce_CUTMODE;
 #define CUTMODE_LEN 					2
 #define CUTMODE(p)						CW_READ(p,ce_CUTMODE)
 #define SETCUTMODE(p,n) 				CW_WRITE(p,ce_CUTMODE,n)
 
 /* values for CUTMODE */
-#define CM_BEHIND						0
-#define CM_INTERSECT					1
-#define CM_INFRONT						2
+enum {CM_BEHIND, CM_INTERSECT, CM_INFRONT};
 
-INT ce_ELEMORD;
+static INT ce_ELEMORD;
 #define ELEMORD_LEN 					2
 #define ELEMORD(p)						CW_READ(p,ce_ELEMORD)
 #define SETELEMORD(p,n) 				CW_WRITE(p,ce_ELEMORD,n)
 
 /* values for ELEMORD */
-#define NOTHING_DONE                    0
-#define VSIDES_DONE                     1
-#define ALL_DONE                        2
+enum {NOTHING_DONE, VSIDES_DONE, ALL_DONE};
 
 /* Macros for Node order */
 #define NODE_ORDER(p) 		   ((TAG(theElement) == TETRAHEDRON) ? \
