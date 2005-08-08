@@ -50,8 +50,8 @@ START_UG_NAMESPACE
 /*****************************************************************************/
 
 /* CAUTION: when changing NAMESIZE also change scanf sizes!!! */
-#define NAMESIZE            128        /* max length of name string            */
-#define NAMELEN             127        /* NAMESIZE-1                            */
+enum {NAMESIZE = 128};                 /* max length of name string            */
+enum {NAMELEN  = 127};                 /* NAMESIZE-1                            */
 #define NAMELENSTR             "127"    /* NAMESIZE-1 as string                    */
 #define SEARCHALL            -1        /* scan through all directories         */
 #define DIRSEP                "/"     /* character separating directories     */
