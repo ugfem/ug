@@ -50,30 +50,31 @@ START_UG_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-/* markers                                                                                                                                      */
-#define EMPTY_SQUARE_MARKER             0
-#define GRAY_SQUARE_MARKER                      1
-#define FILLED_SQUARE_MARKER            2
-#define EMPTY_CIRCLE_MARKER             3
-#define GRAY_CIRCLE_MARKER                      4
-#define FILLED_CIRCLE_MARKER            5
-#define EMPTY_RHOMBUS_MARKER            6
-#define GRAY_RHOMBUS_MARKER             7
-#define FILLED_RHOMBUS_MARKER           8
-#define PLUS_MARKER                             9
-#define CROSS_MARKER                            10
+/* markers */
+enum {EMPTY_SQUARE_MARKER,
+      GRAY_SQUARE_MARKER,
+      FILLED_SQUARE_MARKER,
+      EMPTY_CIRCLE_MARKER,
+      GRAY_CIRCLE_MARKER,
+      FILLED_CIRCLE_MARKER,
+      EMPTY_RHOMBUS_MARKER,
+      GRAY_RHOMBUS_MARKER,
+      FILLED_RHOMBUS_MARKER,
+      PLUS_MARKER,
+      CROSS_MARKER};
 
 #define NMARKERS                                        11
 
 /* tool numbers */
-#define arrowTool                               0
-#define crossTool                               1
-#define choiceTool                              2
-#define circleTool                              3
-#define handTool                                4
-#define heartTool                               5
-#define gnoedelTool                     6
-#define nboftools                               7
+enum {arrowTool,
+      crossTool,
+      choiceTool,
+      circleTool,
+      handTool,
+      heartTool,
+      gnoedelTool};
+
+#define nboftools 7
 
 /* toolbox text len */
 #define INFO_SIZE                               128
@@ -82,33 +83,18 @@ START_UG_NAMESPACE
 #define NO_TOOL_CHOSEN                  -1              /* possible return value of WhichTool */
 
 /* text position */
-#define TEXT_NOT_CENTERED               0
-#define TEXT_CENTERED                   1
+enum {TEXT_NOT_CENTERED,
+      TEXT_CENTERED};
 
 /* text modes */
-#define TEXT_REGULAR                    0
-#define TEXT_INVERSE                    1
-#define TEXT_INDEXED                    2
+enum {TEXT_REGULAR,
+      TEXT_INVERSE,
+      TEXT_INDEXED};
 
 /* buffer space for command line input */
 #define INPUTBUFFERLEN                  4096
 
 /* event types */
-// #define EVENT_ERROR                     0
-
-// #define EVERY_EVENT                     1
-
-// #define NO_EVENT                                2
-// #define TERM_GOAWAY                     3
-// #define TERM_CMDKEY                     4
-// #define TERM_STRING                     5
-// #define DOC_GOAWAY                              6
-// #define DOC_ACTIVATE                    7
-// #define DOC_DRAG                                8
-// #define DOC_GROW                                9
-// #define DOC_CHANGETOOL                  10
-// #define DOC_CONTENTCLICK                11
-// #define DOC_UPDATE                              12
 enum EventType {EVENT_ERROR,
                 EVERY_EVENT,
                 NO_EVENT,
