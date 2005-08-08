@@ -1330,12 +1330,10 @@ void NS_PREFIX SetCurrentGW (GraphWindow *g)
 
 static int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int height)
 {
-  int i;
   unsigned int border_width = DEFAULTBORDER;
   char *icon_name = GRAPHICONNAME;
-  char *Geometry, *Fontname;
+  char *Fontname;
   char *ug_name = RESOURCENAME;
-  int flags;
   unsigned long valuemask = 0;
   static char dash_list[] = {12,24};
   XGCValues values;
@@ -1605,7 +1603,7 @@ static INT X11_ActivateOutput (WINDOWID win)
 static INT X11_UpdateOutput (WINDOWID win, INT tool)
 {
   int x,y,w,h,i;
-  int lw,ts;
+  int lw;
   unsigned long fg,bg;
   XGCValues gcv;
   XRectangle rect;
