@@ -1254,7 +1254,15 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #endif
 
 #define ARCH_VERSION "ARCH_1_0"
+
+/* The following is actually a definition (and not just a declaration) in a header
+   file.  Since DUNE actually includes compiler.h twice from a single source, this
+   definition has to go.  Yes, I know, including a header twice is not nice, but
+   I currently see no other way.
+ */
+#ifndef FOR_DUNE
 static char compilerrcs_id[] = "$Id$";
+#endif
 
 /* limits of the basic types */
 #define MAX_S            SHRT_MAX
