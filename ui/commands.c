@@ -1260,7 +1260,7 @@ static INT ProtoOffCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
-FILE *GetProtocolFile (void)
+FILE* NS_DIM_PREFIX GetProtocolFile ()
 {
   return (protocolFile);
 }
@@ -4742,9 +4742,10 @@ static INT MarkCommand (INT argc, char **argv)
   INT i,j,l,mode,rv,sid;
   enum RefinementRule Rule;
   DOUBLE_VECTOR global;
-  DOUBLE x,X,y,Y;
+  DOUBLE x,y;
   long nmarked;
 #       ifdef __THREEDIM__
+  DOUBLE X,Y;
   DOUBLE z,Z;
 #       endif
 
