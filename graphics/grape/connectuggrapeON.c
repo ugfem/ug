@@ -1603,7 +1603,7 @@ static void save_actuell_status (void)
    D*/
 /****************************************************************************/
 
-void usleep (unsigned long time)
+void NS_DIM_PREFIX usleep (unsigned long time)
 {
   return;
 }
@@ -1628,7 +1628,7 @@ void usleep (unsigned long time)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX InitGrape (void)
+INT NS_DIM_PREFIX InitGrape (void)
 {
   return (0);
 }
