@@ -80,26 +80,26 @@ enum Priorities
 };
 
 /* define dynamic lists ids */
-#define ELEMENT_LIST     0
-#define NODE_LIST        1
-#define VECTOR_LIST      2
-#define VERTEX_LIST      3
+enum DynamicListId {ELEMENT_LIST,
+                    NODE_LIST,
+                    VECTOR_LIST,
+                    VERTEX_LIST};
 
 #ifdef ModelP
 
 /* define number of priorities for objects */
-#define MAX_PRIOS                               6
-#define ELEMENT_PRIOS                   4
-#define NODE_PRIOS                              5
-#define VECTOR_PRIOS                    5
-#define VERTEX_PRIOS                    5
+enum {MAX_PRIOS     = 6};
+enum {ELEMENT_PRIOS = 4};
+enum {NODE_PRIOS    = 5};
+enum {VECTOR_PRIOS  = 5};
+enum {VERTEX_PRIOS  = 5};
 
 /* define number of listparts for objects */
-#define MAX_LISTPARTS                   8
-#define ELEMENT_LISTPARTS               2
-#define NODE_LISTPARTS                  3
-#define VECTOR_LISTPARTS                3
-#define VERTEX_LISTPARTS                3
+enum {MAX_LISTPARTS     = 8};
+enum {ELEMENT_LISTPARTS = 2};
+enum {NODE_LISTPARTS    = 3};
+enum {VECTOR_LISTPARTS  = 3};
+enum {VERTEX_LISTPARTS  = 3};
 
 /* define mapping from object priority to position in linked list */
 #define PRIO2LISTPART(listtype,prio)                                         \
@@ -172,18 +172,18 @@ enum Priorities
 #else   /* not ModelP */
 
 /* define number of priorities for objects */
-#define MAX_PRIOS                               1
-#define ELEMENT_PRIOS                   1
-#define NODE_PRIOS                              1
-#define VECTOR_PRIOS                    1
-#define VERTEX_PRIOS                    1
+enum {MAX_PRIOS = 1};
+enum {ELEMENT_PRIOS = 1};
+enum {NODE_PRIOS = 1};
+enum {VECTOR_PRIOS = 1};
+enum {VERTEX_PRIOS = 1};
 
 /* define number of listparts for objects */
-#define MAX_LISTPARTS                   1
-#define ELEMENT_LISTPARTS               1
-#define NODE_LISTPARTS                  1
-#define VECTOR_LISTPARTS                1
-#define VERTEX_LISTPARTS                1
+enum {MAX_LISTPARTS = 1};
+enum {ELEMENT_LISTPARTS = 1};
+enum {NODE_LISTPARTS = 1};
+enum {VECTOR_LISTPARTS = 1};
+enum {VERTEX_LISTPARTS = 1};
 
 /* define mapping from object priority to position in linked list */
 
