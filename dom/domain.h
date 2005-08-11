@@ -173,8 +173,8 @@ typedef struct BVP_Descriptor BVP_DESC;
 struct mesh
 {
 
-  /** \brief Status see above                                    */
-  INT mesh_status;
+  /** \brief Status */
+  enum MeshStatus mesh_status;
 
   /** \brief Number of boundary points              */
   INT nBndP;
