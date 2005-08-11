@@ -34,6 +34,7 @@
 #ifndef __UG__
    #include "sm.h"
    #define ERR_FILE_ID 6
+#define NS_PREFIX
 #else /* __UG__ */
 
 #include "sm.h"
@@ -65,8 +66,8 @@ REP_ERR_FILE;
  */
 /****************************************************************************/
 
-INT ComputeSMSizeOfArray (SHORT nr, SHORT nc, const SHORT *comps,
-                          SHORT *NPtr, SHORT *NredPtr)
+INT NS_PREFIX ComputeSMSizeOfArray (SHORT nr, SHORT nc, const SHORT *comps,
+                                    SHORT *NPtr, SHORT *NredPtr)
 {
   SHORT off,N,Nred;
   SHORT flag[MAX_NDOF];
@@ -121,7 +122,7 @@ INT ComputeSMSizeOfArray (SHORT nr, SHORT nc, const SHORT *comps,
  */
 /****************************************************************************/
 
-INT SM2Array (const SPARSE_MATRIX *sm, SHORT *comps)
+INT NS_PREFIX SM2Array (const SPARSE_MATRIX *sm, SHORT *comps)
 {
   int i,j,nr,nc,off,posc;
 
@@ -178,7 +179,7 @@ INT SM2Array (const SPARSE_MATRIX *sm, SHORT *comps)
  */
 /****************************************************************************/
 
-INT Array2SM (SHORT nr, SHORT nc, const SHORT *comps, SPARSE_MATRIX *sm)
+INT NS_PREFIX Array2SM (SHORT nr, SHORT nc, const SHORT *comps, SPARSE_MATRIX *sm)
 {
   INT error;
   SHORT off,posc,N,Nred;
@@ -243,7 +244,7 @@ INT Array2SM (SHORT nr, SHORT nc, const SHORT *comps, SPARSE_MATRIX *sm)
  */
 /****************************************************************************/
 
-INT String2SMArray (SHORT n, char *str, SHORT *comps)
+INT NS_PREFIX String2SMArray (SHORT n, char *str, SHORT *comps)
 {
   SHORT off;
   int i;
@@ -313,7 +314,7 @@ INT String2SMArray (SHORT n, char *str, SHORT *comps)
  */
 /****************************************************************************/
 
-INT SM_Compute_Reduced_Size (SPARSE_MATRIX *sm)
+INT NS_PREFIX SM_Compute_Reduced_Size (SPARSE_MATRIX *sm)
 {
   register INT i, j, off;
   register INT ident_count;
@@ -358,7 +359,7 @@ INT SM_Compute_Reduced_Size (SPARSE_MATRIX *sm)
  */
 /****************************************************************************/
 
-INT SM_Compute_Reduced_Offsets (SPARSE_MATRIX *sm, SHORT *reduced_offsets)
+INT NS_PREFIX SM_Compute_Reduced_Offsets (SPARSE_MATRIX *sm, SHORT *reduced_offsets)
 {
   register INT i, j, k, off;
 
@@ -404,7 +405,7 @@ INT SM_Compute_Reduced_Offsets (SPARSE_MATRIX *sm, SHORT *reduced_offsets)
  */
 /****************************************************************************/
 
-INT SM_Compare (SPARSE_MATRIX *sm1, SPARSE_MATRIX *sm2)
+INT NS_PREFIX SM_Compare (SPARSE_MATRIX *sm1, SPARSE_MATRIX *sm2)
 {
   register INT i, j, off1, off2;
 
@@ -464,7 +465,7 @@ INT SM_Compare (SPARSE_MATRIX *sm1, SPARSE_MATRIX *sm2)
  */
 /****************************************************************************/
 
-INT SM_Compute_Diff_From_Offset (INT N, SHORT *offset, ptrdiff_t *Diff)
+INT NS_PREFIX SM_Compute_Diff_From_Offset (INT N, SHORT *offset, ptrdiff_t *Diff)
 {
   register int i;
 
@@ -505,8 +506,8 @@ INT SM_Compute_Diff_From_Offset (INT N, SHORT *offset, ptrdiff_t *Diff)
  */
 /****************************************************************************/
 
-INT SM_Compute_yDiff_From_Offset (INT N, SHORT *col_ind, SHORT *cmp_off,
-                                  ptrdiff_t *Diff)
+INT NS_PREFIX SM_Compute_yDiff_From_Offset (INT N, SHORT *col_ind, SHORT *cmp_off,
+                                            ptrdiff_t *Diff)
 {
   register int i;
 
@@ -523,7 +524,7 @@ INT SM_Compute_yDiff_From_Offset (INT N, SHORT *col_ind, SHORT *cmp_off,
   return(0);
 }
 
-INT Decompose_LR_pivot (int n, DOUBLE *mat, int *pivot)
+INT NS_PREFIX Decompose_LR_pivot (int n, DOUBLE *mat, int *pivot)
 {
   register DOUBLE dinv, piv, sum, factor;
   register int i, j, k, off_i, off_j;
@@ -573,7 +574,7 @@ INT Decompose_LR_pivot (int n, DOUBLE *mat, int *pivot)
   return(0);
 }
 
-INT Solve_LR (int n, const DOUBLE *LR, const int *pivot, DOUBLE *x, const DOUBLE *b)
+INT NS_PREFIX Solve_LR (int n, const DOUBLE *LR, const int *pivot, DOUBLE *x, const DOUBLE *b)
 {
   register int i, j, off_i;
   register DOUBLE sum;
@@ -624,8 +625,8 @@ INT Solve_LR (int n, const DOUBLE *LR, const int *pivot, DOUBLE *x, const DOUBLE
  */
 /****************************************************************************/
 
-INT SM_Decompose_LR_pivot (const SPARSE_MATRIX *sm, DOUBLE *values,
-                           DOUBLE *LR, int *pivot)
+INT NS_PREFIX SM_Decompose_LR_pivot (const SPARSE_MATRIX *sm, DOUBLE *values,
+                                     DOUBLE *LR, int *pivot)
 {
   register int i,j,k,n;
   register DOUBLE *Row_Ptr;
