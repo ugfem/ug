@@ -3316,7 +3316,7 @@ EDGE            *GetFatherEdge                  (EDGE *theEdge);
 EDGE            *FatherEdge                             (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge);
 #endif
 EDGE            *GetEdge                                (NODE *from, NODE *to);
-INT             GetSons                                 (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
+INT             GetSons                                 (const ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
 #ifdef ModelP
 INT             GetAllSons                              (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
 #endif

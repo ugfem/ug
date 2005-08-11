@@ -2355,7 +2355,7 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, INT *side)
    D*/
 /****************************************************************************/
 
-INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
+INT GetSons (const ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
   INT i;
 

@@ -2432,7 +2432,7 @@ INT NS_DIM_PREFIX GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
+INT NS_DIM_PREFIX GetSons (const ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
 	int SonID;
 	ELEMENT *son;

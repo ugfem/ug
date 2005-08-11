@@ -248,7 +248,7 @@ INT ShowRefRule (INT nb)
  */
 /****************************************************************************/
 
-INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
+INT GetSons (const ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
   REFRULE *theRule;
   ELEMENT *theSon;
