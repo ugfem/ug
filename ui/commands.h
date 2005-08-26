@@ -37,22 +37,20 @@
 
 
 #include "compiler.h"
-#include "ugdevices.h"
-#include "cmdline.h"
 #include "gm.h"
-
 #include "namespace.h"
 
 START_UGDIM_NAMESPACE
 
-/** I need this in DUNE */
-#ifdef __cplusplus
+
+/** This method is not static because it is needed in DUNE */
 INT NewCommand(INT argc, char **argv);
 
+/** This method is not static because it is needed in DUNE */
 INT ConfigureCommand (INT argc, char **argv);
 
+/** This method is not static because it is needed in DUNE */
 INT LBCommand (INT argc, char **argv);
-#endif
 
 
 /****************************************************************************/

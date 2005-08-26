@@ -1468,9 +1468,6 @@ static INT CnomCommand (INT argc, char **argv)
 
 
 /** \brief Implementation of \ref configure. */
-#ifndef __cplusplus
-static
-#endif
 INT NS_DIM_PREFIX ConfigureCommand (INT argc, char **argv)
 {
   BVP *theBVP;
@@ -1582,9 +1579,6 @@ static INT CloseCommand (INT argc, char **argv)
 
 
 /** \brief Implementation of \ref new. */
-#ifndef __cplusplus
-static
-#endif
 INT NS_DIM_PREFIX NewCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10552,13 +10546,7 @@ static INT InitScreenSize (void)
 
 
 /** \brief Implementation of \ref lb. */
-INT
-#ifdef __cplusplus
-NS_DIM_PREFIX
-#else
-static
-#endif
-LBCommand (INT argc, char **argv)
+INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
 {
                 #ifndef ModelP
   /* dummy command in seriell version */
