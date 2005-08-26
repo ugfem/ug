@@ -34,6 +34,7 @@
 #endif
 
 #include "general.h"
+#include "ugdevices.h"
 #include "gm.h"
 #include "cw.h"
 #include "elements.h"
