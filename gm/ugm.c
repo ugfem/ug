@@ -10612,8 +10612,7 @@ INT NS_DIM_PREFIX PropagateNextNodeClasses (GRID *theGrid)
 }
 
 /****************************************************************************/
-/** \brief
-   SetEdgeAndNodeSubdomainFromElements - set subdomain id on level 0 edges
+/** \brief Set subdomain id on level 0 edges
 
  * @param   id - the id of the block to be allocated
 
@@ -10625,9 +10624,6 @@ INT NS_DIM_PREFIX PropagateNextNodeClasses (GRID *theGrid)
    </ul> */
 /****************************************************************************/
 
-#ifndef __cplusplus
-static
-#endif
 INT NS_DIM_PREFIX SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
 {
   ELEMENT *theElement;
