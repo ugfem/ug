@@ -289,6 +289,7 @@ START_UGDIM_NAMESPACE
 /** \todo Please doc me! */
 #define DIAGMATRIXTYPE(rt)  (MAXMATRICES+rt)
 
+/** \brief Type of geometric entity which a certain vector is attached to */
 enum VectorType {NODEVEC,   /**< Vector associated to a node */
                  EDGEVEC,   /**< Vector associated to an edge */
                  ELEMVEC,   /**< Vector associated to an element */
@@ -321,23 +322,19 @@ enum VectorType {NODEVEC,   /**< Vector associated to a node */
 
 /** @name Constants for BLOCKVECTOR */
 /*@{*/
-/* constants for BLOCKVECTOR */
 /** \brief symbolic value for BVDOWNTYPE */
-#define BVDOWNTYPEVECTOR        0
-/** \brief symbolic value for BVDOWNTYPE */
-#define BVDOWNTYPEBV            1
-/** \brief symbolic value for BVDOWNTYPE */
-#define BVDOWNTYPEDIAG          2
+enum {BVDOWNTYPEVECTOR,
+      BVDOWNTYPEBV,
+      BVDOWNTYPEDIAG};
+
 /** \brief symbolic value for BVTVTYPE */
-#define BV1DTV                          0
-/** \brief symbolic value for BVTVTYPE */
-#define BV2DTV                          1
-/** \brief no special orientation for BVORIENTATION */
-#define BVNOORIENTATION         0
-/** \brief vectors form a horizontal line for BVORIENTATION */
-#define BVHORIZONTAL            1
-/** \brief vectors form a vertical line for BVORIENTATION */
-#define BVVERTICAL                      2
+enum {BV1DTV,
+      BV2DTV};
+
+enum {BVNOORIENTATION, /**< No special orientation for BVORIENTATION */
+      BVHORIZONTAL, /**< Vectors form a horizontal line for BVORIENTATION */
+      BVVERTICAL /**< Vectors form a vertical line for BVORIENTATION */
+};
 /*@}*/
 
 /****************************************************************************/
@@ -354,17 +351,17 @@ enum VectorType {NODEVEC,   /**< Vector associated to a node */
 /** \brief configProblem could not init problem */
 #define CANNOT_INIT_PROBLEM     1
 
-/* use of GSTATUS (for grids), use power of 2 */
-#define GSTATUS_BDF                             1
-#define GSTATUS_INTERPOLATE             2
-#define GSTATUS_ASSEMBLED               4
-#define GSTATUS_ORDERED             8
+/** \brief Use of GSTATUS (for grids), use power of 2 */
+enum {GSTATUS_BDF         = 1,
+      GSTATUS_INTERPOLATE = 2,
+      GSTATUS_ASSEMBLED   = 4,
+      GSTATUS_ORDERED     = 8};
 /*@}*/
 
 /** \brief Selection mode */
-enum {nodeSelection=1,         /**< Objects selected are nodes */
-      elementSelection=2,       /**< Objects selected are elements */
-      vectorSelection=3        /**< Objects selected are vectors */
+enum {nodeSelection=1,     /**< Objects selected are nodes */
+      elementSelection=2,   /**< Objects selected are elements */
+      vectorSelection=3    /**< Objects selected are vectors */
 };
 
 /** \brief Possible values for rule in MarkForRefinement */
@@ -435,9 +432,9 @@ enum {CORNER_NODE,
    #define TOPNODE(p)              ((p)->iv.topnode)
  */
 
-/* modes for LexOrderVectorsInGrid */
-#define OV_CARTES                       0
-#define OV_POLAR                        1
+/** \brief Modes for LexOrderVectorsInGrid */
+enum {OV_CARTES,
+      OV_POLAR};
 
 /****************************************************************************/
 /*                                                                          */
@@ -466,10 +463,10 @@ typedef INT (*ConversionProcPtr)(void *, const char *, char *);
 /** \brief Tagged print user data --> string
  *
  */
-typedef INT (*TaggedConversionProcPtr)(INT,            /**< Tag for data identification          */
-                                       void *,                          /* pointer to user data                         */
-                                       const char *,            /* prefix for each line                         */
-                                       char *                           /* resulting string                                     */
+typedef INT (*TaggedConversionProcPtr)(INT,            /**< Tag for data identification */
+                                       void *,             /**< Pointer to user data */
+                                       const char *,      /**< Prefix for each line */
+                                       char *              /**< Resulting string */
                                        );
 
 
@@ -576,21 +573,33 @@ typedef struct {
    */
   int tp;
 
-  /* a single char as name of abstract type */
+  /** \brief A single char as name of abstract type */
   char name;
 
-  /* data size in bytes */
+  /* \brief Data size in bytes */
   int size;
 
 } VectorDescriptor ;
 
 typedef struct {
-  int from;                                             /* This connection goes from position from      */
-  int to;                                               /* to position to                                                       */
-  int diag;                                             /* 1 if diagonal, 0 if not                  */
-  int size;                                             /* with size bytes per connection                       */
-  int isize;                                            /* size of interpolation matrices                       */
-  int depth;                                            /* connect with depth in dual graph             */
+
+  /** \brief This connection goes from position 'from'      */
+  int from;
+
+  /** \brief to position 'to' */
+  int to;
+
+  /** \brief 1 if diagonal, 0 if not */
+  int diag;
+
+  /** \brief Number of bytes per connection */
+  int size;
+
+  /** \brief Size of interpolation matrices */
+  int isize;
+
+  /** \brief Connect with depth in dual graph */
+  int depth;
 } MatrixDescriptor ;
 
 /****************************************************************************/
@@ -600,30 +609,42 @@ typedef struct {
 /****************************************************************************/
 
 /* data structure for BlockvectorDescription */
-typedef UINT BVD_ENTRY_TYPE;    /* memory providing storage for level numbers */
-typedef UINT BLOCKNUMBER;       /* valid numbers are 0..MAX_BV_NUMBER */
-typedef unsigned char BLOCKLEVEL;       /* valid levels are 0..MAX_BV_LEVEL */
+typedef UINT BVD_ENTRY_TYPE;    /**< Memory providing storage for level numbers */
+typedef UINT BLOCKNUMBER;       /**< Valid numbers are 0..MAX_BV_NUMBER */
+typedef unsigned char BLOCKLEVEL;       /**< Valid levels are 0..MAX_BV_LEVEL */
 
-struct blockvector_description_format           /* describes how a struct of type
-                                                                                           blockvector_description is to
-                                                                                           be interpreted                               */
+/** \brief Describes how a struct of type blockvector_description is to be interpreted */
+struct blockvector_description_format
 {
-  INT bits;                                                                       /* bits per blocknumber entry */
-  BLOCKLEVEL max_level;                                                   /* max. number of entries     */
+  /** \brief Bits per block number entry */
+  INT bits;
+
+  /** \brief Maximum number of entries */
+  BLOCKLEVEL max_level;
+
+  /** \brief level_mask[i] = mask entries for levels 0..i */
   BVD_ENTRY_TYPE level_mask[BVD_MAX_ENTRIES];
-  /* level_mask[i] = mask entries for levels 0..i         */
+
+  /** \brief neg_digit_mask[i] = masks out entry for level i */
   BVD_ENTRY_TYPE neg_digit_mask[BVD_MAX_ENTRIES];
-  /* neg_digit_mask[i] = masks out entry for level i      */
+
 };
+
 typedef struct blockvector_description_format BV_DESC_FORMAT;
 
-struct blockvector_description  /* describes the position of a blockvector      */
-{                                                               /* in a hierarchy of blockvectors                       */
-  BVD_ENTRY_TYPE entry;                 /* sequence of block levels     according to    */
-  /* a certain blockvector_description_format */
-  BLOCKLEVEL current;                           /* levels 0..current-1 currently valid          */
-  BLOCKLEVEL read;                              /* level read is next to be read                        */
+/** \brief Describes the position of a blockvector in a hierarchy of blockvectors */
+struct blockvector_description
+{
+  /** \brief Sequence of block levels according to a certain blockvector_description_format */
+  BVD_ENTRY_TYPE entry;
+
+  /** \brief Levels 0..current-1 currently valid */
+  BLOCKLEVEL current;
+
+  /** \brief Level 'read' is next to be read */
+  BLOCKLEVEL read;
 };
+
 typedef struct blockvector_description BV_DESC;
 
 /* Struct documentation in gm.doc */
@@ -696,31 +717,31 @@ typedef struct matrix CONNECTION;
 struct blockvector
 {
 
-  /* object identification, various flags   */
+  /** \brief Object identification, various flags   */
   UINT control;
 
-  /* logical blockvectornumber */
+  /** \brief Logical blockvector number */
   BLOCKNUMBER number;
 
-  /* double linked list of blockvectors     */
+  /** \brief Realize doubly linked list of blockvectors     */
   struct blockvector *pred,*succ;
 
-  /* start vector of this blockvector       */
+  /** \brief Start vector of this blockvector       */
   VECTOR *first_vec;
 
-  /* last vector of this blockvector                */
+  /** \brief Last vector of this blockvector                */
   VECTOR *last_vec;
 
-  /* number of covered VECTORs                      */
+  /** \brief Number of covered VECTORs                      */
   INT vec_number;
 
-  /* pointer to any data */
+  /** \brief Pointer to any data */
   void *user_data;
 
-  /* start of blockvector list on next level*/
+  /** \brief Start of blockvector list on next level*/
   struct blockvector *first_son;
 
-  /* end of blockvector list on next level  */
+  /** \brief End of blockvector list on next level  */
   struct blockvector *last_son;
 
 };
@@ -741,7 +762,6 @@ typedef struct blockvector BLOCKVECTOR;
 /** \brief Inner vertex data structure */
 struct ivertex {
 
-  /* variables */
   /** \brief Object identification, various flags */
   UINT control;
 
@@ -770,10 +790,10 @@ struct ivertex {
   union element *father;
 
 #ifdef TOPNODE
-  /* REMARK: TOPNODE no more available since 970411
+  /** \brief Highest node where defect is valid
+      \todo REMARK: TOPNODE no more available since 970411
      because of problems in parallelisation
      to use it in serial version uncomment define TOPNODE */
-  /* highest node where defect is valid   */
   struct node *topnode;
 #endif
 };
@@ -795,6 +815,7 @@ struct bvertex {
   DOUBLE xi[DIM];
 
 #ifdef ModelP
+  /** \brief Information about the parallelization of this object */
   DDD_HEADER ddd;
 #endif
 
@@ -809,10 +830,10 @@ struct bvertex {
   union element *father;
 
 #ifdef TOPNODE
-  /* REMARK: TOPNODE no more available since 970411
+  /** \brief Highest node where defect is valid
+      \todo REMARK: TOPNODE no more available since 970411
      because of problems in parallelisation
      to use it in serial version uncomment define TOPNODE */
-  /** \brief highest node where defect is valid   */
   struct node *topnode;
 #endif
 
@@ -851,6 +872,7 @@ struct node {
 #endif
 
 #ifdef ModelP
+  /** \brief Information about the parallelization of this object */
   DDD_HEADER ddd;
 #endif
 
@@ -881,10 +903,9 @@ struct node {
   void *data;
 };
 
-/** \brief ???? */
+/** \todo Please doc me! */
 struct link {
 
-  /* variables */
   /** \brief object identification, various flags */
   UINT control;
 
@@ -912,7 +933,7 @@ struct edge {
   DDD_HEADER ddd;
 #endif
 
-  /* pointer to mid node on next finer grid */
+  /** \brief Pointer to mid node on next finer grid */
   struct node *midnode;
 
   /** \brief associated vector
@@ -921,21 +942,22 @@ struct edge {
   VECTOR *vector;
 };
 
-/** \brief A generic grid element */
-struct generic_element {            /* no difference between inner and bndel*/
+/** \brief A generic grid element
 
-  /* variables */
+   No difference between inner and boundary elements
+ */
+struct generic_element {
 
-  /* object identification, various flags */
+  /** \brief object identification, various flags */
   UINT control;
 
-  /* unique id used for load/store        */
+  /** \brief unique id used for load/store        */
   INT id;
 
-  /* additional flags for elements        */
+  /** \brief additional flags for elements        */
   UINT flag;
 
-  /* to store NodeOrder for hexahedrons   */
+  /** \brief to store NodeOrder for hexahedrons   */
   INT property;
 
 #ifdef FOR_DUNE
@@ -952,91 +974,46 @@ struct generic_element {            /* no difference between inner and bndel*/
 #endif
 
 #ifdef ModelP
+  /** \brief Information about the parallelization of this object */
   DDD_HEADER ddd;
-  INT lb1;                              /* stores partition information         */
-  INT lb2;                              /* stores cluster pointer               */
-  INT lb3;                              /* stores number of descendents         */
+
+  /** \brief Stores partition information */
+  INT lb1;
+
+  /** \brief Stores cluster information */
+  INT lb2;
+
+  /** \brief Stores number of descendents */
+  INT lb3;
 #endif
 
-  /* pointers */
-
-  /* double linked list of elements       */
+  /** \brief double linked list of elements       */
   union element *pred, *succ;
 
-        #ifdef __CENTERNODE__
-  struct node *centernode;                      /* pointer to center node				*/
-        #endif
+#ifdef __CENTERNODE__
+  /** \brief Pointer to center node */
+  struct node *centernode;
+#endif
 
-  /* variable length array managed by ug  */
+  /** \brief Element specific part of variable length array managed by ug  */
   void *refs[1];
 
 };
 
+/** \brief A triangle element in a 2d grid */
 struct triangle {
 
-  /* variables */
-  UINT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store                */
+  /** \brief Object identification, various flags */
+  UINT control;
 
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
+  /** \brief Unique id used for load/store */
+  INT id;
 
-#ifdef FOR_DUNE
-  /* When UG is used as part of the DUNE numerics system we need
-     a few more indices per element */
+  /** \brief Additional flags for elements */
+  UINT flag;
 
-  /** \brief An index hat is unique and consecutive per level.
-      Controlled by DUNE */
-  int levelIndex;
-
-  /** \brief An index hat is unique and consecutive on the grid surface.
-      Controlled by DUNE */
-  int leafIndex;
-#endif
-
-        #ifdef ModelP
-  DDD_HEADER ddd;
-  INT lb1;                                      /* stores partition information         */
-  INT lb2;                                      /* stores cluster pointer               */
-  INT lb3;                                      /* stores number of descendents         */
-        #endif
-
-  /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements               */
-        #ifdef __CENTERNODE__
-  struct node *centernode;                      /* pointer to center node				*/
-        #endif
-  struct node *n[3];                                    /* corners of that element                              */
-  union element *father;                        /* father element on coarser grid               */
-        #ifdef ModelP
-  union element *sons[2];                       /* element tree                                                 */
-        #else
-  union element *sons[1];                       /* element tree                                                 */
-        #endif
-  union element *nb[3];                         /* dual graph                                                   */
-
-  /* WARNING: the allocation of the vector pointer depends on the format      */
-  /* void *ptr[4] would be possible too:                                      */
-  /* if there are no element vectors, the sides will be ptr[0],ptr[1],ptr[2]  */
-  /* Use the macros to find the correct address!                              */
-
-  /* associated vector */
-  VECTOR *vector;                                       /* associated vector                                    */
-
-  BNDS *bnds[3];                        /* only on bnd, NULL if interior side   */
-
-  /* WARNING: the allocation of the data pointer depends on the format        */
-  void *data;                                       /* associated data pointer              */
-};
-
-struct quadrilateral {
-
-  /* variables */
-  UINT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store                */
-
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
+  /** \brief Even more property bits */
+  INT property;
 
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
@@ -1052,48 +1029,160 @@ struct quadrilateral {
 #endif
 
 #ifdef ModelP
+  /** \brief Information about the parallelization of this object */
   DDD_HEADER ddd;
-  INT lb1;                                      /* stores partition information         */
-  INT lb2;                                      /* stores cluster pointer               */
-  INT lb3;                                      /* stores number of descendents         */
-        #endif
 
-  /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements               */
-        #ifdef __CENTERNODE__
-  struct node *centernode;                      /* pointer to center node				*/
-        #endif
-  struct node *n[4];                                    /* corners of that element                              */
-  union element *father;                        /* father element on coarser grid               */
-        #ifdef ModelP
-  union element *sons[2];                       /* element tree                                                 */
-        #else
-  union element *sons[1];                       /* element tree                                                 */
-        #endif
-  union element *nb[4];                         /* dual graph                                                   */
+  /** \brief stores partition information         */
+  INT lb1;
 
-  /* WARNING: the allocation of the vector pointer depends on the format      */
-  /* void *ptr[5] would be possible too:                                      */
-  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
-  /* Use the macros to find the correct address!                              */
+  /** \brief stores cluster pointer               */
+  INT lb2;
 
-  /* associated vector */
-  VECTOR *vector;                                       /* associated vector                                    */
+  /** \brief stores number of descendents         */
+  INT lb3;
+#endif
 
-  BNDS *bnds[4];                        /* only on bnd, NULL if interior side   */
+  /** \brief Realize a doubly linked list of elements */
+  union element *pred, *succ;
 
-  /* WARNING: the allocation of the data pointer depends on the format        */
-  void *data;                                       /* associated data pointer              */
+#ifdef __CENTERNODE__
+  /** \brief Pointer to the center node */
+  struct node *centernode;
+#endif
+
+  /** \brief Corners of this element */
+  struct node *n[3];
+
+  /** \brief Father element on next-coarser grid */
+  union element *father;
+
+#ifdef ModelP
+  /** \brief Element tree */
+  union element *sons[2];
+#else
+  /** \brief Element tree */
+  union element *sons[1];
+#endif
+
+  /** \brief The neighboring elements */
+  union element *nb[3];
+
+  /** \brief Associated vector
+
+     WARNING: the allocation of the vector pointer depends on the format
+     void *ptr[4] would be possible too:
+     if there are no element vectors, the sides will be ptr[0],ptr[1],ptr[2]
+     Use the macros to find the correct address!                              */
+  VECTOR *vector;
+
+  /** \brief Only on the boundary, NULL if interior side */
+  BNDS *bnds[3];
+
+  /* \brief Associated data pointer
+
+     WARNING: the allocation of the data pointer depends on the format        */
+  void *data;
 };
 
+/** \brief A quadrilateral element in a 2d grid */
+struct quadrilateral {
+
+  /** \brief object identification, various flags */
+  UINT control;
+
+  /** \brief unique id used for load/store                */
+  INT id;
+
+  /** \brief additional flags for elements                */
+  UINT flag;
+
+  /** \brief Even more flags */
+  INT property;
+
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per element */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+
+  /** \brief An index hat is unique and consecutive on the grid surface.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
+#ifdef ModelP
+  /** \brief Information about the parallelization of this object */
+  DDD_HEADER ddd;
+
+  /** \brief stores partition information         */
+  INT lb1;
+
+  /** \brief stores cluster pointer               */
+  INT lb2;
+
+  /** \brief stores number of descendents         */
+  INT lb3;
+#endif
+
+  /** \brief doubly linked list of elements               */
+  union element *pred, *succ;
+
+#ifdef __CENTERNODE__
+  /** \brief pointer to center node				*/
+  struct node *centernode;
+#endif
+
+  /** \brief corners of that element */
+  struct node *n[4];
+
+  /** \brief father element on coarser grid */
+  union element *father;
+
+#ifdef ModelP
+  /** \brief Element tree */
+  union element *sons[2];
+#else
+  /** \brief Element tree */
+  union element *sons[1];
+#endif
+
+  /** \brief The neighbor elements */
+  union element *nb[4];
+
+  /** \brief Associated vector
+
+     WARNING: the allocation of the vector pointer depends on the format
+     void *ptr[5] would be possible too:
+     if there are no element vectors, the sides will be ptr[0],ptr[1], ..
+     Use the macros to find the correct address!
+   */
+  VECTOR *vector;
+
+  /** \brief only on bnd, NULL if interior side   */
+  BNDS *bnds[4];
+
+  /** \brief Associated data pointer
+
+     WARNING: the allocation of the data pointer depends on the format        */
+  void *data;
+};
+
+/** \brief A tetrahedral element in a 3d grid */
 struct tetrahedron {
 
-  /* variables */
-  UINT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store                */
+  /** \brief object identification, various flags */
+  UINT control;
 
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
+  /** \brief Unique id used for load/store */
+  INT id;
+
+  /** \brief Additional flags */
+  UINT flag;
+
+  /** \brief Even more flags */
+  INT property;
 
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
@@ -1108,52 +1197,82 @@ struct tetrahedron {
   int leafIndex;
 #endif
 
-        #ifdef ModelP
+#ifdef ModelP
+
+  /** \brief Information about the parallelization of this element */
   DDD_HEADER ddd;
-  INT lb1;                                      /* stores partition information         */
-  INT lb2;                                      /* stores cluster pointer               */
-  INT lb3;                                      /* stores number of descendents         */
-        #endif
+
+  /** \brief Stores partition information */
+  INT lb1;
+
+  /** \brief Stores cluster pointer */
+  INT lb2;
+
+  /** \brief Stores number of descendents */
+  INT lb3;
+#endif
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements               */
-        #ifdef __CENTERNODE__
-  struct node *centernode;                      /* pointer to center node				*/
-        #endif
-  struct node *n[4];                                    /* corners of that element                              */
-  union element *father;                        /* father element on coarser grid               */
-        #ifdef ModelP
-  union element *sons[2];                       /* element tree                                                 */
-        #else
-  union element *sons[1];                       /* element tree                                                 */
-        #endif
-  union element *nb[4];                         /* dual graph                                                   */
 
-  /* WARNING: the allocation of the vector pointer depends on the format      */
-  /* void *ptr[9] would be possible too:                                      */
-  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
-  /* Use the macros to find the correct address!                              */
+  /** \brief Realize a double linked list of elements */
+  union element *pred, *succ;
 
-  /* associated vector */
-  VECTOR *vector;                                       /* associated vector                                    */
+#ifdef __CENTERNODE__
+  /** \brief Pointer to the center node */
+  struct node *centernode;
+#endif
 
-  /* associated vector */
-  VECTOR *sidevector[4];                        /* associated vectors for sides                 */
+  /** \brief Corners of this element */
+  struct node *n[4];
 
-  BNDS *bnds[4];                        /* only on bnd, NULL if interior side   */
+  /** \brief Father element on coarser grid */
+  union element *father;
 
-  /* WARNING: the allocation of the data pointer depends on the format        */
-  void *data;                                       /* associated data pointer              */
+#ifdef ModelP
+  /** \brief Element tree */
+  union element *sons[2];                   /* element tree                                                 */
+#else
+  /** \brief Element tree */
+  union element *sons[1];
+#endif
+
+  /** \brief The neighboring elements */
+  union element *nb[4];
+
+  /** \brief Associated vector
+
+     WARNING: the allocation of the vector pointer depends on the format
+     void *ptr[9] would be possible too:
+     if there are no element vectors, the sides will be ptr[0],ptr[1], ..
+     Use the macros to find the correct address! */
+  VECTOR *vector;
+
+  /** \brief Associated vector for sides */
+  VECTOR *sidevector[4];
+
+  /** \brief The boundary segments, NULL if interior side */
+  BNDS *bnds[4];
+
+  /** \brief Associated data pointer
+
+     WARNING: the allocation of the data pointer depends on the format */
+  void *data;
 };
 
+/** \brief A pyramid element in a 3d grid */
 struct pyramid {
 
-  /* variables */
-  UINT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store                */
+  /** \brief object identification, various flags */
+  UINT control;
 
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
+  /** \brief Unique id used for load/store */
+  INT id;
+
+  /** \brief Additional flags for elements */
+  UINT flag;
+
+  /** \brief Even more flags */
+  INT property;
 
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
@@ -1168,52 +1287,80 @@ struct pyramid {
   int leafIndex;
 #endif
 
-        #ifdef ModelP
+#ifdef ModelP
+  /** \brief Information about the parallelization of this element */
   DDD_HEADER ddd;
-  INT lb1;                                      /* stores partition information         */
-  INT lb2;                                      /* stores cluster pointer               */
-  INT lb3;                                      /* stores number of descendents         */
-        #endif
+
+  /** \brief Stores partition information */
+  INT lb1;
+
+  /** \brief Stores cluster pointer */
+  INT lb2;
+
+  /** \brief Stores number of descendents */
+  INT lb3;
+#endif
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements               */
-        #ifdef __CENTERNODE__
-  struct node *centernode;                      /* pointer to center node				*/
-        #endif
-  struct node *n[5];                                    /* corners of that element                              */
-  union element *father;                        /* father element on coarser grid               */
-        #ifdef ModelP
-  union element *sons[2];                       /* element tree                                                 */
-        #else
-  union element *sons[1];                       /* element tree                                                 */
-        #endif
-  union element *nb[5];                         /* dual graph                                                   */
+  /** \brief Realize a doubly linked list of elements */
+  union element *pred, *succ;
 
-  /* WARNING: the allocation of the vector pointer depends on the format      */
-  /* void *ptr[11] would be possible too:                                     */
-  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
-  /* Use the macros to find the correct address!                              */
+#ifdef __CENTERNODE__
+  /** \brief Pointer to center node */
+  struct node *centernode;
+#endif
 
-  /* associated vector */
-  VECTOR *vector;                                       /* associated vector                                    */
+  /** \brief Corners of this element */
+  struct node *n[5];
 
-  /* associated vector */
-  VECTOR *sidevector[5];                        /* associated vectors for sides                 */
+  /** \brief Father element on coarser grid */
+  union element *father;
 
-  BNDS *bnds[5];                        /* only on bnd, NULL if interior side   */
+#ifdef ModelP
+  /** \brief Element tree */
+  union element *sons[2];
+#else
+  /** \brief Element tree */
+  union element *sons[1];
+#endif
 
-  /* WARNING: the allocation of the data pointer depends on the format        */
-  void *data;                                       /* associated data pointer              */
+  /** \brief The neighbor elements */
+  union element *nb[5];
+
+  /** \brief Associated vector
+
+     WARNING: the allocation of the vector pointer depends on the format
+     void *ptr[11] would be possible too:
+     if there are no element vectors, the sides will be ptr[0],ptr[1], ..
+     Use the macros to find the correct address! */
+  VECTOR *vector;
+
+  /** \brief Associated vector for sides */
+  VECTOR *sidevector[5];
+
+  /** \brief The boundary segments, NULL if interior side */
+  BNDS *bnds[5];
+
+  /** \brief Associated data pointer
+
+     WARNING: the allocation of the data pointer depends on the format        */
+  void *data;
 };
 
+/** \brief A prism element in a 3d grid */
 struct prism {
 
-  /* variables */
-  UINT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store                */
+  /** \brief object identification, various flags */
+  UINT control;
 
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
+  /** \brief Unique id used for load/store */
+  INT id;
+
+  /** \brief Additional flags for this element */
+  UINT flag;
+
+  /** \brief Even more flags */
+  INT property;
 
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
@@ -1228,52 +1375,81 @@ struct prism {
   int leafIndex;
 #endif
 
-        #ifdef ModelP
+#ifdef ModelP
+  /** \brief Information about the parallelization of this element */
   DDD_HEADER ddd;
-  INT lb1;                                      /* stores partition information         */
-  INT lb2;                                      /* stores cluster pointer               */
-  INT lb3;                                      /* stores number of descendents         */
-        #endif
+
+  /** \brief Stores partition information */
+  INT lb1;
+
+  /** \brief Stores cluster pointer */
+  INT lb2;
+
+  /** \brief Stores number of descendents */
+  INT lb3;
+#endif
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements               */
-        #ifdef __CENTERNODE__
-  struct node *centernode;                      /* pointer to center node				*/
-        #endif
-  struct node *n[6];                                    /* corners of that element                              */
-  union element *father;                        /* father element on coarser grid               */
-        #ifdef ModelP
-  union element *sons[2];                       /* element tree                                                 */
-        #else
-  union element *sons[1];                       /* element tree                                                 */
-        #endif
-  union element *nb[5];                         /* dual graph                                                   */
+  /** \brief Realize doubly linked list */
+  union element *pred, *succ;
 
-  /* WARNING: the allocation of the vector pointer depends on the format      */
-  /* void *ptr[11] would be possible too:                                     */
-  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
-  /* Use the macros to find the correct address!                              */
+#ifdef __CENTERNODE__
+  /** \brief Pointer to center node */
+  struct node *centernode;
+#endif
 
-  /* associated vector */
-  VECTOR *vector;                                       /* associated vector                                    */
+  /** \brief Corners of this element */
+  struct node *n[6];
 
-  /* associated vector */
-  VECTOR *sidevector[5];                        /* associated vectors for sides                 */
+  /** \brief Father element on next coarser grid */
+  union element *father;
 
-  BNDS *bnds[5];                        /* only on bnd, NULL if interior side   */
+#ifdef ModelP
+  /** \brief Element tree */
+  union element *sons[2];
+#else
+  /** \brief Element tree */
+  union element *sons[1];
+#endif
 
-  /* WARNING: the allocation of the data pointer depends on the format        */
-  void *data;                                       /* associated data pointer              */
+  /** \brief Neighbor elements */
+  union element *nb[5];
+
+  /** \brief Associated vector
+
+     WARNING: the allocation of the vector pointer depends on the format
+     void *ptr[11] would be possible too:
+     if there are no element vectors, the sides will be ptr[0],ptr[1], ...
+     Use the macros to find the correct address!
+   */
+  VECTOR *vector;
+
+  /** \brief Associated vectors for sides */
+  VECTOR *sidevector[5];
+
+  /** \brief Boundary segments, NULL if interior side */
+  BNDS *bnds[5];
+
+  /** \brief Associated data pointer
+
+     WARNING: the allocation of the data pointer depends on the format        */
+  void *data;
 };
 
+/** \brief A hexahedral element in a 3d grid */
 struct hexahedron {
 
-  /* variables */
-  UINT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store                */
+  /** \brief object identification, various flags */
+  UINT control;
 
-  UINT flag;                            /* additional flags for elements                */
-  INT property;                                 /* we need more bits ...                                */
+  /** \brief Unique id used for load/store */
+  INT id;
+
+  /** \brief Additional flags for this element */
+  UINT flag;
+
+  /** \brief Even more flags */
+  INT property;
 
 #ifdef FOR_DUNE
   /* When UG is used as part of the DUNE numerics system we need
@@ -1288,44 +1464,67 @@ struct hexahedron {
   int leafIndex;
 #endif
 
-        #ifdef ModelP
+#ifdef ModelP
+  /** \brief Information about the parallelization of this element */
   DDD_HEADER ddd;
-  INT lb1;                                      /* stores partition information         */
-  INT lb2;                                      /* stores cluster pointer               */
-  INT lb3;                                      /* stores number of descendents         */
-        #endif
 
-  /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements               */
-        #ifdef __CENTERNODE__
-  struct node *centernode;                      /* pointer to center node				*/
-        #endif
-  struct node *n[8];                                    /* corners of that element                              */
-  union element *father;                        /* father element on coarser grid               */
-        #ifdef ModelP
-  union element *sons[2];                       /* element tree                                                 */
-        #else
-  union element *sons[1];                       /* element tree                                                 */
-        #endif
-  union element *nb[6];                         /* dual graph                                                   */
+  /** \brief Stores partition information */
+  INT lb1;
 
-  /* WARNING: the allocation of the vector pointer depends on the format      */
-  /* void *ptr[13] would be possible too:                                     */
-  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
-  /* Use the macros to find the correct address!                              */
+  /** \brief Stores cluster pointer */
+  INT lb2;
 
-  /* associated vector */
-  VECTOR *vector;                                       /* associated vector                                    */
+  /** \brief Stores number of descendents */
+  INT lb3;
+#endif
 
-  /* associated vector */
-  VECTOR *sidevector[6];                        /* associated vectors for sides                 */
+  /** \brief Realize doubly linked list of elements on one grid level */
+  union element *pred, *succ;
 
-  BNDS *bnds[6];                        /* only on bnd, NULL if interior side   */
+#ifdef __CENTERNODE__
+  /** \brief Pointer to center node */
+  struct node *centernode;
+#endif
 
-  /* WARNING: the allocation of the data pointer depends on the format        */
-  void *data;                                       /* associated data pointer              */
+  /** \brief Corners of this element */
+  struct node *n[8];
+
+  /** \brief Father element on coarser grid */
+  union element *father;
+
+#ifdef ModelP
+  /** \brief Element tree */
+  union element *sons[2];
+#else
+  /** \brief Element tree */
+  union element *sons[1];
+#endif
+
+  /** \brief The neighboring elements */
+  union element *nb[6];
+
+  /** \brief Associated vector
+
+     WARNING: the allocation of the vector pointer depends on the format
+     void *ptr[13] would be possible too:
+     if there are no element vectors, the sides will be ptr[0],ptr[1], ...
+      Use the macros to find the correct address!
+   */
+  VECTOR *vector;
+
+  /** \brief Associated vectors for sides */
+  VECTOR *sidevector[6];
+
+  /** \brief Boundary segments, NULL if interior side */
+  BNDS *bnds[6];
+
+  /** \brief Associated data pointer
+
+     WARNING: the allocation of the data pointer depends on the format        */
+  void *data;
 } ;
 
+/** \brief Objects that can hold an element */
 union element {
   struct generic_element ge;
     #ifdef __TWODIM__
@@ -1340,19 +1539,22 @@ union element {
         #endif
 };
 
-union geom_object {                                             /* objects that can hold a vector               */
+/** \brief Objects that can hold a vector */
+union geom_object {
   struct node nd;
   struct edge ed;
   union element el;
 };
 
-union selection_object {                                        /* objects than can be selected                 */
+/** \brief Objects that can be selected */
+union selection_object {
   struct node nd;
   union element el;
   struct vector ve;
 };
 
-union object_with_key {                                         /* objects that can have a key                  */
+/** \brief Objects that can have a key */
+union object_with_key {
   struct node nd;
   union element el;
   struct vector ve;
@@ -1364,25 +1566,48 @@ typedef struct
 {
   UINT VecReserv[MAXVECTORS][MAX_NDOF_MOD_32];
   UINT MatReserv[MAXCONNECTIONS][MAX_NDOF_MOD_32];
-  UINT VecConsistentStatus[MAXMATRICES][MAX_NDOF_MOD_32];       /* where used? */
-  UINT VecCollectStatus[MAXMATRICES][MAX_NDOF_MOD_32];       /* where used? */
+  /** \todo Is this used anywhere? */
+  UINT VecConsistentStatus[MAXMATRICES][MAX_NDOF_MOD_32];
+  /** \todo Is this used anywhere? */
+  UINT VecCollectStatus[MAXMATRICES][MAX_NDOF_MOD_32];
 } DATA_STATUS;
 
 struct grid {
 
-  /* variables */
-  UINT control;                         /* object identification, various flags */
-  INT attribut;                                         /* level + 32; needed for controll word check not detecting HEAPFAULT   */
-  INT status;                                           /* possible values see defines above    */
-  INT level;                                                    /* level of that grid                                   */
-  INT nVert[NS_PREFIX MAX_PRIOS];                         /* number of vertices                                   */
-  INT nNode[NS_PREFIX MAX_PRIOS];                         /* number of nodes                                              */
-  INT nElem[NS_PREFIX MAX_PRIOS];                         /* number of elements                                   */
-  INT nEdge;                                                    /* number of edges                                              */
-  INT nVector[NS_PREFIX MAX_PRIOS];                       /* number of vectors                                    */
-  INT nCon;                                                     /* number of Connections                                */
+  /** \brief Object identification, various flags */
+  UINT control;
+
+  /** \brief level + 32; needed for control word check not detecting HEAPFAULT */
+  INT attribut;
+
+  /** \brief A word storing status information. This can be used also by the
+      problem class, e.g. to store whether the grid level is assembled or not. */
+  INT status;
+
+  /** \brief Level within the multigrid structure */
+  INT level;
+
+  /** \brief Number of vertices */
+  INT nVert[NS_PREFIX MAX_PRIOS];
+
+  /** \brief Number of nodes on this grid level */
+  INT nNode[NS_PREFIX MAX_PRIOS];
+
+  /** \brief Number of elements on this grid level */
+  INT nElem[NS_PREFIX MAX_PRIOS];
+
+  /** \brief Number of edges on this grid level */
+  INT nEdge;
+
+  /** \brief Number of vectors on this grid level */
+  INT nVector[NS_PREFIX MAX_PRIOS];
+
+  /** \brief Number of connections on this grid level */
+  INT nCon;
+
 #ifdef __INTERPOLATION_MATRIX__
-  INT nIMat;                        /* number of interpolation matrices     */
+  /** \brief Number of interpolation matrices  */
+  INT nIMat;
 #endif
   DATA_STATUS data_status;          /* memory management for vectors|matrix */
                                     /* status for consistent and collect    */
@@ -1395,8 +1620,16 @@ struct grid {
   struct node *lastNode[NS_PREFIX NODE_LISTPARTS];        /* pointer to last node                 */
   VECTOR *firstVector[NS_PREFIX VECTOR_LISTPARTS];        /* pointer to first vector              */
   VECTOR *lastVector[NS_PREFIX VECTOR_LISTPARTS];         /* pointer to last vector               */
-  BLOCKVECTOR *firstblockvector;        /* pointer to the first blockvector             */
-  BLOCKVECTOR *lastblockvector;         /* pointer to the last blockvector              */
+
+  /** \brief Pointer to the first blockvector
+
+     Valid only if the BLOCKVECTOR mechanism is used, otherwise they are NULL. */
+  BLOCKVECTOR *firstblockvector;
+
+  /** \brief Pointer to the last blockvector
+
+     Valid only if the BLOCKVECTOR mechanism is used, otherwise they are NULL. */
+  BLOCKVECTOR *lastblockvector;
   struct grid *coarser, *finer;         /* coarser and finer grids                              */
   struct multigrid *mg;                         /* corresponding multigrid structure    */
 };
@@ -1406,7 +1639,6 @@ struct multigrid {
   /** \brief env item */
   NS_PREFIX ENVDIR v;
 
-  /* variables */
   /** \brief Multigrid status word */
   INT status;
 
@@ -1545,30 +1777,42 @@ typedef DOUBLE (*MatrixEvalProcPtr)(const MATRIX *);
 
 struct elementvalues {
 
-  /* fields for enironment list variable */
+  /** \brief Fields for environment list variable */
   NS_PREFIX ENVVAR v;
 
-  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values                                  */
-  ElementEvalProcPtr EvalProc;                                  /* pointer to corresponding function    */
+  /** \brief Prepare eval values */
+  PreprocessingProcPtr PreprocessProc;
+
+  /** \brief Pointer to corresponding function */
+  ElementEvalProcPtr EvalProc;
 };
 
 struct elementvector {
 
-  /* fields for enironment list variable */
+  /** \brief Fields for environment list variable */
   NS_PREFIX ENVVAR v;
 
-  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values                                  */
-  ElementVectorProcPtr EvalProc;                                /* pointer to corresponding function    */
-  int dimension;                                                                /* dimension of result vector                   */
+  /** \brief Prepare eval values */
+  PreprocessingProcPtr PreprocessProc;
+
+  /** \brief Pointer to corresponding function */
+  ElementVectorProcPtr EvalProc;
+
+  /** \brief Dimension of result vector */
+  int dimension;
+
 };
 
 struct matrixvalues {
 
-  /* fields for enironment list variable */
+  /** \brief Fields for enironment list variable */
   NS_PREFIX ENVVAR v;
 
-  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values                                  */
-  MatrixEvalProcPtr EvalProc;                                   /* pointer to corresponding function    */
+  /** \brief Prepare eval values */
+  PreprocessingProcPtr PreprocessProc;
+
+  /** \brief Pointer to corresponding function */
+  MatrixEvalProcPtr EvalProc;
 };
 
 typedef struct elementvalues EVALUES ;
@@ -3400,11 +3644,9 @@ INT             KeyForObject                                            (KEY_OBJ
 /** \todo remove the following functions after the code will never need any debugging */
 char *PrintElementInfo (ELEMENT *theElement,INT full);
 
-/** \todo This is a static function in standard UG.  Dune calls it at the
-    moment, so I made it nonstatic. */
-#ifdef __cplusplus
+/* This is a static function in standard UG.  Dune calls it at the
+   moment, so I made it nonstatic. */
 INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid);
-#endif
 
 END_NAMESPACE
 
