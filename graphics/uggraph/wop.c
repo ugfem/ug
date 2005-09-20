@@ -20623,7 +20623,8 @@ static INT EW_Isosurface3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	CELL cell;
 	POLY poly[MAXPOLY];
-	INT i, j, npoly;
+	INT i, j;
+	int npoly;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM], lc[DIM], intensity;
 
 	cell.n = CORNERS_OF_ELEM(theElement);
