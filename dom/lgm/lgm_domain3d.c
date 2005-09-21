@@ -6254,7 +6254,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   DOUBLE globalp1[3],globalp2[3],global[3], local[2], nv[3], local1, local2, globalnew[3], midp[3], newlocal;
   DOUBLE localp1, localp2;
 #ifdef NO_PROJECT
-  DOUBLE len, value;
+  DOUBLE len, value, n[3];
 #endif
 
   theBndP1 = BNDP2LGM(aBndP0);
