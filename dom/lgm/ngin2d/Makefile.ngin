@@ -10,7 +10,7 @@ include $(UGROOT)/ug.conf
 
 # lex and yacc
 LEX = flex 
-YACC = bison -b y
+YACC = bison -b y -d
 
 # prefix to use instead of 'yy'
 PARSERPREFIX = ng
@@ -24,7 +24,7 @@ YFLAGS = -p $(PARSERPREFIX)
 LCFLAGS  = -I$(UGROOT)/include -DUSED_WITH_UG
 
 # object files
-OBJECTS = ngin-lex.o ngin-yacc.o ng.o
+OBJECTS = ngin-yacc.o ngin-lex.o ng.o
 
 # main rule
 NPIN : $(OBJECTS) 
