@@ -929,6 +929,19 @@ struct edge {
   /* two links */
   struct link links[2];
 
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     place to store codim dim-1 indices */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int levelIndex;
+
+  /** \brief An index hat is unique and consecutive on the grid surface.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
 #ifdef EDGE_WITH_DDDHDR
   DDD_HEADER ddd;
 #endif
