@@ -3046,7 +3046,7 @@ INT NS_DIM_PREFIX CreateAlgebra (MULTIGRID *theMG)
                     if(DisposeVector(g,nbvec))
                       REP_ERR_RETURN(GM_ERROR);
                     SET_SVECTOR(nbelem,j,vec);
-                    SETVCOUNT(vec,1);
+                    SETVCOUNT(vec,2);                                                                     /* PB, 25 Sep 2005: changed from 1 to 2 */
                   }
                 }
               }
@@ -3072,7 +3072,7 @@ INT NS_DIM_PREFIX CreateAlgebra (MULTIGRID *theMG)
                   if(DisposeVector(g,nbvec))
                     REP_ERR_RETURN(GM_ERROR);
                   SET_SVECTOR(nbelem,j,vec);
-                  SETVCOUNT(vec,1);
+                  SETVCOUNT(vec,2);                                                               /* PB, 25 Sep 2005: changed from 1 to 2 */
                 }
               }
             }
