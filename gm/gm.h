@@ -774,6 +774,15 @@ struct ivertex {
   /** \brief Local coordinates in father element  */
   DOUBLE xi[DIM];
 
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
+
 #ifdef ModelP
   /** \todo Please doc me! */
   DDD_HEADER ddd;
@@ -813,6 +822,15 @@ struct bvertex {
 
   /** \brief Local coordinates in father element  */
   DOUBLE xi[DIM];
+
+#ifdef FOR_DUNE
+  /* When UG is used as part of the DUNE numerics system we need
+     a few more indices per node */
+
+  /** \brief An index hat is unique and consecutive per level.
+      Controlled by DUNE */
+  int leafIndex;
+#endif
 
 #ifdef ModelP
   /** \brief Information about the parallelization of this object */
