@@ -1,0 +1,47 @@
+#       ARCH MAKEFILE OPTIONS
+#
+#       for MacOS X on a 64-bit processor
+#
+#		change the last lines if you want to use Quartz instead of X11
+#
+
+ARCH_TYPE     = __PPC64__
+
+ARCH_MAKE     = gnumake
+ARCH_PMAKE     = gnumake -j 4
+ARCH_CC       = gcc
+ARCH_C++      = g++
+ARCH_LINK     = gcc
+ARCH_AR       = ugarranlib ar
+ARCH_SUFFIX   = 
+#ARCH_POSTLINK = ugmacosxpostlink $(PROGNAME) $(APPL)
+ARCH_POSTLINK =
+
+ARCH_LIBS     = 
+ARCH_PLIBS    =
+ARCH_FLIBS    =
+
+#ARCH_CFLAGS   = -arch ppc64 -Wchar-subscripts -Wformat -Wimplicit -Wparentheses -Wno-four-char-constants -Wreturn-type -Wswitch -Wtrigraphs -O -Wuninitialized
+#ARCH_CFLAGS   = -arch ppc64 -gccincludes -ext o -I/usr/include -I/System/Library/Frameworks/System.framework/Versions/B/Headers
+ARCH_CFLAGS   = -arch ppc64
+ARCH_C++FLAGS = -arch ppc64
+ARCH_NOOPTIM  = -g
+ARCH_OPTIM    = -qarch=g5 -O5
+ARCH_OPTIM    = -O2
+#ARCH_LFLAGS   = -arch ppc64 -sectcreate __ICON __header $(APPL).iconheader -segprot __ICON r r -sectcreate __ICON app $(UGROOT)/dev/mif/UGIcon.tiff -framework AppKit -framework Foundation
+ARCH_LFLAGS   = -arch ppc64
+ARCH_ARFLAGS  = ru
+ARCH_FFLAGS   =
+ARCH_EXFLAGS  =
+
+# use these settings if you want to use MacOS X GUI
+#ARCH_XINCLUDES =
+#ARCH_XLIBS     = -framework Cocoa
+
+# use these settings if you want to use X11
+#ARCH_XINCLUDES = -I/usr/X11R6/include/
+#ARCH_XLIBS     = -L/usr/X11R6/lib  -lXaw -lXt -lXpm -lXmu -lX11 -lXext -lSM -lICE
+
+# use these settings if you do not use a GUI
+ARCH_XINCLUDES =
+ARCH_XLIBS     =

@@ -32,6 +32,7 @@ list_options_arch()
 	echo "             LINUXIA64 (set ARCH = LINUXIA64)";
 	echo "             LINUXPPC (set ARCH = LINUXPPC)";	
 	echo "             MACOSX (set ARCH = MACOSX)";
+	echo "             MACOSX64 (set ARCH = MACOSX64)";
 	echo "             MACCLUSTER (set ARCH = MACCLUSTER)";
 	echo "             MACOSXSERVER (set ARCH = MACOSXSERVER)";
 	echo "             MKLINUX (set ARCH = MKLINUX)";
@@ -494,6 +495,9 @@ edit_ugconf()
 		;;
 	MACOSX)
 		sed 's/^ARCH.*$/ARCH = MACOSX/' $1 > $1.tmp
+		;;
+	MACOSX64)
+		sed 's/^ARCH.*$/ARCH = MACOSX64/' $1 > $1.tmp
 		;;
 	MACCLUSTER)
 		sed 's/^ARCH.*$/ARCH = MACCLUSTER/' $1 > $1.tmp

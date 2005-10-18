@@ -1175,6 +1175,32 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 
 #endif
 
+#ifdef __PPC64__
+#undef __MWCW__
+
+#define ARCHNAME    "PowerPC 64 bit"
+
+/* basic types */
+#define SHORT  short
+#define INT    long                     /* sizeof(int) != sizeof(void *) !! */
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(INT) !  */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym) lsym
+
+/* current time as DOUBLE value */
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+
+#endif
+
 
 /****************************************************************************/
 /*                                                                          */
