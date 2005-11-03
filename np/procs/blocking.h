@@ -61,9 +61,9 @@ typedef void *(*GetMemProcPtr)(NS_PREFIX MEM n);
 
 typedef struct
 {
-  INT n;                                     /* number of blocks                */
+  INT n;                                 /* number of blocks                */
   INT *nb;                               /* number of block entries         */
-  VECTOR ***vb;                              /* VECTOR-blocks                   */
+  VECTOR ***vb;                          /* VECTOR-blocks                   */
 } BLOCKING_STRUCTUR;
 
 struct np_blocking {
@@ -74,18 +74,18 @@ struct np_blocking {
 
   /* functions */
   INT (*PreProcess)
-    (struct np_blocking *,                       /* pointer to (derived) object     */
+    (struct np_blocking *,               /* pointer to (derived) object     */
     INT level,                           /* level to block                  */
     INT *);                              /* result                          */
   INT (*Blocking)
     (struct np_blocking *,               /* pointer to (derived) object     */
-    GetMemProcPtr GetMem,                        /* memory allocation               */
+    GetMemProcPtr GetMem,                /* memory allocation               */
     INT level,                           /* level to block                  */
     MATDATA_DESC *A,                     /* matrix                          */
     BLOCKING_STRUCTUR *bs,               /* block structur                  */
     INT *);                              /* result                          */
   INT (*PostProcess)
-    (struct np_blocking *,                       /* pointer to (derived) object     */
+    (struct np_blocking *,               /* pointer to (derived) object     */
     INT level,                           /* level to block                  */
     INT *);                              /* result                          */
 };
