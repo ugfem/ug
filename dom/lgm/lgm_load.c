@@ -632,9 +632,11 @@ INT Accel_With_Hash( LGM_DOMAIN_INFO theDomInfo,  LGM_SURFACE **SurfacePtrList ,
   /* . . .  End of Use of Hash  */
 
   /* Statistics of use of Hash */
-
-  printf("Hashstatistik Aufbau : %d Kollisionen (inkl. Sek.koll.) bei %d Zugriffen \n",Kollisionengesamt1,zugriffe1);        /* d.h. Wert wurde nicht mehr in Hashtabelle gefunden */
-  printf("Hashstatistik Nutzung: %d Kollisionen (inkl. Sek.koll.)  bei %d Zugriffen \n",Kollisionengesamt2,zugriffe2);        /* d.h. Wert wurde nicht mehr in Hashtabelle gefunden */
+  if(0)
+  {
+    printf("Hashstatistik Aufbau : %d Kollisionen (inkl. Sek.koll.) bei %d Zugriffen \n",Kollisionengesamt1,zugriffe1);              /* d.h. Wert wurde nicht mehr in Hashtabelle gefunden */
+    printf("Hashstatistik Nutzung: %d Kollisionen (inkl. Sek.koll.)  bei %d Zugriffen \n",Kollisionengesamt2,zugriffe2);              /* d.h. Wert wurde nicht mehr in Hashtabelle gefunden */
+  }
   return(0);
 }
 
