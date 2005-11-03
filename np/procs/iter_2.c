@@ -124,7 +124,7 @@ typedef struct
 
   VEC_SCALAR damp,omega;
   NP_BLOCKING *blocking;
-  INT mode,optimizeBand;
+  INT mode,optimizeBand,gnu;
 
   DOUBLE *Vec[MAXLEVEL],**Mat[MAXLEVEL];
   INT MarkKey[MAXLEVEL];
@@ -614,6 +614,7 @@ static INT OBGS_Init (NP_BASE *theNP, INT argc , char **argv)
   if (strcmp(buffer,"sgs")==0) np->mode=OBGS_SGS;
   if (np->mode==OBGS_MODE_NOT_INIT) REP_ERR_RETURN (NP_NOT_ACTIVE);
   if (ReadArgvINT ("o",&np->optimizeBand,argc,argv)) np->optimizeBand=1;
+  if (ReadArgvINT ("gnu",&np->gnu,argc,argv)) np->gnu=0;
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -633,6 +634,7 @@ static INT OBGS_Display (NP_BASE *theNP)
   if (np->mode==OBGS_GS) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","gs");
   if (np->mode==OBGS_SGS) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","sgs");
   UserWriteF(DISPLAY_NP_FORMAT_SS,"o",BOOL_2_YN(np->optimizeBand));
+  UserWriteF(DISPLAY_NP_FORMAT_SS,"gnu",BOOL_2_YN(np->gnu));
 
   return (0);
 }
@@ -675,6 +677,9 @@ static INT OBGS_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA
   DOUBLE *Mat;
   FIFO fifo;
   void *fifo_buffer;
+  FILE *file;
+  DOUBLE_VECTOR pos;
+  char name[16];
 
   /* memory management */
   if (MarkTmpMem(theHeap,&(np->MarkKey[level]))) REP_ERR_RETURN(1);
@@ -708,6 +713,24 @@ static INT OBGS_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA
     /* admin */
     n=np->bs[level].nb[bl]; bv=np->bs[level].vb[bl];
     for (i=0; i<n; i++) SETVCUSED(bv[i],1);
+
+    /* print gnufile iff */
+    if (np->gnu)
+    {
+      sprintf(name,"gnu_%d_%d",level,bl);
+      file=fopen(name,"w");
+      if (file==NULL) REP_ERR_RETURN(1);
+      for (i=0; i<n; i++)
+      {
+        VectorPosition(bv[i],pos);
+                                #ifdef __TWODIM__
+        fprintf(file,"%e %e\n",pos[0],pos[1]);
+                                #else
+        fprintf(file,"%e %e %e\n",pos[0],pos[1],pos[2]);
+                                #endif
+      }
+      fclose(file);
+    }
 
     /* optimize band */
     if (np->optimizeBand)
