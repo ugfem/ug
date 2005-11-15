@@ -3470,7 +3470,7 @@ INT                     SaveCnomGridAndValues (MULTIGRID *theMG, char *FileName,
 #endif
 
 /* coarse grid manipulations */
-NODE        *InsertInnerNode            (GRID *theGrid, DOUBLE *pos);
+NODE        *InsertInnerNode            (GRID *theGrid, const DOUBLE *pos);
 NODE        *InsertBoundaryNode     (GRID *theGrid, BNDP *bndp);
 
 INT             DeleteNodeWithID                (GRID *theGrid, INT id);

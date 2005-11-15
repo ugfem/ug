@@ -4720,7 +4720,7 @@ INT NS_DIM_PREFIX FindNeighborElement (const ELEMENT *theElement, INT Side, ELEM
  */
 /****************************************************************************/
 
-NODE * NS_DIM_PREFIX InsertInnerNode (GRID *theGrid, DOUBLE *pos)
+NODE * NS_DIM_PREFIX InsertInnerNode (GRID *theGrid, const DOUBLE *pos)
 {
   VERTEX *theVertex;
   NODE *theNode;
