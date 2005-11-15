@@ -115,7 +115,7 @@
 #define DEBUG_TIME_INC
 #define DEBUG_TIME(n)
 
-#define PrintDebug
+#define PrintDebug(...)
 
 #endif  /* Debug */
 
