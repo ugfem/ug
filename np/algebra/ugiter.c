@@ -421,7 +421,8 @@ INT NS_DIM_PREFIX l_lgs (GRID *grid, const VECDATA_DESC *v, const MATDATA_DESC *
 INT NS_DIM_PREFIX l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*first_vec;
-  INT rtype,ctype,myindex,err;
+  INT rtype,ctype,err;
+  UINT myindex;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register SHORT *mcomp,*wcomp,*dcomp;
@@ -625,7 +626,8 @@ INT NS_DIM_PREFIX l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, 
 INT NS_DIM_PREFIX l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*end_vec;
-  INT myindex,err,first_index;
+  INT err;
+  UINT myindex,first_index;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register DOUBLE sum;
@@ -672,7 +674,8 @@ INT NS_DIM_PREFIX l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MAT
 INT NS_DIM_PREFIX l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*end_vec;
-  INT myindex,err,last_index;
+  INT err;
+  UINT myindex,last_index;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register DOUBLE sum;
@@ -741,7 +744,8 @@ INT NS_DIM_PREFIX l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const M
 INT NS_DIM_PREFIX l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*last_vec;
-  INT rtype,ctype,myindex,err;
+  INT rtype,ctype,err;
+  UINT myindex;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register SHORT *mcomp,*wcomp,*dcomp;
@@ -937,7 +941,8 @@ INT NS_DIM_PREFIX l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, 
 INT NS_DIM_PREFIX l_ugs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*last_vec,*end_vec;
-  INT myindex,err,last_index;
+  INT err;
+  UINT myindex,last_index;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register DOUBLE sum;
@@ -1006,7 +1011,8 @@ INT NS_DIM_PREFIX l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
 {
   VECTOR *vec,*w;
   BLOCKVECTOR *theBV;
-  INT rtype,ctype,myindex,err,maxBVmembers,bvn,index;
+  INT rtype,ctype,myindex,err,maxBVmembers,index;
+  UINT bvn;
   register MATRIX *mat;
   register SHORT vc,mc,mask;
   register SHORT *mcomp,*wcomp,*vcomp;
@@ -1347,7 +1353,8 @@ INT NS_DIM_PREFIX l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
                           const VECDATA_DESC *d, const DOUBLE *omega, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*first_vec;
-  INT rtype,ctype,myindex,err;
+  INT rtype,ctype,err;
+  UINT myindex;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register SHORT *mcomp,*wcomp,*dcomp,*vcomp;
@@ -1566,7 +1573,8 @@ INT NS_DIM_PREFIX l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
                           const VECDATA_DESC *d, const DOUBLE *omega, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*last_vec;
-  INT rtype,ctype,myindex,err;
+  INT rtype,ctype,err;
+  UINT myindex;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register SHORT *mcomp,*wcomp,*dcomp;
@@ -1779,7 +1787,8 @@ INT NS_DIM_PREFIX l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
                              const VECDATA_DESC *d, VECDATA_DESC *omega, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*last_vec;
-  INT rtype,ctype,myindex,err;
+  INT rtype,ctype,err;
+  UINT myindex;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask,dmp;
   register SHORT *mcomp,*wcomp,*dcomp;
@@ -1791,7 +1800,6 @@ INT NS_DIM_PREFIX l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr,*vcomp;
-  const SHORT *offset = VD_OFFSETPTR(v);
   DOUBLE *wmat;
 
 #ifndef NDEBUG
@@ -2014,7 +2022,8 @@ INT NS_DIM_PREFIX l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
 INT NS_DIM_PREFIX l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, const VECDATA_DESC *damp, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*first_vec;
-  INT rtype,ctype,myindex,err;
+  INT rtype,ctype,err;
+  UINT myindex;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask,dmp;
   register SHORT *tdmp,*mcomp,*wcomp,*dcomp,*vcomp;
@@ -2628,7 +2637,8 @@ INT NS_DIM_PREFIX l_ilubdecomp_SB (BLOCKVECTOR *theBV, const MATDATA_DESC *M, co
 {
   VECTOR *vi,*vj,*vk,*first_vec,*last_vec;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
-  INT offset[NVECTYPES+1],last_index;
+  INT offset[NVECTYPES+1];
+  UINT last_index;
   INT type,ctype,rtype;
   INT nr;
   INT i,mc,mask;
@@ -4449,7 +4459,8 @@ INT NS_DIM_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
 INT NS_DIM_PREFIX l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
-  INT rtype,ctype,myindex,err;
+  INT rtype,ctype,err;
+  UINT myindex;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register SHORT *mcomp,*vcomp,*wcomp,*dcomp;
@@ -5059,7 +5070,8 @@ INT NS_DIM_PREFIX solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const
 INT NS_DIM_PREFIX l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
-  INT rtype,ctype,myindex,err,bvn,maxBVmembers;
+  INT rtype,ctype,err,bvn,maxBVmembers;
+  UINT myindex;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register SHORT *mcomp,*vcomp,*wcomp,*dcomp;
@@ -5431,7 +5443,8 @@ INT NS_DIM_PREFIX l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC 
 INT NS_DIM_PREFIX l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
-  INT rtype,ctype,myindex,err;
+  INT rtype,ctype,err;
+  UINT myindex;
   register MATRIX *mat,*dmat;
   register SHORT vc,dc,mc,mask;
   register SHORT *mcomp,*wcomp,*dcomp;
@@ -6141,7 +6154,8 @@ INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC
 INT NS_DIM_PREFIX l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
-  INT rtype,ctype,myindex,err;
+  INT rtype,ctype,err;
+  UINT myindex;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
   register SHORT *mcomp,*vcomp,*wcomp,*dcomp;
