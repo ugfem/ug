@@ -5198,7 +5198,7 @@ INT NS_DIM_PREFIX l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDAT
   return (NUM_OK);
 }
 
-INT NS_DIM_PREFIX l_dmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, enum VectorClass xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, enum VectorClass yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
@@ -5245,7 +5245,7 @@ INT NS_DIM_PREFIX l_dmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT 
   return (NUM_ERROR);
 }
 
-INT NS_DIM_PREFIX l_dtpmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dtpmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, enum VectorClass xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, enum VectorClass yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
@@ -5292,7 +5292,7 @@ INT NS_DIM_PREFIX l_dtpmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, IN
   return (NUM_ERROR);
 }
 
-INT NS_DIM_PREFIX l_dmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, enum VectorClass xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, enum VectorClass yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
@@ -5339,7 +5339,7 @@ INT NS_DIM_PREFIX l_dmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, 
   return (NUM_ERROR);
 }
 
-INT NS_DIM_PREFIX l_dtpmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dtpmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, enum VectorClass xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, enum VectorClass yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
@@ -5386,7 +5386,7 @@ INT NS_DIM_PREFIX l_dtpmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x
   return (NUM_ERROR);
 }
 
-INT NS_DIM_PREFIX l_dmatmul_minus_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dmatmul_minus_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, enum VectorClass xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, enum VectorClass yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
