@@ -118,7 +118,9 @@ static int stackhead=0;                         /* push/pop entry						*/
 static int stack[AMG_MAX_STACK];        /* current stack						*/
 static int connectsize=0;                       /* number of neighbors					*/
 static int connect[AMG_MAX_ROW];        /* connectivity list					*/
+#ifdef DEBUG_STACK
 static char buf[256];
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -232,7 +234,6 @@ static int Dependency (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int e = AMG_GRAPH_E(g);
   int *ra = AMG_GRAPH_RA(g);
   int *ja = AMG_GRAPH_JA(g);
-  int *ca = AMG_GRAPH_CA(g);
   char *na = AMG_GRAPH_NA(g);
   char *la = AMG_GRAPH_LA(g);
   double *a = AMG_MATRIX_A(A);
@@ -302,7 +303,6 @@ static int Dependency_sym (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int e = AMG_GRAPH_E(g);
   int *ra = AMG_GRAPH_RA(g);
   int *ja = AMG_GRAPH_JA(g);
-  int *ca = AMG_GRAPH_CA(g);
   char *na = AMG_GRAPH_NA(g);
   char *la = AMG_GRAPH_LA(g);
   double *a = AMG_MATRIX_A(A);
@@ -433,8 +433,6 @@ static int AddCluster (AMG_GRAPH *g, int s, int clusternumber)
 /* initialize cluster with seed node */
 static int SeedCluster (AMG_GRAPH *g, int s, int clusternumber)
 {
-  int *ca=g->ca;
-
   clustersize = 0;
   connectsize=1;
   connect[0] = clusternumber;
@@ -446,7 +444,7 @@ static int SetFront (AMG_GRAPH *g)
 {
   int i,k,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *na=g->na, *la=g->la;
+  char *na=g->na;
   int comp,sas=AMG_GRAPH_SAS(g);
 
   frontsize = 0;
@@ -514,7 +512,6 @@ static int Connected (AMG_GRAPH *g, int f, int clusternumber)
 {
   int k,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *la=g->la;
 
   start = ra[f]; end = start+ja[start];
   for (k=start+1; k<end; k++)
@@ -527,7 +524,7 @@ static int FrontNeighbors (AMG_GRAPH *g, int f)
 {
   int k,start,end,w;
   int *ra=g->ra, *ja=g->ja;
-  char *la=g->la, *na=g->na;
+  char *na=g->na;
 
   w = 0;
   start = ra[f]; end = start+ja[start];
@@ -541,7 +538,7 @@ static int UnusedNeighbors (AMG_GRAPH *g, int f)
 {
   int k,start,end,u;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char  *la=g->la, *na=g->na;
+  char  *la=g->la;
   int comp,sas=AMG_GRAPH_SAS(g);
 
   u = 0;
@@ -600,7 +597,7 @@ static int InnerNeighborCluster (AMG_GRAPH *g, int f)
 {
   int k,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char  *na=g->na, *la=g->la;
+  char *na=g->na;
   int comp,sas=AMG_GRAPH_SAS(g);
 
   start = ra[f]; end = start+ja[start]; comp=f%sas;
@@ -616,7 +613,7 @@ static float AutoDamp (AMG_GRAPH *g, int clusternumber)
 {
   int f,k,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char  *na=g->na, *la=g->la;
+  char *la=g->la;
   int strong=0,depends=0;
   float d;
 
@@ -644,7 +641,7 @@ static int Distance (AMG_GRAPH *g, int f, int clusternumber)
 {
   int i,k,start,end,first,last;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *la=g->la, *na=g->na;
+  char *na=g->na;
   int visitedsize=0;
   int visited[AMG_MAX_CLUSTER];
   int dist=0;
@@ -676,7 +673,7 @@ static int Distance (AMG_GRAPH *g, int f, int clusternumber)
 static int Admissible (AMG_GRAPH *g, int f, int clusternumber)
 {
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *la=g->la, *na=g->na;
+  char *la=g->la;
   int i,j,ki,kj,kij,starti,startj,startij,endi,endj,endij,found;
 
   /* situation 1, front node depends on two nodes in cluster */
@@ -1432,7 +1429,7 @@ static int ReconstructCluster (AMG_GRAPH *g, int f)
 {
   int i,k,start,end,first,last,dist;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *na=g->na, *la=g->la;
+  char *na=g->na;
   int clusternumber;
 
   /* first, reconstruct the cluster */
@@ -1466,7 +1463,7 @@ static int ConstructConnectivity (AMG_GRAPH *g, int f)
 {
   int i,k,m,n,start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
-  char *na=g->na, *la=g->la;
+  char *na=g->na;
   int clusternumber;
 
   clusternumber=ca[f];
