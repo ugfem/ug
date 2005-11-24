@@ -1098,7 +1098,7 @@ INT NS_DIM_PREFIX GetSkewedUpwindShapes (const FVElementGeometry *geo, const DOU
 INT NS_DIM_PREFIX GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
 {
   const DOUBLE_VECTOR *x=FVG_GCOPTR(geo);
-  DOUBLE_VECTOR y,local;
+  DOUBLE_VECTOR y;
   const ELEMENT *elem=FVG_ELEM(geo);
   INT ip,corn,sd,side,tag=FVG_TAG(geo);
   INT nco;
@@ -1106,6 +1106,7 @@ INT NS_DIM_PREFIX GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE
   DOUBLE d0, d1;
   INT co0,co1;
 #else
+  DOUBLE_VECTOR local;
   DOUBLE *CornerPtrs[MAXNC];
 #endif
 
