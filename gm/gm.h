@@ -2195,7 +2195,7 @@ enum LV_ID_TYPES {
 
 #define VTYPE_SHIFT                             2
 #define VTYPE_LEN                                       2
-#define VTYPE(p)                                        CW_READ_STATIC(p,VTYPE_,VECTOR_)
+#define VTYPE(p)                                (enum VectorType)CW_READ_STATIC(p,VTYPE_,VECTOR_)
 #define SETVTYPE(p,n)                           CW_WRITE_STATIC(p,VTYPE_,VECTOR_,n)
 #if (MAXVTYPES > POW2(VTYPE_LEN))
         #error  *** VTYPE_LEN too small ***
