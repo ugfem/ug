@@ -240,7 +240,7 @@ static double clampf(double x)
 
 static INT DataExplorerCommand (INT argc, char **argv)
 {
-  INT i,j,k,l,v;                                /* counters etc.							*/
+  INT i,j,k,v;                                  /* counters etc.							*/
   INT counter;                                  /* for formatting output					*/
   INT dat_pos;                      /* indicates offset in data file            */
   INT old_pos;
@@ -299,7 +299,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
   DOUBLE LocalCoord[DIM];               /* is one of the corners local coordinates	*/
   DOUBLE local[DIM];                            /* local coordinate in DOUBLE				*/
   DOUBLE value;                                 /* returned by user eval proc				*/
-  DOUBLE x,y,z;                                 /* scalar values							*/
   DOUBLE vval[DIM];                             /* result of vector evaluation function		*/
 
   INT notOnlyTetra;                 /* flag for tetrahedrons only grids         */
