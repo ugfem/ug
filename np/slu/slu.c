@@ -396,14 +396,9 @@ static INT SLUPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_D
   NP_SLU *np = (NP_SLU*)theNP;
   HEAP *theHeap = MGHEAP(NP_MG(theNP));
   GRID *theGrid = NP_GRID(theNP,level);
-  VECTOR *theV;
-  MATRIX *theM;
-  NCformat *Ustore;
-  SCformat *Lstore;
   char text[DISPLAY_WIDTH+4];
   char fact[1],equed[1],trans[1],refact[1];
-  int firstfact,info,n,m,i;
-  double *a;
+  int firstfact,info,n,m;
   void *work;
 
         #ifdef ModelP
@@ -458,10 +453,9 @@ static INT SLUIter (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b,
 {
   NP_SLU *np = (NP_SLU*)theNP;
   GRID *theGrid = NP_GRID(theNP,level);
-  int info,bl,firstfact;
+  int info;
   char fact[1],equed[1],trans[1],refact[1];
   void *work;
-  VEC_SCALAR defect;
 
         #ifdef ModelP
   if (me != master) return(0);
@@ -503,7 +497,6 @@ static INT SLUPostProcess (NP_ITER *theNP, INT level,VECDATA_DESC *x, VECDATA_DE
 
 static INT SLUInit (NP_BASE *theNP, INT argc , char **argv)
 {
-  INT i;
   NP_SLU *np;
 
   np = (NP_SLU *) theNP;
