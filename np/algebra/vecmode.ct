@@ -61,7 +61,7 @@ else
 				T_PREP_1;
 				#endif
        	        #define T_MOD_VECTOR T_MOD_VECTOR_1
-                #define T_VEC_TYPE	 VTYPE(v)==(UINT)vtype
+                #define T_VEC_TYPE	 VTYPE(v)==vtype
 				#include "vecloop.ct"
 				break;
 			case 2:
@@ -73,7 +73,7 @@ else
 				T_PREP_2;
 				#endif
        	        #define T_MOD_VECTOR T_MOD_VECTOR_1 T_MOD_VECTOR_2
-				#define T_VEC_TYPE	 VTYPE(v)==(UINT)vtype
+				#define T_VEC_TYPE	 VTYPE(v)==vtype
 				#include "vecloop.ct"
 				break;
 			case 3:
@@ -86,7 +86,7 @@ else
 				T_PREP_3;
 				#endif
        	        #define T_MOD_VECTOR T_MOD_VECTOR_1 T_MOD_VECTOR_2 T_MOD_VECTOR_3
-				#define T_VEC_TYPE	 VTYPE(v)==(UINT)vtype
+				#define T_VEC_TYPE	 VTYPE(v)==vtype
 				#include "vecloop.ct"
 				break;
 			#endif
@@ -96,7 +96,7 @@ else
 				T_PREP_N;
 				#endif
        	        #define T_MOD_VECTOR T_MOD_VECTOR_N
-				#define T_VEC_TYPE	 VTYPE(v)==(UINT)vtype
+				#define T_VEC_TYPE	 VTYPE(v)==vtype
 				#include "vecloop.ct"
 			}	
 		}	
