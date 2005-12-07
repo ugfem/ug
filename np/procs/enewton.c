@@ -276,7 +276,6 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
   INT use_second;
   DOUBLE eh[EXTENSION_MAX];                 /* extension help vector                */
   DOUBLE sc[EXTENSION_MAX*EXTENSION_MAX];       /* schur complement                 */
-  DOUBLE si[EXTENSION_MAX*EXTENSION_MAX];       /* schur complement inverse         */
 
   /* get status */
   newton = (NP_ENEWTON *) nls;

@@ -128,7 +128,6 @@ typedef struct
 
 static VEC_SCALAR Factor_One;
 static INT global;
-static INT quadrature_order;
 
 REP_ERR_FILE;
 

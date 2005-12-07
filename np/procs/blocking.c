@@ -476,13 +476,11 @@ static INT DD_Construct (NP_BASE *theNP)
 
 static INT UB_Init (NP_BASE *theNP, INT argc , char **argv)
 {
-  NP_UB *np=(NP_UB *)theNP;
   return (NP_ACTIVE);
 }
 
 static INT UB_Display (NP_BASE *theNP)
 {
-  NP_UB *np=(NP_UB *)theNP;
   return (0);
 }
 
@@ -524,7 +522,6 @@ static INT UB_WeiredElem (ELEMENT *e)
 
 static INT UB_Blocking (NP_BLOCKING *theNP, GetMemProcPtr GetMem, INT level, MATDATA_DESC *A, BLOCKING_STRUCTUR *bs, INT *result)
 {
-  NP_UB *np=(NP_UB *)theNP;
   GRID *theGrid=NP_GRID(theNP,level);
   void *buffer;
   INT i,n,ne;

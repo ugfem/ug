@@ -593,7 +593,6 @@ static INT EnergyResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
                            VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                            LRESULT *lresult)
 {
-  NP_LS *np = (NP_LS *) theNP;
   VEC_SCALAR err;
   VECDATA_DESC *temp;
   INT i;
