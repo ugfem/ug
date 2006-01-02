@@ -4074,7 +4074,7 @@ INT NS_DIM_PREFIX l_dsetrandom (GRID *g, const VECDATA_DESC *x, enum VectorClass
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register UINT vtype;
+  enum VectorType vtype;
   DOUBLE scale;
   DEFINE_VD_CMPS(cx);
 
@@ -4083,7 +4083,7 @@ INT NS_DIM_PREFIX l_dsetrandom (GRID *g, const VECDATA_DESC *x, enum VectorClass
 
   first_v = FIRSTVECTOR(g);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4130,7 +4130,7 @@ INT NS_DIM_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, enum VectorClas
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register UINT vtype;
+  enum VectorType vtype;
   DOUBLE scale;
   DEFINE_VD_CMPS(cx);
   INT vskip;
@@ -4140,7 +4140,7 @@ INT NS_DIM_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, enum VectorClas
 
   first_v = FIRSTVECTOR(g);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4270,12 +4270,12 @@ INT NS_DIM_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, enum VectorClas
   register SHORT i;
   register SHORT ncomp;
   register INT vskip;
-  register UINT vtype;
+  enum VectorType vtype;
   DEFINE_VD_CMPS(cx);
 
   first_v = FIRSTVECTOR(g);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4349,11 +4349,11 @@ INT NS_DIM_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DE
   register SHORT i;
   register SHORT ncomp;
   register INT vskip;
-  register UINT vtype;
+  enum VectorType vtype;
   INT lev;
   DEFINE_VD_CMPS(cx);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4425,11 +4425,11 @@ INT NS_DIM_PREFIX s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DE
   register SHORT i;
   register SHORT ncomp;
   register INT vskip;
-  register UINT vtype;
+  enum VectorType vtype;
   INT lev;
   DEFINE_VD_CMPS(cx);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4518,12 +4518,12 @@ INT NS_DIM_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, enum VectorClass x
   register SHORT i;
   register SHORT ncomp;
   register INT vskip;
-  register UINT vtype;
+  enum VectorType vtype;
   DEFINE_VD_CMPS(cx);
 
   first_v = FIRSTVECTOR(g);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4603,13 +4603,13 @@ INT NS_DIM_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, enum VectorClass x
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register UINT vtype;
+  enum VectorType vtype;
   DEFINE_VD_CMPS(cx);
 
 #ifndef NDEBUG
   /* check maximal block size */
   maxsmallblock = 0;
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       maxsmallblock = MAX(maxsmallblock,VD_NCMPS_IN_TYPE(x,vtype));
 
@@ -4624,7 +4624,7 @@ INT NS_DIM_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, enum VectorClass x
 
   first_v = FIRSTVECTOR(g);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4680,7 +4680,7 @@ INT NS_DIM_PREFIX l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum Ve
   register SHORT i;
   register SHORT ncomp;
   register INT err;
-  register UINT vtype;
+  enum VectorType vtype;
   DEFINE_VD_CMPS(cx);
   DEFINE_VD_CMPS(cy);
 
@@ -4693,7 +4693,7 @@ INT NS_DIM_PREFIX l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum Ve
   first_v = BVFIRSTVECTOR(theBV);
   end_v = BVENDVECTOR(theBV);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4739,7 +4739,7 @@ INT NS_DIM_PREFIX l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum V
   register VECTOR *v;
   register SHORT i;
   register SHORT ncomp;
-  register UINT vtype;
+  enum VectorType vtype;
   const SHORT *aoff;
   DEFINE_VS_CMPS(a);
   DEFINE_VD_CMPS(cx);
@@ -4748,7 +4748,7 @@ INT NS_DIM_PREFIX l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum V
   first_v = BVFIRSTVECTOR(theBV);
   end_v = BVENDVECTOR(theBV);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4796,7 +4796,7 @@ INT NS_DIM_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum Ve
   register SHORT i;
   register SHORT ncomp;
   register INT err;
-  register UINT vtype;
+  enum VectorType vtype;
   const SHORT *aoff;
   DEFINE_VS_CMPS(a);
   DEFINE_VD_CMPS(cx);
@@ -4812,7 +4812,7 @@ INT NS_DIM_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, enum Ve
   first_v = BVFIRSTVECTOR(theBV);
   end_v = BVENDVECTOR(theBV);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       switch (VD_NCMPS_IN_TYPE(x,vtype))
       {
@@ -4886,21 +4886,21 @@ INT NS_DIM_PREFIX l_mean (const GRID *g, const VECDATA_DESC *x, enum VectorClass
   VECTOR *v,*first_v;
   register SHORT i;
   register SHORT ncomp;
-  UINT vtype;
+  enum VectorType vtype;
   const SHORT *spoff;
   DEFINE_VD_CMPS(cx);
 
   spoff = VD_OFFSETPTR(x);
 
   /* clear sp */
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
       for (i=0; i<VD_NCMPS_IN_TYPE(x,vtype); i++)
         sp[spoff[vtype]+i] = 0.0;
 
   first_v = FIRSTVECTOR(g);
 
-  for (vtype=0; vtype<NVECTYPES; vtype++)
+  for (vtype=(enum VectorType)0; vtype<NVECTYPES; vtype = (enum VectorType)(vtype+1))
     if (VD_ISDEF_IN_TYPE(x,vtype))
     {
       value = sp+spoff[vtype];
@@ -4944,7 +4944,8 @@ INT NS_DIM_PREFIX l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MAT
 {
   register VECTOR *v,*first_v, *end_v;
   register MATRIX *m;
-  INT rtype,ctype,first_index,last_index;
+  INT rtype,ctype;
+  UINT first_index,last_index;
   register SHORT i;
   register SHORT nr;
   DEFINE_MD_CMPS(m);
