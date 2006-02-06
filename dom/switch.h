@@ -23,9 +23,8 @@
 #define __SWITCH__
 
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
+#include "dimension.h"
 
 #ifdef __MWCW__
 #include "MWCW.cmdlinedefs"
@@ -100,21 +99,6 @@
 /*																			*/
 /****************************************************************************/
 
-#if (!defined _2) && (!defined _3)
-#error ****	define dimension _2 or _3		****
-#endif
-
-#ifdef _2
-        #ifdef _3
-        #error ****	define EITHER dimension _2 OR _3	   ****
-        #endif
-#define two
-#endif
-
-#ifdef _3
-#define three
-#endif
-
 #ifdef NodeT
 #define Nodeon
 #else
@@ -137,18 +121,6 @@
 #define Elemon
 #else
 #define Elemoff
-#endif
-
-#ifdef two
-#ifdef three
-#error ****	define at most dimension two OR three		****
-#endif
-#endif
-
-#ifndef two
-#ifndef three
-#error ****	define at least dimension two OR three		****
-#endif
 #endif
 
 #if defined Nodeoff && defined Edgeoff && defined Sideoff && defined Elemoff
@@ -180,14 +152,6 @@
 /*	  dependent of makefile-defines                                                                                 */
 /*																			*/
 /****************************************************************************/
-
-#ifdef two
-#define __TWODIM__
-#endif
-
-#ifdef three
-#define __THREEDIM__
-#endif
 
 #ifdef Nodeon
 #define __NODEDATA__
