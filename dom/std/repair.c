@@ -108,17 +108,6 @@ USING_UG_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-static INT theProblemDirID;             /* env type for Problem dir                     */
-static INT theBdryCondVarID;            /* env type for Problem vars			*/
-
-static INT theDomainDirID;                      /* env type for Domain dir				*/
-static INT theBdrySegVarID;             /* env type for bdry segment vars		*/
-static INT theLinSegVarID;                  /* env type for linear segment vars		*/
-
-static INT theBVPDirID;                         /* env type for BVP dir					*/
-
-static STD_BVP *currBVP;
-
 REP_ERR_FILE;
 
 /* RCS string */
@@ -173,7 +162,7 @@ static REFERENCE_ELEMENT Hexahedron = {
 
 INT NS_DIM_PREFIX CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3)
 {
-  INT i,j,k,m,s[4];
+  INT i,j,k,s[4];
 
   s[0] = n0;
   s[1] = n1;
