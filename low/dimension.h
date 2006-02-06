@@ -2,11 +2,9 @@
 // vi: set et ts=4 sw=2 sts=2:
 /* $Id$ */
 
-/*
-
-   provide the usual preprocessor-defines for the dimension and complain
-   if no dimension was set
-
+/** \file
+    \brief Provide the usual preprocessor-defines for the dimension and complain
+    if the dimension was set incorrectly.
  */
 
 
