@@ -206,21 +206,6 @@ START_UGDIM_NAMESPACE
 #define MAX_NDOF 32*MAX_NDOF_MOD_32
 /*@}*/
 
-/****************************************************************************/
-/*                                                                          */
-/* switch-define dependent defines                                          */
-/*                                                                          */
-/****************************************************************************/
-
-#ifdef __TWODIM__
-        #define DIM                                             2                       /* space dimension                                                              */
-        #define DIM_OF_BND                                      1                       /* dimension of boundary surface                                */
-#endif
-
-#ifdef __THREEDIM__
-        #define DIM                                             3                       /* space dimension                                                              */
-        #define DIM_OF_BND                                      2                       /* dimension of boundary surface                                */
-#endif
 
 /****************************************************************************/
 /*                                                                          */
