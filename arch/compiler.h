@@ -143,9 +143,6 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
-/* Diese bloeden const pointer gehen immer noch nicht ! P.B. 27.7.95 */
-#define const
-
 #endif
 
 
