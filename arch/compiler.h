@@ -96,7 +96,7 @@ extern "C" {
 /*          __SR2201__   Hitachi SR2201                                     */
 /*          __SR8K__     Hitachi SR8000                                     */
 /*          __MACOSXSERVER__   MacOS X Server                               */
-/*          __MACOSX__   Mac OS X                                                   */
+/*          __MACOSX__   Mac OS X                                           */
 /*          __MWCW__     Apple Power Macintosh  (Metrowerks CodeWarrior)    */
 /*          __MKLINUX__  Mikrokernel Linux (PowerPC)                        */
 /*          __NEXTSTEP__ NEXTSTEP operating system                          */
@@ -126,12 +126,12 @@ extern "C" {
 #define ARCHNAME        "MPW32"
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #include <Memory.h>
@@ -160,12 +160,12 @@ extern "C" {
 #include <time.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
@@ -194,12 +194,12 @@ extern "C" {
 #include <time.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
@@ -227,12 +227,12 @@ extern "C" {
 #define ARCHNAME        "PARIX"
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typdef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -262,12 +262,12 @@ extern "C" {
 #define ARCHNAME        "AIX"
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -300,12 +300,12 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #include <nx.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -336,12 +336,12 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #include <stddef.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
@@ -366,12 +366,12 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #include <stddef.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) ! */
@@ -397,12 +397,12 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #include <time.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
@@ -430,12 +430,12 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #define ARCHNAME        "SUN"
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
@@ -449,7 +449,7 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 
 /****************************************************************************/
 /*                                                                          */
-/* Definitions for DEC                                                                                  */
+/* Definitions for DEC                                                      */
 /*                                                                          */
 /****************************************************************************/
 
@@ -459,12 +459,12 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #define ARCHNAME        "DEC"
 
 /* basic types */
-#define SHORT  short
-#define INT    long
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD float
+typedef short SHORT;
+typedef long INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT   8                   /* power of 2 and >= sizeof(int) ! */
@@ -490,12 +490,12 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #include <time.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -547,12 +547,12 @@ static inline double x86_highres_clock(void)
 #define ARCHNAME        "MKLINUX"
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -578,12 +578,12 @@ static inline double x86_highres_clock(void)
 #include <time.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    long                     /* sizeof(int) != sizeof(void *) !! */
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef long INT;                    /* sizeof(int) != sizeof(void *) !! */
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -613,12 +613,12 @@ static inline double x86_highres_clock(void)
 #include <time.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    long                     /* sizeof(int) != sizeof(void *) !! */
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef long INT;                    /* sizeof(int) != sizeof(void *) !! */
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -648,12 +648,12 @@ static inline double x86_highres_clock(void)
 #include <time.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -683,12 +683,12 @@ static inline double x86_highres_clock(void)
 #include <time.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    long                     /* sizeof(int) != sizeof(void *) !! */
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef long INT;                   /* sizeof(int) != sizeof(void *) !! */
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -718,12 +718,12 @@ static inline double x86_highres_clock(void)
 #include <time.h>
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) !  */
@@ -753,12 +753,12 @@ static inline double x86_highres_clock(void)
 #include <unistd.h>     /* for _SC_CLK_TCK */
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -790,12 +790,12 @@ static inline double x86_highres_clock(void)
 #include <unistd.h>     /* for _SC_CLK_TCK */
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -823,12 +823,12 @@ static inline double x86_highres_clock(void)
 #define ARCHNAME        "POWERGC"
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8               /* power of 2 and >=sizeof(int) !  */
@@ -854,12 +854,12 @@ static inline double x86_highres_clock(void)
 #define ARCHNAME        "CC"
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 4               /* power of 2 and >=sizeof(int) !  */
@@ -883,12 +883,12 @@ static inline double x86_highres_clock(void)
 #define ARCHNAME        "C90"
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -913,12 +913,12 @@ static inline double x86_highres_clock(void)
 #define ARCHNAME        "YMP"
 
 /* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -945,12 +945,12 @@ static inline double x86_highres_clock(void)
 
 
 /* basic types */
-#define SHORT  short
-#define INT    long    /* sizeof(int) != sizeof(void *) !! */
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  double
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef long INT;   /* sizeof(int) != sizeof(void *) !! */
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef double COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -981,12 +981,12 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #define ARCHNAME        "SR2201"
 
 /* basic types */
-#define SHORT  short
-#define INT    long    /* sizeof(int) != sizeof(void *) !! */
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  double
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef long INT;    /* sizeof(int) != sizeof(void *) !! */
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef double COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -1014,12 +1014,12 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #define ARCHNAME        "SR8K"
 
 /* basic types */
-#define SHORT  short
-#define INT    long    /* sizeof(int) != sizeof(void *) !! */
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  double
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef long INT;    /* sizeof(int) != sizeof(void *) !! */
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef double COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -1047,12 +1047,12 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #define ARCHNAME        "NEXTSTEP"
 
 /* basic types */
-#define SHORT         short
-#define INT           int
-#define FLOAT         float
-#define DOUBLE        double
-#define COORD         float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
@@ -1083,12 +1083,12 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #define ARCHNAME        "OPENSTEP"
 
 /* basic types */
-#define SHORT         short
-#define INT           int
-#define FLOAT         float
-#define DOUBLE        double
-#define COORD         float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
@@ -1119,12 +1119,12 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #define ARCHNAME        "MacOS X Server"
 
 /* basic types */
-#define SHORT         short
-#define INT           int
-#define FLOAT         float
-#define DOUBLE        double
-#define COORD         float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
@@ -1152,12 +1152,12 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #define ARCHNAME        "Mac OS X"
 
 /* basic types */
-#define SHORT         short
-#define INT           int
-#define FLOAT         float
-#define DOUBLE        double
-#define COORD         float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
@@ -1178,12 +1178,12 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #define ARCHNAME    "PowerPC 64 bit"
 
 /* basic types */
-#define SHORT  short
-#define INT    long                     /* sizeof(int) != sizeof(void *) !! */
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
+typedef short SHORT;
+typedef long INT;                     /* sizeof(int) != sizeof(void *) !! */
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(INT) !  */
@@ -1218,12 +1218,12 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
  */
 
 /* basic types */
-#define SHORT            short
-#define INT             int
-#define FLOAT            float
-#define DOUBLE            double
-#define COORD            float
-#define SCREEN_COORD    float
+typedef short SHORT;
+typedef int INT;
+typedef float FLOAT;
+typedef double DOUBLE;
+typedef float COORD;
+typedef float SCREEN_COORD;
 
 /* memory */
 #include <Memory.h>
