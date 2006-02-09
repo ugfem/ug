@@ -534,9 +534,6 @@ LINKX(OTYPE)
 LINKX(OTYPE)
 {
 	INT listpart		= PRIO2LISTPART(CAT(OTYPE,_LIST),Prio);
-	INT listpartprev	= listpart;
-	INT listpartnext	= listpart;
-	OTYPE *Object1		= NULL;
 
 	ASSERT(Grid != NULL);
 	ASSERT(Object != NULL);
@@ -546,7 +543,7 @@ LINKX(OTYPE)
 	{
 		IFDEBUG(gm,2)
 		printf(PFMT " GRID_LINKX_" STR(OTYPE) "():" STR(OTYPE) 
-			" calling GRID_LINK_" STR(OTYPE) "(): Object=%x After=%x \n",me,Object,After);
+			" calling GRID_LINK_" STR(OTYPE) "(): Object=%p After=%p \n",me,Object,After);
 		ENDDEBUG
 
 		CAT(GRID_LINK_,OTYPE) (Grid,Object,Prio);
@@ -555,7 +552,7 @@ LINKX(OTYPE)
 
 	IFDEBUG(gm,2) 
 		printf("%d: GRID_LINKX_" STR(OTYPE) "():" STR(OTYPE) 
-			" has listpart=%d for prio=%d obj=%x\n",me,listpart,Prio,Object);
+			" has listpart=%d for prio=%d obj=%p\n",me,listpart,Prio,Object);
 		fflush(stdout);
 	ENDDEBUG 
 
