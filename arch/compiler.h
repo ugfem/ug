@@ -128,6 +128,7 @@ extern "C" {
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -162,6 +163,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -196,6 +198,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -229,6 +232,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -264,6 +268,7 @@ typdef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -302,6 +307,7 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -338,6 +344,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -368,6 +375,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -399,6 +407,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -432,6 +441,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -461,6 +471,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef long INT;
+typedef unsigned long UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -492,6 +503,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -549,6 +561,7 @@ static inline double x86_highres_clock(void)
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -580,6 +593,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef long INT;                    /* sizeof(int) != sizeof(void *) !! */
+typedef unsigned long UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -615,6 +629,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef long INT;                    /* sizeof(int) != sizeof(void *) !! */
+typedef unsigned long UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -650,6 +665,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -685,6 +701,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef long INT;                   /* sizeof(int) != sizeof(void *) !! */
+typedef unsigned long UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -720,6 +737,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -755,6 +773,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -792,6 +811,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -825,6 +845,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -856,6 +877,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -885,6 +907,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -915,6 +938,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -947,6 +971,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef long INT;   /* sizeof(int) != sizeof(void *) !! */
+typedef unsigned long UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef double COORD;
@@ -983,6 +1008,7 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 /* basic types */
 typedef short SHORT;
 typedef long INT;    /* sizeof(int) != sizeof(void *) !! */
+typedef unsigned long UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef double COORD;
@@ -1016,6 +1042,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef long INT;    /* sizeof(int) != sizeof(void *) !! */
+typedef unsigned long UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef double COORD;
@@ -1049,6 +1076,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -1085,6 +1113,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -1121,6 +1150,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -1154,6 +1184,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -1180,6 +1211,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef long INT;                     /* sizeof(int) != sizeof(void *) !! */
+typedef unsigned long UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -1220,6 +1252,7 @@ typedef float SCREEN_COORD;
 /* basic types */
 typedef short SHORT;
 typedef int INT;
+typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
@@ -1296,9 +1329,6 @@ static char compilerrcs_id[] = "$Id$";
 #define SMALL_D         (DBL_EPSILON*SMALL_FAC)
 #define MAX_C            FLT_MAX
 #define SMALL_C         (FLT_EPSILON*SMALL_FAC)
-
-/* define derived types */
-typedef unsigned INT UINT;
 
 #ifdef __cplusplus
 }
