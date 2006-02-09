@@ -135,16 +135,16 @@ INT             CheckOrientationInGrid  (GRID *theGrid);
 
 NODE        *CreateSonNode          (GRID *theGrid, NODE *FatherNode);
 NODE            *CreateMidNode                  (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT edge);
-NODE            *GetCenterNode                  (ELEMENT *theElement);
+NODE            *GetCenterNode                  (const ELEMENT *theElement);
 NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex);
 
 #ifdef __THREEDIM__
 NODE            *CreateSideNode                 (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT side);
-NODE            *GetSideNode                    (ELEMENT *theElement, INT side);
+NODE            *GetSideNode                    (const ELEMENT *theElement, INT side);
 #endif
 INT          GetSideIDFromScratch   (ELEMENT *theElement, NODE *theNode);
-NODE        *GetMidNode             (ELEMENT *theElement, INT edge);
-INT                     GetNodeContext                  (ELEMENT *theElement, NODE **theElementContext);
+NODE        *GetMidNode             (const ELEMENT *theElement, INT edge);
+INT                     GetNodeContext                  (const ELEMENT *theElement, NODE **theElementContext);
 void            GetNbSideByNodes                (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, INT side);
 
 

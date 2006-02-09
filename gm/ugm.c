@@ -808,7 +808,7 @@ NODE *NS_DIM_PREFIX CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *t
 }
 
 
-NODE * NS_DIM_PREFIX GetMidNode (ELEMENT *theElement, INT edge)
+NODE * NS_DIM_PREFIX GetMidNode (const ELEMENT *theElement, INT edge)
 {
   EDGE *theEdge;
   NODE *theNode;
@@ -821,10 +821,11 @@ NODE * NS_DIM_PREFIX GetMidNode (ELEMENT *theElement, INT edge)
   theNode = MIDNODE(theEdge);
   if (theNode == NULL) return(NULL);
 
-  /* this is a bad place for the following code (s.l. 981015) */
+  /** \todo This is a bad place for the following code (s.l. 981015) */
   theVertex = MYVERTEX(theNode);
   if (theVertex!=NULL && VFATHER(theVertex) == NULL) {
-    VFATHER(theVertex) = theElement;
+    /** \todo Strange that this cast has to be here.  O.S. 060902 */
+    VFATHER(theVertex) = (ELEMENT*)theElement;
     SETONEDGE(theVertex,edge);
     V_DIM_LINCOMB(0.5,
                   LOCAL_COORD_OF_ELEM(theElement,
@@ -843,7 +844,7 @@ NODE * NS_DIM_PREFIX GetMidNode (ELEMENT *theElement, INT edge)
  */
 /****************************************************************************/
 
-static INT SideOfNbElement(ELEMENT *theElement, INT side)
+static INT SideOfNbElement(const ELEMENT *theElement, INT side)
 {
   ELEMENT *nb;
   NODE *nd[MAX_CORNERS_OF_SIDE];
@@ -995,7 +996,7 @@ NODE *NS_DIM_PREFIX CreateSideNode (GRID *theGrid, ELEMENT *theElement, VERTEX *
  */
 /****************************************************************************/
 
-static NODE *GetSideNodeX (ELEMENT *theElement, INT side, INT n,
+static NODE *GetSideNodeX (const ELEMENT *theElement, INT side, INT n,
                            NODE **MidNodes)
 {
   ELEMENT *theFather;
@@ -1040,7 +1041,8 @@ static NODE *GetSideNodeX (ELEMENT *theElement, INT side, INT n,
               return(theNode);
             }
             else if (theFather == NULL) {
-              VFATHER(theVertex) = theElement;
+              /** \todo Strange that this cast has to be here */
+              VFATHER(theVertex) = (ELEMENT*)theElement;
               SETONSIDE(theVertex,side);
               SETONNBSIDE(theVertex,
                           SideOfNbElement(theElement,side));
@@ -1108,7 +1110,8 @@ static NODE *GetSideNodeX (ELEMENT *theElement, INT side, INT n,
                         #endif
           }
           else if (theFather == NULL) {
-            VFATHER(theVertex) = theElement;
+            /** \todo Strange that this cast has to be here */
+            VFATHER(theVertex) = (ELEMENT*)theElement;
             SETONSIDE(theVertex,side);
             SETONNBSIDE(theVertex,
                         SideOfNbElement(theElement,side));
@@ -1164,7 +1167,7 @@ static NODE *GetSideNodeX (ELEMENT *theElement, INT side, INT n,
   return(NULL);
 }
 
-NODE * NS_DIM_PREFIX GetSideNode (ELEMENT *theElement, INT side)
+NODE * NS_DIM_PREFIX GetSideNode (const ELEMENT *theElement, INT side)
 {
   NODE *theNode;
   NODE *MidNodes[MAX_EDGES_OF_SIDE];
@@ -1638,7 +1641,7 @@ INT GetSideIDFromScratchOld (ELEMENT *theElement, NODE *theNode)
    </ul> */
 /****************************************************************************/
 
-NODE * NS_DIM_PREFIX GetCenterNode (ELEMENT *theElement)
+NODE * NS_DIM_PREFIX GetCenterNode (const ELEMENT *theElement)
 {
   INT i,j;
   NODE    *theNode;
@@ -1815,7 +1818,7 @@ NODE * NS_DIM_PREFIX CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTE
    </ul> */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX GetNodeContext (ELEMENT *theElement, NODE **theElementContext)
+INT NS_DIM_PREFIX GetNodeContext (const ELEMENT *theElement, NODE **theElementContext)
 {
   NODE *theNode, **MidNodes, **CenterNode;
   EDGE *theEdge;
@@ -6530,7 +6533,7 @@ ELEMENT * NS_DIM_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMEN
 
         for (i=0; i<NDELEM_BLKS_MAX; i++)
         {
-          printf("i=%d blk=%08x\n",i,MGNDELEMBLK(theMG,i));
+          printf("i=%d blk=%p\n",i,MGNDELEMBLK(theMG,i));
           fflush(stdout);
         }
       }
