@@ -3016,32 +3016,22 @@ static INT YAlignment (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/** \brief
-   MarkForRefinement - mark an element for refinement
+/** \brief Mark an element for refinement
 
-   SYNOPSIS:
-   INT MarkForRefinement (ELEMENT *theElement, INT rule, INT data);
-
-   PARAMETERS:
-   \param theElement - for that element
+   \param theElement - Element to be refined
    \param rule - type of refinement mark
 
-   DESCRIPTION:
    This function marks an element for refinement
 
-   \return
-   INT
-   .n   1 if element has been marked
-   .n   0 if element cannot be marked
+   \return <ul>
+   <li> 1 if element has been marked </li>
+   <li> 0 if element cannot be marked </li>
+   </ul>
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, enum RefinementRule rule, INT data)
+INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, enum RefinementRule rule, INT side)
 {
-        #ifdef __TWODIM__
-  INT side;
-        #endif
-
   if (theElement == NULL) return(0);
         #ifdef ModelP
   if (EGHOST(theElement)) return(0);
@@ -3062,7 +3052,7 @@ INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, enum RefinementRule ru
                 #ifdef __TWODIM__
   /* 2D case */
   case (2) :
-    side = data;
+
     switch (TAG(theElement))
     {
     case (TRIANGLE) :
