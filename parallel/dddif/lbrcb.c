@@ -375,14 +375,16 @@ static void CenterOfMass (ELEMENT *e, DOUBLE *pos)
 static void InheritPartition (ELEMENT *e)
 {
   int i;
+  ELEMENT *SonList[MAX_SONS];
 
-  for(i=0; i<SONS_OF_ELEM(e); i++)
+
+  if (GetAllSons(e,SonList)==0)
   {
-    ELEMENT *son = SON(e,i);
-    if (son==NULL) break;
-
-    PARTITION(son) = PARTITION(e);
-    InheritPartition(son);
+    for(i=0; SonList[i]!=NULL; i++)
+    {
+      PARTITION(SonList[i]) = PARTITION(e);
+      InheritPartition(SonList[i]);
+    }
   }
 }
 
@@ -454,6 +456,11 @@ int NS_PREFIX BalanceGridRCB (MULTIGRID *theMG, int level)
                  DDD_InfoGlobalId(PARHDRE(e)), PARTITION(e));
     }
     ENDDEBUG
+
+    for (i=0, e=FIRSTELEMENT(theGrid); e!=NULL; i++, e=SUCCE(e))
+    {
+      InheritPartition (e);
+    }
 
     Release(theHeap,FROM_TOP,MarkKey);
   }
