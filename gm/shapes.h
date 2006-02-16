@@ -7,22 +7,22 @@
 
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          shapes.h                                                                                                              */
-/*                                                                                                                                                      */
-/* Purpose:   header file for shape functions                                                           */
-/*                                                                                                                                                      */
-/* Author:        Klaus Johannsen                                                                                               */
-/*                        Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
-/*                        Universitaet Heidelberg                                                                               */
-/*                        Im Neuenheimer Feld 368                                                                               */
-/*                        6900 Heidelberg                                                                                               */
-/*                        internet: ug@ica3.uni-stuttgart.de                                                    */
-/*                                                                                                                                                      */
-/* History:   28.11.95 begin, ug version 3.1                                                            */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      shapes.h                                                      */
+/*                                                                          */
+/* Purpose:   header file for shape functions                               */
+/*                                                                          */
+/* Author:    Klaus Johannsen                                               */
+/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 368                                       */
+/*            6900 Heidelberg                                               */
+/* internet:  ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
+/* History:   28.11.95 begin, ug version 3.1                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -31,9 +31,9 @@ $Header$
 */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __SHAPES__
@@ -47,13 +47,13 @@ $Header$
 START_UGDIM_NAMESPACE
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* defines in the following order                                                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
 /*                compile time constants defining static data size (i.e. arrays)        */
 /*                other constants                                                                                                       */
 /*                macros                                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -732,8 +732,8 @@ INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], DOUBLE Jinv[DIM]
  */
 
 INT SurfaceElement (INT dim, INT nc, 
-                                        DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
-                                        DOUBLE ip_local[DIM], DOUBLE *result);
+                    const DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
+                    const DOUBLE ip_local[DIM], DOUBLE *result);
 
 #ifdef __TWODIM__
 DOUBLE  dNds                    (INT n, INT i, DOUBLE s, DOUBLE t);

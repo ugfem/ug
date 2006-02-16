@@ -147,9 +147,9 @@ static DOUBLE_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*																			*/
-/* forward declarations of functions used before they are defined			*/
-/*																			*/
+/*                                                                          */
+/* forward declarations of functions used before they are defined           */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -317,12 +317,9 @@ INT  NS_DIM_PREFIX LinearTrafo (INT dim, INT tag)
    general element.
    This function computes the determinant of the Jacobian of T and
    the inverse of the Jacobian of T at a given point in reference coordinates. 
-   Currently triangles (tag=3) and
-   quadrilaterals (tag=4) are implemented.
 
-   RETURN VALUES:
+  \return
    0 when o.k.
-
    1 if an error occured (e.g. determinant is very small)
 
    \sa
@@ -475,12 +472,11 @@ INT  NS_DIM_PREFIX JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNE
    This function computes the gradient of a finite element function in a point
    given in reference coordinates.
 
-   RETURN VALUES:
+ \return
    0 when o.k.
-
    1 if an error occured.
 
-   SEE ALSO:
+   \sa
    JacobianInverse
 */
 /****************************************************************************/
@@ -563,36 +559,27 @@ INT  NS_DIM_PREFIX GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
 }
 
 /****************************************************************************/
-/** \brief
-   SurfaceElement - compute surface element for surface integral of first kind
+/** \brief Compute surface element for surface integral of first kind
 
-   SYNOPSIS:
-   INT SurfaceElement (INT dim, INT nc, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
-       DOUBLE ip_local[DIM], DOUBLE *result)
-
-   PARAMETERS:
 \param dim - space dimension of mapped element (i.e. 2 and 3 are allowed)
 \param nc - number of corners
 \param co_global - global coordintes of corners of the element
 \param ip_local - point in coordinates of the reference element where surfel should be evaluated
 
-   DESCRIPTION:
    The reference elements in 1D and 2D are mapped to an arbitrary element in the
    next higher dimension, e.g. the unit quadrilateral to a general quadrilateral
    in 3D space. This function computes the surface integral for the
    surface integral of the first kind (see Bronstein 20. Auflage Kap. 3.1.12.2).
 
-   RETURN VALUES:
+\return
    0 is ok else error
-
-   SEE ALSO:
 
 */
 /****************************************************************************/
 
-INT  NS_DIM_PREFIX SurfaceElement (INT dim, INT nc, 
-					DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
-					DOUBLE ip_local[DIM], DOUBLE *result)
+INT NS_DIM_PREFIX SurfaceElement (INT dim, INT nc, 
+                                  const DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
+                                  const DOUBLE ip_local[DIM], DOUBLE *result)
 {
 	DOUBLE E,G,F;
 	DOUBLE Phi_Xi, Phi_Eta, Psi_Xi, Psi_Eta, Chi_Xi, Chi_Eta;
@@ -1789,21 +1776,6 @@ INT  NS_DIM_PREFIX FV_TetInfo (const DOUBLE **theCorners, DOUBLE_VECTOR Area[MAX
 }
 #endif
 
-/****************************************************************************/
-/*																			*/
-/* Function:  FV_AliTetInfo													*/
-/*																			*/
-/* Purpose:   calc gradient of shape function i 							*/
-/*																			*/
-/* Input:	  int i: corner number [0..3]									*/
-/*			  DOUBLE **Corners: list of ptrs to phys corner vectors			*/
-/*																			*/
-/* Output:	  DOUBLE **theGradient: list of ptrs to gradients				*/
-/*																			*/
-/* Return:	  INT 0: ok 													*/
-/*				  1: error													*/
-/*																			*/
-/****************************************************************************/
 
 #ifdef __THREEDIM__						 
 static INT FindCrossParam3D (DOUBLE *p1, DOUBLE *p2, DOUBLE *p3, DOUBLE *p4, DOUBLE_VECTOR v, DOUBLE *param)
@@ -1876,7 +1848,7 @@ static INT  EdgeOf2Sides[4][4] = {{-1,1,2,0},{1,-1,5,4},{2,5,-1,3},{0,4,3,-1}};
 /* the indices of opposite corners for each side */
 static INT OppositeCorner[4] = {3,0,1,2};
 
-INT  NS_DIM_PREFIX FV_AliTetInfo (const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[6], DOUBLE_VECTOR conv, DOUBLE_VECTOR GIP[6], DOUBLE_VECTOR LIP[6])
+INT NS_DIM_PREFIX FV_AliTetInfo (const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[6], DOUBLE_VECTOR conv, DOUBLE_VECTOR GIP[6], DOUBLE_VECTOR LIP[6])
 {
 	DOUBLE sp, alpha, check[2], M[9], Inv[9];
 	DOUBLE_VECTOR a, b, c, d, e, cm, normal, param, EdgeMidPoints[6], SideMidPoints[4];
@@ -2561,22 +2533,6 @@ INT  NS_DIM_PREFIX FV_AliTetInfo (const DOUBLE **CornerPoints, DOUBLE_VECTOR Are
 	return (0);
 }
 #endif
-
-/****************************************************************************/
-/*																			*/
-/* Function:  FV_TetInfo_for_conv											*/
-/*																			*/
-/* Purpose:   calc gradient of shape function i 							*/
-/*																			*/
-/* Input:	  int i: corner number [0..3]									*/
-/*			  DOUBLE **Corners: list of ptrs to phys corner vectors			*/
-/*																			*/
-/* Output:	  DOUBLE **theGradient: list of ptrs to gradients				*/
-/*																			*/
-/* Return:	  INT 0: ok 													*/
-/*				  1: error													*/
-/*																			*/
-/****************************************************************************/
 
 #ifdef __THREEDIM__						 
 INT FV_TetInfo_for_conv (ELEMENT *theElement, const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR GIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv)
