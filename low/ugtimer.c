@@ -58,7 +58,7 @@
 /*																			*/
 /****************************************************************************/
 
-UG_TIMER ug_timer[MAX_TIMER];
+NS_PREFIX UG_TIMER NS_PREFIX ug_timer[MAX_TIMER];
 
 
 /****************************************************************************/
@@ -78,24 +78,11 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /****************************************************************************/
-/*D
-   new_timer - allocate a new timer
-
-   SYNOPSIS:
-   void new_timer (int *n)
-
-   PARAMETERS:
-
-   DESCRIPTION:
-   allocate a new timer
-
-   RETURN VALUE:
-
-   SEE ALSO:
-   D*/
+/** \brief Allocate a new timer
+ */
 /****************************************************************************/
 
-void new_timer (int *n)
+void NS_PREFIX new_timer (int *n)
 {
   int i;
 

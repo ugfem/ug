@@ -33,6 +33,10 @@
 #ifndef __UGTIMER__
 #define __UGTIMER__
 
+#include "namespace.h"
+
+START_UG_NAMESPACE
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -87,5 +91,7 @@ extern UG_TIMER ug_timer[MAX_TIMER];
 /****************************************************************************/
 
 void new_timer (int *n);
+
+END_NAMESPACE
 
 #endif
