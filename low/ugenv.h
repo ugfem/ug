@@ -59,13 +59,27 @@ enum {NAMELEN  = 127};                 /* NAMESIZE-1                            
 /* directories with odd numbers */
 #define ROOT_DIR            1        /* indicates root directory             */
 
+/** \brief Return pointer to the first 'ENVITEM' contained in the directory. */
 #define ENVITEM_DOWN(p)         (((ENVITEM *)(p))->d.down)
+
+/** \brief Return pointer to the first 'ENVDIR' contained in the directory. */
 #define ENVDIR_DOWN(p)            ((p)->down)
+
+/** \brief Return pointer to the next 'ENVITEM' in the doubly linked list */
 #define NEXT_ENVITEM(p)         (((ENVITEM *)(p))->v.next)
+
+/** \brief Return pointer to the previous 'ENVITEM' in the doubly linked list. */
 #define PREV_ENVITEM(p)         (((ENVITEM *)(p))->v.previous)
+
+/** \brief Return the type of the 'ENVITEM' (odd: 'ENVDIR', even: 'ENVVAR'). */
 #define ENVITEM_TYPE(p)         (((ENVITEM *)(p))->v.type)
+
 #define IS_ENVDIR(p)            (ENVITEM_TYPE(p)%2==1)
+
+/** \brief This macro returns a pointer to the name string of the 'ENVITEM'. */
 #define ENVITEM_NAME(p)         (((ENVITEM *)(p))->v.name)
+
+/** \brief 'RemoveEnvItem' checks this and returns an error if TRUE. */
 #define ENVITEM_LOCKED(p)         (((ENVITEM *)(p))->v.locked)
 
 /****************************************************************************/
