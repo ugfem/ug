@@ -364,10 +364,10 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
       for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
         if (theLine->id==lgm_mesh_info.BndP_LineID[i][j])
         {
-          theBndP->Line[j].theLine=theLine;
+          theBndP->Line[j].l.theLine=theLine;
           break;
         }
-      if (theBndP->Line[j].theLine==NULL) {  UserWriteF("ERROR: line (id=%d) doesn't exist in domain\n",lgm_mesh_info.BndP_LineID[i][j]); return (1); }
+      if (theBndP->Line[j].l.theLine==NULL) {  UserWriteF("ERROR: line (id=%d) doesn't exist in domain\n",lgm_mesh_info.BndP_LineID[i][j]); return (1); }
       theBndP->Line[j].local=lgm_mesh_info.BndP_lcoord[i][j];
     }
   }

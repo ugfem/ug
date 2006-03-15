@@ -408,7 +408,7 @@ void BVertexScatterBndP (BNDP **Bndp, int cnt, char *data)
       PRINTDEBUG(dom,3,(PFMT "BVertexScatterBndP(): LGM_BNDP_LINE(*bndp,i)=%x"
                         " LGM_BNDP_LINE(*Bndp,i)=%x ((*bndp)->Surf[(i)].theSurf)=%x\n",
                         me,&(LGM_BNDP_LINE(*bndp,i)),&(LGM_BNDP_LINE((LGM_BNDP *)*Bndp,i)),
-                        &((*bndp)->Surf[(i)].theSurf)));
+                        &((*bndp)->Surf[(i)].s.theSurf)));
 
       LGM_BNDP_LINE(*bndp,i) =
         LGM_LINE_ID_2_LINE((INT)

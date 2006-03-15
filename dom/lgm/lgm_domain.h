@@ -191,10 +191,10 @@ START_UGDIM_NAMESPACE
 /* macros for LGM_BNDP */
 #define LGM_BNDP_N(p)                                           ((p)->n)
 #define LGM_BNDP_LINES(p,i)                                     ((p)->Line[(i)])
-#define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].theLine)
-#define LGM_BNDP_ID(p,i)                                        ((p)->Line[(i)].theLineID)
+#define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].l.theLine)
+#define LGM_BNDP_ID(p,i)                                        ((p)->Line[(i)].l.theLineID)
 #define LGM_BNDP_LOCAL(p,i)                                     ((p)->Line[(i)].local)
-#define LGM_BNDP_LINE_GLINE(p)                          ((p).theLine)
+#define LGM_BNDP_LINE_GLINE(p)                          ((p).l.theLine)
 #define LGM_BNDP_LINE_LOCAL(p)                          ((p).local)
 
 /* macros for LGM_BNDS */
@@ -300,8 +300,8 @@ START_UGDIM_NAMESPACE
 /* macros for LGM_BNDP */
 #define LGM_BNDP_NLINE(p)                                       ((p)->nlines)
 #define LGM_BNDP_LINES(p,i)                                     ((p)->Line[(i)])
-#define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].theLine)
-#define LGM_BNDP_ID(p,i)                                        ((p)->Line[(i)].theLineID)
+#define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].l.theLine)
+#define LGM_BNDP_ID(p,i)                                        ((p)->Line[(i)].l.theLineID)
 #ifndef NO_PROJECT
 #define LGM_BNDP_LINE_LEFT(p,i)                         ((p)->Line[(i)].local_left)
 #define LGM_BNDP_LINE_RIGHT(p,i)                        ((p)->Line[(i)].local_right)
@@ -309,7 +309,7 @@ START_UGDIM_NAMESPACE
 #define LGM_BNDP_LINE_GLOBALLEFT(p,i)           ((p)->Line[(i)].global_left)
 #define LGM_BNDP_LINE_GLOBALRIGHT(p,i)          ((p)->Line[(i)].global_right)
 #endif
-#define LGM_BNDP_LINE_GLINE(p)                          ((p).theLine)
+#define LGM_BNDP_LINE_GLINE(p)                          ((p).l.theLine)
 #ifndef NO_PROJECT
 #define LGM_BNDP_LOCAL_LEFT(p)                          ((p).local_left)
 #define LGM_BNDP_LOCAL_RIGHT(p)                         ((p).local_right)
@@ -319,8 +319,8 @@ START_UGDIM_NAMESPACE
 #endif
 #define LGM_BNDP_N(p)                                           ((p)->nsurf)
 #define LGM_BNDP_SURFACES(p,i)                          ((p)->Surf[(i)])
-#define LGM_BNDP_SURFACE(p,i)                           ((p)->Surf[(i)].theSurf)
-#define LGM_BNDP_SURFACEID(p,i)                           ((p)->Surf[(i)].theSurfID)
+#define LGM_BNDP_SURFACE(p,i)                           ((p)->Surf[(i)].s.theSurf)
+#define LGM_BNDP_SURFACEID(p,i)                           ((p)->Surf[(i)].s.theSurfID)
 #define LGM_BNDP_SURFACEPTR(p)                          ((p)->Surf)
 #define LGM_BNDP_LINEPTR(p)                                     ((p)->Line)
 
@@ -329,7 +329,7 @@ START_UGDIM_NAMESPACE
 #else
 #define LGM_BNDP_GLOBAL(p,i)                            ((p)->Surf[(i)].global)
 #endif
-#define LGM_BNDP_SURFACE_GSURFACE(p)            ((p).theSurf)
+#define LGM_BNDP_SURFACE_GSURFACE(p)            ((p).s.theSurf)
 #ifndef NO_PROJECT
 #define LGM_BNDP_SURFACE_LOCAL(p)                       ((p).local)
 #else
@@ -450,7 +450,7 @@ struct lgm_bndp_line {
   union {
     struct lgm_line *theLine;   /* real line data                */
     INT theLineID;              /* used by Load_Ext and Save_Ext */
-  };
+  } l;
   DOUBLE local;                                                 /* local coordinate                                                             */
 };
 
@@ -641,7 +641,7 @@ struct lgm_bndp_line {
   {
     struct lgm_line *theLine;  /* either pointer to line data ...  */
     INT theLineID;             /* ... or just an ID (for Save_Ext/Load_Ext) */
-  };
+  } l;
 
         #ifdef NO_PROJECT
   DOUBLE global_left[3];                                /* global coordinate of the left neighbor       */
@@ -658,7 +658,7 @@ struct lgm_bndp_surf {
   {
     struct lgm_surface *theSurf;  /* surface... */
     INT theSurfID;                /* ... or just ID */
-  };
+  } s;
 
     #ifdef NO_PROJECT
   DOUBLE global[3];                                                     /* global coordinate                                                            */
