@@ -661,7 +661,7 @@ OUTPUTDEVICE * NS_PREFIX InitScreen (int *argcp, char **argv, INT *error)
       if (sscanf(argv[i+1],"%s",buffer)!=1)
       {
         fprintf(stderr,"%s: invalid use of option -np\n",prog_name);
-        fprintf(stderr,"%s: choose for option -np name extension for named pipes\n");
+        fprintf(stderr,"%s: choose for option -np name extension for named pipes\n",prog_name);
         exit(-1);
       }
       user_interface |= PUI;
