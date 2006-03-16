@@ -19,6 +19,7 @@
 /****************************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
 #include "ng2d.h"
 #include "ngin-yacc.h"
 

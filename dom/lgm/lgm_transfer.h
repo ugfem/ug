@@ -92,54 +92,54 @@ struct lgm_domain_info {
   /* parameters */
   char Name[128];                                               /* name of domain								*/
   char ProblemName[128];                                /* problems name of domain						*/
-  int Dimension;                                                /* dimension of domain							*/
-  int Convex;                                                           /* 0 (no) or 1 (yes)							*/
-  float Radius, MidPoint[3];                            /* sphere of which domain is a subset			*/
-  int nSubDomain;                                               /* nb. of subdomains							*/
-  int nPolyline;                                                /* nb. of lines									*/
-  int nPoint;                                                           /* nb. of points								*/
+  INT Dimension;                                                /* dimension of domain							*/
+  INT Convex;                                                           /* 0 (no) or 1 (yes)							*/
+  FLOAT Radius, MidPoint[3];                            /* sphere of which domain is a subset			*/
+  INT nSubDomain;                                               /* nb. of subdomains							*/
+  INT nPolyline;                                                /* nb. of lines									*/
+  INT nPoint;                                                           /* nb. of points								*/
 };
 
 struct lgm_sizes {
 
-  int *Subdom_nLine;                                            /* nb. of lines of each subdomain				*/
-  int *Polyline_nPoint;                                 /* nb. of points of each polyline				*/
+  INT *Subdom_nLine;                                            /* nb. of lines of each subdomain				*/
+  INT *Polyline_nPoint;                                 /* nb. of points of each polyline				*/
 };
 
 struct lgm_subdomain_info {
 
   char Unit[128];                                               /* Unit-identification							*/
-  int *LineNumber;                                              /* ids of the lines                                                     */
+  INT *LineNumber;                                              /* ids of the lines                                                     */
 };
 
 struct lgm_line_info {
 
-  int left, right;                                              /* subdomain on left and right side				*/
-  int *point;                                                           /* global ids of the points                                     */
+  INT left, right;                                              /* subdomain on left and right side				*/
+  INT *point;                                                           /* global ids of the points                                     */
 };
 
 struct lgm_point_info {
 
-  double position[LGM_TRDIM];                           /* position of corner							*/
+  DOUBLE position[LGM_TRDIM];                           /* position of corner							*/
 };
 
 struct lgm_mesh_info {
 
-  int nBndP;                         /* nb. of boundary points                  */
-  int *BndP_nLine;                   /* nb. of lines per bound. point           */
-  int **BndP_LineID;                 /* id of each line                         */
-  float **BndP_lcoord;               /* local coord of BndP on each line        */
-  double **BndPosition;               /* list of boundary points                 */
-  int nInnP;                         /* nb. of inner nodes                      */
-  double **InnPosition;               /* positions of inner nodes               */
-  int nSubDomains;                   /* nb. of subdomains                       */
-  int *nSides;                       /* nb. of boundary sides per subdomain     */
-  int ***Side_corner_ids;            /* corner ids                              */
-  int *nElements;                    /* nb. of element corners                  */
-  int **Element_corners;             /* nb. of element corners                  */
-  int **Element_SideOnBnd;           /* used bitwise: sides on bnd for elem     */
-  int ***Element_corner_ids;         /* nb. of side corners                     */
-  int ***nbElements;                 /* nb. of side corners                     */
+  INT nBndP;                         /* nb. of boundary points                  */
+  INT *BndP_nLine;                   /* nb. of lines per bound. point           */
+  INT **BndP_LineID;                 /* id of each line                         */
+  FLOAT **BndP_lcoord;               /* local coord of BndP on each line        */
+  DOUBLE **BndPosition;               /* list of boundary points                 */
+  INT nInnP;                         /* nb. of inner nodes                      */
+  DOUBLE **InnPosition;               /* positions of inner nodes               */
+  INT nSubDomains;                   /* nb. of subdomains                       */
+  INT *nSides;                       /* nb. of boundary sides per subdomain     */
+  INT ***Side_corner_ids;            /* corner ids                              */
+  INT *nElements;                    /* nb. of element corners                  */
+  INT **Element_corners;             /* nb. of element corners                  */
+  INT **Element_SideOnBnd;           /* used bitwise: sides on bnd for elem     */
+  INT ***Element_corner_ids;         /* nb. of side corners                     */
+  INT ***nbElements;                 /* nb. of side corners                     */
 
 };
 
@@ -164,83 +164,83 @@ struct lgm_domain_info {
 
   char Name[128];                                               /* name of domain								*/
   char ProblemName[128];                                /* problems name of domain						*/
-  int Dimension;                                                /* dimension of domain							*/
-  int Convex;                                                           /* 0 (no) or 1 (yes)							*/
-  float Radius, MidPoint[3];                            /* sphere of which domain is a subset			*/
-  int nSubDomain;                                               /* nb. of subdomains							*/
-  int nSurface;                                                 /* nb. of surfaces								*/
-  int nPolyline;                                                        /* nb. of lines								*/
-  int nPoint;                                                           /* nb. of points								*/
+  INT Dimension;                                                /* dimension of domain							*/
+  INT Convex;                                                           /* 0 (no) or 1 (yes)							*/
+  FLOAT Radius, MidPoint[3];                            /* sphere of which domain is a subset			*/
+  INT nSubDomain;                                               /* nb. of subdomains							*/
+  INT nSurface;                                                 /* nb. of surfaces								*/
+  INT nPolyline;                                                        /* nb. of lines								*/
+  INT nPoint;                                                           /* nb. of points								*/
 };
 
 struct lgm_sizes {
 
-  int *Subdom_nSurf;                                            /* nb. of surfaces of each subdomain			*/
-  int *Surf_nPolyline;                                  /* nb. of polylines of each surface				*/
-  int *Surf_nTriangle;                                  /* nb. of triangles of each surface				*/
-  int *Surf_nPoint;                                             /* nb. of points of each surface				*/
-  int *Polyline_nPoint;                                 /* nb. of points of each line					*/
+  INT *Subdom_nSurf;                                            /* nb. of surfaces of each subdomain			*/
+  INT *Surf_nPolyline;                                  /* nb. of polylines of each surface				*/
+  INT *Surf_nTriangle;                                  /* nb. of triangles of each surface				*/
+  INT *Surf_nPoint;                                             /* nb. of points of each surface				*/
+  INT *Polyline_nPoint;                                 /* nb. of points of each line					*/
 };
 
 struct lgm_subdomain_info {
 
   char Unit[128];                                               /* Unit-identification							*/
-  int *SurfaceNumber;                                           /* ids of the surfaces                                                  */
+  INT *SurfaceNumber;                                           /* ids of the surfaces                                                  */
 };
 
 struct lgm_triangle_info {
 
-  int corner[3];                                                /* local (w.r.t. the surface) ids of the corners*/
-  int neighbor[3];                                              /* local ids of the neighborsfor that surface	*/
+  INT corner[3];                                                /* local (w.r.t. the surface) ids of the corners*/
+  INT neighbor[3];                                              /* local ids of the neighborsfor that surface	*/
 };
 
 struct lgm_surface_info {
 
-  int left, right;                                              /* subdomain on left and right side				*/
-  int nTriangles;                                               /* nb. of triangles representing the surface    */
-  int nPoint;                                                           /* nb. of points used for this surface			*/
-  int nLine;                                                            /* nb. of lines used for this surface			*/
+  INT left, right;                                              /* subdomain on left and right side				*/
+  INT nTriangles;                                               /* nb. of triangles representing the surface    */
+  INT nPoint;                                                           /* nb. of points used for this surface			*/
+  INT nLine;                                                            /* nb. of lines used for this surface			*/
   /*	LGM_SURFACE_DATA *SurfaceData;*/		/* data for surface								*/
   struct lgm_triangle_info *Triangle;           /* ptr to list of triangle_info					*/
-  int *point;                                                           /* ptr to array of corner (global) id's			*/
-  int *line;                                                            /* ptr to array of (global) line id's			*/
-  int **point_list;                                             /* ptr to array for finding neighbour triangles */
-  int length;                                                           /* length of point_list array					*/
+  INT *point;                                                           /* ptr to array of corner (global) id's			*/
+  INT *line;                                                            /* ptr to array of (global) line id's			*/
+  INT **point_list;                                             /* ptr to array for finding neighbour triangles */
+  INT length;                                                           /* length of point_list array					*/
 };
 
 struct lgm_line_info {
 
-  int *point;                                                           /* global ids of the points                                     */
+  INT *point;                                                           /* global ids of the points                                     */
 };
 
 struct lgm_point_info {
 
-  double position[LGM_TRDIM];                           /* position of corner							*/
+  DOUBLE position[LGM_TRDIM];                           /* position of corner							*/
 };
 
 struct lgm_mesh_info {
 
-  int nBndP;                         /* nb. of boundary points              */
-  int *BndP_nSurf;                   /* nb. of surfaces per bound. point    */
-  int *BndP_nLine;                       /* nb. of lines per bound. point    */
-  int **BndP_SurfID;                 /* id of each surface                  */
-  int **BndP_LineID;                     /* id of each line                  */
-  int **BndP_Cor_TriaID;                 /* id of corr. triangle of each surface*/
-  float ***BndP_lcoord;              /* local coord of BndP on each surface */
-  float **BndP_lcoord_left;              /* left local coord of BndP on each line */
-  float **BndP_lcoord_right;             /* right local coord of BndP on each line */
-  double **BndPosition;                          /* list of boundary points	            */
-  int nInnP;                         /* nb. of inner nodes                  */
-  double **InnPosition;               /* positions of inner nodes            */
-  int nSubDomains;                   /* nb. of subdomains                   */
-  int *nSides;                       /* nb. of boundary sides per subdomain */
-  int **Side_corners;                /* nb. of side corners                 */
-  int ***Side_corner_ids;                /* corner ids                          */
-  int *nElements;                    /* nb. of element corners              */
-  int **Element_corners;             /* nb. of element corners              */
-  int **Element_SideOnBnd;               /* used bitwise: sides on bnd for elem */
-  int ***Element_corner_ids;         /* nb. of side corners                 */
-  int ***nbElements;                 /* nb. of side corners                 */
+  INT nBndP;                         /* nb. of boundary points              */
+  INT *BndP_nSurf;                   /* nb. of surfaces per bound. point    */
+  INT *BndP_nLine;                       /* nb. of lines per bound. point    */
+  INT **BndP_SurfID;                 /* id of each surface                  */
+  INT **BndP_LineID;                     /* id of each line                  */
+  INT **BndP_Cor_TriaID;                 /* id of corr. triangle of each surface*/
+  FLOAT ***BndP_lcoord;              /* local coord of BndP on each surface */
+  FLOAT **BndP_lcoord_left;              /* left local coord of BndP on each line */
+  FLOAT **BndP_lcoord_right;             /* right local coord of BndP on each line */
+  DOUBLE **BndPosition;                          /* list of boundary points	            */
+  INT nInnP;                         /* nb. of inner nodes                  */
+  DOUBLE **InnPosition;               /* positions of inner nodes            */
+  INT nSubDomains;                   /* nb. of subdomains                   */
+  INT *nSides;                       /* nb. of boundary sides per subdomain */
+  INT **Side_corners;                /* nb. of side corners                 */
+  INT ***Side_corner_ids;                /* corner ids                          */
+  INT *nElements;                    /* nb. of element corners              */
+  INT **Element_corners;             /* nb. of element corners              */
+  INT **Element_SideOnBnd;               /* used bitwise: sides on bnd for elem */
+  INT ***Element_corner_ids;         /* nb. of side corners                 */
+  INT ***nbElements;                 /* nb. of side corners                 */
 };
 
 typedef struct lgm_domain_info LGM_DOMAIN_INFO;

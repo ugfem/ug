@@ -1218,7 +1218,7 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
   if (fprintf(stream,"# Domain-Info\n")<0) return (1);
   if (fprintf(stream,"name = %s\n",mgname)<0) return (1);
   if (fprintf(stream,"problemname = %s\n",ENVITEM_NAME(lgm_domain->theProblem))<0) return (1);
-  if (fprintf(stream,"convex = %d\n\n",lgm_domain->convex)<0) return (1);
+  if (fprintf(stream,"convex = %d\n\n",(int)lgm_domain->convex)<0) return (1);
 
   /* create point lists */
   MarkTmpMem(theHeap,&MarkKey);

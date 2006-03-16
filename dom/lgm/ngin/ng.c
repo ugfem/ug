@@ -86,11 +86,11 @@ extern FILE *ngin;
 static int mode;
 static int n_bn,n_in,n_el,lineid_max,subdom_max;
 static int ng_abort;
-static int *Line_npoints;
+static INT *Line_npoints;
 static float **Line_coords;
 static LGM_MESH_INFO *Global_Mesh;
 static HEAP *Global_Heap;
-static int Global_MarkKey;
+static INT Global_MarkKey;
 
 #ifdef __USE_IN_UG__
 static int lgmdomainpathes_set;
@@ -337,7 +337,7 @@ int PutBndNode (BND_NODE *BndNode)
     Global_Mesh->BndP_nSurf[n_bn]=BndNode->n_sp;
     if (Global_Mesh->BndP_nLine[n_bn])
     {
-      Global_Mesh->BndP_LineID[n_bn]=(int*)NG_MALLOC(Global_Heap,BndNode->n_lp*sizeof(int),Global_MarkKey);
+      Global_Mesh->BndP_LineID[n_bn]=(INT*)NG_MALLOC(Global_Heap,BndNode->n_lp*sizeof(INT),Global_MarkKey);
       if (Global_Mesh->BndP_LineID[n_bn]==NULL) return (1);
       Global_Mesh->BndP_lcoord_left[n_bn]=(float*)NG_MALLOC(Global_Heap,BndNode->n_lp*sizeof(float),Global_MarkKey);
       if (Global_Mesh->BndP_lcoord_left[n_bn]==NULL) return (1);
@@ -357,9 +357,9 @@ int PutBndNode (BND_NODE *BndNode)
       Global_Mesh->BndP_lcoord_right[n_bn][i]=NG_NORIGHT_COORD;
       Line_npoints[BndNode->lp[i].line_id]++;
     }
-    Global_Mesh->BndP_SurfID[n_bn]=(int*)NG_MALLOC(Global_Heap,BndNode->n_sp*sizeof(int),Global_MarkKey);
+    Global_Mesh->BndP_SurfID[n_bn]=(INT*)NG_MALLOC(Global_Heap,BndNode->n_sp*sizeof(INT),Global_MarkKey);
     if (Global_Mesh->BndP_SurfID[n_bn]==NULL) return (1);
-    Global_Mesh->BndP_Cor_TriaID[n_bn]=(int*)NG_MALLOC(Global_Heap,BndNode->n_sp*sizeof(int),Global_MarkKey);
+    Global_Mesh->BndP_Cor_TriaID[n_bn]=(INT*)NG_MALLOC(Global_Heap,BndNode->n_sp*sizeof(INT),Global_MarkKey);
     if (Global_Mesh->BndP_Cor_TriaID[n_bn]==NULL) return (1);
     Global_Mesh->BndP_lcoord[n_bn]=(float**)NG_MALLOC(Global_Heap,BndNode->n_sp*sizeof(float*),Global_MarkKey);
     if (Global_Mesh->BndP_lcoord[n_bn]==NULL) return (1);
@@ -480,7 +480,7 @@ void ngbreak (void)
   ng_abort=1;
 }
 
-int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
+int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey)
 {
   int i,j,error;
   char ngname[128];
@@ -519,17 +519,17 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   /* bnd points */
   if (n_bn<=0) {NG_Print(ERROR_PREFIX "nb of bnd points is 0\n"); return (1);}
   theMesh->nBndP=n_bn;
-  theMesh->BndP_nSurf=(int*)NG_MALLOC(Heap,n_bn*sizeof(int),MarkKey);
+  theMesh->BndP_nSurf=(INT*)NG_MALLOC(Heap,n_bn*sizeof(INT),MarkKey);
   if (theMesh->BndP_nSurf==NULL) NG_HEAPFAULT;
-  theMesh->BndP_nLine=(int*)NG_MALLOC(Heap,n_bn*sizeof(int),MarkKey);
+  theMesh->BndP_nLine=(INT*)NG_MALLOC(Heap,n_bn*sizeof(INT),MarkKey);
   if (theMesh->BndP_nLine==NULL) NG_HEAPFAULT;
-  theMesh->BndP_LineID=(int**)NG_MALLOC(Heap,n_bn*sizeof(int*),MarkKey);
+  theMesh->BndP_LineID=(INT**)NG_MALLOC(Heap,n_bn*sizeof(INT*),MarkKey);
   if (theMesh->BndP_LineID==NULL) NG_HEAPFAULT;
   theMesh->BndP_lcoord=(float***)NG_MALLOC(Heap,n_bn*sizeof(float**),MarkKey);
   if (theMesh->BndP_lcoord==NULL) NG_HEAPFAULT;
-  theMesh->BndP_SurfID=(int**)NG_MALLOC(Heap,n_bn*sizeof(int*),MarkKey);
+  theMesh->BndP_SurfID=(INT**)NG_MALLOC(Heap,n_bn*sizeof(INT*),MarkKey);
   if (theMesh->BndP_SurfID==NULL) NG_HEAPFAULT;
-  theMesh->BndP_Cor_TriaID=(int**)NG_MALLOC(Heap,n_bn*sizeof(int*),MarkKey);
+  theMesh->BndP_Cor_TriaID=(INT**)NG_MALLOC(Heap,n_bn*sizeof(INT*),MarkKey);
   if (theMesh->BndP_Cor_TriaID==NULL) NG_HEAPFAULT;
   theMesh->BndP_lcoord_left=(float**)NG_MALLOC(Heap,n_bn*sizeof(float*),MarkKey);
   if (theMesh->BndP_lcoord_left==NULL) NG_HEAPFAULT;
@@ -539,7 +539,7 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   if (theMesh->BndPosition==NULL) NG_HEAPFAULT;
   theMesh->nbElements=NULL;
   theMesh->Element_SideOnBnd=NULL;
-  Line_npoints=(int*)NG_MALLOC(Heap,(lineid_max+1)*sizeof(int),MarkKey);
+  Line_npoints=(INT*)NG_MALLOC(Heap,(lineid_max+1)*sizeof(INT),MarkKey);
   if (Line_npoints==NULL) NG_HEAPFAULT;
   Line_coords=(float**)NG_MALLOC(Heap,(lineid_max+1)*sizeof(float*),MarkKey);
   if (Line_coords==NULL) NG_HEAPFAULT;
@@ -558,21 +558,21 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   /* elements */
   if (subdom_max<=0) {NG_Print(ERROR_PREFIX "nb of subdomains is 0\n"); return (1);}
   theMesh->nSubDomains=subdom_max;
-  theMesh->nSides=(int*)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int),MarkKey);
+  theMesh->nSides=(INT*)NG_MALLOC(Heap,(subdom_max+1)*sizeof(INT),MarkKey);
   if (theMesh->nSides==NULL) NG_HEAPFAULT;
   for (i=0; i<=subdom_max; i++) theMesh->nSides[i]=0;
-  theMesh->Side_corners=(int**)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int*),MarkKey);
+  theMesh->Side_corners=(INT**)NG_MALLOC(Heap,(subdom_max+1)*sizeof(INT*),MarkKey);
   if (theMesh->Side_corners==NULL) NG_HEAPFAULT;
-  theMesh->Side_corner_ids=(int***)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int**),MarkKey);
+  theMesh->Side_corner_ids=(INT***)NG_MALLOC(Heap,(subdom_max+1)*sizeof(INT**),MarkKey);
   if (theMesh->Side_corner_ids==NULL) NG_HEAPFAULT;
-  theMesh->nElements=(int*)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int),MarkKey);
+  theMesh->nElements=(INT*)NG_MALLOC(Heap,(subdom_max+1)*sizeof(INT),MarkKey);
   if (theMesh->nElements==NULL) NG_HEAPFAULT;
   for (i=0; i<=subdom_max; i++) theMesh->nElements[i]=0;
-  theMesh->Element_corners=(int**)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int*),MarkKey);
+  theMesh->Element_corners=(INT**)NG_MALLOC(Heap,(subdom_max+1)*sizeof(INT*),MarkKey);
   if (theMesh->Element_corners==NULL) NG_HEAPFAULT;
-  theMesh->Element_SideOnBnd=(int**)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int*),MarkKey);
+  theMesh->Element_SideOnBnd=(INT**)NG_MALLOC(Heap,(subdom_max+1)*sizeof(INT*),MarkKey);
   if (theMesh->Element_SideOnBnd==NULL) NG_HEAPFAULT;
-  theMesh->Element_corner_ids=(int***)NG_MALLOC(Heap,(subdom_max+1)*sizeof(int**),MarkKey);
+  theMesh->Element_corner_ids=(INT***)NG_MALLOC(Heap,(subdom_max+1)*sizeof(INT**),MarkKey);
   if (theMesh->Element_corner_ids==NULL) NG_HEAPFAULT;
 
   /* output */
@@ -605,16 +605,16 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   {
     if (theMesh->nElements[i]<=0) {error=1; NG_Print(ERROR_PREFIX "no element in subdomain %d\n",i); continue;}
     if (theMesh->nSides[i]<=0) {error=1; NG_Print(ERROR_PREFIX "no side in subdomain %d\n",i); continue;}
-    theMesh->Side_corners[i]=(int*)NG_MALLOC(Heap,theMesh->nSides[i]*sizeof(int),MarkKey);
+    theMesh->Side_corners[i]=(INT*)NG_MALLOC(Heap,theMesh->nSides[i]*sizeof(INT),MarkKey);
     if (theMesh->Side_corners[i]==NULL) NG_HEAPFAULT;
-    theMesh->Side_corner_ids[i]=(int**)NG_MALLOC(Heap,theMesh->nSides[i]*sizeof(int*),MarkKey);
+    theMesh->Side_corner_ids[i]=(INT**)NG_MALLOC(Heap,theMesh->nSides[i]*sizeof(INT*),MarkKey);
     if (theMesh->Side_corner_ids[i]==NULL) NG_HEAPFAULT;
     theMesh->nSides[i]=0;
-    theMesh->Element_corners[i]=(int*)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(int),MarkKey);
+    theMesh->Element_corners[i]=(INT*)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(INT),MarkKey);
     if (theMesh->Element_corners[i]==NULL) NG_HEAPFAULT;
-    theMesh->Element_SideOnBnd[i]=(int*)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(int),MarkKey);
+    theMesh->Element_SideOnBnd[i]=(INT*)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(INT),MarkKey);
     if (theMesh->Element_SideOnBnd[i]==NULL) NG_HEAPFAULT;
-    theMesh->Element_corner_ids[i]=(int**)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(int*),MarkKey);
+    theMesh->Element_corner_ids[i]=(INT**)NG_MALLOC(Heap,theMesh->nElements[i]*sizeof(INT*),MarkKey);
     if (theMesh->Element_corner_ids[i]==NULL) NG_HEAPFAULT;
     theMesh->nElements[i]=0;
   }
@@ -637,13 +637,13 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   {
     for (j=0; j<theMesh->nSides[i]; j++)
     {
-      theMesh->Side_corner_ids[i][j]=(int*)NG_MALLOC(Heap,theMesh->Side_corners[i][j]*sizeof(int),MarkKey);
+      theMesh->Side_corner_ids[i][j]=(INT*)NG_MALLOC(Heap,theMesh->Side_corners[i][j]*sizeof(INT),MarkKey);
       if (theMesh->Side_corner_ids[i][j]==NULL) NG_HEAPFAULT;
     }
     theMesh->nSides[i]=0;
     for (j=0; j<theMesh->nElements[i]; j++)
     {
-      theMesh->Element_corner_ids[i][j]=(int*)NG_MALLOC(Heap,theMesh->Element_corners[i][j]*sizeof(int),MarkKey);
+      theMesh->Element_corner_ids[i][j]=(INT*)NG_MALLOC(Heap,theMesh->Element_corners[i][j]*sizeof(INT),MarkKey);
       if (theMesh->Element_corner_ids[i][j]==NULL) NG_HEAPFAULT;
     }
     theMesh->nElements[i]=0;

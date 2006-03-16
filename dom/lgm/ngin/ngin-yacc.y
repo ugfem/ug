@@ -23,8 +23,11 @@
 
 #include "ng.h"
 #include "ngin-lex.h"
-  
+
+#ifndef alloca
 #define alloca(p)		malloc(p)
+#endif
+
 #define SP_COPY(d,s)    {(d)->surf_id=(s)->surf_id; \
 						 (d)->tri_id=(s)->tri_id; \
 						 (d)->local[0]=(s)->local[0]; \
@@ -60,7 +63,7 @@ static NG_ELEMENT Elem;
 
   /* unfortunately we can't put namespace.h into the generated header as well */
 	NS_DIM_PREFIX LINE_POSITION *lp;
-	NS_DIM_PREFIX SURFACE_POSITION *sp;
+ 	NS_DIM_PREFIX SURFACE_POSITION *sp;
 	NS_DIM_PREFIX BND_NODE *bs;
 	NS_DIM_PREFIX INNER_NODE *in;
 	NS_DIM_PREFIX ELEM_FACE *ef;

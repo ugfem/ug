@@ -187,8 +187,8 @@ static INT *point_array;
 static INT *point_array_UG_CAD;
 static int nmbOfTetrhdrOfThisSbd;
 static int nmbOfSidesOfThisSbd;
-static int *el_besucht_array;
-static int *elemflag_array;
+static INT *el_besucht_array;
+static INT *elemflag_array;
 /*Bei der Bestimmung der Tetraeder-Subdomain-Zugehoerigkeit
    wird el_besucht_array als Kennzeichnungsfeld verwendet
    Jedes Tetraederelement erhaelt dort seine zugehoerige SubdomainID.
@@ -8568,7 +8568,7 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
   /* TO ASK KLAUS : eine Spalte freilassen, da keine SbdID 0 ? vermutlich nein ===> DOCH*/
   (theMesh->nSides)[ug_lgm_id] = nmbofsides;
 
-  if(((theMesh->Side_corners)[ug_lgm_id] = (int *)GetTmpMem(theHeap,(nmbofsides)*sizeof(INT), ANS_MarkKey)) == NULL)
+  if(((theMesh->Side_corners)[ug_lgm_id] = (INT *)GetTmpMem(theHeap,(nmbofsides)*sizeof(INT), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Side_corners)[ug_lgm_id]");
     return(1);
@@ -8579,14 +8579,14 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
     ((theMesh->Side_corners)[ug_lgm_id])[lfv] =  CORNERS_OF_BND_SIDE;
   }
 
-  if(((theMesh->Side_corner_ids)[ug_lgm_id] = (int **)GetTmpMem(theHeap,(nmbofsides)*sizeof(INT*), ANS_MarkKey)) == NULL)
+  if(((theMesh->Side_corner_ids)[ug_lgm_id] = (INT **)GetTmpMem(theHeap,(nmbofsides)*sizeof(INT*), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Side_corner_ids)[ug_lgm_id]");
     return(1);
   }
   for(lf = 0; lf <nmbofsides; lf++)
   {
-    if((((theMesh->Side_corner_ids)[ug_lgm_id])[lf] = (int *)GetTmpMem(theHeap,(CORNERS_OF_BND_SIDE)*sizeof(INT), ANS_MarkKey)) == NULL)
+    if((((theMesh->Side_corner_ids)[ug_lgm_id])[lf] = (INT *)GetTmpMem(theHeap,(CORNERS_OF_BND_SIDE)*sizeof(INT), ANS_MarkKey)) == NULL)
     {
       PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for ((theMesh->Side_corner_ids)[ug_lgm_id])[lf]");
       return(1);
@@ -8595,7 +8595,7 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 
 
   /*elements*/
-  if(((theMesh->Element_corners)[ug_lgm_id] = (int *)GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT), ANS_MarkKey)) == NULL)
+  if(((theMesh->Element_corners)[ug_lgm_id] = (INT *)GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_corners)[ug_lgm_id]");
     return(1);
@@ -8605,7 +8605,7 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
   {
     ((theMesh->Element_corners)[ug_lgm_id])[lfv] = CORNERS_OF_ELEMENT;
   }
-  if(((theMesh->Element_SideOnBnd)[ug_lgm_id] = (int *)GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT), ANS_MarkKey)) == NULL)
+  if(((theMesh->Element_SideOnBnd)[ug_lgm_id] = (INT *)GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_SideOnBnd)[ug_lgm_id]");
     return(1);
@@ -8613,14 +8613,14 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
   memset(((theMesh->Element_SideOnBnd)[ug_lgm_id]),0,(nmbOfTetrhdrOfThisSbd)*sizeof(INT));      /*hier zunaechst 0; d.h. keine BndSide*/
   /*die Boundarysides muessen noch bitweise gesetzt werden; aber wo  ... TODO  GOON HERE ...*/
 
-  if(((theMesh->Element_corner_ids)[ug_lgm_id] = (int **)GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT*), ANS_MarkKey)) == NULL)
+  if(((theMesh->Element_corner_ids)[ug_lgm_id] = (INT **)GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT*), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_corner_ids)[ug_lgm_id]");
     return(1);
   }
   for(lf = 0; lf <nmbOfTetrhdrOfThisSbd; lf++)
   {
-    if((((theMesh->Element_corner_ids)[ug_lgm_id])[lf] = (int *)GetTmpMem(theHeap,(CORNERS_OF_ELEMENT)*sizeof(INT), ANS_MarkKey)) == NULL)
+    if((((theMesh->Element_corner_ids)[ug_lgm_id])[lf] = (INT *)GetTmpMem(theHeap,(CORNERS_OF_ELEMENT)*sizeof(INT), ANS_MarkKey)) == NULL)
     {
       PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for ((theMesh->Element_corner_ids)[ug_lgm_id])[lf]");
       return(1);
@@ -8756,21 +8756,21 @@ int FillBndPointInformations(LGM_MESH_INFO *theMesh, int *bnd_pnt_srfc, int *bnd
 
   int b,s,stelle;
   /* Speicher holen für int *BndP_nSurf*/
-  if((theMesh->BndP_nSurf = (int *)GetTmpMem(theHeap,statistik[1]*sizeof(INT), ANS_MarkKey)) == NULL)
+  if((theMesh->BndP_nSurf = (INT *)GetTmpMem(theHeap,statistik[1]*sizeof(INT), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for theMesh->BndP_nSurf !!!");
     return(1);
   }
 
   /* Speicher holen für int **BndP_SurfID*/
-  if((theMesh->BndP_SurfID = (int **)GetTmpMem(theHeap,statistik[1]*sizeof(INT*), ANS_MarkKey)) == NULL)
+  if((theMesh->BndP_SurfID = (INT **)GetTmpMem(theHeap,statistik[1]*sizeof(INT*), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for theMesh->BndP_SurfID !!!");
     return(1);
   }
 
   /* Speicher holen für int **BndP_Cor_TriaID*/
-  if((theMesh->BndP_Cor_TriaID = (int **)GetTmpMem(theHeap,statistik[1]*sizeof(INT*), ANS_MarkKey)) == NULL)
+  if((theMesh->BndP_Cor_TriaID = (INT **)GetTmpMem(theHeap,statistik[1]*sizeof(INT*), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for theMesh->BndP_Cor_TriaID !!!");
     return(1);
@@ -8790,14 +8790,14 @@ int FillBndPointInformations(LGM_MESH_INFO *theMesh, int *bnd_pnt_srfc, int *bnd
     (theMesh->BndP_nSurf)[b] = bnd_pnt_cntr[b];
 
     /* Speicher holen für int *BndP_SurfID */
-    if(((theMesh->BndP_SurfID)[b] = (int *)GetTmpMem(theHeap,bnd_pnt_cntr[b]*sizeof(INT), ANS_MarkKey)) == NULL)
+    if(((theMesh->BndP_SurfID)[b] = (INT *)GetTmpMem(theHeap,bnd_pnt_cntr[b]*sizeof(INT), ANS_MarkKey)) == NULL)
     {
       PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for (theMesh->BndP_SurfID)[b] !!!");
       return(1);
     }
 
     /* Speicher holen für int *BndP_Cor_TriaID */
-    if(((theMesh->BndP_Cor_TriaID)[b] = (int *)GetTmpMem(theHeap,bnd_pnt_cntr[b]*sizeof(INT), ANS_MarkKey)) == NULL)
+    if(((theMesh->BndP_Cor_TriaID)[b] = (INT *)GetTmpMem(theHeap,bnd_pnt_cntr[b]*sizeof(INT), ANS_MarkKey)) == NULL)
     {
       PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for (theMesh->BndP_Cor_TriaID)[b] !!!");
       return(1);
@@ -9075,13 +9075,13 @@ int BndPoint_Line_Alloc_Mem(LGM_MESH_INFO *theMesh, int *boundary_point_line_cou
   float float_help;
   int hlp;
 
-  if((theMesh->BndP_nLine = (int *)GetTmpMem(theHeap,statistik[1]*sizeof(INT), ANS_MarkKey)) == NULL)
+  if((theMesh->BndP_nLine = (INT *)GetTmpMem(theHeap,statistik[1]*sizeof(INT), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"BndPoint_Line_Alloc_Mem"," ERROR: No memory for theMesh->BndP_nLine !!!");
     return(1);
   }
 
-  if((theMesh->BndP_LineID = (int **)GetTmpMem(theHeap,statistik[1]*sizeof(INT*), ANS_MarkKey)) == NULL)
+  if((theMesh->BndP_LineID = (INT **)GetTmpMem(theHeap,statistik[1]*sizeof(INT*), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"BndPoint_Line_Alloc_Mem"," ERROR: No memory for theMesh->BndP_LineID !!!");
     return(1);
@@ -9111,7 +9111,7 @@ int BndPoint_Line_Alloc_Mem(LGM_MESH_INFO *theMesh, int *boundary_point_line_cou
     /* Speicher holen für int *BndP_LineID */
     if (boundary_point_line_counter[b] != 0)
     {
-      if(((theMesh->BndP_LineID)[b] = (int *)GetTmpMem(theHeap,(boundary_point_line_counter[b])*sizeof(INT), ANS_MarkKey)) == NULL)
+      if(((theMesh->BndP_LineID)[b] = (INT *)GetTmpMem(theHeap,(boundary_point_line_counter[b])*sizeof(INT), ANS_MarkKey)) == NULL)
       {
         PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for <theMesh->BndP_LineID>[b] !!!");
         return(1);
@@ -9759,7 +9759,7 @@ int LGM_ANSYS_ReadMesh (char *name, HEAP *Heappointer, LGM_MESH_INFO *theMesh, i
   }
 
   /*Initialsierung des notwendigen KontrollFlagFeldes zur Steuerung der Elem_Sbd_Zgh. */
-  el_besucht_array = (int *)GetTmpMem(theHeap,(statistik[6]+1)*sizeof(INT), ANS_MarkKey);
+  el_besucht_array = (INT *)GetTmpMem(theHeap,(statistik[6]+1)*sizeof(INT), ANS_MarkKey);
   if ( el_besucht_array == NULL )
   {
     PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for el_besucht_array !!!");
@@ -9771,43 +9771,43 @@ int LGM_ANSYS_ReadMesh (char *name, HEAP *Heappointer, LGM_MESH_INFO *theMesh, i
   /*the number of Subdomains:*/
   theMesh->nSubDomains = NMB_OF_SBDMS(DomainInfo_Pointer);
   /*allocate array for nmbofsides per sbd*/
-  if((theMesh->nSides = (int *)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
+  if((theMesh->nSides = (INT *)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->nSides !!!");
     return(1);
   }
   /*allocate array for nmbofelems per sbd*/
-  if((theMesh->nElements = (int *)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
+  if((theMesh->nElements = (INT *)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->nElements !!!");
     return(1);
   }
   /*allocate array for SideCorners*/
-  if((theMesh->Side_corners = (int **)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
+  if((theMesh->Side_corners = (INT **)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT*), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->nSides !!!");
     return(1);
   }
   /*allocate array for SideCornerIds*/
-  if((theMesh->Side_corner_ids = (int ***)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int**), ANS_MarkKey)) == NULL)
+  if((theMesh->Side_corner_ids = (INT ***)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT**), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Side_corner_ids !!!");
     return(1);
   }
   /*allocate array for Element_corners*/
-  if((theMesh->Element_corners = (int **)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
+  if((theMesh->Element_corners = (INT **)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT*), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Element_corners !!!");
     return(1);
   }
   /*allocate array for Element_SideOnBnd*/
-  if((theMesh->Element_SideOnBnd = (int **)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
+  if((theMesh->Element_SideOnBnd = (INT **)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT*), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Element_SideOnBnd !!!");
     return(1);
   }
   /*allocate array for Element_corner_ids*/
-  if((theMesh->Element_corner_ids = (int ***)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int**), ANS_MarkKey)) == NULL)
+  if((theMesh->Element_corner_ids = (INT ***)GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT**), ANS_MarkKey)) == NULL)
   {
     PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Element_corner_ids !!!");
     return(1);

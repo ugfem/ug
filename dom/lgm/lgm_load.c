@@ -109,8 +109,8 @@ LGM_LINE        **LinePtrArray          = NULL;
 LGM_SURFACE     **SurfacePtrArray       = NULL;
 #endif
 #ifdef OCC_GEOMETRY
-int *LineMap = NULL;
-int *SurfMap = NULL;
+INT *LineMap = NULL;
+INT *SurfMap = NULL;
 OCC_GEOM occ_geom;
 #endif
 
@@ -221,8 +221,8 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   LGM_DOMAIN_S2P_PTR(theDomain)           = NULL;
 
   /* read sizes */
-  if ((lgm_sizes.Subdom_nLine=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nSubDomain+1),MarkKey)) == NULL) return (NULL);
-  if ((lgm_sizes.Polyline_nPoint=(int*)GetTmpMem(theHeap,sizeof(int)*theDomInfo.nPolyline,MarkKey)) == NULL) return (NULL);
+  if ((lgm_sizes.Subdom_nLine=(INT*)GetTmpMem(theHeap,sizeof(INT)*(theDomInfo.nSubDomain+1),MarkKey)) == NULL) return (NULL);
+  if ((lgm_sizes.Polyline_nPoint=(INT*)GetTmpMem(theHeap,sizeof(INT)*theDomInfo.nPolyline,MarkKey)) == NULL) return (NULL);
   if ((*ReadSizes)(&lgm_sizes))
   {
     UserWrite("ERROR in LGM_LoadDomain: ReadSizes failed\n");
@@ -233,10 +233,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   /* prepare for LGM_DOMAIN_SUBDOM and LGM_LINE_INFO */
   MaxLinePerSubdom = 0;
   for (i=1; i<=theDomInfo.nSubDomain; i++) MaxLinePerSubdom = MAX(MaxLinePerSubdom,lgm_sizes.Subdom_nLine[i]);
-  if ((theSubdomInfo.LineNumber=(int*)GetTmpMem(theHeap,sizeof(int)*MaxLinePerSubdom,MarkKey))==NULL) return (NULL);
+  if ((theSubdomInfo.LineNumber=(INT*)GetTmpMem(theHeap,sizeof(INT)*MaxLinePerSubdom,MarkKey))==NULL) return (NULL);
   MaxPointPerLine = 0;
   for (i=0; i<theDomInfo.nPolyline; i++) MaxPointPerLine = MAX(MaxPointPerLine,lgm_sizes.Polyline_nPoint[i]);
-  if ((theLineInfo.point=(int*)GetTmpMem(theHeap,sizeof(int)*MaxPointPerLine,MarkKey))==NULL) return (NULL);
+  if ((theLineInfo.point=(INT*)GetTmpMem(theHeap,sizeof(INT)*MaxPointPerLine,MarkKey))==NULL) return (NULL);
 
   /* allocate lines */
   if ((LinePtrList=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
@@ -319,9 +319,6 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
   LGM_MESH_INFO lgm_mesh_info;
   LGM_LINE *theLine;
   LGM_BNDP *theBndP;
-
-  /* the very basic checks */
-  assert(sizeof(int)==sizeof(INT));
 
   /* if impossible to read mesh, return 1 */
   if (ReadMesh==NULL) return (1);
@@ -723,11 +720,11 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   LGM_DOMAIN_PROBLEM(theDomain)           = NULL;
 
   /* read sizes */
-  if ((lgm_sizes.Subdom_nSurf=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nSubDomain+1),MarkKey)) == NULL) return (NULL);
-  if ((lgm_sizes.Surf_nPolyline=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nSurface+1),MarkKey)) == NULL) return (NULL);
-  if ((lgm_sizes.Surf_nTriangle=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nSurface+1),MarkKey)) == NULL) return (NULL);
-  if ((lgm_sizes.Surf_nPoint=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nSurface+1),MarkKey)) == NULL) return (NULL);
-  if ((lgm_sizes.Polyline_nPoint=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nPolyline+1),MarkKey)) == NULL) return (NULL);
+  if ((lgm_sizes.Subdom_nSurf=(INT*)GetTmpMem(theHeap,sizeof(INT)*(theDomInfo.nSubDomain+1),MarkKey)) == NULL) return (NULL);
+  if ((lgm_sizes.Surf_nPolyline=(INT*)GetTmpMem(theHeap,sizeof(INT)*(theDomInfo.nSurface+1),MarkKey)) == NULL) return (NULL);
+  if ((lgm_sizes.Surf_nTriangle=(INT*)GetTmpMem(theHeap,sizeof(INT)*(theDomInfo.nSurface+1),MarkKey)) == NULL) return (NULL);
+  if ((lgm_sizes.Surf_nPoint=(INT*)GetTmpMem(theHeap,sizeof(INT)*(theDomInfo.nSurface+1),MarkKey)) == NULL) return (NULL);
+  if ((lgm_sizes.Polyline_nPoint=(INT*)GetTmpMem(theHeap,sizeof(INT)*(theDomInfo.nPolyline+1),MarkKey)) == NULL) return (NULL);
 
   if (LGM_VERBOSE) UserWrite("Reading sizes.");
   if ((*ReadSizes)(&lgm_sizes))
@@ -738,19 +735,19 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
 
   MaxSurfacePerSubdom = 0;
   for (i=1; i<=theDomInfo.nSubDomain; i++) MaxSurfacePerSubdom = MAX(MaxSurfacePerSubdom,lgm_sizes.Subdom_nSurf[i]);
-  if ((theSubdomInfo.SurfaceNumber=(int*)GetTmpMem(theHeap,sizeof(int)*MaxSurfacePerSubdom,MarkKey))==NULL)
+  if ((theSubdomInfo.SurfaceNumber=(INT*)GetTmpMem(theHeap,sizeof(INT)*MaxSurfacePerSubdom,MarkKey))==NULL)
     return (NULL);
 
   MaxPointPerLS = 0;
   for (i=0; i<theDomInfo.nPolyline; i++)
     MaxPointPerLS = MAX(MaxPointPerLS,lgm_sizes.Polyline_nPoint[i]);
-  if ((theLineInfo.point=(int*)GetTmpMem(theHeap,sizeof(int)*MaxPointPerLS,MarkKey))==NULL)
+  if ((theLineInfo.point=(INT*)GetTmpMem(theHeap,sizeof(INT)*MaxPointPerLS,MarkKey))==NULL)
     return (NULL);
 
   MaxPointPerSurface = 0;
   for (i=0; i<theDomInfo.nSurface; i++)
     MaxPointPerSurface = MAX(MaxPointPerSurface,lgm_sizes.Surf_nPoint[i]);
-  if ((theSurfaceInfo.point=(int*)GetTmpMem(theHeap,sizeof(int)*MaxPointPerSurface,MarkKey))==NULL)
+  if ((theSurfaceInfo.point=(INT*)GetTmpMem(theHeap,sizeof(INT)*MaxPointPerSurface,MarkKey))==NULL)
     return (NULL);
 
   MaxTrianglePerSurface = 0;
@@ -761,14 +758,14 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   MaxLinePerSurface = 0;
   for (i=0; i<theDomInfo.nSurface; i++)
     MaxLinePerSurface = MAX(MaxLinePerSurface,lgm_sizes.Surf_nPolyline[i]);
-  if ((theSurfaceInfo.line=(int*)GetTmpMem(theHeap,sizeof(int)*MaxLinePerSurface,MarkKey))==NULL)
+  if ((theSurfaceInfo.line=(INT*)GetTmpMem(theHeap,sizeof(INT)*MaxLinePerSurface,MarkKey))==NULL)
     return (NULL);
 
   theSurfaceInfo.length = theDomInfo.nPoint;
-  if ((theSurfaceInfo.point_list=(int**)GetTmpMem(theHeap,sizeof(int*)*theDomInfo.nPoint,MarkKey))==NULL)
+  if ((theSurfaceInfo.point_list=(INT**)GetTmpMem(theHeap,sizeof(INT*)*theDomInfo.nPoint,MarkKey))==NULL)
     return (NULL);
   for(i=0; i<theDomInfo.nPoint; i++)
-    if( (theSurfaceInfo.point_list[i] = (int*)GetTmpMem(theHeap,sizeof(int)*MAXTRIANGLES,MarkKey)) == NULL )
+    if( (theSurfaceInfo.point_list[i] = (INT*)GetTmpMem(theHeap,sizeof(INT)*MAXTRIANGLES,MarkKey)) == NULL )
       return(NULL);
 
   /* allocate lines */
@@ -777,7 +774,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
         #if defined(ModelP) || defined(OCC_GEOMETRY)
   if ((LinePtrArray=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
         #ifdef OCC_GEOMETRY
-  if ((LineMap=(int*)GetFreelistMemory(theHeap,sizeof(int)*theDomInfo.nPolyline)) == NULL)
+  if ((LineMap=(INT*)GetFreelistMemory(theHeap,sizeof(INT)*theDomInfo.nPolyline)) == NULL)
     return (NULL);
         #endif
         #endif

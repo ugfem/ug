@@ -591,7 +591,8 @@ static int OrientateTriangles(LGM_SURFACE_INFO *surface_info, int tri_id, int *t
   HEAP *heap = theHeap;       /* global in this file */
   FIFO shell;
   LGM_TRIANGLE_INFO *triangles, *tri, *nb;
-  int err, n, j, nb_id, flip, changed, MarkKey;
+  int err, n, j, nb_id, flip, changed;
+  INT MarkKey;
   void *buffer;
 
   /* the 1st triangle is assumed to be already orientated */
@@ -646,7 +647,8 @@ static int OrientateTriangles(LGM_SURFACE_INFO *surface_info, int tri_id, int *t
 static int Check_Orientation(LGM_SURFACE_INFO *surface_info, int id)
 {
   HEAP *heap = theHeap;       /* global to this file */
-  int i, nsfparts, n, changed, MarkKey;
+  int i, nsfparts, n, changed;
+  INT MarkKey;
   int *tr_used;
 
   n = surface_info->nTriangles;
@@ -681,7 +683,7 @@ static int Check_Orientation(LGM_SURFACE_INFO *surface_info, int id)
   return changed;
 }
 
-static int Search_Neighbours(LGM_SURFACE_INFO *surface_info, int **point_list, int nPoints)
+static int Search_Neighbours(LGM_SURFACE_INFO *surface_info, INT **point_list, INT nPoints)
 {
   int ni,i,j,k,l,nTriangle,corner_id;
   int a,b,c,d;

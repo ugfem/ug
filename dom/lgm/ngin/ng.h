@@ -62,38 +62,38 @@ START_UGDIM_NAMESPACE
 #define ERROR_PREFIX    "\nngin: parse-error: "
 
 typedef struct {
-  int line_id;
-  float local;
+  INT line_id;
+  FLOAT local;
 } LINE_POSITION;
 
 typedef struct {
-  int surf_id;
-  int tri_id;
-  float local[2];
+  INT surf_id;
+  INT tri_id;
+  FLOAT local[2];
 } SURFACE_POSITION;
 
 typedef struct {
-  int n_lp;
+  INT n_lp;
   LINE_POSITION lp[NG_LPMAX];
-  int n_sp;
+  INT n_sp;
   SURFACE_POSITION sp[NG_LPMAX];
-  double global[3];
+  DOUBLE global[3];
 } BND_NODE;
 
 typedef struct {
-  double global[3];
+  DOUBLE global[3];
 } INNER_NODE;
 
 typedef struct {
-  int n_c;
-  int c_id[4];
+  INT n_c;
+  INT c_id[4];
 } ELEM_FACE;
 
 typedef struct {
-  int subdom;
-  int n_c;
-  int c_id[8];
-  int n_f;
+  INT subdom;
+  INT n_c;
+  INT c_id[8];
+  INT n_f;
   ELEM_FACE face[6];
 } NG_ELEMENT;
 
@@ -110,30 +110,30 @@ typedef struct {
 #define NG_MALLOC(h,s,m)       malloc(s)
 #define NG_Print               printf
 #define NG_FOPEN(d,n)          {(d)=fopen(n,"r");}
-typedef int HEAP;
+typedef INT HEAP;
 typedef struct {
 
-  int nBndP;                         /* nb. of boundary points              */
-  int *BndP_nSurf;                   /* nb. of surfaces per bound. point    */
-  int *BndP_nLine;                   /* nb. of lines per bound. point    */
-  int **BndP_SurfID;                 /* id of each surface                  */
-  int **BndP_LineID;                 /* id of each line                  */
-  int **BndP_Cor_TriaID;             /* id of corr. triangle of each surface*/
-  float ***BndP_lcoord;              /* local coord of BndP on each surface */
-  float **BndP_lcoord_left;          /* left local coord of BndP on each line */
-  float **BndP_lcoord_right;         /* right local coord of BndP on each line */
-  float **BndPosition;               /* list of boundary points             */
-  int nInnP;                         /* nb. of inner nodes                  */
-  double **InnPosition;               /* positions of inner nodes            */
-  int nSubDomains;                   /* nb. of subdomains                   */
-  int *nSides;                       /* nb. of boundary sides per subdomain */
-  int **Side_corners;                /* nb. of side corners                 */
-  int ***Side_corner_ids;            /* corner ids                          */
-  int *nElements;                    /* nb. of element corners              */
-  int **Element_corners;             /* nb. of element corners              */
-  int **Element_SideOnBnd;           /* used bitwise: sides on bnd for elem */
-  int ***Element_corner_ids;         /* nb. of side corners                 */
-  int ***nbElements;                 /* nb. of side corners                 */
+  INT nBndP;                         /* nb. of boundary points              */
+  INT *BndP_nSurf;                   /* nb. of surfaces per bound. point    */
+  INT *BndP_nLine;                   /* nb. of lines per bound. point    */
+  INT **BndP_SurfID;                 /* id of each surface                  */
+  INT **BndP_LineID;                 /* id of each line                  */
+  INT **BndP_Cor_TriaID;             /* id of corr. triangle of each surface*/
+  FLOAT ***BndP_lcoord;              /* local coord of BndP on each surface */
+  FLOAT **BndP_lcoord_left;          /* left local coord of BndP on each line */
+  FLOAT **BndP_lcoord_right;         /* right local coord of BndP on each line */
+  FLOAT **BndPosition;               /* list of boundary points             */
+  INT nInnP;                         /* nb. of inner nodes                  */
+  DOUBLE **InnPosition;               /* positions of inner nodes            */
+  INT nSubDomains;                   /* nb. of subdomains                   */
+  INT *nSides;                       /* nb. of boundary sides per subdomain */
+  INT **Side_corners;                /* nb. of side corners                 */
+  INT ***Side_corner_ids;            /* corner ids                          */
+  INT *nElements;                    /* nb. of element corners              */
+  INT **Element_corners;             /* nb. of element corners              */
+  INT **Element_SideOnBnd;           /* used bitwise: sides on bnd for elem */
+  INT ***Element_corner_ids;         /* nb. of side corners                 */
+  INT ***nbElements;                 /* nb. of side corners                 */
 
 } LGM_MESH_INFO;
 
@@ -162,7 +162,7 @@ typedef struct {
 int PutBndNode (BND_NODE *BndNode);
 int PutInnerNode (INNER_NODE *InnNode);
 int PutElement (NG_ELEMENT *Elem);
-int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey);
+int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey);
 
 #ifdef __USE_IN_UG__
 int NG_Init (int domainpaths_set);

@@ -23,8 +23,11 @@
 
 #include "ng2d.h"
 #include "ngin-lex.h"
-  
+
+#ifndef alloca  
 #define alloca(p)		malloc(p)
+#endif
+
 #define SP_COPY(d,s)    {(d)->surf_id=(s)->surf_id; \
 						 (d)->tri_id=(s)->tri_id; \
 						 (d)->local[0]=(s)->local[0]; \
@@ -200,4 +203,5 @@ int ngerror (char *s)
 	NP_Error(&line,text);
     NG_Print(ERROR_PREFIX "'%s', line %d\n",text,line);
     ngbreak();
+	return 0;
 }
