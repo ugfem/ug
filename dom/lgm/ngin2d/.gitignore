@@ -4,4 +4,7 @@ Makefile.in
 .libs
 *.lo
 *.la
+ngin-lex.c
+ngin-yacc.c
+ngin-yacc.h
 semantic.cache
