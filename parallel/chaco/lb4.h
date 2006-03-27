@@ -72,7 +72,7 @@ typedef struct cluster {
   SHORT destination;                        /* where cluster is mapped to       */
   SHORT minlevel;                           /* where cluster starts             */
   SHORT depth;                              /* maxlevel = minlevel + depth      */
-  unsigned SHORT level_size[MAXDEPTH];      /* weight on each level (from minl.)*/
+  unsigned short level_size[MAXDEPTH];      /* weight on each level (from minl.)*/
   COORD sx,sy;                              /* center of mass                   */
                 #ifdef __THREEDIM__
   COORD sz;                                 /* center of mass                   */
