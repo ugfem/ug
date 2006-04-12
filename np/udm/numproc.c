@@ -87,28 +87,22 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /****************************************************************************/
-/*D
-   CreateClass - create constructor for a new class
+/** \brief Create constructor for a new class
 
-   SYNOPSIS:
-   INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct);
+   \param classname - name for new class. Must conform to class naming rules.
+   \param size - size of objects of this class.
+   \param Construct - pointer to constructor function for objects of this class.
 
-   PARAMETERS:
-   .  classname - name for new class. Must conform to class naming rules.
-   .  size - size of objects of this class.
-   .  Construct - pointer to constructor function for objects of this class.
-
-   DESCRIPTION:
    This function is used by a class to bring itself into existence
    at initialization time.
    It creates a new class of numerical procedure (TOFKANT - The
    objects formerly known as numproc types :-) ).
 
-   RETURN VALUE:
-   INT
-   .n    0 no error.
-   .n     1 error, usually memory overflow in environment.
-   D*/
+   \return <ul>
+   <li>  0 no error. </li>
+   <li>  1 error, usually memory overflow in environment. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX CreateClass (const char *classname, INT size, ConstructorProcPtr Construct)
@@ -133,23 +127,17 @@ INT NS_DIM_PREFIX CreateClass (const char *classname, INT size, ConstructorProcP
   return(0);
 }
 /****************************************************************************/
-/*D
-   GetConstructor - return constructor for given class name
+/** \brief Return constructor for given class name
 
-   SYNOPSIS:
-   NP_CONSTRUCTOR *GetConstructor (const char *classname)
+   \param classname - final class name of an existing class.
 
-   PARAMETERS:
-   .  classname - final class name of an existing class.
-
-   DESCRIPTION:
    The constructor for the given class name is returned.
 
-   RETURN VALUE:
-   NP_CONSTRUCTOR *
-   .n    constructor
-   .n     NULL if not found
-   D*/
+   \return <ul>
+   <li>  constructor </li>
+   <li>  NULL if not found </li>
+   </ul>
+ */
 /****************************************************************************/
 
 NP_CONSTRUCTOR * NS_DIM_PREFIX GetConstructor (const char *classname)
@@ -172,18 +160,12 @@ NP_CONSTRUCTOR * NS_DIM_PREFIX GetConstructor (const char *classname)
 }
 
 /****************************************************************************/
-/*D
-   CreateObject - create a numproc object of a given numproc class
+/** \brief Create a numproc object of a given numproc class
 
-   SYNOPSIS:
-   INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname);
+   \param theMG - numproc objects are now associated with a multigrid
+   \param objectname - name for new object.
+   \param classname - final class name of an existing class.
 
-   PARAMETERS:
-   .  theMG - numproc objects are now associated with a multigrid
-   .  objectname - name for new object.
-   .  classname - final class name of an existing class.
-
-   DESCRIPTION:
    This function is used by the npcreate command to create instances
    of a class at runtime.
    It creates a new numproc object of a given class. Memory is
@@ -192,11 +174,11 @@ NP_CONSTRUCTOR * NS_DIM_PREFIX GetConstructor (const char *classname)
    is called with the new object.
    CAUTION - name is classname.objectname. Consider NAMESIZE in ugenv.h
 
-   RETURN VALUE:
-   INT
-   .n    0 no error.
-   .n     __LINE__ error, usually memory overflow in environment or something not found.
-   D*/
+   \return <ul>
+   <li>  0 no error. </li>
+   <li>  __LINE__ error, usually memory overflow in environment or something not found. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX CreateObject (MULTIGRID *theMG, const char *objectname, const char *classname)
@@ -240,30 +222,23 @@ INT NS_DIM_PREFIX CreateObject (MULTIGRID *theMG, const char *objectname, const 
 
 
 /****************************************************************************/
-/*D
-   GetNumProcByName - find a numproc object
+/** \brief Find a numproc object
 
-   SYNOPSIS:
-   NP_BASE *GetNumProcByName (const MULTIGRID *theMG, char *object_name,
-   char *abstract_class_name);
+   \param theMG - numproc objects are now associated with a multigrid
+   \param object_name - name of object.
+   \param abstract_class_name - leading part of an existing class name.
 
-   PARAMETERS:
-   .  theMG - numproc objects are now associated with a multigrid
-   .  object_name - name of object.
-   .  abstract_class_name - leading part of an existing class name.
-
-   DESCRIPTION:
    This function is called by numproc objects to find other numproc objects
    of some abstract base class.
    In order to be found the leading characters of the object name must
    coincide with abstract_class_name and the trailing part of the objects
    name must coincide with object_name.
 
-   RETURN VALUE:
-   INT
-   .n    NULL pointer    object not found
-   .n     else pointer to object
-   D*/
+   \return <ul>
+   <li>  NULL pointer    object not found </li>
+   <li>  else pointer to object </li>
+   </ul>
+ */
 /****************************************************************************/
 
 NP_BASE * NS_DIM_PREFIX GetNumProcByName (const MULTIGRID *theMG, const char *object_name, const char *abstract_class_name)
@@ -271,7 +246,7 @@ NP_BASE * NS_DIM_PREFIX GetNumProcByName (const MULTIGRID *theMG, const char *ob
   ENVITEM *item;
   INT n,m,i;
 
-  /* OK, it is not nice here to access internas of the ENVITEM
+  /** \todo OK, it is not nice here to access internas of the ENVITEM
      data structure. It would have been better to extent the
      functionality of ugenv instead. But it has been done
      at other places, so why bother her... See
@@ -304,24 +279,18 @@ NP_BASE * NS_DIM_PREFIX GetNumProcByName (const MULTIGRID *theMG, const char *ob
 }
 
 /****************************************************************************/
-/*D
-   MGListNPClasses - display classes using general print format function
+/** \brief Display classes using general print format function
 
-   SYNOPSIS:
-   INT MGListNPClasses (const MULTIGRID *theMG)
+   \param theMG - numproc objects are now associated with a multigrid
 
-   PARAMETERS:
-   .  theMG - numproc objects are now associated with a multigrid
-
-   DESCRIPTION:
    This function lists all abstract classes of numerical procedures enroled for
    a certain multigrid.
 
-   RETURN VALUE:
-   INT
-   .n    0 no error.
-   .n     __LINE__ error, usually memory overflow in environment or something not found.
-   D*/
+   \return <ul>
+   <li>  0 no error. </li>
+   <li>  __LINE__ error, usually memory overflow in environment or something not found. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX MGListNPClasses (const MULTIGRID *theMG)
@@ -365,24 +334,18 @@ INT NS_DIM_PREFIX MGListNPClasses (const MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
-   MGListNPsOfClass - display num proc contents of all num procs of given class
+/** \brief Display num proc contents of all num procs of given class
 
-   SYNOPSIS:
-   INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName)
+   \param theMG - numproc objects are now associated with a multigrid
+   \param ClassName - list num procs of this class
 
-   PARAMETERS:
-   .  theMG - numproc objects are now associated with a multigrid
-   .  ClassName - list num procs of this class
-
-   DESCRIPTION:
    This function displays the num proc contents of all num procs of a given class.
 
-   RETURN VALUE:
-   INT
-   .n    0 no error.
-   .n     __LINE__ error, usually memory overflow in environment or something not found.
-   D*/
+   \return <ul>
+   <li>  0 no error. </li>
+   <li>  __LINE__ error, usually memory overflow in environment or something not found. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName)
@@ -411,23 +374,17 @@ INT NS_DIM_PREFIX MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassNam
 }
 
 /****************************************************************************/
-/*D
-   MGListAllNPs - display num proc contents of all num procs
+/** \brief Display num proc contents of all num procs
 
-   SYNOPSIS:
-   INT MGListAllNPs (const MULTIGRID *theMG)
+   \param theMG - numproc objects are now associated with a multigrid
 
-   PARAMETERS:
-   .  theMG - numproc objects are now associated with a multigrid
-
-   DESCRIPTION:
    This function displays the num proc contents of all num procs.
 
-   RETURN VALUE:
-   INT
-   .n    0 no error.
-   .n     __LINE__ error, usually memory overflow in environment or something not found.
-   D*/
+   \return <ul>
+   <li> 0 no error </li>
+   <li>__LINE__ error, usually memory overflow in environment or something not found </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX MGListAllNPs (const MULTIGRID *theMG)
@@ -450,26 +407,6 @@ INT NS_DIM_PREFIX MGListAllNPs (const MULTIGRID *theMG)
     }
   return(0);
 }
-
-/****************************************************************************/
-/*D
-   MGListAllNPs - display num proc contents of all num procs
-
-   SYNOPSIS:
-   INT MGListAllNPs (const MULTIGRID *theMG)
-
-   PARAMETERS:
-   .  theMG - numproc objects are now associated with a multigrid
-
-   DESCRIPTION:
-   This function displays the num proc contents of all num procs.
-
-   RETURN VALUE:
-   INT
-   .n    0 no error.
-   .n     __LINE__ error, usually memory overflow in environment or something not found.
-   D*/
-/****************************************************************************/
 
 INT NS_DIM_PREFIX ListNumProc (NP_BASE *np)
 {
@@ -499,22 +436,12 @@ INT NS_DIM_PREFIX ListNumProc (NP_BASE *np)
 }
 
 /****************************************************************************/
-/*
-   InitNumProcManager - Init this file
+/** \brief Init this file
 
-   SYNOPSIS:
-   INT InitNumProcManager (void);
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
    This function inits this file.
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    __LINE__ if error occured.
+   \return
+   0
  */
 /****************************************************************************/
 
