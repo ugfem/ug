@@ -85,6 +85,10 @@ INT NS_PREFIX InitUgEnv (INT heapSize)
   void *buffer;
   ENVDIR *root;
 
+  /* Environment heap already initialized? */
+  if (envHeap)
+    return 0;
+
   /* allocate memory from system */
   if ((buffer=malloc(heapSize))==NULL) return(__LINE__);
 
@@ -108,6 +112,7 @@ INT NS_PREFIX InitUgEnv (INT heapSize)
 INT NS_PREFIX ExitUgEnv()
 {
   free(envHeap);
+  envHeap = NULL;
   return 0;
 }
 
