@@ -3170,7 +3170,7 @@ QUADRATURE *NS_DIM_PREFIX GetQuadrature(INT dim, INT n, INT order)
    D*/
 /****************************************************************************/
 
-QUADRATURE *GetQuadratureRule(INT dim, INT n, INT order)
+QUADRATURE* NS_DIM_PREFIX GetQuadratureRule(INT dim, INT n, INT order)
 {
   switch (dim)
   {
@@ -3327,7 +3327,7 @@ QUADRATURE *GetQuadratureRule(INT dim, INT n, INT order)
    D*/
 /****************************************************************************/
 
-QUADRATURE *GetSymmetricQuadratureRule(INT dim, INT n, INT order)
+QUADRATURE* NS_DIM_PREFIX GetSymmetricQuadratureRule(INT dim, INT n, INT order)
 {
   switch (dim)
   {

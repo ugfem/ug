@@ -34,6 +34,9 @@
 #define __PLOTPROC__
 
 #include "compiler.h"
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -65,6 +68,8 @@
 /*																			*/
 /****************************************************************************/
 
-INT InitPlotProc (void);
+INT InitPlotProc ();
+
+END_NAMESPACE
 
 #endif

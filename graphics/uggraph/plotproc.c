@@ -370,7 +370,7 @@ static DOUBLE SubDomID(const ELEMENT *e, const DOUBLE **cc, DOUBLE *lc)
  */
 /****************************************************************************/
 
-INT InitPlotProc ()
+INT NS_DIM_PREFIX InitPlotProc ()
 {
   /* install general plot procs */
   if (CreateElementValueEvalProc("nvalue",PreProcessNodeValue,NodeValue) == NULL) return(1);
