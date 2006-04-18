@@ -42,7 +42,7 @@ char *strdup(const char *text)
 #endif
 
 
-int mm_is_valid(MM_typecode matcode)
+int NS_DIM_PREFIX mm_is_valid(MM_typecode matcode)
 {
   if (!mm_is_matrix(matcode)) return 0;
   if (mm_is_dense(matcode) && mm_is_pattern(matcode)) return 0;
@@ -52,7 +52,7 @@ int mm_is_valid(MM_typecode matcode)
   return 1;
 }
 
-int mm_read_banner(FILE *f, MM_typecode *matcode)
+int NS_DIM_PREFIX mm_read_banner(FILE *f, MM_typecode *matcode)
 {
   char line[MM_MAX_LINE_LENGTH];
   char banner[MM_MAX_TOKEN_LENGTH];
@@ -136,7 +136,7 @@ int mm_read_banner(FILE *f, MM_typecode *matcode)
   return 0;
 }
 
-int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz)
+int NS_DIM_PREFIX mm_write_mtx_crd_size(FILE *f, int M, int N, int nz)
 {
   if (fprintf(f, "%d %d %d\n", M, N, nz) != 3)
     return MM_COULD_NOT_WRITE_FILE;
@@ -144,7 +144,7 @@ int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz)
     return 0;
 }
 
-int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
+int NS_DIM_PREFIX mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
 {
   char line[MM_MAX_LINE_LENGTH];
   int num_items_read;
@@ -175,7 +175,7 @@ int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
 }
 
 
-int mm_read_mtx_array_size(FILE *f, int *M, int *N)
+int NS_DIM_PREFIX mm_read_mtx_array_size(FILE *f, int *M, int *N)
 {
   char line[MM_MAX_LINE_LENGTH];
   int num_items_read;
@@ -205,7 +205,7 @@ int mm_read_mtx_array_size(FILE *f, int *M, int *N)
   return 0;
 }
 
-int mm_write_mtx_array_size(FILE *f, int M, int N)
+int NS_DIM_PREFIX mm_write_mtx_array_size(FILE *f, int M, int N)
 {
   if (fprintf(f, "%d %d\n", M, N) != 2)
     return MM_COULD_NOT_WRITE_FILE;
@@ -221,8 +221,8 @@ int mm_write_mtx_array_size(FILE *f, int M, int N)
 /* use when I[], J[], and val[]J, and val[] are already allocated */
 /******************************************************************/
 
-int mm_read_mtx_crd_data(FILE *f, int M, int N, int nz, int I[], int J[],
-                         double val[], MM_typecode matcode)
+int NS_DIM_PREFIX mm_read_mtx_crd_data(FILE *f, int M, int N, int nz, int I[], int J[],
+                                       double val[], MM_typecode matcode)
 {
   int i;
   if (mm_is_complex(matcode))
@@ -254,8 +254,8 @@ int mm_read_mtx_crd_data(FILE *f, int M, int N, int nz, int I[], int J[],
 
 }
 
-int mm_read_mtx_crd_entry(FILE *f, int *I, int *J,
-                          double *real, double *imag, MM_typecode matcode)
+int NS_DIM_PREFIX mm_read_mtx_crd_entry(FILE *f, int *I, int *J,
+                                        double *real, double *imag, MM_typecode matcode)
 {
   if (mm_is_complex(matcode))
   {
@@ -289,8 +289,8 @@ int mm_read_mtx_crd_entry(FILE *f, int *I, int *J,
                             (nz pairs of real/imaginary values)
 ************************************************************************/
 
-int mm_read_mtx_crd(char *fname, int *M, int *N, int *nz, int **I, int **J,
-                    double **val, MM_typecode *matcode)
+static int mm_read_mtx_crd(char *fname, int *M, int *N, int *nz, int **I, int **J,
+                           double **val, MM_typecode *matcode)
 {
   int ret_code;
   FILE *f;
@@ -342,7 +342,7 @@ int mm_read_mtx_crd(char *fname, int *M, int *N, int *nz, int **I, int **J,
   return 0;
 }
 
-int mm_write_banner(FILE *f, MM_typecode matcode)
+int NS_DIM_PREFIX mm_write_banner(FILE *f, MM_typecode matcode)
 {
   char *str = mm_typecode_to_str(matcode);
   int ret_code;
@@ -355,8 +355,8 @@ int mm_write_banner(FILE *f, MM_typecode matcode)
     return 0;
 }
 
-int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
-                     double val[], MM_typecode matcode)
+int NS_DIM_PREFIX mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
+                                   double val[], MM_typecode matcode)
 {
   FILE *f;
   int i;
@@ -399,7 +399,7 @@ int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
 }
 
 
-char  *mm_typecode_to_str(MM_typecode matcode)
+char* NS_DIM_PREFIX mm_typecode_to_str(MM_typecode matcode)
 {
   char buffer[MM_MAX_LINE_LENGTH];
   char *types[4];
@@ -649,7 +649,7 @@ error:
 }
 
 
-int InitMMIO (void)
+int NS_DIM_PREFIX InitMMIO ()
 {
   if (CreateCommand("readMM",     ReadMMCommand)==NULL)
     return (__LINE__);

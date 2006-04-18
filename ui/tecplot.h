@@ -34,6 +34,9 @@
 #define __TECPLOT__
 
 #include "compiler.h"
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -42,6 +45,8 @@
 /****************************************************************************/
 
 /* exports only the init function */
-INT InitTecplot (void);
+INT InitTecplot ();
+
+END_NAMESPACE
 
 #endif

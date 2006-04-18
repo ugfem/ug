@@ -559,7 +559,7 @@ static INT TecplotCommand (INT argc, char **argv)
 /*																			*/
 /****************************************************************************/
 
-INT InitTecplot (void)
+INT NS_DIM_PREFIX InitTecplot ()
 {
   if (CreateCommand("tecplot",TecplotCommand)==NULL) return (__LINE__);
 

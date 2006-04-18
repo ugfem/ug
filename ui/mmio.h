@@ -11,6 +11,10 @@
 #ifndef MM_IO_H
 #define MM_IO_H
 
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
+
 #define MM_MAX_LINE_LENGTH 1025
 #define MatrixMarketBanner "%%MatrixMarket"
 #define MM_MAX_TOKEN_LENGTH 64
@@ -127,7 +131,8 @@ int mm_read_mtx_crd_data(FILE *f, int M, int N, int nz, int I[], int J[],
 int mm_read_mtx_crd_entry(FILE *f, int *I, int *J, double *real, double *img,
                           MM_typecode matcode);
 
-int InitMMIO(void);
+int InitMMIO();
 
+END_NAMESPACE
 
 #endif

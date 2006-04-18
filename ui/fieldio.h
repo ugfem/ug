@@ -33,6 +33,9 @@
 #define __FIELDIO__
 
 #include "compiler.h"
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -40,7 +43,9 @@
 /*                                                                          */
 /****************************************************************************/
 
-INT InitFieldIO(void);
+INT InitFieldIO();
 INT LoadFieldCommand(INT argc, char **argv);
+
+END_NAMESPACE
 
 #endif

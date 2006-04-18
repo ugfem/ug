@@ -1978,7 +1978,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
 /*																			*/
 /****************************************************************************/
 
-INT InitDataExplorer (void)
+INT NS_DIM_PREFIX InitDataExplorer ()
 {
   if (CreateCommand("dataexplorer",DataExplorerCommand)==NULL) return (__LINE__);
 

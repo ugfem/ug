@@ -947,7 +947,7 @@ static INT AVSCommand (INT argc, char **argv)
 /*																			*/
 /****************************************************************************/
 
-INT InitAVS (void)
+INT NS_DIM_PREFIX InitAVS ()
 {
   if (CreateCommand("avs",AVSCommand)==NULL) return (__LINE__);
 

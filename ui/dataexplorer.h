@@ -34,6 +34,9 @@
 #define __DATAEXPLORER_H__
 
 #include "compiler.h"
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -42,6 +45,8 @@
 /****************************************************************************/
 
 /* exports only the init function */
-INT InitDataExplorer (void);
+INT InitDataExplorer ();
+
+END_NAMESPACE
 
 #endif

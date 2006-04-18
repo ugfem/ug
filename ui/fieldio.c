@@ -841,7 +841,7 @@ static int IntegrateElementData(STREAM *stream, BOXTREE *tree, int no_elements,
   return 0;
 }
 
-/*static*/ INT LoadFieldCommand(INT argc, char **argv)
+/*static*/ INT NS_DIM_PREFIX LoadFieldCommand(INT argc, char **argv)
 {
   MULTIGRID *mg;
   HEAP *heap;
@@ -934,7 +934,7 @@ failed:
 
 /******************************************************************************/
 
-INT InitFieldIO(void)
+INT NS_DIM_PREFIX InitFieldIO()
 {
   if (CreateCommand("savefield", SaveFieldCommand) == NULL) return __LINE__;
   if (CreateCommand("loadfield", LoadFieldCommand) == NULL) return __LINE__;
