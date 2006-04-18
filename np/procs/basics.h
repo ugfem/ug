@@ -33,7 +33,9 @@
 #ifndef __BASICS__
 #define __BASICS__
 
-#include "np.h"
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -65,6 +67,8 @@
 /*																			*/
 /****************************************************************************/
 
-INT     InitBasics (void);
+INT     InitBasics ();
+
+END_NAMESPACE
 
 #endif

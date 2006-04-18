@@ -903,7 +903,7 @@ static INT FasConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitFasSolver (void)
+INT NS_DIM_PREFIX InitFasSolver()
 {
   if (CreateClass (NL_SOLVER_CLASS_NAME ".fas",
                    sizeof(NP_FAS), FasConstruct))

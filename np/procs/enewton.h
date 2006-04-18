@@ -33,9 +33,9 @@
 #ifndef __ENEWTON__
 #define __ENEWTON__
 
-#include "np.h"
-#include "ls.h"
-#include "nls.h"
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -60,6 +60,8 @@
 /****************************************************************************/
 
 /* create extended newton num proc type */
-INT InitENewtonSolver (void);
+INT InitENewtonSolver();
+
+END_NAMESPACE
 
 #endif

@@ -812,27 +812,19 @@ static INT RV_Construct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
-/*D
-   InitBasics - Enrol basics
+/** \brief Enrol basics
 
-   SYNOPSIS:
-   INT InitBasics (void);
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
    This function creates the numprocs 'cv', 'cm' and 'eu'.
    It is called in InitNumerics.
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> 1 if error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
-INT InitBasics (void)
+INT NS_DIM_PREFIX InitBasics ()
 {
   if (CreateClass(BASE_CLASS_NAME ".cv",sizeof(NP_CLEAR_VEC),CV_Construct))
     return (__LINE__);

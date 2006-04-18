@@ -28,9 +28,9 @@
 #ifndef __NMGSOLVER__
 #define __NMGSOLVER__
 
-#ifndef __NUMERICS__
-#include "num.h"
-#endif
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -68,6 +68,8 @@
 /*																			*/
 /****************************************************************************/
 
-INT             InitFasSolver           (void);
+INT             InitFasSolver           ();
+
+END_NAMESPACE
 
 #endif

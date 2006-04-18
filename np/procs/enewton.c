@@ -745,7 +745,7 @@ static INT ENewtonConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitENewtonSolver (void)
+INT NS_DIM_PREFIX InitENewtonSolver()
 {
   if (CreateClass (ENL_SOLVER_CLASS_NAME ".enewton",sizeof(NP_ENEWTON), ENewtonConstruct))
     REP_ERR_RETURN (__LINE__);
