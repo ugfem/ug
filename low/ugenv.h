@@ -88,22 +88,42 @@ enum {NAMELEN  = 127};                 /* NAMESIZE-1                            
 /*                                                                          */
 /****************************************************************************/
 
-typedef struct {                /* user defined variable                    */
-  INT type;                      /* one of the variable types above            */
-  INT locked;                   /* may not be changed or deleted            */
+/** \brief User-defined variable */
+typedef struct {
+
+  /** \brief One of the variable types above            */
+  INT type;
+
+  /** \brief May not be changed or deleted            */
+  INT locked;
+
+  /** \brief Doubly linked list of environment items    */
   union envitem *next;
-  union envitem *previous;      /* double linked list of environment items    */
-  char name[NAMESIZE];          /* name of that item                        */
-                                /* may be longer, but of no interest for env*/
+  union envitem *previous;
+
+  /** \brief Name of that item. May be longer, but of no interest for env*/
+  char name[NAMESIZE];
+
 } ENVVAR;
 
-typedef struct {                /* directory                                */
-  INT type;                      /* one of the directory types above         */
-  INT locked;                   /* may not be changed or deleted            */
+/** \brief Directory */
+typedef struct {
+
+  /** \brief One of the directory types above         */
+  INT type;
+
+  /** \brief May not be changed or deleted            */
+  INT locked;
+
+  /** \brief Doubly linked list of environment items    */
   union envitem *next;
-  union envitem *previous;      /* double linked list of environment items    */
-  char name[NAMESIZE];          /* name of that item                        */
-  union envitem *down;          /* one level down in the tree                */
+  union envitem *previous;
+
+  /** \brief Name of that item                        */
+  char name[NAMESIZE];
+
+  /** \brief One level down in the tree                */
+  union envitem *down;
 } ENVDIR;
 
 union envitem {
