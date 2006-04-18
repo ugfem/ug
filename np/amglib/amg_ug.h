@@ -35,6 +35,10 @@
 #ifndef __AMGSOLVER__
 #define __AMGSOLVER__
 
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -67,6 +71,8 @@
 /*																			*/
 /****************************************************************************/
 
-INT             InitAMGSolver           (void);
+INT             InitAMGSolver           ();
+
+END_NAMESPACE
 
 #endif

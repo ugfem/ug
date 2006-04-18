@@ -1067,7 +1067,7 @@ static INT AMGConstruct (NP_BASE *theNP)
   return(0);
 }
 
-INT InitAMGSolver (void)
+INT NS_DIM_PREFIX InitAMGSolver ()
 {
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".amg",sizeof(NP_AMG),AMGConstruct))
     return (__LINE__);
