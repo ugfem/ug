@@ -1,6 +1,6 @@
 # $Id$
 
-SOURCES = ugblas.c ugiter.c transgrid.c block.c quadrature.c fvgeom.c fegeom.c ff_gen.c ff.c amgtools.c npcheck.c sm.c blasm.c ugeblas.c amgtools.h blasm.h block.h fegeom.h ff_gen.h ff.h fvgeom.h npcheck.h quadrature.h sm.h transgrid.h ugblas.h ugeblas.h
+SOURCES = ugblas.c ugiter.c transgrid.c block.c quadrature.c fvgeom.c fegeom.c ff_gen.c ff.c amgtools.c npcheck.c sm.c blasm.c ugeblas.c amgtools.h blasm.h block.h fegeom.h ff_gen.h ff.h fvgeom.h npcheck.h quadrature.h sm.h transgrid.h ugblas.h
 
 if BUILD2D
   LIB_2D = libalgebra2.la
