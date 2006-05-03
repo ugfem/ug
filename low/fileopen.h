@@ -34,10 +34,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#ifdef __OPENSTEP__
-#include <sys/types.h>
-#endif
-
 #ifndef __COMPILER__
 #include "compiler.h"
 #endif

@@ -30,7 +30,7 @@ USING_UG_NAMESPACES
 
 
 /* MacOS doesn't support the non-standard (!) strdup function */
-#if ( defined(__MWCW__) || defined(__OPENSTEP__) )
+#if defined(__MWCW__)
 char *strdup(const char *text);  /* forward declaration to make ANSI compilers happy */
 
 char *strdup(const char *text)
