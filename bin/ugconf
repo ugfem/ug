@@ -37,8 +37,6 @@ list_options_arch()
 	echo "             MACOSXSERVER (set ARCH = MACOSXSERVER)";
 	echo "             MKLINUX (set ARCH = MKLINUX)";
 	echo "             NECSX4 (set ARCH = NECSX4)";
-	echo "             NEXTSTEP (set ARCH = NEXTSTEP)";
-	echo "             OPENSTEP (set ARCH = OPENSTEP)";
 	echo "             ORIGIN (set ARCH = ORIGIN)";
 	echo "             PARAGON (set ARCH = PARAGON)";
 	echo "             PC (set ARCH = PC)";
@@ -506,12 +504,6 @@ edit_ugconf()
 		;;
 	MACOSXSERVER)
 		sed 's/^ARCH.*$/ARCH = MACOSXSERVER/' $1 > $1.tmp
-		;;
-	NEXTSTEP)
-		sed 's/^ARCH.*$/ARCH = NEXTSTEP/' $1 > $1.tmp
-		;;
-	OPENSTEP)
-		sed 's/^ARCH.*$/ARCH = OPENSTEP/' $1 > $1.tmp
 		;;
 	ORIGIN)
 		sed 's/^ARCH.*$/ARCH = ORIGIN/' $1 > $1.tmp
