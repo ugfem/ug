@@ -99,8 +99,6 @@ extern "C" {
 /*          __MACOSX__   Mac OS X                                           */
 /*          __MWCW__     Apple Power Macintosh  (Metrowerks CodeWarrior)    */
 /*          __MKLINUX__  Mikrokernel Linux (PowerPC)                        */
-/*          __NEXTSTEP__ NEXTSTEP operating system                          */
-/*          __OPENSTEP__ OPENSTEP                                           */
 /*          __LINUXPPC__                                                    */
 /*          __LINUXAXP__                                                    */
 /*          __LINUXIA64__                                                   */
@@ -1056,80 +1054,6 @@ typedef float SCREEN_COORD;
 #define F77SYM(lsym,usym)  lsym ## _
 
 /* current time as DOUBLE value */
-#undef CURRENT_TIME
-#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
-
-#endif
-
-
-/****************************************************************************/
-/*                                                                          */
-/* Definitions for NEXTSTEP                                                 */
-/*                                                                          */
-/****************************************************************************/
-
-#ifdef __NEXTSTEP__
-#undef __MWCW__
-
-#define ARCHNAME        "NEXTSTEP"
-
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
-/* memory */
-#define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
-#define ALIGNMASK     0xFFFFFFFC    /* compatible to alignment */
-
-/* fortran interfacing */
-#define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#ifndef CLOCKS_PER_SEC
-#define CLOCKS_PER_SEC CLK_TCK
-#endif
-#undef CURRENT_TIME
-#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
-
-#endif
-
-
-/****************************************************************************/
-/*                                                                          */
-/* Definitions for OPENSTEP                                                 */
-/*                                                                          */
-/****************************************************************************/
-
-#ifdef __OPENSTEP__
-#undef __MWCW__
-
-#define ARCHNAME        "OPENSTEP"
-
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
-/* memory */
-#define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
-#define ALIGNMASK     0xFFFFFFFC    /* compatible to alignment */
-
-/* fortran interfacing */
-#define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#ifndef CLOCKS_PER_SEC
-#define CLOCKS_PER_SEC 10000
-#endif
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
