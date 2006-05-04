@@ -53,7 +53,8 @@ START_UG_NAMESPACE
 enum {NAMESIZE = 128};                 /* max length of name string            */
 enum {NAMELEN  = 127};                 /* NAMESIZE-1                            */
 #define NAMELENSTR             "127"    /* NAMESIZE-1 as string                    */
-#define SEARCHALL            -1        /* scan through all directories         */
+
+enum {SEARCHALL = -1};                 /*!< Scan through all directories         */
 #define DIRSEP                "/"     /* character separating directories     */
 
 /* directories with odd numbers */
