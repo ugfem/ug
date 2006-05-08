@@ -76,7 +76,7 @@ typedef enum {
   RCOND,     /* estimate reciprocal condition number */
   SOLVE,     /* forward and back solves */
   REFINE,    /* perform iterative refinement */
-  FLOAT,     /* time spent in floating-point operations */
+  SLU_FLOAT,     /* time spent in floating-point operations */
   TRSV,      /* fraction of FACT spent in xTRSV */
   GEMV,      /* fraction of FACT spent in xGEMV */
   FERR,      /* estimate error bounds after iterative refinement */
