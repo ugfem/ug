@@ -223,9 +223,6 @@ void PUI_CreatePipes (char *extension)
 
 static INT GetNextUGEvent_PUI (EVENT *theEvent, INT EventMask)
 {
-  char *s;
-  int cmdKey, onlyCmdKey;
-
   /* no event as default */
   theEvent->Type = NO_EVENT;
   theEvent->NoEvent.InterfaceEvent = 0;
@@ -244,9 +241,6 @@ static INT GetNextUGEvent_PUI (EVENT *theEvent, INT EventMask)
 
 static INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
 {
-  char *s;
-  int cmdKey, onlyCmdKey;
-
   /* cancel X events */
   if(!NUI_ON) GetNextUGEvent_XUI(theEvent,EventMask);
 
@@ -272,7 +266,6 @@ static INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
 static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
 {
   XEvent report;
-  XWindowAttributes xwa;
   Window root,child;
   int root_x,root_y;
   char *s;
@@ -281,7 +274,9 @@ static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
   INT tool,pt[2];
   int x,y,w,h;
   int cmdKey, onlyCmdKey;
+#ifdef USE_XAW
   int flag;
+#endif
   unsigned int keys_buttons;
   static int count = 0;
 
@@ -657,7 +652,6 @@ OUTPUTDEVICE * NS_PREFIX InitScreen (int *argcp, char **argv, INT *error)
     }
     else if (strcmp(argv[i],"-np")==0)
     {
-      int ok = 0;
       if (sscanf(argv[i+1],"%s",buffer)!=1)
       {
         fprintf(stderr,"%s: invalid use of option -np\n",prog_name);
