@@ -42,6 +42,6 @@ START_UGDIM_NAMESPACE
 *****************************************************************************/
 INT LGM_InitAcceleration(HEAP *theHeap, LGM_SURFACE **sf, INT nsf);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

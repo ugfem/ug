@@ -83,6 +83,6 @@ int CallGrape (MULTIGRID *theMG);
 void usleep (unsigned long time);
 #endif
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

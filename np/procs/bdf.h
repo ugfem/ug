@@ -135,6 +135,6 @@ INT InitBDFSolver (void);
 INT BDFInit (NP_BASE *base, INT argc, char **argv);
 INT BDFDisplay (NP_BASE *theNumProc);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

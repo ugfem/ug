@@ -229,6 +229,6 @@ INT FreeMatDescCmd (MULTIGRID * theMG, INT argc, char **argv);
 
 INT InitFormats (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

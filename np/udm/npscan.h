@@ -124,6 +124,6 @@ INT esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, cons
 /* scanning argument lists                                                  */
 INT ReadArgvDisplay (INT argc, char **argv);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

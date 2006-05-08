@@ -341,6 +341,6 @@ INT FFMultWithMInv(
 
 INT InitFF (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

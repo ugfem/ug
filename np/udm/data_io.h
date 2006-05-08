@@ -80,6 +80,6 @@ START_UGDIM_NAMESPACE
 INT LoadData (MULTIGRID *theMG, char *FileName, char *type, INT number, INT n, VECDATA_DESC **theVDList);
 INT SaveData (MULTIGRID *theMG, char *FileName, INT rename, INT save_without_mg, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

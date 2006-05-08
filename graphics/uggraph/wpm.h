@@ -662,6 +662,6 @@ INT                     InitPlotObjTypes                                (void);
 INT                     InitWPM                                                 (void);
 
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

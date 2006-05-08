@@ -508,6 +508,6 @@ PLOTOBJHANDLING *CreatePlotObjHandling (char *PlotObjTypeName);
 INT             Draw2D                                  (DRAWINGOBJ *q);
 INT             Draw3D                                  (DRAWINGOBJ *q);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

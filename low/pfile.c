@@ -153,7 +153,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-PFILE *pfile_open (char *name)
+PFILE * NS_PREFIX pfile_open (char *name)
 {
 #ifndef ModelP
   return( (PFILE *) fileopen(name,"w") );
@@ -234,7 +234,7 @@ PFILE *pfile_open (char *name)
    D*/
 /****************************************************************************/
 
-INT pfile_master_puts (PFILE *pf, char *s)
+INT NS_PREFIX pfile_master_puts (PFILE *pf, char *s)
 {
 #ifndef ModelP
   fputs(s,(FILE *) pf);
@@ -406,7 +406,7 @@ static INT flush_buffer (PFILE *pf)
    D*/
 /****************************************************************************/
 
-INT pfile_puts (PFILE *pf, char *s)
+INT NS_PREFIX pfile_puts (PFILE *pf, char *s)
 {
 #ifndef ModelP
   fputs(s,(FILE *) pf);
@@ -512,7 +512,7 @@ static INT append_buffer (PFILE *pf, char *s, INT key)
 }
 #endif
 
-INT pfile_tagged_puts (PFILE *pf, char *s, INT key)
+INT NS_PREFIX pfile_tagged_puts (PFILE *pf, char *s, INT key)
 {
 #ifndef ModelP
   fputs(s,(FILE *) pf);
@@ -571,7 +571,7 @@ INT pfile_tagged_puts (PFILE *pf, char *s, INT key)
    D*/
 /****************************************************************************/
 
-INT pfile_sync (PFILE *pf)
+INT NS_PREFIX pfile_sync (PFILE *pf)
 {
 #ifdef ModelP
   /* wait until all processors reach end of segment */
@@ -608,7 +608,7 @@ INT pfile_sync (PFILE *pf)
    D*/
 /****************************************************************************/
 
-INT pfile_close (PFILE *pf)
+INT NS_PREFIX pfile_close (PFILE *pf)
 {
 #ifdef ModelP
   /* wait until all processors reach end of segment */
@@ -653,7 +653,7 @@ INT pfile_close (PFILE *pf)
    D*/
 /****************************************************************************/
 
-PFILE_BIN *pfile_open_bin (char *name)
+PFILE_BIN* NS_PREFIX pfile_open_bin (char *name)
 {
 #ifndef ModelP
   return( (PFILE_BIN *) fileopen(name,"wb") );
@@ -883,7 +883,7 @@ static INT append_buffer_bin_INT (PFILE_BIN *pf, INT *values, int n, INT key)
 }
 #endif
 
-INT pfile_tagged_write_INT (PFILE_BIN *pf, INT *values, int n, INT key)
+INT NS_PREFIX pfile_tagged_write_INT (PFILE_BIN *pf, INT *values, int n, INT key)
 {
 #ifndef ModelP
   fwrite(values, sizeof(INT), n, (FILE *) pf);
@@ -950,7 +950,7 @@ static INT append_buffer_bin_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key
 }
 #endif
 
-INT pfile_tagged_write_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key)
+INT NS_PREFIX pfile_tagged_write_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key)
 {
 #ifndef ModelP
   fwrite(values, sizeof(FLOAT), n, (FILE *) pf);
@@ -1017,7 +1017,7 @@ static INT append_buffer_bin_BYTE (PFILE_BIN *pf, unsigned char *values, int n, 
 }
 #endif
 
-INT pfile_tagged_write_BYTE (PFILE_BIN *pf, unsigned char *values, int n, INT key)
+INT NS_PREFIX pfile_tagged_write_BYTE (PFILE_BIN *pf, unsigned char *values, int n, INT key)
 {
 #ifndef ModelP
   fwrite(values, sizeof(unsigned char), n, (FILE *) pf);
@@ -1074,7 +1074,7 @@ INT pfile_tagged_write_BYTE (PFILE_BIN *pf, unsigned char *values, int n, INT ke
    D*/
 /****************************************************************************/
 
-INT pfile_sync_bin (PFILE_BIN *pf)
+INT NS_PREFIX pfile_sync_bin (PFILE_BIN *pf)
 {
 #ifdef ModelP
   while (!flush_buffer_bin(pf)) ;
@@ -1107,7 +1107,7 @@ INT pfile_sync_bin (PFILE_BIN *pf)
    D*/
 /****************************************************************************/
 
-INT pfile_close_bin (PFILE_BIN *pf)
+INT NS_PREFIX pfile_close_bin (PFILE_BIN *pf)
 {
 #ifndef ModelP
   fclose( (FILE *) pf);

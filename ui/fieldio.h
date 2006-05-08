@@ -46,6 +46,6 @@ START_UGDIM_NAMESPACE
 INT InitFieldIO();
 INT LoadFieldCommand(INT argc, char **argv);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

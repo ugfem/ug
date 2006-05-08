@@ -388,6 +388,6 @@ INT             SetAlignmentPtr                 (MULTIGRID *theMG, EVECTOR *dire
 INT             GetRule_AnisotropicRed  (ELEMENT *theElement, INT *Rule);
 #endif
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

@@ -211,6 +211,6 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv);
 /* create standard transfer num proc type */
 INT InitTransfer (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

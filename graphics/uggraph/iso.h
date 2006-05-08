@@ -74,6 +74,6 @@ typedef struct {
 
 void ExtractElement(CELL *cell, double lambda, POLY *poly, int *npoly);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

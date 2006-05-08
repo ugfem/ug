@@ -79,6 +79,6 @@ START_UGDIM_NAMESPACE
 INT               InitGraphics                          (void);
 INT           ExitGraphics              (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

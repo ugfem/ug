@@ -139,7 +139,7 @@ BVP   *Create_MarcBVP             (char *BVPname, BndCondProcPtr theBndCond,
 
 BVP *CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 /** @} */
 

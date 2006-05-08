@@ -541,6 +541,6 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric);
 INT ScaleIVector (GRID *g, VECDATA_DESC *theVD);
 INT ClearIVector (GRID *g);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

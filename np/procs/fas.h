@@ -70,6 +70,6 @@ START_UGDIM_NAMESPACE
 
 INT             InitFasSolver           ();
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

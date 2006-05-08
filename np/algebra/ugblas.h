@@ -374,6 +374,6 @@ INT  VecCheckConsistency                        (const VECDATA_DESC *x, const VE
 INT  MatmulCheckConsistency             (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y);
 INT  TraceUGBlas                                        (INT trace);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

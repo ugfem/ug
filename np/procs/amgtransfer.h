@@ -200,6 +200,6 @@ INT AMGTransferExecute    (NP_BASE *theNP, INT argc , char **argv);
 INT InitAMGTransfer       (void);
 INT AMGTransferConstruct  (NP_BASE *theNP);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

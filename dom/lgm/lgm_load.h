@@ -91,6 +91,6 @@ INT                     LGM_LoadMesh    (char *filename, HEAP *theHeap, MESH *th
 INT                     InitLGMLoad             (void);
 
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

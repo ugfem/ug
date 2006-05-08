@@ -785,6 +785,6 @@ INT   STD_BVP_Configure           (INT argc, char **argv);
 /* scanning of coordinates */
 INT   ReadAndPrintArgvPosition    (char *name, INT argc, char **argv, DOUBLE *pos);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

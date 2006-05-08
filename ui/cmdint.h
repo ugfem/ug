@@ -90,6 +90,6 @@ INT     InterpretCommand                (char *cmds);
 INT     InitCommandInterpreter  (INT argc, char **argv);
 INT     ExitCommandInterpreter       ();
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

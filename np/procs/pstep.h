@@ -107,6 +107,6 @@ typedef struct np_p_step NP_P_STEP;
 
 INT InitPStep (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

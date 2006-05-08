@@ -112,6 +112,6 @@ INT Project_Display (NP_PROJECT *theNP);
 
 INT     InitProject (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

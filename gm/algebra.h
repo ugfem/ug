@@ -214,7 +214,7 @@ INT             MoveVector                                              (GRID *t
 /** \brief Initialization */
 INT             InitAlgebra (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif
 

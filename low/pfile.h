@@ -35,6 +35,9 @@
 
 #include <limits.h>
 #include "compiler.h"
+#include "namespace.h"
+
+START_UG_NAMESPACE
 
 #define PFILE_BUFFER_SIZE       16384
 #define PFILE_MAX_TREE          32
@@ -99,5 +102,7 @@ INT        pfile_tagged_write_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT ke
 INT        pfile_tagged_write_BYTE  (PFILE_BIN *pf, unsigned char *values, int n, INT key);
 INT        pfile_sync_bin           (PFILE_BIN *pf);
 INT        pfile_close_bin          (PFILE_BIN *pf);
+
+END_NAMESPACE
 
 #endif

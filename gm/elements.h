@@ -69,7 +69,7 @@ INT PreInitElementTypes         (void);
 INT InitElementTypes            (MULTIGRID *theMG);
 
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 
 #endif

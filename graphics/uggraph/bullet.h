@@ -85,6 +85,6 @@ void BulletLine(DOUBLE *point1, DOUBLE *point2, long color);
 void BulletPolyLine(DOUBLE *points, INT nb, long color);
 void BulletPolygon(DOUBLE *points, INT nb, DOUBLE intensity, long color);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

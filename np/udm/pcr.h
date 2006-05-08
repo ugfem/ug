@@ -83,6 +83,6 @@ INT         PrepareEPCR                 (EVECDATA_DESC *Vsym, INT DispMode, cons
 INT             PostPCR                                         (INT ID, char *path);
 INT             DoPCR                                           (INT ID, VEC_SCALAR Defect, INT PrintMode);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

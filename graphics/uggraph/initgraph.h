@@ -40,6 +40,6 @@ START_UGDIM_NAMESPACE
 /* initialisation of the UGGraph module */
 INT InitUGGraph (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

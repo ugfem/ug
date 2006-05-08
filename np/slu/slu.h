@@ -34,6 +34,11 @@
 #ifndef __SLU__
 #define __SLU__
 
+#include "compiler.h"
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -58,6 +63,10 @@
 /*																			*/
 /****************************************************************************/
 
+void* SLU_Malloc(int size);
+
 INT InitSLU (void);
+
+END_UGDIM_NAMESPACE
 
 #endif

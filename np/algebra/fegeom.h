@@ -142,6 +142,6 @@ typedef struct {
 
 INT EvaluateFEGeometry (ELEMENT *e, FEElementGeometry *geo);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

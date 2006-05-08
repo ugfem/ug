@@ -102,6 +102,6 @@ INT                      QualityElement                 (MULTIGRID *theMG, ELEME
 MULTIGRID       *GetCurrentMultigrid    (void);
 INT              SetCurrentMultigrid    (MULTIGRID *theMG);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

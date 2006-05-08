@@ -136,6 +136,6 @@ INT MG_Matrix_Loop(MULTIGRID *mg, INT fl, INT tl, INT mode,
                    int N_vals, const DOUBLE *value, DOUBLE *result);
 
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif /* __BLASM__ */

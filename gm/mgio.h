@@ -445,6 +445,6 @@ int     CloseMGFile                     (void);
 int     MGIO_Init                       (void);
 int             MGIO_dircreate          (char *filename, int rename);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

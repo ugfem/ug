@@ -60,6 +60,6 @@ INT GenerateBnodes  (MULTIGRID *theMG, DOUBLE RelRasterSize,
 INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff, INT Single_Mode, INT display);
 INT InitGG (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

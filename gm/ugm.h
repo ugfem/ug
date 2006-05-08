@@ -178,6 +178,6 @@ INT                     SetPerVecVOBJECT                        (GRID *g);
 INT                     Grid_CheckPeriodicity           (GRID *g);
 #endif
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

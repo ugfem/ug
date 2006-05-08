@@ -66,6 +66,6 @@ START_UGDIM_NAMESPACE
 /* create standard LinearSolver num proc type */
 INT InitNewtonSolver();
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

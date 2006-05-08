@@ -41,6 +41,6 @@ START_UGDIM_NAMESPACE
 /* initialisation of the numerics module */
 INT InitNumerics();
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

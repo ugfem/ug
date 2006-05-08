@@ -725,6 +725,6 @@ const char *pp_action2str               (const PARTASS_PARAMS *pp);
 /* init tis file */
 INT InitAssemble (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

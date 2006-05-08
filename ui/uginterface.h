@@ -93,6 +93,6 @@ INT                     UserRead                                                
 
 INT SetRefreshState (INT status, INT bullet, DOUBLE factor);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

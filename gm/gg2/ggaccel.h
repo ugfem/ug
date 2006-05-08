@@ -134,6 +134,6 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL,
 
 FRONTCOMP* AccelBaseTreeSearch(FRONTLIST** myList);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

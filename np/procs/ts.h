@@ -117,6 +117,6 @@ INT NPTSolverExecute (NP_BASE *np, INT argc, char **argv);
 /* init */
 INT InitTSolver (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

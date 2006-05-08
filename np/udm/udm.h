@@ -602,6 +602,6 @@ INT    MDusesVOTypeOnly                     (const MATDATA_DESC *md, INT votype)
 /** \brief Init user data manager */
 INT InitUserDataManager (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

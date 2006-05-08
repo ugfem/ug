@@ -85,6 +85,6 @@ typedef struct np_order NP_ORDER;
 
 INT     InitOrder (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

@@ -36,9 +36,10 @@
 #define __HELPMSG__
 
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -76,5 +77,7 @@
 INT             InitHelpMsg                             (void);
 INT     PrintHelp                               (const char *HelpFor,int mode, const char *addText);
 INT     CheckHelp                               (void);
+
+END_UGDIM_NAMESPACE
 
 #endif

@@ -128,6 +128,6 @@ INT InitIter (void);
 /* create standard iter num proc type */
 INT InitIter_2 (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

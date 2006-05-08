@@ -73,6 +73,6 @@ START_UGDIM_NAMESPACE
 
 INT             InitAMGSolver           ();
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

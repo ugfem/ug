@@ -70,6 +70,6 @@ START_UGDIM_NAMESPACE
 INT CheckSymmetryOfMatrix (GRID *theGrid, MATDATA_DESC *A);
 INT CheckNP (MULTIGRID *theMG, INT argc, char **argv);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

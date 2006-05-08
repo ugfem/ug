@@ -764,6 +764,6 @@ INT OuterBndSurfaceIDs (LGM_DOMAIN *theDomain, INT *sf); /* OS_CHANGED */
 INT SurfaceIDsOfSubdomain (LGM_DOMAIN *theDomain, INT *sf, INT i); /* OS_CHANGED */
 
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

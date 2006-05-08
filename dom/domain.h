@@ -780,7 +780,7 @@ void BVertexScatterBndP  (BNDP **bndp, int cnt, char *data);
 INT         InitDom               (void);
 
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif
 

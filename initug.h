@@ -52,6 +52,6 @@ INT InitUg (int *argcp, char ***argvp);
 INT ExitUg (void);
 
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

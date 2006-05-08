@@ -99,8 +99,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
-                     const SHORT *mcomp, const DOUBLE *mat, DOUBLE *rhs)
+INT NS_DIM_PREFIX SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
+                                   const SHORT *mcomp, const DOUBLE *mat, DOUBLE *rhs)
 {
   DOUBLE BlockMat[MAX_SINGLE_MAT_COMP],BlockSol[MAX_SINGLE_VEC_COMP], det;
   DOUBLE aux,M3div0,M6div0;
@@ -220,9 +220,9 @@ INT SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
 /*																			*/
 /****************************************************************************/
 
-INT SolveInverseSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
-                            const SHORT *invcomp, const DOUBLE *inv,
-                            const DOUBLE *rhs)
+INT NS_DIM_PREFIX SolveInverseSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
+                                          const SHORT *invcomp, const DOUBLE *inv,
+                                          const DOUBLE *rhs)
 {
   register DOUBLE sum;
   register SHORT i,j;
@@ -267,8 +267,8 @@ INT SolveInverseSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
 /*																			*/
 /****************************************************************************/
 
-INT InvertSmallBlock (SHORT n, const SHORT *mcomp,
-                      const DOUBLE *mat, DOUBLE *invmat)
+INT NS_DIM_PREFIX InvertSmallBlock (SHORT n, const SHORT *mcomp,
+                                    const DOUBLE *mat, DOUBLE *invmat)
 {
   DOUBLE det,invdet,BlockMat[MAX_SINGLE_MAT_COMP],piv;
   INT i,j,k;
@@ -419,9 +419,9 @@ INT InvertSmallBlock (SHORT n, const SHORT *mcomp,
 /*																			*/
 /****************************************************************************/
 
-INT MatMulSmallBlock (SHORT nr, SHORT nc, SHORT n,
-                      const SHORT *mcomp1, const DOUBLE *mat1,
-                      const DOUBLE *mat2, DOUBLE *resmat)
+INT NS_DIM_PREFIX MatMulSmallBlock (SHORT nr, SHORT nc, SHORT n,
+                                    const SHORT *mcomp1, const DOUBLE *mat1,
+                                    const DOUBLE *mat2, DOUBLE *resmat)
 {
   register INT i,j,k;
   register DOUBLE sum;
@@ -438,8 +438,8 @@ INT MatMulSmallBlock (SHORT nr, SHORT nc, SHORT n,
   return (NUM_OK);
 }
 
-INT InvertFullMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
-                      DOUBLE invmat[LOCAL_DIM][LOCAL_DIM])
+INT NS_DIM_PREFIX InvertFullMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
+                                    DOUBLE invmat[LOCAL_DIM][LOCAL_DIM])
 {
   DOUBLE det,invdet,piv,sum;
   INT i,j,k;
@@ -583,8 +583,8 @@ static INT CholeskyDecomposition (INT n,
   return(0);
 }
 
-INT InvertSpdMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
-                     DOUBLE invmat[LOCAL_DIM][LOCAL_DIM])
+INT NS_DIM_PREFIX InvertSpdMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
+                                   DOUBLE invmat[LOCAL_DIM][LOCAL_DIM])
 {
   DOUBLE sum;
   INT i,j,k;
@@ -629,7 +629,7 @@ INT InvertSpdMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
   return (0);
 }
 
-INT SolveFullMatrix (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
+INT NS_DIM_PREFIX SolveFullMatrix (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
 {
   register DOUBLE dinv,piv,sum;
   register INT i,j,k;
@@ -697,7 +697,7 @@ INT SolveFullMatrix (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
   return (NUM_OK);
 }
 
-INT Choleskydecomposition (INT n, DOUBLE *mat, DOUBLE *chol)
+INT NS_DIM_PREFIX Choleskydecomposition (INT n, DOUBLE *mat, DOUBLE *chol)
 {
   DOUBLE piv,sum;
   INT i,j,k;
@@ -729,7 +729,7 @@ INT Choleskydecomposition (INT n, DOUBLE *mat, DOUBLE *chol)
   return(0);
 }
 
-INT InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv)
+INT NS_DIM_PREFIX InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv)
 {
   register DOUBLE dinv,piv,sum;
   DOUBLE rhs[LOCAL_DIM];
@@ -807,7 +807,7 @@ INT InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv)
   return (NUM_OK);
 }
 
-INT SolveFullMatrix2 (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
+INT NS_DIM_PREFIX SolveFullMatrix2 (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
 {
   DOUBLE sum;
   INT i,j;
@@ -837,8 +837,8 @@ INT SolveFullMatrix2 (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
   return(NUM_OK);
 }
 
-INT InvertFullMatrix_gen (INT n, DOUBLE *mat, DOUBLE *inv,
-                          DOUBLE *rhs, INT *ipv)
+INT NS_DIM_PREFIX InvertFullMatrix_gen (INT n, DOUBLE *mat, DOUBLE *inv,
+                                        DOUBLE *rhs, INT *ipv)
 {
   register DOUBLE dinv,piv,sum;
   register INT i,j,k;

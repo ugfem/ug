@@ -130,6 +130,6 @@ INT Field_RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out);
 
 INT InitStochField (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

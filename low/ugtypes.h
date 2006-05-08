@@ -11,6 +11,10 @@
 #ifndef UGTYPES_H
 #define UGTYPES_H
 
+#include "namespace.h"
+
+START_UG_NAMESPACE
+
 /* standard types */
 
 /* !!! maybe insert values via ugtypes.h.in? */
@@ -26,5 +30,7 @@ typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
 typedef float SCREEN_COORD;
+
+END_NAMESPACE
 
 #endif

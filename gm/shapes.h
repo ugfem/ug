@@ -762,6 +762,6 @@ INT     GCUIP               (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[
 INT     COPYIP              (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 #endif
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

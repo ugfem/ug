@@ -349,7 +349,7 @@ int WriteVector (INT n, SuperMatrix *B, GRID *theGrid, VECDATA_DESC *x)
   return(0);
 }
 
-void *SLU_Malloc (int size)
+void* NS_DIM_PREFIX SLU_Malloc (int size)
 {
   return((void*)GetTmpMem(SLU_Heap,size,SLU_MarkKey[SLU_MarkKey_nb]));
 }
@@ -560,7 +560,7 @@ static INT SLUConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitSLU ()
+INT NS_DIM_PREFIX InitSLU ()
 {
   if (CreateClass(ITER_CLASS_NAME ".slu",sizeof(NP_SLU),SLUConstruct)) REP_ERR_RETURN (__LINE__);
 

@@ -117,6 +117,6 @@ typedef struct np_t_step NP_T_STEP;
 
 INT InitTStep (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

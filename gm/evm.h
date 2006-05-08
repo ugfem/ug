@@ -626,6 +626,6 @@ INT             M4_Invert                                                       
 DOUBLE          GeneralElementVolume                            (INT tag, DOUBLE *x_co[]);
 DOUBLE          ElementVolume                                           (const ELEMENT *elem);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

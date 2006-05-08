@@ -62,6 +62,6 @@ START_UGDIM_NAMESPACE
 /* create extended newton num proc type */
 INT InitENewtonSolver();
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

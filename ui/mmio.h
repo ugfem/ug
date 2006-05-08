@@ -133,6 +133,6 @@ int mm_read_mtx_crd_entry(FILE *f, int *I, int *J, double *real, double *img,
 
 int InitMMIO();
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

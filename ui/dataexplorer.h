@@ -47,6 +47,6 @@ START_UGDIM_NAMESPACE
 /* exports only the init function */
 INT InitDataExplorer ();
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

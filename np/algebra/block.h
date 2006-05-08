@@ -35,6 +35,9 @@
 
 #include "np.h"
 #include "disctools.h"
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -142,5 +145,6 @@ INT InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv);
 INT SolveFullMatrix2 (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs);
 INT InvertFullMatrix_gen (INT n, DOUBLE *mat, DOUBLE *inv, DOUBLE *rhs,
                           INT *ipv);
+END_UGDIM_NAMESPACE
 
 #endif

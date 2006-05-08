@@ -84,6 +84,6 @@ INT DisposeBottomHeapTmpMemory (MULTIGRID *theMG);
 
 #endif
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

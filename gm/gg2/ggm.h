@@ -184,6 +184,6 @@ INT DisposeFrontComp            (FRONTLIST *myList, FRONTCOMP *theFC);
 
 MG_GGDATA *GetMGdataPointer (MULTIGRID *theMG);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

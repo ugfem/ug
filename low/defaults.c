@@ -90,7 +90,7 @@ static char *defaults_buffer=NULL;
 #define NAMELEN     31
 #define NAMELENSTR    "31"
 
-INT GetLocalizedDefaultValue (const char *filename, const char *name, char *value)
+INT NS_PREFIX GetLocalizedDefaultValue (const char *filename, const char *name, char *value)
 {
   FILE *defaultsFile;
   char Name[NAMESIZE];
@@ -249,7 +249,7 @@ static INT GetPathedUGRCValue (const char *path, const char *name, char *value, 
   }
 }
 
-INT GetDefaultValue (const char *filename, const char *name, char *value)
+INT NS_PREFIX GetDefaultValue (const char *filename, const char *name, char *value)
 {
         #ifdef ModelP
   static int already_called = FALSE;

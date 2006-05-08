@@ -53,6 +53,6 @@ INT InitGm ();
 /* Clean up of the gm module */
 INT ExitGm ();
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

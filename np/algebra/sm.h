@@ -32,9 +32,7 @@
 
 #ifdef __UG__
 
-        #ifndef __COMPILER__
-                #include "compiler.h"
-        #endif
+    #include "compiler.h"
 
     #include <stddef.h>
 

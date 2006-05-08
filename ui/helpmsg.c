@@ -208,34 +208,27 @@ static void WriteFormatted (const char *text)
 }
 
 /****************************************************************************/
-/*D
-   PrintHelp - Print entry from help file
+/** \brief Print entry from help file
 
-   SYNOPSIS:
-   INT PrintHelp (const char *HelpFor,int mode, const char *addText);
+   \param HelpFor - command name or keyword
+   \param mode - operation mode (see below)
+   \param addText - additional text to be printed
 
-   PARAMETERS:
-   .  HelpFor - command name or keyword
-   .  mode - operation mode (see below)
-   .  addText - additional text to be printed
-
-   DESCRIPTION:
    This command processes the helpfiles declared in the 'defaults'
    file of the application and prints the corresponding message
    for the command if 'mode' is 'HELPITEM' or all messages that
    have the corresponding keyword, if 'mode' is 'KEYWORD'.
 
-   RETURN VALUE:
-   INT
-   .n 'HELP_OK'
-   .n 'HELP_STRING_EMPTY'
-   .n 'HELP_NOT_FOUND'
-   .n 'HELP_STRING_TOO_LONG'
-
-   D*/
+   \return <ul>
+   <li> 'HELP_OK'
+   <li> 'HELP_STRING_EMPTY'
+   <li> 'HELP_NOT_FOUND'
+   <li> 'HELP_STRING_TOO_LONG'
+   </ul>
+ */
 /****************************************************************************/
 
-INT PrintHelp (const char *HelpFor,int mode, const char *addText)
+INT NS_DIM_PREFIX PrintHelp (const char *HelpFor,int mode, const char *addText)
 {
   char *s,HelpItem[64],helpfor[BUFFERSIZE];
   INT i,len,found;
@@ -399,28 +392,20 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
 }
 
 /****************************************************************************/
-/*D
-   CheckHelp - Check if all commands have a help message
+/** \brief Check if all commands have a help message
 
-   SYNOPSIS:
-   INT CheckHelp (void);
-
-   PARAMETERS:
-   .  void - no parameters
-
-   DESCRIPTION:
    This command checks whether all UG commands have a corresponding
    entry in any of the help files. All commands without entry
    are listed.
 
-   RETURN VALUE:
-   INT
-   .n 0 all commands have entry in help file
-   .n 1 one or more helps missing
-   D*/
+   \return <ul>
+   <li> 0 all commands have entry in help file
+   <li>1 one or more helps missing
+   </ul>
+ */
 /****************************************************************************/
 
-INT CheckHelp ()
+INT NS_DIM_PREFIX CheckHelp ()
 {
   COMMAND *theCmd;
   char HelpItem[128],cmdname[NAMESIZE],*s;
@@ -510,7 +495,7 @@ INT CheckHelp ()
 /*																			*/
 /****************************************************************************/
 
-INT InitHelpMsg (void)
+INT NS_DIM_PREFIX InitHelpMsg (void)
 {
   FILE *fp;
   char *token,buffer[BUFFSIZE+64],path2ug[64],fname[64],*s;

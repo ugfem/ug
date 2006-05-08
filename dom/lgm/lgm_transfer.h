@@ -284,7 +284,7 @@ int HGM_ReadSurface             (int i, LGM_SURFACE_INFO *surface_info);
 FILE *LGM_WriteOpenFile         (char* name);
 INT InitLGMTransfer             (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 
 #endif

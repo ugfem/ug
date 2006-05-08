@@ -212,6 +212,6 @@ INT PrintTMatrix                                (GRID *g, MATDATA_DESC *Mat, INT
 INT PrintDiagMatrix                             (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass);
 INT PrintIMatrix                                (GRID *g, VECDATA_DESC *V, INT vclass, INT vnclass);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

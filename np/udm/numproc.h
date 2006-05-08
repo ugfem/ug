@@ -117,6 +117,6 @@ INT             ListNumProc                     (NP_BASE *np);
 
 INT             InitNumProcManager  (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

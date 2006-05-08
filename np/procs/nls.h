@@ -187,6 +187,6 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv);
 /* create standard LinearSolver num proc type */
 INT InitNonlinearSolver (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

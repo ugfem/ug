@@ -146,6 +146,6 @@ INT NPEWSolverExecute (NP_BASE *theNP, INT argc , char **argv);
 INT InitEW (void);
 INT InitEWN (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

@@ -2906,7 +2906,7 @@ typedef struct {
   /* ... the refinement rules should be placed here later */
 } GENERAL_ELEMENT;
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 /** \todo move this to include section, when other general element stuff is separated */
 #include "elements.h"
@@ -3626,10 +3626,10 @@ INT             KeyForObject                                            (KEY_OBJ
 /** \todo remove the following functions after the code will never need any debugging */
 char *PrintElementInfo (ELEMENT *theElement,INT full);
 
-/* This is a static function in standard UG.  Dune calls it at the
+/** \todo  This is a static function in standard UG.  Dune calls it at the
    moment, so I made it nonstatic. */
 INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

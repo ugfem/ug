@@ -98,6 +98,6 @@ typedef INT (*PostProcessDataBase)(NP_ORDERED_LIST *, INT *);
 
 INT InitDb (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

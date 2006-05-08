@@ -113,6 +113,6 @@ extern CONTROL_ENTRY
 
 INT InitCW      (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

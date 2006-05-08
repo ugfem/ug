@@ -106,6 +106,6 @@ void    UgSetLineWidth                          (short width);
 void    UgFlush                                         (void);
 void    UgWait                                          (DOUBLE wait_sec);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

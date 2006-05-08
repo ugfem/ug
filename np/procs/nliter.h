@@ -124,6 +124,6 @@ INT NPNLIterExecute (NP_BASE *theNP, INT argc , char **argv);
 /* create nonlinear iter num proc type */
 INT InitNLIter (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

@@ -36,9 +36,10 @@
 #define __DEFAULTS__
 
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
+#include "namespace.h"
+
+START_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -72,5 +73,7 @@
 /* access to default file */
 INT     GetDefaultValue                         (const char *filename, const char *name, char *value);
 INT     GetLocalizedDefaultValue        (const char *filename, const char *name, char *value);
+
+END_NAMESPACE
 
 #endif

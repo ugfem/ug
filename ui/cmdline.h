@@ -96,6 +96,6 @@ COMMAND *GetCommand             (const char *name);
 COMMAND *ReplaceCommand         (const char *name, CommandProcPtr cmdProc);
 INT      ExecCommand            (char *cmdLine);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

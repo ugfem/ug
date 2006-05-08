@@ -265,6 +265,6 @@ INT             Get_Sons_of_ElementSide                                 (ELEMENT
 INT     Connect_Sons_of_ElementSide                     (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag);
 INT             Refinement_Changes                                              (ELEMENT *theElement);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

@@ -105,6 +105,6 @@ typedef struct np_blocking NP_BLOCKING;
 
 INT InitBlocking (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

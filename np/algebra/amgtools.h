@@ -507,6 +507,6 @@ INT NBFineGridCorrection  (GRID *theGrid, const VECDATA_DESC *to,
                            const MATDATA_DESC *Mat, INT decoupled);
 
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

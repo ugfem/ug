@@ -99,6 +99,6 @@ INT REINIT_Display (NP_BASE *base);
 INT InitReinit (void);
 
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

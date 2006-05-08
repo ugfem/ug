@@ -58,6 +58,6 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
                     INT argc, char **argv);
 int Get_Local_h(double *in, double *out);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

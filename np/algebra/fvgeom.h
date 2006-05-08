@@ -237,6 +237,6 @@ INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const
 /* init */
 INT InitFiniteVolumeGeom                        (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

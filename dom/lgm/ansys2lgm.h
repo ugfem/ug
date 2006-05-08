@@ -366,4 +366,4 @@ int LGM_ANSYS_ReadPoints                        (LGM_POINT_INFO *lgm_point_info)
 int LGM_ANSYS_ReadSurface                       (int i, LGM_SURFACE_INFO *surface_info);
 int LGM_ANSYS_ReadMesh              (char *name, HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE

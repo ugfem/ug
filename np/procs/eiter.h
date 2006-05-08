@@ -122,6 +122,6 @@ INT NPEIterExecute (NP_BASE *theNP, INT argc , char **argv);
 /* create standard iter num proc type */
 INT InitEIter (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

@@ -140,6 +140,6 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv);
 
 INT     InitError (void);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif
