@@ -34,6 +34,8 @@
 #include "dsp_defs.h"
 #include "util.h"
 
+#include "../slu.h"
+
 /*
  * Global statistics variale
  */
@@ -45,10 +47,9 @@ void superlu_abort_and_exit(char* msg)
   exit (-1);
 }
 
-void *SLU_Malloc (int size); /* imported from slu.c */
 void *superlu_malloc(int size)
 {
-  return(SLU_Malloc(size));
+  return NS_DIM_PREFIX SLU_Malloc(size);
   /*void *buf;
      buf = (void *) malloc(size);
      return (buf);*/
