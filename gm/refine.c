@@ -6028,7 +6028,7 @@ DDD_CONSCHECK;
 DDD_CONSCHECK;
 
 { 
-INT check=1;
+int check=1;
 int debugstart=3;
 #ifdef Debug
 int gmlevel=Debuggm;
