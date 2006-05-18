@@ -234,7 +234,7 @@ typedef unsigned int UINT;
 typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
-typdef float SCREEN_COORD;
+typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
