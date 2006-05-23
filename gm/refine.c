@@ -6577,8 +6577,6 @@ if (0)
 			return(GM_ERROR);
 		}
 	}
-	
-	/** \todo delete special debug */ debugelem = NULL;
 
 	/* set flags for different modes */
 	rFlag=flag & 0x03; 	 	/* copy local or all */
