@@ -6747,6 +6747,8 @@ if (1)
 		/* now really manipulate the next finer level */		
 		START_TIMER(gridadapt_timer)
 
+                nadapted = 0;
+
 		if (level<toplevel || newlevel)
 			#ifndef ModelP
 			if (AdaptGrid(theGrid,&nadapted)!=GM_OK)							RETURN(GM_FATAL);
