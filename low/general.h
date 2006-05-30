@@ -4,7 +4,7 @@
 /*																			*/
 /* File:	  general.h														*/
 /*																			*/
-/* Purpose:   genereal header file                                                                      */
+/* Purpose:   general header file                                                                       */
 /*																			*/
 /* Author:	  Stefan Lang                                                                           */
 /*			  Institut fuer Computeranwendungen III                                                 */
@@ -33,9 +33,6 @@
 #ifndef __GENERAL__
 #define __GENERAL__
 
-#ifndef __COMPILER__
-#include "compiler.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
