@@ -31,10 +31,14 @@
    use that C-compilers don't fail compilation if a header doesn't
    exist... */
 #include "config.h"
+
+/* Include the custom type declarations.  This should eventually be included
+   directly by the headers who need it and not via compiler.h */
+#include "ugtypes.h"
+
 #ifdef AUTOTOOLS_BUILD
 /* include all headers providing the compiler.h functionality */
   #include "architecture.h"
-  #include "ugtypes.h"
   #include "ugmemory.h"
   #include "ugstrings.h"
   #include "ugtime.h"
@@ -123,15 +127,6 @@ extern "C" {
 
 #define ARCHNAME        "MPW32"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #include <Memory.h>
 #define malloc(n) ((void *) NewPtr((Size) n))
@@ -157,15 +152,6 @@ typedef float SCREEN_COORD;
 #define ARCHNAME        "SGI"
 
 #include <time.h>
-
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
@@ -193,15 +179,6 @@ typedef float SCREEN_COORD;
 
 #include <time.h>
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
@@ -227,14 +204,6 @@ typedef float SCREEN_COORD;
 
 #define ARCHNAME        "PARIX"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -263,14 +232,6 @@ typedef float SCREEN_COORD;
 
 #define ARCHNAME        "AIX"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -302,14 +263,6 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 
 #include <nx.h>
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -339,15 +292,6 @@ typedef float SCREEN_COORD;
 
 #include <stddef.h>
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
@@ -369,15 +313,6 @@ typedef float SCREEN_COORD;
 #define ARCHNAME        "SUN4GCC"
 
 #include <stddef.h>
-
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) ! */
@@ -401,15 +336,6 @@ typedef float SCREEN_COORD;
 #define ARCHNAME        "HP"
 
 #include <time.h>
-
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
@@ -436,15 +362,6 @@ typedef float SCREEN_COORD;
 
 #define ARCHNAME        "SUN"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
@@ -465,15 +382,6 @@ typedef float SCREEN_COORD;
 #undef __MWCW__
 
 #define ARCHNAME        "DEC"
-
-/* basic types */
-typedef short SHORT;
-typedef long INT;
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT   8                   /* power of 2 and >= sizeof(int) ! */
@@ -498,14 +406,6 @@ typedef float SCREEN_COORD;
 
 #include <time.h>
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -556,14 +456,6 @@ static inline double x86_highres_clock(void)
 
 #define ARCHNAME        "MKLINUX"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -588,14 +480,6 @@ typedef float SCREEN_COORD;
 
 #include <time.h>
 
-/* basic types */
-typedef short SHORT;
-typedef long INT;                    /* sizeof(int) != sizeof(void *) !! */
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -624,14 +508,6 @@ typedef float SCREEN_COORD;
 
 #include <time.h>
 
-/* basic types */
-typedef short SHORT;
-typedef long INT;                    /* sizeof(int) != sizeof(void *) !! */
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -660,14 +536,6 @@ typedef float SCREEN_COORD;
 
 #include <time.h>
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -696,14 +564,6 @@ typedef float SCREEN_COORD;
 
 #include <time.h>
 
-/* basic types */
-typedef short SHORT;
-typedef long INT;                   /* sizeof(int) != sizeof(void *) !! */
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 #define __SWAPBYTES__ 1
 
 /* memory */
@@ -732,15 +592,6 @@ typedef float SCREEN_COORD;
 
 #include <time.h>
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment          */
@@ -767,15 +618,6 @@ typedef float SCREEN_COORD;
 
 #include <time.h>       /* for rtclock()   */
 #include <unistd.h>     /* for _SC_CLK_TCK */
-
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -806,15 +648,6 @@ typedef float SCREEN_COORD;
 #include <time.h>       /* for rtclock()   */
 #include <unistd.h>     /* for _SC_CLK_TCK */
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
@@ -840,15 +673,6 @@ typedef float SCREEN_COORD;
 
 #define ARCHNAME        "POWERGC"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT 8               /* power of 2 and >=sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8     /*  compatible to alignment */
@@ -872,15 +696,6 @@ typedef float SCREEN_COORD;
 
 #define ARCHNAME        "CC"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT 4               /* power of 2 and >=sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFFC     /*  compatible to alignment */
@@ -901,15 +716,6 @@ typedef float SCREEN_COORD;
 #undef __MWCW__
 
 #define ARCHNAME        "C90"
-
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -933,15 +739,6 @@ typedef float SCREEN_COORD;
 
 #define ARCHNAME        "YMP"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
@@ -964,16 +761,6 @@ typedef float SCREEN_COORD;
 #define ARCHNAME        "NECSX4"
 
 #include <time.h>
-
-
-/* basic types */
-typedef short SHORT;
-typedef long INT;   /* sizeof(int) != sizeof(void *) !! */
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef double COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -1003,15 +790,6 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 
 #define ARCHNAME        "SR2201"
 
-/* basic types */
-typedef short SHORT;
-typedef long INT;    /* sizeof(int) != sizeof(void *) !! */
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef double COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
@@ -1036,15 +814,6 @@ typedef float SCREEN_COORD;
 #undef __MWCW__
 
 #define ARCHNAME        "SR8K"
-
-/* basic types */
-typedef short SHORT;
-typedef long INT;    /* sizeof(int) != sizeof(void *) !! */
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef double COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
@@ -1071,15 +840,6 @@ typedef float SCREEN_COORD;
 
 #define ARCHNAME        "MacOS X Server"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK     0xFFFFFFFC    /* compatible to alignment */
@@ -1105,15 +865,6 @@ typedef float SCREEN_COORD;
 
 #define ARCHNAME        "Mac OS X"
 
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
 /* memory */
 #define ALIGNMENT     4             /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK     0xFFFFFFFC    /* compatible to alignment */
@@ -1131,15 +882,6 @@ typedef float SCREEN_COORD;
 #undef __MWCW__
 
 #define ARCHNAME    "PowerPC 64 bit"
-
-/* basic types */
-typedef short SHORT;
-typedef long INT;                     /* sizeof(int) != sizeof(void *) !! */
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(INT) !  */
@@ -1172,15 +914,6 @@ typedef float SCREEN_COORD;
    #define __MWCW_oldVersion__
     (see MacShell.c)
  */
-
-/* basic types */
-typedef short SHORT;
-typedef int INT;
-typedef unsigned int UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
 
 /* memory */
 #include <Memory.h>
