@@ -22,22 +22,21 @@ ARCH_PLIBS    =
 ARCH_FLIBS    =
 
 #ARCH_CFLAGS   = -Wchar-subscripts -Wformat -Wimplicit -Wparentheses -Wno-four-char-constants -Wreturn-type -Wswitch -Wtrigraphs -O -Wuninitialized
-ARCH_CFLAGS   = -gccincludes -ext o -I/usr/include -I/System/Library/Frameworks/System.framework/Versions/B/Headers
-ARCH_CFLAGS   = 
-ARCH_C++FLAGS = 
+#ARCH_CFLAGS   = -gccincludes -ext o -I/usr/include -I/System/Library/Frameworks/System.framework/Versions/B/Headers
+ARCH_CFLAGS   = -m32
+ARCH_C++FLAGS = -m32
 ARCH_NOOPTIM  = -g
 ARCH_OPTIM    = -qarch=g5 -O5
-ARCH_OPTIM    = -O3
-#ARCH_LFLAGS   = 
-ARCH_LFLAGS   = -L../pclib -sectcreate __ICON __header $(APPL).iconheader -segprot __ICON r r -sectcreate __ICON app $(UGROOT)/dev/mif/UGIcon.tiff -framework AppKit -framework Foundation
-ARCH_LFLAGS   = 
+ARCH_OPTIM    = -O3 -fomit-frame-pointer -funroll-loops -fno-strict-aliasing
+#ARCH_LFLAGS   = -L../pclib -sectcreate __ICON __header $(APPL).iconheader -segprot __ICON r r -sectcreate __ICON app $(UGROOT)/dev/mif/UGIcon.tiff -framework AppKit -framework Foundation
+ARCH_LFLAGS   = -m32
 ARCH_ARFLAGS  = ru
 ARCH_FFLAGS   =
 ARCH_EXFLAGS  =
 
 # use these settings if you want to use MacOS X GUI
-ARCH_XINCLUDES =
-ARCH_XLIBS     = -framework Cocoa
+#ARCH_XINCLUDES =
+#ARCH_XLIBS     = -framework Cocoa
 
 # use these settings if you want to use X11
 ARCH_XINCLUDES = -I/usr/X11R6/include/
