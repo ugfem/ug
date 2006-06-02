@@ -34,7 +34,7 @@
 #define __MISC__
 
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include <string.h>
 #include "heaps.h"
 

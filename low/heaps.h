@@ -41,8 +41,7 @@
 #ifndef __HEAPS__
 #define __HEAPS__
 
-
-#include "compiler.h"
+#include "ugtypes.h"
 
 
 #if defined __NECSX4__ && defined _MALLOC64

@@ -54,7 +54,7 @@
 #include <time.h>
 #include <math.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "heaps.h"
 #include "ugenv.h"
 #include "misc.h"
