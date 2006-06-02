@@ -18,6 +18,7 @@
 /*                                                                          */
 /****************************************************************************/
 
+#include "config.h"
 #include <stdlib.h>
 #include "ng.h"
 #include "ngin-yacc.h"

@@ -34,6 +34,8 @@
 /****************************************************************************/
 
 /* ug includes */
+#include "config.h"
+
 #include "defs.h"
 #include "gm.h"
 #include "ugdevices.h"

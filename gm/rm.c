@@ -26,6 +26,8 @@
 /*                                                                          */
 /****************************************************************************/
 
+#include "config.h"
+
 /* standard C library */
 #include <assert.h>
 #include <stdio.h>
