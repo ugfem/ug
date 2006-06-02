@@ -29,6 +29,8 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
+
 /* Macintosh toolbox includes */
 #include <Types.h>
 #include <Events.h>

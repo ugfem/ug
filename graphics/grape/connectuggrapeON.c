@@ -33,19 +33,17 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
+
 /* ug includes */
 #include "defs.h"
 #include "gm.h"
 #include "evm.h"
 #include "general.h"
+#include "namespace.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-using namespace UG2d;
-#else
-using namespace UG3d;
-#endif
-#endif
+USING_UGDIM_NAMESPACE
+
 
 /* COARSE is defined in gm.h and grape.h: we do not need it at all, so: */
 #ifdef COARSE

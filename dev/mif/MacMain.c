@@ -33,6 +33,8 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
+
 /* standard C includes */
 /*  #include <string.h> */
 /*  #include <math.h> */
