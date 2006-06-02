@@ -36,7 +36,7 @@
 #ifndef __CMDLINE__
 #define __CMDLINE__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ugenv.h"
 
 

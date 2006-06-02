@@ -32,7 +32,7 @@
 
 #ifdef __UG__
 
-    #include "compiler.h"
+    #include "ugtypes.h"
 
     #include <stddef.h>
 

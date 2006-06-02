@@ -52,7 +52,7 @@
 #ifndef __ALGEBRA__
 #define __ALGEBRA__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 
 #include "namespace.h"

@@ -56,7 +56,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ugenv.h"
 #include "heaps.h"
 

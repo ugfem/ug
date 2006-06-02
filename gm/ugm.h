@@ -40,7 +40,7 @@
 #ifndef __UGM__
 #define __UGM__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 #include "dlmgr.h"
 

@@ -33,7 +33,7 @@
 #ifndef __INITUG__
 #define __INITUG__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "namespace.h"
 
 START_UGDIM_NAMESPACE

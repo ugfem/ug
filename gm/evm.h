@@ -39,7 +39,7 @@ $Header$
 #define __EVM__
 
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 
 #include "debug.h"

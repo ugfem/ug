@@ -35,7 +35,7 @@
 #ifndef __UDM__
 #define __UDM__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 #include "sm.h"
 
