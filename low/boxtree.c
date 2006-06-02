@@ -27,6 +27,9 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
+
+#include "compiler.h"
 #include "general.h"
 #include "boxtree.h"
 

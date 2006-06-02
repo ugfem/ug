@@ -27,6 +27,8 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
+
 /* standard C library */
 #include <stdlib.h>
 #include <stddef.h>
