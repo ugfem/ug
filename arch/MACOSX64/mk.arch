@@ -23,13 +23,12 @@ ARCH_FLIBS    =
 
 #ARCH_CFLAGS   = -arch ppc64 -Wchar-subscripts -Wformat -Wimplicit -Wparentheses -Wno-four-char-constants -Wreturn-type -Wswitch -Wtrigraphs -O -Wuninitialized
 #ARCH_CFLAGS   = -arch ppc64 -gccincludes -ext o -I/usr/include -I/System/Library/Frameworks/System.framework/Versions/B/Headers
-ARCH_CFLAGS   = -arch ppc64
-ARCH_C++FLAGS = -arch ppc64
+ARCH_CFLAGS   = -m64
+ARCH_C++FLAGS = -m64
 ARCH_NOOPTIM  = -g
-ARCH_OPTIM    = -qarch=g5 -O5
-ARCH_OPTIM    = -O2
+ARCH_OPTIM    = -O3 -fomit-frame-pointer -funroll-loops -fno-strict-aliasing
 #ARCH_LFLAGS   = -arch ppc64 -sectcreate __ICON __header $(APPL).iconheader -segprot __ICON r r -sectcreate __ICON app $(UGROOT)/dev/mif/UGIcon.tiff -framework AppKit -framework Foundation
-ARCH_LFLAGS   = -arch ppc64
+ARCH_LFLAGS   = -m64
 ARCH_ARFLAGS  = ru
 ARCH_FFLAGS   =
 ARCH_EXFLAGS  =
