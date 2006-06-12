@@ -35,7 +35,7 @@
     USING_UG_NAMESPACE       // for stuff from the namespace UG
 
    or
-    USING_UGDIM_NAMESPACE    // for stuff from UG3d resp. UG2d
+    USING_UGDIM_NAMESPACE    // for stuff from UG::D3 resp. UG::D2
 
    Write
 
