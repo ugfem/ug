@@ -297,8 +297,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*                                                                          */
 /****************************************************************************/
 
-static INT ReallocateVector (GRID *g, VECTOR *v, INT part, INT side);
-
 static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid );
 static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size );
 static INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
@@ -1195,26 +1193,17 @@ INT NS_DIM_PREFIX DisposeVector (GRID *theGrid, VECTOR *theVector)
 }
 
 /****************************************************************************/
-/* \brief	????
- *
- * \todo Correct this documentation!
-   ReallocateVector - change vector allocated with wrong part
+/* \brief Change vector allocated with wrong part
 
-   SYNOPSIS:
-   INT ReinspectSonSideVector (GRID *g, ELEMENT *elem, INT side, VECTOR **vHandle)
-
-   PARAMETERS:
  * @param  g - grid level where the element is in.
  * @param  elem - element of side vector
  * @param  side - element side
  * @param  vHandle - handle to side vector (inialized with old, may be changed)
 
-   DESCRIPTION:
    This changes a side vector which was allocated with the wrong part (maybe unknown for side vectors
    when creating an element).
 
  * @return <ul>
-   INT
  *   <li>   GM_OK if ok
  *   <li>   GM_ERROR if error occured.
  */
