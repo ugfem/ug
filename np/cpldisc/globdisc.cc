@@ -58,10 +58,14 @@
 #include <math.h>
 #include <string.h>
 
+/* The UG namespaces: */
+#include "namespace.h"
+USING_UG_NAMESPACES
+
 /* UG headers: */
+#include "compiler.h"
 extern "C"
 {
-  #include "compiler.h"
   #include "debug.h"
   #include "ugdevices.h"
   #include "general.h"
@@ -75,10 +79,6 @@ extern "C"
   #include "transfer.h"
   #include "sm.h" /* for sparse block structures */
 }
-#include "namespace.h"
-
-/* The UG namespaces: */
-USING_UG_NAMESPACES
 
 /* Local discretization header: */
 #include "partdisc.hh"

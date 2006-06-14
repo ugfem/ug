@@ -13,10 +13,14 @@
 #include <math.h>
 #include <string.h>
 
+/* The UG namespaces: */
+#include "namespace.h"
+USING_UG_NAMESPACES
+
 /* UG headers: */
+#include "compiler.h"
 extern "C"
 {
-  #include "compiler.h"
   #include "debug.h"
   #include "ugdevices.h"
   #include "general.h"
@@ -26,10 +30,6 @@ extern "C"
   #include "np.h"
   #include "fvgeom.h"
 }
-#include "namespace.h"
-
-/* The UG namespaces: */
-USING_UG_NAMESPACES
 
 /* Own header: */
 #include "partdisc.hh"
