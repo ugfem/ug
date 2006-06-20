@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <math.h>
 
+/* The UG namespaces: */
+#include "namespace.h"
+USING_UG_NAMESPACES
+
 #include "gm.h"        /* for data structure               */
 #include "evm.h"       /* for data structure               */
 #include "shapes.h"    /* for data structure               */
@@ -27,7 +31,7 @@
 /* Own header: */
 #include "coupleddiscinit.h"
 
-INT Install_Coupled_Discretization ()
+INT NS_DIM_PREFIX Install_Coupled_Discretization ()
 {
   if (Install_GlobalDisc ())
   {

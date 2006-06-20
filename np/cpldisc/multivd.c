@@ -17,6 +17,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* The UG namespaces: */
+#include "namespace.h"
+USING_UG_NAMESPACES
+
 #include "gm.h"        /* for data structure               */
 #include "misc.h"      /* for MIN, MAX, PI, ...            */
 #include "ugdevices.h" /* for UserWrite, PrintErrorMessage */
@@ -155,7 +159,7 @@ static INT combinevd_command (INT argc, char * * argv)
 }
 
 /* The installer: */
-INT Install_CombineVD ()
+INT NS_DIM_PREFIX Install_CombineVD ()
 {
   return CreateCommand (command_name, combinevd_command) == NULL;
 }

@@ -2445,7 +2445,7 @@ static INT transfer_Construct (NP_BASE * base)
 }
 
 /***** Class installer: *****/
-INT Install_GlobalDisc ()
+INT NS_DIM_PREFIX Install_GlobalDisc ()
 {
   if (CreateClass (NP_COUPLED_GLOBAL_DISC_CLASS_NAME,
                    sizeof (np_coupled_global_disc), Construct))

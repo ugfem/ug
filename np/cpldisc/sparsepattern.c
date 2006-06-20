@@ -48,6 +48,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* The UG namespaces: */
+#include "namespace.h"
+USING_UG_NAMESPACES
+
 #include "gm.h"        /* for data structure               */
 #include "misc.h"      /* for MIN, MAX, PI, ...            */
 #include "ugdevices.h" /* for UserWrite, PrintErrorMessage */
@@ -207,7 +211,7 @@ static INT create_sparsity_pattern_command (INT argc, char * * argv)
 }
 
 /* The installer: */
-INT Install_Sparsity_Descriptions ()
+INT NS_DIM_PREFIX Install_Sparsity_Descriptions ()
 {
   return CreateCommand ("create_sparsity_pattern",
                         create_sparsity_pattern_command) == NULL;

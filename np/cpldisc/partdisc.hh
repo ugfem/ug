@@ -105,6 +105,15 @@
  * initialization can lead to numerical errors.
  */
 
+#ifndef __UG_CPL_PART_DISC__
+#define __UG_CPL_PART_DISC__
+
+/* UG headers: */
+#include "namespace.h"
+#include "compiler.h"
+
+START_UGDIM_NAMESPACE
+
 /* The number of the system entries of the input bc array: */
 #define MIN_BC_IN_SIZE (DOM_N_IN_PARAMS + 2)
 
@@ -569,16 +578,6 @@ struct np_part_discretization : public np_base
     return 0; \
   }
 
-/* Standard functions for the sparsity patterns: */
-
-/* full_jac_pattern - use for both jac_sparse_diag and jac_sparse_diag: */
-INT full_jac_pattern /* returns nonzero always */
-(
-  np_part_discretization * np, /* 'this' pointer */
-  INT i, /* the index of the first unknown */
-  INT j /* the index of the second unknown */
-);
-
 /* The standard functions for the transfer operators: */
 
 INT cpl_standard_interpolate_correction /* interpolates the correction */
@@ -603,5 +602,9 @@ INT cpl_standard_restrict_defect /* restricts the defect */
 
 /* The numproc class name: */
 #define NP_PART_DISCRETIZATION_CLASS_NAME "partdisc"
+
+END_UGDIM_NAMESPACE
+
+#endif
 
 /* End of File */

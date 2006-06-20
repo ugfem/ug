@@ -37,7 +37,7 @@ extern "C"
 /* n_position_points - returns the number of position points for
  * the position types:
  */
-INT n_position_points
+INT NS_DIM_PREFIX n_position_points
 (
   FVElementGeometry * fvg, /* specifies the element */
   position_type type /* the position type to check */
@@ -62,7 +62,7 @@ INT n_position_points
 /* max_n_position_points - array that keeps the maximum number of
  * position points in a given position type:
  */
-INT max_n_position_points [N_POSITION_TYPES] =
+INT NS_DIM_PREFIX max_n_position_points [N_POSITION_TYPES] =
 {
   MAXF, MAXBF, MAXNC, 1, MAXS
 };
@@ -112,7 +112,7 @@ DOUBLE export_param::D_param_wrt_unk /* dummy substitution */
 
 /*** The standard transgrid functions: ***/
 
-INT cpl_standard_interpolate_correction /* interpolates the correction */
+INT NS_DIM_PREFIX cpl_standard_interpolate_correction /* interpolates the correction */
 (
   np_part_discretization * np, /* 'this' pointer */
   INT level, /* grid level */
@@ -187,7 +187,7 @@ INT cpl_standard_interpolate_correction /* interpolates the correction */
   return 0;
 }
 
-INT cpl_standard_restrict_defect /* restricts the defect */
+INT NS_DIM_PREFIX cpl_standard_restrict_defect /* restricts the defect */
 (
   np_part_discretization * np, /* 'this' pointer */
   INT level, /* grid level */

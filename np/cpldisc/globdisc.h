@@ -6,6 +6,10 @@
  * D. Logashenko
  */
 
+START_UGDIM_NAMESPACE
+
 INT Install_GlobalDisc (void);
+
+END_UGDIM_NAMESPACE
 
 /* End of File */
