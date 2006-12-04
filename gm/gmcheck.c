@@ -571,6 +571,8 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 
 	SETUSED(theEdge,1);
 
+        /** \todo Commented out because it uses GetElemLink, which does not exist */
+#if 0
 #	if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
 	{
 		int elemlink,no_of_elem,No_Of_Elem;
@@ -634,6 +636,7 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 		}
 	}
 #	endif
+#endif
 
 	theNode = MIDNODE(theEdge);
 	if (theNode == NULL)
