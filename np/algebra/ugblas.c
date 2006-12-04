@@ -1859,7 +1859,7 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
   DOUBLE  *msgbuf = (DOUBLE *)           data;
   INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
   DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
-  int i, *proclist,mc,vtype,mtype,masc;
+  int i, *proclist,vtype,mtype;
   SPARSE_MATRIX *sm;
 
   *maxgid = 0;
@@ -1900,7 +1900,7 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
   DOUBLE  *msgbuf = (DOUBLE *)           data;
   INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
   DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
-  int i, *proclist,mc,vtype,mtype,masc;
+  int i, *proclist,vtype,mtype;
   SPARSE_MATRIX *sm;
 
   *maxgid = 0;
@@ -1947,7 +1947,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
   INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
   DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
   INT igid = 0;
-  int i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
+  int i,j,k, *proclist,vtype,mtype,ncomp,rcomp,vecskip;
   const SHORT *Comp;
   SPARSE_MATRIX *sm;
 
@@ -3384,7 +3384,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 #include "matfunc.ct"
 
 
-#define T_FUNCNAME     dmatscale
+#define T_FUNCNAME     NS_DIM_PREFIX dmatscale
 #define T_ARGS         ,const MATDATA_DESC *M,DOUBLE a
 #define T_PR_DBG                (" M=%s a=%e",ENVITEM_NAME(M),(double)a)
 #define T_ARGS_BV      ,INT mc,DOUBLE a
@@ -3429,7 +3429,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 #include "matfunc.ct"
 
 
-#define T_FUNCNAME     dmataddunit
+#define T_FUNCNAME     NS_DIM_PREFIX dmataddunit
 #define T_ARGS         ,const MATDATA_DESC *M,DOUBLE a
 #define T_PR_DBG                (" M=%s a=%e",ENVITEM_NAME(M),(double)a)
 #define T_ARGS_BV      ,INT mc,DOUBLE a

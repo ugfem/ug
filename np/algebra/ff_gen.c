@@ -119,16 +119,16 @@ INT NS_DIM_PREFIX aux5_COMP = DUMMY_COMP;
 INT NS_DIM_PREFIX aux6_COMP = DUMMY_COMP;
 
 #ifdef ModelP
-PEInfo *PEInfoArray = NULL;     /* dyn. allocacted array for each slave pe */
-int FFFarmer;                   /* pe number of the master for cross system calculation */
-VChannelPtr FFFarmerVC; /* for slave: channel to the farmer */
-DOUBLE *FFCrossVecMem;  /* mem for global cross point vector */
-INT FFCrossVecSize;             /* size of the FFCrossVecMem vector */
-DOUBLE *FFCrossMatMem;  /* mem for band matrix for cross point system */
-INT FFCrossMatSize;             /* size of the FFCrossMatMem matrix */
-INT FFCrossBw;                  /* bandwidth of the FFCrossMatMem matrix */
-DOUBLE FFFarmerBuffer[FF_MAX_CROSS_MATS];       /* buffer for communication with FFFarmer */
-INT FFCrossOffdiagMats; /* number of offdiagonal matrix entries for cross system */
+PEInfo* NS_DIM_PREFIX PEInfoArray = NULL;       /* dyn. allocacted array for each slave pe */
+int NS_DIM_PREFIX FFFarmer;                     /* pe number of the master for cross system calculation */
+VChannelPtr NS_DIM_PREFIX FFFarmerVC;   /* for slave: channel to the farmer */
+DOUBLE* NS_DIM_PREFIX FFCrossVecMem;    /* mem for global cross point vector */
+INT NS_DIM_PREFIX FFCrossVecSize;               /* size of the FFCrossVecMem vector */
+DOUBLE* NS_DIM_PREFIX FFCrossMatMem;    /* mem for band matrix for cross point system */
+INT NS_DIM_PREFIX FFCrossMatSize;               /* size of the FFCrossMatMem matrix */
+INT NS_DIM_PREFIX FFCrossBw;                    /* bandwidth of the FFCrossMatMem matrix */
+DOUBLE NS_DIM_PREFIX FFFarmerBuffer[FF_MAX_CROSS_MATS]; /* buffer for communication with FFFarmer */
+INT NS_DIM_PREFIX FFCrossOffdiagMats;   /* number of offdiagonal matrix entries for cross system */
 #endif
 
 /****************************************************************************/
