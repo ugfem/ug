@@ -36,8 +36,10 @@
 #include "dddi.h"
 #include "xfer.h"
 
+#include "ugtypes.h"
+#include "namespace.h"
 
-
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
