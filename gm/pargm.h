@@ -44,7 +44,6 @@
 #ifdef ModelP
 #include "ppif.h"
 #include "ddd.h"
-#include "dimension.h"
 #endif
 
 #include "namespace.h"
@@ -61,7 +60,7 @@ START_UG_NAMESPACE
 /*                                                                                                                                                      */
 /****************************************************************************/
 
-#if defined(ModelP) && defined(__THREEDIM__)
+#if defined(ModelP)
 /* switch on/off whether struct edge has DDD Header */
 /* former this was only for 3D the case using:      */
 /* #if defined(ModelP) && defined(__THREEDIM__)     */
@@ -276,7 +275,6 @@ enum {VERTEX_LISTPARTS = 1};
 #define EDID_FFMTX   EDID_FMTX
 #define EDID_PRTX(x) (x)
 #else
-#ifdef EDGE_WITH_DDDHDR
 #define EDID_FMT     "%08x"
 #define EDID_FFMT    EDID_FMT
 #define EDID_PRT(x)  GID(x)
@@ -286,9 +284,6 @@ enum {VERTEX_LISTPARTS = 1};
 #define EDID_FMTX    "%x/%08x/%d"
 #define EDID_FFMTX   EDID_FMTX
 #define EDID_PRTX(x) x,GID(x),PRIO(x)
-#else
-#error ****   Define either __TWODIM__ or __THREEDIM__  ****
-#endif
 #endif
 
 
@@ -426,22 +421,6 @@ enum {VERTEX_LISTPARTS = 1};
 /* exported global variables                                                */
 /*                                                                          */
 /****************************************************************************/
-
-#ifdef ModelP
-/* DDD Interfaces */
-extern DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
-              ElementVHIF, ElementSymmVHIF;
-extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
-              NodeIF, NodeAllIF;
-extern DDD_IF BorderVectorIF, BorderVectorSymmIF,
-              OuterVectorIF, OuterVectorSymmIF,
-              VectorVIF, VectorVAllIF, VectorIF;
-#ifdef EDGE_WITH_DDDHDR
-extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeVHIF,
-              EdgeSymmVHIF;
-#endif
-#endif
-
 
 /****************************************************************************/
 /*                                                                          */
