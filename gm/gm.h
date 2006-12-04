@@ -190,7 +190,7 @@ START_UGDIM_NAMESPACE
 /** \brief two sides have one edge in common*/
 #define MAX_SIDES_OF_EDGE               2
 /** \brief max number of sons of an element */
-#define MAX_SONS                        30
+enum {MAX_SONS = 30};
 /** \brief max number of nodes on elem side */
 #define MAX_SIDE_NODES                  9
 /** \brief max number of son edges of edge  */
@@ -2960,11 +2960,17 @@ START_UGDIM_NAMESPACE
 #define CORNER(p,i)     ((NODE *) (p)->ge.refs[n_offset[TAG(p)]+(i)])
 #define EFATHER(p)              ((ELEMENT *) (p)->ge.refs[father_offset[TAG(p)]])
 #define SON(p,i)                ((ELEMENT *) (p)->ge.refs[sons_offset[TAG(p)]+(i)])
-#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
-#define NBELEM(p,i)     NbElem((p),(i))
-#else
+/** \todo NbElem is declared in ugm.h, but never defined.
+    We need a clean solution. */
+/*
+   #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+   #define NBELEM(p,i)     NbElem((p),(i))
+   #else
+ */
 #define NBELEM(p,i)     ((ELEMENT *) (p)->ge.refs[nb_offset[TAG(p)]+(i)])
-#endif
+/*
+   #endif
+ */
 #define ELEM_BNDS(p,i)  ((BNDS *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
 #define EVECTOR(p)              ((VECTOR *) (p)->ge.refs[evector_offset[TAG(p)]])
 #define SVECTOR(p,i)    ((VECTOR *) (p)->ge.refs[svector_offset[TAG(p)]+(i)])
@@ -2992,11 +2998,20 @@ START_UGDIM_NAMESPACE
 #define SET_CORNER(p,i,q)       ((p)->ge.refs[n_offset[TAG(p)]+(i)] = q)
 #define SET_EFATHER(p,q)        ((p)->ge.refs[father_offset[TAG(p)]] = q)
 #define SET_SON(p,i,q)          ((p)->ge.refs[sons_offset[TAG(p)]+(i)] = q)
+/** \todo Set_NbElem is declared in ugm.h, but never defined.
+    We need a clean solution. */
+/*
+   #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+   #define SET_NBELEM(p,i,q)       Set_NbElem((p),(i),(q))
+   #else
+ */
+#define SET_NBELEM(p,i,q)       ((p)->ge.refs[nb_offset[TAG(p)]+(i)] = q)
+/*
+   #endif
+ */
 #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
-#define SET_NBELEM(p,i,q)       Set_NbElem((p),(i),(q))
 #define VOID_NBELEM(p,i)        NBELEM(p,i)
 #else
-#define SET_NBELEM(p,i,q)       ((p)->ge.refs[nb_offset[TAG(p)]+(i)] = q)
 #define VOID_NBELEM(p,i)        ((p)->ge.refs[nb_offset[TAG(p)]+(i)])
 #endif
 #define SET_BNDS(p,i,q)         ((p)->ge.refs[side_offset[TAG(p)]+(i)] = q)
@@ -3544,7 +3559,7 @@ EDGE            *FatherEdge                             (NODE **SideNodes, INT n
 EDGE            *GetEdge                                (NODE *from, NODE *to);
 INT             GetSons                                 (const ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
 #ifdef ModelP
-INT             GetAllSons                              (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
+INT             GetAllSons                              (const ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
 #endif
 INT             VectorPosition                  (const VECTOR *theVector, DOUBLE *position);
 INT             VectorInElement                 (ELEMENT *theElement, VECTOR *theVector);
