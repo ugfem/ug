@@ -808,7 +808,7 @@ void DDD_InfoIFImpl (DDD_IF ifId)
   sprintf(cBuffer, "|\n| DDD_IFInfoImpl for proc=%03d, IF %02d\n", me, ifId);
   DDD_PrintLine(cBuffer);
 
-  sprintf(cBuffer, "|   cpl=%08x  nIfHeads=%03d first=%08x\n",
+  sprintf(cBuffer, "|   cpl=%p  nIfHeads=%03d first=%p\n",
           theIF[ifId].cpl, theIF[ifId].nIfHeads, theIF[ifId].ifHead);
   DDD_PrintLine(cBuffer);
 
@@ -816,7 +816,7 @@ void DDD_InfoIFImpl (DDD_IF ifId)
   {
     int i;
 
-    sprintf(cBuffer, "|   head=%08x cpl=%08x p=%03d nItems=%05d nAttrs=%03d\n",
+    sprintf(cBuffer, "|   head=%p cpl=%p p=%03d nItems=%05d nAttrs=%03d\n",
             ifh, ifh->cpl, ifh->proc, ifh->nItems, ifh->nAttrs);
     DDD_PrintLine(cBuffer);
 
@@ -826,7 +826,7 @@ void DDD_InfoIFImpl (DDD_IF ifId)
     {
       COUPLING *c = ifh->cplAB[i];
       sprintf(cBuffer, "|         gid=%08x proc=%04d prio=%02d "
-              "osc=%08x/%08x\n",
+              "osc=%p/%p\n",
               OBJ_GID(c->obj), CPL_PROC(c), c->prio,
               ifh->objAB[i], OBJ_OBJ(c->obj)
               );
@@ -839,7 +839,7 @@ void DDD_InfoIFImpl (DDD_IF ifId)
     {
       COUPLING *c = ifh->cplBA[i];
       sprintf(cBuffer, "|         gid=%08x proc=%04d prio=%02d "
-              "osc=%08x/%08x\n",
+              "osc=%p/%p\n",
               OBJ_GID(c->obj), CPL_PROC(c), c->prio,
               ifh->objBA[i], OBJ_OBJ(c->obj)
               );
@@ -852,7 +852,7 @@ void DDD_InfoIFImpl (DDD_IF ifId)
     {
       COUPLING *c = ifh->cplABA[i];
       sprintf(cBuffer, "|         gid=%08x proc=%04d prio=%02d "
-              "osc=%08x/%08x\n",
+              "osc=%p/%p\n",
               OBJ_GID(c->obj), CPL_PROC(c), c->prio,
               ifh->objABA[i], OBJ_OBJ(c->obj)
               );
