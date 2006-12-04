@@ -149,7 +149,7 @@ fi
 # during runtime of ./configure
 AC_LANG_PUSH([C++])
 DUNE_MPI
-if test x$parallel = xyes -a x$with_mpi == xno ; then
+if test x$parallel = xyes -a x$with_mpi = xno ; then
    AC_MSG_ERROR([MPI needed for the parallel UG-lib!])
 fi
 AC_LANG_POP([C++])
