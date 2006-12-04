@@ -115,6 +115,9 @@ void  memmgr_MarkHMEM (long *);
 void *memmgr_AllocHMEM (size_t size, long);
 void  memmgr_ReleaseHMEM (long);
 
+void  memmgr_Init ();
+void  memmgr_Report ();
+
 /*
    #ifdef __cplusplus
    }
