@@ -534,11 +534,9 @@ int RasterizeFile(FILE *stream)
   XPoint xy[SIZE];
   char s[CSIZE];
   unsigned char c,ac;
-  long l;
   char *fn;
   char string[10];
   char **list;
-  unsigned long cells[CSIZE];
   XGCValues gcv;
   XColor color;
   XColor colors[CSIZE];
@@ -1105,11 +1103,9 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
   XPoint xy[SIZE];
   char s[CSIZE];
   unsigned char c,ac;
-  long l;
   char *fn;
   char string[10];
   char **list;
-  unsigned long cells[CSIZE];
   XGCValues gcv;
   XColor color;
   XColor colors[CSIZE];
@@ -1689,8 +1685,6 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
 static void Marker (short n,short s,short x,short y)
 {
   short top, left, bottom, right;
-  short r,g,b;
-  short vector[2];
   XColor color, color2;
   XGCValues gcv;
 
@@ -1910,9 +1904,6 @@ static Boolean run_film (void)
 {
   XGCValues gcv;
   XPoint edges[4];
-  Arg args[10];
-  Cardinal n;
-  int j;
   char command[200];
   short xshift, yshift;
 
@@ -2081,10 +2072,6 @@ static Boolean tail_film (void)
 {
   XGCValues gcv;
   XPoint edges[4];
-  Arg args[10];
-  Cardinal n;
-  int j;
-  char command[200];
   short xshift, yshift;
 
   /* try next meta-file */
@@ -2133,12 +2120,7 @@ static Boolean tail_film (void)
 /* main */
 int main (int argc, char* argv[])
 {
-  XGCValues gcv;            /* GC structure */
   Arg args[10];           /* argument list */
-  char*       type;        /* kind of file access */
-  char*       string;    /* string array */
-  int colors;            /* number of available colors */
-  long bs;                   /* maximum blocksize */
   short xshift, yshift;
   int i, nopt;
   XtWorkProcId film_work_id, tail_work_id;
@@ -2277,7 +2259,7 @@ int main (int argc, char* argv[])
           mstream[0]=auto_fopen(argv[f_offset]);
           if (mstream[0]==NULL) { printf("Can't open file %s\n", file); exit(-1); }
         }
-        else { printf("cannot open %s files\n", n_pic); exit(-1); }
+        else { printf("cannot open %d files\n", n_pic); exit(-1); }
       }
     }
 
@@ -2384,7 +2366,7 @@ int main (int argc, char* argv[])
     }
     if (n_pic != i_pic)
     {
-      printf("cannot open %s files\n", n_pic);
+      printf("cannot open %d files\n", n_pic);
       exit(-1);
     }
     if (i_pic>1)
