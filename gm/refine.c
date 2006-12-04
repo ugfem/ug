@@ -2368,7 +2368,7 @@ static INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon,
 */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
+INT NS_DIM_PREFIX GetAllSons (const ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
 	ELEMENT *son;
 	int SonID,i;
