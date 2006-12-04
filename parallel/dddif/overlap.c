@@ -231,7 +231,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
  */
 /****************************************************************************/
 
-INT NS_PREFIX UpdateGridOverlap (GRID *theGrid)
+INT NS_DIM_PREFIX UpdateGridOverlap (GRID *theGrid)
 {
   ELEMENT *theElement;
 
@@ -336,7 +336,7 @@ static INT DropUsedFlags (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX ConnectGridOverlap (GRID *theGrid)
+INT NS_DIM_PREFIX ConnectGridOverlap (GRID *theGrid)
 {
   INT i,j,Sons_of_Side,prio;
   INT SonSides[MAX_SIDE_NODES];
@@ -557,7 +557,7 @@ static INT CompareSide (ELEMENT *theElement, INT s, ELEMENT *theFather, INT t)
   return((k == m));
 }
 
-INT NS_PREFIX ConnectVerticalOverlap (MULTIGRID *theMG)
+INT NS_DIM_PREFIX ConnectVerticalOverlap (MULTIGRID *theMG)
 {
   INT l;
 

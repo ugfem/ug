@@ -84,54 +84,54 @@ USING_UG_NAMESPACES
 /****************************************************************************/
 
 /* DDD objects */
-DDD_TYPE NS_PREFIX TypeVector;
-DDD_TYPE NS_PREFIX TypeIVertex, NS_PREFIX TypeBVertex;
-DDD_TYPE NS_PREFIX TypeNode;
+DDD_TYPE NS_DIM_PREFIX TypeVector;
+DDD_TYPE NS_DIM_PREFIX TypeIVertex, NS_DIM_PREFIX TypeBVertex;
+DDD_TYPE NS_DIM_PREFIX TypeNode;
 #ifdef __THREEDIM__
-DDD_TYPE NS_PREFIX TypeEdge;
+DDD_TYPE NS_DIM_PREFIX TypeEdge;
 #endif
 
-DDD_TYPE NS_PREFIX TypeUnknown;
+DDD_TYPE NS_DIM_PREFIX TypeUnknown;
 
 #ifdef __TWODIM__
-DDD_TYPE NS_PREFIX TypeTrElem, NS_PREFIX TypeTrBElem;
-DDD_TYPE NS_PREFIX TypeQuElem, NS_PREFIX TypeQuBElem;
+DDD_TYPE NS_DIM_PREFIX TypeTrElem, NS_DIM_PREFIX TypeTrBElem;
+DDD_TYPE NS_DIM_PREFIX TypeQuElem, NS_DIM_PREFIX TypeQuBElem;
 #endif
 
 #ifdef __THREEDIM__
-DDD_TYPE NS_PREFIX TypeTeElem, NS_PREFIX TypeTeBElem;
-DDD_TYPE NS_PREFIX TypePyElem, NS_PREFIX TypePyBElem;
-DDD_TYPE NS_PREFIX TypePrElem, NS_PREFIX TypePrBElem;
-DDD_TYPE NS_PREFIX TypeHeElem, NS_PREFIX TypeHeBElem;
+DDD_TYPE NS_DIM_PREFIX TypeTeElem, NS_DIM_PREFIX TypeTeBElem;
+DDD_TYPE NS_DIM_PREFIX TypePyElem, NS_DIM_PREFIX TypePyBElem;
+DDD_TYPE NS_DIM_PREFIX TypePrElem, NS_DIM_PREFIX TypePrBElem;
+DDD_TYPE NS_DIM_PREFIX TypeHeElem, NS_DIM_PREFIX TypeHeBElem;
 #endif
 
 
 /* DDD data objects */
-DDD_TYPE NS_PREFIX TypeMatrix;
-DDD_TYPE NS_PREFIX TypeBndP;
+DDD_TYPE NS_DIM_PREFIX TypeMatrix;
+DDD_TYPE NS_DIM_PREFIX TypeBndP;
 #ifdef __TWODIM__
-DDD_TYPE NS_PREFIX TypeEdge;
+DDD_TYPE NS_DIM_PREFIX TypeEdge;
 #endif
-DDD_TYPE NS_PREFIX TypeBndS;
+DDD_TYPE NS_DIM_PREFIX TypeBndS;
 
 /* DDD interfaces needed for distributed computation */
-DDD_IF NS_PREFIX ElementIF, NS_PREFIX ElementSymmIF, NS_PREFIX ElementVIF, NS_PREFIX ElementSymmVIF,
-NS_PREFIX ElementVHIF, NS_PREFIX ElementSymmVHIF;
-DDD_IF NS_PREFIX BorderNodeIF, NS_PREFIX BorderNodeSymmIF, NS_PREFIX OuterNodeIF, NS_PREFIX NodeVIF,
-NS_PREFIX NodeIF, NS_PREFIX NodeAllIF;
-DDD_IF NS_PREFIX BorderVectorIF, NS_PREFIX BorderVectorSymmIF,
-NS_PREFIX OuterVectorIF, NS_PREFIX OuterVectorSymmIF,
-NS_PREFIX VectorVIF, NS_PREFIX VectorVAllIF, NS_PREFIX VectorIF;
+DDD_IF NS_DIM_PREFIX ElementIF, NS_DIM_PREFIX ElementSymmIF, NS_DIM_PREFIX ElementVIF, NS_DIM_PREFIX ElementSymmVIF,
+NS_DIM_PREFIX ElementVHIF, NS_DIM_PREFIX ElementSymmVHIF;
+DDD_IF NS_DIM_PREFIX BorderNodeIF, NS_DIM_PREFIX BorderNodeSymmIF, NS_DIM_PREFIX OuterNodeIF, NS_DIM_PREFIX NodeVIF,
+NS_DIM_PREFIX NodeIF, NS_DIM_PREFIX NodeAllIF;
+DDD_IF NS_DIM_PREFIX BorderVectorIF, NS_DIM_PREFIX BorderVectorSymmIF,
+NS_DIM_PREFIX OuterVectorIF, NS_DIM_PREFIX OuterVectorSymmIF,
+NS_DIM_PREFIX VectorVIF, NS_DIM_PREFIX VectorVAllIF, NS_DIM_PREFIX VectorIF;
 static DDD_IF VertexIF;
 #ifdef __THREEDIM__
-DDD_IF NS_PREFIX EdgeIF, NS_PREFIX BorderEdgeSymmIF, NS_PREFIX EdgeHIF, NS_PREFIX EdgeVHIF,
-NS_PREFIX EdgeSymmVHIF;
+DDD_IF NS_DIM_PREFIX EdgeIF, NS_DIM_PREFIX BorderEdgeSymmIF, NS_DIM_PREFIX EdgeHIF, NS_DIM_PREFIX EdgeVHIF,
+NS_DIM_PREFIX EdgeSymmVHIF;
 #endif
 
 
 
 /* DDD global controls */
-DDD_CTRL NS_PREFIX dddctrl;
+DDD_CTRL NS_DIM_PREFIX dddctrl;
 
 
 /****************************************************************************/
@@ -924,7 +924,7 @@ static void InitDDDTypes (void)
 /****************************************************************************/
 
 
-void NS_PREFIX InitCurrMG (MULTIGRID *MG)
+void NS_DIM_PREFIX InitCurrMG (MULTIGRID *MG)
 {
   dddctrl.currMG = MG;
 
@@ -1026,7 +1026,7 @@ static int CheckInitParallel (void)
  */
 /****************************************************************************/
 
-int NS_PREFIX InitDDD (void)
+int NS_DIM_PREFIX InitDDD (void)
 {
   INT err;
   int i;
@@ -1116,7 +1116,7 @@ int NS_PREFIX InitDDD (void)
  */
 /****************************************************************************/
 
-int NS_PREFIX ExitDDD (void)
+int NS_DIM_PREFIX ExitDDD (void)
 {
   /* free memory allocated by InitParallel */
   if (dddctrl._context!=NULL)

@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include "parallel.h"
+#include "memmgr.h"
 #include "general.h"
 #include "ugm.h"
 #include "ugdevices.h"
@@ -27,7 +28,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 
-void NS_PREFIX ddd_DisplayContext (void)
+void NS_DIM_PREFIX ddd_DisplayContext (void)
 {
   int i, last=-1;
   char sep[2] = "";
@@ -78,8 +79,6 @@ void NS_PREFIX ddd_DisplayContext (void)
 
 static void dddif_DisplayMemoryUsage (void)
 {
-  int i;
-
   memmgr_Report();
 
   UserWriteF("mem for interfaces:  %8ld bytes\n",
@@ -110,7 +109,7 @@ static void dddif_DisplayMemoryUsage (void)
 /****************************************************************************/
 
 
-void NS_PREFIX ddd_pstat (char *arg)
+void NS_DIM_PREFIX ddd_pstat (char *arg)
 {
   int cmd;
 
@@ -400,7 +399,7 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
     {
       if (DDD_InfoGlobalId(PARHDRE(e))==gid)
       {
-        printf("%4d: ELEMENT gid=%08x, adr=%08x, level=%d\n",
+        printf("%4d: ELEMENT gid=%08x, adr=%p, level=%d\n",
                me, gid, e, level);
         buggy_ShowCopies(PARHDRE(e));
         buggy_ElemShow(e);
@@ -414,7 +413,7 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
     {
       if (DDD_InfoGlobalId(PARHDR(n))==gid)
       {
-        printf("%4d: NODE gid=%08x, adr=%08x, level=%d\n",
+        printf("%4d: NODE gid=%08x, adr=%p, level=%d\n",
                me, gid, n, level);
         buggy_ShowCopies(PARHDR(n));
         buggy_NodeShow(n);
@@ -581,7 +580,7 @@ static void buggy_help (void)
  */
 /****************************************************************************/
 
-void NS_PREFIX buggy (MULTIGRID *theMG)
+void NS_DIM_PREFIX buggy (MULTIGRID *theMG)
 {
   char buff[100];
   DDD_GID gid;
@@ -679,7 +678,7 @@ void NS_PREFIX buggy (MULTIGRID *theMG)
 
 #define PREFIX "__"
 
-void NS_PREFIX dddif_PrintGridRelations (MULTIGRID *theMG)
+void NS_DIM_PREFIX dddif_PrintGridRelations (MULTIGRID *theMG)
 {
   ELEMENT *e, *enb;
   GRID    *theGrid = GRID_ON_LEVEL(theMG,TOPLEVEL(theMG));

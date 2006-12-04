@@ -34,7 +34,7 @@
 
 #include "namespace.h"
 
-START_UG_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -81,6 +81,6 @@ extern INT ident_mode;
 
 INT Identify_SonObjects (GRID *theGrid);
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

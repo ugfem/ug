@@ -186,7 +186,7 @@ INT CoarseMarks (MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-INT NS_PREFIX CheckPartitioning (MULTIGRID *theMG)
+INT NS_DIM_PREFIX CheckPartitioning (MULTIGRID *theMG)
 {
   INT i,_restrict_;
   ELEMENT *theElement;
@@ -406,7 +406,7 @@ static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, 
  */
 /****************************************************************************/
 
-INT NS_PREFIX RestrictPartitioning (MULTIGRID *theMG)
+INT NS_DIM_PREFIX RestrictPartitioning (MULTIGRID *theMG)
 {
   INT i,j;
   ELEMENT *theElement;

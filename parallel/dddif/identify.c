@@ -37,6 +37,7 @@
 #include "ugdevices.h"
 
 #include "gm.h"
+#include "ugm.h"
 #include "rm.h"
 #include "refine.h"
 #include "ddd.h"
@@ -99,7 +100,7 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX ident_mode = IDENT_OFF;
+INT NS_DIM_PREFIX ident_mode = IDENT_OFF;
 
 /****************************************************************************/
 /*																			*/
@@ -446,6 +447,8 @@ static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
 
   /* identification should occur to at least one other proc */
   ASSERT(n>0);
+
+  return 0;
 }
 
 #ifdef __THREEDIM__
@@ -724,7 +727,6 @@ static INT IdentifySideEdge (GRID *theGrid, EDGE *theEdge, ELEMENT *theElement, 
   int *proclist;
   DDD_HDR IdentObjectHdr[MAX_OBJECT];
   DDD_HDR IdentHdr[MAX_TOKEN];
-  VECTOR *theVector;
   NODE   *theNode0,*theNode1;
 
   nobject = nident = 0;
@@ -871,7 +873,6 @@ static INT IdentifyEdge (GRID *theGrid,
 {
   NODE *Nodes[2];
   EDGE *theEdge;
-  VECTOR *theVector;
   INT nobject,nident;
         #ifdef __THREEDIM__
   INT edge,corner0,corner1;
@@ -1140,9 +1141,8 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
 
 static INT IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 {
-  INT l,i,j,prio;
+  INT l,i,prio;
   ELEMENT *theElement,*theNeighbor;
-  NODE *theNode;
   GRID *theGrid;
 
   PRINTDEBUG(dddif,1,("%d: IdentifyDistributedObjects(): FromLevel=%d "
@@ -1215,7 +1215,7 @@ static INT IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLe
  */
 /****************************************************************************/
 
-INT NS_PREFIX IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
+INT NS_DIM_PREFIX IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 {
         #ifdef Debug
   debug = 0;
@@ -2139,7 +2139,7 @@ INT Identify_SonEdges (GRID *theGrid)
 
 #define NODESFIRST 1
 
-INT NS_PREFIX Identify_SonObjects (GRID *theGrid)
+INT NS_DIM_PREFIX Identify_SonObjects (GRID *theGrid)
 {
     #ifdef Debug
   identlevel = GLEVEL(theGrid)+1;
@@ -2202,7 +2202,7 @@ INT NS_PREFIX Identify_SonObjects (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX Identify_Objects_of_ElementSide(GRID *theGrid, ELEMENT *theElement, INT i)
+INT NS_DIM_PREFIX Identify_Objects_of_ElementSide(GRID *theGrid, ELEMENT *theElement, INT i)
 {
   INT prio;
   ELEMENT *theNeighbor;
@@ -2247,7 +2247,7 @@ INT NS_PREFIX Identify_Objects_of_ElementSide(GRID *theGrid, ELEMENT *theElement
  */
 /****************************************************************************/
 
-void NS_PREFIX IdentifyInit (MULTIGRID *theMG)
+void NS_DIM_PREFIX IdentifyInit (MULTIGRID *theMG)
 {
   INT i;
 
@@ -2289,7 +2289,7 @@ void NS_PREFIX IdentifyInit (MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-void NS_PREFIX IdentifyExit (void)
+void NS_DIM_PREFIX IdentifyExit (void)
 {
   FreeControlEntry(ce_NEW_NIDENT);
   FreeControlEntry(ce_NEW_EDIDENT);

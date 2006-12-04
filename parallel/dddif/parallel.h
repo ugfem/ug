@@ -34,9 +34,7 @@
 #ifndef __PARALLEL_H__
 #define __PARALLEL_H__
 
-#ifndef __HEAPS__
 #include "heaps.h"
-#endif
 
 #ifdef ModelP
 #include "ppif.h"
@@ -48,9 +46,7 @@
 
 #include "namespace.h"
 
-USING_UGDIM_NAMESPACE
-
-  START_UG_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -73,11 +69,6 @@ enum HandlerSets
 
 
 #ifdef ModelP
-
-/* defines for control word entries */
-#define TOUCHED     2 /* object is eventually to be copied  */
-#define COPY        1 /* object is definitely to be copied   */
-#define CLEAR       0 /* clear xfer flag                                        */
 
 /* CE for nodes */
 /* not used, kb 961216
@@ -243,6 +234,18 @@ extern DDD_TYPE TypeBndP;
 extern DDD_TYPE TypeEdge;
 extern DDD_TYPE TypeBndS;
 
+/* DDD Interfaces */
+extern DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
+              ElementVHIF, ElementSymmVHIF;
+extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
+              NodeIF, NodeAllIF;
+extern DDD_IF BorderVectorIF, BorderVectorSymmIF,
+              OuterVectorIF, OuterVectorSymmIF,
+              VectorVIF, VectorVAllIF, VectorIF;
+#ifdef EDGE_WITH_DDDHDR
+extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeVHIF,
+              EdgeSymmVHIF;
+#endif
 
 /* DDD Global Controls */
 typedef struct
@@ -343,10 +346,6 @@ INT             RestrictPartitioning            (MULTIGRID *theMG);
 /* from pgmcheck.c */
 INT             CheckInterfaces                         (GRID *theGrid);
 
-/* form memmgr.c */
-void    memmgr_Init             (void);
-void    memmgr_Report   (void);
-
 #ifdef USE_FAMG
 INT pamgDo( MULTIGRID *theMG, INT level );
 INT pamgCheckDo( MULTIGRID *theMG, INT level );
@@ -354,6 +353,6 @@ INT pamgCheckDo( MULTIGRID *theMG, INT level );
 
 #endif /* ModelP */
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif /* __PARALLEL_H__ */

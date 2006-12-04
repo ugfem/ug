@@ -1160,7 +1160,7 @@ static void NodePriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
   return;
 }
 
-DDD_TYPE NS_PREFIX NFatherObjType(DDD_OBJ obj, DDD_OBJ ref)
+DDD_TYPE NS_DIM_PREFIX NFatherObjType(DDD_OBJ obj, DDD_OBJ ref)
 {
   NODE *theNode = (NODE *)obj;
 
@@ -2203,7 +2203,7 @@ void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 /****************************************************************************/
 /****************************************************************************/
 
-void NS_PREFIX ObjectPriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
+void NS_DIM_PREFIX ObjectPriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
 {
   char type = OBJT(obj);
 
@@ -2294,7 +2294,7 @@ static void BElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 /****************************************************************************/
 
 /* init all handlers necessary for grid xfer */
-void NS_PREFIX ddd_HandlerInit (INT handlerSet)
+void NS_DIM_PREFIX ddd_HandlerInit (INT handlerSet)
 {
   DDD_SetHandlerUPDATE           (TypeVector, VectorUpdate);
   DDD_SetHandlerXFERCOPY         (TypeVector, VectorXferCopy);

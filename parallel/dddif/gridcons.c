@@ -348,15 +348,8 @@ static void ConstructConsistentGridLevel (GRID *theGrid)
  */
 /****************************************************************************/
 
-void NS_PREFIX ConstructConsistentGrid (GRID *theGrid)
+void NS_DIM_PREFIX ConstructConsistentGrid (GRID *theGrid)
 {
-  INT i,j,k,l,m,o;
-  DOUBLE fac,*local;
-  ELEMENT *theElement,*theFather,*theNb;
-  NODE    *theNode;
-  EDGE    *theEdge;
-  VERTEX  *theVertex;
-
   /* the setting of the priorities has to be done in two waves after */
   /* completion of the grid transfer, since                          */
   /* - decisions about vghost prio can only be done if all sons are  */
@@ -393,10 +386,9 @@ void NS_PREFIX ConstructConsistentGrid (GRID *theGrid)
  */
 /****************************************************************************/
 
-void NS_PREFIX ConstructConsistentMultiGrid (MULTIGRID *theMG)
+void NS_DIM_PREFIX ConstructConsistentMultiGrid (MULTIGRID *theMG)
 {
   INT l;
-  GRID *theGrid;
 
   /* this is done in three waves:   */
   /* 1. set priorities of objects   */

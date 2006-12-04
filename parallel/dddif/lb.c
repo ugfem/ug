@@ -529,7 +529,7 @@ static int SimpleSubdomainDistribution (MULTIGRID *theMG,  INT Procs, INT from, 
  */
 /****************************************************************************/
 
-void NS_PREFIX lbs (char *argv, MULTIGRID *theMG)
+void NS_DIM_PREFIX lbs (char *argv, MULTIGRID *theMG)
 {
   int n,mode,param,fromlevel,tolevel,part,hor_boxes,vert_boxes,dest;
 

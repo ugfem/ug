@@ -149,7 +149,7 @@ static INT check_distributed_objects_errors = 0;
  */
 /****************************************************************************/
 
-INT NS_PREFIX CheckProcListCons (int *proclist, int uniqueTag)
+INT NS_DIM_PREFIX CheckProcListCons (int *proclist, int uniqueTag)
 {
   int nunique = 0;
 
@@ -772,7 +772,7 @@ static INT CheckDistributedObjects (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX CheckInterfaces (GRID *theGrid)
+INT NS_DIM_PREFIX CheckInterfaces (GRID *theGrid)
 {
   INT i,j;
   ELEMENT *theElement;

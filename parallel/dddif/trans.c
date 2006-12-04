@@ -131,7 +131,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-void NS_PREFIX AMGAgglomerate(MULTIGRID *theMG)
+void NS_DIM_PREFIX AMGAgglomerate(MULTIGRID *theMG)
 {
   INT level,Size;
   GRID    *theGrid;
@@ -327,7 +327,7 @@ static int Scatter_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
 {
   ELEMENT *theElement = (ELEMENT *)obj;
   ELEMENT *SonList[MAX_SONS];
-  INT i,j;
+  INT i;
 
   switch (*(int *)data)
   {
@@ -599,7 +599,6 @@ static int XferGridWithOverlap (GRID *theGrid)
 {
   ELEMENT *theElement, *theFather, *theNeighbor;
   ELEMENT *SonList[MAX_SONS];
-  NODE    *theNode;
   INT i,j,overlap_elem,part;
   INT migrated = 0;
 
@@ -776,9 +775,8 @@ static void InheritPartitionBottomTop (ELEMENT *e)
  */
 /****************************************************************************/
 
-int NS_PREFIX TransferGridFromLevel (MULTIGRID *theMG, INT level)
+int NS_DIM_PREFIX TransferGridFromLevel (MULTIGRID *theMG, INT level)
 {
-  GRID *theGrid = GRID_ON_LEVEL(theMG,level);       /* transfer grid starting at*/
   INT g,alreadydisposed;
   INT migrated = 0;       /* number of elements moved */
   DOUBLE trans_begin, trans_end, cons_end;
@@ -925,7 +923,7 @@ int NS_PREFIX TransferGridFromLevel (MULTIGRID *theMG, INT level)
  */
 /****************************************************************************/
 
-int NS_PREFIX TransferGrid (MULTIGRID *theMG)
+int NS_DIM_PREFIX TransferGrid (MULTIGRID *theMG)
 {
   TransferGridFromLevel(theMG,0);
 }

@@ -5,10 +5,10 @@
 
 #include "namespace.h"
 
-START_UG_NAMESPACE
+START_UGDIM_NAMESPACE
 void buggy (MULTIGRID *);
 void dddif_PrintGridRelations (MULTIGRID *);
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 
 #endif
