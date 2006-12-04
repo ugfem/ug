@@ -1103,7 +1103,8 @@ static NODE *GetSideNodeX (const ELEMENT *theElement, INT side, INT n,
               return(theNode);
             }
                         #ifdef ModelP
-            VFATHER(theVertex) = theElement;
+            /** \todo Strange that this cast has to be here */
+            VFATHER(theVertex) = (ELEMENT*)theElement;
             SETONSIDE(theVertex,side);
             SETONNBSIDE(theVertex,nbside);
             return(theNode);
