@@ -60,7 +60,7 @@
 
 #include "namespace.h"
 
-USING_UG_NAMESPACE
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -194,7 +194,7 @@ void *ht_malloc (size_t size, char *ident)
       key[i+1]=(int)(ident[i]);
     key[0]=i;
     obj=PopHashEntry(ht_mem,key);
-    if (obj!=NULL) size+=(int)obj;
+    if (obj!=NULL) size+=(size_t)obj;
     if (PushHashEntry(&ht_mem,key,(void*)size)) return (NULL);
   }
   return (mem);
@@ -554,7 +554,8 @@ int HashTableInsertAtBegin (HASH_TABLE **ht, HASH_TABLE *insert)
 
 int ht_malloc_display (void)
 {
-  int total,i,lid,found,key[MAX_KEY_LEN+1];
+  size_t total;
+  int i,lid,found,key[MAX_KEY_LEN+1];
   char name[MAX_KEY_LEN+1];
   void *obj;
 
@@ -569,11 +570,11 @@ int ht_malloc_display (void)
     for (i=1; i<=key[0]; i++)
       name[i-1]=(char)key[i];
     name[key[0]]='\0';
-    printf("%12s: %d bytes\n",name,(int)obj);
-    total+=(int)obj;
+    printf("%12s: %zd bytes\n",name,(size_t)obj);
+    total+=(size_t)obj;
   }
   if (EndHashGet(ht_mem)) return (1);
-  printf("total: %d bytes\n",total);
+  printf("total: %zd bytes\n",total);
   printf("\n");
 
   return (0);
@@ -662,8 +663,8 @@ static int HT_ShiftEntry_Shift;
 
 int HT_ShiftEntry (void **obj)
 {
-  int val;
-  val=(int)(*obj);
+  size_t val;
+  val=(size_t)(*obj);
   val+=HT_ShiftEntry_Shift;
   *obj=(void*)val;
 
