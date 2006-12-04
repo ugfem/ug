@@ -101,11 +101,15 @@ INT              GetFreeOBJT                    (void);
 INT              ReleaseOBJT                    (INT type);
 
 /* create basic objects */
-#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
-int      GetElemLink (NODE *from, NODE *to, ELEMENT *theElement);
-ELEMENT *NbElem     (ELEMENT *theElement, int i);
-void     Set_NbElem (ELEMENT *theElement, int i, ELEMENT *Neighbor);
-#endif
+/** \todo Commented out because no definitions exist for these declarations
+
+   #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+   int      GetElemLink (NODE *from, NODE *to, ELEMENT *theElement);
+   ELEMENT *NbElem     (const ELEMENT *theElement, int i);
+   void     Set_NbElem (ELEMENT *theElement, int i, ELEMENT *Neighbor);
+   #endif
+ */
+
 #ifdef ModelP
 EDGE * CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector);
 #endif
