@@ -25,6 +25,11 @@
 #include "dunemarker.h"
 
 #ifdef FOR_DUNE
+
+#ifndef __cplusplus
+#error You must force the build system to compile as C++ when setting --enable-dune!
+#endif
+
 /** \brief Data field which is only there for the DUNE build system to check
     whether UG has been compiled with FOR_DUNE.
  */
