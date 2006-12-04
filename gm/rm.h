@@ -136,15 +136,6 @@ START_UGDIM_NAMESPACE
 #define MARKED(e)               (MARK(e)!=NO_REFINEMENT)
 #define LEAFELEM(e)                     (!IS_REFINED(e))
 
-#define RESTRICT_BY_FUNCTION
-#ifndef RESTRICT_BY_FUNCTION
-#define ELEMENT_TO_MARK(e)  ((IS_REFINED(e)) ? NULL :                                         \
-                             (ECLASS(e) == RED_CLASS) ? (e) :                                  \
-                             (ECLASS(EFATHER(e)) == RED_CLASS) ?  EFATHER(e) :                 \
-                             (ECLASS(EFATHER(EFATHER(e))) == RED_CLASS) ? EFATHER(EFATHER(e)) :\
-                             EFATHER(EFATHER(EFATHER(e))))
-#endif
-
 /* indices of rules in rule array */
 #define T_NOREF                         0
 #define T_COPY                  1
@@ -379,9 +370,7 @@ INT ShowRefRuleX        (INT tag, INT nb, PrintfProcPtr Printf);
 
 INT                     InitRuleManager                 (void);
 INT                     Patterns2Rules                  (ELEMENT *theElement,INT pattern);
-#ifdef RESTRICT_BY_FUNCTION
 ELEMENT         *ELEMENT_TO_MARK                (ELEMENT *theElement);
-#endif
 
 #ifdef __THREEDIM__
 INT             SetAlignmentPtr                 (MULTIGRID *theMG, EVECTOR *direction);

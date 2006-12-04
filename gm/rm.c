@@ -3621,9 +3621,6 @@ INT NS_DIM_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
   assert(0); return(-1);
 }
 
-#ifdef RESTRICT_BY_FUNCTION
-
-
 /****************************************************************************/
 /** \brief Gets the element which has to be marked
 
@@ -3653,26 +3650,18 @@ ELEMENT * NS_DIM_PREFIX ELEMENT_TO_MARK (ELEMENT *theElement)
 
   return(theElement);
 }
-#endif
 
 
 /****************************************************************************/
-/** \brief
-   GetRefinementMark - gets rule of refinement
+/** \brief Gets rule of refinement
 
-   SYNOPSIS:
-   INT GetRefinementMark (ELEMENT *theElement, INT *rule, void *data);
-
-   PARAMETERS:
    \param theElement - element to refine
    \param rule - filled with current refinement rule
    \param data - filled with side, if rule is oriented
 
-   DESCRIPTION:
    This function gets rule of refinement
 
    \return
-   INT
    .n   0: side information valid
    .n   1: rule without orientation
  */
