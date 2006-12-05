@@ -54,7 +54,7 @@
 /* domain module */
 #include "std_internal.h"
 
-USING_UG_NAMESPACE
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
