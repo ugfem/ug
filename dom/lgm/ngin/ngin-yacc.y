@@ -38,6 +38,7 @@
 
 #include "namespace.h"
 
+USING_UG_NAMESPACE
 USING_UGDIM_NAMESPACE
 
 static LINE_POSITION LinePos;
@@ -49,7 +50,7 @@ static NG_ELEMENT Elem;
 
  /* forward declare my own function (referenced by automatic parser) */ 
  int ngerror (char *s);
- 
+ int ngwrap();
 %}
 
 %union 
@@ -254,7 +255,7 @@ Id:
 %%
 
 
-int ngwrap (char *s)
+int ngwrap ()
 {
     return (1);
 }
