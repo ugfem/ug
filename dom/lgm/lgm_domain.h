@@ -743,7 +743,7 @@ BNDP *BNDP_InsertBndP (HEAP *Heap, BVP *aBVP, double *global);
 #endif
 
 #ifndef Grape
-LGM_PROBLEM *CreateProblem (char *name, InitProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
+LGM_PROBLEM *CreateProblem (const char *name, InitProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
 LGM_PROBLEM *CreateProblemWithInnerBCs (char *name, InitProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
 #endif
 INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond);

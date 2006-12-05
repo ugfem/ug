@@ -89,7 +89,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-LGM_PROBLEM* NS_DIM_PREFIX CreateProblem (char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
+LGM_PROBLEM* NS_DIM_PREFIX CreateProblem (const char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
 {
   LGM_PROBLEM *newProblem;
   int i;
