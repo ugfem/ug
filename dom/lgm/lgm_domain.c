@@ -45,7 +45,8 @@
 
 #include "namespace.h"
 
-USING_UGDIM_NAMESPACE
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 
 #define BVP2LGM(p)                                                      ((LGM_DOMAIN*)(p))
@@ -88,7 +89,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-LGM_PROBLEM *CreateProblem (char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
+LGM_PROBLEM* NS_DIM_PREFIX CreateProblem (char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
 {
   LGM_PROBLEM *newProblem;
   int i;
@@ -115,7 +116,7 @@ LGM_PROBLEM *CreateProblem (char *name, InitProcPtr init, DomainSizeConfig domco
   return (newProblem);
 }
 
-LGM_PROBLEM *CreateProblemWithInnerBCs (char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
+LGM_PROBLEM* NS_DIM_PREFIX CreateProblemWithInnerBCs (char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
 {
   LGM_PROBLEM *newProblem;
   int i;
@@ -175,7 +176,7 @@ BVP_GetByName (const char *name)
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_GetFirst (void)
+BVP* NS_DIM_PREFIX BVP_GetFirst (void)
 {
   ENVDIR *theSBVPDir;
   BVP *theBVP;
@@ -188,14 +189,14 @@ BVP *BVP_GetFirst (void)
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_GetNext (BVP *theBVP)
+BVP* NS_DIM_PREFIX BVP_GetNext (BVP *theBVP)
 {
   if (theBVP==NULL) return (NULL);
   return ((BVP *) NEXT_ENVITEM(theBVP));
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
+BVP* NS_DIM_PREFIX BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_PROBLEM *theProblem;
@@ -295,7 +296,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_Dispose (BVP *theBVP)
+INT NS_DIM_PREFIX BVP_Dispose (BVP *theBVP)
 {
   LGM_DOMAIN *theDomain;
 
@@ -308,13 +309,13 @@ INT BVP_Dispose (BVP *theBVP)
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_Load (char *name, INT argc, char **argv)
+BVP* NS_DIM_PREFIX BVP_Load (char *name, INT argc, char **argv)
 {
   return (NULL);
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
+INT NS_DIM_PREFIX BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
 {
   LGM_DOMAIN *theDomain;
   LGM_PROBLEM *theProblem;
@@ -344,7 +345,7 @@ INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
+INT NS_DIM_PREFIX BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
 {
   LGM_DOMAIN *theDomain;
   LGM_PROBLEM *theProblem;
@@ -369,7 +370,7 @@ INT BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
+INT NS_DIM_PREFIX BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 {
   LGM_DOMAIN *theDomain;
   LGM_PROBLEM *theProblem;
@@ -402,7 +403,7 @@ INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 /****************************************************************************/
 
 /* domain interface function: for description see domain.h */
-BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
+BNDP* NS_DIM_PREFIX BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 {
 
         #ifdef __THREEDIM__
@@ -423,13 +424,13 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
+INT NS_DIM_PREFIX BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
 {
   return (1);
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_Dispose (HEAP *Heap, BNDS *aBndS)
+INT NS_DIM_PREFIX BNDS_Dispose (HEAP *Heap, BNDS *aBndS)
 {
   LGM_BNDS *theBndS;
 
@@ -439,13 +440,13 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *aBndS)
 }
 /* domain interface function: for description see domain.h */
 #ifdef __TWODIM__
-INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
+INT NS_DIM_PREFIX BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 {
   return(1);
 }
 #endif
 #ifdef __THREEDIM__
-INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
+INT NS_DIM_PREFIX BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 {
 #ifdef NO_PROJECT
   INT i,j;
@@ -464,7 +465,7 @@ INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 #endif
 
 /* domain interface function: for description see domain.h */
-INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
+INT NS_DIM_PREFIX BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
 {
   /* HRR_TODO: assign part */
   *part = 0;
@@ -493,7 +494,7 @@ INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
  */
 /****************************************************************************/
 
-INT InitDom (void)
+INT NS_DIM_PREFIX InitDom ()
 {
   /* change to root directory */
   if (ChangeEnvDir("/")==NULL)

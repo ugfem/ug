@@ -56,7 +56,8 @@
 
 #include "namespace.h"
 
-USING_UGDIM_NAMESPACE
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 
 /****************************************************************************/
@@ -333,7 +334,7 @@ NextLine (LGM_DOMAIN *theDomain)
   return (theLine);
 }
 
-INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond)
+INT NS_DIM_PREFIX SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond)
 {
   INT i,k;
   LGM_SUBDOMAIN *theSubdom;
@@ -355,7 +356,7 @@ INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCond
   return (0);
 }
 
-INT SetDomainSize (LGM_DOMAIN *theDomain)
+INT NS_DIM_PREFIX SetDomainSize (LGM_DOMAIN *theDomain)
 {
   LGM_PROBLEM *theProblem;
   LGM_LINE *theLine;
@@ -688,14 +689,14 @@ static INT PrintMeshInfo (MESH *mesh)
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
+INT NS_DIM_PREFIX BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
 {
   UserWrite("SORRY: not implemented yet\n");
   return (1);
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_Check (BVP *aBVP)
+INT NS_DIM_PREFIX BVP_Check (BVP *aBVP)
 {
   INT i,i2,j,j2,p,ret,sbd,sfce,left,right,l,m, m2;
   INT commmonIDs_Counter, tr_index, ntr_index, richtung_TheTria, richtung_TheNgbTria;
@@ -1432,19 +1433,23 @@ static INT Normal_Vector(DOUBLE *p0, DOUBLE *p1, DOUBLE *p2, DOUBLE *n)
   n1[1] = p2[1] - p0[1];
   n1[2] = p2[2] - p0[2];
 
-  l1 = Lenght(n1);
-  Scale(n1, 1.0/l1);
+  V3_EUKLIDNORM(n1,l1);
+  /*    Scale(n1, 1.0/l1); */
+  V3_SCALE(1.0/l1,n1);
 
   n2[0] = p2[0] - p1[0];
   n2[1] = p2[1] - p1[1];
   n2[2] = p2[2] - p1[2];
 
-  l2 = Lenght(n2);
-  Scale(n2, 1.0/l2);
+  V3_EUKLIDNORM(n2,l2);
+  /*    Scale(n2, 1.0/l2); */
+  V3_SCALE(1.0/l2, n2);
 
-  Cross(n, n1, n2);
-  l = Lenght(n);
-  Scale(n, 1.0/l);
+  /*    Cross(n, n1, n2); */
+  V3_VECTOR_PRODUCT(n1,n2,n);
+  V3_EUKLIDNORM(n,l);
+  /*    Scale(n, 1.0/l); */
+  V3_SCALE(1.0/l, n);
 
   return(0);
 }
@@ -1467,7 +1472,8 @@ static DOUBLE Calc_Triangle_Angle(LGM_SURFACE *theSurface, INT i,  INT j)
   /* get Normalvector to the Triangle j */
   Normal_Vector(p0, p1, p2, &n2[0]);
 
-  scalarproduct =  Mult(n1, n2);
+  /*    scalarproduct =  Mult(n1, n2); */
+  V3_SCALAR_PRODUCT(n1, n2, scalarproduct);
   return(scalarproduct);
 }
 
@@ -1713,7 +1719,8 @@ static DOUBLE Calc_Angle_to_Normal(LGM_SURFACE *theSurface, INT i, DOUBLE *n)
   /* get Normalvector to the Triangle i */
   Normal_Vector(p0, p1, p2, &n1[0]);
 
-  scalarproduct =  Mult(n1, n);
+  /*    scalarproduct =  Mult(n1, n); */
+  V3_SCALAR_PRODUCT(n1, n, scalarproduct);
   return(scalarproduct);
 }
 
@@ -2291,7 +2298,7 @@ INT Aux_Check(HEAP *Heap, LGM_DOMAIN *theDomain, INT MarkKey)
 }
 
 /* domain interface function: for description see domain.h */
-MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey)
+MESH* NS_DIM_PREFIX BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_SURFACE *theSurface;
@@ -3041,15 +3048,15 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
 
   /* compute 2 vectors in the plane + normalvector */
   Minus(n0,e2,e0);
-  l = Lenght(n0);
+  V3_EUKLIDNORM(n0,l);
   Scale(n0,1.0/l);
 
   Minus(n1,e2,e1);
-  l = Lenght(n1);
+  V3_EUKLIDNORM(n1,l);
   Scale(n1,1.0/l);
 
   Cross(n2,n0,n1);
-  l = Lenght(n2);
+  V3_EUKLIDNORM(n2,l);
   Scale(n2,1.0/l);
 
   p[0] = global[0];
@@ -3126,7 +3133,8 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
   lam[1] = bb[1];
   lam[2] = 1 - bb[0] - bb[1];
 
-  return(Lenght(hp));
+  V3_EUKLIDNORM(hp,l);
+  return l;
 }
 
 static INT NormalVector(LGM_TRIANGLE *theSurfaceTriangle, DOUBLE *n)
@@ -5641,7 +5649,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
+INT NS_DIM_PREFIX BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
@@ -5659,7 +5667,7 @@ INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
+INT NS_DIM_PREFIX BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
 {
   LGM_BNDP *theBndP;
 
@@ -5701,7 +5709,7 @@ static INT Check_Local_Coord(LGM_SURFACE *theSurface, DOUBLE *local)
   return(0);
 }
 
-BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
+BNDS* NS_DIM_PREFIX BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
   INT i,j,k,q,i0,j0,k0,q0,count, ilocal,ilocal1;
   LGM_BNDP *theBndP1, *theBndP2, *theBndP3, *theBndP4;
@@ -5735,7 +5743,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   B[0] = globalp2[0] - globalp1[0];
   B[1] = globalp2[1] - globalp1[1];
   B[2] = globalp2[2] - globalp1[2];
-  LGM_VECTOR_PRODUCT(A, B, BNDP_NV);
+  V3_VECTOR_PRODUCT(A, B, BNDP_NV);
   // This is wrong. OS_CHANGED
   //	V_DIM_SCALE(1.0/sqrt(V_DIM_SCAL_PROD(BNDP_NV, BNDP_NV)),BNDP_NV);
 
@@ -5967,9 +5975,9 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   B[2] = LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[2]
          - LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[2];
 
-  LGM_VECTOR_PRODUCT(A, B, Surface_NV);
+  V3_VECTOR_PRODUCT(A, B, Surface_NV);
 
-  LGM_SCALAR_PRODUCT(BNDP_NV, Surface_NV, sp);
+  V3_SCALAR_PRODUCT(BNDP_NV, Surface_NV, sp);
 
 
   if(sp>0.0)
@@ -6193,7 +6201,7 @@ static INT Count_Common_Lines(LGM_BNDP *theBndP1, LGM_BNDP *theBndP2, LGM_SURFAC
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDP_InsertBndP (HEAP *Heap, BVP *aBVP, double *global)
+BNDP* NS_DIM_PREFIX BNDP_InsertBndP (HEAP *Heap, BVP *aBVP, double *global)
 {
   LGM_DOMAIN *theDomain;
   LGM_SURFACE *theSurface;
@@ -6246,7 +6254,7 @@ BNDP *BNDP_InsertBndP (HEAP *Heap, BVP *aBVP, double *global)
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
+BNDP* NS_DIM_PREFIX BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   LGM_BNDP *theBndP1, *theBndP2, *theBndP;
   LGM_SURFACE *Surfaces[MAX_SURFACES], *theNewSurface;
@@ -6525,7 +6533,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
+INT NS_DIM_PREFIX BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
 {
   LGM_BNDP *theBndP;
 
@@ -6541,7 +6549,7 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_SaveBndP (BNDP *aBndP)
+INT NS_DIM_PREFIX BNDP_SaveBndP (BNDP *aBndP)
 {
   INT i;
   LGM_BNDP *theBndP;
@@ -6595,7 +6603,7 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   return(0);
 }
 
-INT BNDP_SaveBndP_Ext (BNDP *aBndP)
+INT NS_DIM_PREFIX BNDP_SaveBndP_Ext (BNDP *aBndP)
 {
   INT i;
   LGM_BNDP *theBndP;
@@ -6651,7 +6659,7 @@ INT BNDP_SaveBndP_Ext (BNDP *aBndP)
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
+BNDP* NS_DIM_PREFIX BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
   LGM_DOMAIN *theDomain;
   LGM_SURFACE *theSurface;
@@ -6727,7 +6735,7 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   return((BNDP *)theBndP);
 }
 
-BNDP *BNDP_LoadBndP_Ext (void)
+BNDP* NS_DIM_PREFIX BNDP_LoadBndP_Ext (void)
 {
   int i,id, nline, nsurf;
   double local[2], left, right;
@@ -6791,7 +6799,7 @@ BNDP *BNDP_LoadBndP_Ext (void)
   return((BNDP *)theBndP);
 }
 
-INT LGM_BNDS_SurfId (BNDS *aBndS)
+INT NS_DIM_PREFIX LGM_BNDS_SurfId (BNDS *aBndS)
 {
   int surf;
   LGM_BNDS *theBndS;
@@ -6807,7 +6815,7 @@ INT LGM_BNDS_SurfId (BNDS *aBndS)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
+INT NS_DIM_PREFIX BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   LGM_BNDS *theBndS;
   LGM_SURFACE *theSurface;
@@ -6902,7 +6910,7 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
+INT NS_DIM_PREFIX BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
 {
   LGM_BNDS *theBndS;
   LGM_SURFACE *theSurface;
@@ -7002,7 +7010,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right, INT *part)
+INT NS_DIM_PREFIX BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right, INT *part)
 {
   LGM_BNDS *theBndS;
   LGM_SURFACE *theSurface;
@@ -7029,7 +7037,7 @@ INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right, INT *part)
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
+BNDP* NS_DIM_PREFIX BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 {
   LGM_BNDS *theBndS;
   LGM_BNDP *theBndP;
@@ -7125,7 +7133,7 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 
 
 /* auxiliary function for getting the maximum surface-ID */
-INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
+INT NS_DIM_PREFIX GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
 {
   INT nSubDom, i, l, maxLineId=0;
 
@@ -7146,7 +7154,7 @@ INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
 }
 
 /* OS_CHANGED: an new auxiliary function to mark surface_IDs of the domain boundary */
-INT OuterBndSurfaceIDs (LGM_DOMAIN *theDomain, INT *sf)
+INT NS_DIM_PREFIX OuterBndSurfaceIDs (LGM_DOMAIN *theDomain, INT *sf)
 {
   INT nSubDom, i, l;
 

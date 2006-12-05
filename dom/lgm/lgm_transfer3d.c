@@ -39,6 +39,7 @@
 
 #include "namespace.h"
 
+USING_UG_NAMESPACE
 USING_UGDIM_NAMESPACE
 
 static FILE *stream;
@@ -121,7 +122,7 @@ static fpos_t UnitInfoFilepos;
 static fpos_t fileposline;
 static fpos_t filepossurface;
 
-int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey)
+int NS_DIM_PREFIX LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey)
 {
   int i,i0,i1,i2;
   char buffer[256];
@@ -291,7 +292,7 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
   return (0);
 }
 
-int LGM_ReadSizes (LGM_SIZES *lgm_sizes)
+int NS_DIM_PREFIX LGM_ReadSizes (LGM_SIZES *lgm_sizes)
 {
   int i,line_i,surface_i,i0,i1,i2;
 
@@ -386,7 +387,7 @@ int LGM_ReadSizes (LGM_SIZES *lgm_sizes)
   return (0);
 }
 
-int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
+int NS_DIM_PREFIX LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 {
   int i,n, old_i, error, line_id;
 
@@ -430,7 +431,7 @@ int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
   return (0);
 }
 
-int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
+int NS_DIM_PREFIX LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 {
   int i,n,surface_i,i1,i2,i3,found,copy;
   fpos_t filepos_tmp;
@@ -529,7 +530,7 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
   return (0);
 }
 
-int LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
+int NS_DIM_PREFIX LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 {
   int n;
   double f[3];
@@ -728,7 +729,7 @@ static int Search_Neighbours(LGM_SURFACE_INFO *surface_info, INT **point_list, I
   return(0);
 }
 
-int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
+int NS_DIM_PREFIX LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
 {
   int i,k,n,i1,i2,i3,surface_id, error;
 
@@ -851,7 +852,7 @@ int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
    D*/
 /****************************************************************************/
 
-FILE *LGM_WriteOpenFile (char* name)
+FILE* NS_DIM_PREFIX LGM_WriteOpenFile (char* name)
 {
   FILE *stream;
 
@@ -869,7 +870,7 @@ FILE *LGM_WriteOpenFile (char* name)
   return (stream);
 }
 
-INT InitLGMTransfer (void)
+INT NS_DIM_PREFIX InitLGMTransfer (void)
 {
   /* path to dir 'storidge' */
   lgmdomainpathes_set = 0;

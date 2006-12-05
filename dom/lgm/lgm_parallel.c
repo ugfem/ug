@@ -133,13 +133,13 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-void DomInitParallel (INT TypeBndP, INT TypeBndS)
+void NS_DIM_PREFIX DomInitParallel (INT TypeBndP, INT TypeBndS)
 {}
 
-void DomHandlerInit (INT handlerSet)
+void NS_DIM_PREFIX DomHandlerInit (INT handlerSet)
 {}
 
-void BElementXferBndS (BNDS **Bnds, int n, int proc, int prio)
+void NS_DIM_PREFIX BElementXferBndS (BNDS **Bnds, int n, int proc, int prio)
 {
   LGM_BNDS **bnds = (LGM_BNDS **)Bnds;
   INT size,i,size0;
@@ -164,7 +164,7 @@ void BElementXferBndS (BNDS **Bnds, int n, int proc, int prio)
   DDD_XferAddData(size,DDD_DOMAIN_DATA);
 }
 
-void BElementGatherBndS (BNDS **Bnds, int n, int cnt, char *data)
+void NS_DIM_PREFIX BElementGatherBndS (BNDS **Bnds, int n, int cnt, char *data)
 {
   LGM_BNDS **bnds = (LGM_BNDS **)Bnds;
   INT size,i;
@@ -201,7 +201,7 @@ void BElementGatherBndS (BNDS **Bnds, int n, int cnt, char *data)
   memcpy(data,&i,sizeof(INT));
 }
 
-void BElementScatterBndS (BNDS **Bnds, int n, int cnt, char *data)
+void NS_DIM_PREFIX BElementScatterBndS (BNDS **Bnds, int n, int cnt, char *data)
 {
   LGM_BNDS **bnds = (LGM_BNDS **)Bnds;
   INT size,i;
@@ -246,10 +246,10 @@ void BElementScatterBndS (BNDS **Bnds, int n, int cnt, char *data)
 }
 
 
-void BVertexXferBndP (BNDP *Bndp, int proc, int prio)
+void NS_DIM_PREFIX BVertexXferBndP (BNDP *Bndp, int proc, int prio)
 {
   LGM_BNDP *bndp = (LGM_BNDP *)Bndp;
-  INT i,size;
+  INT size;
   INT n;
 #if (LGM_DIM==3)
   INT nlines;
@@ -277,7 +277,7 @@ void BVertexXferBndP (BNDP *Bndp, int proc, int prio)
   DDD_XferAddData(size,DDD_DOMAIN_DATA);
 }
 
-void BVertexGatherBndP (BNDP *Bndp, int cnt, char *data)
+void NS_DIM_PREFIX BVertexGatherBndP (BNDP *Bndp, int cnt, char *data)
 {
   LGM_BNDP *bndp = (LGM_BNDP *)Bndp;
   INT i;
@@ -287,7 +287,6 @@ void BVertexGatherBndP (BNDP *Bndp, int cnt, char *data)
   INT nlines;
   INT linesize;
 #endif
-  char *buffer = data;
 
   PRINTDEBUG(dom,1,(PFMT "BVertexGatherBndP(): bndp=%x cnt=%d data=%x\n",
                     me,bndp,cnt,data));
@@ -347,11 +346,10 @@ void BVertexGatherBndP (BNDP *Bndp, int cnt, char *data)
   }
 }
 
-void BVertexScatterBndP (BNDP **Bndp, int cnt, char *data)
+void NS_DIM_PREFIX BVertexScatterBndP (BNDP **Bndp, int cnt, char *data)
 {
   LGM_BNDP **bndp = (LGM_BNDP **)Bndp;
   INT i;
-  char *buffer = data;
 
   PRINTDEBUG(dom,1,(PFMT "BVertexScatterBndP(): bndp=%x cnt=%d data=%x\n",
                     me,*bndp,cnt,data));

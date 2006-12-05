@@ -65,7 +65,8 @@
 
 #include "namespace.h"
 
-USING_UGDIM_NAMESPACE
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 #define NUOFCLMS 70
 #define NU_SFCES_BNDP 9
@@ -7481,7 +7482,7 @@ INT Ansys2lgm  ()
    static fpos_t fileposline;
    static fpos_t filepossurface;*/
 
-int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey)
+int NS_DIM_PREFIX LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey)
 {
   INT ret_val;
   char helpstring[50];
@@ -7596,7 +7597,7 @@ int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_in
    SEE ALSO:
  */
 /****************************************************************************/
-int LGM_ANSYS_ReadSizes (LGM_SIZES *lgm_sizes)
+int NS_DIM_PREFIX LGM_ANSYS_ReadSizes (LGM_SIZES *lgm_sizes)
 {
   int i;
   PL_TYP *plyln;
@@ -7682,7 +7683,7 @@ int LGM_ANSYS_ReadSizes (LGM_SIZES *lgm_sizes)
    SEE ALSO:
  */
 /****************************************************************************/
-int LGM_ANSYS_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
+int NS_DIM_PREFIX LGM_ANSYS_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 {
   int s,n,neue_ID,bisherige_ID,i,hlp;
   SF_TYP *sfce;
@@ -7793,7 +7794,7 @@ int LGM_ANSYS_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
    SEE ALSO:
  */
 /****************************************************************************/
-int LGM_ANSYS_ReadSurface (int sfcnumber, LGM_SURFACE_INFO *surface_info)
+int NS_DIM_PREFIX LGM_ANSYS_ReadSurface (int sfcnumber, LGM_SURFACE_INFO *surface_info)
 {
   SF_TYP *sfce;
   TRIANGLE_TYP *erstes_Tria;
@@ -7988,7 +7989,7 @@ int LGM_ANSYS_ReadSurface (int sfcnumber, LGM_SURFACE_INFO *surface_info)
    SEE ALSO:
  */
 /****************************************************************************/
-int LGM_ANSYS_ReadLines (int which_plline, LGM_LINE_INFO *line_info)
+int NS_DIM_PREFIX LGM_ANSYS_ReadLines (int which_plline, LGM_LINE_INFO *line_info)
 {
   PL_TYP *plyln;
   PL_LINE_TYP *pllyln;
@@ -8063,7 +8064,7 @@ int LGM_ANSYS_ReadLines (int which_plline, LGM_LINE_INFO *line_info)
    SEE ALSO:
  */
 /****************************************************************************/
-int LGM_ANSYS_ReadPoints (LGM_POINT_INFO *lgm_point_info)
+int NS_DIM_PREFIX LGM_ANSYS_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 {
   int p, hilf;
 
@@ -9729,7 +9730,7 @@ int     EvalBndPoint_Line_Informations(LGM_MESH_INFO *theMesh)
                und muss hier nicht nochmal uebergeben werden.*/
 /*int LGM_ANSYS_ReadMesh (HEAP *theHeap, LGM_MESH_INFO *theMesh)*/
 /* alte Version*/
-int LGM_ANSYS_ReadMesh (char *name, HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) /* DIRKS NEU MarkKey*/
+int NS_DIM_PREFIX LGM_ANSYS_ReadMesh (char *name, HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) /* DIRKS NEU MarkKey*/
 {
   SD_TYP *sbd;
   int i,TetraederelementID, SbdName,elem_lf;

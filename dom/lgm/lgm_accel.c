@@ -28,6 +28,7 @@
 
 #include "namespace.h"
 
+USING_UG_NAMESPACE
 USING_UGDIM_NAMESPACE
 
 
@@ -109,7 +110,7 @@ static BBT_BBOX *CreateTriangleBBox(HEAP *theHeap, LGM_TRIANGLE *triangle)
    .  INT value 0: o.k. 1: error
    D*/
 /*---------------------------------------------------------------------------*/
-INT LGM_InitAcceleration(HEAP *theHeap, LGM_SURFACE **sf, INT nsf)
+INT NS_DIM_PREFIX LGM_InitAcceleration(HEAP *theHeap, LGM_SURFACE **sf, INT nsf)
 {
   LGM_TRIANGLE *triangle;
   BBT_BBOX **bboxes;

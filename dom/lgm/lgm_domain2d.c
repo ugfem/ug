@@ -46,7 +46,8 @@
 
 #include "namespace.h"
 
-USING_UGDIM_NAMESPACE
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -171,7 +172,7 @@ LGM_LINE * NS_DIM_PREFIX NextLine (LGM_DOMAIN *theDomain)
   return (theLine);
 }
 
-INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond)
+INT NS_DIM_PREFIX SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond)
 {
   INT i,k;
   LGM_SUBDOMAIN *theSubdom;
@@ -215,7 +216,7 @@ INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCond
    D*/
 /****************************************************************************/
 
-INT SetDomainSize (LGM_DOMAIN *theDomain)
+INT NS_DIM_PREFIX SetDomainSize (LGM_DOMAIN *theDomain)
 {
   LGM_PROBLEM *theProblem;
   LGM_LINE *theLine;
@@ -294,7 +295,7 @@ static INT Get_NBNDP                            (LGM_DOMAIN *theDomain, INT *nBN
 static INT DiscretizeDomain             (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
 
 /* domain interface function: for description see domain.h */
-MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey)
+MESH* NS_DIM_PREFIX BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_LINE *theLine;
@@ -631,7 +632,7 @@ static INT DiscretizeLine2 (HEAP *Heap, LGM_LINE *theLine, MESH *theMesh, DOUBLE
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_Check (BVP *aBVP)
+INT NS_DIM_PREFIX BVP_Check (BVP *aBVP)
 {
   INT i,j,k,ret,at_begin,at_left,flags;
   LGM_DOMAIN *theD;
@@ -769,7 +770,7 @@ INT BVP_Check (BVP *aBVP)
 /****************************************************************************/
 
 /* domain interface function: for description see domain.h */
-INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
+INT NS_DIM_PREFIX BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   LGM_LINE *theLine;
   LGM_BNDP *theBndP;
@@ -799,7 +800,7 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type)
+INT NS_DIM_PREFIX BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type)
 {
   LGM_LINE *theLine;
   LGM_BNDP *theBndP;
@@ -849,7 +850,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
+INT NS_DIM_PREFIX BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
 {
   LGM_LINE *theLine;
   LGM_BNDP *theBndP;
@@ -864,7 +865,7 @@ INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
+INT NS_DIM_PREFIX BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
 {
   LGM_LINE *theLine;
   LGM_BNDP *theBndP;
@@ -889,7 +890,7 @@ INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
 }
 
 /* domain interface function: for description see domain.h */
-BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
+BNDS* NS_DIM_PREFIX BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
   INT i,j,i0,j0,count,k;
   LGM_BNDP *theBndP1, *theBndP2;
@@ -924,7 +925,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
+BNDP* NS_DIM_PREFIX BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   LGM_BNDP *theBndP1, *theBndP2, *theBndP;
   LGM_LINE *theLine;
@@ -961,7 +962,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
+INT NS_DIM_PREFIX BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
 {
   LGM_BNDP *theBndP;
   INT size;
@@ -974,7 +975,7 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_SaveBndP (BNDP *aBndP)
+INT NS_DIM_PREFIX BNDP_SaveBndP (BNDP *aBndP)
 {
   INT i;
   LGM_BNDP *theBndP;
@@ -995,7 +996,7 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   return(0);
 }
 
-INT BNDP_SaveBndP_Ext (BNDP *aBndP)
+INT NS_DIM_PREFIX BNDP_SaveBndP_Ext (BNDP *aBndP)
 {
   INT i;
   LGM_BNDP *theBndP;
@@ -1018,7 +1019,7 @@ INT BNDP_SaveBndP_Ext (BNDP *aBndP)
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
+BNDP* NS_DIM_PREFIX BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
   LGM_DOMAIN *theDomain;
   LGM_LINE *theLine;
@@ -1044,7 +1045,7 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   return((BNDP *)theBndP);
 }
 
-BNDP *BNDP_LoadBndP_Ext (void)
+BNDP* NS_DIM_PREFIX BNDP_LoadBndP_Ext (void)
 {
   int i,n,id;
   double local;
@@ -1106,7 +1107,7 @@ INT NS_DIM_PREFIX BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
+INT NS_DIM_PREFIX BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
 {
   LGM_BNDS *theBndS;
   LGM_LINE *theLine;
@@ -1142,7 +1143,7 @@ static INT SideIsCooriented (LGM_BNDS *theBndS)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_BndSDesc (BNDS *aBndS, INT *id, INT *nbid, INT *part)
+INT NS_DIM_PREFIX BNDS_BndSDesc (BNDS *aBndS, INT *id, INT *nbid, INT *part)
 {
   LGM_BNDS *theBndS;
   LGM_LINE *theLine;
@@ -1175,7 +1176,7 @@ INT BNDS_BndSDesc (BNDS *aBndS, INT *id, INT *nbid, INT *part)
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
+BNDP* NS_DIM_PREFIX BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 {
   LGM_BNDS *theBndS;
   LGM_BNDP *theBndP;
@@ -1195,7 +1196,7 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
+INT NS_DIM_PREFIX BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
 {
   LGM_DOMAIN *lgm_domain;
   LGM_LINE *theLine, **LinePtrList;
@@ -1358,7 +1359,7 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
 
 
 /* auxiliary function for getting the maximum line-ID */
-INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
+INT NS_DIM_PREFIX GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
 {
   INT nSubDom, i, l, maxLineId=0;
 
@@ -1379,12 +1380,12 @@ INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain)
 }
 
 /* dummys OS_CHANGED */
-INT OuterBndSurfaceIDs (LGM_DOMAIN *theDomain, INT *sf)
+INT NS_DIM_PREFIX OuterBndSurfaceIDs (LGM_DOMAIN *theDomain, INT *sf)
 {
   return 1;
 }
 
-INT SurfaceIDsOfSubdomain (LGM_DOMAIN *theDomain, INT *sf, INT i)
+INT NS_DIM_PREFIX SurfaceIDsOfSubdomain (LGM_DOMAIN *theDomain, INT *sf, INT i)
 {
   return 0;
 }

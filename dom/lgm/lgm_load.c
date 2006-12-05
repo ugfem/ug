@@ -62,7 +62,8 @@
 
 #include "namespace.h"
 
-USING_UGDIM_NAMESPACE
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 
 /****************************************************************************/
@@ -167,7 +168,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 #if (LGM_DIM==2)
 
-LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
+LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_DOMAIN_INFO theDomInfo;
@@ -313,7 +314,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   return (theDomain);
 }
 
-INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
+INT NS_DIM_PREFIX LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
 {
   INT i,j,size;
   LGM_MESH_INFO lgm_mesh_info;
@@ -467,7 +468,7 @@ int CompareSurface (int i, int k)
 INT Accel_With_Hash( LGM_DOMAIN_INFO theDomInfo,  LGM_SURFACE **SurfacePtrList ,  LGM_POINT_INFO *piptr, INT MarkKey, HEAP *theHeap)
 {
   int i,j,k,l,tria,corner,surface,Adressei,Hashgroesse,weiter;
-  double x,y,z,Adressed;
+  double x,y,z;
   int ** Tria_Pos;
   double ** Koordinaten;
   double zahl2;
@@ -640,7 +641,7 @@ INT Accel_With_Hash( LGM_DOMAIN_INFO theDomInfo,  LGM_SURFACE **SurfacePtrList ,
 
 
 
-LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
+LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_DOMAIN_INFO theDomInfo;
@@ -1045,7 +1046,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   return (theDomain);
 }
 
-INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
+INT NS_DIM_PREFIX LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
 {
   LGM_MESH_INFO lgm_mesh_info;
   INT i;
@@ -1266,10 +1267,9 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
  */
 /****************************************************************************/
 
-INT InitLGMLoad (void)
+INT NS_DIM_PREFIX InitLGMLoad ()
 {
   if (InitLGMTransfer()) return (1);
-
 
   return (0);
 }

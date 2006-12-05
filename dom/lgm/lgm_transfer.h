@@ -36,19 +36,12 @@
 /* for FILE */
 #include <stdio.h>
 
-#ifndef __DOMAIN__
 #include "domain.h"
-#endif
-
 #include "dimension.h"
-
 #include "heaps.h"
-
 #include "namespace.h"
 
 START_UGDIM_NAMESPACE
-
-  USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
