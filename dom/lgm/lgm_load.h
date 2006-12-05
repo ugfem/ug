@@ -33,17 +33,9 @@
 #ifndef __LGM_LOAD__
 #define __LGM_LOAD__
 
-#ifndef __HEAPS__
 #include "heaps.h"
-#endif
-
-#ifndef __DOMAIN__
 #include "domain.h"
-#endif
-
-#ifndef __LGM_DOM__
 #include "lgm_domain.h"
-#endif
 
 #include "namespace.h"
 

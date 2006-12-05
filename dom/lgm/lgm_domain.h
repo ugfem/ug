@@ -61,17 +61,9 @@
 
 #else
 
-#ifndef __UGENV__
 #include "ugenv.h"
-#endif
-
-#ifndef __HEAPS__
 #include "heaps.h"
-#endif
-
-#ifndef __DOMAIN__
 #include "domain.h"
-#endif
 
 #endif
 
@@ -101,8 +93,6 @@
 #include "namespace.h"
 
 START_UGDIM_NAMESPACE
-
-  USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
