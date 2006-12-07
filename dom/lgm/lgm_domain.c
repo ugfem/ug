@@ -168,6 +168,12 @@ static LGM_PROBLEM *Lgm_Problem_GetByName (char *name)
   return((LGM_PROBLEM *) SearchEnv(name,"/LGM_PROBLEM",theProblemVarID,theProblemDirID));
 }
 
+void NS_DIM_PREFIX
+Set_Current_BVP(BVP* theBVP)
+{
+  return;
+}
+
 /* domain interface function: for description see domain.h */
 BVP *NS_DIM_PREFIX
 BVP_GetByName (const char *name)
