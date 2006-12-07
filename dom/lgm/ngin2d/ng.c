@@ -43,7 +43,9 @@
 
 #include "namespace.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
+
 
 
 /****************************************************************************/
@@ -203,7 +205,7 @@ int OrientateElem (NG_ELEMENT *Elem)
  */
 /****************************************************************************/
 
-int PutBndNode (BND_NODE *BndNode)
+int NS_DIM_PREFIX PutBndNode (BND_NODE *BndNode)
 {
   int i,line_id;
 
@@ -256,7 +258,7 @@ int PutBndNode (BND_NODE *BndNode)
   return (0);
 }
 
-int PutInnerNode (INNER_NODE *InnNode)
+int NS_DIM_PREFIX PutInnerNode (INNER_NODE *InnNode)
 {
   switch (mode)
   {
@@ -275,7 +277,7 @@ int PutInnerNode (INNER_NODE *InnNode)
   return (0);
 }
 
-int PutElement (NG_ELEMENT *Elem)
+int NS_DIM_PREFIX PutElement (NG_ELEMENT *Elem)
 {
   int i,j,side;
 
@@ -317,12 +319,12 @@ int PutElement (NG_ELEMENT *Elem)
   return (0);
 }
 
-void ngbreak (void)
+void NS_DIM_PREFIX ngbreak (void)
 {
   ng_abort=1;
 }
 
-int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey)
+int NS_DIM_PREFIX NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey)
 {
   int i,j,error;
   char ngname[128];
@@ -473,7 +475,7 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey)
 
 #ifdef __USE_IN_UG__
 
-int NG_Init (int domainpathes_set)
+int NS_DIM_PREFIX NG_Init (int domainpathes_set)
 {
   lgmdomainpathes_set = domainpathes_set;
 

@@ -38,6 +38,7 @@
 
 #include "namespace.h"
 
+USING_UG_NAMESPACE
 USING_UGDIM_NAMESPACE
   
 static LINE_POSITION LinePos;

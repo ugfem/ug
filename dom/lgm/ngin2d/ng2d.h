@@ -153,8 +153,8 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey);
 int NG_Init (int domainpaths_set);
 #endif
 
-END_UGDIM_NAMESPACE
-
 void ngbreak (void);
+
+END_UGDIM_NAMESPACE
 
 #endif
