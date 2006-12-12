@@ -78,6 +78,9 @@ extern "C" {
 #define _fmt_lG                 "lG"
 #define _fmt_lf                 "lf"
 
+/* Define to 1 if you have the <malloc.h> header file. */
+#define HAVE_MALLOC_H 1
+
 /****************************************************************************/
 /*                                                                          */
 /* #define exactly one of the following constants: (in Makefile)            */
@@ -875,6 +878,9 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 /* current time as DOUBLE value */
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+
+/* MAcOS does not have malloc.h */
+#undef HAVE_MALLOC_H
 
 #endif
 
