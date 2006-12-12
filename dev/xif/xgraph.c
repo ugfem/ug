@@ -43,7 +43,7 @@
 
 /* standard C includes */
 #include <stdio.h>
-#ifndef __MACOSX__
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #include <stddef.h>
