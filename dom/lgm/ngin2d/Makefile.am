@@ -9,7 +9,7 @@ endif
 noinst_LTLIBRARIES = $(LIB_2D)
 
 # prefix to use instead of 'yy'
-PARSERPREFIX = ng
+PARSERPREFIX = ng2d
 
 # generate header file, rename prefix
 AM_YFLAGS = -d -p $(PARSERPREFIX)

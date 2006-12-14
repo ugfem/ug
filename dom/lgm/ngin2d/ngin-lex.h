@@ -4,9 +4,9 @@
 #define UG_NGIN_LEX_H
 
 /* C++-compilers don't like this defined implicitly */
-int nglex();
+int ng2dlex();
 
 /* error function used in YACC-parser as well */
-int NP_Error (int *line, char *text);
+int NP2d_Error (int *line, char *text);
 
 #endif

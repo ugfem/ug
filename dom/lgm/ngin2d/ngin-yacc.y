@@ -48,7 +48,7 @@ static ELEM_SIDE ElemSide;
 static NG_ELEMENT Elem;
 
  /* forward declare my own function (referenced by automatic parser) */ 
- int ngerror (char *s);
+ int ng2derror (char *s);
 
 
 %}
@@ -193,17 +193,17 @@ Id:
 %%
 
 
-int ngwrap (char *s)
+int ng2dwrap (void )
 {
     return (1);
 }
 
-int ngerror (char *s)
+int ng2derror (char *s)
 {
 	int line;
 	char text[128];
 
-	NP_Error(&line,text);
+	NP2d_Error(&line,text);
     NG_Print(ERROR_PREFIX "'%s', line %d\n",text,line);
     ngbreak();
 	return 0;

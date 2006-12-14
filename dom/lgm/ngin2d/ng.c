@@ -79,6 +79,7 @@ USING_UG_NAMESPACE
 /*																			*/
 /****************************************************************************/
 
+#define ngin ng2din
 extern FILE *ngin;
 
 /****************************************************************************/
@@ -107,7 +108,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
-
+#define ngparse ng2dparse
 int ngparse (void);
 
 
@@ -147,7 +148,7 @@ static int CheckElem (NG_ELEMENT *Elem)
   return (0);
 }
 
-int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
+static int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
 {
   int i,j,esob,c1,c2,ec1,ec2;
 
@@ -167,7 +168,7 @@ int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
   return (esob);
 }
 
-int OrientateElem (NG_ELEMENT *Elem)
+static int OrientateElem (NG_ELEMENT *Elem)
 {
   int i;
   double p[4][2];

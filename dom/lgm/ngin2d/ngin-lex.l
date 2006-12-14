@@ -31,7 +31,7 @@ static int noline=1;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /* forward declare stuff from ngin-yacc.y */
-int ngerror (char *s); 
+int ng2derror (char *s); 
 
 %}
 
@@ -51,19 +51,19 @@ KEY_TEND        	;
 [ \t]+              ;
 [\n]                {noline++;}
 {COMMENT}           ;
-{KEY_INT}			{nglval.ival=atol((const char *)yytext); return (INT_VALUE);}
-{KEY_DOUBLE}		{nglval.dval=strtod((const char *)yytext,NULL); return (DOUBLE_VALUE);}
+{KEY_INT}			{ng2dlval.ival=atol((const char *)yytext); return (INT_VALUE);}
+{KEY_DOUBLE}		{ng2dlval.dval=strtod((const char *)yytext,NULL); return (DOUBLE_VALUE);}
 {KEY_INODE}			{return (INODE);}
 {KEY_BNODE}			{return (BNODE);}
 {KEY_LINE}			{return (LINE);}
 {KEY_ELEM}			{return (ELEM);}
 {KEY_SIDE}			{return (SIDE);}
 {KEY_TEND}			{return (TEND);}
-.                   {ngerror(NULL);}
+.                   {ng2derror(NULL);}
 
 %%
 
-int NP_Error (int *line, char *text)
+int NP2d_Error (int *line, char *text)
 {
 	*line=noline;
 	strcpy(text,yytext);
