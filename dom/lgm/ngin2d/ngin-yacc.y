@@ -192,10 +192,12 @@ Id:
 
 %%
 
-
+extern "C" 
+{
 int ng2dwrap (void )
 {
     return (1);
+}
 }
 
 int ng2derror (char *s)
