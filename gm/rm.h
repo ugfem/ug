@@ -37,7 +37,6 @@
 #ifndef __RULEMANAGER__
 #define __RULEMANAGER__
 
-#include "compiler.h"
 #include "gm.h"
 #include "refine.h"
 
