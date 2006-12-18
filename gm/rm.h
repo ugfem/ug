@@ -230,20 +230,11 @@ enum {HEXA_COPY           = 1,
 /*                                                                                                                                                      */
 /****************************************************************************/
 
-/* Hacks for HITACHI SR2201 will be eliminated as soon as the HITACHI
-   compiler bug is removed */
-
 #define TAG_OF_RULE(r)              ((r)->tag)
 #define MARK_OF_RULE(r)             ((r)->mark)
-#ifdef __SR2201__
-#define CLASS_OF_RULE(r)            ((*(r)).rclass)
-#define NSONS_OF_RULE(r)            ((*(r)).nsons)
-#define SON_OF_RULE(r,s)            (&((*(r)).sons[(s)]))
-#else
 #define CLASS_OF_RULE(r)            ((r)->rclass)
 #define NSONS_OF_RULE(r)            ((r)->nsons)
 #define SON_OF_RULE(r,s)            (&((r)->sons[(s)]))
-#endif
 #define PATTERN_OF_RULE(r,i)            ((r)->pattern[(i)])
 #define PAT_OF_RULE(r)                          ((r)->pat)
 #define SON_OF_NODE_OF_RULE(r,n)        ((r)->sonandnode[(n)][0])
