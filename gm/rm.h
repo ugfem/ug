@@ -57,11 +57,11 @@ START_UGDIM_NAMESPACE
 /* Declaration of TET_RULESET has been moved to config.h */
 /* uncomment this if you want to use the full rule set for tetrahedra */
 
-/* defines for edge types */
-#define INNER_EDGE          1
-#define SIDE_EDGE           2
-#define HALF_FATHER_EDGE    3
-#define FATHER_EDGE         4
+/** \brief Defines for edge types */
+enum {INNER_EDGE        = 1,
+      SIDE_EDGE         = 2,
+      HALF_FATHER_EDGE  = 3,
+      FATHER_EDGE       = 4};
 
 #define NEXTSIDEMASKHEX         0x00000007
 #define NEXTSIDEHEX(i,n)        (((i) & (NEXTSIDEMASKHEX<<(3*(n))))>>(3*(n)))
@@ -135,43 +135,43 @@ START_UGDIM_NAMESPACE
 #define MARKED(e)               (MARK(e)!=NO_REFINEMENT)
 #define LEAFELEM(e)                     (!IS_REFINED(e))
 
-/* indices of rules in rule array */
-#define T_NOREF                         0
-#define T_COPY                  1
-#define T_RED                           2
-#define T_BISECT_1_0            3
-#define T_BISECT_1_1            4
-#define T_BISECT_1_2            5
-#define T_BISECT_2_T1_0         7
-#define T_BISECT_2_T1_1         8
-#define T_BISECT_2_T1_2         6
-#define T_BISECT_2_T2_0         11
-#define T_BISECT_2_T2_1         9
-#define T_BISECT_2_T2_2         10
-#define T_BISECT_2_Q_0          12
-#define T_BISECT_2_Q_1          13
-#define T_BISECT_2_Q_2          14
-#define T_BISECT_3_0            15
-#define T_BISECT_3_1            16
-#define T_BISECT_3_2            17
+/** \brief Indices of rules in rule array */
+enum {T_NOREF               = 0,
+      T_COPY                = 1,
+      T_RED                 = 2,
+      T_BISECT_1_0          = 3,
+      T_BISECT_1_1          = 4,
+      T_BISECT_1_2          = 5,
+      T_BISECT_2_T1_0       = 7,
+      T_BISECT_2_T1_1       = 8,
+      T_BISECT_2_T1_2       = 6,
+      T_BISECT_2_T2_0       = 11,
+      T_BISECT_2_T2_1       = 9,
+      T_BISECT_2_T2_2       = 10,
+      T_BISECT_2_Q_0        = 12,
+      T_BISECT_2_Q_1        = 13,
+      T_BISECT_2_Q_2        = 14,
+      T_BISECT_3_0          = 15,
+      T_BISECT_3_1          = 16,
+      T_BISECT_3_2          = 17};
 
-#define Q_NOREF                         0
-#define Q_COPY                          1
-#define Q_RED                           2
-#define Q_CLOSE_1_0                     3
-#define Q_CLOSE_1_1                     4
-#define Q_CLOSE_1_2                     5
-#define Q_CLOSE_1_3                     6
-#define Q_BLUE_0                        7
-#define Q_BLUE_1                        8
-#define Q_CLOSE_2_0                     9
-#define Q_CLOSE_2_1                     10
-#define Q_CLOSE_2_2                     11
-#define Q_CLOSE_2_3                     12
-#define Q_CLOSE_3_0                     13
-#define Q_CLOSE_3_1                     14
-#define Q_CLOSE_3_2                     15
-#define Q_CLOSE_3_3                     16
+enum {Q_NOREF,
+      Q_COPY,
+      Q_RED,
+      Q_CLOSE_1_0,
+      Q_CLOSE_1_1,
+      Q_CLOSE_1_2,
+      Q_CLOSE_1_3,
+      Q_BLUE_0,
+      Q_BLUE_1,
+      Q_CLOSE_2_0,
+      Q_CLOSE_2_1,
+      Q_CLOSE_2_2,
+      Q_CLOSE_2_3,
+      Q_CLOSE_3_0,
+      Q_CLOSE_3_1,
+      Q_CLOSE_3_2,
+      Q_CLOSE_3_3};
 
 #define TET_COPY                        1
 #ifdef TET_RULESET
@@ -195,33 +195,33 @@ START_UGDIM_NAMESPACE
 #define TET_RED_HEX                     5
 #endif
 
-#define PYR_COPY                        1
-#define PYR_RED                         2
+enum {PYR_COPY    = 1,
+      PYR_RED     = 2};
 
-#define PRI_COPY                        1
-#define PRI_RED                         2
-#define PRI_QUADSECT            3
-#define PRI_BISECT_1_2      7
-#define PRI_BISECT_HEX0         8
-#define PRI_BISECT_HEX1         9
-#define PRI_BISECT_HEX2         10
-#define PRI_RED_HEX                     11
-#define PRI_ROT_L                       12
-#define PRI_ROT_R                       13
-#define PRI_QUADSECT_HEXPRI0 14
+enum {PRI_COPY             = 1,
+      PRI_RED              = 2,
+      PRI_QUADSECT         = 3,
+      PRI_BISECT_1_2       = 7,
+      PRI_BISECT_HEX0      = 8,
+      PRI_BISECT_HEX1      = 9,
+      PRI_BISECT_HEX2      = 10,
+      PRI_RED_HEX          = 11,
+      PRI_ROT_L            = 12,
+      PRI_ROT_R            = 13,
+      PRI_QUADSECT_HEXPRI0 = 14};
 
-#define HEXA_COPY                       1
-#define HEXA_RED                        2
-#define HEXA_BISECT_0_1     3
-#define HEXA_BISECT_0_2     4
-#define HEXA_BISECT_0_3     5
-#define HEXA_QUADSECT_0     6
-#define HEXA_QUADSECT_1     7
-#define HEXA_QUADSECT_2     8
-#define HEXA_TRISECT_0      9
-#define HEXA_TRISECT_5      10
-#define HEXA_BISECT_HEXPRI0 11
-#define HEXA_BISECT_HEXPRI1 12
+enum {HEXA_COPY           = 1,
+      HEXA_RED            = 2,
+      HEXA_BISECT_0_1     = 3,
+      HEXA_BISECT_0_2     = 4,
+      HEXA_BISECT_0_3     = 5,
+      HEXA_QUADSECT_0     = 6,
+      HEXA_QUADSECT_1     = 7,
+      HEXA_QUADSECT_2     = 8,
+      HEXA_TRISECT_0      = 9,
+      HEXA_TRISECT_5      = 10,
+      HEXA_BISECT_HEXPRI0 = 11,
+      HEXA_BISECT_HEXPRI1 = 12};
 
 
 /****************************************************************************/
