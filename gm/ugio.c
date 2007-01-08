@@ -171,24 +171,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 static INT WriteElementParInfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pinfo);
 
-/****************************************************************************/
-/*D
-   RenumberMultiGrid - Recalculate ids in the current order
-
-   SYNOPSIS:
-   INT RenumberMultiGrid (MULTIGRID *theMG);
-
-   PARAMETERS:
-   .  theMG - structure to renumber
-
-   DESCRIPTION:
-   This function recalculates ids in the current order.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   D*/
-/****************************************************************************/
 
 /************************************************************************************/
 /*                                                                                                                                                              */
@@ -268,29 +250,6 @@ static INT RenumberNodes (MULTIGRID *theMG, INT *foid, INT *non)
 
   return (0);
 }
-
-/****************************************************************************/
-/*D
-        SaveMultiGrid - Save complete multigrid structure in a text file
-
-        SYNOPSIS:
-        INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment);
-
-        PARAMETERS:
-        .  theMG - pointer to multigrid
-        .  name - name of the text file
-        .  comment - to be included at beginning of file
-
-        DESCRIPTION:
-        This function saves the grid on level 0 to a text file.
-        The text file can be used in a script to load the grid.
-
-        RETURN VALUE:
-        INT
-        .n    0 if ok
-        .n    >0 if error occured.
-        D*/
-/****************************************************************************/
 
 static INT SaveSurfaceGrid  (MULTIGRID *theMG, FILE *stream)
 {
@@ -688,6 +647,17 @@ static INT OrphanCons(MULTIGRID *theMG)
 
   return(error);
 }
+
+/****************************************************************************/
+/** \brief Recalculate ids in the current order
+
+   \param theMG - structure to renumber
+
+   This function recalculates ids in the current order.
+
+   \return 0 if ok
+ */
+/****************************************************************************/
 
 INT NS_DIM_PREFIX RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non, INT MarkKey)
 {
@@ -1734,6 +1704,23 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   return (0);
 }
 
+/****************************************************************************/
+/** \brief Save complete multigrid structure in a text file
+
+   \param theMG - pointer to multigrid
+   \param name - name of the text file
+   \param comment - to be included at beginning of file
+
+   This function saves the grid on level 0 to a text file.
+   The text file can be used in a script to load the grid.
+
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> >0 if error occured </li>
+   </ul>
+ */
+/****************************************************************************/
+
 INT NS_DIM_PREFIX SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename)
 {
   /* check name convention */
@@ -1747,31 +1734,6 @@ INT NS_DIM_PREFIX SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char 
   }
   return (0);
 }
-
-/****************************************************************************/
-/*
-   LoadMultiGrid - Load complete multigrid structure from a text file
-
-   SYNOPSIS:
-   MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName,
-   char *BVPName, char *format, unsigned long heapSize);
-
-   PARAMETERS:
-   .  MultigridName - Name of the new 'MULTIGRID' structure in memory.
-   .  FileName - Name of the file to be read.
-   .  BVPName - `Name` of the BVP used for the 'MULTIGRID'.
-   .  format - `Name` of the 'FORMAT' to be used for the 'MULTIGRID'.
-   .  heapSize - Size of the heap in bytes that will be allocated for the 'MULTIGRID'.
-
-   DESCRIPTION:
-   This function can read grid files produced with the 'SaveMultiGrid' function.
-
-   RETURN VALUE:
-   INT
-   .n    NULL if an error occured
-   .n    else pointer to new 'MULTIGRID'
- */
-/****************************************************************************/
 
 static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pinfo)
 {
@@ -2756,6 +2718,23 @@ static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
   return (0);
 }
 #endif
+
+/****************************************************************************/
+/** \brief  Load complete multigrid structure from a text file
+
+   \param MultigridName - Name of the new 'MULTIGRID' structure in memory.
+   \param FileName - Name of the file to be read.
+   \param BVPName - `Name` of the BVP used for the 'MULTIGRID'.
+   \param format - `Name` of the 'FORMAT' to be used for the 'MULTIGRID'.
+   \param heapSize - Size of the heap in bytes that will be allocated for the 'MULTIGRID'.
+
+   This function can read grid files produced with the 'SaveMultiGrid' function.
+
+   \return
+   NULL if an error occured else apointer to new 'MULTIGRID'
+ */
+/****************************************************************************/
+
 
 MULTIGRID * NS_DIM_PREFIX LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE, INT autosave)
 /* Documentation of the intended programm flow resp. communication requirements.
