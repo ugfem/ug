@@ -38,6 +38,15 @@
 /** \todo this is a hierarchy conflict, remove. (VR) */
 #include "ugdevices.h"
 
+/* If this is set, we use the normal heap provided by the operating system instead
+   of the built-in UG heap.  That way we don't have to give an initial heap size
+   ever.  And that in turn make the Dune UGGrid interface easier, because UGGrid
+   users don't even have to know what the UG environment heap is.
+   In fact I currently see no reason not to always use the operating system heap.
+   Please report problems to sander at mi dot fu-berlin dot de
+ */
+#define USE_OS_HEAP
+
 USING_UG_NAMESPACE
 
 /****************************************************************************/
@@ -58,8 +67,13 @@ USING_UG_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
+#ifndef USE_OS_HEAP
 static HEAP *envHeap=NULL;              /* heap used for the environment    */
-static ENVDIR *path[MAXENVPATH];        /* path to current directory        */
+#endif
+/** \brief Path to current directory
+
+   We only need the first entry to be zero-initialized. */
+static ENVDIR *path[MAXENVPATH] = {NULL};
 static int pathIndex;                   /* entry to path array              */
 
 /* RCS string */
@@ -82,8 +96,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 INT NS_PREFIX InitUgEnv (INT heapSize)
 {
-  void *buffer;
   ENVDIR *root;
+#ifndef USE_OS_HEAP
+  void *buffer;
 
   /* Environment heap already initialized? */
   if (envHeap)
@@ -97,6 +112,14 @@ INT NS_PREFIX InitUgEnv (INT heapSize)
 
   /* allocate root directory */
   if ((root=(ENVDIR*)GetMem(envHeap,sizeof(ENVDIR),0))==NULL) return(__LINE__);
+#else
+  /* Environment heap already initialized? */
+  if (path[0])
+    return 0;
+
+  /* allocate root directory */
+  if ((root=(ENVDIR*)malloc(sizeof(ENVDIR)))==NULL) return(__LINE__);
+#endif
   root->type = ROOT_DIR;
   root->next = root->previous = root->down = NULL;
   strcpy(root->name,"root");
@@ -111,8 +134,12 @@ INT NS_PREFIX InitUgEnv (INT heapSize)
 
 INT NS_PREFIX ExitUgEnv()
 {
+#ifndef USE_OS_HEAP
   free(envHeap);
   envHeap = NULL;
+#else
+  path[0] = NULL;
+#endif
   return 0;
 }
 
@@ -286,19 +313,28 @@ ENVITEM * NS_PREFIX MakeEnvItem (const char *name, const INT type, const INT siz
     if (type%2==0)
     {
       /* new variable */
+#ifndef USE_OS_HEAP
       newItem=(ENVITEM *) GetMem(envHeap,size,0);
+#else
+      newItem=(ENVITEM*) malloc(size);
+#endif
       if (newItem==NULL)
       {
         UserWriteF("MakeEnvItem(): envHeap out of memory\n");
         return(NULL);
       }
+      newItem=(ENVITEM*) malloc(size);
       memset(newItem,0,size);
     }
     else
     {
       /* new directory */
       if (pathIndex+1>=MAXENVPATH) return(NULL);
+#ifndef USE_OS_HEAP
       newItem=(ENVITEM *) GetMem(envHeap,size,0);
+#else
+      newItem=(ENVITEM*) malloc(size);
+#endif
       if (newItem==NULL)
       {
         UserWriteF("MakeEnvItem(): envHeap out of memory\n");
@@ -380,7 +416,11 @@ INT NS_PREFIX RemoveEnvItem (ENVITEM *theItem)
     theItem->v.next->v.previous = theItem->v.previous;
 
   /* deallocate memory */
+#ifndef USE_OS_HEAP
   DisposeMem(envHeap,theItem);
+#else
+  free(theItem);
+#endif
 
   /* return ok */
   return(0);
@@ -417,7 +457,11 @@ INT RemoveEnvDirContent (ENVITEM *theItem)
     Next = NEXT_ENVITEM(Item);
     if (IS_ENVDIR(Item))
       RemoveEnvDirContent(ENVITEM_DOWN(Item));
+#ifndef USE_OS_HEAP
     DisposeMem(envHeap,Item);
+#else
+    free(Item);
+#endif
   }
 
   return(0);
@@ -450,7 +494,11 @@ INT NS_PREFIX RemoveEnvDir (ENVITEM *theItem)
     theItem->v.next->v.previous = theItem->v.previous;
 
   /* deallocate memory */
+#ifndef USE_OS_HEAP
   DisposeMem(envHeap,theItem);
+#else
+  free(theItem);
+#endif
 
   return(0);
 }
@@ -596,7 +644,11 @@ ENVITEM * NS_PREFIX SearchEnv (const char *name, const char *where, INT type, IN
 
 void * NS_PREFIX AllocEnvMemory (INT size)
 {
+#ifndef USE_OS_HEAP
   return(GetMem(envHeap,size,0));
+#else
+  return malloc(size);
+#endif
 }
 
 /****************************************************************************/
@@ -611,7 +663,11 @@ void * NS_PREFIX AllocEnvMemory (INT size)
 
 void NS_PREFIX FreeEnvMemory (void *buffer)
 {
+#ifndef USE_OS_HEAP
   DisposeMem(envHeap,buffer);
+#else
+  free(buffer);
+#endif
 }
 
 /****************************************************************************/
@@ -626,7 +682,11 @@ void NS_PREFIX FreeEnvMemory (void *buffer)
 
 void NS_PREFIX EnvHeapInfo (char *s)
 {
+#ifndef USE_OS_HEAP
   sprintf(s,"   size: %ld\n   used: %ld\n",HeapSize(envHeap),HeapUsed(envHeap));
+#else
+  sprintf(s,"   no heap information available\n");
+#endif
 }
 
 /****************************************************************************/
