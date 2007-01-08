@@ -79,25 +79,18 @@ static INT theStringVarID;                      /* env type for String vars     
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*D
-   ChangeStructDir - change current structure directory
+/** \brief Change current structure directory
 
-   SYNOPSIS:
-   ENVDIR *ChangeStructDir (const char *name);
+   \param name - name to which the current structure directory shall be changed
 
-   PARAMETERS:
-   .  name - name to which the current structure directory shall be changed
-
-   DESCRIPTION:
    Changes the current structure directory to the one given by name. The name is
    interpreted as starting from the previous end of the path. It is possible to
    use ".." to go to the parent directory and ":" at the beginning
    to start from the root directory.
 
-   RETURN VALUE:
-   ENVDIR *
-   .n The new directory or NULL, if it was not found.
-   D*/
+   \return
+   The new directory or NULL, if it was not found.
+ */
 /****************************************************************************/
 
 ENVDIR * NS_PREFIX ChangeStructDir (const char *name)
@@ -179,34 +172,27 @@ ENVDIR * NS_PREFIX ChangeStructDir (const char *name)
   return(path[pathIndex]);
 }
 
+static char token[NAMESIZE];                    /* must be global for lastnameHnd ! */
+static char nexttoken[NAMESIZE];        /* must be global for lastnameHnd ! */
+
 /****************************************************************************/
-/*D
-   FindStructDir - finds the directory with the given name or its parent
+/** \brief Finds the directory with the given name or its parent
 
-   SYNOPSIS:
-   ENVDIR *FindStructDir (const char *name, char **lastnameHnd);
+   \param name - name to be found (from current structure directory)
+   \param lastnameHnd - if not NULL it is set to a pointer to the last name
 
-   PARAMETERS:
-   .  name - name to be found (from current structure directory)
-   .  lastnameHnd - if not NULL it is set to a pointer to the last name
-
-   DESCRIPTION:
    This function searchs (starting from the current structure directory)
    for the structure directory given by name and returns its adress.
    It does not change the current structure directory! If 'lastnameHnd!=NULL'
    it also sets '*lastNameHnd' to be a pointer to the last name of the directory.
 
-   SEE ALSO:
+   \sa
    strntok
 
-   RETURN VALUE:
-   ENVDIR *
-   .n The directory, or NULL if not found.
-   D*/
+   \return
+   The directory, or NULL if not found.
+ */
 /****************************************************************************/
-
-static char token[NAMESIZE];                    /* must be global for lastnameHnd ! */
-static char nexttoken[NAMESIZE];        /* must be global for lastnameHnd ! */
 
 ENVDIR * NS_PREFIX FindStructDir (const char *name, char **lastnameHnd)
 {
@@ -302,23 +288,14 @@ ENVDIR * NS_PREFIX FindStructDir (const char *name, char **lastnameHnd)
 }
 
 /****************************************************************************/
-/*D
-   FindStringVar - searches a string variable inside a directory/structure
+/** \brief Searches a string variable inside a directory/structure
 
-   SYNOPSIS:
-   STRVAR *FindStringVar (const ENVDIR *where, const char *name);
+   \param where - the directory to be searched
+   \param name - the name to be searched
 
-   PARAMETERS:
-   .  where - the directory to be searched
-   .  name - the name to be searched
-
-   DESCRIPTION:
-   See above.
-
-   RETURN VALUE:
-   STRVAR *
-   .n The address of the variable or NULL, if not found.
-   D*/
+   \return
+   The address of the variable or NULL, if not found.
+ */
 /****************************************************************************/
 
 STRVAR * NS_PREFIX FindStringVar (const ENVDIR *where, const char *name)
@@ -341,20 +318,14 @@ STRVAR * NS_PREFIX FindStringVar (const ENVDIR *where, const char *name)
 }
 
 /****************************************************************************/
-/*D
-   FindStructure - searches a directory/structure inside a directory/structure
+/** \brief Searches a directory/structure inside a directory/structure
 
-   SYNOPSIS:
-   ENVDIR *FindStructure (const ENVDIR *where, const char *name)
+   \param where - the directory to be searched (if NULL then search is in root)
+   \param name - the name to be searched
 
-   PARAMETERS:
-   .  where - the directory to be searched (if NULL then search is in root)
-   .  name - the name to be searched
-
-   RETURN VALUE:
-   ENVDIR *
-   .n The address of the structure or NULL, if not found.
-   D*/
+   \return
+   The address of the structure or NULL, if not found.
+ */
 /****************************************************************************/
 
 ENVDIR * NS_PREFIX FindStructure (const ENVDIR *where, const char *name)
@@ -379,23 +350,15 @@ ENVDIR * NS_PREFIX FindStructure (const ENVDIR *where, const char *name)
 }
 
 /****************************************************************************/
-/*D
-    GetStringVar - Get string contained in the variable 'name'
+/** \brief Get string contained in the variable 'name'
 
-    SYNOPSIS:
-    char *GetStringVar (const char *name);
+   \param  name - name of the string variable (from the current structure directory)
 
-    PARAMETERS:
-   .   name - name of the string variable (from the current structure directory)
-
-    DESCRIPTION:
     This function returns the string contained in the variable 'name'.
 
-    RETURN VALUE:
-    char *
-   .n  pointer to the string
-   .n  NULL if not found
-   D*/
+    \return
+   Pointer to the string, or NULL if not found
+ */
 /****************************************************************************/
 
 char * NS_PREFIX GetStringVar (const char *name)
@@ -414,24 +377,19 @@ char * NS_PREFIX GetStringVar (const char *name)
 }
 
 /****************************************************************************/
-/*
-   GetStringValue - Get double value of the string contained in the variable 'name'
+/** \brief Get double value of the string contained in the variable 'name'
 
-   SYNOPSIS:
-   INT GetStringValue (const char *name, double *value);
+   \param name - name of the string variable
+   \param value - address where the result is stored
 
-   PARAMETERS:
-   .  name - name of the string variable
-   .  value - address where the result is stored
+   Same as GetStringValueDouble.
 
-   DESCRIPTION:
-   Same as GetStringValueDouble. Should not be used and may be skipped
-   in a future version.
+   \todo Should not be used and may be skipped in a future version.
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> 1 if error occured </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -454,25 +412,19 @@ INT NS_PREFIX GetStringValue (const char *name, double *value)
 }
 
 /****************************************************************************/
-/*D
-   GetStringValueDouble	- Get double value of a variable
+/** \brief Get double value of a variable
 
-   SYNOPSIS:
-   INT GetStringValueDouble (const char *name, double *value);
+   \param name - name of the string variable
+   \param value - address where the result is stored
 
-   PARAMETERS:
-   .  name - name of the string variable
-   .  value - address where the result is stored
-
-   DESCRIPTION:
    This function evaluates a string variable holding a floating point number
    and returns the result.
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> 1 if error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX GetStringValueDouble (const char *name, double *value)
@@ -496,25 +448,19 @@ INT NS_PREFIX GetStringValueDouble (const char *name, double *value)
 }
 
 /****************************************************************************/
-/*D
-   GetStringValueInt - Get integer value of a variable
+/** \brief Get integer value of a variable
 
-   SYNOPSIS:
-   INT GetStringValueInt (const char *name, int *value);
+   \param name - name of the string variable
+   \param value - place result here
 
-   PARAMETERS:
-   .  name - name of the string variable
-   .  value - place result here
-
-   DESCRIPTION:
    This function evaluates a string variable holding an integer number
    and returns the result.
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> 1 if error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX GetStringValueInt (const char *name, int *value)
@@ -538,30 +484,23 @@ INT NS_PREFIX GetStringValueInt (const char *name, int *value)
 }
 
 /****************************************************************************/
-/*D
-   GetStringDOUBLEInRange - Get the double value of 'name' together with a range check
+/** \brief Get the double value of 'name' together with a range check
 
-   SYNOPSIS:
-   INT GetStringDOUBLEInRange (const char *name, DOUBLE min,
-   DOUBLE max, DOUBLE *value);
+   \param name - memory address of the string variable
+   \param min - left endpoint of interval
+   \param max - right endpoint of interval
+   \param value - address where the value is stored
 
-   PARAMETERS:
-   .  name - memory address of the string variable
-   .  min - left endpoint of interval
-   .  max - right endpoint of interval
-   .  value - address where the value is stored
-
-   DESCRIPTION:
    This function gets the double value of the string variable 'name'
    and checks wether it is lying in the specified interval.
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 variable not found
-   .n     2 no legal value
-   .n     3/4 outside of range
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 variable not found </li>
+   <li>  2 no legal value </li>
+   <li>  3/4 outside of range </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX GetStringDOUBLEInRange (const char *name, DOUBLE min, DOUBLE max, DOUBLE *value)
@@ -582,29 +521,23 @@ INT NS_PREFIX GetStringDOUBLEInRange (const char *name, DOUBLE min, DOUBLE max, 
 }
 
 /****************************************************************************/
-/*D
-   GetStringINTInRange - Get the integer value of 'name' together with a range check
+/** \brief Get the integer value of 'name' together with a range check
 
-   SYNOPSIS:
-   INT GetStringINTInRange (const char *name, INT min, INT max, INT *value);
+   \param name - memory address of the string variable
+   \param min - left endpoint of interval
+   \param max - right endpoint of interval
+   \param value - address where the value is stored
 
-   PARAMETERS:
-   .  name - memory address of the string variable
-   .  min - left endpoint of interval
-   .  max - right endpoint of interval
-   .  value - address where the value is stored
-
-   DESCRIPTION:
    This function gets the integer value of the string variable 'name'
    and checks wether it is lying in the specified interval.
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 variable not found
-   .n     2 no legal value
-   .n     3/4 outside of range
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 variable not found </li>
+   <li>  2 no legal value </li>
+   <li>  3/4 outside of range </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX GetStringINTInRange (const char *name, INT min, INT max, INT *value)
@@ -625,23 +558,15 @@ INT NS_PREFIX GetStringINTInRange (const char *name, INT min, INT max, INT *valu
 }
 
 /****************************************************************************/
-/*D
-   GetCurrentStructDir - get current structure directory
+/** \brief Get current structure directory
 
-   SYNOPSIS:
-   ENVDIR *GetCurrentStructDir ();
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
    This function returns the current structure directory.
 
-   RETURN VALUE:
-   ENVDIR *
-   .n     pointer to the directory
-   .n     NULL
-   D*/
+   \return <ul>
+   <li>  pointer to the directory </li>
+   <li>  NULL </li>
+   </ul>
+ */
 /****************************************************************************/
 
 ENVDIR * NS_PREFIX GetCurrentStructDir ()
@@ -650,24 +575,17 @@ ENVDIR * NS_PREFIX GetCurrentStructDir ()
 }
 
 /****************************************************************************/
-/*D
-   GetStructPathName - Assemble pathname of current structure directory
+/** \brief Assemble pathname of current structure directory
 
-   SYNOPSIS:
-   INT GetStructPathName (char *s, int n);
+   \param s - pointer to buffer for the string
+   \param n - length of buffer
 
-   PARAMETERS:
-   .  s - pointer to buffer for the string
-   .  n - length of buffer
-
-   DESCRIPTION:
    This function assembles the pathname of the current structure directory.
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
+   \return
+   <li>  0 if ok </li>
+   <li>  1 if error occured. </li>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX GetStructPathName (char *s, int n)
@@ -691,32 +609,25 @@ INT NS_PREFIX GetStructPathName (char *s, int n)
 }
 
 /****************************************************************************/
-/*D
-   MakeStructItem - Allocate a new environment item in the current directory
+/** \brief Allocate a new environment item in the current directory
 
-   SYNOPSIS:
-   ENVITEM *MakeStructItem (ENVDIR *where, const char *name, INT type,
-   INT size);
+   \param where - directory in which the new one will be allocated
+   \param name - name of the new item
+   \param type - type of the new item
+   \param size - total size if user defined, string size for string variable
 
-   PARAMETERS:
-   .  where - directory in which the new one will be allocated
-   .  name - name of the new item
-   .  type - type of the new item
-   .  size - total size if user defined, string size for string variable
-
-   DESCRIPTION:
    This function allocates a new environment item in the current directory.
    It is some reduced form of 'MakeEnvItem' with the additional feature,
    that it can start from a given directory.
 
-   SEE ALSO:
+   \sa
    MakeEnvItem
 
-   RETURN VALUE:
-   ENVITEM *
-   .n      pointer to
-   .n      NULL if not enough memory in the environment heap or other error condition occurs
-   D*/
+   \return <ul>
+   <li>   pointer to </li>
+   <li>   NULL if not enough memory in the environment heap or other error condition occurs </li>
+   </ul>
+ */
 /****************************************************************************/
 
 ENVITEM * NS_PREFIX MakeStructItem (ENVDIR *where, const char *name, INT type, INT size)
@@ -787,20 +698,15 @@ ENVITEM * NS_PREFIX MakeStructItem (ENVDIR *where, const char *name, INT type, I
 }
 
 /****************************************************************************/
-/*D
-   MakeStruct - Allocate a new structure
+/** \brief Allocate a new structure
 
-   SYNOPSIS:
-   INT MakeStruct (const char *name);
+   \param name - name of the new directory
 
-   PARAMETERS:
-   .  name - name of the new directory
-
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 if error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX MakeStruct (const char *name)
@@ -817,30 +723,25 @@ INT NS_PREFIX MakeStruct (const char *name)
 }
 
 /****************************************************************************/
-/*D
-   DeleteStruct	- Delete an existing structure
+/** \brief Delete an existing structure
 
-   SYNOPSIS:
-   INT DeleteStruct (char *name);
-
-   PARAMETERS:
-   .  name - structure name
+   \param name - structure name
 
    SEE ALSO:
    FindStructDir, FindStructure, CheckIfInStructPath, CheckStructTree, RemoveStructTree
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 structure directory not found
-   .n     2 structure does not exist
-   .n     3 structure is inside structure path
-   .n     4 structure contains locked objects
-   .n     5 structure could not be removed
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 structure directory not found </li>
+   <li>  2 structure does not exist </li>
+   <li>  3 structure is inside structure path </li>
+   <li>  4 structure contains locked objects </li>
+   <li>  5 structure could not be removed </li>
+   </ul>
+ */
 /****************************************************************************/
 
-INT NS_PREFIX DeleteStruct (char *name)
+INT NS_PREFIX DeleteStruct (const char *name)
 {
   char *lastname;
   ENVDIR *theDir,*theStruct;
@@ -864,26 +765,20 @@ INT NS_PREFIX DeleteStruct (char *name)
 }
 
 /****************************************************************************/
-/*D
-   RemoveStringVar - remove a string variable fro the environment tree
+/** \brief Remove a string variable fro the environment tree
 
-   SYNOPSIS:
-   INT RemoveStringVar (ENVDIR *homeDir, STRVAR *theVar)
+   \param homeDir - theVar is located in this directory
+   \param theVar - string var to remove
 
-   PARAMETERS:
-   .  homeDir - theVar is located in this directory
-   .  theVar - string var to remove
-
-   DESCRIPTION:
    This function removes a string variable from the environment tree.
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 homeDir==NULL
-   .n     2 theVar==NULL
-   .n     3 theVar is a directory
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 homeDir==NULL </li>
+   <li>  2 theVar==NULL </li>
+   <li>  3 theVar is a directory </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX RemoveStringVar (ENVDIR *homeDir, STRVAR *theVar)
@@ -908,29 +803,24 @@ INT NS_PREFIX RemoveStringVar (ENVDIR *homeDir, STRVAR *theVar)
 }
 
 /****************************************************************************/
-/*D
-   DeleteVariable	- Delete an existing string variable
+/** \brief Delete an existing string variable
 
-   SYNOPSIS:
-   INT DeleteVariable (char *name);
-
-   PARAMETERS:
-   .  name - variable name
+   \param name - variable name
 
    SEE ALSO:
    FindStructDir, FindStructure, CheckIfInStructPath, CheckStructTree, RemoveStructTree
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 variable directory not found
-   .n     2 variable does not exist
-   .n     4 variable contains locked objects
-   .n     5 variable could not be removed
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 variable directory not found </li>
+   <li>  2 variable does not exist </li>
+   <li>  4 variable contains locked objects </li>
+   <li>  5 variable could not be removed </li>
+   </ul>
+ */
 /****************************************************************************/
 
-INT NS_PREFIX DeleteVariable (char *name)
+INT NS_PREFIX DeleteVariable (const char *name)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -952,30 +842,24 @@ INT NS_PREFIX DeleteVariable (char *name)
 }
 
 /****************************************************************************/
-/*D
-   SetStringVar - Set a string variable to a given string
+/** \brief Set a string variable to a given string
 
-   SYNOPSIS:
-   INT SetStringVar (const char *name, const char *sval);
+   \param name - variable name
+   \param sval - address of the string
 
-   PARAMETERS:
-   .  name - variable name
-   .  sval - address of the string
-
-   DESCRIPTION:
    This function searches a string variable and sets it to the given string.
    If the string variable does not yet exist it is created, if it is
    too short for the string, it is removed and newly created.
 
-   SEE ALSO:
+   \sa
    FindStructDir, FindStringVar, RemoveStringVar, MakeStructItem
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 structure directory not found
-   .n     2 could not allocate variable
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 structure directory not found </li>
+   <li>  2 could not allocate variable </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX SetStringVar (const char *name, const char *sval)
@@ -1008,18 +892,12 @@ INT NS_PREFIX SetStringVar (const char *name, const char *sval)
 }
 
 /****************************************************************************/
-/*D
-   SetnStringVar - Set a string variable to a given string
+/** \brief Set a string variable to a given string
 
-   SYNOPSIS:
-   INT SetnStringVar (const char *name, const char *sval, int n);
+   \param name - variable name
+   \param sval - address of the string
+   \param n - length of string
 
-   PARAMETERS:
-   .  name - variable name
-   .  sval - address of the string
-   .  n - length of string
-
-   DESCRIPTION:
    This function searches a string variable and sets it to the given string.
    If the string variable does not yet exist it is created, if it is
    too short for the string, it is removed and newly created.
@@ -1027,15 +905,15 @@ INT NS_PREFIX SetStringVar (const char *name, const char *sval)
    The difference to 'SetStringVar' is that the string is not terminated
    by '\0'.
 
-   SEE ALSO:
+   \sa
    SetStringVar, FindStructDir, FindStringVar, RemoveStringVar, MakeStructItem
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 structure directory not found
-   .n     2 could not allocate variable
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 structure directory not found </li>
+   <li>  2 could not allocate variable </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX SetnStringVar (const char *name, const char *sval, int n)
@@ -1068,30 +946,24 @@ INT NS_PREFIX SetnStringVar (const char *name, const char *sval, int n)
   return(0);
 }
 /****************************************************************************/
-/*D
-   SetStringVarNotify - Set a string variable to a given string and notify if changed
+/** \brief Set a string variable to a given string and notify if changed
 
-   SYNOPSIS:
-   INT SetStringVarNotify (const char *name, const char *sval);
+   \param name - variable name
+   \param sval - address of the string
 
-   PARAMETERS:
-   .  name - variable name
-   .  sval - address of the string
-
-   DESCRIPTION:
    This function searches a string variable and sets it to the given string.
    If the string variable does not yet exist it is created, if it is
    too short for the string, it is removed and newly created.
 
-   SEE ALSO:
+   \sa
    FindStructDir, FindStringVar, RemoveStringVar, MakeStructItem
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 structure directory not found
-   .n     2 could not allocate variable
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 structure directory not found </li>
+   <li>  2 could not allocate variable </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX SetStringVarNotify (const char *name, const char *sval)
@@ -1128,26 +1000,19 @@ INT NS_PREFIX SetStringVarNotify (const char *name, const char *sval)
 }
 
 /****************************************************************************/
-/*D
-   SetStringValue - Set a variable to a real value
+/** \brief Set a variable to a real value
 
-   SYNOPSIS:
-   INT SetStringValue (const char *name, double value);
+   \param name - variable name
+   \param value - value
 
-   PARAMETERS:
-   .  name - variable name
-   .  value - value
-
-   DESCRIPTION:
    This function sets a variable to a real value.
 
-   SEE ALSO:
+   \sa
    SetStringVar
 
-   RETURN VALUE:
-   INT
-   .n     see 'SetStringVar'
-   D*/
+   \return
+    see 'SetStringVar'
+ */
 /****************************************************************************/
 
 INT NS_PREFIX SetStringValue (const char *name, double value)
@@ -1160,25 +1025,19 @@ INT NS_PREFIX SetStringValue (const char *name, double value)
 
 
 /****************************************************************************/
-/*D
-   CheckStructTree - Check if LOCKED-Flag is set somewhere
+/** \brief Check if LOCKED-Flag is set somewhere
 
-   SYNOPSIS:
-   INT CheckStructTree (const ENVDIR *theDir);
+   \param theDir - directory in which struct is located
 
-   PARAMETERS:
-   .  theDir - directory in which struct is located
-
-   DESCRIPTION:
    This function checks (recursively) if the LOCKED-Flag is set somewhere
    inside the directory tree starting at 'theDir'.
    Up to now the locking is not yet used.
 
-   RETURN VALUE:
-   INT
-   .n     1 if LOCKED-Flag set somewhere
-   .n     0 else.
-   D*/
+   \return <ul>
+   <li>  1 if LOCKED-Flag set somewhere </li>
+   <li>  0 else </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX CheckStructTree (const ENVDIR *theDir)
@@ -1197,23 +1056,15 @@ INT NS_PREFIX CheckStructTree (const ENVDIR *theDir)
 }
 
 /****************************************************************************/
-/*D
-   CheckIfInStructPath - Searches '*theDir' inside the current structure path
+/** \brief Searches '*theDir' inside the current structure path
 
-   SYNOPSIS:
-   INT CheckIfInStructPath (const ENVDIR *theDir);
+   \param theDir - structure
 
-   PARAMETERS:
-   .  theDir - structure
-
-   DESCRIPTION:
-   See above.
-
-   RETURN VALUE:
-   INT
-   .n     1 if inside path
-   .n     0 if not inside path.
-   D*/
+   \return <ul>
+   <li>  1 if inside path </li>
+   <li>  0 if not inside path </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX CheckIfInStructPath (const ENVDIR *theDir)
@@ -1228,24 +1079,18 @@ INT NS_PREFIX CheckIfInStructPath (const ENVDIR *theDir)
 }
 
 /****************************************************************************/
-/*D
-   RemoveStructTree - Removes the whole structure tree
+/** \brief Removes the whole structure tree
 
-   SYNOPSIS:
-   INT RemoveStructTree (ENVDIR *homeDir, ENVDIR *theDir);
+   \param homeDir - home directory
+   \param theDir - structure
 
-   PARAMETERS:
-   .  homeDir - home directory
-   .  theDir - structure
-
-   DESCRIPTION:
    This function removes recursively the whole structure tree.
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 if error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX RemoveStructTree (ENVDIR *homeDir, ENVDIR *theDir)
@@ -1272,34 +1117,28 @@ INT NS_PREFIX RemoveStructTree (ENVDIR *homeDir, ENVDIR *theDir)
 }
 
 /****************************************************************************/
-/*D
-   DirOut - (recursively) print directory contents
+/** \brief (recursively) print directory contents
 
-   SYNOPSIS:
-   static INT DirOut (const ENVDIR *theDir, char *buffer, int bufLen, int ropt);
+   \param theDir - structure
+   \param buffer - address of buffer
+   \param bufLen - length of buffer
+   \param ropt - if set, the contents are printed recursively
 
-   PARAMETERS:
-   .  theDir - structure
-   .  buffer - address of buffer
-   .  bufLen - length of buffer
-   .  ropt - if set, the contents are printed recursively
-
-   DESCRIPTION:
    This function (recursively) prints the contents of theDir into the buffer.
    It will return the value 4 if the buffer is full and it is not yet ready.
    In this case it has to be called another time. If it is ready it returns
    the value 0.
 
-   RETURN VALUE:
-   INT
-   .n    0 all is done
-   .n    1 buffer too small
-   .n    2 theDir is not a string directory
-   .n    3 false type encountered (should never occur)
-   .n    4 not yet ready with output (this is not an error!)
-   .n    5 directory tree too deeply nested (should never occur)
-   .n    6 this should also never occur
-   D*/
+   \return <ul>
+   <li> 0 all is done </li>
+   <li> 1 buffer too small </li>
+   <li> 2 theDir is not a string directory </li>
+   <li> 3 false type encountered (should never occur) </li>
+   <li> 4 not yet ready with output (this is not an error!) </li>
+   <li> 5 directory tree too deeply nested (should never occur) </li>
+   <li> 6 this should also never occur </li>
+   </ul>
+ */
 /****************************************************************************/
 
 static INT DirOut (const ENVDIR *theDir, char *buffer, int bufLen, int ropt)
@@ -1429,29 +1268,23 @@ static INT DirOut (const ENVDIR *theDir, char *buffer, int bufLen, int ropt)
 }
 
 /****************************************************************************/
-/*D
-   VarOut - prints variable = content into a buffer
+/** \brief Prints variable = content into a buffer
 
-   SYNOPSIS:
-   static INT VarOut (const STRVAR *StrVar, char *buffer, int bufLen,);
+   \param StrVar - string variable
+   \param buffer - address of buffer
+   \param bufLen - length of buffer
 
-   PARAMETERS:
-   .  StrVar - string variable
-   .  buffer - address of buffer
-   .  bufLen - length of buffer
-
-   DESCRIPTION:
    This function prints the contents of StrVar into the buffer.
    It will return the value 4 if the buffer is full and it is not yet ready.
    In this case it has to be called another time. If it is ready it returns
    the value 0.
 
-   RETURN VALUE:
-   INT
-   .n    0 all is done
-   .n    1 buffer too small
-   .n    4 not yet ready with output (this is not an error!)
-   D*/
+   \return <ul>
+   <li> 0 all is done </li>
+   <li> 1 buffer too small </li>
+   <li> 4 not yet ready with output (this is not an error!) </li>
+   </ul>
+ */
 /****************************************************************************/
 
 static INT VarOut (const STRVAR *StrVar, char *buffer, int bufLen)
@@ -1486,36 +1319,30 @@ static INT VarOut (const STRVAR *StrVar, char *buffer, int bufLen)
 }
 
 /****************************************************************************/
-/*D
-   PrintStructContents - (recursively) print structure contents
+/** \brief (recursively) print structure contents
 
-   SYNOPSIS:
-   INT PrintStructContents (const char *name, char *buffer, int bufLen, int ropt);
+   \param name - name of structure(dir)
+   \param buffer - address of buffer
+   \param bufLen - length of buffer
+   \param ropt - if set, the contents are printed recursively
 
-   PARAMETERS:
-   .  name - name of structure(dir)
-   .  buffer - address of buffer
-   .  bufLen - length of buffer
-   .  ropt - if set, the contents are printed recursively
-
-   DESCRIPTION:
    This function prints the contents of the variable or structure 'name'.
    More or less it provides a call for the functions DirOut and VarOut.
    You should take care with error handling when using these function.
 
-   SEE ALSO:
+   \sa
    DirOut, VarOut, FindStructDir, FindStringVar, FindStructure
 
-   RETURN VALUE:
-   INT
-   .n    0 all is done
-   .n    1 buffer too small
-   .n    2, 3 (should not occur)
-   .n    4 not yet ready with output (this is not an error!)
-   .n    5, 6 (should not occur)
-   .n    7 structure path not found
-   .n    8 structure not found
-   D*/
+   \return <ul>
+   <li> 0 all is done </li>
+   <li> 1 buffer too small </li>
+   <li> 2, 3 (should not occur) </li>
+   <li> 4 not yet ready with output (this is not an error!) </li>
+   <li> 5, 6 (should not occur) </li>
+   <li> 7 structure path not found </li>
+   <li> 8 structure not found </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX PrintStructContents (const char *name, char *buffer, int bufLen, int ropt)
@@ -1579,33 +1406,27 @@ INT NS_PREFIX PrintStructContents (const char *name, char *buffer, int bufLen, i
 }
 
 /****************************************************************************/
-/*D
-   PrintCurrentStructContents - (recursively) print contents of current structure directory
+/** \brief (recursively) print contents of current structure directory
 
-   SYNOPSIS:
-   INT PrintCurrentStructContents (int flag, char *buffer, int bufLen, int ropt);
+   \param flag - 1 for the first call, 0 if others are necessary
+   \param buffer - address of buffer
+   \param bufLen - length of buffer
+   \param ropt - if set, the contents are printed recursively
 
-   PARAMETERS:
-   .  flag - 1 for the first call, 0 if others are necessary
-   .  buffer - address of buffer
-   .  bufLen - length of buffer
-   .  ropt - if set, the contents are printed recursively
-
-   DESCRIPTION:
    This function prints the contents of the of the current working structure.
    More or less it calls the function DirOut.
 
-   SEE ALSO:
+   \sa
    DirOut, PrintStructContents, FindStructDir, FindStringVar, FindStructure
 
-   RETURN VALUE:
-   INT
-   .n    0 all is done
-   .n    1 buffer too small
-   .n    2, 3 (should not occur)
-   .n    4 not yet ready with output (this is not an error!)
-   .n    5, 6 (should not occur)
-   D*/
+   \return <ul>
+   <li> 0 all is done </li>
+   <li> 1 buffer too small </li>
+   <li> 2, 3 (should not occur) </li>
+   <li> 4 not yet ready with output (this is not an error!) </li>
+   <li> 5, 6 (should not occur) </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX PrintCurrentStructContents (int flag, char *buffer, int bufLen, int ropt)
@@ -1617,21 +1438,16 @@ INT NS_PREFIX PrintCurrentStructContents (int flag, char *buffer, int bufLen, in
 }
 
 /****************************************************************************/
-/*D
-   InitUgStruct	- Initialize ugstruct
+/** \brief Initialize ugstruct
 
-   PARAMETERS:
-   .  none
-
-   DESCRIPTION:
    This function creates the '/Strings'-directory, gets an ID for
    string directories and sets the current structure path to '/Strings'.
 
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if not enough memory.
-   D*/
+   \return <ul>
+   <li>  0 if ok </li>
+   <li>  1 if not enough memory </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX InitUgStruct ()
