@@ -1940,7 +1940,7 @@ GetDomain (char *name)
 void *NS_DIM_PREFIX
 CreateBoundarySegment (const char *name,
                        INT left, INT right, INT id, enum BoundaryType type, INT res,
-                       INT * point, const DOUBLE * alpha, const DOUBLE * beta,
+                       const INT * point, const DOUBLE * alpha, const DOUBLE * beta,
                        BndSegFuncPtr BndSegFunc, void *data)
 {
   BOUNDARY_SEGMENT *newSegment;
@@ -2055,7 +2055,7 @@ GetFirstBoundarySegment (DOMAIN * theDomain)
 /****************************************************************************/
 
 void *NS_DIM_PREFIX
-CreateBoundarySegment2D (char *name, int left, int right,
+CreateBoundarySegment2D (const char *name, int left, int right,
                          int id, int from, int to, int res, DOUBLE alpha,
                          DOUBLE beta, BndSegFuncPtr BndSegFunc, void *data)
 {
@@ -2092,16 +2092,16 @@ CreateBoundarySegment2D (char *name, int left, int right,
  */
 /****************************************************************************/
 
-LINEAR_SEGMENT *NS_DIM_PREFIX
-CreateLinearSegment (char *name,
+void *NS_DIM_PREFIX
+CreateLinearSegment (const char *name,
                      INT left, INT right, INT id,
-                     INT n, INT * point,
-                     DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM_OF_BND])
+                     INT n, const INT * point,
+                     DOUBLE x[CORNERS_OF_BND_SEG][DIM])
 {
   LINEAR_SEGMENT *newSegment;
   INT i, k;
 
-  if (n > MAX_CORNERS_OF_LINEAR_PATCH)
+  if (n > CORNERS_OF_BND_SEG)
     return (NULL);
 
   /* allocate the boundary segment */
@@ -2119,7 +2119,7 @@ CreateLinearSegment (char *name,
   for (i = 0; i < n; i++)
   {
     newSegment->points[i] = point[i];
-    for (k = 0; k < DIM_OF_BND; k++)
+    for (k = 0; k < DIM; k++)
       newSegment->x[i][k] = x[i][k];
   }
 
@@ -2603,7 +2603,8 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   LINEAR_SEGMENT *theLinSegment;
   BOUNDARY_CONDITION *theBndCond;
   PATCH **corners, **sides, *thePatch;
-  INT i, j, n, m, maxSubDomains, ncorners, nlines, nsides, free;
+  unsigned short* segmentsPerPoint, *freeSegmentsPerPoint;
+  INT i, j, n, m, maxSubDomains, ncorners, nlines, nsides, freePatches;
 #       ifdef __THREEDIM__
   PATCH **lines;
   INT k, err;
@@ -2741,35 +2742,57 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   if (corners == NULL)
     return (NULL);
   theBVP->ncorners = ncorners;
-  for (i = 0; i < ncorners; i++)
-  {
-    m = 0;
-    /* count parameter patchs */
-    for (j = 0; j < nsides; j++)
-    {
-      if (PATCH_TYPE (sides[j]) == LINEAR_PATCH_TYPE)
-      {
+
+  /* precompute the number of segments at each point patch */
+  segmentsPerPoint = (unsigned short*)calloc(ncorners,sizeof(unsigned short));
+  freeSegmentsPerPoint = (unsigned short*)calloc(ncorners,sizeof(unsigned short));
+
+  for (j = 0; j < nsides; j++) {
+
+    if (PATCH_TYPE (sides[j]) == LINEAR_PATCH_TYPE) {
+      for (n = 0; n < LINEAR_PATCH_N (sides[j]); n++)
+        segmentsPerPoint[LINEAR_PATCH_POINTS (sides[j], n)]++;
+
+      if (PATCH_IS_FREE(sides[j]))
         for (n = 0; n < LINEAR_PATCH_N (sides[j]); n++)
-          if (LINEAR_PATCH_POINTS (sides[j], n) == i)
-            m++;
-      }
-      else if (PATCH_TYPE (sides[j]) == PARAMETRIC_PATCH_TYPE)
-      {
+          freeSegmentsPerPoint[LINEAR_PATCH_POINTS (sides[j], n)]++;
+
+    } else if (PATCH_TYPE (sides[j]) == PARAMETRIC_PATCH_TYPE) {
+      for (n = 0; n < 2 * DIM_OF_BND; n++)
+        if (PARAM_PATCH_POINTS (sides[j], n) >= 0)       /* Entry may be -1 for triangular faces */
+          segmentsPerPoint[PARAM_PATCH_POINTS (sides[j], n)]++;
+
+      if (PATCH_IS_FREE(sides[j]))
         for (n = 0; n < 2 * DIM_OF_BND; n++)
-          if (PARAM_PATCH_POINTS (sides[j], n) == i)
-            m++;
-      }
+          if (PARAM_PATCH_POINTS (sides[j], n) >= 0)     /* Entry may be -1 for triangular faces */
+            freeSegmentsPerPoint[PARAM_PATCH_POINTS (sides[j], n)]++;
+
     }
+
+  }
+
+  /* Allocate point patches */
+  for (i = 0; i < ncorners; i++) {
+
+    m = segmentsPerPoint[i];
+
     thePatch =
       (PATCH *) GetFreelistMemory (Heap, sizeof (POINT_PATCH)
-                                   + (m -
-                                      1) * sizeof (struct point_on_patch));
+                                   + (m-1) * sizeof (struct point_on_patch));
     if (thePatch == NULL)
       return (NULL);
+
     PATCH_TYPE (thePatch) = POINT_PATCH_TYPE;
     PATCH_ID (thePatch) = i;
+
+    POINT_PATCH_N (thePatch) = m;
+    corners[i] = thePatch;
+
+  }
+
+  for (i = 0; i < ncorners; i++) {
+    thePatch = corners[i];
     m = 0;
-    free = 0;
     for (j = 0; j < nsides; j++)
     {
       if (PATCH_TYPE (sides[j]) == LINEAR_PATCH_TYPE)
@@ -2779,8 +2802,6 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
           {
             POINT_PATCH_PID (thePatch, m) = j;
             POINT_PATCH_CID (thePatch, m++) = n;
-            if (PATCH_IS_FREE (sides[j]))
-              free++;
           }
       }
       else if (PATCH_TYPE (sides[j]) == PARAMETRIC_PATCH_TYPE)
@@ -2790,21 +2811,17 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
           {
             POINT_PATCH_PID (thePatch, m) = j;
             POINT_PATCH_CID (thePatch, m++) = n;
-            if (PATCH_IS_FREE (sides[j]))
-              free++;
           }
       }
     }
-    if (free == m)
+
+    if (freeSegmentsPerPoint[i] == m)
       PATCH_STATE (thePatch) = PATCH_FREE;
-    else if (free == 0)
+    else if (freeSegmentsPerPoint[i] == 0)
       PATCH_STATE (thePatch) = PATCH_FIXED;
     else
       PATCH_STATE (thePatch) = PATCH_BND_OF_FREE;
 
-    for (j = 0; j < nsides; j++)
-      POINT_PATCH_N (thePatch) = m;
-    corners[i] = thePatch;
     PRINTDEBUG (dom, 1, ("corners id %d type %d n %d\n",
                          PATCH_ID (thePatch), PATCH_TYPE (thePatch),
                          POINT_PATCH_N (thePatch)));
@@ -2813,6 +2830,10 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
                            POINT_PATCH_PID (thePatch, j),
                            POINT_PATCH_CID (thePatch, j)));
   }
+
+  /* Return memory that will not be used anymore */
+  free(segmentsPerPoint);
+  free(freeSegmentsPerPoint);
 
   /* create line patches */
   nlines = 0;
@@ -2833,7 +2854,7 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
               POINT_PATCH_PID (corners[j], m))
             k++;
       if (k < 2)
-        /* points share one patch only and ly on opposite corners of this patch */
+        /* points share one patch only and lie on opposite corners of this patch */
         continue;
       thePatch =
         (PATCH *) GetFreelistMemory (Heap, sizeof (LINE_PATCH)
@@ -2846,7 +2867,7 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
       LINE_PATCH_C0 (thePatch) = i;
       LINE_PATCH_C1 (thePatch) = j;
       k = 0;
-      free = 0;
+      freePatches = 0;
       for (n = 0; n < POINT_PATCH_N (corners[i]); n++)
         for (m = 0; m < POINT_PATCH_N (corners[j]); m++)
           if (POINT_PATCH_PID (corners[i], n) ==
@@ -2859,7 +2880,7 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
             LINE_PATCH_CID1 (thePatch, k) =
               POINT_PATCH_CID (corners[j], m);
             if (PATCH_IS_FREE (sides[LINE_PATCH_PID (thePatch, k)]))
-              free++;
+              freePatches++;
             k++;
           }
       LINE_PATCH_N (thePatch) = k;
@@ -2908,9 +2929,9 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
           }
         }
       }
-      ENDDEBUG if (free == k)
+      ENDDEBUG if (freePatches == k)
         PATCH_STATE (thePatch) = PATCH_FREE;
-      else if (free == 0)
+      else if (freePatches == 0)
         PATCH_STATE (thePatch) = PATCH_FIXED;
       else
         PATCH_STATE (thePatch) = PATCH_BND_OF_FREE;
@@ -4570,15 +4591,22 @@ PatchGlobal (PATCH * p, DOUBLE * lambda, DOUBLE * global)
                 + lambda[0] * LINEAR_PATCH_POS (p, 1)[1];
 #endif
 #ifdef __THREEDIM__
-    global[0] = (1 - lambda[0] - lambda[1]) * LINEAR_PATCH_POS (p, 0)[0]
-                + lambda[0] * LINEAR_PATCH_POS (p, 1)[0]
-                + lambda[1] * LINEAR_PATCH_POS (p, 2)[0];
-    global[1] = (1 - lambda[0] - lambda[1]) * LINEAR_PATCH_POS (p, 0)[1]
-                + lambda[0] * LINEAR_PATCH_POS (p, 1)[1]
-                + lambda[1] * LINEAR_PATCH_POS (p, 2)[1];
-    global[2] = (1 - lambda[0] - lambda[1]) * LINEAR_PATCH_POS (p, 0)[2]
-                + lambda[0] * LINEAR_PATCH_POS (p, 1)[2]
-                + lambda[1] * LINEAR_PATCH_POS (p, 2)[2];
+
+    if (LINEAR_PATCH_N(p) ==3) {
+      /* Linear interpolation for a triangle boundary segment */
+      for (int i=0; i<3; i++)
+        global[i] = (1 - lambda[0] - lambda[1]) * LINEAR_PATCH_POS (p, 0)[i]
+                    + lambda[0] * LINEAR_PATCH_POS (p, 1)[i]
+                    + lambda[1] * LINEAR_PATCH_POS (p, 2)[i];
+
+    } else {
+      /* Bilinear interpolation for a triangle boundary segment */
+      for (int i=0; i<3; i++)
+        global[i] = LINEAR_PATCH_POS (p, 0)[i]
+                    + lambda[0]*(LINEAR_PATCH_POS (p, 1)[i] - LINEAR_PATCH_POS (p, 0)[i])
+                    + lambda[1]*(LINEAR_PATCH_POS (p, 3)[i]- LINEAR_PATCH_POS (p, 0)[i])
+                    + lambda[0]*lambda[1]*(LINEAR_PATCH_POS (p, 0)[i]+LINEAR_PATCH_POS (p, 2)[i]-LINEAR_PATCH_POS (p, 1)[i]-LINEAR_PATCH_POS (p, 3)[i]);
+    }
 #endif
     return (0);
   }
@@ -4622,7 +4650,7 @@ FreeBNDS_Global (BND_PS * ps, DOUBLE * local, DOUBLE * global)
     break;
   case 4 :
     for (i = 0; i < DIM; i++)
-      global[0] = (1.0 - local[0]) * (1.0 - local[1]) * pos[0][i]
+      global[i] = (1.0 - local[0]) * (1.0 - local[1]) * pos[0][i]
                   + local[0] * (1.0 - local[1]) * pos[1][i]
                   + local[0] * local[1] * pos[2][i]
                   + (1.0 - local[0]) * local[1] * pos[3][i];
@@ -4923,32 +4951,31 @@ BndPointGlobal (BNDP * aBndP, DOUBLE * global)
     return (PatchGlobal (p, ps->local[0], global));
   case POINT_PATCH_TYPE :
     s = currBVP->patches[POINT_PATCH_PID (p, 0)];
+
     PRINTDEBUG (dom, 1, (" bndp n %d %d loc %f %f gl \n",
                          POINT_PATCH_N (p),
                          POINT_PATCH_PID (p, 0),
                          ps->local[0][0], ps->local[0][1]));
-    if ((*PARAM_PATCH_BS (s))(PARAM_PATCH_BSD (s), ps->local[0], global))
-      REP_ERR_RETURN (1);
-    PRINTDEBUG (dom, 1, (" bndp n %d %d loc %f %f gl %f %f %f\n",
-                         POINT_PATCH_N (p),
-                         POINT_PATCH_PID (p, 0),
-                         ps->local[0][0],
-                         ps->local[0][1], global[0], global[1], global[2]));
+
+    PatchGlobal(s, ps->local[0], global);
+
     for (j = 1; j < POINT_PATCH_N (p); j++)
     {
       s = currBVP->patches[POINT_PATCH_PID (p, j)];
-      if ((*PARAM_PATCH_BS (s))
-          (PARAM_PATCH_BSD (s), ps->local[j], pglobal))
+
+      if (PatchGlobal(s, ps->local[j], pglobal))
         REP_ERR_RETURN (1);
-      PRINTDEBUG (dom, 1, (" bndp    j %d %d loc %f %f gl %f %f %f\n", j,
-                           POINT_PATCH_PID (p, j),
-                           ps->local[j][0],
-                           ps->local[j][1],
-                           pglobal[0], pglobal[1], pglobal[2]));
+
+      PRINTDEBUG (dom,1, (" bndp    j %d %d loc %f %f gl %f %f %f\n", j,
+                          POINT_PATCH_PID (p, j),
+                          ps->local[j][0],
+                          ps->local[j][1],
+                          pglobal[0], pglobal[1], pglobal[2]));
       for (k = 0; k < DIM; k++)
         if (ABS (pglobal[k] - global[k]) > SMALL_DIFF)
           REP_ERR_RETURN (1);
     }
+
     return (0);
 #ifdef __THREEDIM__
   case LINE_PATCH_TYPE :
