@@ -1238,7 +1238,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1},
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
-  /* PRI_bisect_0_1 */
+  /* PRI_BISECT_0_1 */
   {PRISM,4,RED_CLASS|SWITCH_CLASS,2,
    {1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
    1 + 1<<6,
@@ -1281,7 +1281,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1},
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
-  /* PRI_bisect_0_2 */
+  /* PRI_BISECT_0_2 */
   {PRISM,5,RED_CLASS|SWITCH_CLASS,2,
    {0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
    1<<1 + 1<<7,
@@ -1324,7 +1324,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1},
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
-  /* PRI_bisect_0_3 */
+  /* PRI_BISECT_0_3 */
   {PRISM,6,RED_CLASS|SWITCH_CLASS,2,
    {0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
    1<<2 + 1<<8,
@@ -1367,7 +1367,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1},
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
-  /* PRI_bisect_1_2 */
+  /* PRI_BISECT_1_2 */
   {PRISM,7,RED_CLASS|SWITCH_CLASS,2,
    {0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
    1<<3 + 1<<4 + 1<<5,
@@ -1410,7 +1410,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1},
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
-  /* PRI_bisect_hex_0 */
+  /* PRI_BISECT_HEX0 */
   {PRISM,8,RED_CLASS|SWITCH_CLASS,2,
    {1,0,1,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0},
    1+1<<2+1<<6+1<<8,
@@ -1453,7 +1453,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1},
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
-  /* PRI_bisect_hex_1 */
+  /* PRI_BISECT_HEX1 */
   {PRISM,9,RED_CLASS|SWITCH_CLASS,2,
    {0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0},
    1<<1+1<<2+1<<7+1<<8,
@@ -1496,7 +1496,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1},
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
-  /* PRI_bisect_hex_2 */
+  /* PRI_BISECT_HEX2 */
   {PRISM,10,RED_CLASS|SWITCH_CLASS,2,
    {1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0},
    1+1<<1+1<<6+1<<7,
@@ -1651,7 +1651,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1},
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
-  /* PRI_quadsect_hexpri0 */
+  /* PRI_QUADSECT_HEXPRI0 */
   {PRISM,14,RED_CLASS,4,
    {1,1,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,0,0},
    3 + 1<<3 + 1<<4 + 1<<5 + 1<<6 + 1<<7 + 1<<10 + 1<<11,
@@ -3290,6 +3290,19 @@ INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, enum RefinementRule ru
         SETMARK(theElement,PRI_QUADSECT_HEXPRI0);
         SETMARKCLASS(theElement,RED_CLASS);
         break;
+      case (PRISM_BISECT_0_1) :
+        SETMARK(theElement,PRI_BISECT_0_1);
+        SETMARKCLASS(theElement,RED_CLASS);
+        break;
+      case (PRISM_BISECT_0_2) :
+        SETMARK(theElement,PRI_BISECT_0_2);
+        SETMARKCLASS(theElement,RED_CLASS);
+        break;
+      case (PRISM_BISECT_0_3) :
+        SETMARK(theElement,PRI_BISECT_0_3);
+        SETMARKCLASS(theElement,RED_CLASS);
+        break;
+
       default :
         return(GM_ERROR);
       }
@@ -3586,8 +3599,16 @@ INT NS_DIM_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
       return(PRI_RED);
     case (455) :
       return(PRI_QUADSECT);
+    case 56 :
+      return PRI_BISECT_1_2;
+    case 65 :
+      return PRI_BISECT_0_1;
+    case 130 :
+      return PRI_BISECT_0_2;
+    case 260 :
+      return PRI_BISECT_0_3;
     default :
-      PrintErrorMessage('E',"Patterns2Rules","no mapping for PRISM and this pattern!");
+      PrintErrorMessageF('E',"Patterns2Rules","no mapping for PRISM and pattern %d!", pattern);
                                                 #ifndef __ANISOTROPIC__
       assert(0);
                                                 #endif
@@ -4592,9 +4613,9 @@ static INT InitRuleManager3D (void)
   RefRules[PYRAMID] = PyramidRules;
 
   /************************************************************************/
-  /*																		*/
-  /*  init refinement rules from for pyramids                           */
-  /*																		*/
+  /*                                                                      */
+  /*  init refinement rules for prisms                                    */
+  /*                                                                      */
   /************************************************************************/
 
   nRules = MAX_PRI_RULES;

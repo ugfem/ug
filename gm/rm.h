@@ -195,12 +195,17 @@ enum {Q_NOREF,
 #define TET_RED_HEX                     5
 #endif
 
-enum {PYR_COPY    = 1,
-      PYR_RED     = 2};
+enum {PYR_COPY       = 1,
+      PYR_RED        = 2,
+      PYR_BISECT_0_1 = 3,
+      PYR_BISECT_0_2 = 4};
 
 enum {PRI_COPY             = 1,
       PRI_RED              = 2,
       PRI_QUADSECT         = 3,
+      PRI_BISECT_0_1       = 4,
+      PRI_BISECT_0_2       = 5,
+      PRI_BISECT_0_3       = 6,
       PRI_BISECT_1_2       = 7,
       PRI_BISECT_HEX0      = 8,
       PRI_BISECT_HEX1      = 9,

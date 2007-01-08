@@ -342,6 +342,9 @@ enum RefinementRule
  PRISM_ROTATE_RGHT = 11,
  PRISM_QUADSECT_HEXPRI0 = 14,
  PRISM_RED_HEX = 15,
+ PRISM_BISECT_0_1,      /* No explicit numbers.  Maybe they are not necessary? */
+ PRISM_BISECT_0_2,
+ PRISM_BISECT_0_3,
 
  HEX_BISECT_0_1 = 5,
  HEX_BISECT_0_2 = 6,
