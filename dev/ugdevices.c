@@ -92,9 +92,14 @@ USING_UG_NAMESPACE
 /*																			*/
 /****************************************************************************/
 
-/* the mute level is set by the MuteCommand and used for output control		*/
-/* convention: 0 is default, <0 produces less output, >0 produces more outpu*/
+/* the mute level is set by the MuteCommand and used for output control.
+   convention: 0 is default, <0 produces less output, >0 produces more output.
+   When compiling for DUNE, the default is -1001, which equals total silence. */
+#ifndef FOR_DUNE
 static INT mutelevel=0;
+#else
+static INT mutelevel=-1001;
+#endif
 
 static FILE *logFile=NULL;                                              /* log file pointer             */
 static OUTPUTDEVICE *defaultOuputDevice=NULL;   /* console graphical outp.	*/
