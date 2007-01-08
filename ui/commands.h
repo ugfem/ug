@@ -40,11 +40,6 @@
 #include "gm.h"
 #include "namespace.h"
 
-/* include defines like OKCODE. Not directly needed here but many
-   UG-applications assume that the defines exist when commands.h is
-   used */
-#include "cmdline.h"
-
 START_UGDIM_NAMESPACE
 
 
