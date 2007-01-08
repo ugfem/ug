@@ -104,16 +104,21 @@ void                     *CreateDomain                        (const char *name,
 
 void   *CreateBoundarySegment       (const char *name, INT left, INT right,
                                      INT id, enum BoundaryType type, INT res,
-                                     INT *point,
+                                     const INT *point,
                                      const DOUBLE *alpha, const DOUBLE *beta,
                                      BndSegFuncPtr BndSegFunc,
                                      void *data);
 
-void   *CreateBoundarySegment2D     (char *name, int left, int right,
+void   *CreateBoundarySegment2D     (const char *name, int left, int right,
                                      int id, int from, int to, int res,
                                      DOUBLE alpha, DOUBLE beta,
                                      BndSegFuncPtr BndSegFunc,
                                      void *data);
+
+void *CreateLinearSegment (const char *name,
+                           INT left, INT right,INT id,
+                           INT n, const INT *point,
+                           DOUBLE x[CORNERS_OF_BND_SEG][DIM]);
 
 /* problem definition */
 void                    *CreateProblem                       (char *domain, char *name,

@@ -64,9 +64,6 @@ enum PatchType {POINT_PATCH_TYPE,
 
 /** @name Macros for STD_BVP */
 /*@{*/
-#define MAX_CORNERS_OF_LINEAR_PATCH      DIM
-
-
 #define STD_BVP_NAME(p)                                 ENVITEM_NAME(p)
 
 #define STD_BVP_DOMAIN(p)                               ((p)->Domain)
@@ -130,9 +127,9 @@ enum PatchType {POINT_PATCH_TYPE,
 
 /** @name Macros for patches */
 /*@{*/
-#define PATCH_FIXED                             0
-#define PATCH_BND_OF_FREE               1
-#define PATCH_FREE                              2
+enum {PATCH_FIXED,
+      PATCH_BND_OF_FREE,
+      PATCH_FREE};
 
 #define PATCH_TYPE(p)           (p)->ge.type
 #define PATCH_STATE(p)          (p)->ge.state
@@ -279,10 +276,10 @@ struct linear_segment {
   INT n;
 
   /** \brief  Numbers of the vertices (ID)*/
-  INT points[MAX_CORNERS_OF_LINEAR_PATCH];
+  INT points[CORNERS_OF_BND_SEG];
 
   /** \brief  Coordinates  */
-  DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM_OF_BND];
+  DOUBLE x[CORNERS_OF_BND_SEG][DIM];
 };
 
 /****************************************************************************/
@@ -559,10 +556,10 @@ struct linear_patch {
   INT corners;
 
   /** \brief Ids of points */
-  INT points[MAX_CORNERS_OF_LINEAR_PATCH];
+  INT points[CORNERS_OF_BND_SEG];
 
   /** \brief Position */
-  DOUBLE pos[MAX_CORNERS_OF_LINEAR_PATCH][DIM];
+  DOUBLE pos[CORNERS_OF_BND_SEG][DIM];
 };
 /** \brief ???
  *
@@ -773,11 +770,6 @@ INT CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3);
 void SetBVPType(INT type);
 
 DOMAIN *GetDomain                           (char *name);
-
-LINEAR_SEGMENT *CreateLinearSegment (char *name,
-                                     INT left, INT right,INT id,
-                                     INT n, INT *point,
-                                     DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM_OF_BND]);
 
 /* BVP definition */
 INT   STD_BVP_Configure           (INT argc, char **argv);
