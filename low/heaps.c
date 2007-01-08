@@ -195,7 +195,7 @@ INT NS_PREFIX InitHeaps ()
  */
 /****************************************************************************/
 
-HEAP *NS_PREFIX NewHeap (INT type, MEM size, void *buffer)
+HEAP *NS_PREFIX NewHeap (HeapType type, MEM size, void *buffer)
 {
   HEAP *theHeap;
   INT i;

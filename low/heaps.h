@@ -74,8 +74,8 @@ START_UG_NAMESPACE
 /** \brief Max depth of mark/release calls */
 #define MARK_STACK_SIZE 128
 
-enum {GENERAL_HEAP,                  /**< Heap with alloc/free mechanism  */
-      SIMPLE_HEAP                  /**< Heap with mark/release mechanism*/
+enum HeapType {GENERAL_HEAP,                  /**< Heap with alloc/free mechanism  */
+               SIMPLE_HEAP         /**< Heap with mark/release mechanism*/
 };
 
 enum {FROM_TOP=1,                  /**< Allocate from top of stack      */
@@ -148,7 +148,7 @@ struct block {
 };
 
 typedef struct {
-  INT type;
+  HeapType type;
   MEM size;
   MEM used;
   MEM freelistmem;
@@ -215,7 +215,7 @@ INT          InitHeaps                (void);
 
 /** @name Functions for the simple and general heap management */
 /* @{ */
-HEAP        *NewHeap                (INT type, MEM size, void *buffer);
+HEAP        *NewHeap                (HeapType type, MEM size, void *buffer);
 void        *GetMem                 (HEAP *theHeap, MEM n, INT mode);
 void            *GetMemUsingKey                 (HEAP *theHeap, MEM n, INT mode, INT key);
 void         DisposeMem             (HEAP *theHeap, void *buffer);
