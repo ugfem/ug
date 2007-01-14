@@ -124,23 +124,14 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
-   INT_2_bitpattern	- transform an INT into a bitpattern string
+/** \brief Transform an INT into a bitpattern string
 
-   SYNOPSIS:
-   static void INT_2_bitpattern (INT n, char *text)
+   \param n - integer to convert
+   \param text - string of size >= 33 for conversion
 
-   PARAMETERS:
-   .  n - integer to convert
-   .  text - string of size >= 33 for conversion
-
-   DESCRIPTION:
    This function transforms an INT into a bitpattern string consisting of 0s
    and 1s only.
-
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void NS_PREFIX INT_2_bitpattern (INT n, char text[33])
@@ -158,40 +149,19 @@ void NS_PREFIX INT_2_bitpattern (INT n, char text[33])
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  CenterInPattern												*/
-/*																			*/
-/* Purpose:   fill str up to PatLen with pattern and center text in it.		*/
-/*			  Terminate the str with end									*/
-/*																			*/
-/* Input:	  s.a															*/
-/*																			*/
-/* Output:	  INT 0: ok														*/
-/*				  1: error													*/
-/*																			*/
-/****************************************************************************/
+/** \brief Compose a headline of chars with string centered
 
-/****************************************************************************/
-/*D
-   CenterInPattern	- compose a headline of chars with string centered
+   \param str - string to print to
+   \param PatLen - width of headline
+   \param text - text to center in headline
+   \param p - char replicated for headline
+   \param end - trailing string (optional)
 
-   SYNOPSIS:
-   INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char *end)
+   Fill str up to PatLen with pattern and center text in it. Terminate the str with end
 
-   PARAMETERS:
-   .  str - string to print to
-   .  PatLen - width of headline
-   .  text - text to center in headline
-   .  p - char replicated for headline
-   .  end - trailing string (optional)
-
-   DESCRIPTION:
-   This function transforms an INT into a bitpattern string consisting of 0s
-   and 1s only.
-
-   RETURN VALUE:
-   void
-   D*/
+   \return
+   0 okay 1 error
+ */
 /****************************************************************************/
 
 INT NS_PREFIX CenterInPattern (char *str, INT PatLen, const char *text, char p, const char *end)
@@ -220,25 +190,7 @@ INT NS_PREFIX CenterInPattern (char *str, INT PatLen, const char *text, char p, 
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   expandfmt - Expand (make explicit) charset-ranges in scanf
 
-   SYNOPSIS:
-   char *expandfmt (const char *fmt)
-
-   PARAMETERS:
-   .  fmt - pointer to char (const)
-
-   DESCRIPTION:
-   This function expands (make explicit) charset-ranges in scanf.
-   For example '%<number>[...a-d...]' --> '%<number>[...abcd...]'.
-
-   RETURN VALUE:
-   char*
-   .n        new pointer to char
-   D*/
-/****************************************************************************/
 
 /* install a user math error handler */
 static int UG_matherr(
@@ -260,6 +212,16 @@ static int UG_matherr(
 
 static char newfmt[FMTBUFFSIZE];
 
+/****************************************************************************/
+/** \brief Expand (make explicit) charset-ranges in scanf
+
+   This function expands (make explicit) charset-ranges in scanf.
+   For example '%<number>[...a-d...]' --> '%<number>[...abcd...]'.
+
+   \return
+   .n        new pointer to char
+ */
+/****************************************************************************/
 char * NS_PREFIX expandfmt (const char *fmt)
 {
   const char *pos;
@@ -423,25 +385,18 @@ char * NS_PREFIX ExpandCShellVars (char *string)
 }
 
 /****************************************************************************/
-/*D
-   StrTok - Copy a token out of a string (ANSI-C)
+/** \brief Copy a token out of a string (ANSI-C)
 
-   SYNOPSIS:
-   char *StrTok (char *s, const char *ct)
+   \param s -  pointer to char
+   \param ct - pointer to char (const)
 
-   PARAMETERS:
-   .  s -  pointer to char
-   .  ct - pointer to char (const)
-
-   DESCRIPTION:
    This function copies a token out of a string.
 
    See also ANSI-C for description of this function.
 
-   RETURN VALUE:
-   char
+   \return
    .n    pointer to char, modified string
-   D*/
+ */
 /****************************************************************************/
 
 char * NS_PREFIX StrTok (char *s, const char *ct)
@@ -479,29 +434,22 @@ char * NS_PREFIX StrTok (char *s, const char *ct)
 }
 
 /****************************************************************************/
-/*D
-   strntok - Split a string into tokens each of maximal length 'n+1'
+/** \brief Split a string into tokens each of maximal length 'n+1'
 
-   SYNOPSIS:
-   const char *strntok (const char *str, const char *sep, int n, char *token)
+   \param str -   pointer to char (const)
+   \param sep -   pointer to char (const)
+   \param n -     integer, number of chars in token
+   \param token - pointer to char
 
-   PARAMETERS:
-   .  str -   pointer to char (const)
-   .  sep -   pointer to char (const)
-   .  n -     integer, number of chars in token
-   .  token - pointer to char
-
-   DESCRIPTION:
    This function splits a string into tokens each of maximal length 'n+1'.
    A pointer to the next char following the token (its a sep) is returned.
    NB: possibly check whether the returned char is a sep.
    If not: the token was to long and only the first n chars where copied!
 
-   RETURN VALUE:
-   char
+   \return
    .n     pointer to token
    .n     NULL if token larger than n.
-   D*/
+ */
 /****************************************************************************/
 
 const char * NS_PREFIX strntok (const char *str, const char *sep, int n, char *token)
@@ -528,22 +476,15 @@ const char * NS_PREFIX strntok (const char *str, const char *sep, int n, char *t
 }
 
 /****************************************************************************/
-/*D
-   StrDup - duplicate string to memory allocated with malloc
+/** \brief Duplicate string to memory allocated with malloc
 
-   SYNOPSIS:
-   char *StrDup (const char *s)
+   \param s - string to duplicate
 
-   PARAMETERS:
-   .  s - string to duplicate
-
-   DESCRIPTION:
    This function duplicates a string to memory allocated with malloc.
 
-   RETURN VALUE:
-   char*
+   \return
    .n        pointer to new string
-   D*/
+ */
 /****************************************************************************/
 
 char * NS_PREFIX StrDup (const char *s)
@@ -568,26 +509,17 @@ static void Copy (char *a, const char *b, INT size)
 }
 
 /****************************************************************************/
-/*D
-   QSort - Sorting routine (standard function)
+/** \brief Sorting routine (standard function)
 
-   SYNOPSIS:
-   void QSort (void *base,INT n,INT size,int (*cmp)(const void *,const void *))
+   \param base - pointer to void, field to be sorted
+   \param n -    integer, length of string
+   \param size - integer, number of characters to be sorted
+   \param cmp -  pointer to function with two arguments
 
-   PARAMETERS:
-   .  base - pointer to void, field to be sorted
-   .  n -    integer, length of string
-   .  size - integer, number of characters to be sorted
-   .  cmp -  pointer to function with two arguments
-
-   DESCRIPTION:
    This function sorts the values returned by a function given as argument.
 
    See also standard description of 'QSort'.
-
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 void NS_PREFIX QSort (void *base, INT n, INT size, int (*cmp)(const void *, const void *))
 {
@@ -649,26 +581,17 @@ void NS_PREFIX QSort (void *base, INT n, INT size, int (*cmp)(const void *, cons
 }
 
 /****************************************************************************/
-/*D
-   SelectionSort - Sorting routine (standard)
+/** \brief Sorting routine (standard)
 
-   SYNOPSIS:
-   void SelectionSort (void *base,INT n,INT size,int (*cmp)(const void *,const void *))
+   \param base - pointer to void, field to be sorted
+   \param n -    integer, length of string
+   \param size - integer, number of characters to be sorted
+   \param cmp -  pointer to function with two arguments
 
-   PARAMETERS:
-   .  base - pointer to void, field to be sorted
-   .  n -    integer, length of string
-   .  size - integer, number of characters to be sorted
-   .  cmp -  pointer to function with two arguments
-
-   DESCRIPTION:
    This function sorts the arguments of the function.
 
    See also standard description of 'SelectionSort'.
-
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void NS_PREFIX SelectionSort (void *base, INT n, INT size, int (*cmp)(const void *, const void *))
@@ -710,17 +633,11 @@ void NS_PREFIX SelectionSort (void *base, INT n, INT size, int (*cmp)(const void
 
 
 /****************************************************************************/
-/*D
-    ReadMemSizeFromString - Convert a (memory)size specification from String to MEM (long int)
+/** \brief Convert a (memory)size specification from String to MEM (long int)
 
-   SYNOPSIS:
-   INT ReadMemSizeFromString (const char *s, MEM *mem_size );
+   \param s - input string
+   \param mem_size - the specified mem size in byte
 
-   PARAMETERS:
-   .  s - input string
-   .  mem_size - the specified mem size in byte
-
-   DESCRIPTION:
    This function converts a (memory)size specification from String to type MEM (an integer type).
    The size specification contains an integer number followed by an optional unit specifier:
       G for gigabyte
@@ -731,14 +648,14 @@ void NS_PREFIX SelectionSort (void *base, INT n, INT size, int (*cmp)(const void
    EXAMPLE:
       "10M" is converted to 10485760 (10 mega byte).
 
-   RETURN VALUE:
+   \return
    INT: 0 ok
         1 integer could not be read
         2 invalid unit specifier
 
-   SEE ALSO:
+   \sa
    MEM, WriteMemSizeToString
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ReadMemSizeFromString (const char *s, MEM *mem_size )
@@ -768,26 +685,20 @@ INT NS_PREFIX ReadMemSizeFromString (const char *s, MEM *mem_size )
 }
 
 /****************************************************************************/
-/*D
-    WriteMemSizeToString - Convert a (memory)size MEM to string
+/** \brief Convert a (memory)size MEM to string
 
-   SYNOPSIS:
-   INT WriteMemSizeToString (MEM mem_size, char *s)
+   \param s - input string
+   \param mem_size - the specified mem size in byte
 
-   PARAMETERS:
-   .  s - input string
-   .  mem_size - the specified mem size in byte
-
-   DESCRIPTION:
    This function writes a MEM size in MBytes to string in a format that is recognized by
    WriteMemSizeToString.
 
-   RETURN VALUE:
-   INT: 0 ok
+   \return
+   0 ok
 
-   SEE ALSO:
+   \sa
    MEM, ReadMemSizeFromString
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX WriteMemSizeToString (MEM mem_size, char *s)
