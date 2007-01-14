@@ -244,11 +244,6 @@ enum {HEXA_COPY           = 1,
 #define PAT_OF_RULE(r)                          ((r)->pat)
 #define SON_OF_NODE_OF_RULE(r,n)        ((r)->sonandnode[(n)][0])
 #define SONNODE_OF_NODE_OF_RULE(r,n)((r)->sonandnode[(n)][0])
-#define EDGE_OF_RULE(r,e)                       (&((r)->edges[(e)]))
-#define EDGE_TYPE_OF_RULE(r,e)          ((r)->edges[(e)].type)
-#define EDGE_FROM_OF_RULE(r,e)          ((r)->edges[(e)].from)
-#define EDGE_TO_OF_RULE(r,e)            ((r)->edges[(e)].to)
-#define EDGE_SIDE_OF_RULE(r,e)          ((r)->edges[(e)].side)
 #define SON_TAG_OF_RULE(r,s)            ((r)->sons[(s)].tag)
 #define SON_TAG(s)                                      ((s)->tag)
 #define SON_CORNER_OF_RULE(r,s,n)       ((r)->sons[(s)].corners[(n)])
@@ -298,20 +293,6 @@ typedef struct {
 
 } FULLREFRULE;
 
-/*
-   edge type  : 1 = inner edge of the father
-                2 = inner edge of one side (3D only)
-                3 = half an edge of the father element
-                4 = edge of the father itself
- */
-
-struct edgedata {
-  SHORT type;                      /* interior edge of the tetra or only of one side        */
-  SHORT from;                      /* indices of the first endpoint (0..9 for t)            */
-  SHORT to;                        /* indices of the second endpoint (4..9 for t)           */
-  SHORT side;                      /* side, for which edge is interior, if type 2 (3D only) */
-};
-
 struct sondata {
   SHORT tag;                                     /* which element type is the son                           */
   SHORT corners[MAX_CORNERS_OF_ELEM_DIM];        /* corners of the son                                  */
@@ -330,12 +311,10 @@ struct refrule {
   INT pat;                                                      /* bitwise format of pattern               */
   SHORT sonandnode[MAX_NEW_CORNERS_DIM][2];                 /* for each new node the number of the son */
   /* and the local node number of the node   */
-  struct edgedata edges[MAX_NEW_EDGES_DIM];
   struct sondata sons[MAX_SONS_DIM];
 };
 
 typedef struct sondata SONDATA;
-typedef struct edgedata EDGEDATA;
 typedef struct refrule REFRULE;
 
 
