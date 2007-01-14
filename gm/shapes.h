@@ -135,8 +135,7 @@ START_UGDIM_NAMESPACE
 #define CORNER_COORDINATES(e,n,x)                               \
  {if (TAG((e))==TRIANGLE)                                       \
                  CORNER_COORDINATES_TRIANGLE((e),(n),(x))       \
-  else if (TAG((e))==QUADRILATERAL)                             \
-                 CORNER_COORDINATES_QUADRILATERAL((e),(n),(x))}
+  else           CORNER_COORDINATES_QUADRILATERAL((e),(n),(x))}
 
 #define COPY_CORNER_COORDINATES(e,n,x)                          \
  {if (TAG((e))==TRIANGLE)                                       \
@@ -204,7 +203,7 @@ START_UGDIM_NAMESPACE
 
 #define TRANSFORMATION_2D(n,x,local,M)                                      \
  {if ((n) == 3)      {TRANSFORMATION_OF_TRIANGLE((x),(M));}              \
-  else if ((n) == 4) {TRANSFORMATION_OF_QUADRILATERAL((x),(local),(M));} }
+  else TRANSFORMATION_OF_QUADRILATERAL((x),(local),(M)); }
 
 #define SIDE_NORMAL_2D(n,i,x,normal)                 \
    { DOUBLE s; DOUBLE_VECTOR y;                   \
@@ -321,7 +320,7 @@ START_UGDIM_NAMESPACE
   {if (TAG((e))==TETRAHEDRON)     CORNER_COORDINATES_TETRAHEDRON((e),(n),(x))\
    else if (TAG((e))==PYRAMID)    CORNER_COORDINATES_PYRAMID((e),(n),(x))    \
    else if (TAG((e))==PRISM)      CORNER_COORDINATES_PRISM((e),(n),(x))      \
-   else if (TAG((e))==HEXAHEDRON) CORNER_COORDINATES_HEXAHEDRON((e),(n),(x))}
+   else CORNER_COORDINATES_HEXAHEDRON((e),(n),(x))}
  
 #define COPY_CORNER_COORDINATES(e,n,x)                                     \
   {if (TAG((e))==TETRAHEDRON)     COPY_COORDINATES_TETRAHEDRON((e),(n),(x))\
@@ -598,7 +597,7 @@ START_UGDIM_NAMESPACE
  {if ((n) == 4)      {TRANSFORMATION_OF_TETRAHEDRON((x),(M));}          \
   else if ((n) == 5) {TRANSFORMATION_OF_PYRAMID((x),(local),(M));}      \
   else if ((n) == 6) {TRANSFORMATION_OF_PRISM((x),(local),(M));}        \
-  else if ((n) == 8) {TRANSFORMATION_OF_HEXAHEDRON((x),(local),(M));}}
+  else TRANSFORMATION_OF_HEXAHEDRON((x),(local),(M));}
 
 #define SIDE_NORMAL_3D(n,i,x,normal)                                \
   { DOUBLE s; DOUBLE_VECTOR a,b;                                 \
