@@ -58,37 +58,27 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 static char *defaults_buffer=NULL;
 #endif
 
+#define NAMESIZE    32
+#define NAMELEN     31
+#define NAMELENSTR    "31"
+
 
 /****************************************************************************/
-/*D
-   GetLocalizedDefaultValue - Provide access to defaults file
+/** \brief Provide access to defaults file
 
-   SYNOPSIS:
-   INT GetLocalizedDefaultValue (const char *filename, const char *name, char *value);
-
-   PARAMETERS:
-   .  filename - pointer to char (const)
-   .  name -     pointer to char (const)
-   .  value -    pointer to char
-
-   DESCRIPTION:
    This function provides access to defaults file. When 'ug' is started
    this function reads the defaults on file in order to set some
    parameters of 'ug' in advance.
 
-   RETURN VALUE:
-   INT
-   .n    0 if OK
-   .n    1 if error in opening or reading defaults file
+   \return <ul>
+   <li> 0 if OK </li>
+   <li> 1 if error in opening or reading defaults file </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
    GetDefaultValue
-   D*/
+ */
 /****************************************************************************/
-
-#define NAMESIZE    32
-#define NAMELEN     31
-#define NAMELENSTR    "31"
 
 INT NS_PREFIX GetLocalizedDefaultValue (const char *filename, const char *name, char *value)
 {
@@ -194,34 +184,6 @@ INT NS_PREFIX GetLocalizedDefaultValue (const char *filename, const char *name, 
 }
 
 
-/****************************************************************************/
-/*D
-   GetDefaultValue - Provide access to defaults file
-
-   SYNOPSIS:
-   INT GetDefaultValue (const char *filename, const char *name, char *value);
-
-   PARAMETERS:
-   .  filename - pointer to char (const)
-   .  name -     pointer to char (const)
-   .  value -    pointer to char
-
-   DESCRIPTION:
-   This function provides access to defaults file. When 'ug' is started
-   this function reads the defaults on file in order to set some
-   parameters of 'ug' in advance.
-
-   RETURN VALUE:
-   INT
-   .n    0 if OK
-   .n    1 if error in opening or reading defaults file
-
-   SEE ALSO:
-   GetLocalizedDefaultValue
-   D*/
-/****************************************************************************/
-
-
 #define MAX_PATH_LEN            1024
 enum {PATH_TOO_LONG = 1, COULD_NOT_STAT};
 
@@ -248,6 +210,23 @@ static INT GetPathedUGRCValue (const char *path, const char *name, char *value, 
     return COULD_NOT_STAT;
   }
 }
+
+/****************************************************************************/
+/** \brief Provide access to defaults file
+
+   This function provides access to defaults file. When 'ug' is started
+   this function reads the defaults on file in order to set some
+   parameters of 'ug' in advance.
+
+   \return <ul>
+   <li> 0 if OK </li>
+   <li> 1 if error in opening or reading defaults file </li>
+   </ul>
+
+   \sa
+   GetLocalizedDefaultValue
+ */
+/****************************************************************************/
 
 INT NS_PREFIX GetDefaultValue (const char *filename, const char *name, char *value)
 {
