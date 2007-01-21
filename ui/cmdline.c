@@ -95,28 +95,22 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
-   CreateCommand - Register the commands exported by this module in the environ
+/** \brief Register the commands exported by this module in the environ
 
-   SYNOPSIS:
-   COMMAND *CreateCommand (const char *name, CommandProcPtr cmdProc);
+   \param name - Name of the command
+   \param cmdProc - Pointer to a function of type 'CommandProcPtr'
 
-   PARAMETERS:
-   .  name - Name of the command
-   .  cmdProc - Pointer to a function of type 'CommandProcPtr'
-
-   DESCRIPTION:
    This function registers a new command that can be executed from the UG
    shell. This process is described in detail on the page 'commands'.
 
-   SEE ALSO:
+   \sa
    'commands'.
 
-   RETURN VALUE:
-   COMMAND *
-   .n   pointer to new 'COMMAND' structure if o.k.
-   .n   NULL pointer in case of an error.
-   D*/
+   \return <ul>
+   <li> pointer to new 'COMMAND' structure if o.k </li>
+   <li> NULL pointer in case of an error </li>
+   </ul>
+ */
 /****************************************************************************/
 
 COMMAND * NS_DIM_PREFIX CreateCommand (const char *name, CommandProcPtr cmdProc)
@@ -138,24 +132,18 @@ COMMAND * NS_DIM_PREFIX CreateCommand (const char *name, CommandProcPtr cmdProc)
 }
 
 /****************************************************************************/
-/*D
-   GetCommand - Return pointer to command structure with name name
+/** \brief Return pointer to command structure with name name
 
-   SYNOPSIS:
-   COMMAND *GetCommand (const char *name);
+   \param name - Name of the command.
 
-   PARAMETERS:
-   .  name - Name of the command.
-
-   DESCRIPTION:
    This function returns pointer to command structure with name 'name'. If
    it does not exist a 'NULL' pointer is returned.
 
-   RETURN VALUE:
-   COMMAND *
-   .n      POINTER to 'COMMAND' structure
-   .n      NULL if not found
-   D*/
+   \return <ul>
+   <li> POINTER to 'COMMAND' structure </li>
+   <li> NULL if not found </li>
+   </ul>
+ */
 /****************************************************************************/
 
 COMMAND * NS_DIM_PREFIX GetCommand (const char *name)
@@ -168,24 +156,16 @@ COMMAND * NS_DIM_PREFIX GetCommand (const char *name)
 }
 
 /****************************************************************************/
-/*D
-   GetFirstCommand - Return pointer to first command structure of /Menu dir
+/** \brief Return pointer to first command structure of /Menu dir
 
-   SYNOPSIS:
-   COMMAND *GetFirstCommand ();
-
-   PARAMETERS:
-   .  void - no arguments
-
-   DESCRIPTION:
    This function returns pointer to first command structure of the '/Menu'
    environment directory.
 
-   RETURN VALUE:
-   COMMAND *
-   .n      POINTER to 'COMMAND' structure
-   .n     NULL if not found
-   D*/
+   \return <ul>
+   <li> POINTER to 'COMMAND' structure </li>
+   <li> NULL if not found </li>
+   </ul>
+ */
 /****************************************************************************/
 
 COMMAND * NS_DIM_PREFIX GetFirstCommand ()
@@ -201,24 +181,18 @@ COMMAND * NS_DIM_PREFIX GetFirstCommand ()
 }
 
 /****************************************************************************/
-/*D
-   GetNextCommand - Return pointer to command structure of /Menu dir following cmd
+/** \brief Return pointer to command structure of /Menu dir following cmd
 
-   SYNOPSIS:
-   COMMAND *GetNextCommand (const COMMAND *cmd);
+   \param cmd - pointer to a 'COMMAND'
 
-   PARAMETERS:
-   .  cmd - pointer to a 'COMMAND'
-
-   DESCRIPTION:
    This function returns a pointer to the next command after 'cmd' in the
    list of commands.
 
-   RETURN VALUE:
-   COMMAND *
-   .n      POINTER to
-   .n      NULL if not found
-   D*/
+   \return <ul>
+   <li> POINTER to next command </li>
+   <li> NULL if not found </li>
+   </ul>
+ */
 /****************************************************************************/
 
 COMMAND * NS_DIM_PREFIX GetNextCommand (const COMMAND *cmd)
@@ -238,8 +212,8 @@ COMMAND * NS_DIM_PREFIX GetNextCommand (const COMMAND *cmd)
    static int Str1inStr2 (const char *name1, const char *name2);
 
    PARAMETERS:
-   .  name1 -
-   .  name2 -
+   \param name1 -
+   \param name2 -
 
    DESCRIPTION:
    This function
@@ -260,25 +234,19 @@ static int Str1inStr2 (const char *name1, const char *name2)
   return (0);
 }
 /****************************************************************************/
-/*D
-   SearchUgCmd - Find a UG command by (part of) name
+/** \brief Find a UG command by (part of) name
 
-   SYNOPSIS:
-   COMMAND *SearchUgCmd (const char *cmdName);
+   \param cmdName - name of command
 
-   PARAMETERS:
-   .  cmdName - name of command
-
-   DESCRIPTION:
    This function searches for a command with name 'name'. The difference
    to 'GetCommand' is that the name need not be complete. Only the first few
    characters must be supplied that make the name unique.
 
-   RETURN VALUE:
-   COMMAND *
-   .n      pointer to 'COMMAND' if found and unique
-   .n      NULL if not found or ambiguos
-   D*/
+   \return <ul>
+   <li> pointer to 'COMMAND' if found and unique </li>
+   <li> NULL if not found or ambiguous </li>
+   </ul>
+ */
 /********************************************************************************/
 
 COMMAND * NS_DIM_PREFIX SearchUgCmd (const char *cmdName)
@@ -321,25 +289,19 @@ COMMAND * NS_DIM_PREFIX SearchUgCmd (const char *cmdName)
 }
 
 /****************************************************************************/
-/*D
-   ReplaceCommand - Change an existing command or create a new one
+/** \brief Change an existing command or create a new one
 
-   SYNOPSIS:
-   COMMAND *ReplaceCommand (const char *name, CommandProcPtr cmdProc)
+   \param name - name of a command
+   \param cmdProc - new command function
 
-   PARAMETERS:
-   .  name - name of a command
-   .  cmdProc - new command function
-
-   DESCRIPTION:
    This function changes the execution function of an existing command
    or creates a new one in case it does not exist already.
 
-   RETURN VALUE:
-   COMMAND *
-   .n     pointer to new or replaced command
-   .n     NULL in case of an error
-   D*/
+   \return </ul>
+   <li> pointer to new or replaced command </li>
+   <li> NULL in case of an error </li>
+   </ul>
+ */
 /****************************************************************************/
 
 COMMAND * NS_DIM_PREFIX ReplaceCommand (const char *name, CommandProcPtr cmdProc)
@@ -363,24 +325,18 @@ COMMAND * NS_DIM_PREFIX ReplaceCommand (const char *name, CommandProcPtr cmdProc
 
 
 /****************************************************************************/
-/*D
-   ExecCommand - Processes the command line  and execute command
+/** \brief Processes the command line  and execute command
 
-   SYNOPSIS:
-   INT ExecCommand (char *cmdLine)
+   \param cmdLine - character string containing a complete command line
 
-   PARAMETERS:
-   .  cmdLine - character string containing a complete command line
-
-   DESCRIPTION:
    This function processes the command line, i.e. it constructs the 'argc'
    'argv' arrays and calls the execution function of the command.
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> 1 if error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX ExecCommand (char *cmdLine)
