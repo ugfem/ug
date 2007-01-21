@@ -608,21 +608,22 @@ Then, the file 'exp.proto' will consist of the string
 \section Syntax
    'open \<filename> [$t \<type>] [$m \<mg name>] [$b \<problem>] [$f \<format>] [$h \<heapsize>]'
 
-  <li> \<filename>             		- the name of the multigrid file (the fule name will be composed
-									to: \<filename>.ug.mg.\<type>
-  <li> $t~\<type>					- file was saved with type: asc (default) or bin
-  <li> \<mg~name>					- grid will be created with this name
-  <li> $p~\<boundary~value~problem>	- a boundary value problem
-									(overrides saved one)
-  <li> $f~\<format>            		- one of the enroled formats matching with \<boundary value problem>
-									(overrides saved one)
-  <li> $h~\<heapsize>          		- the heapsize to be allocated
-									(overrides saved one)
-   
+  <ul>
+  <li> \<filename>             		- the name of the multigrid file (the full name will be composed
+					to: \<filename>.ug.mg.\<type> </li>
+  <li> $t \<type>			- file was saved with type: asc (default) or bin </li>
+  <li> $m \<mg name>			- grid will be created with this name </li>
+  <li> $p \<boundary value problem>	- a boundary value problem (overrides saved one) </li>
+  <li> $f \<format>            		- one of the enroled formats matching with \<boundary value problem>
+									(overrides saved one) </li>
+  <li> $h \<heapsize>          		- the heapsize to be allocated
+									(overrides saved one) </li>
+  </ul>   
+
  \section Keywords
    multigrid, new, open, file
 
-   SEE ALSO:
+   \sa
    'new', 'save'
 */
 /****************************************************************************/
@@ -636,19 +637,21 @@ Then, the file 'exp.proto' will consist of the string
 \section Syntax
    'save [\<name>] [$t \<type>] [$r [0|1]] [$c \<comment>]'
 
-  <li> \<name>                  - name to save with (default is the mgname)
+  <ul>
+  <li> \<name>                  - name to save with (default is the mgname) </li>
 .n								if name is ending in .scr a script file is saved which
 								will generate the surface of the grid as level 0 on execution
   <li> $t~\<type>			   - type can be asc (default> or bin. asc and bin can be opened with
-								the open command
-  <li> $c~\<comment>            - optionally specify a comment string
-  <li> $r~[0|1]                - 0: replace (default), 1: rename existing mg file (using modification date)
-   
+								the open command </li>
+  <li> $c~\<comment>            - optionally specify a comment string </li>
+  <li> $r~[0|1]                - 0: replace (default), 1: rename existing mg file (using modification date) </li>
+  </ul>   
+
  \section Keywords
    multigrid, save, write, data, file, output
 
-   SEE ALSO:
-   'open'
+   \sa
+   open
 */
 /****************************************************************************/
 
