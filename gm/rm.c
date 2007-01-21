@@ -2989,34 +2989,6 @@ INT NS_DIM_PREFIX GetRefinementMarkType (ELEMENT *theElement)
   return(0);
 }
 
-
-/****************************************************************************/
-/*
-   PrintEdgeData -
-
-   SYNOPSIS:
-   static INT PrintEdgeData (struct edgedata theEdgeData);
-
-   PARAMETERS:
-   \param theEdgeData
-
-   DESCRIPTION:
-
-   \return
-   INT
- */
-/****************************************************************************/
-
-static INT PrintEdgeData (struct edgedata theEdgeData)
-{
-  UserWriteF("typ=%d from=%2d to=%2d side=%2d",(int)theEdgeData.type
-             ,(int)theEdgeData.from
-             ,(int)theEdgeData.to
-             ,(int)theEdgeData.side);
-  return(0);
-}
-
-
 /****************************************************************************/
 /*
    PrintSonData -
