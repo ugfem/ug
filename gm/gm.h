@@ -3426,10 +3426,10 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
                             INT optimizedIE, INT insertMesh);
 MULTIGRID *OpenMGFromDataFile(MULTIGRID *theMG, INT number, char *type,
                               char *DataFileName, NS_PREFIX MEM heapSize);
-MULTIGRID       *LoadMultiGrid  (char *MultigridName, char *name, char *type,
-                                 char *BndValProblem, char *format,
+MULTIGRID       *LoadMultiGrid  (const char *MultigridName, const char *name, const char *type,
+                                 const char *BndValProblem, const char *format,
                                  unsigned long heapSize,INT force,INT optimizedIE, INT autosave);
-INT             SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename);
+INT             SaveMultiGrid (MULTIGRID *theMG, const char *name, const char *type, const char *comment, INT autosave, INT rename);
 INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
 INT         DisposeAMGLevels        (MULTIGRID *theMG);

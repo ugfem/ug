@@ -341,7 +341,7 @@ static INT SaveSurfaceGrid  (MULTIGRID *theMG, FILE *stream)
   return(GM_OK);
 }
 
-static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
+static INT SaveMultiGrid_SCR (MULTIGRID *theMG, const char *name, const char *comment)
 {
   FILE *stream;
   GRID *theGrid;
@@ -1280,7 +1280,7 @@ static INT WriteElementParInfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO
 }
 #endif
 
-static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename)
+static INT SaveMultiGrid_SPF (MULTIGRID *theMG, const char *name, const char *type, const char *comment, INT autosave, INT rename)
 {
   GRID *theGrid;
   NODE *theNode;
@@ -1721,7 +1721,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename)
+INT NS_DIM_PREFIX SaveMultiGrid (MULTIGRID *theMG, const char *name, const char *type, const char *comment, INT autosave, INT rename)
 {
   /* check name convention */
   if (name==NULL || strcmp(name+strlen(name)-4,".scr")!=0)
@@ -2731,12 +2731,20 @@ static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
    This function can read grid files produced with the 'SaveMultiGrid' function.
 
    \return
-   NULL if an error occured else apointer to new 'MULTIGRID'
+   NULL if an error occured else a pointer to new 'MULTIGRID'
  */
 /****************************************************************************/
 
 
-MULTIGRID * NS_DIM_PREFIX LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE, INT autosave)
+MULTIGRID * NS_DIM_PREFIX LoadMultiGrid (const char *MultigridName,
+                                         const char *name,
+                                         const char *type,
+                                         const char *BVPName,
+                                         const char *format,
+                                         unsigned long heapSize,
+                                         INT force,
+                                         INT optimizedIE,
+                                         INT autosave)
 /* Documentation of the intended programm flow resp. communication requirements.
    Functions introducing a global communication (all processors without any exception)
    are:
