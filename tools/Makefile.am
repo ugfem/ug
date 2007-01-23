@@ -17,13 +17,13 @@ endif
 TOOLS = ugnetgen ugstl $(XUGV) ugmesh m2ps
 
 if BUILD2D
-  TOOLS_2D = ugmgs2 ugpfm2 ugmarc2
+  TOOLS_2D = ugmgs2 ugpfm2
 else
   TOOLS_2D =
 endif
 
 if BUILD3D
-  TOOLS_3D = ugmgs3 ugpfm3 ugmarc3
+  TOOLS_3D = ugmgs3 ugpfm3
 else
   TOOLS_3D =
 endif
@@ -56,13 +56,3 @@ ugmgs3_SOURCES = ugmgs.c
 ugmgs3_CPPFLAGS = $(UG_2DFLAGS)
 ugmgs3_LDFLAGS = $(UG_LDFLAGS)
 ugmgs3_LDADD = $(UG_2DLIBS)
-
-ugmarc2_SOURCES = ugmarc.c
-ugmarc2_CPPFLAGS = $(UG_2DFLAGS)
-ugmarc2_LDFLAGS = $(UG_LDFLAGS)
-ugmarc2_LDADD = $(UG_2DLIBS)
-
-ugmarc3_SOURCES = ugmarc.c
-ugmarc3_CPPFLAGS = $(UG_3DFLAGS)
-ugmarc3_LDFLAGS = $(UG_LDFLAGS)
-ugmarc3_LDADD = $(UG_3DLIBS)

@@ -28,16 +28,13 @@ START_UGDIM_NAMESPACE
 
 typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 
-enum {BVP_STANDARD,
-      BVP_MARC};
+/** \todo Do we need this? */
+enum {BVP_STANDARD};
 
 enum PatchType {POINT_PATCH_TYPE,
                 LINE_PATCH_TYPE,
                 LINEAR_PATCH_TYPE,
-                PARAMETRIC_PATCH_TYPE,
-                MARC_0_PATCH_TYPE,
-                MARC_1_PATCH_TYPE,
-                MARC_2_PATCH_TYPE};
+                PARAMETRIC_PATCH_TYPE};
 
 /** @name  Macros for DOMAIN_PART_INFO */
 /*@{*/
@@ -168,8 +165,6 @@ enum {PATCH_FIXED,
 #define M_BNDS_NSIZE(n)         (((n)-1)*sizeof(M_BNDP)+sizeof(M_BNDS))
 #define M_BNDS_SIZE(p)          M_BNDS_NSIZE(((M_BNDS *)(p))->n)
 
-#define IF_MARC(p) \
-  if (PATCH_TYPE(currBVP->patches[BND_PATCH_ID(p)]) >= MARC_0_PATCH_TYPE)
 /*@}*/
 
 /****************************************************************************/
@@ -608,66 +603,6 @@ struct parameter_patch {
  *
  * \todo Please doc me!
  */
-struct marc_0_patch {
-
-  /** \brief Patch type                           */
-  enum PatchType type;
-
-  /** \brief Fixed/bnd of free/free               */
-  INT state;
-
-  /** \brief Unique id used for load/store        */
-  INT id;
-
-  /** \brief Position                             */
-  DOUBLE pos[3];
-};
-
-/** \brief ???
- *
- * \todo Please doc me!
- */
-struct marc_1_patch {
-
-  /** \brief Patch type                           */
-  enum PatchType type;
-
-  /** \brief Fixed/bnd of free/free               */
-  INT state;
-
-  /** \brief Unique id used for load/store        */
-  INT id;
-
-  /** \brief Line between two points              */
-  INT p[2];
-};
-
-/** \brief ???
- *
- * \todo Please doc me!
- */
-struct marc_2_patch {
-
-  /** \brief Patch type                           */
-  enum PatchType type;
-
-  /** \brief Fixed/bnd of free/free               */
-  INT state;
-
-  /** \brief Unique id used for load/store        */
-  INT id;
-
-  /** \brief Bnd cond                             */
-  INT c;
-
-  /** \brief Triangle of three points             */
-  INT p[3];
-};
-
-/** \brief ???
- *
- * \todo Please doc me!
- */
 union patch {
   struct generic_patch ge;
   struct point_patch po;
@@ -676,9 +611,6 @@ union patch {
     #ifdef __THREEDIM__
   struct line_patch li;
         #endif
-  struct marc_0_patch m0;
-  struct marc_1_patch m1;
-  struct marc_2_patch m2;
 } ;
 
 /** \brief ???
@@ -699,34 +631,6 @@ struct bnd_ps {
   /** \brief Parameter range                      */
   COORD_BND_VECTOR local[1];
 };
-/** \brief ???
- *
- * \todo Please doc me!
- */
-struct marc_bndp {
-
-  /** \brief Associated patch                     */
-  INT patch_id;
-
-  /** \brief Position                             */
-  DOUBLE pos[3];
-};
-
-/** \brief ???
- *
- * \todo Please doc me!
- */
-struct marc_bnds {
-
-  /** \brief associated patch */
-  INT patch_id;
-
-  /** \brief number of corners */
-  INT n;
-
-  /** \brief corners */
-  struct marc_bndp p[1];
-};
 
 /*----------- typedef for structs ------------------------------------------*/
 
@@ -744,12 +648,7 @@ typedef struct point_patch POINT_PATCH;
 typedef struct line_patch LINE_PATCH;
 typedef struct linear_patch LINEAR_PATCH;
 typedef struct parameter_patch PARAMETER_PATCH;
-typedef struct marc_0_patch M0_PATCH;
-typedef struct marc_1_patch M1_PATCH;
-typedef struct marc_2_patch M2_PATCH;
 typedef struct bnd_ps BND_PS;
-typedef struct marc_bndp M_BNDP;
-typedef struct marc_bnds M_BNDS;
 
 /****************************************************************************/
 /*                                                                          */

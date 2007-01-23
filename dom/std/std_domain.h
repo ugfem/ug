@@ -138,9 +138,6 @@ BVP   *CreateBoundaryValueProblem (const char *BVPname, BndCondProcPtr theBndCon
 BVP       *CreateBVP                              (char *BVP, char *Domain, char *Problem);
 const char *GetBVP_DomainName     (const BVP *aBVP);
 const char *GetBVP_ProblemName    (const BVP *aBVP);
-BVP   *Create_MarcBVP             (char *BVPname, BndCondProcPtr theBndCond,
-                                   int numOfCoeffFct, CoeffProcPtr coeffs[],
-                                   int numOfUserFct, UserProcPtr userfct[]);
 
 BVP *CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName);
 

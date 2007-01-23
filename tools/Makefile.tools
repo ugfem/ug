@@ -20,13 +20,12 @@ UGLIBS      = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a \
 			  $(UGROOT)/lib/libgrape$(GRAPE)$(DIM).a \
 			  $(UGROOT)/lib/libgg$(DIM).a 
 
-OBJECTS = ugnetgen.o ugstl.o xugv.o m2ps.o ugmgs.o ugpfm.o ugmarc.o ugmesh.o
+OBJECTS = ugnetgen.o ugstl.o xugv.o m2ps.o ugmgs.o ugpfm.o ugmesh.o
 
 all : $(OBJECTS) Makefile.tools
 	$(UG_LINK) m2ps.o  -o $(UGROOT)/bin/m2ps  $(UG_LFLAGS) 
 	$(UG_LINK) ugmgs.o -o $(UGROOT)/bin/ugmgs $(UGLIBS) $(UG_LFLAGS) $(UGLIBS) 
 	$(UG_LINK) ugpfm.o -o $(UGROOT)/bin/ugpfm $(UGLIBS) $(UG_LFLAGS) $(UGLIBS)
-	$(UG_LINK) ugmarc.o -o $(UGROOT)/bin/ugmarc  $(UGLIBS) $(UG_LFLAGS) 
 	$(UG_LINK) ugnetgen.o -o $(UGROOT)/bin/ugnetgen  $(UGLIBS) $(UG_LFLAGS) 
 	$(UG_LINK) ugstl.o -o $(UGROOT)/bin/ugstl  $(UGLIBS) $(UG_LFLAGS) 
 	$(UG_LINK) ugmesh.o -o $(UGROOT)/bin/ugmesh $(UGLIBS) $(UG_LFLAGS) 
@@ -38,4 +37,4 @@ all : $(OBJECTS) Makefile.tools
 clean:
 	rm -f $(OBJECTS)
 	rm -f $(UGROOT)/bin/xugv $(UGROOT)/bin/m2ps $(UGROOT)/bin/ugmgs
-	rm -f $(UGROOT)/bin/ugmarc $(UGROOT)/bin/ugstl $(UGROOT)/bin/ugmesh
+	rm -f $(UGROOT)/bin/ugstl $(UGROOT)/bin/ugmesh
