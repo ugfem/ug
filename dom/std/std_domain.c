@@ -719,8 +719,6 @@ CreateBoundaryValueProblem (const char *BVPName, BndCondProcPtr theBndCond,
   theBVP->ConfigProc = STD_BVP_Configure;
   theBVP->GeneralBndCond = theBndCond;
 
-  theBVP->type = BVP_STANDARD;
-
   UserWriteF ("BVP %s installed.\n", BVPName);
 
   return ((BVP *) theBVP);
@@ -784,8 +782,6 @@ CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
   /* fill in data of problem */
   theBVP->ConfigProc = theProblem->ConfigProblem;
   theBVP->GeneralBndCond = NULL;
-
-  theBVP->type = BVP_STANDARD;
 
   UserWriteF ("BVP %s installed.\n", BVPName);
 
@@ -887,8 +883,6 @@ CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName)
   /* fill in data of problem */
   theBVP->ConfigProc = Problem_Configure;
   theBVP->GeneralBndCond = NULL;
-
-  theBVP->type = BVP_STANDARD;
 
   UserWriteF ("BVP %s installed.\n", BVPName);
 

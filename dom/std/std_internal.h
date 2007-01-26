@@ -28,9 +28,6 @@ START_UGDIM_NAMESPACE
 
 typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 
-/** \todo Do we need this? */
-enum {BVP_STANDARD};
-
 enum PatchType {POINT_PATCH_TYPE,
                 LINE_PATCH_TYPE,
                 LINEAR_PATCH_TYPE,
@@ -372,9 +369,6 @@ struct std_BoundaryValueProblem
 {
   /** \brief Fields for environment directory */
   NS_PREFIX ENVDIR d;
-
-  /* init */
-  INT type;
 
   /** \brief Domain pointer                      */
   struct domain *Domain;
