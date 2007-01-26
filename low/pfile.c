@@ -2,18 +2,18 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      pfile.c		                                                */
+/* File:      pfile.c                                                       */
 /*                                                                          */
-/* Purpose:   a nice utility for writing a single file from parallel		*/
-/*            processes														*/
+/* Purpose:   a nice utility for writing a single file from parallel        */
+/*            processes                                                     */
 /*                                                                          */
-/* Author:	  Peter Bastian                                                                                         */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*																			*/
-/* History:   28.01.97    begin												*/
+/* Author:    Peter Bastian                                                 */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*                                                                          */
+/* History:   28.01.97    begin                                             */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -83,10 +83,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
-   pfile - write single (text) file from parallel processes
+/** \file
+    \brief write single (text) file from parallel processes
 
-   DESCRIPTION:
    This module provides some useful functions to write a single
    file from multiple parallel processes. It is assumed that the
    file is subdivided into several segments. Each segment consists
@@ -112,9 +111,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
    pfile uses the Concentrate, Broadcast calls of ppif.
 
-   FILE STRUCTURE:
+   \section File Structure
 
-   .vb
+   \verbatim
    segment 1
       item1 ... item n1
    segment 2
@@ -122,35 +121,30 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    ...
    segment m
       item1 ... item nm
-   .ve
+   \endverbatim
 
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
-   pfile_open - open a parallel file
+/** \brief Open a parallel file
 
-   SYNOPSIS:
-   PFILE *pfile_open (char *name);
+   \param name - filename, relative paths are allowed
 
-   PARAMETERS:
-   .  name - filename, relative paths are allowed
-
-   DESCRIPTION:
    Allocates a new PFILE data structure on all processors and
    returns a pointer to it. This function has to be called by
    all processes, but the file is only opened on the master.
    The PFILE data structure contains a buffer. The size of
    the buffer can be adjusted in pfile.h .
 
-   RETURN VALUE:
-   .n NULL if any errors are encountered, this is a global state
-   .n valid pointer if allocate successful on all processors
+   \return <ul>
+   <li> NULL if any errors are encountered, this is a global state </li>
+   <li> valid pointer if allocate successful on all processors </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
    'pfile_sync', 'pfile_puts', 'pfile_close'
-   D*/
+ */
 /****************************************************************************/
 
 PFILE * NS_PREFIX pfile_open (char *name)
@@ -208,30 +202,25 @@ PFILE * NS_PREFIX pfile_open (char *name)
 
 
 /****************************************************************************/
-/*D
-   pfile_master_puts - write string to file immediately
+/** \brief Write string to file immediately
 
-   SYNOPSIS:
-   INT pfile_master_puts (PFILE *pf, char *s);
+   \param pf - pointer to parallel file
+   \param s - item to be written
 
-   PARAMETERS:
-   .  pf - pointer to parallel file
-   .  s - item to be written
-
-   DESCRIPTION:
    Enables the master process to write a string to the
    output file immediately. This function should be called
    immediately after pfile_open or pfile_sync. Otherwise
    the position of the string withinm the segment is not
    predictable.
 
-   RETURN VALUE:
-   .n 0 if ok.
-   .n >0 if any errors are encountered, this is a LOCAL state
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> >0 if any errors are encountered, this is a LOCAL state </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
    'pfile_sync', 'pfile_open', 'pfile_close'
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX pfile_master_puts (PFILE *pf, char *s)
@@ -248,22 +237,16 @@ INT NS_PREFIX pfile_master_puts (PFILE *pf, char *s)
 
 #ifdef ModelP
 /****************************************************************************/
-/*
-   flush_buffer - flush buffer in global sequence
+/** \brief Flush buffer in global sequence
 
-   SYNOPSIS:
-   static void flush_buffer (PFILE *pf)
+   \param pf - pointer to parallel file
 
-   PARAMETERS:
-   .  pf - pointer to parallel file
+   \return <ul>
+   <li> 1 if all processors had local.nchars==0 </li>
+   <li> 0 else </li>
+   </ul>
 
-   DESCRIPTION:
-
-   RETURN VALUE:
-   .n 1 if all processors had local.nchars==0
-   .n 0 else
-
-   SEE ALSO:
+   \sa
    'pfile_sync', 'pfile_open', 'pfile_close'
  */
 /****************************************************************************/
@@ -379,17 +362,11 @@ static INT flush_buffer (PFILE *pf)
 
 
 /****************************************************************************/
-/*D
-   pfile_puts - write string to parallel file
+/** \brief Write string to parallel file
 
-   SYNOPSIS:
-   INT pfile_puts (PFILE *pf, char *s);
+   \param pf - pointer to parallel file
+   \param s - item to be written
 
-   PARAMETERS:
-   .  pf - pointer to parallel file
-   .  s - item to be written
-
-   DESCRIPTION:
    Writes a string to a previously opened parallel file.
    It is ensured that the string s is written as a whole to
    the output file. The string is appended to the output buffer
@@ -397,13 +374,14 @@ static INT flush_buffer (PFILE *pf)
 
    Any number of calls to pfile_puts may be issued by a single process.
 
-   RETURN VALUE:
-   .n 0 if ok.
-   .n >0 if any errors are encountered, this is a LOCAL state
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> >0 if any errors are encountered, this is a LOCAL state </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
    'pfile_sync', 'pfile_open', 'pfile_close'
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX pfile_puts (PFILE *pf, char *s)
@@ -448,35 +426,6 @@ INT NS_PREFIX pfile_puts (PFILE *pf, char *s)
 
 
 
-/****************************************************************************/
-/*D
-   pfile_tagged_puts - write tagged string to parallel file
-
-   SYNOPSIS:
-   INT pfile_tagged_puts (PFILE *pf, char *s, INT key);
-
-   PARAMETERS:
-   .  pf - pointer to parallel file
-   .  s - item to be written
-   .  key - key for this item
-
-   DESCRIPTION:
-   Writes a tagged item to the output file. Tags should be globally
-   unique and locally increasing within each segment. If tags
-   are out of order, a warning is issued and the item is treated
-   as in order.
-
-   Any number of calls to pfile_tagged_puts may be issued by a single process.
-
-   RETURN VALUE:
-   .n 0 if ok.
-   .n >0 if any errors are encountered, this is a LOCAL state
-
-   SEE ALSO:
-   'pfile_sync', 'pfile_open', 'pfile_close'
-   D*/
-/****************************************************************************/
-
 #ifdef ModelP
 static INT append_buffer (PFILE *pf, char *s, INT key)
 {
@@ -511,6 +460,30 @@ static INT append_buffer (PFILE *pf, char *s, INT key)
   return(0);       /* could not append */
 }
 #endif
+
+/****************************************************************************/
+/** \brief Write tagged string to parallel file
+
+   \param pf - pointer to parallel file
+   \param s - item to be written
+   \param key - key for this item
+
+   Writes a tagged item to the output file. Tags should be globally
+   unique and locally increasing within each segment. If tags
+   are out of order, a warning is issued and the item is treated
+   as in order.
+
+   Any number of calls to pfile_tagged_puts may be issued by a single process.
+
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> >0 if any errors are encountered, this is a LOCAL state </li>
+   </ul>
+
+   \sa
+   'pfile_sync', 'pfile_open', 'pfile_close'
+ */
+/****************************************************************************/
 
 INT NS_PREFIX pfile_tagged_puts (PFILE *pf, char *s, INT key)
 {
@@ -547,28 +520,23 @@ INT NS_PREFIX pfile_tagged_puts (PFILE *pf, char *s, INT key)
 
 
 /****************************************************************************/
-/*D
-   pfile_sync - indicate end of file segment
+/** \brief Indicate end of file segment
 
-   SYNOPSIS:
-   INT pfile_sync (PFILE *pf);
+   \param pf - pointer to parallel file
 
-   PARAMETERS:
-   .  pf - pointer to parallel file
-
-   DESCRIPTION:
    At the end of a segment this function has to be called by
    all processes. The function returns when all process
    have reached the end the current segment. Then the segment
    counter is increased.
 
-   RETURN VALUE:
-   .n 0 if ok.
-   .n >0 if any errors are encountered, this is a LOCAL state
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> >0 if any errors are encountered, this is a LOCAL state </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
    'pfile_puts', 'pfile_open', 'pfile_close'
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX pfile_sync (PFILE *pf)
@@ -584,28 +552,23 @@ INT NS_PREFIX pfile_sync (PFILE *pf)
 
 
 /****************************************************************************/
-/*D
-   pfile_close - indicate end of file
+/** \brief Indicate end of file
 
-   SYNOPSIS:
-   INT pfile_close (PFILE *pf);
+   \param pf - pointer to parallel file
 
-   PARAMETERS:
-   .  pf - pointer to parallel file
-
-   DESCRIPTION:
    At the end of the file this function has to be called by
    all processes. The function returns when all process
    have reached the end of file. Then the file is closed
    and buffer space is released.
 
-   RETURN VALUE:
-   .n 0 if ok.
-   .n >0 if any errors are encountered, this is a LOCAL state
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> >0 if any errors are encountered, this is a LOCAL state </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
    'pfile_puts', 'pfile_open', 'pfile_sync'
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX pfile_close (PFILE *pf)
@@ -627,16 +590,10 @@ INT NS_PREFIX pfile_close (PFILE *pf)
 }
 
 /****************************************************************************/
-/*D
-   pfile_open_bin - open a parallel binary file
+/** \brief Open a parallel binary file
 
-   SYNOPSIS:
-   PFILE_BIN *pfile_open_bin (char *name);
+   \param name - filename, relative paths are allowed
 
-   PARAMETERS:
-   .  name - filename, relative paths are allowed
-
-   DESCRIPTION:
    Allocates a new PFILE_BIN data structure on all processors and
    returns a pointer to it. This function has to be called by
    all processes, but the file is only opened on the master.
@@ -644,13 +601,14 @@ INT NS_PREFIX pfile_close (PFILE *pf)
    and one for floats. The size of the buffer can be adjusted
    in pfile.h .
 
-   RETURN VALUE:
-   .n NULL if any errors are encountered, this is a global state
-   .n valid pointer if allocate successful on all processors
+   \return <ul>
+   <li> NULL if any errors are encountered, this is a global state </li>
+   <li> valid pointer if allocate successful on all processors </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
    'pfile_sync_bin', 'pfile_close_bin'
-   D*/
+ */
 /****************************************************************************/
 
 PFILE_BIN* NS_PREFIX pfile_open_bin (char *name)
@@ -817,38 +775,6 @@ static INT flush_buffer_bin (PFILE_BIN *pf)
 }
 #endif
 
-/****************************************************************************/
-/*D
-   pfile_tagged_write_INT - write tagged sequence of integers to
-   parallel binary file
-
-   SYNOPSIS:
-   INT pfile_tagged_write_INT (PFILE_BIN *pf, INT *values, int n, INT key);
-
-   PARAMETERS:
-   .  pf - pointer to parallel binary file
-   .  values - integers to be written
-   .  n - number of integers
-   .  key - key for this sequence of integers
-
-   DESCRIPTION:
-   Writes a tagged item to the output file. Tags should be globally
-   unique and locally increasing within each segment. If tags
-   are out of order, a warning is issued and the item is treated
-   as in order.
-
-   Any number of calls to pfile_tagged_write_INT may be issued by
-   a single process.
-
-   RETURN VALUE:
-   .n 0 if ok.
-   .n >0 if any errors are encountered, this is a LOCAL state
-
-   SEE ALSO:
-   'pfile_sync_bin', 'pfile_open_bin', 'pfile_close_bin'
-   D*/
-/****************************************************************************/
-
 #ifdef ModelP
 static INT append_buffer_bin_INT (PFILE_BIN *pf, INT *values, int n, INT key)
 {
@@ -882,6 +808,32 @@ static INT append_buffer_bin_INT (PFILE_BIN *pf, INT *values, int n, INT key)
   return(0);       /* could not append */
 }
 #endif
+
+/****************************************************************************/
+/** \brief Write tagged sequence of integers to parallel binary file
+
+   \param pf - pointer to parallel binary file
+   \param values - integers to be written
+   \param n - number of integers
+   \param key - key for this sequence of integers
+
+   Writes a tagged item to the output file. Tags should be globally
+   unique and locally increasing within each segment. If tags
+   are out of order, a warning is issued and the item is treated
+   as in order.
+
+   Any number of calls to pfile_tagged_write_INT may be issued by
+   a single process.
+
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> >0 if any errors are encountered, this is a LOCAL state </li>
+   </ul>
+
+   \sa
+   'pfile_sync_bin', 'pfile_open_bin', 'pfile_close_bin'
+ */
+/****************************************************************************/
 
 INT NS_PREFIX pfile_tagged_write_INT (PFILE_BIN *pf, INT *values, int n, INT key)
 {
@@ -1050,28 +1002,23 @@ INT NS_PREFIX pfile_tagged_write_BYTE (PFILE_BIN *pf, unsigned char *values, int
 }
 
 /****************************************************************************/
-/*D
-   pfile_sync_bin - indicate end of binary file segment
+/** \brief Indicate end of binary file segment
 
-   SYNOPSIS:
-   INT pfile_sync_bin (PFILE_BIN *pf);
+   \param pf - pointer to parallel binary file
 
-   PARAMETERS:
-   .  pf - pointer to parallel binary file
-
-   DESCRIPTION:
    At the end of a segment this function has to be called by
    all processes. The function returns when all process
    have reached the end the current segment. Then the segment
    counter is increased.
 
-   RETURN VALUE:
-   .n 0 if ok.
-   .n >0 if any errors are encountered, this is a LOCAL state
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> >0 if any errors are encountered, this is a LOCAL state </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
    'pfile_open_bin', 'pfile_close_bin'
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX pfile_sync_bin (PFILE_BIN *pf)
@@ -1083,28 +1030,23 @@ INT NS_PREFIX pfile_sync_bin (PFILE_BIN *pf)
 }
 
 /****************************************************************************/
-/*D
-   pfile_close_bin - indicate end of binary file
+/** \brief Indicate end of binary file
 
-   SYNOPSIS:
-   INT pfile_close_bin (PFILE_BIN *pf);
+   \param pf - pointer to parallel binary file
 
-   PARAMETERS:
-   .  pf - pointer to parallel binary file
-
-   DESCRIPTION:
    At the end of the file this function has to be called by
    all processes. The function returns when all process
    have reached the end of file. Then the file is closed
    and buffer space is released.
 
-   RETURN VALUE:
-   .n 0 if ok.
-   .n >0 if any errors are encountered, this is a LOCAL state
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> >0 if any errors are encountered, this is a LOCAL state </li>
+   </ul>
 
-   SEE ALSO:
+   \sa
    'pfile_open_bin', 'pfile_sync_bin'
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX pfile_close_bin (PFILE_BIN *pf)
