@@ -158,8 +158,6 @@ typedef int (*RefinementProcPtr)(MERGE_REFINEMENT *ref);
 /*																			*/
 /****************************************************************************/
 
-static int debug=0;
-
 #ifdef MERGE_DEBUG
 static HASH_TABLE *ht_nodes=NULL;
 #endif
@@ -493,9 +491,9 @@ int HashTableStat (HASH_TABLE *ht, HASH_STAT *hst)
   return (0);
 }
 
-int HashTablePrint (HASH_TABLE *ht, char *name)
+int HashTablePrint (HASH_TABLE *ht, const char *name)
 {
-  printf("######### %s #########\n");
+  printf("######### %s #########\n", name);
   if (ht!=NULL)
   {
     printf("n_obj: %d\n",ht->n_obj);
@@ -804,7 +802,7 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
 
   /* allocate ProcList */
   ProcList = (unsigned short*)ht_malloc(PROCLISTSIZE(map->nparfiles)*sizeof(unsigned short),"const");
-  if (ProcList==NULL) {printf("ERROR in 'MergeMultigrid': cannot allocate 'ProcList'\n",i);return (1);}
+  if (ProcList==NULL) {printf("ERROR in 'MergeMultigrid': cannot allocate 'ProcList'\n");return (1);}
 
   /* allocate dynamic lists */
   mg_general_list=(MGIO_MG_GENERAL*)ht_malloc(map->nparfiles*sizeof(MGIO_MG_GENERAL),"const");
@@ -1335,7 +1333,7 @@ int GetMgFromData (char *data, MG_DESC *mgdesc)
   strcpy(buffer,data);
   strcat(buffer,"/data.0000");
   if (Read_OpenDTFile(buffer))                            {printf("cannot open file '%s' in 'GetMgFromData'\n",buffer); return (1);}
-  if (Read_DT_General(&dio_general))                      {printf("cannot read 'dio_general' in 'GetMgFromData'\n",buffer); return (1);}
+  if (Read_DT_General(&dio_general))                      {printf("cannot read 'dio_general' in 'GetMgFromData'\n"); return (1);}
   strcpy(mgdesc->mgname,dio_general.mgfile);
   mgdesc->mgname[strlen(mgdesc->mgname)-8]='\0';
   mgdesc->magic_cookie=dio_general.magic_cookie;
@@ -1365,7 +1363,7 @@ int MergeData (char *data, DATA_MAP *data_map, int step)
   strcpy(buffer,data);
   strcat(buffer,"/data.0000");
   if (Read_OpenDTFile(buffer))                {printf("cannot open file '%s' in 'MergeData'\n",buffer); return (1);}
-  if (Read_DT_General(&dio_general_out))      {printf("cannot read 'dio_general_out' in 'MergeData'\n",buffer); return (1);}
+  if (Read_DT_General(&dio_general_out))      {printf("cannot read 'dio_general_out' in 'MergeData'\n"); return (1);}
   if (CloseDTFile())                          {printf("cannot close file '%s' in 'MergeData'\n",buffer); return (1);}
   strcpy(dio_general_out.mgfile,data_map->out);
   ndata_pn=0;
@@ -1395,7 +1393,7 @@ int MergeData (char *data, DATA_MAP *data_map, int step)
     else printf("[%d]\n",i);
     fflush(stdout);
     if (Read_OpenDTFile(buffer))            {printf("cannot open file '%s' in 'MergeData'\n",buffer); return (1);}
-    if (Read_DT_General(&dio_general))      {printf("cannot read 'dio_general' in 'MergeData'\n",buffer); return (1);}
+    if (Read_DT_General(&dio_general))      {printf("cannot read 'dio_general' in 'MergeData'\n"); return (1);}
     data_in=(double*)ht_malloc(dio_general.ndata*sizeof(double),"procloc");
     if (data_in==NULL)                                              {printf("cannot allocate %d bytes for data_in in 'MergeData'\n",dio_general.ndata*sizeof(double)); return (1);}
     if (Bio_Read_mdouble(dio_general.ndata,data_in))        {printf("cannot read data from %s in 'MergeData'\n",buffer); return (1);}
