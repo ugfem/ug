@@ -912,6 +912,9 @@ struct edge {
   /** \brief An index hat is unique and consecutive on the grid surface.
       Controlled by DUNE */
   int leafIndex;
+
+  /** \brief A unique and persistent, but not necessarily consecutive index */
+  INT id;
 #endif
 
 #ifdef EDGE_WITH_DDDHDR
@@ -1646,6 +1649,11 @@ struct multigrid {
 
   /** \brief count objects in that multigrid              */
   INT elemIdCounter;
+
+#ifdef FOR_DUNE
+  /** \brief count objects in that multigrid              */
+  INT edgeIdCounter;
+#endif
 
   /** \brief depth of the element tree                    */
   INT topLevel;
@@ -3552,14 +3560,14 @@ void            ListVectorOfElementSelection(MULTIGRID *theMG,                  
 void            ListVectorRange                 (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers);
 
 /* query */
-LINK            *GetLink                                (NODE *from, NODE *to);
-EDGE            *GetSonEdge                             (EDGE *theEdge);
-INT                     GetSonEdges                             (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES]);
-EDGE            *GetFatherEdge                  (EDGE *theEdge);
+LINK            *GetLink                                (const NODE *from, const NODE *to);
+EDGE            *GetSonEdge                             (const EDGE *theEdge);
+INT                     GetSonEdges                             (const EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES]);
+EDGE            *GetFatherEdge                  (const EDGE *theEdge);
 #ifdef __THREEDIM__
 EDGE            *FatherEdge                             (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge);
 #endif
-EDGE            *GetEdge                                (NODE *from, NODE *to);
+EDGE            *GetEdge                                (const NODE *from, const NODE *to);
 INT             GetSons                                 (const ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
 #ifdef ModelP
 INT             GetAllSons                              (const ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);

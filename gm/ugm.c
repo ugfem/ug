@@ -1937,7 +1937,7 @@ void NS_DIM_PREFIX GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT 
    </ul> */
 /****************************************************************************/
 
-EDGE * NS_DIM_PREFIX GetSonEdge (EDGE *theEdge)
+EDGE * NS_DIM_PREFIX GetSonEdge (const EDGE *theEdge)
 {
   EDGE *SonEdge=NULL;
   NODE *Node0,*Node1,*SonNode0,*SonNode1;
@@ -1969,7 +1969,7 @@ EDGE * NS_DIM_PREFIX GetSonEdge (EDGE *theEdge)
    </ul> */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
+INT NS_DIM_PREFIX GetSonEdges (const EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
 {
   INT nedges;
   NODE *Node0,*Node1,*SonNode0,*SonNode1,*MidNode;
@@ -2032,7 +2032,7 @@ INT NS_DIM_PREFIX GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
    </ul> */
 /****************************************************************************/
 
-EDGE * NS_DIM_PREFIX GetFatherEdge (EDGE *theEdge)
+EDGE * NS_DIM_PREFIX GetFatherEdge (const EDGE *theEdge)
 {
   NODE *theNode0 = NBNODE(LINK0(theEdge));
   NODE *theNode1 = NBNODE(LINK1(theEdge));
@@ -2078,10 +2078,8 @@ EDGE * NS_DIM_PREFIX GetFatherEdge (EDGE *theEdge)
       return(NULL);
   }
 
-  /* one case not considered */
-  assert(0);
-
-  return NULL;          /* in case NDEBUG defined */
+  /* No father available */
+  return NULL;
 }
 
 #ifdef __THREEDIM__
@@ -2241,7 +2239,7 @@ EDGE * NS_DIM_PREFIX FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, E
    </ul> */
 /****************************************************************************/
 
-EDGE * NS_DIM_PREFIX GetEdge (NODE *from, NODE *to)
+EDGE * NS_DIM_PREFIX GetEdge (const NODE *from, const NODE *to)
 {
   LINK *pl;
 
@@ -2319,6 +2317,10 @@ CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
   SETOBJT(link1,LIOBJ);
         #endif
   SETLOFFSET(link1,1);
+
+#ifdef FOR_DUNE
+  pe->id = (theGrid->mg->edgeIdCounter)++;
+#endif
 
   SETLEVEL(pe,GLEVEL(theGrid));
         #if (defined ModelP) && (defined __THREEDIM__)
@@ -3277,6 +3279,9 @@ MULTIGRID * NS_DIM_PREFIX CreateMultiGrid (char *MultigridName, char *BndValProb
   theMG->vertIdCounter = 0;
   theMG->nodeIdCounter = 0;
   theMG->elemIdCounter = 0;
+#ifdef FOR_DUNE
+  theMG->edgeIdCounter = 0;
+#endif
   theMG->topLevel = -1;
   theMG->bottomLevel = 0;
   MG_BVP(theMG) = theBVP;
