@@ -152,8 +152,8 @@ RCS_ID
 /*                                                                          */
 /****************************************************************************/
 
-static INT BndPointGlobal (BNDP * aBndP, DOUBLE * global);
-static INT PatchGlobal (PATCH * p, DOUBLE * lambda, DOUBLE * global);
+static INT BndPointGlobal (const BNDP * aBndP, DOUBLE * global);
+static INT PatchGlobal (const PATCH * p, DOUBLE * lambda, DOUBLE * global);
 
 /****************************************************************************/
 /** \brief Create a new PROBLEM structure
@@ -935,6 +935,7 @@ GetPatchId (PATCH * p, INT i)
 {
   switch (PATCH_TYPE (p))
   {
+  case LINEAR_PATCH_TYPE :
   case PARAMETRIC_PATCH_TYPE :
     return (PATCH_ID (p));
   case POINT_PATCH_TYPE :
@@ -945,6 +946,7 @@ GetPatchId (PATCH * p, INT i)
 #endif
   }
 
+  assert(0);
   return (-1);
 }
 
@@ -1037,6 +1039,11 @@ CreateBndPOnPoint (HEAP * Heap, PATCH * p)
         ps->local[j][1] = 0.0;
         break;
       case 2 :
+        /* This coordinate depends on whether we're looking at a triangle or a quadrilateral */
+        ps->local[j][0] = (LINEAR_PATCH_N(pp)==3) ? 0.0 : 1.0;
+        ps->local[j][1] = 1.0;
+        break;
+      case 3 :
         ps->local[j][0] = 0.0;
         ps->local[j][1] = 1.0;
         break;
@@ -3058,7 +3065,7 @@ BVP_GenerateMesh (HEAP * Heap, BVP * aBVP, INT argc, char **argv, INT MarkKey)
 /****************************************************************************/
 
 static INT
-PatchGlobal (PATCH * p, DOUBLE * lambda, DOUBLE * global)
+PatchGlobal (const PATCH * p, DOUBLE * lambda, DOUBLE * global)
 {
   if (PATCH_TYPE (p) == PARAMETRIC_PATCH_TYPE)
     return ((*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD (p), lambda, global));
@@ -3080,11 +3087,11 @@ PatchGlobal (PATCH * p, DOUBLE * lambda, DOUBLE * global)
                     + lambda[1] * LINEAR_PATCH_POS (p, 2)[i];
 
     } else {
-      /* Bilinear interpolation for a triangle boundary segment */
+      /* Bilinear interpolation for a quadrilateral boundary segment */
       for (int i=0; i<3; i++)
         global[i] = LINEAR_PATCH_POS (p, 0)[i]
                     + lambda[0]*(LINEAR_PATCH_POS (p, 1)[i] - LINEAR_PATCH_POS (p, 0)[i])
-                    + lambda[1]*(LINEAR_PATCH_POS (p, 3)[i]- LINEAR_PATCH_POS (p, 0)[i])
+                    + lambda[1]*(LINEAR_PATCH_POS (p, 3)[i] - LINEAR_PATCH_POS (p, 0)[i])
                     + lambda[0]*lambda[1]*(LINEAR_PATCH_POS (p, 0)[i]+LINEAR_PATCH_POS (p, 2)[i]-LINEAR_PATCH_POS (p, 1)[i]-LINEAR_PATCH_POS (p, 3)[i]);
     }
 #endif
@@ -3403,7 +3410,7 @@ BNDS_CreateBndP (HEAP * Heap, BNDS * aBndS, DOUBLE * local)
 /****************************************************************************/
 
 static INT
-BndPointGlobal (BNDP * aBndP, DOUBLE * global)
+BndPointGlobal (const BNDP * aBndP, DOUBLE * global)
 {
   BND_PS *ps;
   PATCH *p, *s;
@@ -3422,6 +3429,7 @@ BndPointGlobal (BNDP * aBndP, DOUBLE * global)
   case LINEAR_PATCH_TYPE :
     return (PatchGlobal (p, ps->local[0], global));
   case POINT_PATCH_TYPE :
+
     s = currBVP->patches[POINT_PATCH_PID (p, 0)];
 
     PRINTDEBUG (dom, 1, (" bndp n %d %d loc %f %f gl \n",
@@ -3452,8 +3460,10 @@ BndPointGlobal (BNDP * aBndP, DOUBLE * global)
 #ifdef __THREEDIM__
   case LINE_PATCH_TYPE :
     s = currBVP->patches[LINE_PATCH_PID (p, 0)];
-    if ((*PARAM_PATCH_BS (s))(PARAM_PATCH_BSD (s), ps->local[0], global))
+
+    if (PatchGlobal(s, ps->local[0], global))
       REP_ERR_RETURN (1);
+
     PRINTDEBUG (dom, 1, (" bndp    n %d %d loc %f %f gl %f %f %f\n",
                          POINT_PATCH_N (p),
                          LINE_PATCH_PID (p, 0),
@@ -3462,9 +3472,10 @@ BndPointGlobal (BNDP * aBndP, DOUBLE * global)
     for (j = 1; j < LINE_PATCH_N (p); j++)
     {
       s = currBVP->patches[LINE_PATCH_PID (p, j)];
-      if ((*PARAM_PATCH_BS (s))
-          (PARAM_PATCH_BSD (s), ps->local[j], pglobal))
-        return (1);
+
+      if (PatchGlobal(s, ps->local[j], pglobal))
+        REP_ERR_RETURN (1);
+
       PRINTDEBUG (dom, 1, (" bndp    j %d %d loc %f %f gl %f %f %f\n", j,
                            LINE_PATCH_PID (p, j),
                            ps->local[j][0],
