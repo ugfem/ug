@@ -29,7 +29,9 @@ START_UGDIM_NAMESPACE
 typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 
 enum PatchType {POINT_PATCH_TYPE,
+#ifdef __THREEDIM__
                 LINE_PATCH_TYPE,
+#endif
                 LINEAR_PATCH_TYPE,
                 PARAMETRIC_PATCH_TYPE};
 
