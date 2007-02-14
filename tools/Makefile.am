@@ -33,9 +33,9 @@ bin_PROGRAMS = $(TOOLS) $(TOOLS_2D) $(TOOLS_3D)
 xugv_LDFLAGS = $(UG_XLIBS)
 
 # !!! std-domain / device SIF ok?
-UG_2DLIBS = $(top_builddir)/lib/libug2.la $(top_builddir)/dom/std/libdomS2.la \
+UG_2DLIBS = $(top_builddir)/lib/libugS2.la \
   $(top_builddir)/dev/sif/libdevS.la
-UG_3DLIBS = $(top_builddir)/lib/libug3.la $(top_builddir)/dom/std/libdomS3.la \
+UG_3DLIBS = $(top_builddir)/lib/libugS3.la \
   $(top_builddir)/dev/sif/libdevS.la
 
 ugpfm2_SOURCES = ugpfm.c

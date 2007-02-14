@@ -7,7 +7,7 @@ else
 endif
 
 # should be installed
-lib_LTLIBRARIES = $(LIB_2D)
+noinst_LTLIBRARIES = $(LIB_2D)
 
 libgg2_la_SOURCES = ggmain.c ggaccel.c ggm.c ggaccel.h ggmain.h ggm.h
 libgg2_la_CPPFLAGS = $(UG_2DFLAGS)

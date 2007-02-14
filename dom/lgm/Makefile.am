@@ -22,7 +22,7 @@ SOURCES = lgm_domain.c lgm_load.c lgm_parallel.c ansys2lgm.h lgm_domain.h lgm_lo
 
 include_HEADERS = lgm_domain.h
 
-lib_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
+noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
 libdomL2_la_SOURCES = $(SOURCES) lgm_transfer2d.c lgm_domain2d.c
 libdomL2_la_CPPFLAGS = $(UG_2DFLAGS)

@@ -3,45 +3,45 @@
 SUBDIRS = ugdata
 
 if BUILD2D
-  LIB_2D = libug2.la
+  LIB_2D = libugS2.la libugL2.la
 else
   LIB_2D =
 endif
 
 if BUILD3D
-  LIB_3D = libug3.la
+  LIB_3D = libugS3.la libugL3.la
 else
   LIB_3D =
 endif
 
-if PARALLEL
-  PLIBS_2D = ../parallel/libparallel2.la
-  PLIBS_3D = ../parallel/libparallel3.la
-else
-  PLIBS_2D =
-  PLIBS_3D =
-endif
+2DLIBS = ../gm/libug_gm2.la \
+         ../np/libnp2.la \
+         ../graphics/libgraphics2.la \
+         ../ui/libugui2.la \
+         ../dev/libdevices.la \
+         ../low/liblow2.la
+
+3DLIBS = ../gm/libug_gm3.la \
+         ../np/libnp3.la \
+         ../graphics/libgraphics3.la \
+         ../ui/libugui3.la \
+         ../dev/libdevices.la \
+         ../low/liblow3.la
 
 lib_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
-libug2_la_SOURCES = ../initug.c
-libug2_la_CPPFLAGS = $(UG_2DFLAGS)
-libug2_la_LIBADD = ../gm/libug_gm2.la \
-                   ../np/libnp2.la \
-                   ../graphics/libgraphics2.la \
-                   ../ui/libugui2.la \
-                   ../dev/libdevices.la \
-                   ../low/liblow2.la \
-                   ../parallel/util/libparutil.la \
-                   ../low/liblow.la $(PLIBS_2D)
+libugS2_la_SOURCES = ../initug.c
+libugS2_la_CPPFLAGS = $(UG_2DFLAGS)
+libugS2_la_LIBADD = $(2DLIBS) ../dom/std/libdomS2.la
 
-libug3_la_SOURCES = ../initug.c
-libug3_la_CPPFLAGS = $(UG_3DFLAGS)
-libug3_la_LIBADD = ../gm/libug_gm3.la \
-                   ../np/libnp3.la \
-                   ../graphics/libgraphics3.la \
-                   ../ui/libugui3.la \
-                   ../dev/libdevices.la \
-                   ../low/liblow3.la \
-                   ../parallel/util/libparutil.la \
-                   ../low/liblow.la $(PLIBS_3D)
+libugL2_la_SOURCES = ../initug.c
+libugL2_la_CPPFLAGS = $(UG_2DFLAGS)
+libugL2_la_LIBADD = $(2DLIBS) ../dom/lgm/libdomL2.la
+
+libugS3_la_SOURCES = ../initug.c
+libugS3_la_CPPFLAGS = $(UG_3DFLAGS)
+libugS3_la_LIBADD = $(3DLIBS) ../dom/std/libdomS3.la
+
+libugL3_la_SOURCES = ../initug.c
+libugL3_la_CPPFLAGS = $(UG_3DFLAGS)
+libugL3_la_LIBADD = $(3DLIBS) ../dom/lgm/libdomL3.la

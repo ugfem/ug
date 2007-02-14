@@ -21,7 +21,7 @@ else
   LIB_3D =
 endif
 
-lib_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
+noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
 include_HEADERS = std_domain.h
 

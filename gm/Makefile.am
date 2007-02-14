@@ -36,8 +36,8 @@ noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
 libug_gm2_la_SOURCES = $(SOURCES)
 libug_gm2_la_CPPFLAGS = $(UG_2DFLAGS)
-libug_gm2_la_LIBADD = gg2/libgg2.la
+libug_gm2_la_LIBADD = gg2/libgg2.la ../low/liblow2.la
 
 libug_gm3_la_SOURCES = $(SOURCES)
 libug_gm3_la_CPPFLAGS = $(UG_3DFLAGS)
-libug_gm3_la_LIBADD = gg3/libgg3.la
+libug_gm3_la_LIBADD = gg3/libgg3.la ../low/liblow3.la
