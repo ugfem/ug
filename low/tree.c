@@ -59,32 +59,25 @@ USING_UG_NAMESPACE
 /****************************************************************************/
 
 /* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
+static char RCS_ID("$Header: /var/lib/cvs/UG/ug/low/tree.c,v 1.8 2004-07-21 09:19:50 sander Exp $",UG_RCS_STRING);
 
 
 /****************************************************************************/
-/*D
-   CreateTree - Create root of search tree
+/** \brief Create root of search tree
 
-   SYNOPSIS:
-   TREE *CreateTree(HEAP *theHeap, INT dim, DOUBLE *posrange)
-
-   PARAMETERS:
    .  HEAP - reference to Heap to get memory from
    .  dim - dimension of underlaying space
    .  posrange - array of ranges of positions in order x1min,x1max,x2min,...
 
-   DESCRIPTION:
    This function creates a new search tree.
 
    For dim equal to one the tree is a binary tree, for dim equal to two
    a quarttree...
 
    RETURN VALUE:
-   TREE *
    .n     pointer to the tree
    .n     NULL if an error occurred
-   D*/
+ */
 /****************************************************************************/
 TREE *CreateTree (HEAP *theHeap, INT dim, DOUBLE *posrange)
 {
@@ -111,21 +104,14 @@ TREE *CreateTree (HEAP *theHeap, INT dim, DOUBLE *posrange)
 }
 
 /****************************************************************************/
-/*D
-   DeleteTree - Removes a search tree
+/** \brief Removes a search tree
 
-   SYNOPSIS:
-   INT DeleteTree(TREE *theTree);
-
-   PARAMETERS:
    .  theTree - reference to the tree
 
-   DESCRIPTION:
    This function deletes a search tree and frees all the memory
    occupied by the tree and its objects.
 
    RETURN VALUE:
-   INT
    .n     0 if okay
    .n     1 if an error occurred
    D*/
@@ -202,26 +188,18 @@ static INT PointInTNODE(TREE_ENTRY *entry, DOUBLE *pos, INT dim)
 }
 
 /****************************************************************************/
-/*D
-   SearchInsertPoint - Gets position of insert point
+/** \brief Gets position of insert point
 
-   SYNOPSIS:
-   INT SearchInsertPoint(TREE *theTree, DOUBLE *position,
-                                  TREE_ENTRY **insertPoint)
-
-   PARAMETERS:
    .  theTree - reference to the tree
    .  Position - position of the object
    . insertPoint - Pointer to result
 
-   DESCRIPTION:
    This function searches the tree for the point for insertation of a new
    object. *insertPoint points to the insertation place and the return value
    indicates if the insertation point is at a free end of the tree or already
    occupied.
 
    RETURN VALUE:
-   INT
    .n 0 - tree not correct
    .n 1 - insertation point is a free end
    .n 2 - place is occupied
@@ -262,24 +240,17 @@ static INT SearchInsertPoint(TREE *theTree, DOUBLE *position, TREE_ENTRY **inser
 
 
 /****************************************************************************/
-/*D
-   InsertinTree - Inserts object in search tree
+/** \brief Inserts object in search tree
 
-   SYNOPSIS:
-   void *InsertinTree(TREE *theTree, DOUBLE *Position);
-
-   PARAMETERS:
    .  theTree - reference to the tree
    .  Position - position of the object
    .  obj - pointer to object
 
-   DESCRIPTION:
    This function changes the search tree for a new object at Position.
    The tree leaf will hold a pointer to the object which has to exist
    before.
 
    RETURN VALUE:
-   INT
    .n     error code
    .n     0 if okay
    D*/
@@ -429,25 +400,18 @@ INT InsertinTree (TREE *theTree, DOUBLE *Position, void *obj)
 }
 
 /****************************************************************************/
-/*D
-   DeleteObjinTree - Deletes object in search tree
+/** \brief Deletes object in search tree
 
-   SYNOPSIS:
-   void *DeleteObjinTree(TREE *theTree, DOUBLE *Position);
-
-   PARAMETERS:
    .  theTree - reference to the tree
    .  Position - position of the object
 
-   DESCRIPTION:
    This function deletes the tree leaf at Position and all
    unnecassary tree nodes from the search tree.
 
    RETURN VALUE:
-   void *
    .n     pointer to object at delete position
    .n     NULL if none or error occured
-   D*/
+ */
 /****************************************************************************/
 void *DeleteObjinTree (TREE *theTree, DOUBLE *Position)
 {
@@ -536,29 +500,21 @@ void *DeleteObjinTree (TREE *theTree, DOUBLE *Position)
 }
 
 /****************************************************************************/
-/*D
-   GetFirstLeafinQuader,GetNextLeafinQuader - Gives objects whitch are inside a hyper-rectangular
+/** \brief Gives objects whitch are inside a hyper-rectangular
 
-   SYNOPSIS:
-   void *GetFirstLeafinQuader(TREE *theTree, DOUBLE *ll, DOUBLE *ur);
-   .n void *GetNextLeafinQuader(TREE *theTree);
-
-   PARAMETERS:
    .  theTree - reference to the tree
    .  ll: lower left ... corner coordinates
    .  ur: upper right ... corner coordinates
 
-   DESCRIPTION:
    GetFirstLeafinQuader initializes the fifo for a search and searches for
    a first leaf entry in the tree theTree which is lying inside the quader
    with lower left ... corner ll and upper right ... corner ur.
    .n GetNextLeafinQuader searches for the next object in the quader.
 
    RETURN VALUE:
-   INT
    .n     Pointer to the TREE_ENTRY
    .n     NULL if no leaf entry inside exists or an error occured
-   D*/
+ */
 /****************************************************************************/
 TREE_ENTRY *GetFirstLeafinQuader(TREE *theTree, DOUBLE *ll, DOUBLE *ur)
 {
@@ -646,6 +602,23 @@ TREE_ENTRY *GetFirstLeafinQuader(TREE *theTree, DOUBLE *ll, DOUBLE *ur)
   return(NULL);
 }
 
+/****************************************************************************/
+/** \brief Gives objects whitch are inside a hyper-rectangular
+
+   .  theTree - reference to the tree
+   .  ll: lower left ... corner coordinates
+   .  ur: upper right ... corner coordinates
+
+   GetFirstLeafinQuader initializes the fifo for a search and searches for
+   a first leaf entry in the tree theTree which is lying inside the quader
+   with lower left ... corner ll and upper right ... corner ur.
+   .n GetNextLeafinQuader searches for the next object in the quader.
+
+   RETURN VALUE:
+   .n     Pointer to the TREE_ENTRY
+   .n     NULL if no leaf entry inside exists or an error occured
+ */
+/****************************************************************************/
 TREE_ENTRY *GetNextLeafinQuader(TREE *theTree)
 {
   INT i, dim, inside;
