@@ -36,8 +36,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "domain.h"
-
 #include "compiler.h"
 #include "heaps.h"
 #include "misc.h"
@@ -49,12 +47,9 @@
 #include "gm.h"
 #include "commands.h"
 #include "mgheapmgr.h"
+#endif
 #include "namespace.h"
 USING_UG_NAMESPACE
-#else
-USING_UG_NAMESPACE
-#endif
-USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
