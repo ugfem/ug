@@ -148,7 +148,7 @@ struct block {
 };
 
 typedef struct {
-  HeapType type;
+  enum HeapType type;
   MEM size;
   MEM used;
   MEM freelistmem;
@@ -215,7 +215,7 @@ INT          InitHeaps                (void);
 
 /** @name Functions for the simple and general heap management */
 /* @{ */
-HEAP        *NewHeap                (HeapType type, MEM size, void *buffer);
+HEAP        *NewHeap                (enum HeapType type, MEM size, void *buffer);
 void        *GetMem                 (HEAP *theHeap, MEM n, INT mode);
 void            *GetMemUsingKey                 (HEAP *theHeap, MEM n, INT mode, INT key);
 void         DisposeMem             (HEAP *theHeap, void *buffer);
