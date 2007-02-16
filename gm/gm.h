@@ -621,6 +621,14 @@ struct vector {
   /** \brief ordering of unknowns                                 */
   UINT index;
 
+#ifdef FOR_DUNE
+  /** \brief A unique and persistent, but not necessarily consecutive index
+      \todo This line is a hack.  It is used to implement face ids for Dune.
+      As soon as the face data structure is available the id should be stored
+      there.  Then this code can be removed again. */
+  INT id;
+#endif
+
   /** \brief used bitwise to skip unknowns                */
   UINT skip;
 
@@ -1653,6 +1661,12 @@ struct multigrid {
 #ifdef FOR_DUNE
   /** \brief count objects in that multigrid              */
   INT edgeIdCounter;
+
+  /** \brief Count vector objects in that multigrid
+      \todo This line is a hack.  It is used to implement face ids for Dune.
+      As soon as the face data structure is available the id should be stored
+      there.  Then this code can be removed again. */
+  INT vectorIdCounter;
 #endif
 
   /** \brief depth of the element tree                    */
