@@ -658,13 +658,7 @@ typedef struct bnd_ps BND_PS;
 /*                                                                          */
 /****************************************************************************/
 
-# ifdef __THREEDIM__
-INT RepairMesh (NS_PREFIX HEAP *Heap, INT MarkKey, MESH *mesh);
-INT CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3);
-# endif
-void SetBVPType(INT type);
-
-DOMAIN *GetDomain                           (char *name);
+DOMAIN *GetDomain                           (const char *name);
 
 /* BVP definition */
 INT   STD_BVP_Configure           (INT argc, char **argv);

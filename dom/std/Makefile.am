@@ -29,6 +29,6 @@ libdomS2_la_SOURCES = $(SOURCES) domains2d.c
 libdomS2_la_CPPFLAGS = $(UG_2DFLAGS)
 libdomS2_la_LIBADD = $(PLIBS2) $(EXTRALIBS)
 
-libdomS3_la_SOURCES = $(SOURCES) repair.c domains3d.c
+libdomS3_la_SOURCES = $(SOURCES) domains3d.c
 libdomS3_la_CPPFLAGS = $(UG_3DFLAGS)
 libdomS3_la_LIBADD = $(PLIBS3) $(EXTRALIBS)
