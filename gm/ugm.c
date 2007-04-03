@@ -10638,7 +10638,7 @@ INT NS_DIM_PREFIX PropagateNextNodeClasses (GRID *theGrid)
    </ul> */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
+static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
 {
   ELEMENT *theElement;
   NODE *n0,*n1;

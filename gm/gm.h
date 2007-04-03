@@ -3666,10 +3666,6 @@ INT             KeyForObject                                            (KEY_OBJ
 /** \todo remove the following functions after the code will never need any debugging */
 char *PrintElementInfo (ELEMENT *theElement,INT full);
 
-/** \todo  This is a static function in standard UG.  Dune calls it at the
-   moment, so I made it nonstatic. */
-INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid);
-
 END_UGDIM_NAMESPACE
 
 #endif
