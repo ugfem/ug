@@ -436,7 +436,7 @@ CreateDomain (const char *name, const DOUBLE* MidPoint, DOUBLE radius, INT segme
 /****************************************************************************/
 
 DOMAIN *NS_DIM_PREFIX
-GetDomain (char *name)
+GetDomain (const char *name)
 {
   return ((DOMAIN *)
           SearchEnv (name, "/Domains", theDomainDirID, theDomainDirID));
