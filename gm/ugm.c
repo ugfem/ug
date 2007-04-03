@@ -2548,7 +2548,7 @@ CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
    </ul> */
 /****************************************************************************/
 
-LINK *GetLink (NODE *from, NODE *to)
+LINK *GetLink (const NODE *from, const NODE *to)
 {
   LINK *pl;
 
