@@ -6448,7 +6448,6 @@ static INT	PreProcessAdaptMultiGrid(MULTIGRID *theMG)
 	#endif
 
 	#ifdef __PERIODIC_BOUNDARY__
-if (1)
 	if (MG_MakePeriodicMarksConsistent(theMG)) REP_ERR_RETURN(1);
 	#endif
 	
@@ -6629,7 +6628,6 @@ if (0)
 		}
 		#endif
 #ifdef __PERIODIC_BOUNDARY__
-if (1)
 		/* initialize USED flag on next lower grid level */
 		if (InitializePeriodicFlags(GRID_ON_LEVEL(theMG,level-1)))
 			RETURN(GM_ERROR);
