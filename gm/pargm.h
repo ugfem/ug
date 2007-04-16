@@ -184,9 +184,7 @@ enum {NODE_LISTPARTS = 1};
 enum {VECTOR_LISTPARTS = 1};
 enum {VERTEX_LISTPARTS = 1};
 
-/* define mapping from object priority to position in linked list */
-
-/* define mapping from object priority to position in linked list */
+/** \brief define mapping from object priority to position in linked list */
 #define PRIO2LISTPART(listtype,prio) 0
 
 /* define mapping from position in linked list to object priority */
@@ -198,10 +196,6 @@ enum {VERTEX_LISTPARTS = 1};
 #define CDBG(x,y)
 
 #endif
-
-#define GRID_ATTR(g) ((unsigned char) (GLEVEL(g)+32))
-#define ATTR_TO_GLEVEL(i) (i-32)
-
 
 /*
         printing of IDs via printf()

@@ -3245,6 +3245,9 @@ START_UGDIM_NAMESPACE
 #define EDATA_DEF_IN_GRID(p)   (GFORMAT(p)->elementdata)
 #define NDATA_DEF_IN_GRID(p)   (GFORMAT(p)->nodedata)
 
+#define GRID_ATTR(g) ((unsigned char) (GLEVEL(g)+32))
+#define ATTR_TO_GLEVEL(i) (i-32)
+
 /****************************************************************************/
 /*                                                                          */
 /* macros for multigrids                                                    */
