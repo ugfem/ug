@@ -161,13 +161,6 @@ enum {VERTEX_LISTPARTS  = 3};
                                            GID((NODE *)(x)) : -1)))
 #endif
 
-/*
-   #define CDBG(x,y)       if (GETGID(x)==0x25000d) {y}
- */
-#define CDBG(x,y)
-
-
-
 #else   /* not ModelP */
 
 /* define number of priorities for objects */
@@ -192,8 +185,6 @@ enum {VERTEX_LISTPARTS = 1};
 
 /* define mapping from position in linked list to object priority */
 #define PRIO2INDEX(prio)  0
-
-#define CDBG(x,y)
 
 #endif
 
