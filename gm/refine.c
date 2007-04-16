@@ -116,9 +116,9 @@ USING_PPIF_NAMESPACE
 /* defines in the following order                                           */
 /*                                                                          */
 /*    compile time constants defining static data size (i.e. arrays)        */
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 /* undefine if overlap should be only updated where needed */
@@ -362,22 +362,47 @@ INT NS_DIM_PREFIX ce_NEW_EDIDENT;
 /*																			*/
 /****************************************************************************/
 
-static int rFlag=GM_REFINE_TRULY_LOCAL; /* type of refine                   */
-static int hFlag=0;						/* refine with hanging nodes?		*/
-static int fifoFlag=0;					/* use fifo? 0=no 1=yes				*/
-static int first;						/* fifo loop counter 				*/
-static ELEMENT *fifo_first=NULL;		/* first element in fifo work list	*/
-static ELEMENT *fifo_last=NULL;			/* last element in fifo	work list	*/
-static ELEMENT *fifo_insertfirst=NULL;	/* first element in fifo insertlist */
-static ELEMENT *fifo_insertlast=NULL;	/* last element in fifo insertlist	*/
-static ELEMENT *firstElement=NULL;		/* first element to consider for    */
-										/* next loop						*/
-static INT No_Green_Update;				/* counter for green refinements	*/
-										/* need not to be updated			*/
-static INT Green_Marks;					/* green refined element counter	*/
-static INT refine_seq = 0;				/* 0/1: do/do not parallel part		*/
-static INT fifoloop = 0;				/* counter for FIFO loops			*/
-static INT total_adapted = 0;           /* count of adapted elements        */
+/** \brief type of refinement                   */
+static int rFlag=GM_REFINE_TRULY_LOCAL;
+
+/** \brief refine with hanging nodes?		*/
+static int hFlag=0;
+
+/** \brief use fifo? 0=no 1=yes				*/
+static int fifoFlag=0;
+
+/** \brief fifo loop counter 				*/
+static int first;
+
+/** \brief first element in fifo work list	*/
+static ELEMENT *fifo_first=NULL;
+
+/** \brief last element in fifo	work list	*/
+static ELEMENT *fifo_last=NULL;
+
+/** \brief first element in fifo insertlist */
+static ELEMENT *fifo_insertfirst=NULL;
+
+/** \brief last element in fifo insertlist	*/
+static ELEMENT *fifo_insertlast=NULL;
+
+/** \brief first element to consider for next loop   */
+static ELEMENT *firstElement=NULL;
+
+/** \brief Counter for green refinements doesn't need to be updated */
+static INT No_Green_Update;
+
+/** \brief green refined element counter	*/
+static INT Green_Marks;
+
+/** \brief 0/1: do/do not parallel part		*/
+static INT refine_seq = 0;
+
+/** \brief counter for FIFO loops			*/
+static INT fifoloop = 0;
+
+/** \brief count of adapted elements        */
+static INT total_adapted = 0;
 
 #ifdef STAT_OUT
 /* timing variables */
@@ -3507,10 +3532,17 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 
 struct compare_record
 { 
-	ELEMENT *elem; 		 /* element to connect 					 */
-	INT side;			 /* side of elem to connect 			 */
-	INT nodes;		     /* number of nodes of side 			 */
-	NODE *nodeptr[4]; 	 /* pointer of nodes in descending order */
+    /** \brief Element to connect */
+    ELEMENT *elem;
+
+    /** \brief Side of element to connect */
+    INT side;
+    
+    /** \brief Number of nodes of side */
+    INT nodes;
+
+    /** \brief Number of nodes in descending order */
+    NODE *nodeptr[4];
 };
 typedef struct compare_record COMPARE_RECORD;
 
