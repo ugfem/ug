@@ -2678,7 +2678,7 @@ INT NS_DIM_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
   switch (TAG(theElement)) {
   case (TRIANGLE) :
     switch (pattern) {
-    /* TODO: 0 can mean T_COPY OR T_NOREF */
+    /** \todo 0 can mean T_COPY OR T_NOREF */
     case (0) : return(T_NOREF);
     case (1) : return(T_BISECT_1_0);
     case (2) : return(T_BISECT_1_1);
@@ -2811,6 +2811,12 @@ INT NS_DIM_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
       return PRI_BISECT_0_2;
     case 260 :
       return PRI_BISECT_0_3;
+    case 325 :
+      return PRI_BISECT_HEX0;
+    case 195 :
+      return PRI_BISECT_HEX1;
+    case 390 :
+      return PRI_BISECT_HEX2;
     default :
       PrintErrorMessageF('E',"Patterns2Rules","no mapping for PRISM and pattern %d!", pattern);
                                                 #ifndef __ANISOTROPIC__
