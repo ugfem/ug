@@ -76,9 +76,9 @@ enum VectorClass {EVERY_CLASS = 0,       /*!< Class of all vectors */
 };
 
 #define GET_MATRIX(v,w,m)                                                   \
-  { register MATRIX *theMatrix0;                                              \
-    register VECTOR *theVector0 = (v);                                        \
-    register VECTOR *theVector1 = (w);                                        \
+  { MATRIX *theMatrix0;                                                       \
+    VECTOR *theVector0 = (v);                                                 \
+    VECTOR *theVector1 = (w);                                                 \
     (m) = NULL;                                                               \
     if (theVector0 == theVector1) (m) = VSTART(theVector0);                   \
     else if (VINDEX(theVector0) > VINDEX(theVector1)) {                       \

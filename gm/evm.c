@@ -1598,8 +1598,8 @@ INT NS_DIM_PREFIX V2_apbmin2c (const DOUBLE *a, const DOUBLE *b, const DOUBLE *c
 
 INT NS_DIM_PREFIX Yams (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
 {
-  register DOUBLE dinv,piv,sum;
-  register INT i,j,k;
+  DOUBLE dinv,piv,sum;
+  INT i,j,k;
   DOUBLE *ipv=mat+(n*n);
 
   if (rhs==NULL)

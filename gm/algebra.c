@@ -487,8 +487,8 @@ INT NS_DIM_PREFIX PushEntry( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT
 
 BLOCKVECTOR *NS_DIM_PREFIX FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf )
 {
-  register BLOCKVECTOR *bv;
-  register BLOCKNUMBER nr;
+  BLOCKVECTOR *bv;
+  BLOCKNUMBER nr;
   BV_DESC copy_bvd = *bvd;
 
   /* initialize the search with the topmost blockvector in the grid */
@@ -1325,7 +1325,7 @@ INT NS_DIM_PREFIX DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
 
 static void FreeBVList (GRID *grid, BLOCKVECTOR *bv)
 {
-  register BLOCKVECTOR *bv_h;
+  BLOCKVECTOR *bv_h;
 
   if ( bv == NULL )
     return;
@@ -6853,9 +6853,9 @@ void NS_DIM_PREFIX SetLevelnumberBV( BLOCKVECTOR *bv, INT level )
 static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid )
 {
   BLOCKVECTOR *bv;
-  register BLOCKVECTOR *prev;
-  register INT i, j;
-  register VECTOR *pred_v;
+  BLOCKVECTOR *prev;
+  INT i, j;
+  VECTOR *pred_v;
 
   (void)CreateBlockvector( grid, bv_plane );
   if ( *bv_plane == NULL )
@@ -7249,7 +7249,7 @@ INT NS_DIM_PREFIX CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
 #ifdef __BLOCK_VECTOR_DESC__
   BLOCKVECTOR *bv;
   INT ret;
-  register VECTOR *v, *end_v;
+  VECTOR *v, *end_v;
 
   if ( GFIRSTBV( grid ) != NULL )
     FreeAllBV( grid );
@@ -7332,7 +7332,7 @@ static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, IN
 {
   VECTOR *v, *vpred, *end_v, **v0, **v1, **vi;
   BLOCKVECTOR *bv0, *bv1, *bvi;
-  register INT index, interface, nr_0, nr_1, nr_i;
+  INT index, interface, nr_0, nr_1, nr_i;
   VECTOR *pred_first_vec;
 
     #ifndef __BLOCK_VECTOR_DESC__
