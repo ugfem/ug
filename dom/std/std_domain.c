@@ -3081,14 +3081,16 @@ PatchGlobal (const PATCH * p, DOUBLE * lambda, DOUBLE * global)
 
     if (LINEAR_PATCH_N(p) ==3) {
       /* Linear interpolation for a triangle boundary segment */
-      for (int i=0; i<3; i++)
+      int i;
+      for (i=0; i<3; i++)
         global[i] = (1 - lambda[0] - lambda[1]) * LINEAR_PATCH_POS (p, 0)[i]
                     + lambda[0] * LINEAR_PATCH_POS (p, 1)[i]
                     + lambda[1] * LINEAR_PATCH_POS (p, 2)[i];
 
     } else {
       /* Bilinear interpolation for a quadrilateral boundary segment */
-      for (int i=0; i<3; i++)
+      int i;
+      for (i=0; i<3; i++)
         global[i] = LINEAR_PATCH_POS (p, 0)[i]
                     + lambda[0]*(LINEAR_PATCH_POS (p, 1)[i] - LINEAR_PATCH_POS (p, 0)[i])
                     + lambda[1]*(LINEAR_PATCH_POS (p, 3)[i] - LINEAR_PATCH_POS (p, 0)[i])
