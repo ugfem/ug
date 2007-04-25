@@ -2826,13 +2826,16 @@ static INT RestrictMarks (GRID *theGrid)
 		}
 			
 		if (flag) continue;
+
+		/* preserve regular refinement marks */
+		if (hFlag==0 && SonList[0]==NULL) continue;
 	
 		/* remove refinement */
 		SETMARK(theElement,NO_REFINEMENT);
 		SETMARKCLASS(theElement,NO_CLASS);
 		SETCOARSEN(theElement,1);
 	}
-	/** \todo delete special debug */ PRINTELEMID(-1);
+	/** \todo delete/ special debug */ PRINTELEMID(-1);
 #ifdef __PERIODIC_BOUNDARY__
 	#ifdef ModelP
 	PRINTDEBUG(gm,1,("\n" PFMT "exchange USED flag for restrict marks\n",me));
@@ -5899,9 +5902,10 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
 
 			if (hFlag==0 && MARKCLASS(theElement)!=RED_CLASS)
 			{
+				/* remove copy marks */
 				SETMARK(theElement,NO_REFINEMENT);
 				SETMARKCLASS(theElement,NO_CLASS);
-				continue; 
+/*				continue;  */
 			}
 
 			REFINE_ELEMENT_LIST(1,theElement,"REFINING element: ");
