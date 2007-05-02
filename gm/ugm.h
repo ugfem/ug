@@ -132,7 +132,7 @@ INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, EL
 INT              PointInElement                 (const DOUBLE*, const ELEMENT *theElement);
 INT          PointOnSide            (const DOUBLE *global, const ELEMENT *theElement, INT side);
 DOUBLE       DistanceFromSide       (const DOUBLE *global, const ELEMENT *theElement, INT side);
-INT FindFlippedElements                         (MULTIGRID *theMG, INT verbose);
+INT FindFlippedElements                         (const MULTIGRID *theMG, INT verbose);
 NS_PREFIX VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 INT             CheckOrientation                (INT n, VERTEX **vertices);
 INT             CheckOrientationInGrid  (GRID *theGrid);
@@ -168,9 +168,9 @@ INT             PropagateNodeClasses            (GRID *theGrid);
 INT             ClearNextNodeClasses            (GRID *theGrid);
 INT             SeedNextNodeClasses             (ELEMENT *theElement);
 INT             PropagateNextNodeClasses        (GRID *theGrid);
-INT             MaxNextNodeClass                        (ELEMENT *theElement);
-INT             MinNodeClass                            (ELEMENT *theElement);
-INT             MinNextNodeClass                        (ELEMENT *theElement);
+INT             MaxNextNodeClass                        (const ELEMENT *theElement);
+INT             MinNodeClass                            (const ELEMENT *theElement);
+INT             MinNextNodeClass                        (const ELEMENT *theElement);
 #endif
 
 #ifdef __PERIODIC_BOUNDARY__

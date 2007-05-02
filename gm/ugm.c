@@ -107,7 +107,7 @@ USING_UGDIM_NAMESPACE
 /* local refinement hack */
 #undef _SCHALE_X_
 
-/* macro for controlling debugging output by conditions on objects */
+/** \brief macro for controlling debugging output by conditions on objects */
 #define UGM_CDBG(x,y)
 
 /****************************************************************************/
@@ -134,9 +134,11 @@ INT ce_NO_DELETE_OVERLAP2 = -1;
 /*                                                                          */
 /****************************************************************************/
 
-static char buffer[4*256];                      /* general purpose text buffer			*/
+/** \brief General purpose text buffer */
+static char buffer[4*256];
 
-static VIRT_HEAP_MGMT *theGenMGUDM; /* general user data space management	*/
+/** \brief General user data space management	*/
+static VIRT_HEAP_MGMT *theGenMGUDM;
 
 static INT theMGDirID;                          /* env var ID for the multigrids		*/
 static INT theMGRootDirID;                      /* env dir ID for the multigrids		*/
@@ -978,24 +980,6 @@ NODE *NS_DIM_PREFIX CreateSideNode (GRID *theGrid, ELEMENT *theElement, VERTEX *
   return(theNode);
 }
 
-
-/****************************************************************************/
-/*
-   GetSideNode -
-
-   SYNOPSIS:
-   NODE *GetSideNode (ELEMENT *theElement, INT side);
-
-   PARAMETERS:
- * @param   theElement
- * @param   side
-
-   DESCRIPTION:
-
-   @return
- */
-/****************************************************************************/
-
 static NODE *GetSideNodeX (const ELEMENT *theElement, INT side, INT n,
                            NODE **MidNodes)
 {
@@ -1234,18 +1218,6 @@ NODE * NS_DIM_PREFIX GetSideNode (const ELEMENT *theElement, INT side)
 
   return(theNode);
 }
-
-/****************************************************************************/
-/** \brief ???
-   PARAMETERS:
- * @param   theElement
- * @param   theNode
-
-   DESCRIPTION:
-
-   @return ???
- */
-/****************************************************************************/
 
 static int CountSideNodes (ELEMENT *e)
 {
@@ -1956,8 +1928,7 @@ EDGE * NS_DIM_PREFIX GetSonEdge (const EDGE *theEdge)
 
 
 /****************************************************************************/
-/** \brief
-   GetSonEdges - Return pointer to son edges if it exists
+/** \brief Return pointer to son edges if it exists
 
  * @param   theEdge - edge for which son is searched
  * @param   SonEdges - array of pointers will be filled with son edges
@@ -2019,8 +1990,7 @@ INT NS_DIM_PREFIX GetSonEdges (const EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES
 }
 
 /****************************************************************************/
-/** \brief
-   GetFatherEdge - Return pointer to father edge if it exists
+/** \brief Return pointer to father edge if it exists
 
  * @param   theEdge - edge for which father is searched
 
@@ -2085,8 +2055,7 @@ EDGE * NS_DIM_PREFIX GetFatherEdge (const EDGE *theEdge)
 #ifdef __THREEDIM__
 
 /****************************************************************************/
-/** \brief
-   FatherEdge - Return pointer to father edge if it exists
+/** \brief Return pointer to father edge if it exists
 
  * @param   SideNodes - nodes of the side
  * @param   ncorners - number of sidenodes
@@ -2225,8 +2194,7 @@ EDGE * NS_DIM_PREFIX FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, E
 #endif
 
 /****************************************************************************/
-/** \brief
-   GetEdge - Return pointer to edge if it exists
+/** \brief Return pointer to edge if it exists
 
  * @param   from - starting node of edge
  * @param   to - end node of edge
@@ -2253,8 +2221,7 @@ EDGE * NS_DIM_PREFIX GetEdge (const NODE *from, const NODE *to)
 }
 
 /****************************************************************************/
-/** \brief
-   CreateEdge - Return pointer to a new edge structure
+/** \brief Return pointer to a new edge structure
 
  * @param   theGrid - grid where vertex should be inserted
  * @param   theElement - pointer to element
@@ -2534,8 +2501,7 @@ CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
 }
 
 /****************************************************************************/
-/** \brief
-   GetLink - Return pointer to link if it exists
+/** \brief Return pointer to link if it exists
 
  * @param   from - starting node of link
  * @param   to - end node of link
@@ -2562,8 +2528,7 @@ LINK *GetLink (const NODE *from, const NODE *to)
 }
 
 /****************************************************************************/
-/** \brief
-   CreateElement - Return a pointer to  a new element structure
+/** \brief Return a pointer to  a new element structure
 
  * @param   theGrid - grid structure to extend
  * @param   tag - the element type
@@ -2713,8 +2678,7 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
 }
 
 /****************************************************************************/
-/** \brief
-   CreateSonElementSide - creates the element sides of son elements
+/** \brief Creates the element sides of son elements
 
  * @param   theGrid - grid for which to create
  * @param   theElement - pointer to a boundary element
@@ -2828,8 +2792,7 @@ INT NS_DIM_PREFIX CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT 
 }
 
 /****************************************************************************/
-/** \brief
-   CreateNewLevel - Return pointer to new grid structure
+/** \brief Return pointer to new grid structure
 
  * @param   theMG - multigrid structure
 
@@ -2907,8 +2870,7 @@ GRID * NS_DIM_PREFIX CreateNewLevel (MULTIGRID *theMG, INT algebraic)
 
 
 /****************************************************************************/
-/** \brief
-   CreateNewLevelAMG - Create new amg level
+/** \brief Create new amg level
 
  * @param   theMG - multigrid structure
 
@@ -2967,8 +2929,7 @@ GRID * NS_DIM_PREFIX CreateNewLevelAMG (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   MakeMGItem - Create a multigrid environment item
+/** \brief Create a multigrid environment item
 
  * @param   name - name of the multigrid
 
@@ -3067,8 +3028,7 @@ INT NS_DIM_PREFIX ClearMultiGridUsedFlags (MULTIGRID *theMG, INT FromLevel, INT 
 
 
 /****************************************************************************/
-/** \brief
-   GetMultigrid - Find the multigrid environment item with name
+/** \brief Find the multigrid environment item with name
 
  * @param   name - name of the multigrid to find
 
@@ -3088,10 +3048,7 @@ MULTIGRID * NS_DIM_PREFIX GetMultigrid (const char *name)
 }
 
 /****************************************************************************/
-/** \brief
-   GetFirstMultigrid - Return a pointer to the first multigrid
-
- * @param   void
+/** \brief Return a pointer to the first multigrid
 
    This function returns a pointer to the first multigrid in the /Multigrids
    directory.
@@ -3154,8 +3111,7 @@ MULTIGRID * NS_DIM_PREFIX GetNextMultigrid (const MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   CreateMultiGrid - Return a pointer to new multigrid structure
+/** \brief Return a pointer to new multigrid structure
 
  * @param   MultigridName - name of multigrid
  * @param   domain - name of domain description from environment
@@ -3574,8 +3530,7 @@ INT NS_DIM_PREFIX DisposeNode (GRID *theGrid, NODE *theNode)
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeVertex - Remove vertex from the data structure
+/** \brief Remove vertex from the data structure
 
  * @param   theGrid - grid to remove from
  * @param   theVertex - vertex to remove
@@ -3613,8 +3568,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeElement - Remove element from the data structure
+/** \brief Remove element from the data structure
 
  * @param   theGrid - grid to remove from
  * @param   theElement - element to remove
@@ -3980,8 +3934,7 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
 #endif
 
 /****************************************************************************/
-/** \brief
-   Collapse - construct coarse grid from surface
+/** \brief Construct coarse grid from surface
 
  * @param   theMG - multigrid to collapse
 
@@ -4142,8 +4095,7 @@ INT NS_DIM_PREFIX Collapse (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeTopLevel - Remove top level grid from multigrid  structure
+/** \brief Remove top level grid from multigrid  structure
 
  * @param   theMG - multigrid to remove from
 
@@ -4193,8 +4145,7 @@ INT NS_DIM_PREFIX DisposeTopLevel (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeGrid - dispose top level grid
+/** \brief Dispose top level grid
 
  * @param   theGrid - grid to be removed
 
@@ -4254,8 +4205,7 @@ INT NS_DIM_PREFIX DisposeGrid (GRID *theGrid)
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeAMGLevel - dispose bottom AMG level
+/** \brief Dispose bottom AMG level
 
  * @param   theMG - multigrid to remove from
 
@@ -4314,8 +4264,7 @@ static INT DisposeAMGLevel (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeAMGLevels - dispose all AMG level
+/** \brief Dispose all AMG level
 
  * @param   theMG - multigrid to remove from
 
@@ -4503,8 +4452,7 @@ static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
 }
 
 /****************************************************************************/
-/** \brief
-   OrderNodesInGrid - reorder double linked 'NODE' list
+/** \brief Reorder double linked 'NODE' list
 
  * @param   theGrid - grid to order
  * @param   order - precedence of coordinate directions
@@ -4616,8 +4564,7 @@ INT NS_DIM_PREFIX OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *
 }
 
 /****************************************************************************/
-/** \brief
-   PutAtEndOfList - reorder a given set of elements and put them first in the list
+/** \brief Reorder a given set of elements and put them first in the list
 
  * @param   theGrid - elements are part of that level (not checked)
  * @param   cnt - number of elements in list
@@ -4680,8 +4627,7 @@ INT NS_DIM_PREFIX PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
 }
 
 /****************************************************************************/
-/** \brief
- *     Determine neighbor and side of neighbor that goes back to element
+/** \brief Determine neighbor and side of neighbor that goes back to element
  *
  * @param   theElement - considered element
  * @param   Side - side of that element
@@ -4763,8 +4709,7 @@ NODE * NS_DIM_PREFIX InsertInnerNode (GRID *theGrid, const DOUBLE *pos)
 }
 
 /****************************************************************************/
-/** \brief
-   InsertBoundaryNode - Insert a boundary node
+/** \brief Insert a boundary node
 
  * @param   theGrid - grid structure
  * @param   bndp - boundary point descriptor
@@ -4829,8 +4774,7 @@ NODE * NS_DIM_PREFIX InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
 }
 
 /****************************************************************************/
-/** \brief
-   DeleteNode - Delete a node
+/** \brief Delete a node
 
  * @param   theGrid - grid structure
  * @param   theNode - node to delete
@@ -4879,8 +4823,7 @@ INT NS_DIM_PREFIX DeleteNode (GRID *theGrid, NODE *theNode)
 }
 
 /****************************************************************************/
-/** \brief
-   DeleteNodeWithID - Delete the node with id
+/** \brief Delete the node with id
 
  * @param   theGrid - grid structure
  * @param   id - id of node to delete
@@ -4909,8 +4852,7 @@ INT NS_DIM_PREFIX DeleteNodeWithID (GRID *theGrid, INT id)
 }
 
 /****************************************************************************/
-/** \brief
-   FindFather - Find the new father element
+/** \brief Find the new father element
 
  * @param   theVertex -
 
@@ -4951,8 +4893,7 @@ ELEMENT * NS_DIM_PREFIX FindFather (VERTEX *theVertex)
 }
 
 /****************************************************************************/
-/** \brief
-   RecreateBNDSofNode - searche the boundary sides and recreate the corresponding BNDS
+/** \brief Search the boundary sides and recreate the corresponding BNDS
 
  * @param   theMG - multigrid structure
  * @param   theNode - node with new BNDP
@@ -5033,8 +4974,7 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
 }
 
 /****************************************************************************/
-/** \brief
-   MoveBndMidNode - set new position for a midnode on a boundary
+/** \brief Set new position for a midnode on a boundary
 
  * @param   theMG - pointer to multigrid
  * @param   theVertex - vertex to move
@@ -5142,8 +5082,7 @@ INT NS_DIM_PREFIX MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex)
 }
 
 /****************************************************************************/
-/** \brief
-   MoveMidNode - set new position for a midnode
+/** \brief Set new position for a midnode
 
  * @param   theMG - pointer to multigrid
  * @param   theNode - node to move
@@ -5232,8 +5171,7 @@ INT NS_DIM_PREFIX MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda, I
 }
 
 /****************************************************************************/
-/** \brief
-   MoveCenterNode - set new position for a centernode
+/** \brief Set new position for a centernode
 
  * @param   theMG - pointer to multigrid
  * @param   theNode - node to move
@@ -5297,8 +5235,7 @@ INT NS_DIM_PREFIX MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambd
 }
 
 /****************************************************************************/
-/** \brief
-   MoveSideNode - set new position for a sidenode
+/** \brief Set new position for a sidenode
 
  * @param   theMG - pointer to multigrid
  * @param   theNode - node to move
@@ -5400,8 +5337,7 @@ INT NS_DIM_PREFIX MoveSideNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
 #endif
 
 /****************************************************************************/
-/** \brief
-   MoveNode - Let user enter a new position for an inner node
+/** \brief Let user enter a new position for an inner node
 
  * @param   theMG - pointer to multigrid
  * @param   theNode - node to move
@@ -5488,8 +5424,7 @@ INT NS_DIM_PREFIX MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT
 }
 
 /****************************************************************************/
-/** \brief
- *    Assign new local and global coords to a vertex
+/** \brief Assign new local and global coords to a vertex
 
  * @param   theMG - pointer to multigrid
  * @param   vert - vertex to move
@@ -5519,8 +5454,7 @@ INT NS_DIM_PREFIX SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, c
 }
 
 /****************************************************************************/
-/** \brief
-   MoveFreeBoundaryVertex - move a vertex on a free boundary
+/** \brief Move a vertex on a free boundary
 
  * @param   theMG - pointer to multigrid
  * @param   vert - vertex to move
@@ -5564,8 +5498,7 @@ INT NS_DIM_PREFIX MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const 
 }
 
 /****************************************************************************/
-/** \brief
-   FinishMovingFreeBoundaryVertices - finish moving of free boundary vertices
+/** \brief Finish moving of free boundary vertices
 
  * @param   theMG - pointer to multigrid
 
@@ -5616,8 +5549,7 @@ INT NS_DIM_PREFIX FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   GetMidNodeParam - Get local position of a midnode on an edge
+/** \brief Get local position of a midnode on an edge
 
  * @param   theNode - midnode
  * @param   lambda  - local coordinate of midnode w.r.t. the edge
@@ -6329,8 +6261,7 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
 
 
 /****************************************************************************/
-/** \brief
-   InsertElement - Insert an element
+/** \brief Insert an element
 
  * @param   theGrid - grid structure
  * @param   n
@@ -6663,8 +6594,7 @@ ELEMENT * NS_DIM_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMEN
 }
 
 /****************************************************************************/
-/** \brief
-   InsertElementFromIDs - Insert element with node ids
+/** \brief Insert element with node ids
 
  * @param   theGrid - grid structure
  * @param   n - number of nodes in node id list
@@ -6732,8 +6662,7 @@ ELEMENT * NS_DIM_PREFIX InsertElementFromIDs (GRID *theGrid, INT n, INT *idList,
 }
 
 /****************************************************************************/
-/** \brief
-   DeleteElement - Delete an element
+/** \brief Delete an element
 
  * @param   theMG - multigrid structure
  * @param   theElement - element to delete
@@ -6829,8 +6758,7 @@ INT NS_DIM_PREFIX DeleteElementWithID (MULTIGRID *theMG, INT id)
 }
 
 /****************************************************************************/
-/** \brief
-   InsertMesh - Insert a mesh described by the domain
+/** \brief Insert a mesh described by the domain
 
  * @param   theMG - multigrid structure
  * @param   theMesh - mesh structure
@@ -6964,8 +6892,7 @@ INT NS_DIM_PREFIX InsertMesh (MULTIGRID *theMG, MESH *theMesh)
 }
 
 /****************************************************************************/
-/** \brief
-   FindNodeFromId - Find a node with given id
+/** \brief Find a node with given id
 
  * @param   theGrid - grid level to search.
 
@@ -6977,7 +6904,7 @@ INT NS_DIM_PREFIX InsertMesh (MULTIGRID *theMG, MESH *theMesh)
    </ul> */
 /****************************************************************************/
 
-NODE * NS_DIM_PREFIX FindNodeFromId (GRID *theGrid, INT id)
+NODE * NS_DIM_PREFIX FindNodeFromId (const GRID *theGrid, INT id)
 {
   NODE *theNode;
 
@@ -6989,8 +6916,7 @@ NODE * NS_DIM_PREFIX FindNodeFromId (GRID *theGrid, INT id)
 
 
 /****************************************************************************/
-/** \brief
-   FindNodeFromPosition - Find node from position
+/** \brief Find node from position
 
  * @param   theGrid - grid level to search
  * @param   pos - given position
@@ -7004,7 +6930,7 @@ NODE * NS_DIM_PREFIX FindNodeFromId (GRID *theGrid, INT id)
    </ul> */
 /****************************************************************************/
 
-NODE * NS_DIM_PREFIX FindNodeFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
+NODE * NS_DIM_PREFIX FindNodeFromPosition (const GRID *theGrid, const DOUBLE *pos, const DOUBLE *tol)
 {
   NODE *theNode;
   int i,found;
@@ -7021,8 +6947,7 @@ NODE * NS_DIM_PREFIX FindNodeFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *t
 }
 
 /****************************************************************************/
-/** \brief
-   FindVectorFromPosition - Find vector from position
+/** \brief Find vector from position
 
  * @param   theGrid - grid level to search
  * @param   pos - given position
@@ -7055,8 +6980,7 @@ VECTOR * NS_DIM_PREFIX FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBL
 }
 
 /****************************************************************************/
-/** \brief
-   FindVectorFromIndex - Find vector from Index
+/** \brief Find vector from Index
 
  * @param   theGrid - grid level to search
  * @param   index - given index
@@ -7081,8 +7005,7 @@ VECTOR * NS_DIM_PREFIX FindVectorFromIndex (GRID *theGrid, INT index)
 }
 
 /****************************************************************************/
-/** \brief
-   FindElementFromId - Find element with id
+/** \brief Find element with id
 
  * @param   theGrid - grid level to search
  * @param   id - id to search
@@ -7108,8 +7031,7 @@ ELEMENT * NS_DIM_PREFIX FindElementFromId (GRID *theGrid, INT id)
 }
 
 /****************************************************************************/
-/** \brief
-   PointInElement - Determine whether point is contained in element
+/** \brief Determine whether point is contained in element
 
  * @param   x - coordinates of given point
  * @param   theElement - element to scan
@@ -7183,8 +7105,7 @@ INT NS_DIM_PREFIX PointInElement (const DOUBLE *global, const ELEMENT *theElemen
 
 
 /****************************************************************************/
-/** \brief
-   PointOnSide - Determine whether point is on an element side
+/** \brief Determine whether point is on an element side
 
  * @param   x - coordinates of given point
  * @param   theElement - element to scan
@@ -7251,8 +7172,7 @@ INT NS_DIM_PREFIX PointOnSide(const DOUBLE *global, const ELEMENT *theElement, I
 #endif
 
 /****************************************************************************/
-/** \brief
-   DOUBLESide - Determine distance of a point to an element side
+/** \brief Determine distance of a point to an element side
 
  * @param   x - coordinates of given point
  * @param   theElement - element to scan
@@ -7315,8 +7235,7 @@ DOUBLE NS_DIM_PREFIX DistanceFromSide(const DOUBLE *global, const ELEMENT *theEl
 #endif
 
 /****************************************************************************/
-/** \brief
-   FindFlippedElements - Determine whether elements are flipped
+/** \brief Determine whether elements are flipped
 
  * @param   theMG - multigrid
  * @param   verbose - verbose mode
@@ -7330,7 +7249,7 @@ DOUBLE NS_DIM_PREFIX DistanceFromSide(const DOUBLE *global, const ELEMENT *theEl
    </ul> */
 /****************************************************************************/
 #ifdef __THREEDIM__
-INT NS_DIM_PREFIX FindFlippedElements(MULTIGRID *theMG, INT verbose)
+INT NS_DIM_PREFIX FindFlippedElements(const MULTIGRID *theMG, INT verbose)
 {
   ELEMENT *e;
   INT l,n,i,j,fn,found,bfound,bfather;
@@ -7401,8 +7320,7 @@ INT NS_DIM_PREFIX FindFlippedElements(MULTIGRID *theMG, INT verbose)
 }
 #endif
 /****************************************************************************/
-/** \brief
-   FindElementFromPosition - Find element containing position
+/** \brief Find element containing position
 
  * @param   theGrid - grid level to search
  * @param   pos - given position
@@ -7476,8 +7394,7 @@ ELEMENT * NS_DIM_PREFIX FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
 }
 
 /****************************************************************************/
-/** \brief
-   FindElementOnSurfaceCached - Find element containing position
+/** \brief Find element containing position
 
  * @param   theMG - multigrid level to search
  * @param   global - given position
@@ -7553,8 +7470,7 @@ INT NS_DIM_PREFIX InnerBoundary (ELEMENT *t, INT side)
 
 
 /****************************************************************************/
-/** \brief
-   NeighbourElement - get the neighbouring element
+/** \brief Get the neighbouring element
 
  * @param   theElement - pointer to an element
  * @param   side - number of an element side
@@ -7654,7 +7570,7 @@ void NS_DIM_PREFIX CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR cent
  */
 /****************************************************************************/
 
-static void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR global, DOUBLE_VECTOR local)
+static void CalculateCenterOfMassOfSide(const ELEMENT *theElement, int side, DOUBLE_VECTOR global, DOUBLE_VECTOR local)
 {
   DOUBLE *corner;
   DOUBLE *l_corner;
@@ -7677,8 +7593,7 @@ static void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VE
 }
 
 /****************************************************************************/
-/** \brief
-   KeyForObject - calculate an (hopefully) unique key for the geometric object
+/** \brief Calculate an (hopefully) unique key for the geometric object
 
  * @param   obj - geometric object which from the key is needed (can be one of VERTEX, ELEMENT, NODE or VECTOR)
 
@@ -7765,9 +7680,16 @@ INT NS_DIM_PREFIX KeyForObject( KEY_OBJECT *obj )
   return (GM_ERROR);
 }
 
+void NS_DIM_PREFIX ListMultiGridHeader (const INT longformat)
+{
+  if (longformat)
+    sprintf(buffer,"   %-20.20s %-20.20s %-20.20s %10.10s %10.10s\n","mg name","domain name","problem name","heap size","heap used");
+  else
+    sprintf(buffer,"   %-20.20s\n","mg name");
+}
+
 /****************************************************************************/
-/** \brief
-   ListMultiGrid - List general information about multigrid structure
+/** \brief List general information about multigrid structure
 
  * @param   theMG - structure to list
  * @param   isCurrent - is `theMG` current multigrid
@@ -7778,19 +7700,11 @@ INT NS_DIM_PREFIX KeyForObject( KEY_OBJECT *obj )
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX ListMultiGridHeader (const INT longformat)
-{
-  if (longformat)
-    sprintf(buffer,"   %-20.20s %-20.20s %-20.20s %10.10s %10.10s\n","mg name","domain name","problem name","heap size","heap used");
-  else
-    sprintf(buffer,"   %-20.20s\n","mg name");
-}
-
-void NS_DIM_PREFIX ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
+void NS_DIM_PREFIX ListMultiGrid (const MULTIGRID *theMG, const INT isCurrent, const INT longformat)
 {
   char c;
   BVP *theBVP;
-  BVP_DESC *theBVPDesc;
+  const BVP_DESC *theBVPDesc;
 
   /* get BVP description */
   theBVP = MG_BVP(theMG);
@@ -7808,8 +7722,7 @@ void NS_DIM_PREFIX ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const I
 }
 
 /****************************************************************************/
-/** \brief
-   MultiGridStatus - List information about refinement type distribution
+/** \brief List information about refinement type distribution
 
  * @param   theMG - structure to list
  * @param   gridflag -
@@ -7823,7 +7736,7 @@ void NS_DIM_PREFIX ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const I
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, INT verbose)
+INT NS_DIM_PREFIX MultiGridStatus (const MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, INT verbose)
 {
   INT i,j,sons,maxsons,heap,used,free_bytes;
   INT red, green, yellow;
@@ -8281,8 +8194,7 @@ INT NS_DIM_PREFIX MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag
 }
 
 /****************************************************************************/
-/** \brief
-   ListGrids - list general information about grids of multigrid
+/** \brief List general information about grids of multigrid
 
  * @param   theMG - multigrid structure
 
@@ -8596,8 +8508,7 @@ void NS_DIM_PREFIX ListGrids (const MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   ListNode - List information about node in multigrid
+/** \brief List information about node in multigrid
 
  * @param   theMG - structure containing the node
  * @param   theNode - node to list
@@ -8611,7 +8522,7 @@ void NS_DIM_PREFIX ListGrids (const MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt, INT vopt)
+void NS_DIM_PREFIX ListNode (const MULTIGRID *theMG, const NODE *theNode, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
   VERTEX *theVertex;
   LINK *theLink;
@@ -8721,8 +8632,7 @@ void NS_DIM_PREFIX ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT b
 
 
 /****************************************************************************/
-/** \brief
-   ListNodeSelection - List information about all nodes in selection
+/** \brief List information about all nodes in selection
 
  * @param   theMG - structure containing the nodes
  * @param   dataopt - list user data if true
@@ -8781,8 +8691,7 @@ INT NS_DIM_PREFIX IsNodeSelected (MULTIGRID *theMG, NODE *theNode)
 
 
 /****************************************************************************/
-/** \brief
-   ListNodeRange - List information about nodes in given range of ids
+/** \brief List information about nodes in given range of ids
 
  * @param   theMG - structure to list
  * @param   from - first id
@@ -8844,7 +8753,7 @@ void NS_DIM_PREFIX ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt,
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt)
+void NS_DIM_PREFIX ListElement (const MULTIGRID *theMG, const ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
   char etype[10];
   char ekind[8];
@@ -8894,26 +8803,14 @@ void NS_DIM_PREFIX ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT datao
       UserWriteF("    FA=NULL");
 
     UserWriteF("  NSONS=%d\n",NSONS(theElement));
-    /** \todo delete this
-       #ifdef __TWODIM__
-       for (i=0; i<SONS_OF_ELEM(theElement); i++)
-            if (SON(theElement,i)!=NULL)
-            {
-                    UserWriteF("    S%d=" EID_FMTX ,
-                            i,EID_PRTX(SON(theElement,i)));
-            }
-       #endif
-       #ifdef __THREEDIM__
-     */
+
     if (GetAllSons(theElement,SonList)!=0) return;
     for (i=0; SonList[i] != NULL; i++)
     {
       UserWriteF("    S%d=" EID_FMTX ,i,EID_PRTX(SonList[i]));
       if ((i+1)%4 == 0) UserWrite("\n");
     }
-    /*
-       #endif
-     */
+
   }
   if (nbopt)
   {
@@ -8951,8 +8848,7 @@ void NS_DIM_PREFIX ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT datao
 
 
 /****************************************************************************/
-/** \brief
-    ListElementSelection - list information about elements in selection
+/** \brief List information about elements in selection
 
  * @param  theMG multigrid structure to list
  * @param   dataopt - list user data if true
@@ -8963,7 +8859,7 @@ void NS_DIM_PREFIX ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT datao
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX ListElementSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, INT vopt)
+void NS_DIM_PREFIX ListElementSelection (const MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
   int j;
   ELEMENT *theElement;
@@ -8983,8 +8879,7 @@ void NS_DIM_PREFIX ListElementSelection (MULTIGRID *theMG, INT dataopt, INT bopt
 
 
 /****************************************************************************/
-/** \brief
-   IsElementSelected - Check whether element is in selection list
+/** \brief Check whether element is in selection list
 
  * @param   theMG - multigrid structure
  * @param   theElement - element to check
@@ -8997,7 +8892,7 @@ void NS_DIM_PREFIX ListElementSelection (MULTIGRID *theMG, INT dataopt, INT bopt
    </ul> */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
+INT NS_DIM_PREFIX IsElementSelected (const MULTIGRID *theMG, const ELEMENT *theElement)
 {
   int j;
 
@@ -9010,8 +8905,7 @@ INT NS_DIM_PREFIX IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
 
 
 /****************************************************************************/
-/** \brief
-   ListElementRange - List information about elements in range of ids
+/** \brief List information about elements in range of ids
 
  * @param   theMG - multigrid structure to list
  * @param   from - first id
@@ -9025,7 +8919,7 @@ INT NS_DIM_PREFIX IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt)
+void NS_DIM_PREFIX ListElementRange (const MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt)
 {
   int level,fromlevel,tolevel;
   ELEMENT *theElement;
@@ -9066,8 +8960,7 @@ void NS_DIM_PREFIX ListElementRange (MULTIGRID *theMG, INT from, INT to, INT ido
 
 
 /****************************************************************************/
-/** \brief
-   ListVector - List information about vector
+/** \brief List information about vector
 
  * @param   theMG - multigrid structure to list
  * @param   theVector - vector to list
@@ -9080,7 +8973,7 @@ void NS_DIM_PREFIX ListElementRange (MULTIGRID *theMG, INT from, INT to, INT ido
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt, INT modifiers)
+void NS_DIM_PREFIX ListVector (const MULTIGRID *theMG, const VECTOR *theVector, INT matrixopt, INT dataopt, INT modifiers)
 {
   FORMAT *theFormat;
   NODE *theNode;
@@ -9212,8 +9105,7 @@ void NS_DIM_PREFIX ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixop
 }
 
 /****************************************************************************/
-/** \brief
-   ListVectorOfElementSelection - List info about vectors of elements in selection
+/** \brief List info about vectors of elements in selection
 
  * @param   theMG -  structure to list
  * @param   matrixopt - list line of matrix corresponding to theVector
@@ -9225,7 +9117,7 @@ void NS_DIM_PREFIX ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixop
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX  ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
+void NS_DIM_PREFIX  ListVectorOfElementSelection (const MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
 {
   int i,j;
   ELEMENT *theElement;
@@ -9268,8 +9160,7 @@ void NS_DIM_PREFIX  ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixop
 }
 
 /****************************************************************************/
-/** \brief
-   ListVectorSelection - list information about vectors in selection
+/** \brief List information about vectors in selection
 
  * @param   theMG: multigrid structure to list
  * @param   matrixopt - list matrices of this vector
@@ -9281,7 +9172,7 @@ void NS_DIM_PREFIX  ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixop
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
+void NS_DIM_PREFIX ListVectorSelection (const MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
 {
   int j;
   VECTOR *theVector;
@@ -9300,8 +9191,7 @@ void NS_DIM_PREFIX ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dat
 }
 
 /****************************************************************************/
-/** \brief
-   IsVectorSelected - Check whether vector is in selection list
+/** \brief Check whether vector is in selection list
 
  * @param   theMG - multigrid structure
  * @param   theVector - vector to check
@@ -9314,7 +9204,7 @@ void NS_DIM_PREFIX ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dat
    </ul> */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
+INT NS_DIM_PREFIX IsVectorSelected (const MULTIGRID *theMG, const VECTOR *theVector)
 {
   int j;
 
@@ -9326,8 +9216,7 @@ INT NS_DIM_PREFIX IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
 }
 
 /****************************************************************************/
-/** \brief
-   ListVectorRange - list information about vectors in range of ids
+/** \brief List information about vectors in range of ids
 
  * @param   theMG - structure to list
  * @param   from - first index
@@ -9343,7 +9232,7 @@ INT NS_DIM_PREFIX IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers)
+void NS_DIM_PREFIX ListVectorRange (const MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers)
 {
   int level;
   VECTOR *theVector;
@@ -9375,26 +9264,8 @@ void NS_DIM_PREFIX ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, 
       }
 }
 
-/*
-   void ListConnections (GRID *theGrid)
-   {
-        VECTOR *v;
-        MATRIX *m;
-        INT len;
-    buffer[256];
-
-        for (v=PFIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
-                len = sprintf(buffer,"%d: prio=%d  %8d ->",me,PRIO(v),GID(v));
-                for (m=START(v); m!=NULL; m=MNEXT(m))
-                    len += sprintf(buffer+len," %8d",GID(MDEST(m)));
-                printf("%s\n",buffer);
-        }
-   }
- */
-
 /****************************************************************************/
-/** \brief
-   ClearSelection - Clear selection buffer
+/** \brief Clear selection buffer
 
  * @param   theMG - multigrid structure
 
@@ -9763,8 +9634,7 @@ static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc)
 
 
 /****************************************************************************/
-/** \brief
-   MinMaxAngle - Determine min and max angle in degrees
+/** \brief Determine min and max angle in degrees
 
  * @param   theElement - element to check
  * @param   amin - minimum angle
@@ -9778,7 +9648,7 @@ static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc)
    </ul> */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
+INT NS_DIM_PREFIX MinMaxAngle (const ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 {
   INT error,i,s1,s2,tag;
   DOUBLE angle,*x[MAX_CORNERS_OF_SIDE],n1[DIM],n2[DIM];
@@ -9855,8 +9725,7 @@ static INT MinMaxEdge (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 }
 
 /****************************************************************************/
-/** \brief
-   DefineMGUDBlock - Define block in general MG user data space
+/** \brief Define block in general MG user data space
 
  * @param   id - the id of the block to be allocated
  * @param   size - size of the data block
@@ -9879,8 +9748,7 @@ INT NS_DIM_PREFIX DefineMGUDBlock (BLOCK_ID id, MEM size)
 
 
 /****************************************************************************/
-/** \brief
-   FreeMGUDBlock - Free block in general MG user data space
+/** \brief Free block in general MG user data space
 
  * @param   id: the id of the block to be allocated
 
@@ -9901,8 +9769,7 @@ INT NS_DIM_PREFIX FreeMGUDBlock (BLOCK_ID id)
 }
 
 /****************************************************************************/
-/** \brief
-   GetMGUDBlockDescriptor - Return pointer to block descriptor with id
+/** \brief Return pointer to block descriptor with id
 
  * @param   id - the id of the block to be allocated
 
@@ -9914,7 +9781,7 @@ INT NS_DIM_PREFIX FreeMGUDBlock (BLOCK_ID id)
    </ul> */
 /****************************************************************************/
 
-BLOCK_DESC      * NS_DIM_PREFIX GetMGUDBlockDescriptor (BLOCK_ID id)
+BLOCK_DESC* NS_DIM_PREFIX GetMGUDBlockDescriptor (BLOCK_ID id)
 {
   return (GetBlockDesc(theGenMGUDM,id));
 }
@@ -9925,8 +9792,7 @@ VIRT_HEAP_MGMT * NS_DIM_PREFIX GetGenMGUDM()
 }
 
 /****************************************************************************/
-/** \brief
-   MaxNodeClass - Returns highest Node class of a dof on next level
+/** \brief Returns highest Node class of a dof on next level
 
  * @param   theElement - pointer to a element
 
@@ -9939,7 +9805,7 @@ VIRT_HEAP_MGMT * NS_DIM_PREFIX GetGenMGUDM()
    </ul> */
 /****************************************************************************/
 
-static INT MaxNodeClass (ELEMENT *theElement)
+static INT MaxNodeClass (const ELEMENT *theElement)
 {
   INT m = 0;
   INT i;
@@ -9954,8 +9820,7 @@ static INT MaxNodeClass (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/** \brief
-   MaxNextNodeClass - Returns highest Node class of a dof on next level
+/** \brief Returns highest Node class of a dof on next level
 
  * @param   theElement - pointer to a element
 
@@ -9968,7 +9833,7 @@ static INT MaxNodeClass (ELEMENT *theElement)
    </ul> */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX MaxNextNodeClass (ELEMENT *theElement)
+INT NS_DIM_PREFIX MaxNextNodeClass (const ELEMENT *theElement)
 {
   INT m = 0;
   INT i;
@@ -10011,8 +9876,7 @@ INT NS_DIM_PREFIX MaxPeriodicNextNodeClass (ELEMENT *theElement)
 #endif
 
 /****************************************************************************/
-/** \brief
-   MinNodeClass - Returns minimal Node class of a dof on next level
+/** \brief Returns minimal Node class of a dof on next level
 
  * @param   theElement - pointer to a element
 
@@ -10025,7 +9889,7 @@ INT NS_DIM_PREFIX MaxPeriodicNextNodeClass (ELEMENT *theElement)
    </ul> */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX MinNodeClass (ELEMENT *theElement)
+INT NS_DIM_PREFIX MinNodeClass (const ELEMENT *theElement)
 {
   INT m = 3;
   INT i;
@@ -10040,8 +9904,7 @@ INT NS_DIM_PREFIX MinNodeClass (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/** \brief
-   MinNextNodeClass - Returns minimal Node class of a dof on next level
+/** \brief Returns minimal Node class of a dof on next level
 
  * @param   theElement - pointer to a element
 
@@ -10054,7 +9917,7 @@ INT NS_DIM_PREFIX MinNodeClass (ELEMENT *theElement)
    </ul> */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX MinNextNodeClass (ELEMENT *theElement)
+INT NS_DIM_PREFIX MinNextNodeClass (const ELEMENT *theElement)
 {
   INT m = 3;
   INT i;
@@ -10069,8 +9932,7 @@ INT NS_DIM_PREFIX MinNextNodeClass (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/** \brief
-   SeedNodeClasses - Initialize node classes
+/** \brief Initialize node classes
 
  * @param   theGrid - given grid
  * @param   theElement - given element
@@ -10094,8 +9956,7 @@ INT NS_DIM_PREFIX SeedNodeClasses (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/** \brief
-   ClearNodeClasses - Reset node classes
+/** \brief Reset node classes
 
  * @param   theGrid - pointer to grid
 
@@ -10117,20 +9978,6 @@ INT NS_DIM_PREFIX ClearNodeClasses (GRID *theGrid)
 
   return(0);
 }
-/****************************************************************************/
-/** \brief
-   PropagateNodeClasses - Compute Node classes after initialization
-
- * @param   theGrid - pointer to grid
-
-   After Node classes have been reset and initialized, this function
-   now computes the class 2 and class 1 Nodes.
-
-   @return <ul>
-   <li>      0 if ok </li>
-   <li>      1 if error occured </li>
-   </ul> */
-/****************************************************************************/
 
 #ifdef ModelP
 static int Gather_NodeClass (DDD_OBJ obj, void *data)
@@ -10161,6 +10008,19 @@ static int Scatter_GhostNodeClass (DDD_OBJ obj, void *data)
 }
 #endif
 
+/****************************************************************************/
+/** \brief Compute Node classes after initialization
+
+ * @param   theGrid - pointer to grid
+
+   After Node classes have been reset and initialized, this function
+   now computes the class 2 and class 1 Nodes.
+
+   @return <ul>
+   <li>      0 if ok </li>
+   <li>      1 if error occured </li>
+   </ul> */
+/****************************************************************************/
 static INT PropagateNodeClass (GRID *theGrid, INT nclass)
 {
   ELEMENT *theElement;
@@ -10374,13 +10234,12 @@ INT NS_DIM_PREFIX ClearNextNodeClasses (GRID *theGrid)
     SETNNCLASS(theNode,0);
 
   /* now the refinement algorithm will initialize the class 3 Nodes   */
-  /* on the *NEXT* level.                                                                               */
+  /* on the *NEXT* level. */
   return(0);
 }
 
 /****************************************************************************/
-/** \brief
-   SeedNextNodeClasses - Set 'NNCLASS' in all Nodes associated with element
+/** \brief Set 'NNCLASS' in all Nodes associated with element
 
  * @param   theElement - pointer to element
 

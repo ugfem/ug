@@ -3548,8 +3548,8 @@ INT         GetAllVectorsOfElement  (GRID *theGrid, ELEMENT *theElement,
                                      VECTOR **vec);
 
 /* searching */
-NODE            *FindNodeFromId                 (GRID *theGrid, INT id);
-NODE            *FindNodeFromPosition   (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
+NODE            *FindNodeFromId                 (const GRID *theGrid, INT id);
+NODE            *FindNodeFromPosition   (const GRID *theGrid, const DOUBLE *pos, const DOUBLE *tol);
 VECTOR          *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
 VECTOR      *FindVectorFromIndex    (GRID *theGrid, INT index);
 ELEMENT         *FindElementFromId              (GRID *theGrid, INT id);
@@ -3562,19 +3562,19 @@ BLOCKVECTOR *FindBV                                     (const GRID *grid, const
 
 /* list */
 void            ListMultiGridHeader     (const INT longformat);
-void            ListMultiGrid                   (MULTIGRID *theMG, const INT isCurrent, const INT longformat);
-INT         MultiGridStatus         (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, INT verbose);
+void            ListMultiGrid           (const MULTIGRID *theMG, const INT isCurrent, const INT longformat);
+INT         MultiGridStatus             (const MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, INT verbose);
 void            ListGrids                               (const MULTIGRID *theMG);
-void            ListNode                                (MULTIGRID *theMG, NODE *theNode,               INT dataopt, INT bopt, INT nbopt, INT vopt);
+void            ListNode                                (const MULTIGRID *theMG, const NODE *theNode, INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListNodeSelection               (MULTIGRID *theMG,                                              INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListNodeRange                   (MULTIGRID *theMG, INT from, INT to,    INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt);
-void            ListElement                     (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt);
-void            ListElementSelection    (MULTIGRID *theMG,                                              INT dataopt, INT bopt, INT nbopt, INT vopt);
-void            ListElementRange                (MULTIGRID *theMG, INT from, INT to,    INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt);
-void            ListVector                              (MULTIGRID *theMG, VECTOR *theVector,   INT matrixopt, INT dataopt, INT modifiers);
-void            ListVectorSelection     (MULTIGRID *theMG,                                              INT matrixopt, INT dataopt, INT modifiers);
-void            ListVectorOfElementSelection(MULTIGRID *theMG,                                  INT matrixopt, INT dataopt, INT modifiers);
-void            ListVectorRange                 (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers);
+void            ListElement                     (const MULTIGRID *theMG, const ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt);
+void            ListElementSelection    (const MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, INT vopt);
+void            ListElementRange                (const MULTIGRID *theMG, INT from, INT to,    INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt);
+void            ListVector                      (const MULTIGRID *theMG, const VECTOR *theVector, INT matrixopt, INT dataopt, INT modifiers);
+void            ListVectorSelection     (const MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers);
+void            ListVectorOfElementSelection(const MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers);
+void            ListVectorRange                 (const MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers);
 
 /* query */
 LINK            *GetLink                                (const NODE *from, const NODE *to);
@@ -3591,7 +3591,7 @@ INT             GetAllSons                              (const ELEMENT *theEleme
 #endif
 INT             VectorPosition                  (const VECTOR *theVector, DOUBLE *position);
 INT             VectorInElement                 (ELEMENT *theElement, VECTOR *theVector);
-INT             MinMaxAngle                     (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax);
+INT             MinMaxAngle                     (const ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax);
 
 /* check */
 #ifndef ModelP
@@ -3607,9 +3607,9 @@ void            ClearSelection                  (MULTIGRID *theMG);
 INT             AddNodeToSelection              (MULTIGRID *theMG, NODE *theNode);
 INT             IsNodeSelected                  (MULTIGRID *theMG, NODE *theNode);
 INT             AddElementToSelection   (MULTIGRID *theMG, ELEMENT *theElement);
-INT             IsElementSelected               (MULTIGRID *theMG, ELEMENT *theElement);
+INT             IsElementSelected               (const MULTIGRID *theMG, const ELEMENT *theElement);
 INT             AddVectorToSelection    (MULTIGRID *theMG, VECTOR *theVector);
-INT             IsVectorSelected                (MULTIGRID *theMG, VECTOR *theVector);
+INT             IsVectorSelected                (const MULTIGRID *theMG, const VECTOR *theVector);
 INT             RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode);
 INT             RemoveElementFromSelection(MULTIGRID *theMG, ELEMENT *theElement);
 INT             RemoveVectorFromSelection(MULTIGRID *theMG, VECTOR *theVector);
