@@ -267,9 +267,8 @@ USING_PPIF_NAMESPACE
 		}
 /*@}*/
 
-/** \todo delete special debug */
+/** \todo delete special debug
 static ELEMENT *debugelem=NULL;
-/*
 #define PRINTELEMID(id)                                                      \
 		if (ID(theElement)==(id) && (id)!=10120)                             \
 		{                                                                    \
@@ -411,6 +410,7 @@ static int gridadaptl_timer,ident_timer,overlap_timer,gridcons_timer;
 static int algebra_timer;
 #endif
 
+#ifdef TET_RULESET
 /* determine number of edge from reduced (i.e. restricted to one side) edgepattern */
 /* if there are two edges marked for bisection, if not deliver -1. If the edge-    */
 /* is not reduced (i.e. marked edges lying on more than one side) deliver -2       */
@@ -427,6 +427,7 @@ static INT TriSectionEdge[64][2] =
 
 /* the indices of the edges of each side */
 static INT  CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
+#endif
 
 REP_ERR_FILE;
 
@@ -439,8 +440,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+#ifdef ModelP
 static void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check);
-
+#endif
 
 /****************************************************************************/
 /** \brief Fill refineinfo structure
