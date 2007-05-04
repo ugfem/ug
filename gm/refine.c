@@ -3552,28 +3552,7 @@ struct compare_record
 typedef struct compare_record COMPARE_RECORD;
 
 
-/****************************************************************************/
-/*
-   GetSonSideNodes - 
-
-   SYNOPSIS:
-   INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX_SIDE_NODES], INT ioflag));
-
-   PARAMETERS:
-.  theElement
-.  side
-.  nodes
-.  SideNodes[MAX_SIDE_NODES]
-.  ioflag
-
-   DESCRIPTION:
-
-   \return <ul>
-   INT 
-*/
-/****************************************************************************/
-
-INT NS_DIM_PREFIX GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, 
+INT NS_DIM_PREFIX GetSonSideNodes (const ELEMENT *theElement, INT side, INT *nodes, 
 					 NODE *SideNodes[MAX_SIDE_NODES], INT ioflag)
 {
 	INT i,ncorners,nedges;
@@ -3718,7 +3697,7 @@ static int compare_node (const void *e0, const void *e1)
 */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
+INT NS_DIM_PREFIX Get_Sons_of_ElementSide (const ELEMENT *theElement, INT side, INT *Sons_of_Side,
 							 ELEMENT *SonList[MAX_SONS], INT *SonSides, 
 							 INT NeedSons, INT ioflag)
 {
