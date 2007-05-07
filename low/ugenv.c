@@ -323,7 +323,6 @@ ENVITEM * NS_PREFIX MakeEnvItem (const char *name, const INT type, const INT siz
         UserWriteF("MakeEnvItem(): envHeap out of memory\n");
         return(NULL);
       }
-      newItem=(ENVITEM*) malloc(size);
       memset(newItem,0,size);
     }
     else
