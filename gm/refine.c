@@ -3690,6 +3690,8 @@ static int compare_node (const void *e0, const void *e1)
 \param[out] SonSides Output element side numbers
 \param[in] NeedSons If this is false, the correct list of sons is expected to be
   provided in SonList.  If not it is recomputed.
+\param[in] ioflag An obsolete debugging flag
+\param[in] useRefineFlag 
 
   For a given side of an element, this routine computes all element sides
   on the next finer grid level which are topological sons of the input
@@ -3698,8 +3700,9 @@ static int compare_node (const void *e0, const void *e1)
 /****************************************************************************/
 
 INT NS_DIM_PREFIX Get_Sons_of_ElementSide (const ELEMENT *theElement, INT side, INT *Sons_of_Side,
-							 ELEMENT *SonList[MAX_SONS], INT *SonSides, 
-							 INT NeedSons, INT ioflag)
+                                           ELEMENT *SonList[MAX_SONS], INT *SonSides, 
+                                           INT NeedSons, INT ioflag,
+                                           INT useRefineClass)
 {
 	INT i,j,nsons;
         enum MarkClass markclass;
@@ -3727,7 +3730,14 @@ INT NS_DIM_PREFIX Get_Sons_of_ElementSide (const ELEMENT *theElement, INT side, 
 	markclass = RED_CLASS;
 	#endif
 	#ifdef __THREEDIM__
-	markclass = (enum MarkClass)MARKCLASS(theElement);
+        /* The following line used to read: markclass = (enum MarkClass) MARKCLASS(theElement);
+           This works well within the UG grid refinement context.  However, now I want to use this
+           method within the DUNE UGGridLeafIntersectionIterator.  The problem is that the user
+           may have randomly marked elements before calling the iterator.  In that case the
+           mark classes may not be set the way this method expects it.  Hence we allow the option
+           to use REFINECLASS instead.  To be absolutely certain we don't break existing code
+           we keep the old behaviour as the default.*/
+	markclass = (enum MarkClass) ((useRefineClass) ? REFINECLASS(theElement) : MARKCLASS(theElement));
 	#endif
 
         /** \todo quick fix */
