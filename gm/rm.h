@@ -282,11 +282,8 @@ enum {HEXA_COPY           = 1,
 typedef INT (*FULLREFRULEPTR)(ELEMENT *);
 
 typedef struct {
-  INT type;                                    /* one of the variable types above          */
-  INT locked;                                  /* may not be changed or deleted            */
-  union envitem *next;
-  union envitem *previous;                     /* double linked list of environment items  */
-  char name[NS_PREFIX NAMESIZE];                         /* name of that item (view)                 */
+  /** \brief Fields for environment list variable */
+  NS_PREFIX ENVVAR v;
 
   /* full ref rule spezific stuff */
   FULLREFRULEPTR theFullRefRule;               /* the best full refrule                    */
