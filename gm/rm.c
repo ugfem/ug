@@ -466,6 +466,7 @@ static REFRULE QuadrilateralRules[MAX_QUA_RULES] =
 #ifdef __THREEDIM__
 
 static INT theBFRRDirID;      /* env type for BestFullRefRule       */
+static INT theBFRRVarID;
 
 static REFRULE Empty_Rule =
 {-1,-1,NO_CLASS,-1,
@@ -3840,38 +3841,40 @@ static INT InitRuleManager3D (void)
   if (ChangeEnvDir("/best full refrule")==NULL)
     return(__LINE__);
 
-  newFRR = (FULLREFRULE *) MakeEnvItem("shortestie",theBFRRDirID,sizeof(FULLREFRULE));
+  theBFRRVarID = GetNewEnvVarID();
+
+  newFRR = (FULLREFRULE *) MakeEnvItem("shortestie",theBFRRVarID,sizeof(FULLREFRULE));
   if (newFRR==NULL)
     return(__LINE__);
   newFRR->theFullRefRule = ShortestInteriorEdge;
 
-  newFRR = (FULLREFRULE *) MakeEnvItem("maxper",theBFRRDirID,sizeof(FULLREFRULE));
+  newFRR = (FULLREFRULE *) MakeEnvItem("maxper",theBFRRVarID,sizeof(FULLREFRULE));
   if (newFRR==NULL)
     return(__LINE__);
   newFRR->theFullRefRule = MaxPerpendicular;
 
-  newFRR = (FULLREFRULE *) MakeEnvItem("mra",theBFRRDirID,sizeof(FULLREFRULE));
+  newFRR = (FULLREFRULE *) MakeEnvItem("mra",theBFRRVarID,sizeof(FULLREFRULE));
   if (newFRR==NULL)
     return(__LINE__);
   newFRR->theFullRefRule = MaxRightAngle;
 
-  newFRR = (FULLREFRULE *) MakeEnvItem("maxarea",theBFRRDirID,sizeof(FULLREFRULE));
+  newFRR = (FULLREFRULE *) MakeEnvItem("maxarea",theBFRRVarID,sizeof(FULLREFRULE));
   if (newFRR==NULL)
     return(__LINE__);
   newFRR->theFullRefRule = MaxArea;
 
 #ifdef __ALLRULES__
-  newFRR = (FULLREFRULE *) MakeEnvItem("minangle",theBFRRDirID,sizeof(FULLREFRULE));
+  newFRR = (FULLREFRULE *) MakeEnvItem("minangle",theBFRRVarID,sizeof(FULLREFRULE));
   if (newFRR==NULL)
     return(__LINE__);
   newFRR->theFullRefRule = MinimalSideAngle;
 
-  newFRR = (FULLREFRULE *) MakeEnvItem("bestm",theBFRRDirID,sizeof(FULLREFRULE));
+  newFRR = (FULLREFRULE *) MakeEnvItem("bestm",theBFRRVarID,sizeof(FULLREFRULE));
   if (newFRR==NULL)
     return(__LINE__);
   newFRR->theFullRefRule = BestLaplaceMMatrix;
 
-  newFRR = (FULLREFRULE *) MakeEnvItem("minentry",theBFRRDirID,sizeof(FULLREFRULE));
+  newFRR = (FULLREFRULE *) MakeEnvItem("minentry",theBFRRVarID,sizeof(FULLREFRULE));
   if (newFRR==NULL)
     return(__LINE__);
   newFRR->theFullRefRule = MinimalSideEntry;
@@ -3955,7 +3958,7 @@ static INT InitRuleManager2D (void)
 
   /* get storage for Pattern2Rule */
   nPatterns = 17;       /* there are 2^3 different patterns */
-  /* TODO: delete all concerning Pattern2Rule */
+  /** \todo delete all concerning Pattern2Rule */
   Pattern2Rule[TRIANGLE] = (SHORT *) malloc(nPatterns*sizeof(SHORT));
   if (Pattern2Rule[TRIANGLE]==NULL)
   {
@@ -3989,7 +3992,7 @@ static INT InitRuleManager2D (void)
 
   /* get storage for Pattern2Rule */
   nPatterns = 32;       /* there are 2^5 different patterns */
-  /* TODO: delete all concerning Pattern2Rule */
+  /** \todo delete all concerning Pattern2Rule */
   Pattern2Rule[QUADRILATERAL] = (SHORT *) malloc(nPatterns*sizeof(SHORT));
   if (Pattern2Rule[QUADRILATERAL]==NULL)
   {
