@@ -132,18 +132,6 @@ INT NS_PREFIX InitUgEnv (INT heapSize)
   return(0);
 }
 
-INT NS_PREFIX ExitUgEnv()
-{
-#ifndef USE_OS_HEAP
-  free(envHeap);
-  envHeap = NULL;
-#else
-  path[0] = NULL;
-#endif
-  return 0;
-}
-
-
 /****************************************************************************/
 /** \brief Change environment directory
 
@@ -425,26 +413,6 @@ INT NS_PREFIX RemoveEnvItem (ENVITEM *theItem)
   return(0);
 }
 
-/****************************************************************************/
-/*D
-   RemoveEnvDir - Deallocate an environment directory
-
-   SYNOPSIS:
-   INT RemoveEnvItem (ENVITEM *theItem);
-
-   PARAMETERS:
- * @param   theItem - pointer to item
-
-   DESCRIPTION:
-   This function deallocates an environment directory.
-
-   @return <ul>
-   INT
- *   <li>     0 if OK
- *   <li>     3 if attempt is done to delete locked item.
-   D*/
-/****************************************************************************/
-
 #ifndef __T3E__
 static
 #endif
@@ -465,6 +433,22 @@ INT RemoveEnvDirContent (ENVITEM *theItem)
 
   return(0);
 }
+
+/****************************************************************************/
+/** \brief Deallocate an environment directory
+
+ * @param   theItem - pointer to item
+
+   This function deallocates an environment directory.
+
+   @return <ul>
+   <li>     0 if OK
+   <li>     1 if item not found in current directory
+   <li>     2 if theItem is not a directory
+   <li>     3 if attempt is done to delete locked item
+   </ul>
+ */
+/****************************************************************************/
 
 INT NS_PREFIX RemoveEnvDir (ENVITEM *theItem)
 {
@@ -724,4 +708,18 @@ INT NS_PREFIX GetNewEnvVarID ()
   theNewEnvVarID += 2;
 
   return (theNewEnvVarID);
+}
+
+
+INT NS_PREFIX ExitUgEnv()
+{
+  ENVITEM *Item,*Next,*newDown;
+#ifndef USE_OS_HEAP
+  free(envHeap);
+  envHeap = NULL;
+#else
+  RemoveEnvDirContent((ENVITEM*)path[0]);
+  path[0] = NULL;
+#endif
+  return 0;
 }
