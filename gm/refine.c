@@ -3691,7 +3691,7 @@ static int compare_node (const void *e0, const void *e1)
 \param[in] NeedSons If this is false, the correct list of sons is expected to be
   provided in SonList.  If not it is recomputed.
 \param[in] ioflag An obsolete debugging flag
-\param[in] useRefineFlag 
+\param[in] useRefineClass 
 
   For a given side of an element, this routine computes all element sides
   on the next finer grid level which are topological sons of the input
@@ -3701,8 +3701,11 @@ static int compare_node (const void *e0, const void *e1)
 
 INT NS_DIM_PREFIX Get_Sons_of_ElementSide (const ELEMENT *theElement, INT side, INT *Sons_of_Side,
                                            ELEMENT *SonList[MAX_SONS], INT *SonSides, 
-                                           INT NeedSons, INT ioflag,
-                                           INT useRefineClass)
+                                           INT NeedSons, INT ioflag
+#ifdef FOR_DUNE
+                                           , INT useRefineClass
+#endif
+                                           )
 {
 	INT i,j,nsons;
         enum MarkClass markclass;
@@ -3737,7 +3740,11 @@ INT NS_DIM_PREFIX Get_Sons_of_ElementSide (const ELEMENT *theElement, INT side, 
            mark classes may not be set the way this method expects it.  Hence we allow the option
            to use REFINECLASS instead.  To be absolutely certain we don't break existing code
            we keep the old behaviour as the default.*/
+        #ifdef FOR_DUNE
 	markclass = (enum MarkClass) ((useRefineClass) ? REFINECLASS(theElement) : MARKCLASS(theElement));
+        #else
+        markclass = (enum MarkClass) MARKCLASS(theElement);
+        #endif
 	#endif
 
         /** \todo quick fix */

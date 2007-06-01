@@ -260,7 +260,18 @@ extern INT ce_NEW_EDIDENT;
 /****************************************************************************/
 
 INT     GetSonSideNodes                                                 (const ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX_SIDE_NODES], INT ioflag);
-INT             Get_Sons_of_ElementSide                                 (const ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons, INT ioflag, INT useRefineClass=0);
+INT Get_Sons_of_ElementSide(const ELEMENT *theElement,
+                            INT side,
+                            INT *Sons_of_Side,
+                            ELEMENT *SonList[MAX_SONS],
+                            INT *SonSides,
+                            INT NeedSons,
+                            INT ioflag
+#ifdef FOR_DUNE
+                            /* Only used by Dune.  And default parameters are only allowed in C++ */
+                            , INT useRefineClass=0
+#endif
+                            );
 INT     Connect_Sons_of_ElementSide                     (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag);
 INT             Refinement_Changes                                              (ELEMENT *theElement);
 
