@@ -38,15 +38,6 @@
 /** \todo this is a hierarchy conflict, remove. (VR) */
 #include "ugdevices.h"
 
-/* If this is set, we use the normal heap provided by the operating system instead
-   of the built-in UG heap.  That way we don't have to give an initial heap size
-   ever.  And that in turn make the Dune UGGrid interface easier, because UGGrid
-   users don't even have to know what the UG environment heap is.
-   In fact I currently see no reason not to always use the operating system heap.
-   Please report problems to sander at mi dot fu-berlin dot de
- */
-#define USE_OS_HEAP
-
 USING_UG_NAMESPACE
 
 /****************************************************************************/
@@ -67,9 +58,6 @@ USING_UG_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-#ifndef USE_OS_HEAP
-static HEAP *envHeap=NULL;              /* heap used for the environment    */
-#endif
 /** \brief Path to current directory
 
    We only need the first entry to be zero-initialized. */
@@ -94,32 +82,17 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitUgEnv (INT heapSize)
+INT NS_PREFIX InitUgEnv ()
 {
   ENVDIR *root;
-#ifndef USE_OS_HEAP
-  void *buffer;
 
-  /* Environment heap already initialized? */
-  if (envHeap)
-    return 0;
-
-  /* allocate memory from system */
-  if ((buffer=malloc(heapSize))==NULL) return(__LINE__);
-
-  /* initialize heap structure */
-  if ((envHeap=NewHeap(GENERAL_HEAP,heapSize,buffer))==NULL) return(__LINE__);
-
-  /* allocate root directory */
-  if ((root=(ENVDIR*)GetMem(envHeap,sizeof(ENVDIR),0))==NULL) return(__LINE__);
-#else
   /* Environment heap already initialized? */
   if (path[0])
     return 0;
 
   /* allocate root directory */
   if ((root=(ENVDIR*)malloc(sizeof(ENVDIR)))==NULL) return(__LINE__);
-#endif
+
   root->type = ROOT_DIR;
   root->next = root->previous = root->down = NULL;
   strcpy(root->name,"root");
@@ -301,11 +274,8 @@ ENVITEM * NS_PREFIX MakeEnvItem (const char *name, const INT type, const INT siz
     if (type%2==0)
     {
       /* new variable */
-#ifndef USE_OS_HEAP
-      newItem=(ENVITEM *) GetMem(envHeap,size,0);
-#else
       newItem=(ENVITEM*) malloc(size);
-#endif
+
       if (newItem==NULL)
       {
         UserWriteF("MakeEnvItem(): envHeap out of memory\n");
@@ -317,11 +287,8 @@ ENVITEM * NS_PREFIX MakeEnvItem (const char *name, const INT type, const INT siz
     {
       /* new directory */
       if (pathIndex+1>=MAXENVPATH) return(NULL);
-#ifndef USE_OS_HEAP
-      newItem=(ENVITEM *) GetMem(envHeap,size,0);
-#else
       newItem=(ENVITEM*) malloc(size);
-#endif
+
       if (newItem==NULL)
       {
         UserWriteF("MakeEnvItem(): envHeap out of memory\n");
@@ -403,11 +370,7 @@ INT NS_PREFIX RemoveEnvItem (ENVITEM *theItem)
     theItem->v.next->v.previous = theItem->v.previous;
 
   /* deallocate memory */
-#ifndef USE_OS_HEAP
-  DisposeMem(envHeap,theItem);
-#else
   free(theItem);
-#endif
 
   /* return ok */
   return(0);
@@ -424,11 +387,7 @@ INT RemoveEnvDirContent (ENVITEM *theItem)
     Next = NEXT_ENVITEM(Item);
     if (IS_ENVDIR(Item))
       RemoveEnvDirContent(ENVITEM_DOWN(Item));
-#ifndef USE_OS_HEAP
-    DisposeMem(envHeap,Item);
-#else
     free(Item);
-#endif
   }
 
   return(0);
@@ -477,11 +436,7 @@ INT NS_PREFIX RemoveEnvDir (ENVITEM *theItem)
     theItem->v.next->v.previous = theItem->v.previous;
 
   /* deallocate memory */
-#ifndef USE_OS_HEAP
-  DisposeMem(envHeap,theItem);
-#else
   free(theItem);
-#endif
 
   return(0);
 }
@@ -614,11 +569,11 @@ ENVITEM * NS_PREFIX SearchEnv (const char *name, const char *where, INT type, IN
 
 
 /****************************************************************************/
-/** \brief Allocate memory from environment heap
+/** \brief For backward compatibility: Allocate memory from environment heap
 
  * @param   size - number of bytes to be allocated
 
-   This function allocates memory from environment heap.
+   \deprecated Simply a wrapper for malloc()
 
    @return <ul>
    Pointer to allocated memory
@@ -627,49 +582,37 @@ ENVITEM * NS_PREFIX SearchEnv (const char *name, const char *where, INT type, IN
 
 void * NS_PREFIX AllocEnvMemory (INT size)
 {
-#ifndef USE_OS_HEAP
-  return(GetMem(envHeap,size,0));
-#else
   return malloc(size);
-#endif
 }
 
 /****************************************************************************/
-/** \brief Deallocate memory from environment heap
+/** \brief For backward compatibility: Deallocate memory from environment heap
 
  * @param   buffer - pointer to buffer previously allocated
 
-   This function deallocates memory from environment heap.
-
+   \deprecated Simply a wrapper for free()
  */
 /****************************************************************************/
 
 void NS_PREFIX FreeEnvMemory (void *buffer)
 {
-#ifndef USE_OS_HEAP
-  DisposeMem(envHeap,buffer);
-#else
   free(buffer);
-#endif
 }
 
 /****************************************************************************/
-/** \brief Print size and used of environment heap to string
+/** \brief For backward compatibility: Print size and used of environment heap to string
 
  * @param   s - string to print on
 
-   This function prints size and used of environment heap to string.
-
+   This function used to print size and used percentage of the environment heap
+   to a string.  Ever since the operating system heap is used this information
+   is not available anymore.
  */
 /****************************************************************************/
 
 void NS_PREFIX EnvHeapInfo (char *s)
 {
-#ifndef USE_OS_HEAP
-  sprintf(s,"   size: %ld\n   used: %ld\n",HeapSize(envHeap),HeapUsed(envHeap));
-#else
-  sprintf(s,"   no heap information available\n");
-#endif
+  sprintf(s,"no heap information available\n");
 }
 
 /****************************************************************************/
@@ -713,13 +656,7 @@ INT NS_PREFIX GetNewEnvVarID ()
 
 INT NS_PREFIX ExitUgEnv()
 {
-  ENVITEM *Item,*Next,*newDown;
-#ifndef USE_OS_HEAP
-  free(envHeap);
-  envHeap = NULL;
-#else
   RemoveEnvDirContent((ENVITEM*)path[0]);
   path[0] = NULL;
-#endif
   return 0;
 }

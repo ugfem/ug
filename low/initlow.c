@@ -88,10 +88,6 @@ INT NS_PREFIX InitLow ()
   INT err;
   char buffer[BUFFSIZE];
 
-  /* keep type for sscanf */
-  int heapSize;
-
-
   /* init heaps.c */
   if ((err=InitHeaps())!=0)
   {
@@ -100,12 +96,7 @@ INT NS_PREFIX InitLow ()
   }
 
   /* init ugenv.c */
-  if (GetDefaultValue(DEFAULTSFILENAME,"envmemory",buffer)==0)
-    sscanf(buffer," %d ",&heapSize);
-  else
-    heapSize = DEFAULTENVSIZE;
-
-  if ((err=InitUgEnv(heapSize))!=0)
+  if ((err=InitUgEnv())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);
