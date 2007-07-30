@@ -20,6 +20,37 @@
 /*                                                                          */
 /****************************************************************************/
 
+/** \file
+    \brief Header file for defining standard constants (machine dependent)
+
+    This file is part of the old build system.  We strongly suggest you use
+    the new AutoTools build system which does not use this file.
+
+    In the definitions of the `CFLAGS` in the file 'mk.arch' the
+    key word for a special machine has to be chosen. For example by the
+    compiler option '-D__HP__' ug is about to run on a HP computer.
+    Concerning this option the corresponding definitions of the standard
+    types in the file 'compiler.h' are taken.
+    (The file compiler.h is located in $UGROOT/arch.)
+
+    As this header file 'compiler.h' defines the standard types used in ug
+    it has to be included in `all` source files of ug!!!
+
+    The constant 'ALIGNMENT' has to be set equal to '4' or '8' depending on
+    the 32 or 64 bit architecture of the machine used. It is also related
+    to the constant 'ALIGNMASK', which has correspondingly to be set equal
+    to '0xFFFFFFFC' or '0xFFFFFFF8' to clear the last two or three bits
+    of a memory address.
+
+    If you have to add a new mk.? file to support a new machine you also
+    have to provide a new entry in the 'compiler.h' file defining the basic
+    data types and memory alignment.
+    To that end you include a flag -D<your new machine>
+    in the CFLAGS section of your new mk.<your new machine> file and add
+    a new paragraph depending on this flag in 'compiler.h'.
+
+ */
+
 /* RCS_ID
    $Header$
  */

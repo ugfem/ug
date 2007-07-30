@@ -2,10 +2,14 @@
 // vi: set et ts=4 sw=2 sts=2:
 /* $Id$ */
 
-/*
+/** \file
+    \brief Globally set data types
 
-   globally set data types
-
+    The basic types (normally 'short', 'int', 'float' and 'double') are
+    replaced by 'SHORT', 'INT', 'FLOAT' and 'DOUBLE'. The type 'DOUBLE'
+    is used for all Cartesian coordinates of the (x,y[,z])-directions of
+    the grids and 'SCREEN_DOUBLE' is used for all transformed coordinates
+    of the graphical interface.
  */
 
 #ifndef UGTYPES_H

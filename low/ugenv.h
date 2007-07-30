@@ -18,6 +18,36 @@
 /*                                                                          */
 /****************************************************************************/
 
+/** \file
+    \brief General data management concept in a tree structure
+
+    The environment management of ug provides the possibility to store data in
+    a tree structure.
+    The data structures of the environment allow to create directories and items
+    of specified size. Both data structures start with a general head (among
+    others a name by which one can refer to it). The remaining memory up to the
+    specified size can be used in arbitrary way.
+
+    The head is identical with the struct ENVVAR.
+
+    All items are members of doubly linked lists.
+
+    The data structure for the directory ENVDIR has just an extra component to the
+    start of a list which is the directory contents (and can consist of
+    directories itself, of course).
+
+    The tree starts with a root directory "/" and there is always a current
+    or working directory. Paths are specified in UNIX-style. The current
+    directory can be changed using 'ChangeEnvDir' while 'GetCurrentDir'
+    returns a pointer to the current directory. The routine
+    'MakeEnvItem' creates the specified item in the current directory and
+    it is possible to 'RemoveEnvItem's created previously.
+
+    Finally 'SearchEnv' offers the possibility to hierarchically search
+    the environment tree for an item specified by its name.
+
+ */
+
 
 /* RCS_ID
    $Header$
@@ -92,7 +122,7 @@ enum {SEARCHALL = -1};                 /*!< Scan through all directories        
 /** \brief User-defined variable */
 typedef struct {
 
-  /** \brief One of the variable types above            */
+  /** \brief even number by GetNewEnvVarID           */
   INT type;
 
   /** \brief May not be changed or deleted            */
@@ -110,7 +140,7 @@ typedef struct {
 /** \brief Directory */
 typedef struct {
 
-  /** \brief One of the directory types above         */
+  /** \brief odd number by GetNewEnvDirID        */
   INT type;
 
   /** \brief May not be changed or deleted            */
