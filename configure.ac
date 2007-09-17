@@ -230,9 +230,6 @@ AC_CONFIG_FILES([Makefile
 		 np/amglib/Makefile
 		 np/field/Makefile
 		 np/procs/Makefile
-		 np/slu/Makefile
-		 np/slu/cblas/Makefile
-		 np/slu/src/Makefile
 		 np/udm/Makefile
 		 tools/Makefile
                  ui/Makefile
