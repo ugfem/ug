@@ -65,7 +65,6 @@
 #include "initnp.h"
 #include "numproc.h"
 #include "amglib/amg_ug.h"
-#include "slu/slu.h"
 
 #ifdef USE_FAMG
 #include "ug-famg.h"
@@ -256,12 +255,6 @@ INT NS_DIM_PREFIX InitNumerics ()
 
   /* init reinit numprocs */
   if ((err=InitReinit())!=0) {
-    SetHiWrd(err,__LINE__);
-    return (err);
-  }
-
-  /* init slu */
-  if ((err=InitSLU())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
