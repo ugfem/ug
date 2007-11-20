@@ -1210,7 +1210,18 @@ INT NS_DIM_PREFIX QuadraticFittedMin (DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx)
   return (0);
 }
 
-/* volume computations, orientation is same as in general element definition ! */
+/* Volume computations, orientation is same as in general element definition !
+   Idea of the computations:
+   All the shapes are subdivided into pyramids whose bases are either triangles
+   or quadrilaterals. The volume of any pyramid is V = S h / 3 where S is
+   area of the base and h is height of the pyramid. The areas of the triangles
+   and the quadrilaterals are computed by means of vector products. The
+   height of the pyramid is then taken into account using scalar products.
+ */
+
+/* 1. Volume of a tetrahedron.
+   A tetrahedron is a prism with a triangular base.
+ */
 DOUBLE NS_DIM_PREFIX V_te (const DOUBLE *x0, const DOUBLE *x1,
                            const DOUBLE *x2, const DOUBLE *x3)
 {
@@ -1224,6 +1235,9 @@ DOUBLE NS_DIM_PREFIX V_te (const DOUBLE *x0, const DOUBLE *x1,
   return(OneSixth*V3_SCAL_PROD(n,h));
 }
 
+/* 2. Volume of an UG pyramid.
+   An UG pyramid is a pyramid with a quadrilateral as the base.
+ */
 DOUBLE NS_DIM_PREFIX V_py (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
                            const DOUBLE *x3, const DOUBLE *x4)
 {
@@ -1237,6 +1251,13 @@ DOUBLE NS_DIM_PREFIX V_py (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
   return(OneSixth*V3_SCAL_PROD(n,h));
 }
 
+/* 3. Volume of an UG prism.
+   An UG prism is a shape with two (in general non-parallel) bases that
+   are triangles and four sides that are quadrilaterals. This 'prism'
+   is subdivided into two pyramids:
+   a) {x0, x_1, x_4, x_3; x_5}
+   b) {x_0, x_1, x_2; x_5} (a tetrahedron)
+ */
 DOUBLE NS_DIM_PREFIX V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
                            const DOUBLE *x3, const DOUBLE *x4, const DOUBLE *x5)
 {
@@ -1247,11 +1268,6 @@ DOUBLE NS_DIM_PREFIX V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
   V3_SUBTRACT(x1,x0,c);
   V3_SUBTRACT(x2,x0,d);
   V3_SUBTRACT(x5,x0,e);
-  a[0] = x4[0]-x0[0]; a[1] = x4[1]-x0[1]; a[2] = x4[2]-x0[2];
-  b[0] = x1[0]-x3[0]; b[1] = x1[1]-x3[1]; b[2] = x1[2]-x3[2];
-  c[0] = x1[0]-x0[0]; c[1] = x1[1]-x0[1]; c[2] = x1[2]-x0[2];
-  d[0] = x2[0]-x0[0]; d[1] = x2[1]-x0[1]; d[2] = x2[2]-x0[2];
-  e[0] = x5[0]-x0[0]; e[1] = x5[1]-x0[1]; e[2] = x5[2]-x0[2];
 
   V3_VECTOR_PRODUCT(a,b,m);
   V3_VECTOR_PRODUCT(c,d,n);
@@ -1260,6 +1276,9 @@ DOUBLE NS_DIM_PREFIX V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
   return(OneSixth*V3_SCAL_PROD(n,e));
 }
 
+/* 4. Volume of an UG hexahedron.
+   An UG hexahedron is subdivided into two UG prisms.
+ */
 DOUBLE NS_DIM_PREFIX V_he (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3,
                            const DOUBLE *x4, const DOUBLE *x5, const DOUBLE *x6, const DOUBLE *x7)
 {
