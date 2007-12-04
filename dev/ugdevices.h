@@ -130,11 +130,11 @@ enum UG_PALETTE {
 /*                                                                                                                                                      */
 /****************************************************************************/
 
-/* identification of windows, used to carry a pointer (xif, ppm, ps)
+/** \brief Identification of windows, used to carry a pointer (xif, ppm, ps)
    or INT (rif) */
 typedef void* WINDOWID;
 
-/* type for device coordinates */
+/** \brief Type for device coordinates */
 typedef struct
 {
   short x;
@@ -147,13 +147,38 @@ typedef INT (*CloseOutputPtr)(WINDOWID win);
 typedef INT (*ActivateOutputPtr)(WINDOWID win);
 typedef INT (*UpdateOutputPtr)(WINDOWID win, INT tool);
 
-/* abstract graphical output device */
+/** \brief Data structure to define an interface to output devices
+
+    The struct 'OUTPUTDEVICE' defines an interface to an output device with
+    graphics capabilites. ug uses a default output device which usually is your
+    computer monitor. Additionally there can be defined several other output devices.
+
+    Up to now there is implemented an interface to XWindows of UNIX and to the
+    Macintosh OS with the possibilties of window handling and plotting.
+    They serve as default output device.
+
+    Another output is the 'meta' ouput device. This is a format to write graphics commands
+    to file which later can be view with the 'xugv' tool or that can be translated to PostScript
+    format using the 'm2ps' tool. It is a lean storage format
+    suited quite well for producing and viewing "films" with many pictures of time dependent solutions.
+    It is also a helpful tool for production runs on large problems which often will run
+    in batch mode.
+
+    In the near future probably also a PostScript output device will exist.
+
+    The output device struct requires functions for opening, closing, activating and updating
+    a window on the device. Then there is a collection of graphics functions to set color,
+    line width move the cursor, draw lines and higher level functions to plot filled polygons
+    and text.
+
+    Additionally there is information specified on the color palette used and some standard
+    colors are defined.
+ */
 struct outputdevice {
 
-  /* This is an environment variable */
+  /** \brief This is an environment variable */
   ENVVAR v;
 
-  /* properties */
   long black;                                                   /* value for black                                                                              */
   long gray;                                /* value for gray                                       */
   long white;                                                   /* value for white                                                                              */
@@ -212,8 +237,8 @@ struct outputdevice {
 
 
 
-/* event structure */
-typedef struct {                                        /* no event                                                             */
+/** \brief No event */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
@@ -222,39 +247,45 @@ typedef struct {                                        /* no event             
   INT Mouse[2];                                         /* current mouse coord (rel. to window)         */
 } NO_UGEVENT;
 
-typedef struct {                                        /* go away event for terminal window            */
+/** \brief Go away event for terminal window            */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 } TERM_GOAWAY_EVENT;
 
-typedef struct {                                        /* cmd key event for terminal window            */
+/** \brief Cmd key event for terminal window            */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
   char CmdKey;                                          /* character from keyboard                                      */
 } TERM_CMDKEY_EVENT;
 
-typedef struct {                                        /* string event for terminal window             */
+/** \brief String event for terminal window             */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
   char String[INPUTBUFFERLEN];          /* string from keyboard                                         */
 } TERM_STRING_EVENT;
 
-typedef struct {                                        /* go away event for view                                       */
+/** \brief Go away event for view                                       */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
   WINDOWID win;                                         /* the window                                                           */
 } DOC_GOAWAY_EVENT;
 
-typedef struct {                                        /* activate event for view                                      */
+/** \brief Activate event for view                                      */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
   WINDOWID win;                                         /* the window                                                           */
 } DOC_ACTIVATE_EVENT;
 
-typedef struct {                                        /* drag event for view                                          */
+/** \brief Drag event for view                                          */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
@@ -263,7 +294,8 @@ typedef struct {                                        /* drag event for view  
   INT Global_UR[2];                                     /*                                                                                      */
 } DOC_DRAG_EVENT;
 
-typedef struct {                                        /* grow event for view                                          */
+/** \brief Grow event for view                                          */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
@@ -274,7 +306,8 @@ typedef struct {                                        /* grow event for view  
   INT Local_UR[2];                                      /*                                                                                      */
 } DOC_GROW_EVENT;
 
-typedef struct {                                        /* change tool event for view                           */
+/** \brief Change tool event for view                           */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
@@ -283,7 +316,8 @@ typedef struct {                                        /* change tool event for
   INT MousePosition[2];                         /* mouse position                                                       */
 } DOC_CHANGETOOL_EVENT;
 
-typedef struct {                                        /* content click event for view                         */
+/** \brief Content click event for view                         */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
@@ -291,13 +325,21 @@ typedef struct {                                        /* content click event f
   INT MousePosition[2];                         /* mouse position                                                       */
 } DOC_CONTENTCLICK_EVENT;
 
-typedef struct {                                        /* update event for view                                        */
+/** \brief Update event for view                                        */
+typedef struct {
   INT Type;                                                     /* event type                                                           */
 
   /* data */
   WINDOWID win;                                         /* the window                                                           */
 } DOC_UPDATE_EVENT;
 
+/** \brief Data structure for the ug event handling
+
+    The event handling of ug defines several possible event types the interface
+    function 'GetNextUGEvent' can return to 'ProcessEvent'. Depending on the
+    event type data are transferred by the corresponding component in the union.
+    The events are distinguished by the 'Type' component in the 'EVENT'
+ */
 typedef union {
   INT Type;
   NO_UGEVENT NoEvent;
