@@ -368,11 +368,11 @@ enum MarkClass {NO_CLASS,
                 SWITCH_CLASS};
 
 /** \brief Values for node types (relative to the father element of the vertex) */
-enum {CORNER_NODE,
-      MID_NODE,
-      SIDE_NODE,
-      CENTER_NODE,
-      LEVEL_0_NODE};
+enum NodeType {CORNER_NODE,
+               MID_NODE,
+               SIDE_NODE,
+               CENTER_NODE,
+               LEVEL_0_NODE};
 
 /** @name Macros for the multigrid user data space management */
 /*@{*/
