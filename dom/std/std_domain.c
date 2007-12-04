@@ -1526,9 +1526,21 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
 }
 
 /* domain interface function: for description see domain.h */
+/** \todo This implementation leaks memory.  A BVP points to
+    a set of patches which have to be properly deallocated as
+    well.
+ */
 INT NS_DIM_PREFIX
 BVP_Dispose (BVP * theBVP)
 {
+  /* Unlock the item so it can be deleted from the environment tree */
+  ((ENVITEM*)theBVP)->d.locked = 0;
+
+  if (ChangeEnvDir("/BVP")==NULL)
+    return (1);
+  if (RemoveEnvItem((ENVITEM *)theBVP))
+    return (1);
+
   return (0);
 }
 
