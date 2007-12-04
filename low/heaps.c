@@ -586,7 +586,6 @@ void NS_PREFIX DisposeMem (HEAP *theHeap, void *buffer)
 
    \param theHeap - pointer to Heap
    \param size - size of the object
-   \param type - type of the requested object
 
    This function gets an object of type `type` from free list if possible,
    otherwise it allocates memory from the heap using 'GetMem'.
