@@ -155,7 +155,7 @@ struct import_param
   import_param * tl; /* next in the list of import params of this disc. */
   np_part_discretization * disc; /* own discretization */
 
-  char * name; /* name of this parameter */
+  const char * name; /* name of this parameter */
   position_type p_type; /* its position type */
   INT n_comp; /* number of components at every position point */
 
@@ -168,7 +168,7 @@ struct import_param
   (
     import_param * the_tl, /* pointer to the next one in the list, or NULL */
     np_part_discretization * the_disc, /* own discretization */
-    char * the_name, /* name of this parameter */
+    const char * the_name, /* name of this parameter */
     position_type the_p_type, /* its position type */
     INT the_n_comp = 1 /* number of components at every position point */
   )
@@ -222,7 +222,7 @@ struct export_param
   export_param * tl; /* next in the list of export params of this disc. */
   np_part_discretization * disc; /* own discretization */
 
-  char * name; /* name of this parameter */
+  const char * name; /* name of this parameter */
   position_type p_type; /* its position type */
   INT n_comp; /* number of components at every position point */
 
@@ -234,7 +234,7 @@ struct export_param
   (
     export_param * the_tl, /* pointer to the next one in the list, or NULL */
     np_part_discretization * the_disc, /* own discretization */
-    char * the_name, /* name of this parameter */
+    const char * the_name, /* name of this parameter */
     position_type the_p_type, /* its position type */
     INT the_n_comp = 1 /* number of components at every position point */
   )

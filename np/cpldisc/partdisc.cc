@@ -325,7 +325,7 @@ INT np_part_discretization::bnds_cond /* analogue of BNDS_BndCond */
 
 /** Implementations for printing information about import/export parameters: **/
 
-static char * position_type_name [N_POSITION_TYPES] =
+static const char * position_type_name [N_POSITION_TYPES] =
 {
   "integration point", "boundary integration point",
   "node", "element", "side"
