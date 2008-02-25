@@ -12,8 +12,10 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libug.pc
 
 # !!! crazy trick to get include-dir compatibility
+# Crazy indeed.  Let's at least not install f2c.h (because it creates
+# problems) and std_internal.h (because it is newer than the build system).
 install-data-hook:
-	find $(top_srcdir) -name \*.h -exec $(INSTALL_DATA) {} $(includedir)/ \;
+	find $(top_srcdir) -name \*.h -not -name "f2c.h" -not -name "std_internal.h" -exec $(INSTALL_DATA) {} $(includedir)/ \;
 	rm -f $(includedir)/config.h
 	touch $(includedir)/config.h
 
