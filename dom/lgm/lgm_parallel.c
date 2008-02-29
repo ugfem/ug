@@ -53,7 +53,14 @@
 
 #include "namespace.h"
 
-USING_UG_NAMESPACES
+//USING_UG_NAMESPACES
+USING_UGDIM_NAMESPACE
+  USING_UG_NAMESPACE
+
+#ifdef ModelP
+  USING_PPIF_NAMESPACE
+#endif
+
 
 
 /****************************************************************************/
