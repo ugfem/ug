@@ -217,7 +217,7 @@ USING_UG_NAMESPACES
 
 struct MarkRule
 {
-  char *RuleName;       /*!< what you type in the mark cmdline	*/
+  const char *RuleName;         /*!< what you type in the mark cmdline	*/
   INT RuleId;           /*!< corresponding rule ID for refine   */
 };
 
@@ -592,7 +592,7 @@ static INT InitClock(void)
 static INT DateCommand (INT argc, char **argv)
 {
   time_t Time;
-  char *fmt;
+  const char *fmt;
   INT i,svopt;
 
   /* check options */
@@ -2407,7 +2407,7 @@ static INT FreeAverageCommand (INT argc, char **argv)
 
 
 
-static INT ReadSaveDataInput (MULTIGRID *theMG, INT argc, char **argv, char *VDSym, char EvalChar, VECDATA_DESC **theVD, EVALUES **theEVal, EVECTOR **theEVec)
+static INT ReadSaveDataInput (MULTIGRID *theMG, INT argc, char **argv, const char *VDSym, char EvalChar, VECDATA_DESC **theVD, EVALUES **theEVal, EVECTOR **theEVec)
 {
   INT i;
 
