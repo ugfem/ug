@@ -112,12 +112,12 @@ static INT autoRefresh;                                 /* ON or OFF						*/
 static INT use_bullet = NO;             /* whether auto refresh uses bullet */
 static DOUBLE offset_factor = 1.0;      /* offset factor for bullet         */
 
-static char *ArrowToolFuncs[N_ARROW_FUNCS]={"pointer",
-                                            "pan",
-                                            "zoom",
-                                            "rotate",
-                                            "rotate cut",
-                                            "move cut"};
+static const char *ArrowToolFuncs[N_ARROW_FUNCS]={"pointer",
+                                                  "pan",
+                                                  "zoom",
+                                                  "rotate",
+                                                  "rotate cut",
+                                                  "move cut"};
 
 static INT theCmdKeyDirID;                              /* env ID for the /Cmd Key dir		*/
 static INT theCmdKeyVarID;                              /* env ID for the /Cmd Key dir		*/
