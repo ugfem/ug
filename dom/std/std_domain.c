@@ -1104,9 +1104,6 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   if (theBVP == NULL)
     return (NULL);
   currBVP = theBVP;
-#ifdef ModelP
-  SetBVPType (theBVP->type);
-#endif
 
   theDomain = theBVP->Domain;
   if (theDomain == NULL)

@@ -54,7 +54,14 @@
 /* domain module */
 #include "std_internal.h"
 
-USING_UG_NAMESPACES
+#include "namespace.h"
+
+USING_UGDIM_NAMESPACE
+  USING_UG_NAMESPACE
+
+#ifdef ModelP
+  USING_PPIF_NAMESPACE
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -85,8 +92,6 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-static INT BVP_type = BVP_STANDARD;
-
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -95,11 +100,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
-
-void NS_DIM_PREFIX SetBVPType(INT type)
-{
-  BVP_type = type;
-}
 
 void NS_DIM_PREFIX DomInitParallel (INT TypeBndP, INT TypeBndS)
 {}
