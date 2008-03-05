@@ -3187,7 +3187,8 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		if (SONNODE(theNode)==NULL)
 		{
 			SONNODE(theNode) = CreateSonNode(theGrid,theNode);
-			if (SONNODE(theNode)==NULL) RETURN(GM_FATAL);
+			if (SONNODE(theNode)==NULL) 
+                            RETURN(GM_FATAL);
 			#ifdef IDENT_ONLY_NEW
 			SETNEW_NIDENT(SONNODE(theNode),1);
 			#endif
@@ -3250,7 +3251,8 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			if (MidNodes[i] == NULL)
 			{
 				MidNodes[i] = CreateMidNode(theGrid,theElement,NULL,i);
-				if (MidNodes[i]==NULL) RETURN(GM_FATAL);
+				if (MidNodes[i]==NULL) 
+                                    RETURN(GM_FATAL);
 				#ifdef IDENT_ONLY_NEW
 				SETNEW_NIDENT(MidNodes[i],1);
 				#endif
@@ -3368,11 +3370,9 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			{
 
 				/* allocate the sidenode */
-				if ((SideNodes[i] = CreateSideNode(theGrid,theElement,NULL,i)) 
-					== NULL) 
-				{
-					RETURN(GM_FATAL);
-				}
+				if ((SideNodes[i] = CreateSideNode(theGrid,theElement,NULL,i)) == NULL) 
+                                    RETURN(GM_FATAL);
+
                 #ifdef IDENT_ONLY_NEW
 				SETNEW_NIDENT(SideNodes[i],1);
 				#endif
@@ -5827,7 +5827,8 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
 	GRID *UpGrid;
 	
 	UpGrid = UPGRID(theGrid);
-	if (UpGrid==NULL) RETURN(GM_FATAL);
+	if (UpGrid==NULL) 
+            RETURN(GM_FATAL);
 
 	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("AdaptGrid(%d):\n",GLEVEL(theGrid)),"");
 
@@ -5908,7 +5909,8 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
 
 			REFINE_ELEMENT_LIST(1,theElement,"REFINING element: ");
 
-			if (UnrefineElement(UpGrid,theElement))				RETURN(GM_FATAL);
+			if (UnrefineElement(UpGrid,theElement))
+                            RETURN(GM_FATAL);
 
 			#ifdef ModelP
 			/* dispose hghost elements with EFATHER==NULL */
@@ -5928,7 +5930,8 @@ if (0)
 
 			if (EMASTER(theElement))
 			{
-				if (UpdateContext(UpGrid,theElement,theContext)!=0)	RETURN(GM_FATAL);
+				if (UpdateContext(UpGrid,theElement,theContext)!=0) 
+                                    RETURN(GM_FATAL);
 
 				REFINE_CONTEXT_LIST(2,theContext);
 
@@ -5938,7 +5941,8 @@ if (0)
 
 				/* is something to do ? */
 				if (MARKED(theElement))
-					if (RefineElement(UpGrid,theElement,theContext))	RETURN(GM_FATAL);
+					if (RefineElement(UpGrid,theElement,theContext))
+                                            RETURN(GM_FATAL);
 			}
 
 			/* refine and refineclass flag */
@@ -6050,7 +6054,8 @@ DDD_CONSCHECK;
 	DDD_ObjMgrBegin();
 	#endif
 	if (level<toplevel || newlevel)
-		if (AdaptLocalGrid(theGrid,nadapted)!=GM_OK)				RETURN(GM_FATAL);
+		if (AdaptLocalGrid(theGrid,nadapted)!=GM_OK) 
+                    RETURN(GM_FATAL);
 	#ifdef DDDOBJMGR
 	DDD_ObjMgrEnd();
 	#endif
