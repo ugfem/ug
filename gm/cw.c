@@ -76,7 +76,7 @@ USING_UGDIM_NAMESPACE
 /** \brief Description of a control word predefines */
 typedef struct {
   INT used;             /**< Used this entry					*/
-  char *name;          /**< Name string						*/
+  const char *name;          /**< Name string						*/
   INT control_word_id;          /**< Index in control_words			*/
   UINT offset_in_object ;       /**< Where in object is it ?			*/
   INT objt_used;                                /**< Bitwise object ID */
@@ -85,7 +85,7 @@ typedef struct {
 /** \brief Description of a control entry predefines */
 typedef struct {
   INT used;                  /**< Used this entry					*/
-  char *name;                /**< Name string						*/
+  const char *name;                  /**< Name string						*/
   INT control_word;          /**< Index of corresp. controlword	*/
   INT control_entry_id;      /**< Index in control_entries              */
   INT offset_in_word;        /**< Shift in control word			*/

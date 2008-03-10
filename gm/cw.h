@@ -52,7 +52,7 @@ typedef struct {
   INT used;
 
   /** \brief name string */
-  char *name;
+  const char *name;
 
   /** \brief where in object is it ? */
   UINT offset_in_object;
@@ -72,7 +72,7 @@ typedef struct {
   INT used;
 
   /** \brief name string */
-  char *name;
+  const char *name;
 
   /** \brief pointer to corresponding control word */
   INT control_word;

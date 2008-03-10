@@ -3435,7 +3435,7 @@ static INT CheckConnections (GRID *theGrid)
  */
 /****************************************************************************/
 
-static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObject, char *ObjectString,
+static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObject, const char *ObjectString,
                         VECTOR *theVector, INT VectorObjType, INT side)
 {
   GEOM_OBJECT *VecObject;
@@ -4808,7 +4808,7 @@ INT NS_DIM_PREFIX LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *ord
  */
 /****************************************************************************/
 
-FIND_CUT * NS_DIM_PREFIX CreateFindCutProc (char *name, FindCutProcPtr FindCutProc)
+FIND_CUT * NS_DIM_PREFIX CreateFindCutProc (const char *name, FindCutProcPtr FindCutProc)
 {
   FIND_CUT *newFindCut;
 
@@ -4836,7 +4836,7 @@ FIND_CUT * NS_DIM_PREFIX CreateFindCutProc (char *name, FindCutProcPtr FindCutPr
  */
 /****************************************************************************/
 
-ALG_DEP * NS_DIM_PREFIX CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc)
+ALG_DEP * NS_DIM_PREFIX CreateAlgebraicDependency (const char *name, DependencyProcPtr DependencyProc)
 {
   ALG_DEP *newAlgDep;
 

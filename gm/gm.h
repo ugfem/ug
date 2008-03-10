@@ -3629,8 +3629,8 @@ INT             FreeMGUDBlock                   (NS_PREFIX BLOCK_ID id);
 NS_PREFIX BLOCK_DESC      *GetMGUDBlockDescriptor (NS_PREFIX BLOCK_ID id);
 
 /* ordering of degrees of freedom */
-ALG_DEP         *CreateAlgebraicDependency              (char *name, DependencyProcPtr DependencyProc);
-FIND_CUT        *CreateFindCutProc                              (char *name, FindCutProcPtr FindCutProc);
+ALG_DEP         *CreateAlgebraicDependency              (const char *name, DependencyProcPtr DependencyProc);
+FIND_CUT        *CreateFindCutProc                              (const char *name, FindCutProcPtr FindCutProc);
 INT                     LexOrderVectorsInGrid                   (GRID *theGrid, INT mode, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices);
 INT             OrderVectors                                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
 INT                     ShellOrderVectors                               (GRID *theGrid, VECTOR *seed);
