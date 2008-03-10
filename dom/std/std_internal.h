@@ -664,7 +664,7 @@ DOMAIN *GetDomain                           (const char *name);
 INT   STD_BVP_Configure           (INT argc, char **argv);
 
 /* scanning of coordinates */
-INT   ReadAndPrintArgvPosition    (char *name, INT argc, char **argv, DOUBLE *pos);
+INT   ReadAndPrintArgvPosition    (const char *name, INT argc, char **argv, DOUBLE *pos);
 
 END_UGDIM_NAMESPACE
 

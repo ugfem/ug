@@ -4232,7 +4232,7 @@ BNDP_LoadBndP_Ext (void)
 }
 
 INT NS_DIM_PREFIX
-ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE * pos)
+ReadAndPrintArgvPosition (const char *name, INT argc, char **argv, DOUBLE * pos)
 {
   INT i;
   char option[OPTIONLEN];
