@@ -1092,7 +1092,7 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   LINEAR_SEGMENT *theLinSegment;
   BOUNDARY_CONDITION *theBndCond;
   PATCH **corners, **sides, *thePatch;
-  unsigned short* segmentsPerPoint, *freeSegmentsPerPoint;
+  unsigned short* segmentsPerPoint, *freeSegmentsPerPoint, *cornerCounters;
   INT i, j, n, m, maxSubDomains, ncorners, nlines, nsides;
 #       ifdef __THREEDIM__
   INT freePatches;
@@ -1274,32 +1274,32 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
 
   }
 
-  for (i = 0; i < ncorners; i++) {
-    thePatch = corners[i];
-    m = 0;
-    for (j = 0; j < nsides; j++)
+  cornerCounters = (unsigned short*)calloc(ncorners,sizeof(unsigned short));
+
+  for (j = 0; j < nsides; j++)
+  {
+    if (PATCH_TYPE (sides[j]) == LINEAR_PATCH_TYPE)
     {
-      if (PATCH_TYPE (sides[j]) == LINEAR_PATCH_TYPE)
+      for (n = 0; n < LINEAR_PATCH_N (sides[j]); n++)
       {
-        for (n = 0; n < LINEAR_PATCH_N (sides[j]); n++)
-          if (LINEAR_PATCH_POINTS (sides[j], n) == i)
-          {
-            POINT_PATCH_PID (thePatch, m) = j;
-            POINT_PATCH_CID (thePatch, m++) = n;
-          }
-      }
-      else if (PATCH_TYPE (sides[j]) == PARAMETRIC_PATCH_TYPE)
-      {
-        for (n = 0; n < 2 * DIM_OF_BND; n++)
-          if (PARAM_PATCH_POINTS (sides[j], n) == i)
-          {
-            POINT_PATCH_PID (thePatch, m) = j;
-            POINT_PATCH_CID (thePatch, m++) = n;
-          }
+        i = LINEAR_PATCH_POINTS (sides[j], n);
+        POINT_PATCH_PID (corners[i], cornerCounters[i]) = j;
+        POINT_PATCH_CID (corners[i], cornerCounters[i]++) = n;
       }
     }
+    else if (PATCH_TYPE (sides[j]) == PARAMETRIC_PATCH_TYPE)
+    {
+      for (n = 0; n < 2 * DIM_OF_BND; n++)
+      {
+        i = PARAM_PATCH_POINTS (sides[j], n);
+        POINT_PATCH_PID (corners[i], cornerCounters[i]) = j;
+        POINT_PATCH_CID (corners[i], cornerCounters[i]++) = n;
+      }
+    }
+  }
 
-    if (freeSegmentsPerPoint[i] == m)
+  for (i = 0; i < ncorners; i++) {
+    if (freeSegmentsPerPoint[i] == cornerCounters[i])
       PATCH_STATE (thePatch) = PATCH_FREE;
     else if (freeSegmentsPerPoint[i] == 0)
       PATCH_STATE (thePatch) = PATCH_FIXED;
@@ -1318,6 +1318,7 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   /* Return memory that will not be used anymore */
   free(segmentsPerPoint);
   free(freeSegmentsPerPoint);
+  free(cornerCounters);
 
   /* create line patches */
   nlines = 0;
