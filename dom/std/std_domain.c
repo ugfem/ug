@@ -1324,7 +1324,7 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   nlines = 0;
 #ifdef __THREEDIM__
   lines =
-    (PATCH **) GetTmpMem (Heap, ncorners * ncorners * sizeof (PATCH *),
+    (PATCH **) GetTmpMem (Heap, nsides * 2 * sizeof (PATCH *),
                           MarkKey);
   if (lines == NULL)
     return (NULL);
