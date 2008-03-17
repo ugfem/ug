@@ -1323,6 +1323,9 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   /* create line patches */
   nlines = 0;
 #ifdef __THREEDIM__
+  /* The maximum number of boundary lines is equal to the number of
+     boundary faces (nsides) times the max number of lines per face (=4)
+     divided by two. */
   lines =
     (PATCH **) GetTmpMem (Heap, nsides * 2 * sizeof (PATCH *),
                           MarkKey);
