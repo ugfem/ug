@@ -1292,8 +1292,10 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
       for (n = 0; n < 2 * DIM_OF_BND; n++)
       {
         i = PARAM_PATCH_POINTS (sides[j], n);
-        POINT_PATCH_PID (corners[i], cornerCounters[i]) = j;
-        POINT_PATCH_CID (corners[i], cornerCounters[i]++) = n;
+        if (i>=0 && i<ncorners) {
+          POINT_PATCH_PID (corners[i], cornerCounters[i]) = j;
+          POINT_PATCH_CID (corners[i], cornerCounters[i]++) = n;
+        }
       }
     }
   }
