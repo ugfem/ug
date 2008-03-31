@@ -179,7 +179,7 @@ int PushHashEntry (HASH_TABLE **hth, int *key, void *obj);
 /****************************** ugpfm-low ***********************************/
 /****************************************************************************/
 
-void *ht_malloc (size_t size, char *ident)
+void *ht_malloc (size_t size, const char *ident)
 {
   int i,key[MAX_KEY_LEN+1];
   void *mem,*obj;
