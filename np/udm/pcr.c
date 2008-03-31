@@ -409,7 +409,7 @@ INT NS_DIM_PREFIX PrepareEPCR (EVECDATA_DESC *Vsym, INT DispMode, const char *te
  */
 /*************************************************************************/
 
-INT NS_DIM_PREFIX PostPCR (INT ID, char *path)
+INT NS_DIM_PREFIX PostPCR (INT ID, const char *path)
 {
   INT i;
   char name[10];

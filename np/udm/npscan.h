@@ -104,7 +104,7 @@ NP_BASE      *ReadArgvNumProc                   (MULTIGRID *theMG, const char *n
 INT ReadVecTypeINTs             (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], INT theINTs[][MAXVECTORS]);
 INT ReadVecTypeDOUBLEs  (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECTORS], DOUBLE theDOUBLEs[][MAXVECTORS]);
 INT ReadVecTypeOrder    (const FORMAT *fmt, char *str, INT n, INT MaxPerType, INT *nOrder, INT theOrder[]);
-INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, INT n, INT nNUMPROC[MAXVECTORS], NP_BASE *theNUMPROCs[][MAXVECTORS]);
+INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, const char *class_name, INT n, INT nNUMPROC[MAXVECTORS], NP_BASE *theNUMPROCs[][MAXVECTORS]);
 
 /* tools for VEC_SCALAR */
 INT sc_read          (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const char *name, INT argc, char **argv);

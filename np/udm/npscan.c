@@ -951,7 +951,7 @@ INT NS_DIM_PREFIX ReadVecTypeOrder (const FORMAT *fmt, char *str, INT n, INT Max
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, INT n, INT nNUMPROC[MAXVECTORS], NP_BASE *theNUMPROCs[][MAXVECTORS])
+INT NS_DIM_PREFIX ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, const char *class_name, INT n, INT nNUMPROC[MAXVECTORS], NP_BASE *theNUMPROCs[][MAXVECTORS])
 {
   FORMAT *fmt;
   char *s,*tok,*typetok[MAXVECTORS];

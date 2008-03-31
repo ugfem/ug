@@ -80,7 +80,7 @@ INT                     GetStrINTinRange                        (const char *str
 INT                     GetStrDOUBLEinRange                     (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value);
 INT             PreparePCR                                      (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID);
 INT         PrepareEPCR                 (EVECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID);
-INT             PostPCR                                         (INT ID, char *path);
+INT             PostPCR                                         (INT ID, const char *path);
 INT             DoPCR                                           (INT ID, VEC_SCALAR Defect, INT PrintMode);
 
 END_UGDIM_NAMESPACE
