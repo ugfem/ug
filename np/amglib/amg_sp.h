@@ -80,7 +80,7 @@ struct amg_vector AMG_VECTOR;           /* a whole vector						*/
 #define AMG_VECTOR_X(p)                         ((p)->x)
 #define AMG_VECTOR_ENTRY(p,i,ii)        ((p)->x[(i)*(p)->b+(ii)])
 
-AMG_VECTOR *AMG_NewVector (int n, int b, char *name);
+AMG_VECTOR *AMG_NewVector (int n, int b, const char *name);
 
 /****************************************************************************/
 /******** pattern of a general m x n sparse block matrix    *****************/
@@ -120,7 +120,7 @@ struct amg_matrix AMG_MATRIX;                   /* a matrix                     
 #define AMG_MATRIX_A(p)                         ((p)->a)
 
 /* Construction */
-AMG_MATRIX *AMG_NewMatrix (int n, int b, int nonzeros, int system_as_scalar, char *name);
+AMG_MATRIX *AMG_NewMatrix (int n, int b, int nonzeros, int system_as_scalar, const char *name);
 AMG_MATRIX *AMG_CopyMatrix (AMG_MATRIX *A, char *name);
 int             AMG_SetRowLength (AMG_MATRIX *A, int i, int l);
 int             AMG_FindEntry (AMG_MATRIX *A, int i, int j);

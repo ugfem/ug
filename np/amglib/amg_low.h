@@ -61,7 +61,7 @@ typedef void * (*AMG_MallocFuncPtr)(size_t n);
 
 /* string i/o */
 int       AMG_InstallPrintHandler (AMG_PrintFuncPtr print);
-int       AMG_Print         (char *s);
+int       AMG_Print         (const char *s);
 int       AMG_RedirectToFile (char *name);
 int       AMG_RedirectToScreen (void);
 
