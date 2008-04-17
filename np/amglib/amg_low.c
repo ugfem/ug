@@ -149,7 +149,7 @@ int AMG_InstallPrintHandler (AMG_PrintFuncPtr print)
    D*/
 /****************************************************************************/
 
-int AMG_Print (char *s)
+int AMG_Print (const char *s)
 {
   if (outFile!=NULL)
   {

@@ -104,7 +104,7 @@
    D*/
 /****************************************************************************/
 
-AMG_VECTOR *AMG_NewVector (int n, int b, char *name)
+AMG_VECTOR *AMG_NewVector (int n, int b, const char *name)
 {
   AMG_VECTOR *New;
   double *values;
@@ -159,7 +159,7 @@ AMG_VECTOR *AMG_NewVector (int n, int b, char *name)
    D*/
 /****************************************************************************/
 
-AMG_MATRIX *AMG_NewMatrix (int n, int b, int nonzeros, int system_as_scalar, char *name)
+AMG_MATRIX *AMG_NewMatrix (int n, int b, int nonzeros, int system_as_scalar, const char *name)
 {
   AMG_MATRIX *New;
   double *a;
