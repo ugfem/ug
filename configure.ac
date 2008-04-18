@@ -239,7 +239,6 @@ AC_CONFIG_FILES([Makefile
                  parallel/ppif/MPI/Makefile
 		 parallel/ddd/Makefile
 		 parallel/dddif/Makefile
-		 parallel/chaco/Makefile
                  libug.pc
 ])
 AC_OUTPUT
@@ -253,6 +252,10 @@ dnl                  gm/gg3/netgen/geom/makefile
 dnl                  gm/gg3/netgen/linalg/makefile
 dnl                  gm/gg3/netgen/meshing/makefile
 dnl                  gm/gg3/netgen/opti/makefile
+# The chaco stuff is not built because it is not available
+# in the anonymous Heidelberg CVS and not in the set of patches
+# we provide either.  AFAIK it doesn't work anyways.
+dnl                  parallel/chaco/Makefile
 dnl                  parallel/chaco/assign/Makefile
 dnl                  parallel/chaco/bpmatch/Makefile
 dnl                  parallel/chaco/coarsen/Makefile
