@@ -6772,7 +6772,8 @@ if (0)
 #endif
 		if (newlevel)
 		{
-			if (CreateNewLevel(theMG,0)==NULL) RETURN(GM_FATAL);
+			if (CreateNewLevel(theMG,0)==NULL) 
+                            RETURN(GM_FATAL);
 			FinerGrid = GRID_ON_LEVEL(theMG,toplevel+1);
 		}
 		
@@ -6788,9 +6789,11 @@ if (0)
 
 		if (level<toplevel || newlevel)
 			#ifndef ModelP
-			if (AdaptGrid(theGrid,&nadapted)!=GM_OK)							RETURN(GM_FATAL);
+			if (AdaptGrid(theGrid,&nadapted)!=GM_OK)
+                            RETURN(GM_FATAL);
 			#else
-			if (AdaptGrid(theGrid,toplevel,level,newlevel,&nadapted)!=GM_OK)	RETURN(GM_FATAL);
+			if (AdaptGrid(theGrid,toplevel,level,newlevel,&nadapted)!=GM_OK)
+                            RETURN(GM_FATAL);
 			#endif
 
 		SUM_TIMER(gridadapt_timer)
@@ -6807,7 +6810,8 @@ if (0)
 			#ifndef DYNAMIC_MEMORY_ALLOCMODEL
 			/* now rebuild connections in neighborhood of elements which have EBUILDCON set */
 			/* This flag has been set either by GridDisposeConnection or by CreateElement	*/
-			if (GridCreateConnection(FinerGrid)) RETURN(GM_FATAL);
+			if (GridCreateConnection(FinerGrid)) 
+                            RETURN(GM_FATAL);
 			#endif
 			
 			/* and compute the vector classes on the new (or changed) level */
