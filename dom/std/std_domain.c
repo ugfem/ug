@@ -656,6 +656,24 @@ CreateLinearSegment (const char *name,
   return (newSegment);
 }
 
+UINT NS_DIM_PREFIX GetBoundarySegmentId(BNDS* boundarySegment)
+{
+  BND_PS *ps;
+  PATCH *patch;
+
+  ps = (BND_PS *) boundarySegment;
+  patch = currBVP->patches[ps->patch_id];
+  if (patch == NULL) {
+    PrintErrorMessageF ('E', "GetBoundarySegmentId", "invalid argument");
+    return 0;
+  }
+
+  /* The ids in the patch data structure are consecutive but they
+     start at currBVP->sideoffset instead of zero. */
+  return PATCH_ID(patch) - currBVP->sideoffset;
+}
+
+
 static LINEAR_SEGMENT *
 GetNextLinearSegment (LINEAR_SEGMENT * theBSeg)
 {

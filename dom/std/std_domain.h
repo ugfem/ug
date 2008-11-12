@@ -120,6 +120,9 @@ void *CreateLinearSegment (const char *name,
                            INT n, const INT *point,
                            DOUBLE x[CORNERS_OF_BND_SEG][DIM]);
 
+/** \brief Access the id of the segment (used by DUNE) */
+UINT GetBoundarySegmentId(BNDS* boundarySegment);
+
 /* problem definition */
 void                    *CreateProblem                       (char *domain, char *name,
                                                               int id, ConfigProcPtr config,
