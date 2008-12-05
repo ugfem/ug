@@ -40,6 +40,7 @@
 #ifndef __PARGM_H__
 #define __PARGM_H__
 
+#include "ugtypes.h"
 
 #ifdef ModelP
 #include "ppif.h"
