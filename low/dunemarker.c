@@ -21,6 +21,7 @@
    $Header$
  */
 
+#include "config.h"
 #include "namespace.h"
 #include "dunemarker.h"
 

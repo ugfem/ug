@@ -25,6 +25,7 @@
 /*                                                                          */
 /****************************************************************************/
 
+#include "config.h"
 #include <limits.h>
 #include <stdlib.h>
 #ifndef __MWCW__
