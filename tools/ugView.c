@@ -29,6 +29,7 @@
 /*                                                                          */
 /****************************************************************************/
 
+#include "config.h"
 #include <Types.h>
 #include <Memory.h>
 #include <Quickdraw.h>

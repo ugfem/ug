@@ -28,6 +28,7 @@
 /****************************************************************************/
 
 
+#include "config.h"
 #include <string.h>
 #include <strings.h>
 #include <math.h>
