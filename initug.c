@@ -39,6 +39,7 @@
 /****************************************************************************/
 
 /* ANSI-C includes */
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 
