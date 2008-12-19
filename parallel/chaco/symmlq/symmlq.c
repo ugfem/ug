@@ -5,6 +5,7 @@
         -link <S|C|M|L>f2c.lib   (in that order)
  */
 
+#include "config.h"
 #include "f2c.h"
 #include "../main/defs.h"
 

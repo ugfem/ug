@@ -28,6 +28,7 @@
 /****************************************************************************/
 
 /* standard C library */
+#include "config.h"
 #include <stdio.h>
 #include <math.h>
 

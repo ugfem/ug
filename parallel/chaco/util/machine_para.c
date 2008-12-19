@@ -4,6 +4,7 @@
 * at Sandia National Laboratories under US Department of Energy        *
 * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
+#include "config.h"
 #include        <stdio.h>
 #include        <stdlib.h>
 #include        <limits.h>

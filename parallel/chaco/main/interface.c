@@ -33,6 +33,7 @@
 /*                                                                          */
 /****************************************************************************/
 
+#include "config.h"
 #include <stdio.h>
 #include "../main/defs.h"
 #include "../main/structs.h"

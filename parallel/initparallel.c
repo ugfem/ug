@@ -30,6 +30,7 @@
 /****************************************************************************/
 
 /* ANSI includes */
+#include "config.h"
 #include <stdio.h>
 
 /* low module */

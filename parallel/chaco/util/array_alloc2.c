@@ -7,6 +7,7 @@
 
 /* Dynamically allocate a 2 dimensional array. */
 
+#include "config.h"
 #include "../main/defs.h"
 
 double *array_alloc_2D(dim1, dim2, size)
