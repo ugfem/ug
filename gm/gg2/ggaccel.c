@@ -22,6 +22,7 @@
 /*                                                                          */
 /****************************************************************************/
 
+#include "config.h"
 #include  <stdlib.h>
 #include  "ggaccel.h"
 #include  "misc.h"
