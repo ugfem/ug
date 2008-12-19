@@ -33,6 +33,7 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
 #include "bullet.h"
 #include "ugdevices.h"
 #include "commands.h"
