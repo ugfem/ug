@@ -19,6 +19,7 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
 #include <strstream.h>
 #include <iostream.h>
 #include <fstream.h>

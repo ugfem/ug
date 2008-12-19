@@ -18,6 +18,7 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
 #include <iostream.h>
 #include <math.h>
 #include <assert.h>

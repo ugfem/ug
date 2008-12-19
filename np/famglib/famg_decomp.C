@@ -19,6 +19,7 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
 #include <iostream.h>
 #include "famg_decomp.h"
 #include "famg_heap.h"

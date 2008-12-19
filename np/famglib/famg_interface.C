@@ -19,6 +19,7 @@
 /*																			*/
 /****************************************************************************/
 
+#include "config.h"
 #include "famg_system.h"
 #include "famg_heap.h"
 #include "famg_interface.h"

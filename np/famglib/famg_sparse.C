@@ -19,6 +19,7 @@
 /*																			*/
 /****************************************************************************/
  
+#include "config.h"
 #include <string.h>
 #include <strstream.h>
 #include "famg_sparse.h"

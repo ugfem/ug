@@ -7,6 +7,7 @@
  * D. Logashenko
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <math.h>
 

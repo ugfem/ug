@@ -43,6 +43,7 @@
  * set @var_name @i;
  * This sets 'diag_line2' to "2".
  */
+#include "config.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
