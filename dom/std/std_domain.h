@@ -102,6 +102,8 @@ void                     *CreateDomain                        (const char *name,
                                                                DOUBLE radius, INT segments,
                                                                INT corners, INT Convex);
 
+void RemoveDomain(const char* name);
+
 void   *CreateBoundarySegment       (const char *name, INT left, INT right,
                                      INT id, enum BoundaryType type, INT res,
                                      const INT *point,

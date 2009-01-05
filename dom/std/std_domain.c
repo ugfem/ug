@@ -443,6 +443,27 @@ GetDomain (const char *name)
 }
 
 /****************************************************************************/
+/** \brief Remove a domain structure
+ *
+ * @param  name - name of the domain
+ *
+ * This function searches the environment for a domain with the name `name`
+ * and removes it.
+ *
+ */
+/****************************************************************************/
+
+void NS_DIM_PREFIX
+RemoveDomain (const char *name)
+{
+  ENVITEM* d = SearchEnv (name, "/Domains", theDomainDirID, theDomainDirID);
+  if (d!=0) {
+    d->v.locked = FALSE;
+    RemoveEnvDir(d);
+  }
+}
+
+/****************************************************************************/
 /** \brief Create a new BOUNDARY_SEGMENT
  *
  * @param  name - name of the boundary segment
