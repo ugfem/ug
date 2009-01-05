@@ -516,7 +516,7 @@ printf("%4d: PutDepData   XFERSCATTER ok\n", me); fflush(stdout);
 			chunk += CEIL(sizeof(int)*addCnt);
 			for(i=0, adr=chunk; i<addCnt; i++)
 			{
-				table[i] = ((INT)table[i])+adr;
+				table[i] = ((long int)table[i])+adr;
 
 				/* insert pointers into copy using SymTab */
 				if (addTyp<DDD_USER_DATA || addTyp>DDD_USER_DATA_MAX)

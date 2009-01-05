@@ -242,7 +242,7 @@ void NS_DIM_PREFIX BElementScatterBndS (BNDS **Bnds, int n, int cnt, char *data)
                         LGM_OBJECT_ID_2_OBJECT((INT) LGM_BNDS_OBJECT((LGM_BNDS *)data))));
 
       LGM_BNDS_OBJECT(bs) =
-        LGM_OBJECT_ID_2_OBJECT((INT) LGM_BNDS_OBJECT((LGM_BNDS *)data));
+        LGM_OBJECT_ID_2_OBJECT((long int) LGM_BNDS_OBJECT((LGM_BNDS *)data));
     }
     else
       PRINTDEBUG(dom,2,(PFMT "BElementScatterBndS(): ignoring i=%d "
@@ -417,8 +417,7 @@ void NS_DIM_PREFIX BVertexScatterBndP (BNDP **Bndp, int cnt, char *data)
                         &((*bndp)->Surf[(i)].s.theSurf)));
 
       LGM_BNDP_LINE(*bndp,i) =
-        LGM_LINE_ID_2_LINE((INT)
-                           LGM_BNDP_LINE_GLINE(((LGM_BNDP_PLINE *)data)[i]));
+        LGM_LINE_ID_2_LINE((long int) LGM_BNDP_LINE_GLINE(((LGM_BNDP_PLINE *)data)[i]));
 
       PRINTDEBUG(dom,3,(PFMT "BVertexScatterBndP(): outside buffer: "
                         "line=%x local_left=%11.4E local_right=%11.4E\n",me,
@@ -446,8 +445,7 @@ void NS_DIM_PREFIX BVertexScatterBndP (BNDP **Bndp, int cnt, char *data)
                         me,bndp,*bndp));
 
       LGM_BNDP_OBJECT(*bndp,i) =
-        LGM_OBJECT_ID_2_OBJECT((INT)
-                               LGM_BNDP_OBJECT_GOBJECT(((LGM_BNDP_POBJECT *)data)[0]));
+        LGM_OBJECT_ID_2_OBJECT((long int)LGM_BNDP_OBJECT_GOBJECT(((LGM_BNDP_POBJECT *)data)[0]));
 
       PRINTDEBUG(dom,3,(PFMT "BVertexScatterBndP(): outside buffer: "
                         "line=%x local=%11.4E\n",me,

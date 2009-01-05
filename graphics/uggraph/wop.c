@@ -21315,16 +21315,16 @@ static void PWorkEW_Evaluate(void)
 			{
 				/* prepare next element */
 				(*WOP_EW_EvaluateProc)(WOP_Element, WOP_DrawingObject);
-				WOP_CurrDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+				WOP_CurrDoLen = (long int)(WOP_DObjPnt) - (long int)(WOP_DrawingObject);
 				WOP_Element = (*WOP_EW_GetNextElementProc)(WOP_Element);
 			}
-		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((long int)(p) - (long int)(p1)) 
 				 > WOP_CurrDoLen);
 
 		/* set endmarker & length */
 		DO_2c(p) = DO_NO_INST;
 		DO_inc(p1);
-		DO_2INT(p1) = (INT)p-(INT)p1+2*sizeof(DRAWINGOBJ);
+		DO_2INT(p1) = (long int)p-(long int)p1+2*sizeof(DRAWINGOBJ);
 
 		/* book slot */
 		WOP_Count[i]++;
@@ -21508,10 +21508,10 @@ static void PWorkEW_Evaluate_3D(void)
 					(*WOP_EW_EvaluateProc)(WOP_Element, WOP_DrawingObject);
 					WOP_nextID = ID(WOP_Element);
 					consecutive = GElem_Consecutive;
-					WOP_CurrDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+					WOP_CurrDoLen = (long int)(WOP_DObjPnt) - (long int)(WOP_DrawingObject);
 					WOP_Element = (*WOP_EW_GetNextElementProc)(WOP_Element);
 				}
-			} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+			} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((long int)(p) - (long int)(p1)) 
 					 > WOP_CurrDoLen && consecutive);
 
 		} while ( p == p2+2);
@@ -21521,7 +21521,7 @@ static void PWorkEW_Evaluate_3D(void)
 		DO_2c(p) = DO_NO_INST;
 		DO_2INT(p2) = WOP_lastID;
 		DO_inc(p2);
-		DO_2INT(p2) = (INT)p-(INT)p1+sizeof(DRAWINGOBJ);;
+		DO_2INT(p2) = (long int)p-(long int)p1+sizeof(DRAWINGOBJ);;
 
 		/* book slot */
 		WOP_Count[i]++;
@@ -21570,14 +21570,14 @@ static void PWorkNW_Evaluate(void)
 			}
 			else {
 				(*WOP_NW_EvaluateProc)(WOP_Node, WOP_DrawingObject);
-				WOP_CurrDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+				WOP_CurrDoLen = (long int)(WOP_DObjPnt) - (long int)(WOP_DrawingObject);
 				WOP_Node = (*WOP_NW_GetNextNodeProc)(WOP_Node);
 			}
-		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((long int)(p) - (long int)(p1)) 
 				 > WOP_CurrDoLen);
 		DO_2c(p) = DO_NO_INST;
 		DO_inc(p1);
-		DO_2INT(p1) = (INT)p-(INT)p1+2*sizeof(DRAWINGOBJ);
+		DO_2INT(p1) = (long int)p-(long int)p1+2*sizeof(DRAWINGOBJ);
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
@@ -21625,14 +21625,14 @@ static void PWorkVW_Evaluate(void)
 			}
 			else {
 				(*WOP_VW_EvaluateProc)(WOP_Vector, WOP_DrawingObject);
-				WOP_CurrDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+				WOP_CurrDoLen = (long int)(WOP_DObjPnt) - (long int)(WOP_DrawingObject);
 				WOP_Vector = (*WOP_VW_GetNextVectorProc)(WOP_Vector);
 			}
-		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((long int)(p) - (long int)(p1)) 
 				 > WOP_CurrDoLen);
 		DO_2c(p) = DO_NO_INST;
 		DO_inc(p1);
-		DO_2INT(p1) = (INT)p-(INT)p1+2*sizeof(DRAWINGOBJ);
+		DO_2INT(p1) = (long int)p-(long int)p1+2*sizeof(DRAWINGOBJ);
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
@@ -21681,13 +21681,13 @@ static void PWorkET_Evaluate(void)
 			}
 			else {
 				(*WOP_EXT_EvaluateProc)(WOP_DrawingObject, &WOP_EXT_End);
-				WOP_CurrDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+				WOP_CurrDoLen = (long int)(WOP_DObjPnt) - (long int)(WOP_DrawingObject);
 			}
-		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((long int)(p) - (long int)(p1)) 
 				 > WOP_CurrDoLen);
 		DO_2c(p) = DO_NO_INST;
 		DO_inc(p1);
-		DO_2INT(p1) = (INT)p-(INT)p1+2*sizeof(DRAWINGOBJ);
+		DO_2INT(p1) = (long int)p-(long int)p1+2*sizeof(DRAWINGOBJ);
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
