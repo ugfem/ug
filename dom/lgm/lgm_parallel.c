@@ -120,11 +120,8 @@ USING_UGDIM_NAMESPACE
 /*																			*/
 /****************************************************************************/
 
-#if (LGM_DIM==2)
-extern LGM_LINE                        **LinePtrArray2D;
-#endif
-#if (LGM_DIM==3)
 extern LGM_LINE                        **LinePtrArray;
+#if (LGM_DIM==3)
 extern LGM_SURFACE                     **SurfacePtrArray;
 #endif
 

@@ -106,11 +106,8 @@ typedef int (*ReadSurfaceProc)(int i, LGM_SURFACE_INFO *surface_info);
 /*																			*/
 /****************************************************************************/
 
-#if (LGM_DIM==2)
-LGM_LINE        **LinePtrArray2D                = NULL;
-#endif
-#if (LGM_DIM==3)
 LGM_LINE        **LinePtrArray          = NULL;
+#if (LGM_DIM==3)
 LGM_SURFACE     **SurfacePtrArray       = NULL;
 #endif
 #ifdef OCC_GEOMETRY

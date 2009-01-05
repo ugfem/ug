@@ -156,7 +156,7 @@ START_UGDIM_NAMESPACE
 #define LGM_LINE_BNDCOND(p)                                     ((p)->Bndcond)
 #define LGM_LINE_POINT(p,i)                                     ((p)->point+(i))
 #define LGM_LINE_POINTDIST(p,i,j)                       LGM_POINT_DIST(LGM_LINE_POINT(p,i),LGM_LINE_POINT(p,j))
-#define LGM_LINE_ID_2_LINE(i)                           (LinePtrArray2D[i])
+#define LGM_LINE_ID_2_LINE(i)                           (LinePtrArray[i])
 
 /* macros for LGM_SUBDOMAIN */
 #define LGM_SUBDOMAIN_UNIT(p)                           ((p)->Unit)
@@ -193,7 +193,7 @@ START_UGDIM_NAMESPACE
 #ifdef ModelP
 #define LGM_BNDS_SIZE(p)                        (sizeof(LGM_BNDS))
 #define LGM_BNDP_SIZE(p)                        (sizeof(LGM_BNDP))
-#define LINE_ID_2_LINE(i)                                       (LinePtrArray2D[i])
+#define LINE_ID_2_LINE(i)                                       (LinePtrArray[i])
 #endif
 
 
