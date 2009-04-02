@@ -243,7 +243,7 @@ LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theH
   /* allocate lines */
   if ((LinePtrList=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
         #ifdef ModelP
-  if ((LinePtrArray2D=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
+  if ((LinePtrArray=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
         #endif
   for (i=0; i<theDomInfo.nPolyline; i++)
   {
@@ -267,7 +267,7 @@ LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theH
     }
                 #ifdef ModelP
     PRINTDEBUG(dom,3,(PFMT "LGM_LoadDomain(): i=%d lineptr=%x\n",me,i,LinePtrList[i]));
-    LinePtrArray2D[i] = LinePtrList[i];
+    LinePtrArray[i] = LinePtrList[i];
                 #endif
   }
 
