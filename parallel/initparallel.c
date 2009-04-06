@@ -92,7 +92,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX InitParallel (int *argcp, char ***argvp)
+INT NS_DIM_PREFIX InitParallel (int *argcp, char ***argvp)
 {
   INT err;
 
@@ -141,7 +141,7 @@ INT NS_PREFIX InitParallel (int *argcp, char ***argvp)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ExitParallel (void)
+INT NS_DIM_PREFIX ExitParallel (void)
 {
   INT err;
 
