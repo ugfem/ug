@@ -6044,7 +6044,7 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
       {
         /*only in this case  problems like Attention !!! Node has more than ELEMS_OF_NODE_MAX !!iare possible*/
 
-        while(  (MGNDELEMBLKENTRY(theMG,cornerID[IndexOfDivPart],Index) != NULL) && (MGNDELEMPTRARRAY(theMG) != NULL) )
+        while( (MGNDELEMPTRARRAY(theMG) != NULL) && (MGNDELEMBLKENTRY(theMG,cornerID[IndexOfDivPart],Index) != NULL) )
         {
           Index++;
           helpIndex = Index - merkeIndex;
