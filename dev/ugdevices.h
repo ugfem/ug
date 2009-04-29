@@ -408,6 +408,6 @@ INT               MouseStillDown                        (void);
 void              DrawInfoBox                           (WINDOWID win, const char *info);
 INT                       WhichTool                                     (WINDOWID win, const INT mouse[2], INT *tool);
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

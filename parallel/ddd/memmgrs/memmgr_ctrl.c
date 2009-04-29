@@ -50,6 +50,7 @@
 /*                                                                          */
 /****************************************************************************/
 
+START_UGDIM_NAMESPACE
 
 /* constants for hashing of alloc/free requests (for debugging) */
 #define HASHTAB_SIZE  15731
@@ -344,3 +345,5 @@ void memmgr_Init (void)
   memmgr_AllocatedAMEM = 0;
   memmgr_AllocatedTMEM = 0;
 }
+
+END_UGDIM_NAMESPACE

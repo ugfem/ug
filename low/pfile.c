@@ -148,7 +148,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-PFILE * NS_PREFIX pfile_open (char *name)
+NS_DIM_PREFIX PFILE * NS_DIM_PREFIX pfile_open (char *name)
 {
 #ifndef ModelP
   return( (PFILE *) fileopen(name,"w") );
@@ -224,7 +224,7 @@ PFILE * NS_PREFIX pfile_open (char *name)
  */
 /****************************************************************************/
 
-INT NS_PREFIX pfile_master_puts (PFILE *pf, char *s)
+INT NS_DIM_PREFIX pfile_master_puts (PFILE *pf, char *s)
 {
 #ifndef ModelP
   fputs(s,(FILE *) pf);
@@ -251,7 +251,7 @@ INT NS_PREFIX pfile_master_puts (PFILE *pf, char *s)
    'pfile_sync', 'pfile_open', 'pfile_close'
  */
 /****************************************************************************/
-static INT flush_buffer (PFILE *pf)
+static INT flush_buffer (NS_DIM_PREFIX PFILE *pf)
 {
   INT i,j,min_key,min_index,finish=0;
   char *buffer;
@@ -264,7 +264,7 @@ static INT flush_buffer (PFILE *pf)
   for (i=0; i<degree; i++)
     if (!pf->valid_state[i])
     {
-      GetConcentrate(i,pf->state+i,sizeof(PFILE_STATE));
+      GetConcentrate(i,pf->state+i,sizeof(NS_DIM_PREFIX PFILE_STATE));
       pf->valid_state[i] = 1;
 #ifdef LOCAL_DEBUG
       UserWriteF("receiving state from %d: n=%d, fst=%d, lst=%d\n",
@@ -299,7 +299,7 @@ static INT flush_buffer (PFILE *pf)
     if (me == master)
       finish = 1;                   /* now all are finished */
     else {
-      Concentrate(&pf->local,sizeof(PFILE_STATE));                   /* has nchars==0 !  */
+      Concentrate(&pf->local,sizeof(NS_DIM_PREFIX PFILE_STATE));                   /* has nchars==0 !  */
       GetSpread(&finish,sizeof(INT));                                        /* the global state */
     }
 
@@ -351,7 +351,7 @@ static INT flush_buffer (PFILE *pf)
     if (nchars>0) fputs(buffer,pf->stream);
   }
   else {
-    Concentrate(pf->state+min_index,sizeof(PFILE_STATE));             /* send state */
+    Concentrate(pf->state+min_index,sizeof(NS_DIM_PREFIX PFILE_STATE));             /* send state */
     Concentrate(buffer,nchars+1);                  /* send data  */
   }
 
@@ -385,7 +385,7 @@ static INT flush_buffer (PFILE *pf)
  */
 /****************************************************************************/
 
-INT NS_PREFIX pfile_puts (PFILE *pf, char *s)
+INT NS_DIM_PREFIX pfile_puts (PFILE *pf, char *s)
 {
 #ifndef ModelP
   fputs(s,(FILE *) pf);
@@ -428,7 +428,7 @@ INT NS_PREFIX pfile_puts (PFILE *pf, char *s)
 
 
 #ifdef ModelP
-static INT append_buffer (PFILE *pf, char *s, INT key)
+static INT append_buffer (NS_DIM_PREFIX PFILE *pf, char *s, INT key)
 {
   INT n;
 
@@ -486,7 +486,7 @@ static INT append_buffer (PFILE *pf, char *s, INT key)
  */
 /****************************************************************************/
 
-INT NS_PREFIX pfile_tagged_puts (PFILE *pf, char *s, INT key)
+INT NS_DIM_PREFIX pfile_tagged_puts (PFILE *pf, char *s, INT key)
 {
 #ifndef ModelP
   fputs(s,(FILE *) pf);
@@ -540,7 +540,7 @@ INT NS_PREFIX pfile_tagged_puts (PFILE *pf, char *s, INT key)
  */
 /****************************************************************************/
 
-INT NS_PREFIX pfile_sync (PFILE *pf)
+INT NS_DIM_PREFIX pfile_sync (PFILE *pf)
 {
 #ifdef ModelP
   /* wait until all processors reach end of segment */
@@ -572,7 +572,7 @@ INT NS_PREFIX pfile_sync (PFILE *pf)
  */
 /****************************************************************************/
 
-INT NS_PREFIX pfile_close (PFILE *pf)
+INT NS_DIM_PREFIX pfile_close (PFILE *pf)
 {
 #ifdef ModelP
   /* wait until all processors reach end of segment */
@@ -612,7 +612,7 @@ INT NS_PREFIX pfile_close (PFILE *pf)
  */
 /****************************************************************************/
 
-PFILE_BIN* NS_PREFIX pfile_open_bin (char *name)
+NS_DIM_PREFIX PFILE_BIN* NS_DIM_PREFIX pfile_open_bin (char *name)
 {
 #ifndef ModelP
   return( (PFILE_BIN *) fileopen(name,"wb") );
@@ -665,7 +665,7 @@ PFILE_BIN* NS_PREFIX pfile_open_bin (char *name)
 #ifdef ModelP
 /****************************************************************************/
 /* change for BYTES not finished ! */
-static INT flush_buffer_bin (PFILE_BIN *pf)
+static INT flush_buffer_bin (NS_DIM_PREFIX PFILE_BIN *pf)
 {
   INT i,j,min_key,min_index,finish=0;
   INT *buf_INT;
@@ -678,7 +678,7 @@ static INT flush_buffer_bin (PFILE_BIN *pf)
   /* update downtree states */
   for (i=0; i<degree; i++)
     if (!pf->valid_state[i]) {
-      GetConcentrate(i,pf->state+i,sizeof(PFILE_STATE_BIN));
+      GetConcentrate(i,pf->state+i,sizeof(NS_DIM_PREFIX PFILE_STATE_BIN));
       pf->valid_state[i] = 1;
 #ifdef LOCAL_DEBUG
       UserWriteF("receiving state from %d: nints=%d, nfloats=%d fst=%d, lst=%d\n",
@@ -710,7 +710,7 @@ static INT flush_buffer_bin (PFILE_BIN *pf)
     if (me == master)
       finish = 1;                   /* now all are finished */
     else {
-      Concentrate(&pf->local,sizeof(PFILE_STATE_BIN));                   /* has (nints && nfloats)==0 !  */
+      Concentrate(&pf->local,sizeof(NS_DIM_PREFIX PFILE_STATE_BIN));                   /* has (nints && nfloats)==0 !  */
       GetSpread(&finish,sizeof(INT));                                            /* the global state */
     }
 
@@ -765,7 +765,7 @@ static INT flush_buffer_bin (PFILE_BIN *pf)
     if (nfloats>0) fwrite(buf_FLOAT, sizeof(FLOAT), nfloats, pf->stream);
   }
   else {
-    Concentrate(pf->state+min_index,sizeof(PFILE_STATE_BIN));             /* send state */
+    Concentrate(pf->state+min_index,sizeof(NS_DIM_PREFIX PFILE_STATE_BIN));             /* send state */
     Concentrate(buf_INT,nints*sizeof(INT));                               /* send INT data  */
     Concentrate(buf_FLOAT,nfloats*sizeof(FLOAT));                         /* send FLOAT data  */
   }
@@ -777,7 +777,7 @@ static INT flush_buffer_bin (PFILE_BIN *pf)
 #endif
 
 #ifdef ModelP
-static INT append_buffer_bin_INT (PFILE_BIN *pf, INT *values, int n, INT key)
+static INT append_buffer_bin_INT (NS_DIM_PREFIX PFILE_BIN *pf, INT *values, int n, INT key)
 {
   int i;
 #ifdef LOCAL_DEBUG
@@ -836,7 +836,7 @@ static INT append_buffer_bin_INT (PFILE_BIN *pf, INT *values, int n, INT key)
  */
 /****************************************************************************/
 
-INT NS_PREFIX pfile_tagged_write_INT (PFILE_BIN *pf, INT *values, int n, INT key)
+INT NS_DIM_PREFIX pfile_tagged_write_INT (PFILE_BIN *pf, INT *values, int n, INT key)
 {
 #ifndef ModelP
   fwrite(values, sizeof(INT), n, (FILE *) pf);
@@ -870,7 +870,7 @@ INT NS_PREFIX pfile_tagged_write_INT (PFILE_BIN *pf, INT *values, int n, INT key
 
 /****************************************************************************/
 #ifdef ModelP
-static INT append_buffer_bin_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key)
+static INT append_buffer_bin_FLOAT (NS_DIM_PREFIX PFILE_BIN *pf, FLOAT *values, int n, INT key)
 {
   int i;
 #ifdef LOCAL_DEBUG
@@ -903,7 +903,7 @@ static INT append_buffer_bin_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key
 }
 #endif
 
-INT NS_PREFIX pfile_tagged_write_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key)
+INT NS_DIM_PREFIX pfile_tagged_write_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key)
 {
 #ifndef ModelP
   fwrite(values, sizeof(FLOAT), n, (FILE *) pf);
@@ -937,7 +937,7 @@ INT NS_PREFIX pfile_tagged_write_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT
 
 /****************************************************************************/
 #ifdef ModelP
-static INT append_buffer_bin_BYTE (PFILE_BIN *pf, unsigned char *values, int n, INT key)
+static INT append_buffer_bin_BYTE (NS_DIM_PREFIX PFILE_BIN *pf, unsigned char *values, int n, INT key)
 {
   int i;
 #ifdef LOCAL_DEBUG
@@ -970,7 +970,7 @@ static INT append_buffer_bin_BYTE (PFILE_BIN *pf, unsigned char *values, int n, 
 }
 #endif
 
-INT NS_PREFIX pfile_tagged_write_BYTE (PFILE_BIN *pf, unsigned char *values, int n, INT key)
+INT NS_DIM_PREFIX pfile_tagged_write_BYTE (PFILE_BIN *pf, unsigned char *values, int n, INT key)
 {
 #ifndef ModelP
   fwrite(values, sizeof(unsigned char), n, (FILE *) pf);
@@ -1022,7 +1022,7 @@ INT NS_PREFIX pfile_tagged_write_BYTE (PFILE_BIN *pf, unsigned char *values, int
  */
 /****************************************************************************/
 
-INT NS_PREFIX pfile_sync_bin (PFILE_BIN *pf)
+INT NS_DIM_PREFIX pfile_sync_bin (PFILE_BIN *pf)
 {
 #ifdef ModelP
   while (!flush_buffer_bin(pf)) ;
@@ -1050,7 +1050,7 @@ INT NS_PREFIX pfile_sync_bin (PFILE_BIN *pf)
  */
 /****************************************************************************/
 
-INT NS_PREFIX pfile_close_bin (PFILE_BIN *pf)
+INT NS_DIM_PREFIX pfile_close_bin (PFILE_BIN *pf)
 {
 #ifndef ModelP
   fclose( (FILE *) pf);

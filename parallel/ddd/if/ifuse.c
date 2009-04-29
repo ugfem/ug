@@ -47,6 +47,8 @@ USING_UG_NAMESPACE
 /* PPIF namespace: */
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
+
 /****************************************************************************/
 /*                                                                          */
 /* variables global to this source file (static)                            */
@@ -546,3 +548,5 @@ void IFExecHdrLoopCplX (ExecProcHdrXPtr LoopProc, COUPLING **cpl, int nItems)
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

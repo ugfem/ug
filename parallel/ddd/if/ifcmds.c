@@ -55,6 +55,7 @@ USING_PPIF_NAMESPACE
 RCSID("$Header$",DDD_RCS_STRING)
 
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -206,3 +207,5 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

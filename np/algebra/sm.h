@@ -46,7 +46,7 @@
 
 #ifdef __UG__
 #include "namespace.h"
-START_UG_NAMESPACE
+START_UGDIM_NAMESPACE
 #endif
 
 /****************************************************************************/
@@ -101,7 +101,7 @@ INT SM_Decompose_LR_pivot (const SPARSE_MATRIX *sm, DOUBLE *values,
                            DOUBLE *LR, int *pivot);
 
 #ifdef __UG__
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 #endif
 
 #endif /* __SM__ */

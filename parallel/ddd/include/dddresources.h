@@ -20,11 +20,13 @@
 #ifndef __DDD_RESOURCE_H__
 #define __DDD_RESOURCE_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/*
+   #ifdef __cplusplus
+   extern "C" {
+   #endif
+ */
 
-
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -58,8 +60,12 @@ typedef struct
  */
 DDD_RESOURCES *DDD_InfoResources (void);
 
+END_UGDIM_NAMESPACE
 
-#ifdef __cplusplus
-}
-#endif
+/*
+   #ifdef __cplusplus
+   }
+   #endif
+ */
+
 #endif

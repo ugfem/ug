@@ -37,9 +37,9 @@
 #include "dddi.h"
 #include "if.h"
 
-
-
 USING_UG_NAMESPACE
+
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -201,6 +201,6 @@ void IFCheckShortcuts (DDD_IF ifId)
   }
 }
 
-
-
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

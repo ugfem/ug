@@ -74,21 +74,21 @@
 void IF_FUNCNAME (
 	#ifdef IF_EXECLOCAL
 		#ifdef IF_WITH_XARGS
-			ExecProcHdrXPtr ExecProc)
+			NS_DIM_PREFIX ExecProcHdrXPtr ExecProc)
 		#else
-			ExecProcHdrPtr ExecProc)
+			NS_DIM_PREFIX ExecProcHdrPtr ExecProc)
 		#endif
 	#else
 		size_t aSize,
 		#ifdef IF_WITH_XARGS
-			ComProcHdrXPtr Gather, ComProcHdrXPtr Scatter)
+			NS_DIM_PREFIX ComProcHdrXPtr Gather, NS_DIM_PREFIX ComProcHdrXPtr Scatter)
 		#else
-			ComProcHdrPtr Gather, ComProcHdrPtr Scatter)
+			NS_DIM_PREFIX ComProcHdrPtr Gather, NS_DIM_PREFIX ComProcHdrPtr Scatter)
 		#endif
 	#endif
 {
-	DDD_IF        aIF = STD_INTERFACE;
-	IF_PROC		  *ifHead;
+	NS_DIM_PREFIX DDD_IF        aIF = NS_DIM_PREFIX STD_INTERFACE;
+	NS_DIM_PREFIX IF_PROC		  *ifHead;
 	unsigned long tries;
 	int           recv_mesgs;
 
@@ -107,12 +107,12 @@ void IF_FUNCNAME (
 	{
 
 		#ifdef IF_EXCHANGE
-			IFGetMem(ifHead, aSize, PART->nItems, PART->nItems);
+			NS_DIM_PREFIX IFGetMem(ifHead, aSize, PART->nItems, PART->nItems);
 		#endif
 	}
 
 	/* init communication, initiate receives */
-	recv_mesgs = IFInitComm(aIF);
+	recv_mesgs = NS_DIM_PREFIX IFInitComm(aIF);
 
 
 	/* build messages using gather-handler and send them away */
@@ -123,7 +123,7 @@ void IF_FUNCNAME (
 
 		buffer= COMM_LOOP(Gather, D_ABA(PART), buffer, aSize, PART->nItems);
 
-		IFInitSend(ifHead);
+		NS_DIM_PREFIX IFInitSend(ifHead);
 	}
 
 
@@ -139,10 +139,10 @@ void IF_FUNCNAME (
 				int error = InfoARecv(ifHead->vc, ifHead->msgIn);
 				if (error==-1)
 				{
-					sprintf(cBuffer,
+					sprintf(NS_DIM_PREFIX cBuffer,
 							"PPIF's InfoARecv() failed for recv to proc=%d in IF-Comm",
 						ifHead->proc);
-					DDD_PrintError('E', 4221, cBuffer);
+					DDD_PrintError('E', 4221, NS_DIM_PREFIX cBuffer);
 					HARD_EXIT;
 				}
 
@@ -174,17 +174,17 @@ void IF_FUNCNAME (
 	/* finally poll send completion */
 	if (recv_mesgs>0)
 	{
-		sprintf(cBuffer, CONCAT("receive-timeout for IF %02d in ",IF_FUNCNAME), aIF);
-		DDD_PrintError('E', 4200, cBuffer);
+		sprintf(NS_DIM_PREFIX cBuffer, CONCAT("receive-timeout for IF %02d in ",IF_FUNCNAME), aIF);
+		DDD_PrintError('E', 4200, NS_DIM_PREFIX cBuffer);
 
 		ForIF(aIF,ifHead)
 		{
 			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=NO_MSGID)
 			{
-				sprintf(cBuffer,
+				sprintf(NS_DIM_PREFIX cBuffer,
 					"  waiting for message (from proc %d, size %ld)",
 					ifHead->proc, (unsigned long)BufferLen(ifHead->bufIn));
-				DDD_PrintError('E', 4201, cBuffer);
+				DDD_PrintError('E', 4201, NS_DIM_PREFIX cBuffer);
 			}
 		}
 	}
@@ -195,19 +195,19 @@ void IF_FUNCNAME (
 			me, aIF, (unsigned long)tries);
 		#endif
 
-		if (! IFPollSend(aIF))
+		if (! NS_DIM_PREFIX IFPollSend(aIF))
 		{
-			sprintf(cBuffer, CONCAT("send-timeout for IF %02d in ",IF_FUNCNAME), aIF);
-			DDD_PrintError('E', 4210, cBuffer);
+			sprintf(NS_DIM_PREFIX cBuffer, CONCAT("send-timeout for IF %02d in ",IF_FUNCNAME), aIF);
+			DDD_PrintError('E', 4210, NS_DIM_PREFIX cBuffer);
 
 			ForIF(aIF,ifHead)
 			{
 				if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=NO_MSGID)
 				{
-					sprintf(cBuffer,
+					sprintf(NS_DIM_PREFIX cBuffer,
 						"  waiting for send completion (to proc %d, size %ld)",
 						ifHead->proc, (unsigned long)BufferLen(ifHead->bufOut));
-					DDD_PrintError('E', 4211, cBuffer);
+					DDD_PrintError('E', 4211, NS_DIM_PREFIX cBuffer);
 				}
 			}
 		}
@@ -215,7 +215,7 @@ void IF_FUNCNAME (
 
 
 	/* free memory */
-	IFExitComm(aIF);
+	NS_DIM_PREFIX IFExitComm(aIF);
 
 	/*STAT_TIMER1(60);*/
 

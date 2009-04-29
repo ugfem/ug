@@ -42,7 +42,7 @@ USING_PPIF_NAMESPACE
 /* general error string */
 #define ERRSTR "    DDD-IFC Warning: "
 
-
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -137,5 +137,6 @@ int DDD_CheckInterfaces (void)
   return(errors);
 }
 
-
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

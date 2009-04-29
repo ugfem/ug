@@ -42,6 +42,8 @@
 
 USING_UG_NAMESPACE
 
+START_UGDIM_NAMESPACE
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -771,5 +773,7 @@ RETCODE XferPackMsgs (XFERMSG *theMsgs)
 
 #undef _FADR
 
-
 /****************************************************************************/
+
+
+END_UGDIM_NAMESPACE

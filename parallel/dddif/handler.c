@@ -678,7 +678,7 @@ static void VectorObjMkCons (DDD_OBJ obj, int newness)
 /*																			*/
 /****************************************************************************/
 #ifdef USE_FAMG
-void NS_PREFIX VectorDelete (DDD_OBJ obj)
+void NS_DIM_PREFIX VectorDelete (DDD_OBJ obj)
 {
   VECTOR          *pv                     = (VECTOR *)obj;
   INT level           = ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));

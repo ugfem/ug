@@ -119,6 +119,6 @@ int                     DrawRegion                      (GraphWindow *gwin, int 
 GraphWindow     *WhichGW                        (Window win);
 void                    SetCurrentGW            (GraphWindow *g);
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

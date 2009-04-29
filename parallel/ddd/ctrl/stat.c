@@ -79,6 +79,7 @@ RCSID("$Header$",DDD_RCS_STRING)
 /* routines                                                                 */
 /*                                                                          */
 /****************************************************************************/
+START_UGDIM_NAMESPACE
 
 void ddd_StatInit (void)
 {
@@ -123,3 +124,5 @@ char *DDD_StatCountDesc (int module, int index)
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

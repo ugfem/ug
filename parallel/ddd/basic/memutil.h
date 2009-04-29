@@ -36,7 +36,9 @@
 #ifndef __DDD_MEMUTIL_H__
 #define __DDD_MEMUTIL_H__
 
+#include "namespace.h"
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -121,5 +123,6 @@ typedef struct _Buffer
 
 /* memutil.c */
 
+END_UGDIM_NAMESPACE
 
 #endif

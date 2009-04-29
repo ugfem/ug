@@ -41,8 +41,9 @@
 USING_UG_NAMESPACES
 
 /* PPIF namespace: */
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
 
+  START_UGDIM_NAMESPACE
 
 #define DebugNotify   10  /* 0 is all, 10 is off */
 
@@ -538,5 +539,6 @@ int DDD_Notify (void)
   return(nRecvMsgs);
 }
 
-
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

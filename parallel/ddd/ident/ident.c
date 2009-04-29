@@ -63,7 +63,9 @@
 USING_UG_NAMESPACE
 
 /* PPIF namespace: */
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
+
+  START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -1677,6 +1679,6 @@ void ddd_IdentInit (void)
 void ddd_IdentExit (void)
 {}
 
-
-
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

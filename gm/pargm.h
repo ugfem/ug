@@ -49,7 +49,7 @@
 
 #include "namespace.h"
 
-START_UG_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -430,6 +430,6 @@ void   UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x);
 void   UG_GlobalMinNDOUBLE (INT n, DOUBLE *x);
 #endif
 
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif /* __PARGM_H__ */

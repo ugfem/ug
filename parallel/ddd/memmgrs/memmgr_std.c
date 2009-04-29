@@ -79,6 +79,7 @@
 /*                                                                          */
 /****************************************************************************/
 
+START_UGDIM_NAMESPACE
 
 void *memmgr_AllocPMEM (size_t size)
 {
@@ -170,3 +171,5 @@ void memmgr_ReleaseHMEM (void)
 
 void memmgr_Init (void)
 {}
+
+END_UGDIM_NAMESPACE

@@ -66,6 +66,7 @@ USING_UG_NAMESPACES
 /* PPIF namespace: */
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -232,7 +233,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX UpdateGridOverlap (GRID *theGrid)
+INT UpdateGridOverlap (GRID *theGrid)
 {
   ELEMENT *theElement;
 
@@ -337,7 +338,7 @@ static INT DropUsedFlags (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX ConnectGridOverlap (GRID *theGrid)
+INT ConnectGridOverlap (GRID *theGrid)
 {
   INT i,j,Sons_of_Side,prio;
   INT SonSides[MAX_SIDE_NODES];
@@ -558,7 +559,7 @@ static INT CompareSide (ELEMENT *theElement, INT s, ELEMENT *theFather, INT t)
   return((k == m));
 }
 
-INT NS_DIM_PREFIX ConnectVerticalOverlap (MULTIGRID *theMG)
+INT ConnectVerticalOverlap (MULTIGRID *theMG)
 {
   INT l;
 
@@ -781,5 +782,7 @@ static INT ConnectOverlapVerticalMultiGrid (MULTIGRID *theMG)
   }
   return(GM_OK);
 }
+
+END_UGDIM_NAMESPACE
 
 #endif

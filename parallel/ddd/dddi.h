@@ -62,6 +62,7 @@
 #include "include/ddd.h"
 #include "include/dddio.h"
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 
@@ -272,7 +273,7 @@ typedef struct _ELEM_DESC
 typedef struct _TYPE_DESC
 {
   int mode;                             /* current TypeMode (DECLARE/DEFINE)    */
-  char     *name;                       /* textual object description           */
+  char  *name;                       /* textual object description           */
   int currTypeDefCall;                  /* number of current call to TypeDefine */
 
 #ifdef CPP_FRONTEND
@@ -901,5 +902,7 @@ int       ddd_GlobalMinInt  (int);
 void      ddd_StatInit (void);
 void      ddd_StatExit (void);
 
+
+END_UGDIM_NAMESPACE
 
 #endif

@@ -34,7 +34,7 @@
 #ifndef __DDD_LOWCOMM_H__
 #define __DDD_LOWCOMM_H__
 
-
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -120,5 +120,6 @@ size_t   LC_GetBufferSize (LC_MSGHANDLE);
 void LC_PrintSendMsgs (void);
 void LC_PrintRecvMsgs (void);
 
+END_UGDIM_NAMESPACE
 
 #endif

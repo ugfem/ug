@@ -43,6 +43,8 @@
 USING_UG_NAMESPACE
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
+
 /****************************************************************************/
 /*                                                                          */
 /* data structures                                                          */
@@ -1316,3 +1318,5 @@ void DDD_JoinBegin (void)
 #undef _FADR
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

@@ -44,7 +44,7 @@ USING_UG_NAMESPACES
 
 #define DebugCoupling 10  /* 10 is off */
 
-
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -831,6 +831,6 @@ void ddd_CplMgrExit (void)
   FreeTmp(ddd_NCplTable,0);
 }
 
-
-
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

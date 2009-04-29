@@ -29,11 +29,13 @@
 
 #include "dddresources.h"
 
+START_UGDIM_NAMESPACE
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+/*
+   #ifdef __cplusplus
+   extern "C" {
+   #endif
+ */
 
 /****************************************************************************/
 /*                                                                          */
@@ -130,8 +132,12 @@ char *    DDD_StatClockDesc (int module, int index);
 char *    DDD_StatCountDesc (int module, int index);
 
 
-#ifdef __cplusplus
-}
-#endif
+/*
+   #ifdef __cplusplus
+   }
+   #endif
+ */
+
+END_UGDIM_NAMESPACE
 
 #endif

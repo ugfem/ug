@@ -45,6 +45,7 @@ USING_UG_NAMESPACES
 /* PPIF namespaces: */
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -530,7 +531,7 @@ static int SimpleSubdomainDistribution (MULTIGRID *theMG,  INT Procs, INT from, 
  */
 /****************************************************************************/
 
-void NS_DIM_PREFIX lbs (char *argv, MULTIGRID *theMG)
+void lbs (char *argv, MULTIGRID *theMG)
 {
   int n,mode,param,fromlevel,tolevel,part,hor_boxes,vert_boxes,dest;
 
@@ -663,5 +664,7 @@ void NS_DIM_PREFIX lbs (char *argv, MULTIGRID *theMG)
   if (param>=100)
     DDD_SetOption(OPT_INFO_XFER, XFER_SHOW_NONE);
 }
+
+END_UGDIM_NAMESPACE
 
 #endif /* ModelP */

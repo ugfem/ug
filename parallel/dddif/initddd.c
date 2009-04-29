@@ -134,7 +134,6 @@ NS_DIM_PREFIX EdgeSymmVHIF;
 /* DDD global controls */
 DDD_CTRL NS_DIM_PREFIX dddctrl;
 
-
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/

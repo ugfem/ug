@@ -32,6 +32,7 @@
 
 #include "dddaddon.h"
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -185,5 +186,6 @@ extern STAT_DATA stat_data;
 
 #endif
 
+END_UGDIM_NAMESPACE
 
 #endif

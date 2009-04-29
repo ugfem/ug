@@ -37,6 +37,7 @@
 /* PPIF namespace: */
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -139,3 +140,5 @@ void DDD_Library::ListLocalObjects (void)
 
   FreeLocalObjectsList(locObjs);
 }
+
+END_UGDIM_NAMESPACE

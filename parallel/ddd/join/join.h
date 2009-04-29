@@ -43,6 +43,7 @@
 #include "basic/oopp.h"    /* for object-orientated style via preprocessor */
 
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -314,6 +315,6 @@ int JoinStepMode(int);
    void XferDisplayMsg (char *comment, LC_MSGHANDLE);
  */
 
-
+END_UGDIM_NAMESPACE
 
 #endif

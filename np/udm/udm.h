@@ -302,7 +302,7 @@ typedef struct {
   SHORT *CmpsInType[NMATTYPES];
 
   /** \brief Pointers to sm form, if not full */
-  NS_PREFIX SPARSE_MATRIX *sm[NMATTYPES];
+  NS_DIM_PREFIX SPARSE_MATRIX *sm[NMATTYPES];
 
   /* redundant (but frequently used) information                          */
   /** \brief TRUE if sparse form should be used   */

@@ -1270,7 +1270,7 @@ int CheckElementsInMG (MULTIGRID *theMG)
   return (ret);
 }
 
-int NS_PREFIX CallGrape (MULTIGRID *theMG)
+int NS_DIM_PREFIX CallGrape (MULTIGRID *theMG)
 {
   static HMESH *mesh;
   int i,j;

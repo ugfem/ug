@@ -54,7 +54,9 @@
 USING_UG_NAMESPACES
 
 /* PPIF namespace */
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
+
+  START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 
@@ -161,8 +163,8 @@ static size_t mem_from_ug_freelists=0;
 #ifdef WITH_HASH_CONTROL
 /* hashing of alloc/free requests: hashtable and allocated entries */
 /* (from ddd/memmgrs/memmgr_ctrl.c)                   */
-HASH_ENTRY * NS_PREFIX htab[HASHTAB_SIZE];
-int NS_PREFIX nHashEntries;
+HASH_ENTRY *htab[HASHTAB_SIZE];
+int nHashEntries;
 #endif
 
 
@@ -441,7 +443,7 @@ static void HashShowMarks (char info)
  */
 /****************************************************************************/
 
-void NS_PREFIX memmgr_Report (void)
+void memmgr_Report (void)
 {
         #ifdef WITH_HASH_CONTROL
   UserWriteF("%04d memmgr_Report.  P=%9ld   A=%9ld   T=%9ld    SUM=%9ld\n",
@@ -483,7 +485,7 @@ void NS_PREFIX memmgr_Report (void)
  */
 /****************************************************************************/
 
-void * NS_PREFIX memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr)
+void * memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr)
 {
   void   *buffer;
 
@@ -521,7 +523,7 @@ void * NS_PREFIX memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr
  */
 /****************************************************************************/
 
-void NS_PREFIX memmgr_FreeOMEM (void *buffer, size_t size, int ddd_type)
+void memmgr_FreeOMEM (void *buffer, size_t size, int ddd_type)
 {
   /*
      printf("%d: memmgr_FreeOMEM(): buffer=%x, ddd_type=%d\n", me, buffer, ddd_type);
@@ -552,7 +554,7 @@ void NS_PREFIX memmgr_FreeOMEM (void *buffer, size_t size, int ddd_type)
  */
 /****************************************************************************/
 
-void * NS_PREFIX memmgr_AllocPMEM (unsigned long size)
+void * memmgr_AllocPMEM (unsigned long size)
 {
   void   *buffer;
 
@@ -590,7 +592,7 @@ void * NS_PREFIX memmgr_AllocPMEM (unsigned long size)
  */
 /****************************************************************************/
 
-void NS_PREFIX memmgr_FreePMEM (void *buffer)
+void memmgr_FreePMEM (void *buffer)
 {
         #ifdef WITH_HASH_CONTROL
   {
@@ -626,7 +628,7 @@ void NS_PREFIX memmgr_FreePMEM (void *buffer)
  */
 /****************************************************************************/
 
-void * NS_PREFIX memmgr_AllocAMEM (unsigned long size)
+void * memmgr_AllocAMEM (unsigned long size)
 {
   void   *buffer;
 
@@ -664,7 +666,7 @@ void * NS_PREFIX memmgr_AllocAMEM (unsigned long size)
  */
 /****************************************************************************/
 
-void NS_PREFIX memmgr_FreeAMEM (void *buffer)
+void memmgr_FreeAMEM (void *buffer)
 {
         #ifdef WITH_HASH_CONTROL
   {
@@ -699,7 +701,7 @@ void NS_PREFIX memmgr_FreeAMEM (void *buffer)
  */
 /****************************************************************************/
 
-void * NS_PREFIX memmgr_AllocTMEM (unsigned long size, int kind)
+void * memmgr_AllocTMEM (unsigned long size, int kind)
 {
   void   *buffer;
 
@@ -772,7 +774,7 @@ void * NS_PREFIX memmgr_AllocTMEM (unsigned long size, int kind)
  */
 /****************************************************************************/
 
-void NS_PREFIX memmgr_FreeTMEM (void *buffer, int kind)
+void memmgr_FreeTMEM (void *buffer, int kind)
 {
         #ifdef WITH_HASH_CONTROL
   {
@@ -823,14 +825,14 @@ void NS_PREFIX memmgr_FreeTMEM (void *buffer, int kind)
 
 /****************************************************************************/
 
-void NS_PREFIX memmgr_MarkHMEM (long *theMarkKey)
+void memmgr_MarkHMEM (long *theMarkKey)
 {
   INT myMarkKey;
   MarkTmpMem(MGHEAP(dddctrl.currMG), &myMarkKey);
   *theMarkKey = (long)myMarkKey;
 }
 
-void* NS_PREFIX memmgr_AllocHMEM (size_t size, long theMarkKey)
+void* memmgr_AllocHMEM (size_t size, long theMarkKey)
 {
   void *buffer;
   buffer = GetTmpMem(MGHEAP(dddctrl.currMG), size, (INT)theMarkKey);
@@ -842,7 +844,7 @@ void* NS_PREFIX memmgr_AllocHMEM (size_t size, long theMarkKey)
   return(buffer);
 }
 
-void NS_PREFIX memmgr_ReleaseHMEM (long theMarkKey)
+void memmgr_ReleaseHMEM (long theMarkKey)
 {
   ReleaseTmpMem(MGHEAP(dddctrl.currMG), (INT)theMarkKey);
 }
@@ -918,7 +920,7 @@ static size_t DetectAllocatableMemory (void)
  */
 /****************************************************************************/
 
-void NS_PREFIX memmgr_Init (void)
+void memmgr_Init (void)
 {
         #ifdef WITH_GENERAL_HEAP
   {
@@ -958,5 +960,7 @@ void NS_PREFIX memmgr_Init (void)
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE
 
 #endif /* ModelP */

@@ -38,6 +38,7 @@
 
 #include "dddi.h"
 
+START_UGDIM_NAMESPACE
 
 #define DebugPrio     10   /* 0 is all, 10 is off */
 
@@ -418,3 +419,5 @@ void DDD_PrioBegin (void)
 #undef _FADR
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

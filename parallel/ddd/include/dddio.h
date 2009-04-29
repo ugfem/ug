@@ -29,6 +29,7 @@
 #ifndef __DDDIO__
 #define __DDDIO__
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -51,5 +52,6 @@ void DDD_PrintError (char error_class, int error_no, char *text);
 void DDD_Flush (void);
 void DDD_SyncAll (void);
 
+END_UGDIM_NAMESPACE
 
 #endif

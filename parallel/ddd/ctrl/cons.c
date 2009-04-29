@@ -42,8 +42,9 @@
 USING_UG_NAMESPACES
 
 /* PPIF namespace: */
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
 
+  START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -805,3 +806,6 @@ int DDD_Library::ConsCheck (void)
 
   return(total_errors);
 }
+
+
+END_UGDIM_NAMESPACE

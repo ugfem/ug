@@ -38,6 +38,8 @@
 
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
+
 /* #define DebugAllPointers */
 
 
@@ -228,3 +230,5 @@ void XferDisplayMsg (char *comment, LC_MSGHANDLE xm)
   XferPtr(xm, buf);
 #       endif
 }
+
+END_UGDIM_NAMESPACE

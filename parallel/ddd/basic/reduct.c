@@ -38,9 +38,12 @@
 
 #include "ppif.h"
 
+#include "namespace.h"
+
 /* PPIF namespace: */
 USING_PPIF_NAMESPACE
 
+  START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -161,3 +164,5 @@ int ddd_GlobalSumInt (int x)
         return(x);
    }
  */
+
+END_UGDIM_NAMESPACE

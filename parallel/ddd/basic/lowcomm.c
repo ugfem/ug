@@ -72,7 +72,9 @@
 USING_UG_NAMESPACES
 
 /* PPIF namespace: */
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
+
+  START_UGDIM_NAMESPACE
 
 #define DebugLowComm  10  /* 0 is all, 10 is off */
 
@@ -114,7 +116,7 @@ enum CompType {
 
 typedef struct _COMP_DESC
 {
-  char     *name;              /* textual description of component */
+  char *name;               /* textual description of component */
   int type;                    /* type of this component */
   size_t entry_size;           /* size per entry (for tables) */
 } COMP_DESC;
@@ -122,7 +124,7 @@ typedef struct _COMP_DESC
 
 typedef struct _MSG_TYPE
 {
-  char       *name;                      /* textual description of msgtype */
+  char *name;                      /* textual description of msgtype */
   int nComps;                            /* number of components */
   COMP_DESC comp[MAX_COMPONENTS];        /* component array */
 
@@ -1462,3 +1464,5 @@ void LC_PrintRecvMsgs (void)
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

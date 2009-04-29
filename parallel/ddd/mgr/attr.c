@@ -35,6 +35,7 @@
 
 #include "dddi.h"
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -87,3 +88,5 @@ void DDD_AttrSet (DDD_HDR hdr, DDD_ATTR attr)
 
   /* TODO: does attr has to be told the other copies via communication?? */
 }
+
+END_UGDIM_NAMESPACE

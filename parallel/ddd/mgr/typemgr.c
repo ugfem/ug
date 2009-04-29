@@ -45,7 +45,9 @@
 USING_UG_NAMESPACES
 
 /* PPIF namespace: */
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
+
+  START_UGDIM_NAMESPACE
 
 /*
    #define DebugTypeDefine
@@ -1178,10 +1180,10 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 /****************************************************************************/
 
 #ifdef C_FRONTEND
-DDD_TYPE DDD_TypeDeclare (char *name)
+DDD_TYPE DDD_TypeDeclare(char *name)
 #endif
 #ifdef CPP_FRONTEND
-DDD_TYPE DDD_Library::TypeDeclareStruct (char *name)
+DDD_TYPE DDD_Library::TypeDeclareStruct(char *name)
 #endif
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 {
@@ -1842,7 +1844,6 @@ void ddd_TypeMgrExit (void)
   }
 }
 
-
-
-
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

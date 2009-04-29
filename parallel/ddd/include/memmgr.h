@@ -35,7 +35,7 @@
 
 #include "namespace.h"
 
-START_UG_NAMESPACE
+START_UGDIM_NAMESPACE
 /*
    #ifdef __cplusplus
    extern "C" {
@@ -123,6 +123,6 @@ void  memmgr_Report ();
    }
    #endif
  */
-END_NAMESPACE
+END_UGDIM_NAMESPACE
 
 #endif

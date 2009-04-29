@@ -612,7 +612,7 @@ struct vector {
 
 #ifdef ModelP
   /** \todo Please doc me! */
-  DDD_HEADER ddd;
+  NS_DIM_PREFIX DDD_HEADER ddd;
 #endif
 
   /** \brief double linked list of vectors                */
@@ -1584,19 +1584,19 @@ struct grid {
   INT level;
 
   /** \brief Number of vertices */
-  INT nVert[NS_PREFIX MAX_PRIOS];
+  INT nVert[NS_DIM_PREFIX MAX_PRIOS];
 
   /** \brief Number of nodes on this grid level */
-  INT nNode[NS_PREFIX MAX_PRIOS];
+  INT nNode[NS_DIM_PREFIX MAX_PRIOS];
 
   /** \brief Number of elements on this grid level */
-  INT nElem[NS_PREFIX MAX_PRIOS];
+  INT nElem[NS_DIM_PREFIX MAX_PRIOS];
 
   /** \brief Number of edges on this grid level */
   INT nEdge;
 
   /** \brief Number of vectors on this grid level */
-  INT nVector[NS_PREFIX MAX_PRIOS];
+  INT nVector[NS_DIM_PREFIX MAX_PRIOS];
 
   /** \brief Number of connections on this grid level */
   INT nCon;
@@ -1608,14 +1608,14 @@ struct grid {
   DATA_STATUS data_status;          /* memory management for vectors|matrix */
                                     /* status for consistent and collect    */
   /* pointers */
-  union  element *elements[NS_PREFIX ELEMENT_LISTPARTS];       /* pointer to first element*/
-  union  element *lastelement[NS_PREFIX ELEMENT_LISTPARTS];      /*pointer to last element*/
-  union  vertex *vertices[NS_PREFIX VERTEX_LISTPARTS];            /* pointer to first vertex      */
-  union  vertex *lastvertex[NS_PREFIX VERTEX_LISTPARTS];      /* pointer to last vertex   */
-  struct node *firstNode[NS_PREFIX NODE_LISTPARTS];       /* pointer to first node                */
-  struct node *lastNode[NS_PREFIX NODE_LISTPARTS];        /* pointer to last node                 */
-  VECTOR *firstVector[NS_PREFIX VECTOR_LISTPARTS];        /* pointer to first vector              */
-  VECTOR *lastVector[NS_PREFIX VECTOR_LISTPARTS];         /* pointer to last vector               */
+  union  element *elements[NS_DIM_PREFIX ELEMENT_LISTPARTS];       /* pointer to first element*/
+  union  element *lastelement[NS_DIM_PREFIX ELEMENT_LISTPARTS];      /*pointer to last element*/
+  union  vertex *vertices[NS_DIM_PREFIX VERTEX_LISTPARTS];            /* pointer to first vertex      */
+  union  vertex *lastvertex[NS_DIM_PREFIX VERTEX_LISTPARTS];      /* pointer to last vertex   */
+  struct node *firstNode[NS_DIM_PREFIX NODE_LISTPARTS];       /* pointer to first node                */
+  struct node *lastNode[NS_DIM_PREFIX NODE_LISTPARTS];        /* pointer to last node                 */
+  VECTOR *firstVector[NS_DIM_PREFIX VECTOR_LISTPARTS];        /* pointer to first vector              */
+  VECTOR *lastVector[NS_DIM_PREFIX VECTOR_LISTPARTS];         /* pointer to last vector               */
 
   /** \brief Pointer to the first blockvector
 

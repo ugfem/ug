@@ -49,6 +49,12 @@
 #ifndef __DDD__
 #define __DDD__
 
+/* for size_t */
+#include <stddef.h>
+
+#include "namespace.h"
+
+START_UGDIM_NAMESPACE
 
 #define DDD_VERSION    "1.9"
 
@@ -108,19 +114,13 @@
 
 /* F77SYM(lsym,usym) macro is defined in compiler.h. 961127 KB */
 
-
-#ifdef __cplusplus
- #ifndef CPP_FRONTEND
-extern "C" {
- #endif
-#endif
-
-
-
-/* for size_t */
-#include <stddef.h>
-
-
+/*
+   #ifdef __cplusplus
+   #ifndef CPP_FRONTEND
+   extern "C" {
+   #endif
+   #endif
+ */
 
 /****************************************************************************/
 /*                                                                          */
@@ -1196,13 +1196,15 @@ DDD_HDR  DDD_SearchHdr (DDD_GID _FPTR);
 #undef _FPTR
 #undef _OBJREF
 
-
-#ifdef __cplusplus
- #ifndef CPP_FRONTEND
-}
- #endif
-#endif
-
+/*
+   #ifdef __cplusplus
+   #ifndef CPP_FRONTEND
+   }
+   #endif
+   #endif
+ */
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE
 
 #endif

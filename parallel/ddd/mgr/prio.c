@@ -40,6 +40,8 @@ USING_UG_NAMESPACE
 /* PPIF namespace: */
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -536,6 +538,6 @@ void DDD_PrioMergeDisplay (DDD_TYPE type_id)
 }
 #undef FUNCNAME
 
-
-
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

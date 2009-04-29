@@ -35,9 +35,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-
 #include "dddi.h"
-
 
 USING_UG_NAMESPACE
 
@@ -51,6 +49,7 @@ USING_UG_NAMESPACE
  */
 #define _CHECKALLOC(ptr)   if (ptr==NULL) return (NULL)
 
+START_UGDIM_NAMESPACE
 
 static int TmpMem_kind = TMEM_ANY;
 
@@ -76,10 +75,11 @@ void xfer_SetTmpMem (int kind)
 void *xfer_AllocHeap (size_t);
 void xfer_FreeHeap (void *);
 
+END_UGDIM_NAMESPACE
 
 #include "xfer.h"
 
-
+START_UGDIM_NAMESPACE
 
 #ifdef XferMemFromHeap
 void *xfer_AllocHeap (size_t size)
@@ -180,7 +180,6 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 static AddDataSegm *segmAddData = NULL;
 static SizesSegm   *segmSizes   = NULL;
-
 
 
 /****************************************************************************/
@@ -508,3 +507,5 @@ void GetSizesXIAddData (int *nSegms, int *nItems, size_t *alloc_mem, size_t *use
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

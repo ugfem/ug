@@ -50,7 +50,7 @@
 #include "basic/oopp.h"    /* for object-orientated style via preprocessor */
 #include "sll.h"           /* TODO: remove this in future versions */
 
-
+START_UGDIM_NAMESPACE
 
 #define SUPPORT_RESENT_FLAG
 
@@ -662,6 +662,6 @@ void XferUnpack (LC_MSGHANDLE *, int, DDD_HDR *, int,
 /* ctrl.c */
 void XferDisplayMsg (char *comment, LC_MSGHANDLE);
 
-
+END_UGDIM_NAMESPACE
 
 #endif

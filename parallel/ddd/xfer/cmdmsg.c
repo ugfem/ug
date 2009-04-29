@@ -46,7 +46,9 @@
 
 
 USING_UG_NAMESPACE
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
+
+  START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -533,3 +535,5 @@ int PruneXIDelCmd (
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

@@ -50,6 +50,7 @@ USING_UG_NAMESPACE
 /* PPIF namespace: */
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -788,14 +789,8 @@ void DDD_Interface::SetName (char *name)
   DDD_IF ifId = _id;
 #endif
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-/* ensure maximum length */
-if (strlen(name) > IF_NAMELEN-1)
-{
-  name[IF_NAMELEN-1] = 0;
-}
-
 /* copy name string */
-strcpy(theIF[ifId].name, name);
+strncpy(theIF[ifId].name, name, IF_NAMELEN-1);
 }
 #endif
 
@@ -1221,5 +1216,6 @@ size_t DDD_IFInfoMemoryAll (void)
   return(sum);
 }
 
+END_UGDIM_NAMESPACE
 
 /****************************************************************************/

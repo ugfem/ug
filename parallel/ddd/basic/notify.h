@@ -37,6 +37,7 @@
 
 #include "include/ddd.h"
 
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -75,5 +76,6 @@ NOTIFY_DESC *DDD_NotifyBegin (int);
 void         DDD_NotifyEnd (void);
 int          DDD_Notify (void);
 
+END_UGDIM_NAMESPACE
 
 #endif

@@ -37,23 +37,23 @@
 
 
 #ifdef IF_WITH_XARGS
-	#define EXEC_LOOP(a,b,c)     IFExecLoopCplX(a,b,c)
-	#define COMM_LOOP(a,b,c,d,e) IFCommLoopCplX(a,b,c,d,e)
+	#define EXEC_LOOP(a,b,c)     NS_DIM_PREFIX IFExecLoopCplX(a,b,c)
+	#define COMM_LOOP(a,b,c,d,e) NS_DIM_PREFIX IFCommLoopCplX(a,b,c,d,e)
 	#define D_AB(p)              (p->cplAB)
 	#define D_BA(p)              (p->cplBA)
 	#define D_ABA(p)             (p->cplABA)
 #else
-	#define EXEC_LOOP(a,b,c)     IFExecLoopObj(a,b,c)
+	#define EXEC_LOOP(a,b,c)     NS_DIM_PREFIX IFExecLoopObj(a,b,c)
 	#ifdef CPP_FRONTEND
 	  #ifdef IF_CBR
 	    #define COMM_LOOP(a,b,c,d,e) \
-			CAT(IFCommLoopObj,a) (GatherScatter,b,c,d,e)
+			CAT(NS_DIM_PREFIX IFCommLoopObj,a) (GatherScatter,b,c,d,e)
 	  #else
 	    #define COMM_LOOP(a,b,c,d,e) \
-			CAT(IFCommLoopObj,a) (*GatherScatter,b,c,d,e)
+			CAT(NS_DIM_PREFIX IFCommLoopObj,a) (*GatherScatter,b,c,d,e)
 	  #endif
 	#else
-	#define COMM_LOOP(a,b,c,d,e) IFCommLoopObj(a,b,c,d,e)
+	#define COMM_LOOP(a,b,c,d,e) NS_DIM_PREFIX IFCommLoopObj(a,b,c,d,e)
 	#endif
 	#define D_AB(p)              (p->objAB)
 	#define D_BA(p)              (p->objBA)
@@ -196,34 +196,34 @@
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 void IF_FUNCNAME (
 #ifdef C_FRONTEND
-	DDD_IF aIF,
+	NS_DIM_PREFIX DDD_IF aIF,
 #endif
 	#ifdef IF_WITH_ATTR
-		DDD_ATTR aAttr,
+		NS_DIM_PREFIX DDD_ATTR aAttr,
 	#endif
 	#ifdef IF_EXECLOCAL
 		#ifdef IF_WITH_XARGS
-			ExecProcXPtr ExecProc)
+			NS_DIM_PREFIX ExecProcXPtr ExecProc)
 		#else
-			ExecProcPtr ExecProc)
+			NS_DIM_PREFIX ExecProcPtr ExecProc)
 		#endif
 	#else
 		#ifdef IF_ONEWAY
-			DDD_IF_DIR aDir,
+			NS_DIM_PREFIX DDD_IF_DIR aDir,
 		#endif
 		size_t aSize,
 #ifdef C_FRONTEND
 		#ifdef IF_WITH_XARGS
-			ComProcXPtr Gather, ComProcXPtr Scatter)
+			NS_DIM_PREFIX ComProcXPtr Gather, NS_DIM_PREFIX ComProcXPtr Scatter)
 		#else
-			ComProcPtr Gather, ComProcPtr Scatter)
+			NS_DIM_PREFIX ComProcPtr Gather, NS_DIM_PREFIX ComProcPtr Scatter)
 		#endif
 #endif
 #ifdef CPP_FRONTEND
 		#ifdef IF_WITH_XARGS
-			DDD_GatherScatterX REFDECL GatherScatter)
+			NS_DIM_PREFIX DDD_GatherScatterX REFDECL GatherScatter)
 		#else
-			DDD_GatherScatter  REFDECL GatherScatter)
+			NS_DIM_PREFIX DDD_GatherScatter  REFDECL GatherScatter)
 		#endif
 #endif
 	#endif
@@ -236,9 +236,9 @@ void IF_FUNCNAME (
 #endif
 
 #ifdef F_FRONTEND
-void IF_FUNCNAME (DDD_IF *_aIF,
+void IF_FUNCNAME (NS_DIM_PREFIX DDD_IF *_aIF,
 	#ifdef IF_WITH_ATTR
-		DDD_ATTR *_aAttr,
+		NS_DIM_PREFIX DDD_ATTR *_aAttr,
 	#endif
 	#ifdef IF_EXECLOCAL
 		#ifdef IF_WITH_XARGS
@@ -252,9 +252,9 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 		#endif
 		size_t *_aSize,
 		#ifdef IF_WITH_XARGS
-			ComProcXPtr Gather, ComProcXPtr Scatter)
+			NS_DIM_PREFIX ComProcXPtr Gather, NS_DIM_PREFIX ComProcXPtr Scatter)
 		#else
-			ComProcPtr Gather, ComProcPtr Scatter)
+			NS_DIM_PREFIX ComProcPtr Gather, NS_DIM_PREFIX ComProcPtr Scatter)
 		#endif
 	#endif
 {
@@ -271,13 +271,13 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 	#endif
 #endif  /* F_FRONTEND */
 
-	IF_PROC		  *ifHead;
+	NS_DIM_PREFIX IF_PROC		  *ifHead;
 	unsigned long tries;
 	int           recv_mesgs;
 
 
 	/* prohibit using standard interface (IF0) */
-	if (aIF==STD_INTERFACE)
+	if (aIF==NS_DIM_PREFIX STD_INTERFACE)
 	{
 		DDD_PrintError('E', 4300,
 			CONCAT("cannot use standard interface in ",IF_FUNCNAME));
@@ -288,7 +288,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 	/* shortcuts can only be used without extended handler arguments */
 	#ifndef IF_WITH_XARGS
 		/* if shortcut tables are invalid -> recompute */
-		IFCheckShortcuts(aIF);
+		NS_DIM_PREFIX IFCheckShortcuts(aIF);
 	#endif
 
 
@@ -297,7 +297,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 	ForIF(aIF,ifHead)
 	{
 		#ifdef IF_WITH_ATTR
-			IF_ATTR	    *ifAttr;
+			NS_DIM_PREFIX IF_ATTR	    *ifAttr;
 			FIND_ATTR; /* find ifAttr */
 		#endif
 
@@ -320,7 +320,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 	ForIF(aIF,ifHead)
 	{
 		#ifdef IF_WITH_ATTR
-			IF_ATTR	    *ifAttr;
+			NS_DIM_PREFIX IF_ATTR	    *ifAttr;
 		#endif
 		#ifdef IF_ONEWAY
 			int      nOut, nIn;
@@ -335,11 +335,11 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 		#endif
 
 		#ifdef IF_EXCHANGE
-			IFGetMem(ifHead, aSize, PART->nItems, PART->nItems);
+			NS_DIM_PREFIX IFGetMem(ifHead, aSize, PART->nItems, PART->nItems);
 		#endif
 
 		#ifdef IF_ONEWAY
-			if (aDir==IF_FORWARD) {
+			if (aDir==NS_DIM_PREFIX IF_FORWARD) {
 				nOut = PART->nAB; nIn = PART->nBA;
 			}
 			else {
@@ -360,7 +360,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 
 
 	/* init communication, initiate receives */
-	recv_mesgs = IFInitComm(aIF);
+	recv_mesgs = NS_DIM_PREFIX IFInitComm(aIF);
 
 
 	/* build messages using gather-handler and send them away */
@@ -368,14 +368,14 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 	{
 		char   *buffer;
 		#ifdef IF_WITH_ATTR
-			IF_ATTR *ifAttr;
+			NS_DIM_PREFIX IF_ATTR *ifAttr;
 		#endif
 		#ifdef IF_ONEWAY
 			int      nOut;
 			#ifdef IF_WITH_XARGS
-			COUPLING **datOut;
+			NS_DIM_PREFIX COUPLING **datOut;
 			#else
-			IFObjPtr  *datOut;
+			NS_DIM_PREFIX IFObjPtr  *datOut;
 			#endif
 		#endif
 
@@ -392,7 +392,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 		#endif
 
 		#ifdef IF_ONEWAY
-			if (aDir==IF_FORWARD) {
+			if (aDir==NS_DIM_PREFIX IF_FORWARD) {
 				nOut = PART->nAB;  datOut = D_AB(PART);
 			}
 			else {
@@ -404,7 +404,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 
 		buffer= COMM_LOOP(Gather, D_ABA(PART), buffer, aSize, PART->nABA);
 
-		IFInitSend(ifHead);
+		NS_DIM_PREFIX IFInitSend(ifHead);
 	}
 
 
@@ -420,10 +420,10 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 				int error = InfoARecv(ifHead->vc, ifHead->msgIn);
 				if (error==-1)
 				{
-					sprintf(cBuffer,
+					sprintf(NS_DIM_PREFIX cBuffer,
 							"PPIF's InfoARecv() failed for recv to proc=%d in IF-Comm",
 						ifHead->proc);
-					DDD_PrintError('E', 4221, cBuffer);
+					DDD_PrintError('E', 4221, NS_DIM_PREFIX cBuffer);
 					HARD_EXIT;
 				}
 
@@ -433,13 +433,13 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 					#ifdef IF_ONEWAY
 						int      nIn;
 						#ifdef IF_WITH_XARGS
-						COUPLING **datIn;
+						NS_DIM_PREFIX COUPLING **datIn;
 						#else
-						IFObjPtr  *datIn;
+						NS_DIM_PREFIX IFObjPtr  *datIn;
 						#endif
 					#endif
 					#ifdef IF_WITH_ATTR
-						IF_ATTR  *ifAttr;
+						NS_DIM_PREFIX IF_ATTR  *ifAttr;
 					#endif
 
 					#ifdef CtrlTimeoutsDetailed
@@ -468,7 +468,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 					#endif
 
 					#ifdef IF_ONEWAY
-						if (aDir==IF_FORWARD) {
+						if (aDir==NS_DIM_PREFIX IF_FORWARD) {
 							nIn  = PART->nBA;  datIn = D_BA(PART);
 						}
 						else {
@@ -488,17 +488,17 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 	/* finally poll send completion */
 	if (recv_mesgs>0)
 	{
-		sprintf(cBuffer, CONCAT("receive-timeout for IF %02d in ",IF_FUNCNAME), aIF);
-		DDD_PrintError('E', 4200, cBuffer);
+		sprintf(NS_DIM_PREFIX cBuffer, CONCAT("receive-timeout for IF %02d in ",IF_FUNCNAME), aIF);
+		DDD_PrintError('E', 4200, NS_DIM_PREFIX cBuffer);
 
 		ForIF(aIF,ifHead)
 		{
 			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=NO_MSGID)
 			{
-				sprintf(cBuffer,
+				sprintf(NS_DIM_PREFIX cBuffer,
 					"  waiting for message (from proc %d, size %ld)",
 					ifHead->proc, (unsigned long)BufferLen(ifHead->bufIn));
-				DDD_PrintError('E', 4201, cBuffer);
+				DDD_PrintError('E', 4201, NS_DIM_PREFIX cBuffer);
 			}
 		}
 	}
@@ -509,19 +509,19 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 			me, aIF, (unsigned long)tries);
 		#endif
 
-		if (! IFPollSend(aIF))
+		if (! NS_DIM_PREFIX IFPollSend(aIF))
 		{
-			sprintf(cBuffer, CONCAT("send-timeout for IF %02d in ",IF_FUNCNAME), aIF);
-			DDD_PrintError('E', 4210, cBuffer);
+			sprintf(NS_DIM_PREFIX cBuffer, CONCAT("send-timeout for IF %02d in ",IF_FUNCNAME), aIF);
+			DDD_PrintError('E', 4210, NS_DIM_PREFIX cBuffer);
 
 			ForIF(aIF,ifHead)
 			{
 				if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=NO_MSGID)
 				{
-					sprintf(cBuffer,
+					sprintf(NS_DIM_PREFIX cBuffer,
 						"  waiting for send completion (to proc %d, size %ld)",
 						ifHead->proc, (unsigned long)BufferLen(ifHead->bufOut));
-					DDD_PrintError('E', 4211, cBuffer);
+					DDD_PrintError('E', 4211, NS_DIM_PREFIX cBuffer);
 				}
 			}
 		}
@@ -529,7 +529,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 
 
 	/* free memory */
-	IFExitComm(aIF);
+	NS_DIM_PREFIX IFExitComm(aIF);
 
 	/*STAT_TIMER1(60);*/
 

@@ -46,6 +46,7 @@
 USING_UG_NAMESPACE
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
 
 /* TODO kb 961210
 #define DEBUG_MERGE_MODE
@@ -1877,4 +1878,4 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 
 /****************************************************************************/
 
-
+END_UGDIM_NAMESPACE

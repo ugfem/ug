@@ -37,6 +37,7 @@
 #include "basic/memutil.h"
 
 
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -47,6 +48,7 @@
 /*                                                                          */
 /****************************************************************************/
 
+START_UGDIM_NAMESPACE
 
 /*
    #define CtrlTimeouts
@@ -76,7 +78,7 @@ enum CplDir {
 /* macros for easier coding of replicated source code */
 
 /* loop over one interface (all ifHeads) */
-#define ForIF(id,iter)  for((iter)=theIF[(id)].ifHead;  \
+#define ForIF(id,iter)  for((iter)=NS_DIM_PREFIX theIF[(id)].ifHead;  \
                             (iter)!=NULL;  \
                             (iter)=(iter)->next)
 
@@ -224,5 +226,7 @@ void IFCheckShortcuts (DDD_IF);
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE
 
 #endif

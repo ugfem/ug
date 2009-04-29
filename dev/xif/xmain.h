@@ -117,6 +117,6 @@ extern int cui;                                                         /* toggl
 /*                                                                                                                                                      */
 /****************************************************************************/
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

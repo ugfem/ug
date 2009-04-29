@@ -1,12 +1,24 @@
 # $Id$
 
 if PARALLEL
-  LIB = libddd.la
+
+if BUILD2D
+  LIB_2D = libddd2.la
 else
-  LIB =
+  LIB_2D =
+endif
+if BUILD3D
+  LIB_3D = libddd3.la
+else
+  LIB_3D =
 endif
 
-noinst_LTLIBRARIES = $(LIB)
+else
+  LIB_2D =
+  LIB_3D =
+endif
+
+noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
 # set options from Makefile.dddobj
 
@@ -39,7 +51,11 @@ DDD = ddd.c dddi.h
 EXTRA_DIST = include/dddaddon.h include/ddd.h include/memmgr.h include/dddio.h \
              include/fddd.f include/dddresources.h
 
-libddd_la_SOURCES = $(BASIC) $(CTRL) $(MGR) $(IDENT) $(IF) $(XFER) \
+libddd2_la_SOURCES = $(BASIC) $(CTRL) $(MGR) $(IDENT) $(IF) $(XFER) \
                     $(PRIO) $(JOIN) $(MISC) $(DDD) f77/f2c.c
-libddd_la_CPPFLAGS = $(UG_CPPFLAGS) $(DDDFLAGS)
+libddd2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)
+
+libddd3_la_SOURCES = $(BASIC) $(CTRL) $(MGR) $(IDENT) $(IF) $(XFER) \
+                    $(PRIO) $(JOIN) $(MISC) $(DDD) f77/f2c.c
+libddd3_la_CPPFLAGS = $(UG_3DFLAGS) $(DDDFLAGS)
 

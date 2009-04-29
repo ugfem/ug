@@ -3,6 +3,8 @@
 SOURCES = std_domain.c std_parallel.c std_domain.h std_internal.h
 
 EXTRALIBS = ../../low/liblow.la ../../dev/libdevices.la
+EXTRALIBS2D = ../../low/liblow2.la
+EXTRALIBS3D = ../../low/liblow3.la
 if BUILD2D
   LIB_2D = libdomS2.la
 if PARALLEL
@@ -27,8 +29,8 @@ include_HEADERS = std_domain.h
 
 libdomS2_la_SOURCES = $(SOURCES) domains2d.c
 libdomS2_la_CPPFLAGS = $(UG_2DFLAGS)
-libdomS2_la_LIBADD = $(PLIBS2) $(EXTRALIBS)
+libdomS2_la_LIBADD = $(PLIBS2) $(EXTRALIBS) $(EXTRALIBS2D)
 
 libdomS3_la_SOURCES = $(SOURCES) domains3d.c
 libdomS3_la_CPPFLAGS = $(UG_3DFLAGS)
-libdomS3_la_LIBADD = $(PLIBS3) $(EXTRALIBS)
+libdomS3_la_LIBADD = $(PLIBS3) $(EXTRALIBS) $(EXTRALIBS3D)

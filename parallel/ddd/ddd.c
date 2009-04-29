@@ -45,6 +45,8 @@
 USING_UG_NAMESPACE
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -583,3 +585,5 @@ DDD_Library* DDD_Library::Instance (void)
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

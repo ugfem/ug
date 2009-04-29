@@ -36,7 +36,7 @@
 /* PPIF namespace: */
 USING_PPIF_NAMESPACE
 
-
+START_UGDIM_NAMESPACE
 
 void (*DDD_UserLineOutFunction)(char *s);
 
@@ -181,3 +181,5 @@ void DDD_PrintError (char error_class, int error_no, char *text)
   sprintf(buffer,"DDD [%03d] %s %05d: %s\n",me,classText,error_no,text);
   DDD_PrintLine(buffer);
 }
+
+END_UGDIM_NAMESPACE

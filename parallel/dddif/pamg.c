@@ -82,6 +82,8 @@ USING_UG_NAMESPACES
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+START_UGDIM_NAMESPACE
+
 #define NBARRAYSIZE     40      /* only temp. for pamg check */
 static INT MaximumMatrices;     /* only temp. for pamg check */
 static INT pamgerrors;  /* only temp. for pamg check */
@@ -95,7 +97,7 @@ static INT pamgerrors;  /* only temp. for pamg check */
 /****************************************************************************/
 
 /* TODO:remove*/
-void NS_PREFIX printall(GRID *grid, char *text)
+void NS_DIM_PREFIX printall(GRID *grid, char *text)
 {
   VECTOR *v;
   for( v=PFIRSTVECTOR(grid); v!=NULL; v = SUCCVC(v))
@@ -265,7 +267,7 @@ static int Scatter_pamgCheck (DDD_OBJ obj, void *data)
   return 0;
 }
 
-INT NS_PREFIX pamgCheckDo( MULTIGRID *theMG, INT level )
+INT NS_DIM_PREFIX pamgCheckDo( MULTIGRID *theMG, INT level )
 {
   GRID *grid;
   size_t sizePerVector;
@@ -295,6 +297,9 @@ INT NS_PREFIX pamgCheckDo( MULTIGRID *theMG, INT level )
 
   return 0;
 }
+
+END_UGDIM_NAMESPACE
+
 #endif /* USE_FAMG */
 
 #endif  /* ModelP */

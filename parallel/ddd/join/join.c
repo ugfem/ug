@@ -38,8 +38,9 @@
 
 #include "dddi.h"
 
-
 USING_UG_NAMESPACE
+
+  START_UGDIM_NAMESPACE
 
 /*
         NOTE: all container-classes from ooppcc.h are implemented in this
@@ -66,11 +67,11 @@ void join_SetTmpMem (int kind)
   TmpMem_kind = kind;
 }
 
-
+END_UGDIM_NAMESPACE
 
 #include "join.h"
 
-
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -311,5 +312,6 @@ void ddd_JoinExit (void)
 
 #undef _FADR
 
-
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

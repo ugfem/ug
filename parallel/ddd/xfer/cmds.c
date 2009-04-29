@@ -43,7 +43,9 @@
 
 
 USING_UG_NAMESPACE
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
+
+  START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -911,8 +913,6 @@ exit:
    @param prio new priority of that local object.
  */
 
-
-
 void DDD_XferPrioChange (DDD_HDR hdr, DDD_PRIO prio)
 {
   XISetPrio *xi = XISetPrioSet_NewItem(xferGlobals.setXISetPrio);
@@ -1617,3 +1617,5 @@ int DDD_XferObjIsResent (DDD_HDR hdr)
 #undef _FADR
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

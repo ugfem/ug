@@ -40,7 +40,9 @@
 
 
 USING_UG_NAMESPACE
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
+
+  START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -502,3 +504,5 @@ void CommunicateCplMsgs (
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE

@@ -51,7 +51,9 @@
 USING_UG_NAMESPACES
 
 /* PPIF namespaces: */
-  USING_PPIF_NAMESPACE
+USING_PPIF_NAMESPACE
+
+  START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -102,7 +104,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
    D*/
 /****************************************************************************/
-INT NS_PREFIX UG_GlobalMaxINT (INT i)
+INT UG_GlobalMaxINT (INT i)
 {
   int l;
   INT n;
@@ -136,7 +138,7 @@ INT NS_PREFIX UG_GlobalMaxINT (INT i)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX UG_GlobalMinINT (INT i)
+INT UG_GlobalMinINT (INT i)
 {
   int l;
   INT n;
@@ -170,7 +172,7 @@ INT NS_PREFIX UG_GlobalMinINT (INT i)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX UG_GlobalSumINT (INT x)
+INT UG_GlobalSumINT (INT x)
 {
   int l;
   INT y;
@@ -206,7 +208,7 @@ INT NS_PREFIX UG_GlobalSumINT (INT x)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UG_GlobalMaxNINT (INT n, INT *x)
+void UG_GlobalMaxNINT (INT n, INT *x)
 {
   int i,l,size;
   INT *y;
@@ -249,7 +251,7 @@ void NS_PREFIX UG_GlobalMaxNINT (INT n, INT *x)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UG_GlobalMinNINT (INT n, INT *x)
+void UG_GlobalMinNINT (INT n, INT *x)
 {
   int i,l,size;
   INT *y;
@@ -292,7 +294,7 @@ void NS_PREFIX UG_GlobalMinNINT (INT n, INT *x)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UG_GlobalSumNINT (INT n, INT *xs)
+void UG_GlobalSumNINT (INT n, INT *xs)
 {
   int l, i, size=sizeof(INT)*n;
   INT *ys;
@@ -331,7 +333,7 @@ void NS_PREFIX UG_GlobalSumNINT (INT n, INT *xs)
    D*/
 /****************************************************************************/
 
-DOUBLE NS_PREFIX UG_GlobalMaxDOUBLE (DOUBLE x)
+DOUBLE UG_GlobalMaxDOUBLE (DOUBLE x)
 {
   int l;
   DOUBLE n;
@@ -365,7 +367,7 @@ DOUBLE NS_PREFIX UG_GlobalMaxDOUBLE (DOUBLE x)
    D*/
 /****************************************************************************/
 
-DOUBLE NS_PREFIX UG_GlobalMinDOUBLE (DOUBLE x)
+DOUBLE UG_GlobalMinDOUBLE (DOUBLE x)
 {
   int l;
   DOUBLE y;
@@ -399,7 +401,7 @@ DOUBLE NS_PREFIX UG_GlobalMinDOUBLE (DOUBLE x)
    D*/
 /****************************************************************************/
 
-DOUBLE NS_PREFIX UG_GlobalSumDOUBLE (DOUBLE x)
+DOUBLE UG_GlobalSumDOUBLE (DOUBLE x)
 {
   int l;
   DOUBLE y;
@@ -435,7 +437,7 @@ DOUBLE NS_PREFIX UG_GlobalSumDOUBLE (DOUBLE x)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
+void UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
 {
   int i,l,size;
   DOUBLE *y;
@@ -478,7 +480,7 @@ void NS_PREFIX UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
+void UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
 {
   int i,l,size;
   DOUBLE *y;
@@ -521,7 +523,7 @@ void NS_PREFIX UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
+void UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
 {
   int l, i, size=sizeof(DOUBLE)*n;
   DOUBLE *y;
@@ -541,3 +543,5 @@ void NS_PREFIX UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
 }
 
 #endif  /* ModelP */
+
+END_UGDIM_NAMESPACE

@@ -43,6 +43,8 @@ USING_UG_NAMESPACES
 /* PPIF namespace: */
 USING_PPIF_NAMESPACE
 
+START_UGDIM_NAMESPACE
+
 /*
    #define DebugCreation
    #define DebugDeletion
@@ -1120,3 +1122,5 @@ void ddd_ObjMgrExit (void)
 
 
 /****************************************************************************/
+
+END_UGDIM_NAMESPACE
