@@ -790,7 +790,7 @@ int PPIF_NS_PREFIX UsedSpace ()
   return ((int)(100.0*((float)vc_count)/((float)MAXVCHAN)));
 }
 
-void PPIF_NS_PREFIX PrintHostMessage (char *s)
+void PPIF_NS_PREFIX PrintHostMessage (const char *s)
 
 {
   printf ("%s", s);

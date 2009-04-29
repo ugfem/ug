@@ -128,7 +128,7 @@ static void XferPtr (LC_MSGHANDLE xm, char *buf)
 #endif
 
 
-void XferDisplayMsg (char *comment, LC_MSGHANDLE xm)
+void XferDisplayMsg (const char *comment, LC_MSGHANDLE xm)
 {
   SYMTAB_ENTRY *theSymTab;
   OBJTAB_ENTRY *theObjTab;

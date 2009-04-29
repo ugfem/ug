@@ -89,12 +89,12 @@ USING_UG_NAMESPACE
 /*																			*/
 /****************************************************************************/
 
-typedef int (*ReadDomainProc)(HEAP *theHeap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey);
+typedef int (*ReadDomainProc)(HEAP *theHeap, const char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey);
 typedef int (*ReadSizesProc)(LGM_SIZES *lgm_sizes);
 typedef int (*ReadSubDomainProc)(int i, LGM_SUBDOMAIN_INFO *subdom_info);
 typedef int (*ReadLinesProc)(int i, LGM_LINE_INFO *line_info);
 typedef int (*ReadPointsProc)(LGM_POINT_INFO *lgm_point_info);
-typedef int (*ReadMeshProc)(char *name, HEAP *theHeap, LGM_MESH_INFO *lgm_mesh_info, INT MarkKey);
+typedef int (*ReadMeshProc)(const char *name, HEAP *theHeap, LGM_MESH_INFO *lgm_mesh_info, INT MarkKey);
 
 #if (LGM_DIM==3)
 typedef int (*ReadSurfaceProc)(int i, LGM_SURFACE_INFO *surface_info);
@@ -169,7 +169,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 #if (LGM_DIM==2)
 
-LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
+LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (const char *filename, const char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_DOMAIN_INFO theDomInfo;
@@ -180,7 +180,7 @@ LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theH
   LGM_LINE **LinePtrList;
   LGM_POINT_INFO *piptr;
   LGM_LINE_INFO theLineInfo;
-  char *p;
+  const char *p;
 
   /* set transfer functions */
   p = filename + strlen(filename) - 4;
@@ -315,7 +315,7 @@ LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theH
   return (theDomain);
 }
 
-INT NS_DIM_PREFIX LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
+INT NS_DIM_PREFIX LGM_LoadMesh (const char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
 {
   INT i,j,size;
   LGM_MESH_INFO lgm_mesh_info;
@@ -326,7 +326,7 @@ INT NS_DIM_PREFIX LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DO
   if (ReadMesh==NULL) return (1);
 
   /* do the right thing */
-  if ((*ReadMesh)(name,theHeap,&lgm_mesh_info,MarkKey)) return (1);
+  if ((*ReadMesh)((char*) name,theHeap,&lgm_mesh_info,MarkKey)) return (1);
 
   /* copy mesh_info to mesh and create BNDPs */
   theMesh->mesh_status              = MESHSTAT_MESH;
@@ -642,7 +642,7 @@ INT Accel_With_Hash( LGM_DOMAIN_INFO theDomInfo,  LGM_SURFACE **SurfacePtrList ,
 
 
 
-LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
+LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (const char *filename, const char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_DOMAIN_INFO theDomInfo;
@@ -656,7 +656,7 @@ LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theH
   LGM_LINE **LinePtrList;
   LGM_SURFACE **SurfacePtrList;
   LGM_LINE_INFO theLineInfo;
-  char *p;
+  const char *p;
 
 #ifdef OCC_GEOMETRY
   occ_geom.Import_Geometry("geometry.iges");
@@ -1047,7 +1047,7 @@ LGM_DOMAIN* NS_DIM_PREFIX LGM_LoadDomain (char *filename, char *name, HEAP *theH
   return (theDomain);
 }
 
-INT NS_DIM_PREFIX LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
+INT NS_DIM_PREFIX LGM_LoadMesh (const char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
 {
   LGM_MESH_INFO lgm_mesh_info;
   INT i;

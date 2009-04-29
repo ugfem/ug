@@ -531,7 +531,7 @@ static int SimpleSubdomainDistribution (MULTIGRID *theMG,  INT Procs, INT from, 
  */
 /****************************************************************************/
 
-void lbs (char *argv, MULTIGRID *theMG)
+void lbs (const char *argv, MULTIGRID *theMG)
 {
   int n,mode,param,fromlevel,tolevel,part,hor_boxes,vert_boxes,dest;
 

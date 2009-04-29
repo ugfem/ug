@@ -160,7 +160,10 @@ enum ER_DBG {
 #else
 #define PD_ERR(l,x,e)                   /* no debug */
 #define PD(x)                                   /* no debug */
+#ifdef PrintDebug
+#undef PrintDebug
 #define PrintDebug              printf
+#endif
 #endif
 
 /****************************************************************************/

@@ -305,7 +305,7 @@ static int identMode;
         and recovery.
  */
 
-static char *IdentModeName (int mode)
+static const char *IdentModeName (int mode)
 {
   switch(mode)
   {

@@ -1332,9 +1332,9 @@ void NS_PREFIX SetCurrentGW (GraphWindow *g)
 static int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int height)
 {
   unsigned int border_width = DEFAULTBORDER;
-  char *icon_name = GRAPHICONNAME;
-  char *Fontname;
-  char *ug_name = RESOURCENAME;
+  char *icon_name = (char *) GRAPHICONNAME;
+  const char *Fontname;
+  const char *ug_name = RESOURCENAME;
   unsigned long valuemask = 0;
   static char dash_list[] = {12,24};
   XGCValues values;
@@ -1422,7 +1422,7 @@ static int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int widt
   wm_hints.icon_pixmap = gw->icon_pixmap;
   wm_hints.flags = StateHint | IconPixmapHint | InputHint;
   class_hints.res_name = prog_name;
-  class_hints.res_class = ug_name;
+  class_hints.res_class = (char*) ug_name;
   XSetWMProperties(display,gw->win,&gw->window_name,&gw->icon_name,if_argv,if_argc,
                    &size_hints,&wm_hints,&class_hints);
 

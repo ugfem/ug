@@ -1234,7 +1234,7 @@ INT ReadAnsysFile(char *filename)
     return(1);
   }
   /*An der Stelle 0 des KomponentenNamenArray den NotSet-String eintragen :*/
-  KomponentenNamenArray = "< NOT SET IN ANSYS-FILE >";
+  strcpy(KomponentenNamenArray, "< NOT SET IN ANSYS-FILE >");
 
 
 

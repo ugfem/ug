@@ -138,7 +138,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-OUTPUTDEVICE * NS_PREFIX CreateOutputDevice (char *name)
+OUTPUTDEVICE * NS_PREFIX CreateOutputDevice (const char *name)
 {
   OUTPUTDEVICE *dev;
 

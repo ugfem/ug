@@ -351,7 +351,7 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, const char *name, const char *co
   VERTEX *theVertex;
   DOUBLE *global;
   time_t Time;
-  char *fmt;
+  const char *fmt;
   char buffer[BUFFERSIZE];
   BVP_DESC theBVPDesc;
   INT i,id,move,part;

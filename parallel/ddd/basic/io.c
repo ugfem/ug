@@ -38,7 +38,7 @@ USING_PPIF_NAMESPACE
 
 START_UGDIM_NAMESPACE
 
-void (*DDD_UserLineOutFunction)(char *s);
+void (*DDD_UserLineOutFunction)(const char *s);
 
 
 
@@ -65,7 +65,7 @@ RCSID("$Header$",DDD_RCS_STRING)
 /*                                                                          */
 /****************************************************************************/
 
-void DDD_PrintLine (char *s)
+void DDD_PrintLine (const char *s)
 {
   /* newline character will be included in s */
 
@@ -131,7 +131,7 @@ void DDD_SyncAll (void)
 /*                                                                          */
 /****************************************************************************/
 
-void DDD_PrintDebug (char *s)
+void DDD_PrintDebug (const char *s)
 {
   /* newline character will be included in s */
 
@@ -155,7 +155,7 @@ void DDD_PrintDebug (char *s)
 /*                                                                          */
 /****************************************************************************/
 
-void DDD_PrintError (char error_class, int error_no, char *text)
+void DDD_PrintError (char error_class, int error_no, const char *text)
 {
   char buffer[256];
   char classText[32];

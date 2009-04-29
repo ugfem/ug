@@ -527,7 +527,7 @@ void NS_DIM_PREFIX printPatternBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR 
 
 #ifdef __BLOCK_VECTOR_DESC__
 
-static void printBVrec( BLOCKVECTOR *bv_first, char *indent, const BV_DESC *bvd_parent, const BV_DESC_FORMAT *bvdf )
+static void printBVrec( BLOCKVECTOR *bv_first, const char *indent, const BV_DESC *bvd_parent, const BV_DESC_FORMAT *bvdf )
 {
   register VECTOR *v;
   BLOCKVECTOR *bv;

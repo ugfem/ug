@@ -483,11 +483,11 @@ void NS_DIM_PREFIX ngbreak (void)
   ng_abort=1;
 }
 
-int NS_DIM_PREFIX NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey)
+int NS_DIM_PREFIX NG_ReadMesh (const char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey)
 {
   int i,j,error;
   char ngname[128];
-  char *tmp;
+  const char *tmp;
 
   /* init */
   ng_abort=0;

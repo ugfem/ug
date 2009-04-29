@@ -96,7 +96,7 @@ int Bio_Write_mint                      (int n, int *intList);
 int Bio_Read_mdouble            (int n, double *doubleList);
 int Bio_Write_mdouble           (int n, double *doubleList);
 int Bio_Read_string             (char *string);
-int Bio_Write_string            (char *string);
+int Bio_Write_string            (const char *string);
 int Bio_Jump_From                       (void);
 int Bio_Jump_To                         (void);
 int Bio_Jump                            (int dojump);

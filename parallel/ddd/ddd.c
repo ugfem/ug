@@ -399,10 +399,10 @@ void DDD_Library::Status (void)
 #endif
 
 #ifdef C_FRONTEND
-void DDD_LineOutRegister (void (*func)(char *s))
+void DDD_LineOutRegister (void (*func)(const char *s))
 #endif
 #ifdef CPP_FRONTEND
-void DDD_Library::LineOutRegister (void (*func)(char *))
+void DDD_Library::LineOutRegister (void (*func)(const char *))
 #endif
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 {

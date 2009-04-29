@@ -78,8 +78,8 @@ START_UGDIM_NAMESPACE
 /*																			*/
 /****************************************************************************/
 
-LGM_DOMAIN *LGM_LoadDomain      (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey);
-INT                     LGM_LoadMesh    (char *filename, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey);
+LGM_DOMAIN *LGM_LoadDomain      (const char *filename, const char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey);
+INT                     LGM_LoadMesh    (const char *filename, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey);
 INT                     InitLGMLoad             (void);
 
 

@@ -984,7 +984,7 @@ void ddd_XferRegisterDelete (DDD_HDR hdr)
         and recovery.
  */
 
-char *XferModeName (int mode)
+const char *XferModeName (int mode)
 {
   switch(mode)
   {

@@ -88,9 +88,9 @@ void  LC_SetMemMgrRecv (AllocFunc,FreeFunc);
 void  LC_SetMemMgrDefault (void);
 
 
-LC_MSGTYPE LC_NewMsgType (char *);
-LC_MSGCOMP LC_NewMsgTable (char *, LC_MSGTYPE, size_t);
-LC_MSGCOMP LC_NewMsgChunk (char *, LC_MSGTYPE);
+LC_MSGTYPE LC_NewMsgType (const char *);
+LC_MSGCOMP LC_NewMsgTable (const char *, LC_MSGTYPE, size_t);
+LC_MSGCOMP LC_NewMsgChunk (const char *, LC_MSGTYPE);
 
 void       LC_MsgSend (LC_MSGHANDLE);
 

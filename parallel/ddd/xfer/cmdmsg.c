@@ -428,7 +428,7 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 /****************************************************************************/
 
 
-static void CmdMsgDisplay (char *comment, LC_MSGHANDLE xm)
+static void CmdMsgDisplay (const char *comment, LC_MSGHANDLE xm)
 {
   DDD_GID      *theGid;
   char buf[30];

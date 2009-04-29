@@ -134,12 +134,12 @@ static INT UseWithPerl=0;
 
 struct stringOp {
   INT type;
-  char *sptr;
+  const char *sptr;
 };
 
 struct lstringOp {
   INT type;
-  char *sptr;
+  const char *sptr;
   int length;
 };
 
@@ -177,7 +177,7 @@ static int interactiveFlag=0;
 #endif
 
 /* variables for command interpreter */
-static char *cmdPtr,*cmdStart;
+static const char *cmdPtr,*cmdStart;
 static long executePos=0;
 static char *cmdBuffer;
 static char *executeBuffer;
@@ -504,7 +504,7 @@ static INT GetAnItem (int *itemType,char *buffer)
  */
 /****************************************************************************/
 
-static INT ConvertStringToDouble(char *strAdr, int maxLen, char **endAdr, INT *type, DOUBLE *valuePtr)
+static INT ConvertStringToDouble(const char *strAdr, int maxLen, const char **endAdr, INT *type, DOUBLE *valuePtr)
 {
   char c;
   int endPos,anfPos,k;
@@ -689,7 +689,7 @@ static INT GetValueOfOperand (DOUBLE *t, OPERAND *term)
  */
 /****************************************************************************/
 
-static INT StringCompare(DOUBLE *Diff, char *str1, char *str2, int maxLen1, int maxLen2)
+static INT StringCompare(DOUBLE *Diff, const char *str1, const char *str2, int maxLen1, int maxLen2)
 {
   DOUBLE value1,value2;
   int maxLen;
@@ -775,15 +775,15 @@ static INT GetFactor (OPERAND *result)
 {
   char c,c1;
   char buffer[MAXTOKENLENGTH];
-  char *stringAdr;
-  char *savedCmdPtr;
+  const char *stringAdr;
+  const char *savedCmdPtr;
   int k;
   INT error;
   int itemType;
   int signflag;
   DOUBLE sign,t;
   OPERAND newResult;
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
 
   /* set error value */
@@ -1666,11 +1666,11 @@ FILE* NS_DIM_PREFIX FOpenScript (const char *script, const char *mode)
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX InterpretCommand (char *cmds)
+INT NS_DIM_PREFIX InterpretCommand (const char *cmds)
 {
   int pLength;
   INT error;
-  char *oldCmdPtr,*oldCmdStart;
+  const char *oldCmdPtr,*oldCmdStart;
 
   mutelevel = GetMuteLevel();
 
@@ -1773,15 +1773,15 @@ static INT InterpretString (void)
 
   int StatusStack[BUFSIZE];
   int RepeatStatusPos[MAXREPEAT];
-  char *RepeatPtr[MAXREPEAT];
+  const char *RepeatPtr[MAXREPEAT];
   char buffer[MAXTOKENLENGTH];
   char filename[MAXTOKENLENGTH];
   char valueStr[32];
   char *sptr;
 
   int StatusPos,RepeatPos;
-  char *cmdStart;
-  char *cmdEnd;
+  const char *cmdStart;
+  const char *cmdEnd;
 
   COMMAND *commandItem;
 
@@ -2500,7 +2500,7 @@ void NS_DIM_PREFIX CommandLoop (int argc, char **argv)
   int i,kerr;
   char c,errLine[256],spcLine[256],buffer[256];
   char *inpLine;
-  char *strStart;
+  const char *strStart;
   int batch = FALSE;
 
   /* reset doneFlag */

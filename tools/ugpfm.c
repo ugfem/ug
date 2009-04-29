@@ -27,7 +27,9 @@
 /*																			*/
 /****************************************************************************/
 
+#ifndef ModelP
 #define ModelP
+#endif
 
 #include "config.h"
 #include <stdlib.h>

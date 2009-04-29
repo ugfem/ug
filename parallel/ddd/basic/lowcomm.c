@@ -116,7 +116,7 @@ enum CompType {
 
 typedef struct _COMP_DESC
 {
-  char *name;               /* textual description of component */
+  const char *name;               /* textual description of component */
   int type;                    /* type of this component */
   size_t entry_size;           /* size per entry (for tables) */
 } COMP_DESC;
@@ -124,7 +124,7 @@ typedef struct _COMP_DESC
 
 typedef struct _MSG_TYPE
 {
-  char *name;                      /* textual description of msgtype */
+  const char *name;                      /* textual description of msgtype */
   int nComps;                            /* number of components */
   COMP_DESC comp[MAX_COMPONENTS];        /* component array */
 
@@ -790,7 +790,7 @@ static RETCODE LC_PrepareRecv (void)
         and logging output.
  */
 
-LC_MSGTYPE LC_NewMsgType (char *aName)
+LC_MSGTYPE LC_NewMsgType (const char *aName)
 {
   MSG_TYPE *mt;
 
@@ -835,7 +835,7 @@ LC_MSGTYPE LC_NewMsgType (char *aName)
    @param  aMsgType  previously declared message-type
  */
 
-LC_MSGCOMP LC_NewMsgChunk (char *aName, LC_MSGTYPE aMsgType)
+LC_MSGCOMP LC_NewMsgChunk (const char *aName, LC_MSGTYPE aMsgType)
 {
   MSG_TYPE  *mtyp = (MSG_TYPE *)aMsgType;
   LC_MSGCOMP id = mtyp->nComps++;
@@ -884,7 +884,7 @@ LC_MSGCOMP LC_NewMsgChunk (char *aName, LC_MSGTYPE aMsgType)
    @param  aSize     size of each table entry (in byte)
  */
 
-LC_MSGCOMP LC_NewMsgTable (char *aName, LC_MSGTYPE aMsgType, size_t aSize)
+LC_MSGCOMP LC_NewMsgTable (const char *aName, LC_MSGTYPE aMsgType, size_t aSize)
 {
   MSG_TYPE  *mtyp = (MSG_TYPE *)aMsgType;
   LC_MSGCOMP id = mtyp->nComps++;

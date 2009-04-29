@@ -691,7 +691,7 @@ static INT PrintMeshInfo (MESH *mesh)
 }
 
 /* domain interface function: for description see domain.h */
-INT NS_DIM_PREFIX BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
+INT NS_DIM_PREFIX BVP_Save (BVP *theBVP, const char *name, const char *mgname, HEAP *theHeap, INT argc, char **argv)
 {
   UserWrite("SORRY: not implemented yet\n");
   return (1);
@@ -1645,7 +1645,7 @@ static INT Write_Line(LGM_LINE *theLine)
 }
 
 
-static INT Write_Surface(LGM_SURFACE *theSurface, char *name, char *name1)
+static INT Write_Surface(LGM_SURFACE *theSurface, const char *name, const char *name1)
 {
   INT i, id;
   FILE *stream;

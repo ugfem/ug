@@ -141,7 +141,7 @@ static PRIO_GLOBALS prioGlobals;
         and recovery.
  */
 
-char *PrioModeName (int mode)
+const char *PrioModeName (int mode)
 {
   switch(mode)
   {

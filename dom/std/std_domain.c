@@ -177,7 +177,7 @@ static INT PatchGlobal (const PATCH * p, DOUBLE * lambda, DOUBLE * global);
 /****************************************************************************/
 
 void *
-NS_DIM_PREFIX CreateProblem (char *domain, char *name, int id, ConfigProcPtr config,
+NS_DIM_PREFIX CreateProblem (const char *domain, const char *name, int id, ConfigProcPtr config,
                              int numOfCoefficients, CoeffProcPtr coeffs[],
                              int numOfUserFct, UserProcPtr userfct[])
 {
@@ -260,7 +260,7 @@ GetProblem (const char *domain, const char *name)
 /****************************************************************************/
 
 void * NS_DIM_PREFIX
-CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond,
+CreateBoundaryCondition (const char *name, INT id, BndCondProcPtr theBndCond,
                          void *Data)
 {
   BOUNDARY_CONDITION *newBndCond;
@@ -777,7 +777,7 @@ CreateBoundaryValueProblem (const char *BVPName, BndCondProcPtr theBndCond,
  *//****************************************************************************/
 
 BVP *NS_DIM_PREFIX
-CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
+CreateBVP (const char *BVPName, const char *DomainName, const char *ProblemName)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;
@@ -878,7 +878,7 @@ Problem_Configure (INT argc, char **argv)
 }
 
 BVP *NS_DIM_PREFIX
-CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName)
+CreateBVP_Problem (const char *BVPName, const char *DomainName, const char *ProblemName)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;
@@ -1122,7 +1122,7 @@ CreateCornerPoints (HEAP * Heap, STD_BVP * theBVP, BNDP ** bndp)
 }
 
 BVP *NS_DIM_PREFIX
-BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
+BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;
@@ -4117,7 +4117,7 @@ BNDS_Dispose (HEAP * Heap, BNDS * theBndS)
 
 /* the following interface functions are not available in std_domain.c */
 INT NS_DIM_PREFIX
-BVP_Save (BVP * theBVP, char *name, char *mgname, HEAP * theHeap, INT argc,
+BVP_Save (BVP * theBVP, const char *name, const char *mgname, HEAP * theHeap, INT argc,
           char **argv)
 {
   UserWrite ("ERROR: std domain cannot be saved\n");
@@ -4125,7 +4125,7 @@ BVP_Save (BVP * theBVP, char *name, char *mgname, HEAP * theHeap, INT argc,
 }
 
 BVP *NS_DIM_PREFIX
-BVP_Load (char *name, INT argc, char **argv)
+BVP_Load (const char *name, INT argc, char **argv)
 {
   return (NULL);
 }

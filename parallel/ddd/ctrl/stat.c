@@ -110,13 +110,13 @@ long DDD_StatCount (int module, int index)
 
 
 
-char *DDD_StatClockDesc (int module, int index)
+const char *DDD_StatClockDesc (int module, int index)
 {
   STAT_SET_MODULE(module);
   return("<NIY>");
 }
 
-char *DDD_StatCountDesc (int module, int index)
+const char *DDD_StatCountDesc (int module, int index)
 {
   STAT_SET_MODULE(module);
   return("<NIY>");

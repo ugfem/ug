@@ -942,7 +942,7 @@ static INT BulletDraw3D (DRAWINGOBJ *q);
 D*/										
 /****************************************************************************/
 
-PLOTOBJHANDLING * NS_DIM_PREFIX CreatePlotObjHandling (char *PlotObjTypeName)
+PLOTOBJHANDLING * NS_DIM_PREFIX CreatePlotObjHandling (const char *PlotObjTypeName)
 {
 	PLOTOBJHANDLING *poh;
 	INT i;

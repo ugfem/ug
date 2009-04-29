@@ -67,9 +67,12 @@ USING_UG_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-typedef int (*RW_mint_proc)(int n, int *intList);
-typedef int (*RW_mdouble_proc)(int n, double *doubleList);
-typedef int (*RW_string_proc)(char *string);
+typedef int (*R_mint_proc)(int n, int *intList);
+typedef int (*W_mint_proc)(int n, const int *intList);
+typedef int (*R_mdouble_proc)(int n, double *doubleList);
+typedef int (*W_mdouble_proc)(int n, const double *doubleList);
+typedef int (*R_string_proc)(char *string);
+typedef int (*W_string_proc)(const char *string);
 
 /****************************************************************************/
 /*                                                                          */
@@ -92,9 +95,12 @@ static XDR xdrs;
 #endif
 
 /* low level read/write functions */
-static RW_mint_proc Read_mint, Write_mint;
-static RW_mdouble_proc Read_mdouble, Write_mdouble;
-static RW_string_proc Read_string, Write_string;
+static R_mint_proc Read_mint;
+static W_mint_proc Write_mint;
+static R_mdouble_proc Read_mdouble;
+static W_mdouble_proc Write_mdouble;
+static R_string_proc Read_string;
+static W_string_proc Write_string;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -127,7 +133,7 @@ static int XDR_Read_mint (int n, int *intList)
   return (0);
 }
 
-static int XDR_Write_mint (int n, int *intList)
+static int XDR_Write_mint (int n, const int *intList)
 {
   int i;
 
@@ -150,13 +156,13 @@ static int XDR_Read_mdouble (int n, double *doubleList)
   return (0);
 }
 
-static int XDR_Write_mdouble (int n, double *doubleList)
+static int XDR_Write_mdouble (int n, const double *doubleList)
 {
   int i;
 
   for (i=0; i<n; i++)
   {
-    if (!xdr_double(&xdrs,&(doubleList[i]))) return (1);
+    if (!xdr_double(&xdrs,(double*) &(doubleList[i]))) return (1);
     n_byte += 8;
   }
   return (0);
@@ -180,7 +186,7 @@ static int XDR_Read_string (char *string)
   return (0);
 }
 
-static int XDR_Write_string (char *string)
+static int XDR_Write_string (const char *string)
 {
   int i,m,len;
 
@@ -214,7 +220,7 @@ static int ASCII_Read_mint (int n, int *intList)
   return (0);
 }
 
-static int ASCII_Write_mint (int n, int *intList)
+static int ASCII_Write_mint (int n, const int *intList)
 {
   int i,m;
 
@@ -236,7 +242,7 @@ static int ASCII_Read_mdouble (int n, double *doubleList)
   return (0);
 }
 
-static int ASCII_Write_mdouble (int n, double *doubleList)
+static int ASCII_Write_mdouble (int n, const double *doubleList)
 {
   int i,m;
 
@@ -268,7 +274,7 @@ static int ASCII_Read_string (char *string)
 }
 
 
-static int ASCII_Write_string (char *string)
+static int ASCII_Write_string (const char *string)
 {
   int i,m,len;
 
@@ -299,7 +305,7 @@ static int BIN_Read_mint (int n, int *intList)
   return (0);
 }
 
-static int BIN_Write_mint (int n, int *intList)
+static int BIN_Write_mint (int n, const int *intList)
 {
   if (fwrite((void*)intList,sizeof(int)*n,1,stream)!=1) return (1);
   n_byte += n*sizeof(int);
@@ -312,7 +318,7 @@ static int BIN_Read_mdouble (int n, double *doubleList)
   return (0);
 }
 
-static int BIN_Write_mdouble (int n, double *doubleList)
+static int BIN_Write_mdouble (int n, const double *doubleList)
 {
   if (fwrite((void*)doubleList,sizeof(double)*n,1,stream)!=1) return (1);
   n_byte += n*sizeof(double);
@@ -338,7 +344,7 @@ static int BIN_Read_string (char *string)
 }
 
 
-static int BIN_Write_string (char *string)
+static int BIN_Write_string (const char *string)
 {
   int i,m,len;
 
@@ -428,7 +434,7 @@ int NS_PREFIX Bio_Read_string (char *string)
   return ((*Read_string)(string));
 }
 
-int NS_PREFIX Bio_Write_string (char *string)
+int NS_PREFIX Bio_Write_string (const char *string)
 {
   return ((*Write_string)(string));
 }

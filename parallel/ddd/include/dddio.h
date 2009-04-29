@@ -37,7 +37,7 @@ START_UGDIM_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-extern void (*DDD_UserLineOutFunction)(char *s);
+extern void (*DDD_UserLineOutFunction)(const char *s);
 
 
 /****************************************************************************/
@@ -46,9 +46,9 @@ extern void (*DDD_UserLineOutFunction)(char *s);
 /*                                                                          */
 /****************************************************************************/
 
-void DDD_PrintLine (char *s);
-void DDD_PrintDebug (char *s);
-void DDD_PrintError (char error_class, int error_no, char *text);
+void DDD_PrintLine (const char *s);
+void DDD_PrintDebug (const char *s);
+void DDD_PrintError (char error_class, int error_no, const char *text);
 void DDD_Flush (void);
 void DDD_SyncAll (void);
 

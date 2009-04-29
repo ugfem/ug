@@ -145,7 +145,7 @@ Pixmap pixmap;                 /* pixmap to store picture */
 FILE     *stream;
 FILE *mstream[MAX_FILES];
 char     *newfile;
-char     *option;
+const char       *option;
 short fx, fy;          /* dimensions of drawing object */
 short mfx[MAX_FILES], mfy[MAX_FILES];   /* dimensions of drawing object */
 short fx_max, fy_max;
@@ -535,7 +535,7 @@ int RasterizeFile(FILE *stream)
   XPoint xy[SIZE];
   char s[CSIZE];
   unsigned char c,ac;
-  char *fn;
+  const char *fn;
   char string[10];
   char **list;
   XGCValues gcv;
@@ -1104,7 +1104,7 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
   XPoint xy[SIZE];
   char s[CSIZE];
   unsigned char c,ac;
-  char *fn;
+  const char *fn;
   char string[10];
   char **list;
   XGCValues gcv;

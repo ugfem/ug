@@ -360,7 +360,7 @@ static void CplMsgUnpackSingle (LC_MSGHANDLE xm,
 /****************************************************************************/
 
 
-static void CplMsgDisplay (char *comment, LC_MSGHANDLE xm)
+static void CplMsgDisplay (const char *comment, LC_MSGHANDLE xm)
 {
   TEDelCpl     *theDelCpl;
   TEModCpl     *theModCpl;

@@ -260,7 +260,7 @@ typedef struct lgm_mesh_info LGM_MESH_INFO;
 /*																			*/
 /****************************************************************************/
 
-int LGM_ReadDomain                      (HEAP *theHeap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey);
+int LGM_ReadDomain                      (HEAP *theHeap, const char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey);
 int LGM_ReadSizes                       (LGM_SIZES *lgm_sizes);
 int LGM_ReadSubDomain           (int i, LGM_SUBDOMAIN_INFO *subdom_info);
 int LGM_ReadLines                       (int i, LGM_LINE_INFO *line_info);
@@ -274,7 +274,7 @@ int LGM_ReadSurface             (int i, LGM_SURFACE_INFO *surface_info);
 int HGM_ReadSurface             (int i, LGM_SURFACE_INFO *surface_info);
 #endif
 
-FILE *LGM_WriteOpenFile         (char* name);
+FILE *LGM_WriteOpenFile         (const char* name);
 INT InitLGMTransfer             (void);
 
 END_UGDIM_NAMESPACE

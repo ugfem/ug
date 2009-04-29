@@ -135,7 +135,7 @@ static int ExpandLine (char *theLine)
   return(0);
 }
 
-static int file_readline (FILE *f, char *key)
+static int file_readline (FILE *f, const char *key)
 {
   char theLine[MAX_LEN];
 

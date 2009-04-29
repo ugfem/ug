@@ -626,7 +626,7 @@ DDD_IF DDD_IFDefine (
 {
 #endif
 #ifdef CPP_FRONTEND
-DDD_Interface::DDD_Interface (DDD_TYPE t, DDD_PRIO p1, DDD_PRIO p2, char* name)
+DDD_Interface::DDD_Interface (DDD_TYPE t, DDD_PRIO p1, DDD_PRIO p2, const char* name)
 {
   Init(1, &t, 1, &p1, 1, &p2, name);
 }
@@ -635,7 +635,7 @@ DDD_Interface::DDD_Interface (
   int nO, DDD_TYPE O[],
   int nA, DDD_PRIO A[],
   int nB, DDD_PRIO B[],
-  char *name)
+  const char *name)
 {
   Init(nO, O, nA, A, nB, B, name);
 }
@@ -644,7 +644,7 @@ void DDD_Interface::Init (
   int nO, DDD_TYPE O[],
   int nA, DDD_PRIO A[],
   int nB, DDD_PRIO B[],
-  char *name)
+  const char *name)
 {
   _id = nIFs;
 #endif
@@ -780,11 +780,11 @@ static void StdIFDefine (void)
 
 
 #ifdef C_FRONTEND
-void DDD_IFSetName (DDD_IF ifId, char *name)
+void DDD_IFSetName (DDD_IF ifId, const char *name)
 {
 #endif
 #ifdef CPP_FRONTEND
-void DDD_Interface::SetName (char *name)
+void DDD_Interface::SetName (const char *name)
 {
   DDD_IF ifId = _id;
 #endif

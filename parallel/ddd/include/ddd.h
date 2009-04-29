@@ -535,11 +535,11 @@ public:
   }
 
   /// redirect DDD stdout by registering callback function
-  void LineOutRegister (void (*func)(char *s));
+  void LineOutRegister (void (*func)(const char *s));
 
   // from TypeManager
-  DDD_TYPE TypeDeclareStruct (char* n="");
-  DDD_TYPE TypeDeclare (char* n="")
+  DDD_TYPE TypeDeclareStruct (const char* n="");
+  DDD_TYPE TypeDeclare (const char* n="")
   {
     return TypeDeclareStruct(n);
   }
@@ -884,7 +884,7 @@ public:
   DDD_Interface (int, DDD_TYPE O[],
                  int, DDD_PRIO A[], int, DDD_PRIO B[], char* n="");
   DDD_Interface (DDD_TYPE, DDD_PRIO, DDD_PRIO, char* n="");
-  void SetName (char *);
+  void SetName (const char *);
 
   static void DisplayAll (void);
   void Display (void);
@@ -945,7 +945,7 @@ DDD_PROC DDD_InfoProcs (void);
         Redirect line-oriented output, new in V1.2
  */
 #if defined(C_FRONTEND)
-void     DDD_LineOutRegister (void (*func)(char *s));
+void     DDD_LineOutRegister (void (*func)(const char *s));
 #endif
 
 
@@ -960,10 +960,10 @@ void     DDD_LineOutRegister (void (*func)(char *s));
 #define  DDD_HandlerRegister F77SYM(ddd_handlerregister,DDD_HANDLERREGISTER)
 /* TODO hier fehlen DDD_SetHandler-umsetzungen fuer fortran */
 
-void     DDD_TypeDeclare (char *name, int *size, DDD_TYPE *type);
+void     DDD_TypeDeclare (const char *name, int *size, DDD_TYPE *type);
 #endif
 #ifdef C_FRONTEND
-DDD_TYPE DDD_TypeDeclare (char *name);
+DDD_TYPE DDD_TypeDeclare (const char *name);
 int      DDD_InfoHdrOffset (DDD_TYPE);
 #endif
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
@@ -1074,7 +1074,7 @@ void     DDD_IFDefine (int *, DDD_TYPE *, int *, DDD_PRIO *, int *, DDD_PRIO *, 
 
 #ifdef C_FRONTEND
 DDD_IF   DDD_IFDefine (int, DDD_TYPE O[], int, DDD_PRIO A[], int, DDD_PRIO B[]);
-void     DDD_IFSetName (DDD_IF, char *);
+void     DDD_IFSetName (DDD_IF, const char *);
 #endif
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)

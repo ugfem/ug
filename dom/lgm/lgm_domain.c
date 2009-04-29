@@ -117,7 +117,7 @@ LGM_PROBLEM* NS_DIM_PREFIX CreateProblem (const char *name, InitProcPtr init, Do
   return (newProblem);
 }
 
-LGM_PROBLEM* NS_DIM_PREFIX CreateProblemWithInnerBCs (char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
+LGM_PROBLEM* NS_DIM_PREFIX CreateProblemWithInnerBCs (const char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
 {
   LGM_PROBLEM *newProblem;
   int i;
@@ -164,7 +164,7 @@ LGM_PROBLEM* NS_DIM_PREFIX CreateProblemWithInnerBCs (char *name, InitProcPtr in
  */
 /****************************************************************************/
 
-static LGM_PROBLEM *Lgm_Problem_GetByName (char *name)
+static LGM_PROBLEM *Lgm_Problem_GetByName (const char *name)
 {
   return((LGM_PROBLEM *) SearchEnv(name,"/LGM_PROBLEM",theProblemVarID,theProblemDirID));
 }
@@ -203,7 +203,7 @@ BVP* NS_DIM_PREFIX BVP_GetNext (BVP *theBVP)
 }
 
 /* domain interface function: for description see domain.h */
-BVP* NS_DIM_PREFIX BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
+BVP* NS_DIM_PREFIX BVP_Init (const char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_PROBLEM *theProblem;
@@ -316,7 +316,7 @@ INT NS_DIM_PREFIX BVP_Dispose (BVP *theBVP)
 }
 
 /* domain interface function: for description see domain.h */
-BVP* NS_DIM_PREFIX BVP_Load (char *name, INT argc, char **argv)
+BVP* NS_DIM_PREFIX BVP_Load (const char *name, INT argc, char **argv)
 {
   return (NULL);
 }

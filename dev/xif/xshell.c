@@ -227,10 +227,10 @@ int ShellOpen (ShellWindow *sh)
   unsigned int width, height;
   int x, y, i;
   unsigned int border_width = DEFAULTBORDER;
-  char *window_name = SHELLWINNAME;
-  char *icon_name = SHELLICONNAME;
+  const char *window_name = SHELLWINNAME;
+  const char *icon_name = SHELLICONNAME;
   char *Geometry, *Fontname;
-  char *ug_name = RESOURCENAME;
+  const char *ug_name = RESOURCENAME;
   int flags;
   unsigned long valuemask = 0;
   static char dash_list[] = {12,24};
@@ -244,10 +244,10 @@ int ShellOpen (ShellWindow *sh)
   Arg args[20];
   XtTranslations NewTranslations;
   XtActionsRec actions[] = {
-    {"UpAction", UpAction},
-    {"DownAction", DownAction},
-    {"LeftAction", LeftAction},
-    {"RightAction",RightAction},
+    {(char*) "UpAction", UpAction},
+    {(char*) "DownAction", DownAction},
+    {(char*) "LeftAction", LeftAction},
+    {(char*) "RightAction",RightAction},
   };
         #endif /* USE_XAW */
 
@@ -318,20 +318,20 @@ int ShellOpen (ShellWindow *sh)
 
         #ifdef USE_XAW
   n=0;
-  XtSetArg(args[n], XtNx, x); n++;
-  XtSetArg(args[n], XtNy, y); n++;
-  XtSetArg(args[n], XtNwidth, width+sh->font_width); n++;
-  XtSetArg(args[n], XtNheight, height+sh->font_height+sh->font_info->descent); n++;
-  XtSetArg(args[n], XtNborderWidth, border_width); n++;
-  XtSetArg(args[n], XtNscrollVertical, XawtextScrollWhenNeeded); n++;
-  XtSetArg(args[n], XtNscrollHorizontal, XawtextScrollWhenNeeded); n++;
-  XtSetArg(args[n], XtNstring, sh->lineStart[0]); n++;
-  XtSetArg(args[n], XtNlength, MAXLINES*(MAXCOLS+1)); n++;
-  XtSetArg(args[n], XtNpieceSize, MAXLINES*(MAXCOLS+1)); n++;
-  XtSetArg(args[n], XtNeditType, XawtextEdit); n++;
+  XtSetArg(args[n], (char*) XtNx, x); n++;
+  XtSetArg(args[n], (char*) XtNy, y); n++;
+  XtSetArg(args[n], (char*) XtNwidth, width+sh->font_width); n++;
+  XtSetArg(args[n], (char*) XtNheight, height+sh->font_height+sh->font_info->descent); n++;
+  XtSetArg(args[n], (char*) XtNborderWidth, border_width); n++;
+  XtSetArg(args[n], (char*) XtNscrollVertical, XawtextScrollWhenNeeded); n++;
+  XtSetArg(args[n], (char*) XtNscrollHorizontal, XawtextScrollWhenNeeded); n++;
+  XtSetArg(args[n], (char*) XtNstring, sh->lineStart[0]); n++;
+  XtSetArg(args[n], (char*) XtNlength, MAXLINES*(MAXCOLS+1)); n++;
+  XtSetArg(args[n], (char*) XtNpieceSize, MAXLINES*(MAXCOLS+1)); n++;
+  XtSetArg(args[n], (char*) XtNeditType, XawtextEdit); n++;
   /* TODO: delete this, line wrapping does not work correctly
-     XtSetArg(args[n], XtNwrap,XawtextWrapLine); n++; */
-  XtSetArg(args[n], XtNfont,sh->font_info); n++;
+     XtSetArg(args[n],  XtNwrap,XawtextWrapLine); n++; */
+  XtSetArg(args[n], (char*) XtNfont,sh->font_info); n++;
   XtSetArg(args[n], XtNbackground,WhitePixel(display,screen_num)); n++;
   XtSetArg(args[n], XtNforeground,BlackPixel(display,screen_num)); n++;
 
@@ -393,12 +393,12 @@ int ShellOpen (ShellWindow *sh)
   size_hints.flags = USPosition | USSize | PMinSize;
   size_hints.min_width = DEFAULTMINX;
   size_hints.min_height = DEFAULTMINY;
-  if (XStringListToTextProperty(&window_name,1,&(sh->window_name))==0)
+  if (XStringListToTextProperty((char**) &window_name,1,&(sh->window_name))==0)
   {
     fprintf(stderr,"%s: structure alloc for window_name failed.\n",prog_name);
     exit(-1);
   }
-  if (XStringListToTextProperty(&icon_name,1,&(sh->icon_name))==0)
+  if (XStringListToTextProperty((char**) &icon_name,1,&(sh->icon_name))==0)
   {
     fprintf(stderr,"%s: structure alloc for icon_name failed.\n",prog_name);
     exit(-1);
@@ -408,7 +408,7 @@ int ShellOpen (ShellWindow *sh)
   wm_hints.icon_pixmap = sh->icon_pixmap;
   wm_hints.flags = StateHint | IconPixmapHint | InputHint;
   class_hints.res_name = prog_name;
-  class_hints.res_class = ug_name;
+  class_hints.res_class = (char*) ug_name;
   XSetWMProperties(display,sh->win,&sh->window_name,&sh->icon_name,if_argv,if_argc,
                    &size_hints,&wm_hints,&class_hints);
 

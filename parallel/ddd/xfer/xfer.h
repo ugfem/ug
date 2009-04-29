@@ -660,7 +660,7 @@ void XferUnpack (LC_MSGHANDLE *, int, DDD_HDR *, int,
 
 
 /* ctrl.c */
-void XferDisplayMsg (char *comment, LC_MSGHANDLE);
+void XferDisplayMsg (const char *comment, LC_MSGHANDLE);
 
 END_UGDIM_NAMESPACE
 

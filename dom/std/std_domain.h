@@ -126,25 +126,25 @@ void *CreateLinearSegment (const char *name,
 UINT GetBoundarySegmentId(BNDS* boundarySegment);
 
 /* problem definition */
-void                    *CreateProblem                       (char *domain, char *name,
+void                    *CreateProblem                       (const char *domain, const char *name,
                                                               int id, ConfigProcPtr config,
                                                               int numOfCoefficients,
                                                               CoeffProcPtr coeffs[],
                                                               int numOfUserFct,
                                                               UserProcPtr userfct[]);
 
-void *CreateBoundaryCondition (char *name, INT id,
+void *CreateBoundaryCondition (const char *name, INT id,
                                BndCondProcPtr theBndCond,
                                void *Data);
 
 BVP   *CreateBoundaryValueProblem (const char *BVPname, BndCondProcPtr theBndCond,
                                    int numOfCoeffFct, CoeffProcPtr coeffs[],
                                    int numOfUserFct, UserProcPtr userfct[]);
-BVP       *CreateBVP                              (char *BVP, char *Domain, char *Problem);
+BVP       *CreateBVP              (const char *BVP, const char *Domain, const char *Problem);
 const char *GetBVP_DomainName     (const BVP *aBVP);
 const char *GetBVP_ProblemName    (const BVP *aBVP);
 
-BVP *CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName);
+BVP *CreateBVP_Problem (const char *BVPName, const char *DomainName, const char *ProblemName);
 
 END_UGDIM_NAMESPACE
 

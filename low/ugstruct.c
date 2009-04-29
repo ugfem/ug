@@ -195,7 +195,7 @@ static char nexttoken[NAMESIZE];        /* must be global for lastnameHnd ! */
  */
 /****************************************************************************/
 
-ENVDIR * NS_PREFIX FindStructDir (const char *name, char **lastnameHnd)
+ENVDIR * NS_PREFIX FindStructDir (const char *name, const char **lastnameHnd)
 {
   ENVDIR *newPath[MAXENVPATH];
   ENVDIR *theDir;
@@ -364,7 +364,7 @@ ENVDIR * NS_PREFIX FindStructure (const ENVDIR *where, const char *name)
 
 char * NS_PREFIX GetStringVar (const char *name)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
 
@@ -396,7 +396,7 @@ char * NS_PREFIX GetStringVar (const char *name)
 
 INT NS_PREFIX GetStringValue (const char *name, double *value)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
 
@@ -430,7 +430,7 @@ INT NS_PREFIX GetStringValue (const char *name, double *value)
 
 INT NS_PREFIX GetStringValueDouble (const char *name, double *value)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
   double val;
@@ -466,7 +466,7 @@ INT NS_PREFIX GetStringValueDouble (const char *name, double *value)
 
 INT NS_PREFIX GetStringValueInt (const char *name, int *value)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
   int val;
@@ -506,7 +506,7 @@ INT NS_PREFIX GetStringValueInt (const char *name, int *value)
 
 INT NS_PREFIX GetStringDOUBLEInRange (const char *name, DOUBLE min, DOUBLE max, DOUBLE *value)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
   double val;
@@ -543,7 +543,7 @@ INT NS_PREFIX GetStringDOUBLEInRange (const char *name, DOUBLE min, DOUBLE max, 
 
 INT NS_PREFIX GetStringINTInRange (const char *name, INT min, INT max, INT *value)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
   int val;
@@ -712,7 +712,7 @@ ENVITEM * NS_PREFIX MakeStructItem (ENVDIR *where, const char *name, INT type, I
 
 INT NS_PREFIX MakeStruct (const char *name)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir,*theStruct;
 
   if ((theDir=FindStructDir(name,&lastname))==NULL) return(1);
@@ -744,7 +744,7 @@ INT NS_PREFIX MakeStruct (const char *name)
 
 INT NS_PREFIX DeleteStruct (const char *name)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir,*theStruct;
 
   if ((theDir=FindStructDir(name,&lastname))==NULL)
@@ -823,7 +823,7 @@ INT NS_PREFIX RemoveStringVar (ENVDIR *homeDir, STRVAR *theVar)
 
 INT NS_PREFIX DeleteVariable (const char *name)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
 
@@ -865,7 +865,7 @@ INT NS_PREFIX DeleteVariable (const char *name)
 
 INT NS_PREFIX SetStringVar (const char *name, const char *sval)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
 
@@ -919,7 +919,7 @@ INT NS_PREFIX SetStringVar (const char *name, const char *sval)
 
 INT NS_PREFIX SetnStringVar (const char *name, const char *sval, int n)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
 
@@ -969,7 +969,7 @@ INT NS_PREFIX SetnStringVar (const char *name, const char *sval, int n)
 
 INT NS_PREFIX SetStringVarNotify (const char *name, const char *sval)
 {
-  char *lastname;
+  const char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
   int notify = SV_NOT_CHANGED;
@@ -1351,7 +1351,7 @@ INT NS_PREFIX PrintStructContents (const char *name, char *buffer, int bufLen, i
   static ENVDIR *theDir;
   static STRVAR *StrVar;
   static int status;
-  char *lastname;
+  const char *lastname;
   int ret;
 
   buffer[0]=(char) 0;

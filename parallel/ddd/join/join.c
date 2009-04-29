@@ -204,7 +204,7 @@ void Method(Print) (ParamThis _PRINTPARAMS)
         and recovery.
  */
 
-char *JoinModeName (int mode)
+const char *JoinModeName (int mode)
 {
   switch(mode)
   {

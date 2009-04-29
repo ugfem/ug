@@ -170,7 +170,7 @@ static int sort_el_offset (const void *i1, const void *i2)
         error occurred during TypeDefine for desc, with argument argno
  */
 
-static char *RegisterError (TYPE_DESC *desc, int argno, char *txt)
+static char *RegisterError (TYPE_DESC *desc, int argno, const char *txt)
 {
   if (argno==0)
   {
@@ -1180,10 +1180,10 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 /****************************************************************************/
 
 #ifdef C_FRONTEND
-DDD_TYPE DDD_TypeDeclare(char *name)
+DDD_TYPE DDD_TypeDeclare(const char *name)
 #endif
 #ifdef CPP_FRONTEND
-DDD_TYPE DDD_Library::TypeDeclareStruct(char *name)
+DDD_TYPE DDD_Library::TypeDeclareStruct(const char *name)
 #endif
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 {

@@ -706,7 +706,7 @@ INT NS_DIM_PREFIX FreeMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 static VEC_TEMPLATE *CreateVecTemplate (const char *name)
 {
   VEC_TEMPLATE *vt;
-  char *token;
+  const char *token;
   INT j;
 
   if (name == NULL) REP_ERR_RETURN_PTR (NULL);

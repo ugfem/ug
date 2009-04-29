@@ -377,7 +377,7 @@ void              SetMuteLevel                          (INT mute);
 INT               GetMuteLevel                          (void);
 
 /* multiple output devices */
-OUTPUTDEVICE *CreateOutputDevice                (char *name);
+OUTPUTDEVICE *CreateOutputDevice                (const char *name);
 OUTPUTDEVICE *GetOutputDevice                   (const char *name);
 OUTPUTDEVICE *GetDefaultOutputDevice    (void);
 

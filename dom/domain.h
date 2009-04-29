@@ -319,7 +319,7 @@ BVP        *BVP_GetNext           (BVP *theBVP);
  * </ul>
  */
 /****************************************************************************/
-INT BVP_Save (BVP *theBVP, char *name, char *mgname, NS_PREFIX HEAP *theHeap, INT argc, char **argv);
+INT BVP_Save (BVP *theBVP, const char *name, const char *mgname, NS_PREFIX HEAP *theHeap, INT argc, char **argv);
 
 /****************************************************************************/
 /** \brief Load a BVP
@@ -335,7 +335,7 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, NS_PREFIX HEAP *theHeap, IN
  * </ul>
  */
 /****************************************************************************/
-BVP        *BVP_Load              (char *name, INT argc, char **argv);
+BVP        *BVP_Load              (const char *name, INT argc, char **argv);
 
 /****************************************************************************/
 /** \brief Get pointer to BVP by name
@@ -369,7 +369,7 @@ void Set_Current_BVP(BVP* theBVP);
  * </ul>
  */
 /****************************************************************************/
-BVP *BVP_Init (char *filename, NS_PREFIX HEAP *theHeap, MESH *Mesh, INT MarkKey);
+BVP *BVP_Init (const char *filename, NS_PREFIX HEAP *theHeap, MESH *Mesh, INT MarkKey);
 
 /****************************************************************************/
 /** \brief Dispose a BVP

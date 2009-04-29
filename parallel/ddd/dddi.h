@@ -273,7 +273,7 @@ typedef struct _ELEM_DESC
 typedef struct _TYPE_DESC
 {
   int mode;                             /* current TypeMode (DECLARE/DEFINE)    */
-  char  *name;                       /* textual object description           */
+  const char  *name;                       /* textual object description           */
   int currTypeDefCall;                  /* number of current call to TypeDefine */
 
 #ifdef CPP_FRONTEND

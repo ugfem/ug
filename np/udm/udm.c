@@ -4812,7 +4812,7 @@ INT NS_DIM_PREFIX SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, co
 
 INT NS_DIM_PREFIX InitUserDataManager ()
 {
-  char *names;
+  const char *names;
   INT i;
 
   MatrixDirID = GetNewEnvDirID();

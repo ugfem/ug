@@ -128,8 +128,8 @@ enum {
  */
 double    DDD_StatClock (int module, int index);
 long      DDD_StatCount (int module, int index);
-char *    DDD_StatClockDesc (int module, int index);
-char *    DDD_StatCountDesc (int module, int index);
+const char *    DDD_StatClockDesc (int module, int index);
+const char *    DDD_StatCountDesc (int module, int index);
 
 
 /*

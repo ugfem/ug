@@ -1197,7 +1197,7 @@ BNDP* NS_DIM_PREFIX BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 }
 
 /* domain interface function: for description see domain.h */
-INT NS_DIM_PREFIX BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
+INT NS_DIM_PREFIX BVP_Save (BVP *theBVP, const char *name, const char *mgname, HEAP *theHeap, INT argc, char **argv)
 {
   LGM_DOMAIN *lgm_domain;
   LGM_LINE *theLine, **LinePtrList;

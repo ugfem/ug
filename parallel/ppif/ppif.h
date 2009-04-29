@@ -174,7 +174,7 @@ int             GetMail                  (int *sourceId, int *reqId, void *data,
 
 /* miscellaneous */
 int         UsedSpace        (void);
-void        PrintHostMessage (char *s);
+void        PrintHostMessage (const char *s);
 double      CurrentTime      (void);
 int         Distance             (int p, int q);
 int         aid_to_pid       (int x, int y, int z);
@@ -267,7 +267,7 @@ public:
   int    UsedSpace (void) {
     return ::UsedSpace();
   }
-  void   PrintHostMessage (char *s) {
+  void   PrintHostMessage (const char *s) {
     ::PrintHostMessage(s);
   }
   double CurrentTime (void) {

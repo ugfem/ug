@@ -87,7 +87,7 @@ INT      MakeStruct                             (const char *name);
 INT      DeleteStruct                           (const char *name);
 INT      DeleteVariable                         (const char *name);
 ENVDIR  *ChangeStructDir                        (const char *s);
-ENVDIR  *FindStructDir                          (const char *name, char **lastnameHnd);
+ENVDIR  *FindStructDir                          (const char *name, const char **lastnameHnd);
 STRVAR  *FindStringVar                          (const ENVDIR *where, const char *name);
 ENVDIR  *FindStructure                          (const ENVDIR *where, const char *name);
 INT              RemoveStringVar                        (ENVDIR *homeDir, STRVAR *theVar);

@@ -147,7 +147,7 @@ typedef struct {
 int PutBndNode (BND_NODE *BndNode);
 int PutInnerNode (INNER_NODE *InnNode);
 int PutElement (NG_ELEMENT *Elem);
-int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey);
+int NG_ReadMesh (const char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, INT MarkKey);
 
 #ifdef __USE_IN_UG__
 int NG_Init (int domainpaths_set);

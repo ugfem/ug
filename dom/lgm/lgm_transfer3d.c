@@ -84,7 +84,7 @@ static int SkipEOL (void)
 }
 
 
-static int ReadCommentLine (char *comment)
+static int ReadCommentLine (const char *comment)
 {
   char buffer[256];
 
@@ -123,7 +123,7 @@ static fpos_t UnitInfoFilepos;
 static fpos_t fileposline;
 static fpos_t filepossurface;
 
-int NS_DIM_PREFIX LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey)
+int NS_DIM_PREFIX LGM_ReadDomain (HEAP *Heap, const char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey)
 {
   int i,i0,i1,i2;
   char buffer[256];
@@ -853,7 +853,7 @@ int NS_DIM_PREFIX LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
    D*/
 /****************************************************************************/
 
-FILE* NS_DIM_PREFIX LGM_WriteOpenFile (char* name)
+FILE* NS_DIM_PREFIX LGM_WriteOpenFile (const char* name)
 {
   FILE *stream;
 

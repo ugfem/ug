@@ -294,7 +294,7 @@ void    ddd_pstat                       (char *);
 void    ddd_DisplayContext      (void);
 
 /* from lb.c */
-void lbs (char *argv, MULTIGRID *theMG);
+void lbs (const char *argv, MULTIGRID *theMG);
 
 /* from handler.c */
 void            ddd_HandlerInit                 (INT);

@@ -85,7 +85,7 @@ void    ResetDoneFlag                   (void);
 int             GetDoneFlag                     (void);
 FILE   *FOpenScript                             (const char *script, const char *mode);
 
-INT     InterpretCommand                (char *cmds);
+INT     InterpretCommand                (const char *cmds);
 
 INT     InitCommandInterpreter  (INT argc, char **argv);
 INT     ExitCommandInterpreter       ();

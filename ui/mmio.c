@@ -404,7 +404,7 @@ int NS_DIM_PREFIX mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], 
 char* NS_DIM_PREFIX mm_typecode_to_str(MM_typecode matcode)
 {
   char buffer[MM_MAX_LINE_LENGTH];
-  char *types[4];
+  const char *types[4];
   int error =0;
 
   /* check for MTX type */
