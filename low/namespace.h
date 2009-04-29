@@ -16,7 +16,7 @@
 
     ...
 
-    END_NAMESPACE
+    END_UG_NAMESPACE
 
    for stuff that is independent of the space dimension or
 
@@ -55,7 +55,8 @@
 #ifdef __cplusplus
 
 #define START_UG_NAMESPACE namespace UG {
-#define END_NAMESPACE }
+#define END_UG_NAMESPACE }
+#define END_NAMESPACE }   // deprecated
 #define END_UGDIM_NAMESPACE }}
 #define NS_PREFIX UG::
 #define USING_UG_NAMESPACE using namespace UG;
@@ -76,7 +77,8 @@
 /* normal C-compiler, no namespace-stuff */
 # define START_UG_NAMESPACE
 # define START_UGDIM_NAMESPACE
-# define END_NAMESPACE
+# define END_NAMESPACE  // deprecated
+# define END_UG_NAMESPACE
 # define END_UGDIM_NAMESPACE
 # define NS_PREFIX
 #define NS_DIM_PREFIX
@@ -86,7 +88,7 @@
 #endif
 
 /* check if the required symbols exist */
-#if !defined(NS_PREFIX) || !defined(START_UG_NAMESPACE) || !defined(END_NAMESPACE)
+#if !defined(NS_PREFIX) || !defined(START_UG_NAMESPACE) || !defined(END_UG_NAMESPACE)
 # error missing symbol!
 #endif
 
