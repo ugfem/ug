@@ -200,7 +200,7 @@ BndNode:
 														BndNode.global[0]=$2;
 														BndNode.global[1]=$3;
 														BndNode.global[2]=$4;
-														$$=&BndNode;
+														$<bs>$=&BndNode;
 													}
 	BndSpec 										{PutBndNode(&BndNode);}
 	TEND			

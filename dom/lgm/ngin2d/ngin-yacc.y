@@ -157,7 +157,7 @@ BndNode:
 														BndNode.n_lp=0;
 														BndNode.global[0]=$2;
 														BndNode.global[1]=$3;
-														$$=&BndNode;
+														$<bs>$=&BndNode;
 													}
 	BndSpec 										{PutBndNode(&BndNode);}
 	TEND			
