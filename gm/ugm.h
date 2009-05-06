@@ -153,8 +153,8 @@ void            GetNbSideByNodes                (ELEMENT *theNeighbor, INT *nbsi
 
 
 #if defined(ModelP) && !defined(DYNAMIC_MEMORY_ALLOCMODEL)
-void *GetMemoryForObject_par (NS_DIM_PREFIX HEAP *theHeap, INT size, INT type);
-INT PutFreeObject_par (NS_DIM_PREFIX HEAP *theHeap, void *object, INT size, INT type);
+void *GetMemoryForObject_par (NS_PREFIX HEAP *theHeap, INT size, INT type);
+INT PutFreeObject_par (NS_PREFIX HEAP *theHeap, void *object, INT size, INT type);
 #endif
 
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
