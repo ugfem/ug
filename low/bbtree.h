@@ -83,6 +83,6 @@ void BBT_ClosestBBoxesToPoint(BBT_TREE *tree, DOUBLE *x, BBT_FUNC func,
 DOUBLE BBT_TreePointDistance(BBT_TREE *tree, DOUBLE *x, void **obj,
                              BBT_POINT_DIST_FUNC dist);
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

@@ -68,6 +68,6 @@ INT     fifo_full    (const FIFO *myfifo);
 INT     fifo_in     (FIFO *myfifo, void *newelement);
 void    *fifo_out    (FIFO *myfifo);
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

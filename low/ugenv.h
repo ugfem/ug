@@ -214,6 +214,6 @@ INT      GetNewEnvDirID (void);
 INT      GetNewEnvVarID (void);
 
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

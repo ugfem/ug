@@ -244,7 +244,7 @@ INT          DefineBlock            (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM si
 INT          FreeBlock                (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id);
 /* @} */
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 /** @} */
 

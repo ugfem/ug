@@ -59,6 +59,6 @@ typedef float SCREEN_COORD;
 
 #endif
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

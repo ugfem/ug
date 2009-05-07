@@ -113,6 +113,6 @@ INT              PrintCurrentStructContents (int flag, char *buffer, int bufLen,
 /* initialization of this module */
 INT     InitUgStruct                            (void);
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

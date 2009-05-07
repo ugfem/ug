@@ -150,7 +150,7 @@ extern int UG_math_error;
 #ifndef ModelP
 
 #ifdef __cplusplus
-END_NAMESPACE
+END_UG_NAMESPACE
 namespace PPIF {
 #endif
 extern int me;          /* to have in the serial case this variable as a dummy */
@@ -193,6 +193,6 @@ INT                     WriteMemSizeToString    (MEM mem_size, char *s);
 
 INT                     MemoryParameters        (void);
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

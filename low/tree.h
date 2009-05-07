@@ -128,6 +128,6 @@ TREE_ENTRY *GetFirstLeafinQuader(TREE *theTree, DOUBLE *ll, DOUBLE *ur);
 TREE_ENTRY *GetNextLeafinQuader(TREE *theTree);
 
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

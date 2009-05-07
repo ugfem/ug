@@ -55,7 +55,7 @@ INT InitLow (void);
 
 INT ExitLow();
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 /** @} */
 #endif

@@ -41,6 +41,6 @@ START_UG_NAMESPACE
 extern int duneMarker;
 #endif
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

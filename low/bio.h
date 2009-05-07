@@ -102,7 +102,7 @@ int Bio_Jump_To                         (void);
 int Bio_Jump                            (int dojump);
 
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 /** @} */
 #endif

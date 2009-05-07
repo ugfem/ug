@@ -118,6 +118,6 @@ const char*     AddBasePath                                     (const char *pat
 
 INT                     InitFileOpen                            (void);
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

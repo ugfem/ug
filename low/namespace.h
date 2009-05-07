@@ -56,7 +56,6 @@
 
 #define START_UG_NAMESPACE namespace UG {
 #define END_UG_NAMESPACE }
-#define END_NAMESPACE }   // deprecated
 #define END_UGDIM_NAMESPACE }}
 #define NS_PREFIX UG::
 #define USING_UG_NAMESPACE using namespace UG;
@@ -77,7 +76,6 @@
 /* normal C-compiler, no namespace-stuff */
 # define START_UG_NAMESPACE
 # define START_UGDIM_NAMESPACE
-# define END_NAMESPACE  // deprecated
 # define END_UG_NAMESPACE
 # define END_UGDIM_NAMESPACE
 # define NS_PREFIX

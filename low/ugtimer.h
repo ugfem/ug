@@ -92,6 +92,6 @@ extern UG_TIMER ug_timer[MAX_TIMER];
 
 void new_timer (int *n);
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif

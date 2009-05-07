@@ -74,6 +74,6 @@ START_UG_NAMESPACE
 INT     GetDefaultValue                         (const char *filename, const char *name, char *value);
 INT     GetLocalizedDefaultValue        (const char *filename, const char *name, char *value);
 
-END_NAMESPACE
+END_UG_NAMESPACE
 
 #endif
