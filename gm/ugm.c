@@ -3871,10 +3871,6 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
         }
         else
         {
-                                        #ifdef ModelP
-          /* TODO: sidevector case must be tested */
-          assert(0);
-                                        #endif
           if (!FindNeighborElement (theElement,i,&theNeighbor,&j))
             RETURN (1);
           VOBJECT(theVector) = (GEOM_OBJECT *)theNeighbor;
