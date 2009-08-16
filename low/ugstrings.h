@@ -31,7 +31,7 @@
 #if STDC_HEADERS
 # ifdef HAVE_STRING_H
 #  include <string.h>
-# elif
+# else
 #  ifdef HAVE_STRINGS_H
 #   include <strings.h>
 #  endif
