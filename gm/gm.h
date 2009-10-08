@@ -996,7 +996,9 @@ struct generic_element {
 
 };
 
-/** \brief A triangle element in a 2d grid */
+/** \brief A triangle element in a 2d grid
+    \implements generic_element
+ */
 struct triangle {
 
   /** \brief Object identification, various flags */
@@ -1080,7 +1082,9 @@ struct triangle {
   void *data;
 };
 
-/** \brief A quadrilateral element in a 2d grid */
+/** \brief A quadrilateral element in a 2d grid
+    \implements generic_element
+ */
 struct quadrilateral {
 
   /** \brief object identification, various flags */
@@ -1165,7 +1169,9 @@ struct quadrilateral {
   void *data;
 };
 
-/** \brief A tetrahedral element in a 3d grid */
+/** \brief A tetrahedral element in a 3d grid
+    \implements generic_element
+ */
 struct tetrahedron {
 
   /** \brief object identification, various flags */
@@ -1255,7 +1261,9 @@ struct tetrahedron {
   void *data;
 };
 
-/** \brief A pyramid element in a 3d grid */
+/** \brief A pyramid element in a 3d grid
+    \implements generic_element
+ */
 struct pyramid {
 
   /** \brief object identification, various flags */
@@ -1343,7 +1351,9 @@ struct pyramid {
   void *data;
 };
 
-/** \brief A prism element in a 3d grid */
+/** \brief A prism element in a 3d grid
+    \implements generic_element
+ */
 struct prism {
 
   /** \brief object identification, various flags */
@@ -1432,7 +1442,9 @@ struct prism {
   void *data;
 };
 
-/** \brief A hexahedral element in a 3d grid */
+/** \brief A hexahedral element in a 3d grid
+    \implements generic_element
+ */
 struct hexahedron {
 
   /** \brief object identification, various flags */
