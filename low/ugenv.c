@@ -254,6 +254,8 @@ ENVITEM * NS_PREFIX MakeEnvItem (const char *name, const INT type, const INT siz
   /* check if name not already used in this directory */
   currentDir = path[pathIndex];
   anItem = lastItem = currentDir->down;
+
+#ifdef Debug
   while (anItem!=NULL)
   {
     if ((anItem->v.type==type)&&(strcmp(anItem->v.name,name)==0))
@@ -264,6 +266,7 @@ ENVITEM * NS_PREFIX MakeEnvItem (const char *name, const INT type, const INT siz
     lastItem = anItem;
     anItem = anItem->v.next;
   }
+#endif
 
   /* allocate memory from environment heap */
   switch (type)
@@ -315,10 +318,11 @@ ENVITEM * NS_PREFIX MakeEnvItem (const char *name, const INT type, const INT siz
   }
   else
   {
-    /* append to last Item */
-    lastItem->v.next = newItem;
-    newItem->v.previous = lastItem;
-    newItem->v.next = NULL;
+    /* insert before first item */
+    newItem->v.previous = NULL;
+    currentDir->down->v.previous = newItem;
+    newItem->v.next = currentDir->down;
+    currentDir->down = newItem;
   }
 
   /* return pointer to new item */
