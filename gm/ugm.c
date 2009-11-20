@@ -6330,7 +6330,7 @@ ELEMENT * NS_DIM_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMEN
     tag = HEXAHEDRON;
     break;
   default :
-    PrintErrorMessage('E',"InsertElement","only tetrahedrons, pyramids and hexahedrons are allowed in the 3D coarse grid");
+    PrintErrorMessage('E',"InsertElement","only tetrahedra, prisms, pyramids, and hexahedra are allowed in the 3D coarse grid");
     return(NULL);
   }
     #endif
