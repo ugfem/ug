@@ -1107,11 +1107,7 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
 
                         #ifdef __THREEDIM__
       if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
-      {
         IdentifySideVector(theElement,theNeighbor,SonList[j],SonSides[j]);
-        /* this is not debugged */
-        assert(0);
-      }
                         #endif
     }
   }
