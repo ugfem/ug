@@ -1121,6 +1121,116 @@ CreateCornerPoints (HEAP * Heap, STD_BVP * theBVP, BNDP ** bndp)
   return (0);
 }
 
+#ifdef __THREEDIM__
+/** \brief Add a line between two vertices to the boundary data structure
+
+   \param i, j  The line goes from vertex i to vertex j
+   \param corners Array with pointers to all vertices
+ */
+static INT
+CreateLine(INT i, INT j, HEAP *Heap, PATCH *thePatch, PATCH **corners, PATCH **lines, PATCH **sides,
+           INT *nlines, INT *err)
+{
+  INT k, n, m;
+  INT freePatches;
+
+  k = 0;
+  for (n = 0; n < POINT_PATCH_N (corners[i]); n++)
+    for (m = 0; m < POINT_PATCH_N (corners[j]); m++)
+      if (POINT_PATCH_PID (corners[i], n) ==
+          POINT_PATCH_PID (corners[j], m))
+        k++;
+
+  assert(k>=2);
+
+  thePatch =
+    (PATCH *) GetFreelistMemory (Heap, sizeof (LINE_PATCH)
+                                 + (k -
+                                    1) * sizeof (struct line_on_patch));
+  if (thePatch == NULL)
+    return (NULL);
+  PATCH_TYPE (thePatch) = LINE_PATCH_TYPE;
+  PATCH_ID (thePatch) = *nlines;
+  LINE_PATCH_C0 (thePatch) = i;
+  LINE_PATCH_C1 (thePatch) = j;
+  k = 0;
+  freePatches = 0;
+  for (n = 0; n < POINT_PATCH_N (corners[i]); n++)
+    for (m = 0; m < POINT_PATCH_N (corners[j]); m++)
+      if (POINT_PATCH_PID (corners[i], n) ==
+          POINT_PATCH_PID (corners[j], m))
+      {
+        LINE_PATCH_PID (thePatch, k) =
+          POINT_PATCH_PID (corners[i], n);
+        LINE_PATCH_CID0 (thePatch, k) =
+          POINT_PATCH_CID (corners[i], n);
+        LINE_PATCH_CID1 (thePatch, k) =
+          POINT_PATCH_CID (corners[j], m);
+        if (PATCH_IS_FREE (sides[LINE_PATCH_PID (thePatch, k)]))
+          freePatches++;
+        k++;
+      }
+  LINE_PATCH_N (thePatch) = k;
+
+  for (n = 0; n < LINE_PATCH_N (thePatch); n++)
+    PRINTDEBUG (dom, 1, (" pid %d cid %d %d",
+                         LINE_PATCH_PID (thePatch, n),
+                         LINE_PATCH_CID0 (thePatch, n),
+                         LINE_PATCH_CID1 (thePatch, n)));
+  PRINTDEBUG (dom, 1, ("\n"));
+
+  IFDEBUG (dom, 10) if (k == 2)
+  {
+    INT o0, o1, s0, s1;
+
+    s0 = LINE_PATCH_PID (thePatch, 0);
+    s1 = LINE_PATCH_PID (thePatch, 1);
+    o0 =
+      (LINE_PATCH_CID0 (thePatch, 0) ==
+       ((LINE_PATCH_CID1 (thePatch, 0) + 1) % (2 * DIM_OF_BND)));
+    o1 =
+      (LINE_PATCH_CID0 (thePatch, 1) ==
+       ((LINE_PATCH_CID1 (thePatch, 1) + 1) % (2 * DIM_OF_BND)));
+    if (o0 != o1)
+    {
+      if ((PARAM_PATCH_LEFT (sides[s0]) !=
+           PARAM_PATCH_LEFT (sides[s1]))
+          || ((PARAM_PATCH_RIGHT (sides[s0]) !=
+               PARAM_PATCH_RIGHT (sides[s1]))))
+      {
+        PRINTDEBUG (dom, 0, ("patch %d and patch %d:"
+                             "orientation not maches\n", s0, s1));
+        (*err)++;
+      }
+    }
+    else
+    {
+      if ((PARAM_PATCH_LEFT (sides[s0]) !=
+           PARAM_PATCH_RIGHT (sides[s1]))
+          || ((PARAM_PATCH_RIGHT (sides[s0]) !=
+               PARAM_PATCH_LEFT (sides[s1]))))
+      {
+        PRINTDEBUG (dom, 0, ("patch %d and patch %d:"
+                             "orientation not maches\n", s0, s1));
+        (*err)++;
+      }
+    }
+  }
+  ENDDEBUG if (freePatches == k)
+    PATCH_STATE (thePatch) = PATCH_FREE;
+  else if (freePatches == 0)
+    PATCH_STATE (thePatch) = PATCH_FIXED;
+  else
+    PATCH_STATE (thePatch) = PATCH_BND_OF_FREE;
+  lines[(*nlines)++] = thePatch;
+  PRINTDEBUG (dom, 1, ("lines id %d type %d n %d\n",
+                       PATCH_ID (thePatch), PATCH_TYPE (thePatch),
+                       LINE_PATCH_N (thePatch)));
+
+
+}
+#endif
+
 BVP *NS_DIM_PREFIX
 BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
 {
@@ -1134,9 +1244,9 @@ BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   unsigned short* segmentsPerPoint, *freeSegmentsPerPoint, *cornerCounters;
   INT i, j, n, m, maxSubDomains, ncorners, nlines, nsides;
 #       ifdef __THREEDIM__
-  INT freePatches;
   PATCH **lines;
   INT k, err;
+  INT nn;
 #       endif
 
   theBVP = (STD_BVP *) BVP_GetByName (name);
@@ -1340,6 +1450,7 @@ BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   }
 
   for (i = 0; i < ncorners; i++) {
+    /* Shouldn't the 'thePatch' be replaced 'corners[i]' in this loop?  OS */
     if (freeSegmentsPerPoint[i] == cornerCounters[i])
       PATCH_STATE (thePatch) = PATCH_FREE;
     else if (freeSegmentsPerPoint[i] == 0)
@@ -1373,102 +1484,55 @@ BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   if (lines == NULL)
     return (NULL);
   err = 0;
-  for (i = 0; i < ncorners; i++)
-    for (j = i + 1; j < ncorners; j++)
-    {
-      k = 0;
-      for (n = 0; n < POINT_PATCH_N (corners[i]); n++)
-        for (m = 0; m < POINT_PATCH_N (corners[j]); m++)
-          if (POINT_PATCH_PID (corners[i], n) ==
-              POINT_PATCH_PID (corners[j], m))
-            k++;
-      if (k < 2)
-        /* points share one patch only and lie on opposite corners of this patch */
-        continue;
-      thePatch =
-        (PATCH *) GetFreelistMemory (Heap, sizeof (LINE_PATCH)
-                                     + (k -
-                                        1) * sizeof (struct line_on_patch));
-      if (thePatch == NULL)
-        return (NULL);
-      PATCH_TYPE (thePatch) = LINE_PATCH_TYPE;
-      PATCH_ID (thePatch) = nlines;
-      LINE_PATCH_C0 (thePatch) = i;
-      LINE_PATCH_C1 (thePatch) = j;
-      k = 0;
-      freePatches = 0;
-      for (n = 0; n < POINT_PATCH_N (corners[i]); n++)
-        for (m = 0; m < POINT_PATCH_N (corners[j]); m++)
-          if (POINT_PATCH_PID (corners[i], n) ==
-              POINT_PATCH_PID (corners[j], m))
-          {
-            LINE_PATCH_PID (thePatch, k) =
-              POINT_PATCH_PID (corners[i], n);
-            LINE_PATCH_CID0 (thePatch, k) =
-              POINT_PATCH_CID (corners[i], n);
-            LINE_PATCH_CID1 (thePatch, k) =
-              POINT_PATCH_CID (corners[j], m);
-            if (PATCH_IS_FREE (sides[LINE_PATCH_PID (thePatch, k)]))
-              freePatches++;
-            k++;
-          }
-      LINE_PATCH_N (thePatch) = k;
 
-      for (n = 0; n < LINE_PATCH_N (thePatch); n++)
-        PRINTDEBUG (dom, 1, (" pid %d cid %d %d",
-                             LINE_PATCH_PID (thePatch, n),
-                             LINE_PATCH_CID0 (thePatch, n),
-                             LINE_PATCH_CID1 (thePatch, n)));
-      PRINTDEBUG (dom, 1, ("\n"));
+  /* We create the set of all boundary lines by looping over the sides
+     and for each side loop over the edges of this side.  That way, we
+     meet each boundary line twice.  Now, assuming that the sides are
+     properly oriented we get each line once as (a,b) and once as (b,a).
+     We then just ignore the one where the first vertex has a higher
+     number than the second one.
+   */
+  for (int s=0; s<nsides; s++) {
 
-      IFDEBUG (dom, 10) if (k == 2)
+    if (PATCH_TYPE (sides[s]) == LINEAR_PATCH_TYPE) {
+
+      for (nn = 0; nn < LINEAR_PATCH_N (sides[s]); nn++)
       {
-        INT o0, o1, s0, s1;
+        i = LINEAR_PATCH_POINTS (sides[s], nn);
+        j = LINEAR_PATCH_POINTS (sides[s], (nn+1)%LINEAR_PATCH_N(sides[s]));
 
-        s0 = LINE_PATCH_PID (thePatch, 0);
-        s1 = LINE_PATCH_PID (thePatch, 1);
-        o0 =
-          (LINE_PATCH_CID0 (thePatch, 0) ==
-           ((LINE_PATCH_CID1 (thePatch, 0) + 1) % (2 * DIM_OF_BND)));
-        o1 =
-          (LINE_PATCH_CID0 (thePatch, 1) ==
-           ((LINE_PATCH_CID1 (thePatch, 1) + 1) % (2 * DIM_OF_BND)));
-        if (o0 != o1)
-        {
-          if ((PARAM_PATCH_LEFT (sides[s0]) !=
-               PARAM_PATCH_LEFT (sides[s1]))
-              || ((PARAM_PATCH_RIGHT (sides[s0]) !=
-                   PARAM_PATCH_RIGHT (sides[s1]))))
-          {
-            PRINTDEBUG (dom, 0, ("patch %d and patch %d:"
-                                 "orientation not maches\n", s0, s1));
-            err++;
-          }
-        }
-        else
-        {
-          if ((PARAM_PATCH_LEFT (sides[s0]) !=
-               PARAM_PATCH_RIGHT (sides[s1]))
-              || ((PARAM_PATCH_RIGHT (sides[s0]) !=
-                   PARAM_PATCH_LEFT (sides[s1]))))
-          {
-            PRINTDEBUG (dom, 0, ("patch %d and patch %d:"
-                                 "orientation not maches\n", s0, s1));
-            err++;
-          }
-        }
+        if (j>i)
+          /* Insert the line into the boundary data structure */
+          CreateLine(i, j, Heap, thePatch, corners, lines, sides, &nlines, &err);
+
       }
-      ENDDEBUG if (freePatches == k)
-        PATCH_STATE (thePatch) = PATCH_FREE;
-      else if (freePatches == 0)
-        PATCH_STATE (thePatch) = PATCH_FIXED;
-      else
-        PATCH_STATE (thePatch) = PATCH_BND_OF_FREE;
-      lines[nlines++] = thePatch;
-      PRINTDEBUG (dom, 1, ("lines id %d type %d n %d\n",
-                           PATCH_ID (thePatch), PATCH_TYPE (thePatch),
-                           LINE_PATCH_N (thePatch)));
-    }
+
+    } else if (PATCH_TYPE (sides[s]) == PARAMETRIC_PATCH_TYPE) {
+
+      /* Handle edges of parametric patches */
+
+      /* Determine whether the boundary segment is a triangle or a quadrilateral.
+         We assume that it is a triangle if the fourth vertex is invalid, and
+         a quadrilateral otherwise.  This is the best we can do.
+       */
+
+      int cornersOfParametricPatch = (PARAM_PATCH_POINTS (sides[s], 3) < 0 || PARAM_PATCH_POINTS (sides[s], 3) > ncorners) ? 3 : 4;
+
+      for (nn = 0; nn < cornersOfParametricPatch; nn++)
+      {
+        i = PARAM_PATCH_POINTS (sides[s], nn);
+        j = PARAM_PATCH_POINTS (sides[s], (nn+1)%cornersOfParametricPatch);
+
+        if (j>i)
+          /* Insert the line into the boundary data structure */
+          CreateLine(i, j, Heap, thePatch, corners, lines, sides, &nlines, &err);
+
+      }
+
+    } else
+      UserWrite("Error: unknown PATCH_TYPE found for a boundary side!\n");
+
+  }
   ASSERT (err == 0);
 #endif
 
