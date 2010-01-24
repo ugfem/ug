@@ -16,12 +16,12 @@ noinst_LTLIBRARIES = $(PLIB)
 
 SOURCES = initparallel.c initparallel.h
 
-SUBLIBS = ddd/libddd2.la ddd/libddd3.la ppif/MPI/libppifmpi.la
+SUBLIBS = ppif/MPI/libppifmpi.la
 
 libparallel2_la_SOURCES = $(SOURCES)
 libparallel2_la_CPPFLAGS = $(UG_2DFLAGS)
-libparallel2_la_LIBADD = $(SUBLIBS) dddif/libdddif2.la
+libparallel2_la_LIBADD = $(SUBLIBS) ddd/libddd2.la dddif/libdddif2.la
 
 libparallel3_la_SOURCES = $(SOURCES)
 libparallel3_la_CPPFLAGS = $(UG_3DFLAGS)
-libparallel3_la_LIBADD = $(SUBLIBS) dddif/libdddif3.la
+libparallel3_la_LIBADD = $(SUBLIBS) ddd/libddd3.la dddif/libdddif3.la

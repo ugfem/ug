@@ -12,21 +12,14 @@ include_HEADERS = gm.h pargm.h evm.h shapes.h dlmgr.h algebra.h \
 
 
 
-EXTRALIBS =
 if BUILD2D
   LIB_2D = libug_gm2.la
-if PARALLEL
-  EXTRALIBS += ../parallel/dddif/libdddif2.la
-endif
 else
   LIB_2D =
 endif
 
 if BUILD3D
   LIB_3D = libug_gm3.la
-if PARALLEL
-  EXTRALIBS += ../parallel/dddif/libdddif3.la
-endif
 else
   LIB_3D =
 endif
@@ -36,8 +29,8 @@ noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
 libug_gm2_la_SOURCES = $(SOURCES)
 libug_gm2_la_CPPFLAGS = $(UG_2DFLAGS)
-libug_gm2_la_LIBADD = gg2/libgg2.la ../low/liblow2.la
+libug_gm2_la_LIBADD = gg2/libgg2.la
 
 libug_gm3_la_SOURCES = $(SOURCES)
 libug_gm3_la_CPPFLAGS = $(UG_3DFLAGS)
-libug_gm3_la_LIBADD = gg3/libgg3.la ../low/liblow3.la
+libug_gm3_la_LIBADD = gg3/libgg3.la

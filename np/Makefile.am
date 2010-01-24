@@ -28,8 +28,7 @@ libnp2_la_LIBADD = algebra/libalgebra2.la \
                    amglib/libamg2.la \
                    field/libfield2.la \
                    procs/libprocs2.la \
-                   udm/libudm2.la \
-                   ../low/liblow2.la
+                   udm/libudm2.la
 
 libnp3_la_SOURCES = $(SOURCES)
 libnp3_la_CPPFLAGS = $(UG_3DFLAGS)
@@ -37,6 +36,5 @@ libnp3_la_LIBADD = algebra/libalgebra3.la \
                    amglib/libamg3.la \
                    field/libfield3.la \
                    procs/libprocs3.la \
-                   udm/libudm3.la \
-                   ../low/liblow3.la
+                   udm/libudm3.la
 

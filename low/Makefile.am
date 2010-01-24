@@ -24,20 +24,12 @@ include_HEADERS = heaps.h ugenv.h ugstruct.h misc.h debug.h ugtypes.h \
 # special library for the parts of low that need a dimension
 DIMDEPSOURCES = boxtree.c pfile.c
 
-if PARALLEL
-  PLIBS_2D = ../parallel/libparallel2.la
-  PLIBS_3D = ../parallel/libparallel3.la
-else
-  PLIBS_2D =
-  PLIBS_3D =
-endif
-
 liblow2_la_SOURCES = $(DIMDEPSOURCES)
 liblow2_la_CPPFLAGS = $(UG_2DFLAGS)
 liblow2_la_LIBADD = ../parallel/util/libparutil.la \
-                   $(PLIBS_2D) liblow.la
+                   liblow.la
 
 liblow3_la_SOURCES = $(DIMDEPSOURCES)
 liblow3_la_CPPFLAGS = $(UG_3DFLAGS)
 liblow3_la_LIBADD = ../parallel/util/libparutil.la \
-                   $(PLIBS_3D) liblow.la
+                   liblow.la

@@ -33,6 +33,9 @@ lib_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 libugS2_la_SOURCES = ../initug.c
 libugS2_la_CPPFLAGS = $(UG_2DFLAGS)
 libugS2_la_LIBADD = $(2DLIBS) ../dom/std/libdomS2.la
+if PARALLEL
+  libugS2_la_LIBADD += ../parallel/libparallel2.la
+endif
 
 libugL2_la_SOURCES = ../initug.c
 libugL2_la_CPPFLAGS = $(UG_2DFLAGS)
@@ -41,6 +44,9 @@ libugL2_la_LIBADD = $(2DLIBS) ../dom/lgm/libdomL2.la
 libugS3_la_SOURCES = ../initug.c
 libugS3_la_CPPFLAGS = $(UG_3DFLAGS)
 libugS3_la_LIBADD = $(3DLIBS) ../dom/std/libdomS3.la
+if PARALLEL
+  libugS3_la_LIBADD += ../parallel/libparallel3.la
+endif
 
 libugL3_la_SOURCES = ../initug.c
 libugL3_la_CPPFLAGS = $(UG_3DFLAGS)
