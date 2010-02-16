@@ -1839,8 +1839,10 @@ void ddd_TypeMgrExit (void)
   /* free memory */
   for(i=0; i<nDescr; i++)
   {
-    if (theTypeDefs[i].cmask!=NULL)
+    if (theTypeDefs[i].cmask!=NULL) {
       FreeFix(theTypeDefs[i].cmask);
+      theTypeDefs[i].cmask = NULL;
+    }
   }
 }
 
