@@ -13,6 +13,8 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
 AC_PROG_LN_S
+#for per-target flags
+AM_PROG_CC_C_O
 # for dom/lgm/ngin
 AM_PROG_LEX
 AC_PROG_YACC
