@@ -16,7 +16,7 @@ noinst_LTLIBRARIES = $(PLIB)
 
 SOURCES = initparallel.c initparallel.h
 
-SUBLIBS = ppif/MPI/libppifmpi.la
+SUBLIBS = ppif/MPI/libppifmpi.la util/libparutil.la
 
 libparallel2_la_SOURCES = $(SOURCES)
 libparallel2_la_CPPFLAGS = $(UG_2DFLAGS)

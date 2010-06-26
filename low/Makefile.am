@@ -26,10 +26,8 @@ DIMDEPSOURCES = boxtree.c pfile.c
 
 liblow2_la_SOURCES = $(DIMDEPSOURCES)
 liblow2_la_CPPFLAGS = $(UG_2DFLAGS)
-liblow2_la_LIBADD = ../parallel/util/libparutil.la \
-                   liblow.la
+liblow2_la_LIBADD = liblow.la
 
 liblow3_la_SOURCES = $(DIMDEPSOURCES)
 liblow3_la_CPPFLAGS = $(UG_3DFLAGS)
-liblow3_la_LIBADD = ../parallel/util/libparutil.la \
-                   liblow.la
+liblow3_la_LIBADD = liblow.la
