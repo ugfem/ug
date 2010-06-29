@@ -13,10 +13,18 @@ pkgconfig_DATA = libug.pc
 
 # !!! crazy trick to get include-dir compatibility
 # Crazy indeed.  Let's at least not install f2c.h (because it creates
-# problems) and std_internal.h (because it is newer than the build system).
+# problems) and std_internal.h (because we definitely know that it is an internal header).
 install-data-hook:
-	find $(top_srcdir) -name \*.h -not -name "f2c.h" -not -name "std_internal.h" -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
-	rm -f $(DESTDIR)/$(includedir)/config.h
+	$(INSTALL_DATA) $(top_srcdir)/arch/compiler.h $(includedir)/
+	find $(top_srcdir)/parallel -name \*.h -not -name "f2c.h" -exec $(INSTALL_DATA) {} $(includedir)/ \;
+	find $(top_srcdir)/low -name \*.h -exec $(INSTALL_DATA) {} $(includedir)/ \;
+	find $(top_srcdir)/dev -name \*.h -exec $(INSTALL_DATA) {} $(includedir)/ \;
+	find $(top_srcdir)/gm -name \*.h -exec $(INSTALL_DATA) {} $(includedir)/ \;
+	find $(top_srcdir)/dom -name \*.h -not -name "std_internal.h" -exec $(INSTALL_DATA) {} $(includedir)/ \;
+	find $(top_srcdir)/graphics -name \*.h -exec $(INSTALL_DATA) {} $(includedir)/ \;
+	find $(top_srcdir)/np -name \*.h -exec $(INSTALL_DATA) {} $(includedir)/ \;
+	find $(top_srcdir)/ui -name \*.h -exec $(INSTALL_DATA) {} $(includedir)/ \;
+	find $(top_srcdir)/lib -name \*.h -exec $(INSTALL_DATA) {} $(includedir)/ \;
 
 # distcheck checks uninstall as well: revert sick trick above
 #uninstall-hook:
