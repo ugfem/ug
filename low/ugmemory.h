@@ -20,8 +20,6 @@
 #error Internal UG-lib header, must not be used in applications!
 #endif
 
-#include "config.h"
-
 /*  try ISO header first */
 #ifdef HAVE_STDLIB_H
 # include <stdlib.h>

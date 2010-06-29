@@ -16,8 +16,6 @@
 #error Internal UG-lib header, must not be used in applications!
 #endif
 
-#include "config.h"
-
 /*
   Try ISO C header <string.h>
 

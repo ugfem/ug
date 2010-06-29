@@ -11,8 +11,6 @@
 #ifndef UG_UGTIME_H
 #define UG_UGTIME_H
 
-#include "config.h"
-
 #ifdef AUTOTOOLS_BUILD
 
 #ifndef UGLIB

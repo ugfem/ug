@@ -58,11 +58,6 @@
 #ifndef __COMPILER__
 #define __COMPILER__
 
-/* try to import stuff found by autoconf. This is the first time I can
-   use that C-compilers don't fail compilation if a header doesn't
-   exist... */
-#include "config.h"
-
 /* Include the custom type declarations.  This should eventually be included
    directly by the headers who need it and not via compiler.h */
 #include "ugtypes.h"

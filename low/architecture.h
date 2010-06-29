@@ -16,8 +16,6 @@
 #error Internal UG-lib header, must not be used in applications!
 #endif
 
-#include "config.h"
-
 /* --- numerical limits ---*/
 
 #ifdef HAVE_LIMITS_H

@@ -11,8 +11,6 @@
 #ifndef UG_UGFILE_H
 #define UG_UGFILE_H
 
-#include "config.h"
-
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
