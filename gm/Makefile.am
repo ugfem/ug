@@ -7,7 +7,8 @@ SOURCES = algebra.c enrol.c evm.c mgio.c ugio.c ugm.c cw.c initgm.c elements.c s
 # put this "template" into distribution-tarball as well
 EXTRA_DIST = dlmgr.t
 
-include_HEADERS = gm.h pargm.h evm.h shapes.h dlmgr.h algebra.h \
+gmincludedir = $(pkgincludedir)
+gminclude_HEADERS = gm.h pargm.h evm.h shapes.h dlmgr.h algebra.h \
   rm.h refine.h
 
 

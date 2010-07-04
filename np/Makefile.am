@@ -4,7 +4,8 @@ SUBDIRS = algebra amglib field procs udm
 
 # famglib ist auch im alten Makefile nicht drin
 
-include_HEADERS = np.h
+npincludedir = $(pkgincludedir)
+npinclude_HEADERS = np.h
 
 SOURCES = initnp.c initnp.h initnumerics.h np.h num.h
 

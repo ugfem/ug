@@ -5,7 +5,8 @@ SUBDIRS = arch parallel low dev gm dom graphics np ui lib tools
 #
 # libltdl after low will be needed for plugins later
 
-include_HEADERS = initug.h
+ugincludedir = $(pkgincludedir)
+uginclude_HEADERS = initug.h
 
 # install pkg-config information
 pkgconfigdir = $(libdir)/pkgconfig
@@ -15,23 +16,21 @@ pkgconfig_DATA = libug.pc
 # Crazy indeed.  Let's at least not install f2c.h (because it creates
 # problems) and std_internal.h (because we definitely know that it is an internal header).
 install-data-hook:
-	$(INSTALL_DATA) $(top_srcdir)/arch/compiler.h $(DESTDIR)/$(includedir)/
-	find $(top_srcdir)/parallel -name \*.h -not -name "f2c.h" -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
-	find $(top_srcdir)/low -name \*.h -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
-	find $(top_srcdir)/dev -name \*.h -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
-	find $(top_srcdir)/gm -name \*.h -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
-	find $(top_srcdir)/dom -name \*.h -not -name "std_internal.h" -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
-	find $(top_srcdir)/graphics -name \*.h -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
-	find $(top_srcdir)/np -name \*.h -not -name "error.h" -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
-	find $(top_srcdir)/ui -name \*.h -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
-	find $(top_srcdir)/lib -name \*.h -exec $(INSTALL_DATA) {} $(DESTDIR)/$(includedir)/ \;
+	test -z "$(DESTDIR)$(pkgincludedir)" || $(MKDIR_P) "$(DESTDIR)$(pkgincludedir)"
+	$(INSTALL_DATA) $(top_srcdir)/arch/compiler.h "$(DESTDIR)$(pkgincludedir)"
+	find $(top_srcdir)/parallel -name \*.h -not -name "f2c.h" -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/low -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/dev -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/gm -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/dom -name \*.h -not -name "std_internal.h" -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/graphics -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/np -name \*.h -not -name "error.h" -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/ui -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/lib -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
 
 # distcheck checks uninstall as well: revert sick trick above
-#uninstall-hook:
-#	for HEADER in `find $(top_srcdir) -name \*.h` ; do \
-#	  BASE=`basename $$HEADER` ; \
-#	  rm -f $(includedir)/$$BASE ; \
-#	done
+uninstall-hook:
+	rm -rf $(DESTDIR)/$(pkgincludedir)
 
 #
 ## automake-options

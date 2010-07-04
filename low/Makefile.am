@@ -16,7 +16,8 @@ ugstruct.h ugtimer.h ugtypes.h ugtime.h namespace.h bbtree.c bbtree.h
 liblow_la_CPPFLAGS = $(UG_CPPFLAGS)
 
 # normal headers
-include_HEADERS = heaps.h ugenv.h ugstruct.h misc.h debug.h ugtypes.h \
+lowincludedir = $(pkgincludedir)
+lowinclude_HEADERS = heaps.h ugenv.h ugstruct.h misc.h debug.h ugtypes.h \
                   general.h dimension.h smallvecs.h \
                   tree.h boxtree.h ugtimer.h scan.h defaults.h fileopen.h \
                   namespace.h pfile.h dunemarker.h

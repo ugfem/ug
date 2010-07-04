@@ -16,7 +16,8 @@ endif
 
 noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
-include_HEADERS = udm.h numproc.h formats.h npscan.h disctools.h pcr.h
+npincludedir = $(pkgincludedir)
+npinclude_HEADERS = udm.h numproc.h formats.h npscan.h disctools.h pcr.h
 
 libudm2_la_SOURCES = $(SOURCES)
 libudm2_la_CPPFLAGS = $(UG_2DFLAGS)

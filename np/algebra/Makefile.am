@@ -19,7 +19,8 @@ noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 # include templates in distribution tarball
 EXTRA_DIST = matfunc.ct matloop.ct matmode.ct vecfunc.ct vecloop.ct vecmode.ct
 
-include_HEADERS = sm.h fvgeom.h fegeom.h quadrature.h block.h
+npincludedir = $(pkgincludedir)
+npinclude_HEADERS = sm.h fvgeom.h fegeom.h quadrature.h block.h
 
 libalgebra2_la_SOURCES = $(SOURCES)
 libalgebra2_la_CPPFLAGS = $(UG_2DFLAGS)

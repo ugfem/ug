@@ -16,7 +16,8 @@ endif
 
 noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
-include_HEADERS = std_domain.h
+domincludedir = $(pkgincludedir)
+dominclude_HEADERS = std_domain.h
 
 libdomS2_la_SOURCES = $(SOURCES) domains2d.c
 libdomS2_la_CPPFLAGS = $(UG_2DFLAGS)

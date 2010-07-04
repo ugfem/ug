@@ -2,7 +2,8 @@
 
 SOURCES = uginterface.c initui.c cmdint.c cmdline.c dataexplorer.c commands.c helpmsg.c avs.c tecplot.c mmio.c fieldio.c avs.h cmdint.h cmdline.h commands.h dataexplorer.h fieldio.h helpmsg.h initui.h mmio.h tecplot.h uginterface.h
 
-include_HEADERS = cmdint.h cmdline.h commands.h
+uiincludedir = $(pkgincludedir)
+uiinclude_HEADERS = cmdint.h cmdline.h commands.h
 
 if BUILD2D
   LIB_2D = libugui2.la

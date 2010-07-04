@@ -20,7 +20,8 @@ EXTRA_DIST = netgen/lgm_gginterface.h
 
 SOURCES = lgm_domain.c lgm_load.c lgm_parallel.c ansys2lgm.h lgm_domain.h lgm_load.h lgm_macros.h lgm_transfer.h
 
-include_HEADERS = lgm_domain.h
+domincludedir = $(pkgincludedir)
+dominclude_HEADERS = lgm_domain.h
 
 noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 

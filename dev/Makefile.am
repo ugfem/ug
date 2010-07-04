@@ -20,7 +20,8 @@ AM_CPPFLAGS = $(UG_CPPFLAGS) $(UG_PLUGINDIR)
 
 SOURCES = ugdevices.c sockcomm.c initdev.h sockcomm.h ugdevices.h
 
-include_HEADERS = ugdevices.h
+devincludedir = $(pkgincludedir)
+devinclude_HEADERS = ugdevices.h
 
 libdevices_la_SOURCES = $(SOURCES)
 libdevices_la_LIBADD = ppm/libdevice_ppm.la \

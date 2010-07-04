@@ -28,5 +28,6 @@ libgraphics3_la_CPPFLAGS = $(UG_3DFLAGS)
 libgraphics3_la_LIBADD = uggraph/libuggraph3.la \
                          grape/libuggrape3.la
 
-include_HEADERS = graphics.h
+graphicsincludedir = $(pkgincludedir)
+graphicsinclude_HEADERS = graphics.h
 

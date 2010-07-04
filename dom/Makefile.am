@@ -6,7 +6,8 @@ SUBDIRS = std lgm
 # gen
 
 # install the central header
-include_HEADERS = domain.h
+domincludedir = $(pkgincludedir)
+dominclude_HEADERS = domain.h
 
 
 
