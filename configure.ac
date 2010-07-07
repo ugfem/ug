@@ -121,6 +121,7 @@ if test x$parallel = xyes ; then
   # set define
   UG_EXTRAFLAGS="-DModelP"
 fi
+AC_SUBST(parallel)
 
 #
 ## Support for DUNE.  Building with --enable-dune sets the compiler flag -DFOR_DUNE
@@ -134,6 +135,7 @@ if test x$dune = xyes ; then
   # set define
   UG_EXTRAFLAGS="$UG_EXTRAFLAGS -DFOR_DUNE"
 fi
+AC_SUBST(fordune, "$dune")
 
 # debugging
 

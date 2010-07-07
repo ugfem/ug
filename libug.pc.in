@@ -2,10 +2,12 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+parallel=@parallel@
+fordune=@fordune@
 
-Name: UG
+Name: libug
 Version: @VERSION@
 Description: library for the discretization of PDEs on unstructured grids
 Requires:
-Libs: -L${libdir}
-Cflags: -I${includedir} @UG_EXTRAFLAGS@ @UG_XLIBS@
+Libs: -L${libdir} -ldevS @UG_XLIBS@
+Cflags: -I${includedir}/ug @UG_EXTRAFLAGS@
