@@ -1525,9 +1525,9 @@ BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
         long max = std::max(i,j);
         long min = i + j - max;
         std::pair<long, long> z(min,max);
-        if ( bnd_edges.find(z) == bnd_edges.end() )
+
+        if ( bnd_edges.insert(z).second )       /* true if bnd_edges didn't contain z yet */
         {
-          bnd_edges.insert(z);
           /* Insert the line into the boundary data structure */
           CreateLine(min, max, Heap, thePatch, corners, lines, sides, &nlines, &err);
         }
@@ -1555,9 +1555,9 @@ BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
         long max = std::max(i,j);
         long min = i + j - max;
         std::pair<long, long> z(min,max);
-        if ( bnd_edges.find(z) == bnd_edges.end() )
+
+        if ( bnd_edges.insert(z).second )            /* true if bnd_edges didn't contain z yet */
         {
-          bnd_edges.insert(z);
           /* Insert the line into the boundary data structure */
           CreateLine(min, max, Heap, thePatch, corners, lines, sides, &nlines, &err);
         }
