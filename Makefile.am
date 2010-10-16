@@ -24,7 +24,7 @@ install-data-hook:
 	find $(top_srcdir)/gm -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
 	find $(top_srcdir)/dom -name \*.h -not -name "std_internal.h" -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
 	find $(top_srcdir)/graphics -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
-	find $(top_srcdir)/np -name \*.h -not -name "error.h" -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/np -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
 
 # distcheck checks uninstall as well: revert sick trick above
 uninstall-hook:
