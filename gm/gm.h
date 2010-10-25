@@ -849,6 +849,9 @@ struct node {
   /** \brief An index hat is unique and consecutive per level.
       Controlled by DUNE */
   int levelIndex;
+
+  /** \brief Information if this node is on the leaf. */
+  bool isLeaf;
 #endif
 
 #ifdef ModelP
