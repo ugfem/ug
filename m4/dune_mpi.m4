@@ -45,108 +45,87 @@
 #
 # - add --disable-mpi
 
-AC_DEFUN([DUNE_MPI],[
+AC_DEFUN([UG_MPI],[
   AC_PREREQ(2.50) dnl for AC_LANG_CASE
+  
+  AC_LANG_PUSH([C])
 
-  # implicitly sets the HAVE_MPI-define and the MPICXX-substitution
-  ACX_MPI()
+  # enable/disable parallel features
+  AC_ARG_ENABLE(parallel,
+    AS_HELP_STRING([--enable-parallel],
+      [Enable the parallel features of Dune. If enabled
+       configure will try to determine your MPI automatically. You can
+       overwrite this setting by specifying the MPICC variable]))
+  AC_SUBST(ENABLE_PARALLEL, "$enable_parallel")
 
-# somehow variables like $1, $2 seem to disappear after m4... Quote them...
-dune_mpi_getflags () {
-    # -- call mpiCC, remove compiler name
-    # compiler-name is first word in line _if_ it doesn't start with a dash!
-    # needed because mpiCC sometimes does not include compiler (newer LAM)
+  ## do nothing if --disable-parallel is used
+  AS_IF([test "x$enable_parallel" = "xyes"],[
+    ACX_MPI([
+      MPICOMP="$MPICC"
 
-    # the additional brackets keep m4 from interpreting the brackets
-    # in the sed-command...
-    retval=[`$MPICOMP ${1} ${2} 2>/dev/null | sed -e 's/^[^-][^ ]\+ //'`]
-    # remove dummy-parameter (if existing)
-    if test ${#} = 2 ; then
-      retval=`echo $retval | sed -e "s/${2}//"`
-    fi
-}
+      MPI_CONFIG()
+      MPI_CPPFLAGS="$DUNEMPICPPFLAGS $MPI_NOCXXFLAGS -DENABLE_MPI=1"
 
-  # get compilation script
-  AC_LANG_CASE([C],[
-	MPICOMP="$MPICC"
-],
-[C++],[
-	MPICOMP="$MPICXX"
-]
-)
+      with_mpi="yes ($dune_MPI_VERSION)"
+    ],[
+      # ACX_MPI didn't find anything
+      with_mpi="no"
+    ])])
 
-  # taken from acx_mpi: test succeeded if MPILIBS is not empty
-  if test x != x"$MPILIBS" -a x != x"$MPICOMP" ; then
-    with_mpi="no"
+  # if an MPI implementation was found..
+  AS_IF([test "x$with_mpi" != "xno"],[
+    ### do a sanity check: can we compile and link a trivial MPI program?
+    AC_MSG_CHECKING([whether compiling with $dune_MPI_VERSION works])
 
-    AC_MSG_CHECKING([MPI-package])
-    # the LAM mpiCC knows a -showme parameter
-    dune_mpi_getflags "-showme"
-    if test x"$retval" != x ; then
-      with_mpi="LAM"
+    # store old values
+    ac_save_LIBS="$LIBS"
+    ac_save_LDFLAGS="$LDFLAGS"
+    ac_save_CPPFLAGS="$CPPFLAGS"
+    
+    # looks weird but as the -l... are contained in the MPI_LDFLAGS these
+    # parameters have to be last on the commandline: with LIBS this is true
+    LIBS="$DUNEMPILIBS $LIBS"
+    LDFLAGS="$LDFLAGS $DUNEMPILDFLAGS"
+    CPPFLAGS="$CPPFLAGS $DUNEMPICPPFLAGS"
 
-      # try new -showme:xxx function
-      dune_mpi_getflags "-showme:compile"
-      if test x"$retval" != x ; then
-        # seems like LAM >= 7.1 which supports extraction of parameters without
-        # dummy files
-        AC_MSG_RESULT([LAM >= 7.1])
-        MPI_CPPFLAGS="$retval"
+    # try to create MPI program
+    AC_LANG_PUSH([C++])
+    AC_COMPILE_IFELSE(
+      AC_LANG_SOURCE(
+        [ #include <mpi.h>
+          int main (int argc, char** argv) { 
+          MPI_Init(&argc, &argv); 
+          MPI_Finalize(); }]),
+        [ AC_MSG_RESULT([yes]) ],
+        [ AC_MSG_RESULT([no])
+          AC_MSG_ERROR([could not compile MPI testprogram!
+          See config.log for details])
+          with_mpi=no]
+    )
+    AC_LANG_POP
 
-        dune_mpi_getflags "-showme:link"
-        MPI_LDFLAGS="$retval"
-      else
-        AC_MSG_RESULT([LAM <= 7.0])
-        # use -showme and dummy parameters to extract flags        
-        AC_LANG_CASE([C], [MPISOURCE="dummy.c"],
-	  [C++], [MPISOURCE="dummy.cc"])
+    # Check for MPI-2 Standard
+    # We have to provide a dummy lib here as we do not know what the name
+    # of the mpi is. -lm should be save.
+    AC_CHECK_LIB(m,[MPI_Finalized], [AC_DEFINE(MPI_2, 1, [Define to 1 MPI supports MPI-2])])
 
-        dune_mpi_getflags "-showme" "-c $MPISOURCE"
-        MPI_CPPFLAGS="$retval"
-
-        dune_mpi_getflags "-showme" "dummy.o -o dummy"
-        MPI_LDFLAGS="$retval"
-      fi
-    else
-      # the MPICH mpiCC knows a -show parameter
-      dune_mpi_getflags "-show"
-      if test x"$retval" != x ; then
-        with_mpi="MPICH"
-
-        # use special commands to extract options      
-
-        dune_mpi_getflags "-compile_info"
-        MPI_CPPFLAGS="$retval"
-        # hack in option to disable MPICH-C++-bindings...
-        AC_LANG_CASE([C++], [MPI_CPPFLAGS="$MPI_CPPFLAGS -DMPICH_SKIP_MPICXX"])
-
-        dune_mpi_getflags "-link_info"
-        MPI_LDFLAGS="$retval"
-
-        AC_MSG_RESULT([MPICH])
-      else
-        # neither MPICH nor LAM....
-        AC_MSG_RESULT([unknown])
-      fi
-    fi
-
-    # fallback... can't extract flags :( 
-    if test x$with_mpi = xno ; then
-      AC_MSG_WARN([Could not identify MPI-package! Please send a bugreport and tell us what MPI-package you're using])
-    fi
-  else
-    # ACX_MPI didn't find anything
-    with_mpi="no"
-  fi
-
+    # restore variables
+    LIBS="$ac_save_LIBS"
+    CPPFLAGS="$ac_save_CPPFLAGS"
+  ])
+    
   # set flags
-  if test x$with_mpi != xno ; then
-    AC_SUBST(MPI_CPPFLAGS, $MPI_CPPFLAGS)
+  AS_IF([test "x$with_mpi" != "xno"],[
+    MPI_LDFLAGS="$DUNEMPILDFLAGS $DUNEMPILIBS"
+    AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])
+    AC_SUBST(MPI_CPPFLAGS, $DUNEMPICPPFLAGS)
     AC_SUBST(MPI_LDFLAGS, $MPI_LDFLAGS)
-  else
+  ],[
     AC_SUBST(MPI_CPPFLAGS, "")
     AC_SUBST(MPI_LDFLAGS, "")
-  fi
+  ])
+  AC_SUBST(MPI_VERSION, $dune_MPI_VERSION)
+  AM_CONDITIONAL(MPI, [test "x$with_mpi" != "xno"])
 
-  AM_CONDITIONAL(MPI, test x$with_mpi != xno)
+  AC_LANG_POP
 ])

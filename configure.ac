@@ -2,8 +2,10 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT(ug, 3.9.2, UG-REPORT-ADDRESS)
-AM_INIT_AUTOMAKE(ug, 3.9.2, UG-REPORT-ADDRESS)
+
+AC_INIT(ug, 3.9.3, UG-REPORT-ADDRESS)
+AM_INIT_AUTOMAKE
+
 AC_CONFIG_SRCDIR([initug.c])
 AM_CONFIG_HEADER([config.h])
 
@@ -147,16 +149,10 @@ if test x$debug = xyes ; then
 fi
 
 # the DUNE-test for MPI-package and parameters
-
-# use C++-test and hope that the flags will work in the C-case as well
-# Unfortunately the AC_LANG-mechanism is evaluated by m4 and not
-# during runtime of ./configure
-AC_LANG_PUSH([C++])
-DUNE_MPI
-if test x$parallel = xyes -a x$with_mpi = xno ; then
+UG_MPI
+if test "x$parallel" = "xyes" -a "x$with_mpi" = "xno"; then
    AC_MSG_ERROR([MPI needed for the parallel UG-lib!])
 fi
-AC_LANG_POP([C++])
 
 # set results as automake-conditionals
 AM_CONDITIONAL(PARALLEL, test x$parallel = xyes)
