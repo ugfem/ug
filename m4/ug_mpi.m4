@@ -47,6 +47,11 @@
 
 AC_DEFUN([UG_MPI],[
   AC_PREREQ(2.50) dnl for AC_LANG_CASE
+
+  AS_IF([test -n "$MPICXX" -a -z "$MPICC"],[
+    MPICC=$MPICXX
+    AC_MSG_WARN(["You specified the MPICXX variable, but not MPICC. UG extracts the MPI flags using the C interface!])
+  ])
   
   AC_LANG_PUSH([C])
 
