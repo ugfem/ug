@@ -70,6 +70,7 @@ AC_DEFUN([UG_MPI],[
 
       MPI_CONFIG()
       MPI_CPPFLAGS="$DUNEMPICPPFLAGS $MPI_NOCXXFLAGS -DENABLE_MPI=1"
+	  MPI_LDFLAGS="$DUNEMPILDFLAGS $DUNEMPILIBS"
 
       with_mpi="yes ($dune_MPI_VERSION)"
     ],[
@@ -91,7 +92,7 @@ AC_DEFUN([UG_MPI],[
     # parameters have to be last on the commandline: with LIBS this is true
     LIBS="$DUNEMPILIBS $LIBS"
     LDFLAGS="$LDFLAGS $DUNEMPILDFLAGS"
-    CPPFLAGS="$CPPFLAGS $DUNEMPICPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $MPI_CPPFLAGS"
 
     # try to create MPI program
     AC_LANG_PUSH([C++])
@@ -121,9 +122,8 @@ AC_DEFUN([UG_MPI],[
     
   # set flags
   AS_IF([test "x$with_mpi" != "xno"],[
-    MPI_LDFLAGS="$DUNEMPILDFLAGS $DUNEMPILIBS"
     AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])
-    AC_SUBST(MPI_CPPFLAGS, $DUNEMPICPPFLAGS)
+    AC_SUBST(MPI_CPPFLAGS, $MPI_CPPFLAGS)
     AC_SUBST(MPI_LDFLAGS, $MPI_LDFLAGS)
   ],[
     AC_SUBST(MPI_CPPFLAGS, "")
