@@ -63,6 +63,8 @@ AC_DEFUN([UG_MPI],[
        overwrite this setting by specifying the MPICC variable]))
   AC_SUBST(ENABLE_PARALLEL, "$enable_parallel")
 
+  with_mpi="no"
+
   ## do nothing if --disable-parallel is used
   AS_IF([test "x$enable_parallel" = "xyes"],[
     ACX_MPI([
