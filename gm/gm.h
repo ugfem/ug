@@ -2100,7 +2100,8 @@ enum LV_ID_TYPES {
 /* VOTYPE        |0 - 1 |*| | node-,edge-,side- or elemvector               */
 /* VCFLAG        |3     |*| | flag for general use                          */
 /* VCUSED        |4     |*| | flag for general use                          */
-/* VCOUNT        |5-6   |*| |                                               */
+/* VCOUNT        |5-6   |*| | The number of elements that reference         */
+/*                            the vector (if it is a side vector)           */
 /* VECTORSIDE|7 - 9 |*| | nb of side the side vect corr. to (in object elem)*/
 /* VCLASS        |11-12 |*| | class of v. (3: if corr. to red/green elem) */
 /*                                        (2: if corr. to first algebraic nb.) */
