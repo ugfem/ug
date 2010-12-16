@@ -631,7 +631,7 @@ void NS_DIM_PREFIX buggy (MULTIGRID *theMG)
 
       default :
         cmd = 3;
-        gid = (DDD_GID) strtol(buff, 0, 0);
+        gid = /*(DDD_GID)*/ strtol(buff, 0, 0);
       }
     }
 

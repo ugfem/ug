@@ -299,6 +299,39 @@ enum TMemRequests {
 
 
 /*
+        new DDD types, used during access of DDD functional interface
+ */
+#ifdef DDD_GID_DEBUG
+struct ddd_gid_debug
+{
+  unsigned int val;
+  /* ddd_gid_debug(unsigned int v) : val(v) {} */
+  /* ddd_gid_debug() : val(0) {} */
+  bool operator < (const ddd_gid_debug & other) { return val < other.val; }
+  bool operator > (const ddd_gid_debug & other) { return val > other.val; }
+  bool operator == (const ddd_gid_debug & other) { return val == other.val; }
+  bool operator != (const ddd_gid_debug & other) { return val != other.val; }
+  ddd_gid_debug operator ++ (int) { ddd_gid_debug x(*this); x.val++; return x; }
+  ddd_gid_debug& operator= (unsigned int v) { val = v; return *this; }
+  ddd_gid_debug& operator= (unsigned long int v) { val = v; return *this; }
+  ddd_gid_debug& operator= (long int v) { val = v; return *this; }
+  ddd_gid_debug& operator= (int v) { val = v; return *this; }
+};
+typedef ddd_gid_debug DDD_GID;
+#else
+#ifdef DDD_GID_T
+typedef DDD_GID_T DDD_GID;
+#else
+typedef unsigned int DDD_GID;
+#endif
+#endif
+typedef unsigned int DDD_TYPE;
+typedef unsigned int DDD_IF;
+typedef unsigned short DDD_PROC;
+typedef unsigned int DDD_PRIO;
+typedef unsigned int DDD_ATTR;
+
+/*
         DDD object header, include this into all parallel object structures
 
         Some remarks:
@@ -320,24 +353,12 @@ typedef struct _DDD_HEADER
   unsigned char flags;
 
   unsigned int myIndex;         /* global object array index */
-  unsigned int gid;             /* global id */
+  DDD_GID gid;            /* global id */
 
         #ifdef C_FRONTEND
   char empty[4];                 /* 4 unused bytes in current impl. */
         #endif
 } DDD_HEADER;
-
-
-
-/*
-        new DDD types, used during access of DDD functional interface
- */
-typedef unsigned int DDD_GID;
-typedef unsigned int DDD_TYPE;
-typedef unsigned int DDD_IF;
-typedef unsigned short DDD_PROC;
-typedef unsigned int DDD_PRIO;
-typedef unsigned int DDD_ATTR;
 
 #ifdef CPP_FRONTEND
 typedef unsigned int DDD_INDEX;
@@ -353,7 +374,6 @@ typedef DDD_HEADER     * DDD_HDR;
 typedef int DDD_OBJ;
 typedef DDD_HEADER     * DDD_HDR;
 #endif
-
 
 /* NULL values for DDD types */
 #define DDD_TYPE_NULL  0
