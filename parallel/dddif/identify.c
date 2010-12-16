@@ -168,7 +168,7 @@ static INT identlevel = 0;
 
 static INT compare_gid (const void *e0, const void *e1)
 {
-  INT num0, num1;
+  DDD_GID num0, num1;
 
   num0 = DDD_InfoGlobalId(*(DDD_HDR *)e0);
   num1 = DDD_InfoGlobalId(*(DDD_HDR *)e1);
