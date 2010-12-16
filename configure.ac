@@ -148,6 +148,9 @@ if test x$debug = xyes ; then
   UG_EXTRAFLAGS="$UG_EXTRAFLAGS -DDebug"
 fi
 
+# check for some DDD parameters
+DDD_PARAMETERS
+
 # the DUNE-test for MPI-package and parameters
 UG_MPI
 if test "x$parallel" = "xyes" -a "x$with_mpi" = "xno"; then

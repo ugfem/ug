@@ -123,7 +123,11 @@ typedef int RETCODE;
 
 #define MAX_TRIES  50000000  /* max. number of tries til timeout in IF-comm */
 
+#ifdef DDD_MAX_PROCBITS_IN_GID
+#define MAX_PROCBITS_IN_GID DDD_MAX_PROCBITS_IN_GID
+#else
 #define MAX_PROCBITS_IN_GID 10  /* this allows 2^10 procs and 2^22 objects  */
+#endif
 
 /* use maximum as default, if no Priomerge-matrix is available */
 #define PRIOMERGE_DEFAULT PRIOMERGE_MAXIMUM
