@@ -6,7 +6,7 @@ noinst_LTLIBRARIES = liblow.la liblow2.la liblow3.la
 liblow_la_SOURCES = ugenv.c heaps.c fifo.c misc.c \
                   defaults.c initlow.c fileopen.c \
                   ugstruct.c debug.c bio.c \
-                  scan.c ugtimer.c tree.c dunemarker.c \
+                  scan.c ugtimer.c tree.c \
 architecture.h bio.h boxtree.h  debug.h  defaults.h  dimension.h  fifo.h \
 fileopen.h general.h heaps.h initlow.h misc.h pfile.h \
 scan.h smallvecs.h tree.h ugenv.h ugfile.h ugmemory.h ugstrings.h \
@@ -20,7 +20,7 @@ lowincludedir = $(pkgincludedir)
 lowinclude_HEADERS = heaps.h ugenv.h ugstruct.h misc.h debug.h ugtypes.h \
                   general.h dimension.h smallvecs.h \
                   tree.h boxtree.h ugtimer.h scan.h defaults.h fileopen.h \
-                  namespace.h pfile.h dunemarker.h
+                  namespace.h pfile.h
 
 # special library for the parts of low that need a dimension
 DIMDEPSOURCES = boxtree.c pfile.c
