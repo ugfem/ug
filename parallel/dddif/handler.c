@@ -2109,7 +2109,7 @@ static void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-void EdgeUpdate (DDD_OBJ obj)
+static void EdgeUpdate (DDD_OBJ obj)
 {
   EDGE    *pe                     = (EDGE *)obj;
   LINK    *link0,
@@ -2160,7 +2160,7 @@ void EdgeUpdate (DDD_OBJ obj)
   NE(theGrid)++;
 }
 
-void EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
+static void EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
 {
   EDGE    *theEdge        = (EDGE *)obj;
   INT level           = LEVEL(theEdge);
@@ -2171,7 +2171,7 @@ void EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
                       "level=%d\n",me,ID_PRTX(theEdge),old,new_,level))
 }
 
-void EdgeObjMkCons (DDD_OBJ obj, int newness)
+static void EdgeObjMkCons (DDD_OBJ obj, int newness)
 {
   EDGE *theEdge   = (EDGE *) obj;
 
@@ -2185,7 +2185,7 @@ void EdgeObjMkCons (DDD_OBJ obj, int newness)
   ASSERT(OBJT(theEdge) == EDOBJ);
 }
 
-void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
+static void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
   EDGE *pe        =       (EDGE *)obj;
 
