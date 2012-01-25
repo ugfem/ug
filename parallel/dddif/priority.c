@@ -84,12 +84,7 @@ USING_UG_NAMESPACES
         SETPRIOPV(NVECTOR(n),prio);                              \
   }
 
-#ifdef __TWODIM__
-#define PRIO_SET_EDGE(e,prio)
-#endif
-#ifdef __THREEDIM__
 #define PRIO_SET_EDGE(e,prio)  SETPRIOX(e,prio);
-#endif
 
 #define EDGE_PRIORITY_SET(g,e,prio)                                          \
   {                                                                    \
@@ -225,7 +220,6 @@ static int ComputeVectorBorderPrios (DDD_OBJ obj)
     SETPRIO(vector, PrioBorder);
 }
 
-#ifdef __THREEDIM__
 
 
 /****************************************************************************/
@@ -267,7 +261,6 @@ static int ComputeEdgeBorderPrios (DDD_OBJ obj)
   if (me!=min_proc)
     SETPRIO(edge, PrioBorder);
 }
-#endif
 
 
 /****************************************************************************/
@@ -543,10 +536,8 @@ INT NS_DIM_PREFIX SetBorderPriorities (GRID *theGrid)
   DDD_IFAExecLocal(BorderVectorSymmIF,GRID_ATTR(theGrid),
                    ComputeVectorBorderPrios);
 
-#ifdef __THREEDIM__
   DDD_IFAExecLocal(BorderEdgeSymmIF,GRID_ATTR(theGrid),
                    ComputeEdgeBorderPrios);
-#endif
 
   return(GM_OK);
 }
