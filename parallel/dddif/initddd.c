@@ -367,13 +367,11 @@ static void ddd_DeclareTypes (void)
         #endif /* THREEDIM */
 
   /* edge type not unique:                    */
-  /* edge is DDD object for 3D                */
+  /* edge is DDD object for 2D and 3D         */
   /* edge is DDD data object for 2D           */
   TypeEdge        = DDD_TypeDeclare("Edge");
   MAP_TYPES(EDOBJ, TypeEdge);
-        #ifdef __THREEDIM__
   dddctrl.dddObj[EDOBJ] = TRUE;
-        #endif
 
   /* 2. DDD data objects (without DDD_HEADER) */
 
@@ -627,9 +625,7 @@ static void ddd_DefineTypes (void)
                  EL_LDATA,  ELDEF(e.links[1].next),
                  EL_OBJPTR, ELDEF(e.links[1].nbnode), TypeNode,
 
-                #ifdef __THREEDIM__
                  EL_DDDHDR, &e.ddd,
-                #endif
 
                  EL_OBJPTR, ELDEF(e.midnode),  TypeNode,
                  EL_CONTINUE);
