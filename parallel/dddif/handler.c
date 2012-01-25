@@ -2108,7 +2108,6 @@ static void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
 /****************************************************************************/
 /****************************************************************************/
 
-#ifdef __THREEDIM__
 static void EdgeUpdate (DDD_OBJ obj)
 {
   EDGE    *pe                     = (EDGE *)obj;
@@ -2194,7 +2193,6 @@ static void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 
   ASSERT(OBJT(pe) == EDOBJ);
 }
-#endif
 
 /****************************************************************************/
 /****************************************************************************/
@@ -2224,11 +2222,9 @@ void NS_DIM_PREFIX ObjectPriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
   case BEOBJ :
     ElementPriorityUpdate(obj,new_);
     break;
-                #ifdef __THREEDIM__
   case EDOBJ :
     EdgePriorityUpdate(obj,new_);
     break;
-                #endif
   default : assert(0);
   }
   return;
@@ -2352,12 +2348,10 @@ void NS_DIM_PREFIX ddd_HandlerInit (INT handlerSet)
   BElemHandlerInit(TypeHeBElem, handlerSet);
         #endif
 
-        #ifdef __THREEDIM__
   DDD_SetHandlerUPDATE      (TypeEdge, EdgeUpdate);
   DDD_SetHandlerOBJMKCONS   (TypeEdge, EdgeObjMkCons);
   DDD_SetHandlerXFERCOPY    (TypeEdge, EdgeXferCopy);
   DDD_SetHandlerSETPRIORITY (TypeEdge, EdgePriorityUpdate);
-        #endif
 
   DomHandlerInit(handlerSet);
 }
