@@ -638,10 +638,8 @@ static void ddd_DefineTypes (void)
   size = sizeof(EDGE) - ((dddctrl.edgeData) ? 0 : sizeof(VECTOR*));
   DDD_TypeDefine(TypeEdge, &e, EL_END, ((char *)&e)+size);
 
-        #ifdef __THREEDIM__
   /* set mergemode to maximum */
   DDD_PrioMergeDefault(TypeEdge, PRIOMERGE_MAXIMUM);
-        #endif
 
 }
 
