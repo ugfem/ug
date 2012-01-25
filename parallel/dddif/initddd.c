@@ -124,10 +124,9 @@ DDD_IF NS_DIM_PREFIX BorderVectorIF, NS_DIM_PREFIX BorderVectorSymmIF,
 NS_DIM_PREFIX OuterVectorIF, NS_DIM_PREFIX OuterVectorSymmIF,
 NS_DIM_PREFIX VectorVIF, NS_DIM_PREFIX VectorVAllIF, NS_DIM_PREFIX VectorIF;
 static DDD_IF VertexIF;
-#ifdef __THREEDIM__
+/* DDD interfaces for edge communication */
 DDD_IF NS_DIM_PREFIX EdgeIF, NS_DIM_PREFIX BorderEdgeSymmIF, NS_DIM_PREFIX EdgeHIF, NS_DIM_PREFIX EdgeVHIF,
 NS_DIM_PREFIX EdgeSymmVHIF;
-#endif
 
 
 
@@ -805,7 +804,6 @@ static void ddd_IfInit (void)
 
 
   /* define edge interfaces */
-        #ifdef __THREEDIM__
   O[0] = TypeEdge;
 
   A[0] = PrioMaster;
@@ -833,7 +831,6 @@ static void ddd_IfInit (void)
   EdgeSymmVHIF = DDD_IFDefine(1,O,5,A,5,B);
   DDD_IFSetName(EdgeSymmVHIF, "EdgeSymmVHIF: Master/Border/VGhost/HGhost/VHGhost");
 
-        #endif
 }
 
 
