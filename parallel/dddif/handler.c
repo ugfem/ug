@@ -1376,38 +1376,34 @@ static void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
   }
 
   /* send edge and edge vectors */
-  if (dddctrl.edgeData || DIM==3) {
-    for (i=0; i<EDGES_OF_ELEM(pe); i++)
-    {
-      int Size;
-      EDGE    *edge;
-      VECTOR  *vec;
+  for (i=0; i<EDGES_OF_ELEM(pe); i++)
+  {
+    int Size;
+    EDGE    *edge;
+    VECTOR  *vec;
 
-      edge = GetEdge(CORNER(pe,CORNER_OF_EDGE(pe,i,0)),
-                     CORNER(pe,CORNER_OF_EDGE(pe,i,1)));
-      ASSERT(edge != NULL);
-      ASSERT(OBJT(edge) == EDOBJ);
+    edge = GetEdge(CORNER(pe,CORNER_OF_EDGE(pe,i,0)),
+                   CORNER(pe,CORNER_OF_EDGE(pe,i,1)));
+    ASSERT(edge != NULL);
+    ASSERT(OBJT(edge) == EDOBJ);
 
-                        #ifdef __THREEDIM__
-      PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy():  e=" EID_FMTX
-                          " EDGE=%x/%08x proc=%d prio=%d\n",
-                          me,EID_PRTX(pe),edge,DDD_InfoGlobalId(PARHDR(edge)),
-                          proc,prio))
+    PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy():  e=" EID_FMTX
+                        " EDGE=%x/%08x proc=%d prio=%d\n",
+                        me,EID_PRTX(pe),edge,DDD_InfoGlobalId(PARHDR(edge)),
+                        proc,prio))
 
-      DDD_XferCopyObj(PARHDR(edge), proc, prio);
-                        #endif
+    DDD_XferCopyObj(PARHDR(edge), proc, prio);
 
-      if (dddctrl.edgeData) {
-        VECTOR *vec = EDVECTOR(edge);
+    if (dddctrl.edgeData) {
+      VECTOR *vec = EDVECTOR(edge);
 
-        if (vec != NULL) {
-          Size = sizeof(VECTOR)-sizeof(DOUBLE)
-                 +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
-          PRINTDEBUG(dddif,3,(PFMT " ElementXferCopy():  e=" EID_FMTX
-                              " EDGEVEC=" VINDEX_FMTX " size=%d\n",
-                              me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
-          DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
-        }
+      if (vec != NULL) {
+        Size = sizeof(VECTOR)-sizeof(DOUBLE)
+               +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
+        PRINTDEBUG(dddif,3,(PFMT " ElementXferCopy():  e=" EID_FMTX
+                            " EDGEVEC=" VINDEX_FMTX " size=%d\n",
+                            me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
+        DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
       }
     }
   }
