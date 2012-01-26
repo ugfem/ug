@@ -242,10 +242,8 @@ extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
 extern DDD_IF BorderVectorIF, BorderVectorSymmIF,
               OuterVectorIF, OuterVectorSymmIF,
               VectorVIF, VectorVAllIF, VectorIF;
-#ifdef EDGE_WITH_DDDHDR
 extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeVHIF,
               EdgeSymmVHIF;
-#endif
 
 /* DDD Global Controls */
 typedef struct

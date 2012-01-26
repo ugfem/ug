@@ -61,13 +61,6 @@ START_UGDIM_NAMESPACE
 /*                                                                                                                                                      */
 /****************************************************************************/
 
-#if defined(ModelP)
-/* switch on/off whether struct edge has DDD Header */
-/* former this was only for 3D the case using:      */
-/* #if defined(ModelP) && defined(__THREEDIM__)     */
-#define EDGE_WITH_DDDHDR
-#endif
-
 /* object priorties */
 enum Priorities
 {
@@ -150,17 +143,10 @@ enum {VERTEX_LISTPARTS  = 3};
 /* map pointer to structure onto a pointer to its DDD_HDR */
 #define PARHDR(obj)    (&((obj)->ddd))
 
-#ifndef EDGE_WITH_DDDHDR
-#define GETGID(x)       ((OBJT(x)==IEOBJ || OBJT(x)==BEOBJ) ? EGID((ELEMENT*)(x)) :  \
-                         ((OBJT(x)==IVOBJ || OBJT(x)==BVOBJ) ? VXGID((VERTEX *)(x)) :\
-                          ((OBJT(x)==NDOBJ || OBJT(x)==VEOBJ) ? GID((NODE *)(x)) :    \
-                                           -1)))
-#else
 #define GETGID(x)       (( OBJT(x)==IEOBJ || OBJT(x)==BEOBJ) ? EGID((ELEMENT*)(x)) : \
                          ((OBJT(x)==IVOBJ || OBJT(x)==BVOBJ) ? VXGID((VERTEX *)(x)) :\
                           ((OBJT(x)==NDOBJ || OBJT(x)==VEOBJ || OBJT(x)==EDOBJ) ?    \
                                            GID((NODE *)(x)) : -1)))
-#endif
 
 #else   /* not ModelP */
 
@@ -250,17 +236,6 @@ enum {VERTEX_LISTPARTS = 1};
 #define VINDEX_FFMTX   ID_FFMTX
 #define VINDEX_PRTX(x) KeyForObject((KEY_OBJECT *)x),((long)VINDEX(x)),GID(x),PRIO(x)
 
-#ifndef EDGE_WITH_DDDHDR
-#define EDID_FMT     "%08x"
-#define EDID_FFMT    EDID_FMT
-#define EDID_PRT(x)  (x)
-#define EDID_FMTE    "%08x"
-#define EDID_FFMTE   EDID_FMTE
-#define EDID_PRTE(x) (x)
-#define EDID_FMTX    "%08x"
-#define EDID_FFMTX   EDID_FMTX
-#define EDID_PRTX(x) (x)
-#else
 #define EDID_FMT     "%08x"
 #define EDID_FFMT    EDID_FMT
 #define EDID_PRT(x)  GID(x)
@@ -270,7 +245,6 @@ enum {VERTEX_LISTPARTS = 1};
 #define EDID_FMTX    "%x/%08x/%d"
 #define EDID_FFMTX   EDID_FMTX
 #define EDID_PRTX(x) x,GID(x),PRIO(x)
-#endif
 
 
 #define PFMT            "%3d:"

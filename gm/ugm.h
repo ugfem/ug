@@ -103,7 +103,7 @@ INT              ReleaseOBJT                    (INT type);
 /* create basic objects */
 /** \todo Commented out because no definitions exist for these declarations
 
-   #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+   #if defined(__TWODIM__)
    int      GetElemLink (NODE *from, NODE *to, ELEMENT *theElement);
    ELEMENT *NbElem     (const ELEMENT *theElement, int i);
    void     Set_NbElem (ELEMENT *theElement, int i, ELEMENT *Neighbor);

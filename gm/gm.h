@@ -899,7 +899,7 @@ struct link {
   struct node *nbnode;
 
   /** \brief ptr to neighboring elem                              */
-#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+#if defined(__TWODIM__)
   union element *elem;
 #endif
 
@@ -928,9 +928,8 @@ struct edge {
   INT id;
 #endif
 
-#ifdef EDGE_WITH_DDDHDR
+  /** Bookkeeping information for DDD */
   DDD_HEADER ddd;
-#endif
 
   /** \brief Pointer to mid node on next finer grid */
   struct node *midnode;
@@ -2792,7 +2791,7 @@ enum GM_OBJECTS {
 #define MYEDGE(p)                                       ((EDGE *)((p)-LOFFSET(p)))
 #define REVERSE(p)                                      ((p)+(1-LOFFSET(p)*2))
 
-#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+#if defined(__TWODIM__)
 #define LELEM(p)                                        ((p)->elem)
 #define SET_LELEM(p,e)                                  ((p)->elem = (e))
 #endif
@@ -3004,7 +3003,7 @@ START_UGDIM_NAMESPACE
 /** \todo NbElem is declared in ugm.h, but never defined.
     We need a clean solution. */
 /*
-   #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+   #if defined(__TWODIM__)
    #define NBELEM(p,i)     NbElem((p),(i))
    #else
  */
@@ -3042,7 +3041,7 @@ START_UGDIM_NAMESPACE
 /** \todo Set_NbElem is declared in ugm.h, but never defined.
     We need a clean solution. */
 /*
-   #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+   #if defined(__TWODIM__)
    #define SET_NBELEM(p,i,q)       Set_NbElem((p),(i),(q))
    #else
  */
@@ -3050,7 +3049,7 @@ START_UGDIM_NAMESPACE
 /*
    #endif
  */
-#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+#if defined(__TWODIM__)
 #define VOID_NBELEM(p,i)        NBELEM(p,i)
 #else
 #define VOID_NBELEM(p,i)        ((p)->ge.refs[nb_offset[TAG(p)]+(i)])

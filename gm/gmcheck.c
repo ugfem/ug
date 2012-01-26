@@ -512,19 +512,12 @@ else						nerrors++;
 
 						if (MIDNODE(FatherEdge) != theNode)
 						{
-#ifndef EDGE_WITH_DDDHDR
-							UserWriteF(PFMT " midnode=" ID_FMTX 
-								" has edge father with wrong backptr=%x\n", 
-								me,ID_PRTX(theNode),MIDNODE(FatherEdge));
-							nerrors++;
-#else
 							UserWriteF(PFMT " midnode=" ID_FMTX 
 								" has edge  father=" ID_FMTX " with wrong backptr=%x\n", 
 								me,ID_PRTX(theNode),ID_PRTX(FatherEdge),MIDNODE(FatherEdge));
 /* TODO: this should be deleted */
 if (0) MIDNODE(FatherEdge) = theNode;
 else						nerrors++;
-#endif
 							/*nerrors++; temp. auskommentiert, um Reperaturwirkung wirklich nutzen zu koennen */
 						}
 					}
@@ -574,7 +567,7 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 
         /** \todo Commented out because it uses GetElemLink, which does not exist */
 #if 0
-#	if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+#	if defined(__TWODIM__)
 	{
 		int elemlink,no_of_elem,No_Of_Elem;
 		NODE *n0,*n1;
@@ -706,7 +699,6 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 	return(nerrors);
 }
 
-#ifdef EDGE_WITH_DDDHDR
 int EdgeHasTMasterCopy (ELEMENT *e, int i)
 {
 	int nmaster,nborder,nall;
@@ -730,7 +722,6 @@ if (0)
 
 	return(nall-1);
 }
-#endif
 
 static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT *EdgeError,
 						 INT *NodeError, INT *ESonError, INT *NSonError, INT *errors)
@@ -948,7 +939,7 @@ if (0)
 				if (OBJT(theElement) == IEOBJ)
 				#ifdef ModelP
 				if (EMASTER(theElement))
-				#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+				#if defined(__TWODIM__)
 				if (hghost_overlap!=0.0 || EdgeHasTMasterCopy(theElement,i)==0)
 				#endif
 				#endif
@@ -960,7 +951,7 @@ if (0)
 				{
 				  #ifdef ModelP
 				  if (EMASTER(theElement))
-				  #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+				  #if defined(__TWODIM__)
 					if (hghost_overlap!=0.0 || EdgeHasTMasterCopy(theElement,i)==0)
 				  #endif
 				  #endif
@@ -980,7 +971,7 @@ if (0)
 				else if (ECLASS(theElement)!=YELLOW_CLASS)
 					#ifdef ModelP
 					if (EMASTER(theElement))
-				    #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+				    #if defined(__TWODIM__)
 					if (hghost_overlap!=0.0 || EdgeHasTMasterCopy(theElement,i)==0)
 					#endif
 					#endif
@@ -1753,14 +1744,10 @@ static INT CheckGeometry (GRID *theGrid)
 			{
 				errors++;
 				UserWriteF("edge" 
-					#ifdef EDGE_WITH_DDDHDR
 					ID_FMTX
-					#endif
 					" between " ID_FMTX " and " ID_FMTX 
 					" has no element, NO_OF_ELEM=%d \n",
-					#ifdef EDGE_WITH_DDDHDR
 					ID_PRTX(theEdge),
-					#endif
 					ID_PRTX(theNode),ID_PRTX(NBNODE(theLink)),
 					NO_OF_ELEM(theEdge));
 
