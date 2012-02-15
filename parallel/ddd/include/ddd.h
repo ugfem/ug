@@ -309,21 +309,29 @@ struct ddd_gid_debug
   /* ddd_gid_debug() : val(0) {} */
   bool operator < (const ddd_gid_debug & other) { return val < other.val; }
   bool operator > (const ddd_gid_debug & other) { return val > other.val; }
+  bool operator < (int i) { return val < i; }
+  bool operator > (int i) { return val > i; }
   bool operator == (const ddd_gid_debug & other) { return val == other.val; }
   bool operator != (const ddd_gid_debug & other) { return val != other.val; }
+  bool operator == (int i) { return val == i; }
+  bool operator != (int i) { return val != i; }
   ddd_gid_debug operator ++ (int) { ddd_gid_debug x(*this); x.val++; return x; }
+  ddd_gid_debug operator + (int i) { ddd_gid_debug x(*this); x.val = x.val + i; return x; }
+  ddd_gid_debug operator - (int i) { ddd_gid_debug x(*this); x.val = x.val - i; return x; }
   ddd_gid_debug& operator= (unsigned int v) { val = v; return *this; }
   ddd_gid_debug& operator= (unsigned long int v) { val = v; return *this; }
   ddd_gid_debug& operator= (long int v) { val = v; return *this; }
   ddd_gid_debug& operator= (int v) { val = v; return *this; }
 };
 typedef ddd_gid_debug DDD_GID;
+#define DDD_GID_TO_INT(A) A.val
 #else
 #ifdef DDD_GID_T
 typedef DDD_GID_T DDD_GID;
 #else
 typedef unsigned int DDD_GID;
 #endif
+#define DDD_GID_TO_INT(A) (unsigned int) A
 #endif
 typedef unsigned int DDD_TYPE;
 typedef unsigned int DDD_IF;
