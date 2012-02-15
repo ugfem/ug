@@ -699,6 +699,7 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 	return(nerrors);
 }
 
+#ifdef ModelP
 int EdgeHasTMasterCopy (ELEMENT *e, int i)
 {
 	int nmaster,nborder,nall;
@@ -722,6 +723,7 @@ if (0)
 
 	return(nall-1);
 }
+#endif
 
 static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT *EdgeError,
 						 INT *NodeError, INT *ESonError, INT *NSonError, INT *errors)

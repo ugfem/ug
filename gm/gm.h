@@ -612,7 +612,7 @@ struct vector {
 
 #ifdef ModelP
   /** \todo Please doc me! */
-  NS_DIM_PREFIX DDD_HEADER ddd;
+  DDD_HEADER ddd;
 #endif
 
   /** \brief double linked list of vectors                */
@@ -928,8 +928,10 @@ struct edge {
   INT id;
 #endif
 
+#ifdef ModelP
   /** Bookkeeping information for DDD */
   DDD_HEADER ddd;
+#endif
 
   /** \brief Pointer to mid node on next finer grid */
   struct node *midnode;
