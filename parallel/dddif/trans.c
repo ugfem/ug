@@ -46,9 +46,6 @@
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 #include "mgheapmgr.h"
 #endif
-#ifdef __DLB__
-#include "dlb.h"
-#endif
 #include "namespace.h"
 
 /* UG namespaces: */
@@ -810,17 +807,6 @@ int NS_DIM_PREFIX TransferGridFromLevel (MULTIGRID *theMG, INT level)
   if (level < 1)
     if (DisposeAMGLevels(theMG) != 0)
       return 1;
-
-    #ifdef __DLB__
-  /* optimize mapping */
-  {
-    DLB_CONFIG config;
-
-    /* configuration of balancing */
-    if (DLB_ConfigGet(&config)) REP_ERR_RETURN(1);
-    if (config.map == 1) DLB_Mapping(theMG);
-  }
-    #endif
 
         #ifdef __PERIODIC_BOUNDARY__
   if (MGSetPerVecCount(theMG)) assert(0);

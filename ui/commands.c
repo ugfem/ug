@@ -125,17 +125,6 @@
 #include "parallel.h"
 #endif
 
-#ifdef __DLB__
-#include "dlb.h"
-#include "dlb_eval.h"
-#include "dlb_metis.h"
-#include "chaco.h"
-#endif
-
-#ifdef CHACOT
-#include "lb4.h"
-#endif
-
 #include "ppif_namespace.h"
 
 /* own header */
@@ -10560,9 +10549,6 @@ INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
       strategy,eigen,loc,dims,weights,coarse,mode,iopt;
   char levelarg[32];
   MULTIGRID *theMG;
-                #ifdef CHACOT
-  INT error;
-                #endif
 
   theMG = currMG;
 
@@ -10609,12 +10595,7 @@ INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
       break;
 
     case 'd' :
-                                                #ifdef CHACOT
-      sscanf(argv[i],"d %d",&cluster_depth);
-                                                #endif
-                                                #ifndef CHACOT
       UserWriteF("lb: depth parameter skipped\n");
-                                                #endif
       break;
 
     case 'f' :
@@ -10622,12 +10603,7 @@ INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
       break;
 
     case 'e' :
-                                                #ifdef CHACOT
-      sscanf(argv[i],"e %d",&Const);
-                                                #endif
-                                                #ifndef CHACOT
       UserWriteF("lb: minelem parameter skipped\n");
-                                                #endif
       break;
 
     default :
@@ -10644,22 +10620,6 @@ INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
     UserWriteF("Choose <minlevel>: 0-%d (toplevel)\n",TOPLEVEL(theMG));
     cmd_error = 1;
   }
-
-                #ifdef CHACOT
-  if (strategy<0 || strategy>6)
-  {
-    UserWriteF("<strategy>: 0-6\n");
-    cmd_error = 1;
-  }
-                #endif
-                #ifndef CHACOT
-  if (strategy != 0)
-  {
-    UserWriteF("don't specify <strategy> without Chaco\n!");
-    UserWriteF("default <strategy> will be 0 (=RCB)\n!");
-    cmd_error = 1;
-  }
-                #endif
 
   if (maxlevel < minlevel)
   {
@@ -10696,20 +10656,8 @@ INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
 
   if (cmd_error) return(CMDERRORCODE);
 
-                #ifdef CHACOT
-  PRINTDEBUG(ui,1,("mg %x minlevel %d cluster_depth %d threshold %d\n"
-                   "Const %d n %d c %d strategy %d eigen %d loc %d\n"
-                   "dims %d weights %d coarse %d mode %d iopt %d\n",
-                   theMG,minlevel,cluster_depth,threshold,Const,n,c,
-                   strategy,eigen,loc,dims,weights,coarse,mode,iopt));
-  error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
-                        strategy,eigen,loc,dims,weights,coarse,mode,iopt);
-  if (error>0) return(CMDERRORCODE);
-                #endif
-                #ifndef CHACOT
   sprintf(levelarg,"%d",minlevel);
   lbs(levelarg, theMG);
-                #endif
 
   return(OKCODE);
                 #endif
@@ -10797,196 +10745,6 @@ static INT PStatCommand (INT argc, char **argv)
   ddd_pstat(argv[1]);
   return(OKCODE);
 }
-
-#ifdef __DLB__
-
-/** \brief Implementation of \ref dlb_eval. */
-static INT DLB_EvalCommand (INT argc, char **argv)
-{
-  INT verbose;
-  MULTIGRID       *theMG;
-
-  if (argc > 2) return(CMDERRORCODE);
-
-  theMG = currMG;
-  verbose = 0;
-  ReadArgvINT("v",&verbose,argc,argv);
-
-  if (dlb_eval(theMG,verbose)!=0) return(CMDERRORCODE);
-
-  return(OKCODE);
-}
-#endif
-
-#ifdef CHACOT
-
-/** \brief Implementation of \ref lb4. */
-static INT LB4Command (INT argc, char **argv)
-{
-  int cmd_error,error,minlevel,cluster_depth,threshold,Const;
-  int n,c;
-  int strategy,eigen,loc,dims,weights,coarse,mode;
-  MULTIGRID *theMG;
-  int iopt,i,res,copt;
-  char buffer[100];
-#               ifdef __DLB__
-  extern double dlb_chaco;
-#               endif
-
-  theMG = currMG;
-
-  if (theMG == NULL)
-  {
-    UserWrite("LB4Command: no open multigrid\n");
-    return(OKCODE);
-  }
-
-  if (procs==1) return(OKCODE);
-
-  /* $i option ? */
-  iopt = 100000;
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='i')
-    {
-      sscanf(argv[i]," i %d",&iopt);
-      break;
-    }
-
-  /* $c option ? */
-  copt = 0;
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='c')
-    {
-      copt = 1;
-      break;
-    }
-
-  /* scan command line arguments */
-  res = sscanf(argv[0]," lb4 %d %d %d %d %d %d %d %d %d %d %d %d %d",
-               &minlevel,&cluster_depth,
-               &threshold,&Const,&n,&c,&strategy,&eigen,&loc,&dims,&weights,
-               &coarse,&mode);
-  if (res!=13)
-  {
-    UserWriteF("Wrong number of arguments: need exactly 13!");
-    PrintHelp("lb4",HELPITEM,NULL);
-    return(CMDERRORCODE);
-  }
-
-  /* check for parameter consistency! */
-  cmd_error = 0;
-
-  if ((minlevel<0)||(minlevel>TOPLEVEL(theMG)))
-  {
-    UserWriteF("Choose <minlevel>: 0-%d (toplevel)\n",TOPLEVEL(theMG));
-    cmd_error = 1;
-  }
-
-  if (strategy<0 || strategy>6)
-  {
-    UserWriteF("<strategy>: 0-6\n");
-    cmd_error = 1;
-  }
-
-  if (eigen<0 || eigen>8)
-  {
-    UserWriteF("<eigen>: 0-8\n");
-    cmd_error = 1;
-  }
-
-  if (loc<0 || loc>1)
-  {
-    UserWriteF("<loc>: 0 (no KL) / 1 (use KL local refinement)\n");
-    cmd_error = 1;
-  }
-
-  if (dims<1 || dims>3)
-  {
-    UserWriteF("Choose <ndims>: 1-3, 1 bi-, 2 quadri-, 3 octasection\n");
-    cmd_error = 1;
-  }
-
-  if (weights<0 || weights>3)
-  {
-    UserWriteF("Choose <weights>: 0-3, 0 no, 1 vertex, 2 edge, 3 both weights\n");
-    cmd_error = 1;
-  }
-
-  if (strategy==1 && eigen>5)
-  {
-    UserWriteF("For multlevel strategy (1) choose <eigen>: 1-4\n");
-    cmd_error = 1;
-  }
-
-  if (strategy==2 && eigen==0)
-  {
-    UserWriteF("For spectral strategy (2) choose <eigen>: 1-8\n");
-    cmd_error = 1;
-  }
-
-  if (strategy>2 && (eigen!=0 || coarse!=0))
-  {
-    UserWriteF("For inertial, linear, random, scattered strategy (3/4/5/6) set <eigen>, <coarse> = 0\n");
-    cmd_error = 1;
-  }
-
-  if (strategy==1 && loc==0)
-  {
-    UserWriteF("For multlevel strategy (1) set <loc> = 1\n");
-    cmd_error = 1;
-  }
-
-  if ((strategy==1 || strategy==2 && eigen>4) && coarse<1)
-  {
-    UserWriteF("For multilevel method <coarse>: normally 50-500\n");
-    cmd_error = 1;
-  }
-  else if (strategy==2 && eigen<5 && coarse!=0 )
-  {
-    UserWriteF("NOT using a multilevel method <coarse> = 0\n");
-    cmd_error = 1;
-  }
-
-  if ((strategy>2 || strategy<6) && weights >1)
-  {
-    UserWriteF("For inertial, linear, random strategy choose <weights>: 0 no, 1 vertex weights\n");
-    cmd_error = 1;
-  }
-
-  if (strategy==6 && weights>0)
-  {
-    UserWriteF("For scattered strategy set <weights> = 0\n");
-    cmd_error = 1;
-  }
-
-  if (cmd_error) return(CMDERRORCODE);
-
-
-  /* close if before refinement */
-  /*
-     if (copt) CloseOnlyTags(theMG);
-   */
-
-#               ifdef __DLB__
-  if (GetStringValue(":conf:dlb_chaco",&dlb_chaco) != 0)
-    UserWriteF("PARTITION: warning %s not set using default value=%.1lf\n",
-               ":conf:dlb_chaco",dlb_chaco);
-  if (dlb_chaco == 1.0)
-    error = Balance_CHACO(theMG,minlevel,cluster_depth,threshold,Const,n,c,
-                          strategy,eigen,loc,dims,weights,coarse,mode,iopt);
-  else
-#               endif
-  error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
-                        strategy,eigen,loc,dims,weights,coarse,mode,iopt);
-#               ifdef __DLB__
-  dlb_chaco = 0.0;
-#               endif
-
-  if (error>0) return(CMDERRORCODE);
-
-  return(OKCODE);
-}
-#endif /* CHACOT */
 
 #ifdef USE_FAMG
 static INT pamgCheckCommand (INT argc, char **argv)
@@ -11966,17 +11724,6 @@ INT NS_DIM_PREFIX InitCommands ()
   if (CreateCommand("lbs",                        LBSCommand                                      )==NULL) return (__LINE__);
   if (CreateCommand("context",            ContextCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("pstat",                      PStatCommand                                )==NULL) return (__LINE__);
-#ifdef CHACOT
-  if (CreateCommand("lb4",                        LB4Command                                              )==NULL) return (__LINE__);
-#endif
-        #ifdef __DLB__
-  if (CreateCommand("lbmm",           LBMMCommand                     )==NULL) return(__LINE__);
-  if (CreateCommand("crcb",           CRCBCommand                     )==NULL) return(__LINE__);
-  if (CreateCommand("cprcb",          CPRCBCommand                     )==NULL) return(__LINE__);
-  if (CreateCommand("dlb_config",     DLB_Config_Command                  )==NULL      ) return(__LINE__);
-  if (CreateCommand("dlb_eval",           DLB_EvalCommand                             )==NULL) return (__LINE__);
-  if (CreateCommand("metis",          METISCommand                    )==NULL) return (__LINE__);
-        #endif
 
 #ifdef USE_FAMG
   if (CreateCommand("pamgcheck",      pamgCheckCommand                )==NULL) return(__LINE__);

@@ -80,11 +80,6 @@ enum HandlerSets
    #define STAT_OUT
  */
 
-/* use dynamic load balance lib */
-/*
-   #define __DLB__
- */
-
 /* old/new style for grid consistency */
 /* undefine if old is wanted          */
 #define NEW_GRIDCONS_STYLE

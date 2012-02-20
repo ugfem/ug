@@ -255,21 +255,3 @@ dnl                  gm/gg3/netgen/geom/makefile
 dnl                  gm/gg3/netgen/linalg/makefile
 dnl                  gm/gg3/netgen/meshing/makefile
 dnl                  gm/gg3/netgen/opti/makefile
-# The chaco stuff is not built because it is not available
-# in the anonymous Heidelberg CVS and not in the set of patches
-# we provide either.  AFAIK it doesn't work anyways.
-dnl                  parallel/chaco/Makefile
-dnl                  parallel/chaco/assign/Makefile
-dnl                  parallel/chaco/bpmatch/Makefile
-dnl                  parallel/chaco/coarsen/Makefile
-dnl                  parallel/chaco/connect/Makefile
-dnl                  parallel/chaco/eigen/Makefile
-dnl                  parallel/chaco/graph/Makefile
-dnl                  parallel/chaco/inertial/Makefile
-dnl                  parallel/chaco/input/Makefile
-dnl                  parallel/chaco/klspiff/Makefile
-dnl                  parallel/chaco/main/Makefile
-dnl                  parallel/chaco/misc/Makefile
-dnl                  parallel/chaco/optimize/Makefile
-dnl                  parallel/chaco/symmlq/Makefile
-dnl                  parallel/chaco/util/Makefile

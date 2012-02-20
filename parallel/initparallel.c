@@ -106,18 +106,6 @@ INT NS_DIM_PREFIX InitParallel (int *argcp, char ***argvp)
     return (1);
   }
 
-        #ifdef __DLB__
-  /* init dlb module */
-  PRINTDEBUG(init,1,("%d:     InitParallel()...\n",me))
-  if ((err=DLB_Init())!=0)
-  {
-    printf("ERROR in InitParallel while DLB_Init (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
-    printf ("aborting ug\n");
-
-    return (1);
-  }
-        #endif
-
   return (0);
 }
 

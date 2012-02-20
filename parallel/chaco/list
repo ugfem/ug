@@ -1,4 +1,0 @@
-a2ps -t8 -l70 -nP $1 > tmp
-lpr tmp
-rm tmp
-
