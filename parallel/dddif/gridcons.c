@@ -268,8 +268,9 @@ static void ConstructConsistentGridLevel (GRID *theGrid)
                                         #ifdef __THREEDIM__
         case (SIDE_NODE) :
           /* always compute new coords for this case! */
-          k =  GetSideIDFromScratch(theElement,theNode);
           if (TAG(theFather) == PYRAMID) k=0;
+          else
+            k =  GetSideIDFromScratch(theElement,theNode);
           ASSERT(k < SIDES_OF_ELEM(theFather));
 
           SETONSIDE(theVertex,k);
