@@ -575,7 +575,7 @@ static int Gather_ElemObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PR
   /* copy node gids into buffer */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
-    ((unsigned int *)data)[i] = GID(CORNER(theElement,i));
+    ((DDD_GID *)data)[i] = GID(CORNER(theElement,i));
   }
 
         #ifdef __THREEDIM__
@@ -585,7 +585,7 @@ static int Gather_ElemObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PR
     EDGE *theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
                             CORNER_OF_EDGE_PTR(theElement,j,1));
     assert(theEdge!=NULL);
-    ((unsigned int *)data)[i] = GID(theEdge);
+    ((DDD_GID *)data)[i] = GID(theEdge);
   }
         #endif
 }
@@ -601,11 +601,11 @@ static int Scatter_ElemObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_P
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
     theNode = CORNER(theElement,i);
-    if (((unsigned int *)data)[i] != GID(theNode))
+    if (((DDD_GID *)data)[i] != GID(theNode))
     {
       UserWriteF(PFMT "ELEM=" EID_FMTX " #ERROR#: NODE=" ID_FMTX " gids don't match "
                  "local=%08x remote=%08x remoteproc/prio=%d/%d\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
-                 GID(theNode),((unsigned int *)data)[i],proc,prio);
+                 GID(theNode),((DDD_GID *)data)[i],proc,prio);
       check_distributed_objects_errors++;
       assert(0);
     }
@@ -618,11 +618,11 @@ static int Scatter_ElemObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_P
     theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
                       CORNER_OF_EDGE_PTR(theElement,j,1));
     assert(theEdge!=NULL);
-    if (((unsigned int *)data)[i] != GID(theEdge))
+    if (((DDD_GID *)data)[i] != GID(theEdge))
     {
       UserWriteF(PFMT "ELEM=" EID_FMTX " #ERROR#: EDGE=" ID_FMTX " gids don't match "
                  "local=%08x remote=%08x remoteproc/prio=%d/%d\n",me,EID_PRTX(theElement),ID_PRTX(theEdge),
-                 GID(theEdge),((unsigned int *)data)[i],proc,prio);
+                 GID(theEdge),((DDD_GID *)data)[i],proc,prio);
       check_distributed_objects_errors++;
       assert(0);
     }
@@ -644,18 +644,19 @@ static int Gather_EdgeObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PR
   MidNode  = MIDNODE(theEdge);
 
   /* copy node gids into buffer */
-  ((unsigned int *)data)[i++] = GID(theNode0);
-  ((unsigned int *)data)[i++] = GID(theNode1);
+  ((DDD_GID *)data)[i++] = GID(theNode0);
+  ((DDD_GID *)data)[i++] = GID(theNode1);
   if (MidNode != NULL)
-    ((unsigned int *)data)[i++] = GID(MidNode)+1;
+    ((DDD_GID *)data)[i++] = GID(MidNode)+1;
   else
-    ((unsigned int *)data)[i++] = 0;
+    ((DDD_GID *)data)[i++] = 0;
 
 }
 
 static int Scatter_EdgeObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
-  INT i,remotegid;
+  INT i;
+  DDD_GID remotegid;
   EDGE *theEdge = (EDGE *)obj;
   NODE *theNode0, *theNode1, *MidNode;
   int *proclist = PROCLIST(theEdge);
@@ -676,32 +677,32 @@ static int Scatter_EdgeObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_P
   MidNode  = MIDNODE(theEdge);
 
   /* compare node0 gids with buffer gids */
-  if (((unsigned int *)data)[i] != GID(theNode0))
+  if (((DDD_GID *)data)[i] != GID(theNode0))
   {
     UserWriteF(PFMT "EDGE=" ID_FMTX " #ERROR#: NODE0=" ID_FMTX " gids don't match "
                "local=%08x remote=%08x remoteproc/prio=%d/%d\n",
                me,ID_PRTX(theEdge),ID_PRTX(theNode0),
-               GID(theNode0),((unsigned int *)data)[i],proc,prio);
+               GID(theNode0),((DDD_GID *)data)[i],proc,prio);
     check_distributed_objects_errors++;
     assert(0);
   }
   i++;
 
   /* compare node1 gids with buffer gids */
-  if (((unsigned int *)data)[i] != GID(theNode1))
+  if (((DDD_GID *)data)[i] != GID(theNode1))
   {
     UserWriteF(PFMT "EDGE=" ID_FMTX " #ERROR#: NODE1=" ID_FMTX " gids don't match "
                "local=%08x remote=%08x remoteproc/prio=%d/%d\n",
                me,ID_PRTX(theEdge),ID_PRTX(theNode1),
-               GID(theNode1),((unsigned int *)data)[i],proc,prio);
+               GID(theNode1),((DDD_GID *)data)[i],proc,prio);
     check_distributed_objects_errors++;
     assert(0);
   }
   i++;
 
   /* compare node0 gids with buffer gids */
-  if (((unsigned int *)data)[i]>0)
-    remotegid = ((unsigned int *)data)[i]-1;
+  if (((DDD_GID *)data)[i]>0)
+    remotegid = ((DDD_GID *)data)[i]-1;
 
   if (MidNode != NULL)
   {
@@ -743,12 +744,13 @@ static INT CheckDistributedObjects (GRID *theGrid)
 
   check_distributed_objects_errors = 0;
 
-  DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_BACKWARD,size*sizeof(unsigned int),
+  // void DDD_IFAOnewayX (DDD_IF, DDD_ATTR, DDD_IF_DIR, size_t, ComProcXPtr, ComProcXPtr);
+  DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_BACKWARD,size*sizeof(DDD_GID),
                  Gather_ElemObjectGids, Scatter_ElemObjectGids);
 
         #ifdef __THREEDIM__
   if (0)
-    DDD_IFAOnewayX(BorderEdgeSymmIF,GRID_ATTR(theGrid),IF_BACKWARD,3*sizeof(unsigned int),
+    DDD_IFAOnewayX(BorderEdgeSymmIF,GRID_ATTR(theGrid),IF_BACKWARD,3*sizeof(DDD_GID),
                    Gather_EdgeObjectGids, Scatter_EdgeObjectGids);
         #endif
 

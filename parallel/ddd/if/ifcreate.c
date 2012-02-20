@@ -178,7 +178,7 @@ static int sort_prio (const void *e1, const void *e2)
 static int sort_IFCouplings (const void *e1, const void *e2)
 {
   COUPLING  *cp1, *cp2;
-  INT gid1, gid2;
+  DDD_GID gid1, gid2;
   DDD_ATTR attr1, attr2;
 
   cp1 = *((COUPLING **)e1);
