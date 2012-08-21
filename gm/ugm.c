@@ -5762,22 +5762,14 @@ INT NS_DIM_PREFIX CheckOrientationInGrid (GRID *theGrid)
 
 /****************************************************************************/
 /** \todo Please doc me!
-   NeighborSearch_O_n -
 
-   SYNOPSIS:
-   static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, ELEMENT **Nbr);
+ * @param[in]   n Number of element corners
+ * @param[in]   Node
+ * @param[in]   theMG
+ * @param[out]   NbrS
+ * @param[out]   Nbr
 
-
- * @param   n
- * @param   Node
- * @param   theMG
- * @param   NbrS
- * @param   Nbr
-
-   DESCRIPTION:
-
-   @return
-   INT
+   @return 0 if all went well, 1 if an error occurred
  */
 /****************************************************************************/
 
@@ -5912,22 +5904,14 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
 
 /****************************************************************************/
 /** \todo Please doc me!
-   NeighborSearch_O_nn -
 
-   SYNOPSIS:
-   static INT NeighborSearch_O_nn(INT n, NODE **Node, GRID *theGrid, INT *NghbrSide, ELEMENT **Nghbr);
+ * @param[in]   n  Number of element corners
+ * @param[in]   Node
+ * @param[in]   theGrid
+ * @param[out]  NghbrSide
+ * @param[out]  Nghbr
 
-
- * @param   n
- * @param   Node
- * @param   theGrid
- * @param   NghbrSide
- * @param   Nghbr
-
-   DESCRIPTION:
-
-   @return
-   INT
+   @return 0 if everything went well, 1 if an error occurred
  */
 /****************************************************************************/
 
@@ -5945,7 +5929,7 @@ static INT NeighborSearch_O_nn(INT n, NODE **Node, GRID *theGrid, INT *NghbrSide
     for(jj=0; jj<CORNERS_OF_SIDE_REF(n,i); jj++ )
       sideNode[jj] = Node[CORNER_OF_SIDE_REF(n,i,jj)];
 
-    /* for all neighbouring elements allready inserted */
+    /* for all neighbouring elements already inserted */
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
          theElement=SUCCE(theElement))
     {
@@ -6038,7 +6022,7 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
       merkeIndex = Index;
       if(MGNDELEMBLK(theMG,cornerID[IndexOfDivPart]) != NULL)
       {
-        /*only in this case  problems like Attention !!! Node has more than ELEMS_OF_NODE_MAX !!iare possible*/
+        /*only in this case  problems like Attention !!! Node has more than ELEMS_OF_NODE_MAX !!are possible*/
 
         while( (MGNDELEMPTRARRAY(theMG) != NULL) && (MGNDELEMBLKENTRY(theMG,cornerID[IndexOfDivPart],Index) != NULL) )
         {
@@ -6261,7 +6245,7 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
 /** \brief Insert an element
 
  * @param   theGrid - grid structure
- * @param   n
+ * @param[in]   n  Number of vertices of the element to be inserted
  * @param   Node
  * @param   ElemList
  * @param   NbgSdList
@@ -6269,7 +6253,7 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
 
    This function inserts an element
 
-   \todo Please doc the return value!
+   \return Pointer to the newly created element, NULL if an error occurred
 
  */
 /****************************************************************************/
