@@ -8,7 +8,7 @@
   set(UG_LIBRARIES -ldevS   -lX11  -lXt)
   set(UG_LIBRARY_FLAGS -L${libdir})
   set(UG_INCLUDES ${includedir}/ug)
-  set(UG_COMPILE_FLAGS  -DFOR_DUNE)
+  set(UG_COMPILE_FLAGS @UG_EXTRAFLAGS@)
   message(STATUS "UG_LIBRARIES=${UG_LIBRARIES}")
   message(STATUS "UG_LIBRARY_FLAGS=${UG_LIBRARY_FLAGS}")
   message(STATUS "UG_INCLUDES=${UG_INCLUDES}")
