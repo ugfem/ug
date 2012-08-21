@@ -243,6 +243,8 @@ AC_CONFIG_FILES([Makefile
 		 parallel/ddd/Makefile
 		 parallel/dddif/Makefile
                  libug.pc
+		 ug-config.cmake
+		 ug-config-version.cmake
 ])
 AC_OUTPUT
 

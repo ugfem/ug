@@ -12,6 +12,10 @@ uginclude_HEADERS = initug.h
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libug.pc
 
+#install cmake package configuration
+cmakeconfigdir = $(libdir)/cmake/ug
+cmakeconfig_DATA = ug-config.cmake ug-config-version.cmake
+
 # !!! crazy trick to get include-dir compatibility
 # Crazy indeed.  Let's at least not install f2c.h (because it creates
 # problems) and std_internal.h (because we definitely know that it is an internal header).
