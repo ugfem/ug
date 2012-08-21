@@ -6430,7 +6430,7 @@ ELEMENT * NS_DIM_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMEN
     /* We now assume, that:                                         */
     /* if bnds_flag!=NULL && bnds_flag[i]!=0 there has to be a bnds */
     /* so, if not -->error                                          */
-    /* or: if bnds_flag==NULL, the domain decides weather there     */
+    /* or: if bnds_flag==NULL, the domain decides whether there     */
     /* should be a bnds or not (never an error)                     */
 
     for (j=0; j<m; j++)
@@ -6509,7 +6509,7 @@ ELEMENT * NS_DIM_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMEN
     /* use given neighboring elements */
     if ( (rv = Neighbor_Direct_Insert(n, ElemList, NbgSdList, NeighborSide, Neighbor)) == 1)
     {
-      PrintErrorMessage('E',"InsertElement"," ERROR by calling NeighborSearch_O_nn()");
+      PrintErrorMessage('E',"InsertElement"," ERROR by calling Neighbor_Direct_Insert()");
       return(NULL);
     }
   }
