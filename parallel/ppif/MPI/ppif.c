@@ -352,7 +352,9 @@ int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
   DimZ = 1;
   Factor(procs, &DimX, &DimY);
 
+#ifndef FOR_DUNE
   if (me==master) printf("DimX=%d, DimY=%d, DimZ=%d\n", DimX, DimY, DimZ);
+#endif
 
   aid = pid_to_aid(me);
   MyX = XPOS(aid);
