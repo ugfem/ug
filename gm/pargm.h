@@ -61,7 +61,7 @@ START_UGDIM_NAMESPACE
 /*                                                                                                                                                      */
 /****************************************************************************/
 
-/* object priorties */
+/* object priorities */
 enum Priorities
 {
   PrioNone     = 0,
