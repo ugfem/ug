@@ -88,9 +88,7 @@ USING_UG_NAMESPACES
 DDD_TYPE NS_DIM_PREFIX TypeVector;
 DDD_TYPE NS_DIM_PREFIX TypeIVertex, NS_DIM_PREFIX TypeBVertex;
 DDD_TYPE NS_DIM_PREFIX TypeNode;
-#ifdef __THREEDIM__
 DDD_TYPE NS_DIM_PREFIX TypeEdge;
-#endif
 
 DDD_TYPE NS_DIM_PREFIX TypeUnknown;
 
@@ -110,9 +108,6 @@ DDD_TYPE NS_DIM_PREFIX TypeHeElem, NS_DIM_PREFIX TypeHeBElem;
 /* DDD data objects */
 DDD_TYPE NS_DIM_PREFIX TypeMatrix;
 DDD_TYPE NS_DIM_PREFIX TypeBndP;
-#ifdef __TWODIM__
-DDD_TYPE NS_DIM_PREFIX TypeEdge;
-#endif
 DDD_TYPE NS_DIM_PREFIX TypeBndS;
 
 /* DDD interfaces needed for distributed computation */
