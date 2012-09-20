@@ -857,9 +857,7 @@ static void InitDDDTypes (void)
   DDD_TypeDisplay(TypeIVertex);
   DDD_TypeDisplay(TypeBVertex);
   DDD_TypeDisplay(TypeNode);
-        #ifdef __THREEDIM__
   DDD_TypeDisplay(TypeEdge);
-        #endif
 
         #ifdef __TWODIM__
   DDD_TypeDisplay(TypeTrElem);
