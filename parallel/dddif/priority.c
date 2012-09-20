@@ -441,39 +441,37 @@ void NS_DIM_PREFIX SetGhostObjectPriorities (GRID *theGrid)
       }
     }
 
-    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) || DIM==3)
+    /* set edge priorities */
+    for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     {
-      /* set edge priorities */
-      for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+
+      theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
+                        CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+      ASSERT(theEdge != NULL);
+
+      if (USED(theEdge) || THEFLAG(theEdge))
       {
+        PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
+                            " downgrade edge=" EDID_FMTX " from=%d to PrioHGhost\n",
+                            me,EDID_PRTX(theEdge),prio));
 
-        theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
-                          CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
-        ASSERT(theEdge != NULL);
-
-        if (USED(theEdge) || THEFLAG(theEdge))
-        {
-          PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
-                              " downgrade edge=" EDID_FMTX " from=%d to PrioHGhost\n",
-                              me,EDID_PRTX(theEdge),prio));
-
-          EDGE_PRIORITY_SET(theGrid,theEdge,PRIO_CALC(theEdge));
-        }
-        else
-          EDGE_PRIORITY_SET(theGrid,theEdge,PrioMaster);
+        EDGE_PRIORITY_SET(theGrid,theEdge,PRIO_CALC(theEdge));
       }
+      else
+        EDGE_PRIORITY_SET(theGrid,theEdge,PrioMaster);
+    }
 
                         #ifdef __THREEDIM__
-      /* if one(all) of the side nodes is (are) a hghost (vghost) node   */
-      /* then its a hghost (vghost) side vector                          */
-      if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
-        for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-        {
-          if (USED(theVector) || THEFLAG(theVector))
-            SETPRIOX(theVector,PRIO_CALC(theVector));
-        }
+    /* if one(all) of the side nodes is (are) a hghost (vghost) node   */
+    /* then its a hghost (vghost) side vector                          */
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+      {
+        if (USED(theVector) || THEFLAG(theVector))
+          SETPRIOX(theVector,PRIO_CALC(theVector));
+      }
                         #endif
-    }
+
   }
   /* to set also nodes which are at corners of the boundary   */
   /* set them through the node list                           */
