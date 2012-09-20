@@ -1441,7 +1441,6 @@ static int Scatter_IdentSonNode (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRI
 }
 
 /* callback functions for edge identification */
-#ifdef __THREEDIM__
 static int Gather_NewObjectInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   INT nedges, ident_needed;
@@ -1824,7 +1823,6 @@ static int Scatter_IdentSonObjects (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_
 }
 
 #endif
-#endif
 
 
 
@@ -2058,7 +2056,6 @@ static INT Identify_SonNodes (GRID *theGrid)
   return(GM_OK);
 }
 
-#ifdef __THREEDIM__
 
 /****************************************************************************/
 /*
@@ -2111,7 +2108,6 @@ INT Identify_SonEdges (GRID *theGrid)
 
   return(GM_OK);
 }
-#endif
 
 
 /****************************************************************************/
@@ -2146,7 +2142,6 @@ INT NS_DIM_PREFIX Identify_SonObjects (GRID *theGrid)
   {
     if (Identify_SonNodes (theGrid) != GM_OK) RETURN(GM_ERROR);
   }
-        #ifdef __THREEDIM__
   else
   {
     if (Identify_SonEdges (theGrid) != GM_OK) RETURN(GM_ERROR);
@@ -2163,19 +2158,16 @@ INT NS_DIM_PREFIX Identify_SonObjects (GRID *theGrid)
     DDD_IdentifyEnd();
     DDD_IdentifyBegin();
   }
-        #endif
 
 
   if (!NODESFIRST)
   {
     if (Identify_SonNodes (theGrid) != GM_OK) RETURN(GM_ERROR);
   }
-        #ifdef __THREEDIM__
   else
   {
     if (Identify_SonEdges (theGrid) != GM_OK) RETURN(GM_ERROR);
   }
-        #endif
 
   return (GM_OK);
 }
