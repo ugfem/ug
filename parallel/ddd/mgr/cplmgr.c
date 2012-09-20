@@ -628,8 +628,8 @@ void DisposeCouplingList (COUPLING *cpl)
 /*                                                                          */
 /* Output:    pointer to localIBuffer, which has been filled with:          */
 /*               1) id of calling processor                                 */
-/*               2) priority of local object coppy on calling processor     */
-/*               3) id of processor which holds a object copy               */
+/*               2) priority of local object copy on calling processor      */
+/*               3) id of processor which holds an object copy              */
 /*               4) priority of copy on that processor                      */
 /*               5) 3+4 repeated for each coupling                          */
 /*               6) processor number = -1 as end mark                       */
