@@ -2291,7 +2291,7 @@ CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
 #endif
 
   SETLEVEL(pe,GLEVEL(theGrid));
-        #if (defined ModelP) && (defined __THREEDIM__)
+        #ifdef ModelP
   DDD_AttrSet(PARHDR(pe), GRID_ATTR(theGrid));
   /* SETPRIO(pe,PrioMaster); */
         #endif
