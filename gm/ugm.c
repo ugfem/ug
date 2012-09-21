@@ -5775,7 +5775,7 @@ INT NS_DIM_PREFIX CheckOrientationInGrid (GRID *theGrid)
 
 static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, ELEMENT **Nbr)
 {
-  INT i,j,k,l,m,index,fnd,num,IndexOfDivPart,IndexOfModPart;
+  INT i,j,k,l,m,index,num,IndexOfDivPart,IndexOfModPart;
   NODE            *sideNode[MAX_CORNERS_OF_SIDE];
   ELEMENT         *interestingElements[ELEMS_OF_NODE_MAX];
   ELEMENT         *newinterestingElements[ELEMS_OF_NODE_MAX];
@@ -5853,7 +5853,6 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
     if (theElement != NULL)
     {
       /*for all sides of the already existing neighbour elememt*/
-      fnd = 0;
 
 
 
@@ -5884,11 +5883,8 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
           }
           Nbr[i] = theElement;
           NbrS[i] = j;
-          fnd = 1;
+          break;
         }
-
-        if (fnd == 1)
-          j = SIDES_OF_ELEM(theElement);               /*go on with next side*/
 
       }
     }
