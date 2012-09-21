@@ -1124,7 +1124,7 @@ LINK
 D*/
 
 
-/*! struct element
+/*! \struct element
 
  \brief Data type representing an element in the mesh
 
