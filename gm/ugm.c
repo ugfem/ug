@@ -5900,76 +5900,6 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
 
 /****************************************************************************/
 /** \todo Please doc me!
-
- * @param[in]   n  Number of element corners
- * @param[in]   Node
- * @param[in]   theGrid
- * @param[out]  NghbrSide
- * @param[out]  Nghbr
-
-   @return 0 if everything went well, 1 if an error occurred
- */
-/****************************************************************************/
-
-static INT NeighborSearch_O_nn(INT n, NODE **Node, GRID *theGrid, INT *NghbrSide, ELEMENT **Nghbr)
-{
-  INT i,jj,k,m,num;
-  NODE            *sideNode[MAX_CORNERS_OF_SIDE];
-  ELEMENT         *theElement;
-  NODE            *NeighborNode;
-
-  /*O(n*n)InsertElement ...*/
-  /* for all sides of the element to be created */
-  for (i=0; i<SIDES_OF_REF(n); i++)
-  {
-    for(jj=0; jj<CORNERS_OF_SIDE_REF(n,i); jj++ )
-      sideNode[jj] = Node[CORNER_OF_SIDE_REF(n,i,jj)];
-
-    /* for all neighbouring elements already inserted */
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
-         theElement=SUCCE(theElement))
-    {
-      /* for all sides of the neighbour element */
-      for (jj=0; jj<SIDES_OF_ELEM(theElement); jj++)
-      {
-        num = 0;
-        /* for all corners of the side of the neighbour */
-        for (m=0; m<CORNERS_OF_SIDE(theElement,jj); m++)
-        {
-          NeighborNode = CORNER(theElement,
-                                CORNER_OF_SIDE(theElement,jj,m));
-          /* for all corners of the side of the
-                  element to be created */
-          for (k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
-            if(NeighborNode==sideNode[k])
-            {
-              num++;
-              break;
-            }
-        }
-        if(num==CORNERS_OF_SIDE_REF(n,i))
-        {
-          if (NBELEM(theElement,jj)!=NULL)
-          {
-            PrintErrorMessage('E',"InsertElement -> NeighborSearch_O_nn",
-                              "neighbor relation inconsistent");
-            return(1);
-          }
-          Nghbr[i] = theElement;
-          NghbrSide[i] = jj;
-        }
-      }
-    }
-  }
-  /* ... O(n*n)InsertElement */
-
-
-  return(0);
-} /*of "static INT NeighborSearch_O_nn()"*/
-
-
-/****************************************************************************/
-/** \todo Please doc me!
    NdElPtrArray_evalIndexes -
 
    SYNOPSIS:
@@ -6026,32 +5956,15 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
           helpIndex = Index - merkeIndex;
           if (helpIndex == ELEMS_OF_NODE_MAX)
           {
-            /* change to O(n*n)InsertElement ...*/
             /*IE_MEM_PROB  2*/
             MGNDELEMPTRARRAY(theMG) = NULL;                             /* set the O(n)InsertAlgFlag to zero*/
-            UserWrite("Warning concerning InsertElement :\n");
-            UserWrite("\n");
-            UserWrite("The O(n) version of InsertElement cannot be continued \n");
-            UserWrite("because some nodes have more than ELEMS_OF_NODE_MAX elements!\n");
-            UserWrite("\n");
-            UserWrite("Now the O(n*n) version will finish your job.\n");
-            UserWrite("\n");
-            UserWrite("Either you drink a cup of coffee and wait till the end of\n");
-            UserWrite("the slow version or kill the job and do the following:\n");
-            UserWrite("\n");
-            UserWrite("1. increase ELEMS_OF_NODE_MAX in gm.h\n");
-            UserWrite("2. remove ugm.o\n");
-            UserWrite("3. ugmake\n");
-            UserWrite("\n");
-            UserWrite("\n");
-            UserWrite("    .  .  .  .  .  .  .  .  .  .  .  .  please wait \n");
-            /* O(n*n)InsertElement ...*/
-            if ( (retval = NeighborSearch_O_nn(n, Node, theGrid, NbrS, Nbr)) == 1 )
-            {
-              PrintErrorMessage('E',"InsertElement -> NdElPtrArray_evalIndexes",
-                                "neighbor relation inconsistent");
-              return (1);
-            }
+            PrintErrorMessage('E',"NdElPtrArray_evalIndexes","Warning concerning InsertElement:");
+            PrintErrorMessage('E',"NdElPtrArray_evalIndexes","InsertElement cannot be continued,");
+            PrintErrorMessage('E',"NdElPtrArray_evalIndexes","because some nodes have more than ELEMS_OF_NODE_MAX elements!");
+            PrintErrorMessage('E',"NdElPtrArray_evalIndexes","Please do the following:");
+            PrintErrorMessage('E',"NdElPtrArray_evalIndexes","1. increase ELEMS_OF_NODE_MAX in gm.h");
+            PrintErrorMessage('E',"NdElPtrArray_evalIndexes","2. rebuild UG");
+            abort();
 
           }
 
@@ -6476,12 +6389,12 @@ ELEMENT * NS_DIM_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMEN
         return(NULL);
       }
     }
-    else
-    /* using the slow O(n*n) algorithm */
-    if ( (rv = NeighborSearch_O_nn(n, Node, theGrid, NeighborSide, Neighbor)) == 1 )
-    {
-      PrintErrorMessage('E',"InsertElement"," ERROR by calling NeighborSearch_O_nn()");
-      return(NULL);
+    else {
+      PrintErrorMessage('E',"InsertElement","The method InsertElement has run out of memory.");
+      PrintErrorMessage('E',"InsertElement","Please do the following:");
+      PrintErrorMessage('E',"InsertElement","1. increase NDELEM_BLKS_MAX in gm.h");
+      PrintErrorMessage('E',"InsertElement","2. rebuild UG");
+      abort();
     }
   }
   else
