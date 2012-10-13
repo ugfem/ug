@@ -98,12 +98,12 @@ AC_DEFUN([UG_MPI],[
 
     # try to create MPI program
     AC_LANG_PUSH([C++])
-    AC_COMPILE_IFELSE(
+    AC_COMPILE_IFELSE([
       AC_LANG_SOURCE(
         [ #include <mpi.h>
           int main (int argc, char** argv) { 
           MPI_Init(&argc, &argv); 
-          MPI_Finalize(); }]),
+          MPI_Finalize(); }])],
         [ AC_MSG_RESULT([yes]) ],
         [ AC_MSG_RESULT([no])
           AC_MSG_ERROR([could not compile MPI testprogram!
