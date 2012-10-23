@@ -701,10 +701,10 @@ static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType,
   /* SETPRIO(pv,PrioMaster); */
 
 #ifdef FOR_DUNE
-  /** \todo This line is a hack.  It is used to implement face ids for Dune.
-      As soon as the face data structure is available the id should be stored
-      there.  Then this code can be removed again. */
+#ifndef ModelP
+  // Dune uses the id field for face indices in sequential grids
   pv->id = (theGrid->mg->vectorIdCounter)++;
+#endif
 #endif
 
     #ifdef __BLOCK_VECTOR_DESC__

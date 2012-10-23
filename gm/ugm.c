@@ -3238,11 +3238,9 @@ MULTIGRID * NS_DIM_PREFIX CreateMultiGrid (char *MultigridName, char *BndValProb
   theMG->elemIdCounter = 0;
 #ifdef FOR_DUNE
   theMG->edgeIdCounter = 0;
-  /** \brief Count vector objects in that multigrid
-      \todo This line is a hack.  It is used to implement face ids for Dune.
-      As soon as the face data structure is available the id should be stored
-      there.  Then this code can be removed again. */
+#ifndef ModelP
   theMG->vectorIdCounter = 0;
+#endif
 #endif
   theMG->topLevel = -1;
   theMG->bottomLevel = 0;
