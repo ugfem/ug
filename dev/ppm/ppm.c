@@ -215,7 +215,7 @@ static WINDOWID ppm_OpenWindow(const char *title, INT rename,
   PPM_WINDOW *ppm_window;
   FILE *file;
   char ppm_path[BUFFLEN], header[32];
-  char white[3] = {255, 255, 255};
+  unsigned char white[3] = {255, 255, 255};
   INT i, n;
 
   /* allocate ppm window structure */
