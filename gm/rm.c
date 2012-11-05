@@ -2833,7 +2833,8 @@ INT NS_DIM_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
     /* copy rule */
     case (0) :
       return(0);
-
+    case (139023) :
+      return HEXA_QUADSECT_0;
     /* full red rule */
     case (262143) :
       return(HEXA_RED);
