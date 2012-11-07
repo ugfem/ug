@@ -1280,7 +1280,7 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
                      {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1},
                      {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
-  /* HEX_bisect_1_2 */
+  /* HEX_bisect_0_3 */
   {HEXAHEDRON,5,RED_CLASS|SWITCH_CLASS,2,
    {0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
    1<<4 + 1<<5 + 1<<6 + 1<<7,
@@ -2668,7 +2668,7 @@ INT NS_DIM_PREFIX ClearMarksOnLevel (GRID *theGrid, INT ClearType)
 
    This function returns mark of rule for a specific pattern
 
-   \return
+   \return Mark rule; values of the unnamed enums in the file rm.h
    mark of rule
  */
 /****************************************************************************/
@@ -2833,11 +2833,29 @@ INT NS_DIM_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
     /* copy rule */
     case (0) :
       return(0);
-    case (139023) :
-      return HEXA_QUADSECT_0;
     /* full red rule */
     case (262143) :
       return(HEXA_RED);
+    case (1285) :
+      return HEXA_BISECT_0_1;
+    case (2570) :
+      return HEXA_BISECT_0_2;
+    case (240) :
+      return HEXA_BISECT_0_3;
+    case (139023) :
+      return HEXA_QUADSECT_0;
+    case (42485) :
+      return HEXA_QUADSECT_1;
+    case (84730) :
+      return HEXA_QUADSECT_2;
+    case (5) :
+      return HEXA_TRISECT_0;
+    case (1280) :
+      return HEXA_TRISECT_5;
+    case (2056) :
+      return HEXA_BISECT_HEXPRI0;
+    case (257) :
+      return HEXA_BISECT_HEXPRI1;
     default :
       PrintErrorMessage('E',"Patterns2Rules","no mapping for HEXAHEDRON and this pattern!");
       UserWriteF("pattern=%d\n",pattern);
