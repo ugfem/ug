@@ -90,7 +90,7 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 
 /* local unique ID count */
-static int theIdCount;
+static DDD_GID theIdCount;
 
 
 
