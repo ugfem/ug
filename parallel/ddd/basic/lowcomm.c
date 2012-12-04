@@ -734,7 +734,7 @@ static RETCODE LC_PrepareRecv (void)
   if (theRecvBuffer==NULL)
   {
     DDD_PrintError('E', 6610, STR_NOMEM " in LC_PrepareRecv");
-    sprintf(cBuffer, "(size of message buffer: %d)", sumSize);
+    sprintf(cBuffer, "(size of message buffer: %ld)", sumSize);
     DDD_PrintError('E', 6610, cBuffer);
     RET_ON_ERROR;
   }
