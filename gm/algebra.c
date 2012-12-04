@@ -3483,11 +3483,7 @@ static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObje
                  (OBJT(theObject)==BEOBJ || OBJT(theObject)==IEOBJ) ?
                  EGID(&(theObject->el)) : (OBJT(theObject)==NDOBJ) ?
                  GID(&(theObject->nd)) :
-                                #ifdef __TWODIM__
-                 ((int *)(theObject))[0]
-                                #else
                  GID(&(theObject->ed))
-                                #endif
                  );
     }
     else
