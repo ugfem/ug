@@ -335,7 +335,7 @@ typedef unsigned long DDD_GID;
 #endif
 typedef unsigned int DDD_TYPE;
 typedef unsigned int DDD_IF;
-typedef unsigned short DDD_PROC;
+typedef unsigned int DDD_PROC;
 typedef unsigned int DDD_PRIO;
 typedef unsigned int DDD_ATTR;
 
