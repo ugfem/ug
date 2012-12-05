@@ -1101,6 +1101,10 @@ else
 
 void ddd_ObjMgrInit (void)
 {
+  /* sanity check: does the DDD_PROC type have enough bits? */
+  if (sizeof(DDD_PROC)*8 < MAX_PROCBITS_IN_GID)
+    DDD_PrintError('F', 666, "DDD_PROC isn't large enough for MAX_PROCBITS_IN_GID bits");
+
   theIdCount = 1;        /* start with 1, for debugging reasons */
 
   /* allocate first (smallest) object table */
