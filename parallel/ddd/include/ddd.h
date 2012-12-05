@@ -329,7 +329,7 @@ typedef ddd_gid_debug DDD_GID;
 #ifdef DDD_GID_T
 typedef DDD_GID_T DDD_GID;
 #else
-typedef unsigned int DDD_GID;
+typedef unsigned long DDD_GID;
 #endif
 #define DDD_GID_TO_INT(A) (unsigned int) A
 #endif
