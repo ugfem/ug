@@ -24,6 +24,7 @@ noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
 # set options from Makefile.dddobj
 
+# The first one is only used in xfer, the second one in ctrl
 DDDFLAGS = -DXferMemFromHeap -DConsMemFromHeap -DDDD_FRONTEND_C
 
 # reproduce the style of Makefile.ddd
