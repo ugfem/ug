@@ -15,3 +15,6 @@ stamp-h*
 libug.pc
 semantic.cache
 ltmain.sh
+ug-config.cmake
+ug-config-version.cmake
+
