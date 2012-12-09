@@ -1,5 +1,7 @@
 # $Id$
 
+SUBDIRS = test
+
 if PARALLEL
   PLIB = libbasic2.la libbasic3.la
 else
