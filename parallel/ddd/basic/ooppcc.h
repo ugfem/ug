@@ -619,12 +619,12 @@ static ClassPtr Method(Split)  (ParamThis,
   split = ((BTreeOrder+1)>>1)-1;
   /*printf("\t\tsplit_index = %d\n", split);*/
 
-  for(l=split+1, r=0; l<This->nSons; l++, r++)
+  for(l=split+1, r=0; l<This->nSons-1; l++, r++)
   {
     rnode->sons[r] = This->sons[l];
     rnode->data[r] = This->data[l];
   }
-  rnode->sons[r] = rnode->sons[l];
+  rnode->sons[r] = This->sons[l];
 
   rnode->nSons = This->nSons-split-1;
   This->nSons  = split+1;
