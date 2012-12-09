@@ -3639,17 +3639,9 @@ static int      CheckVolumes(REFRULE *Rule)
 /** \brief
    InitRuleManager3D - Read the rule data set and initialize the rules
 
-   SYNOPSIS:
-   static INT InitRuleManager3D (void);
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
    This function reads the rule data set and initializes the rules data structure for tetrahedrons. Initializes the regular refinement rules (red rules) for hexahedrons. Irregular refinement of green closure is done algorithmically.
 
    \return
-   INT
    .n   0 if ok
    .n   >0 if an error occurs
  */
