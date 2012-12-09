@@ -165,7 +165,7 @@ AM_CONDITIONAL(PARALLEL, test x$parallel = xyes)
 #
 
 # !!! reduce include pathes!!!
-UG_CPPFLAGS="-I\$(top_srcdir) -I\$(top_srcdir)/arch -I\$(top_srcdir)/low -I\$(top_srcdir)/gm -I\$(top_srcdir)/dev -I\$(top_srcdir)/dom -I\$(top_srcdir)/np -I\$(top_srcdir)/ui -I\$(top_srcdir)/graphics/uggraph -I\$(top_srcdir)/np/algebra -I\$(top_srcdir)/np/udm -I\$(top_srcdir)/np/procs -I\$(top_srcdir)/parallel -I\$(top_srcdir)/parallel/ppif -I\$(top_srcdir)/parallel/ddd/include -I\$(top_srcdir)/parallel/dddif -I\$(top_srcdir)/parallel/util -DUGLIB $UG_EXTRAFLAGS"
+UG_CPPFLAGS="-I\$(top_srcdir) -I\$(top_srcdir)/arch -I\$(top_srcdir)/low -I\$(top_srcdir)/gm -I\$(top_srcdir)/dev -I\$(top_srcdir)/dom -I\$(top_srcdir)/np -I\$(top_srcdir)/ui -I\$(top_srcdir)/graphics/uggraph -I\$(top_srcdir)/np/algebra -I\$(top_srcdir)/np/udm -I\$(top_srcdir)/np/procs -I\$(top_srcdir)/parallel -I\$(top_srcdir)/parallel/ddd -I\$(top_srcdir)/parallel/ppif -I\$(top_srcdir)/parallel/ddd/include -I\$(top_srcdir)/parallel/dddif -I\$(top_srcdir)/parallel/util -DUGLIB $UG_EXTRAFLAGS"
 AC_SUBST(UG_CPPFLAGS)
 # export EXTRAFLAGS for libug.pc, CPPFLAGS would be quite wrong :)
 AC_SUBST(UG_EXTRAFLAGS)
@@ -241,6 +241,7 @@ AC_CONFIG_FILES([Makefile
                  parallel/ppif/Makefile
                  parallel/ppif/MPI/Makefile
 		 parallel/ddd/Makefile
+		 parallel/ddd/basic/Makefile
 		 parallel/dddif/Makefile
                  libug.pc
 		 ug-config.cmake

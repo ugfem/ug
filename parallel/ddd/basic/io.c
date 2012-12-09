@@ -30,8 +30,8 @@
 
 #include "compiler.h"
 #include "ppif.h"
-#include "include/dddio.h"
-#include "dddi.h"
+#include "dddio.h"
+#include "ddd/dddi.h"
 
 /* PPIF namespace: */
 USING_PPIF_NAMESPACE

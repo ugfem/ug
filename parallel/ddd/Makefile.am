@@ -1,5 +1,7 @@
 # $Id$
 
+SUBDIRS = basic
+
 if PARALLEL
 
 if BUILD2D
@@ -26,8 +28,6 @@ DDDFLAGS = -DXferMemFromHeap -DConsMemFromHeap -DDDD_FRONTEND_C
 
 # reproduce the style of Makefile.ddd
 
-BASIC = basic/io.c basic/topo.c basic/notify.c basic/reduct.c basic/lowcomm.c
-
 CTRL = ctrl/debug.c ctrl/cons.c ctrl/stat.c
 
 MGR = mgr/typemgr.c mgr/objmgr.c mgr/cplmgr.c mgr/prio.c mgr/attr.c
@@ -50,14 +50,16 @@ DDD = ddd.c dddi.h
 # header files that are not explicitly used but need to be distributed
 EXTRA_DIST = include/dddaddon.h include/ddd.h include/memmgr.h include/dddio.h \
              include/fddd.f include/dddresources.h join/join.h ctrl/stat.h \
-             xfer/xfer.h xfer/sll.ct xfer/sll.h xfer/sll.ht if/if.h if/ifstd.ct if/ifcmd.ct basic/notify.h basic/lowcomm.h \
-             dddstr.h mgr/handler.ct basic/oopp.h basic/ooppcc.h basic/memutil.h
+             xfer/xfer.h xfer/sll.ct xfer/sll.h xfer/sll.ht if/if.h if/ifstd.ct if/ifcmd.ct \
+             dddstr.h mgr/handler.ct
 
-libddd2_la_SOURCES = $(BASIC) $(CTRL) $(MGR) $(IDENT) $(IF) $(XFER) \
+libddd2_la_SOURCES = $(CTRL) $(MGR) $(IDENT) $(IF) $(XFER) \
                     $(PRIO) $(JOIN) $(MISC) $(DDD) f77/f2c.c
 libddd2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)
+libddd2_la_LIBADD = basic/libbasic2.la
 
-libddd3_la_SOURCES = $(BASIC) $(CTRL) $(MGR) $(IDENT) $(IF) $(XFER) \
+libddd3_la_SOURCES = $(CTRL) $(MGR) $(IDENT) $(IF) $(XFER) \
                     $(PRIO) $(JOIN) $(MISC) $(DDD) f77/f2c.c
 libddd3_la_CPPFLAGS = $(UG_3DFLAGS) $(DDDFLAGS)
+libddd3_la_LIBADD = basic/libbasic3.la
 
