@@ -121,7 +121,7 @@ typedef int RETCODE;
 
 
 
-#define MAX_TRIES  50000000  /* max. number of tries til timeout in IF-comm */
+#define MAX_TRIES  50000000  /* max. number of tries until timeout in IF-comm */
 
 #ifdef DDD_MAX_PROCBITS_IN_GID
 #define MAX_PROCBITS_IN_GID DDD_MAX_PROCBITS_IN_GID
