@@ -10,8 +10,7 @@ endif
 
 noinst_LTLIBRARIES = $(PLIB)
 
-# header files that are not explicitly used but need to be distributed
-EXTRA_DIST = basic/notify.h basic/lowcomm.h basic/oopp.h basic/ooppcc.h basic/memutil.h
+include_HEADERS = notify.h lowcomm.h oopp.h ooppcc.h memutil.h
 
 SOURCES = io.c lowcomm.c notify.c reduct.c topo.c
 
