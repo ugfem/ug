@@ -21025,6 +21025,10 @@ static void ConnectWopTree(void)
 	WopDownChannels = (INT)ceil(0.5*(sqrt(4.0*(DOUBLE)procs-3.0)-1.0));
 	WopDownChannels = MAX(WopDownChannels, 4);
 
+	/* sanity check: make sure we have allocated enough memory for the channels */
+	if (WopDownChannels > WOP_DOWN_CHANNELS_MAX)
+	    PrintErrorMessage('F', "ConnectWopTree", "Number of WopDownChannels exceeds maximum number WOP_DOWN_CHANNELS_MAX");
+
 	/* setup connections ... */
 
 	WOP_UpChannel = NULL;
