@@ -144,7 +144,7 @@ START_UGDIM_NAMESPACE
 /****************************************************************************/
 
 #ifdef ModelP
-#define WOP_DOWN_CHANNELS_MAX           32
+#define WOP_DOWN_CHANNELS_MAX           1024
 #define DO_BUFFER_SLOTS                 2
 #define DO_SLOT_SIZE                    (DO_SIZE+3)
 #endif
