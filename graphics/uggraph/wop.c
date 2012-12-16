@@ -21108,8 +21108,10 @@ static void ConnectWopTree(void)
 
 static void NumberOfDesc(void)
 {
-	msgid* umid, dmid;
-	int*   uerr, derr;  
+	msgid umid;
+	msgid *dmid;
+	int uerr;
+	int *derr;  
 	INT   sum;
 	INT   i, noDesc;
 
@@ -21120,9 +21122,7 @@ static void NumberOfDesc(void)
 	}
 	if (procs < 2) return;
 
-	umid = (msgid*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(msgid));
 	dmid = (msgid*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(msgid));
-	uerr = (int*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(int));
 	derr = (int*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(int));
 
 	if (noDesc) {
@@ -21151,10 +21151,8 @@ static void NumberOfDesc(void)
 	}
 	
 	/* Release heap memory */
-	free umid;
-	free dmid;
-	free uerr;
-	free derr;
+	free(dmid);
+	free(derr);
 }
 
 
