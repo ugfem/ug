@@ -18045,10 +18045,10 @@ oops:
 
 /****************************************************************************/
 /*
-   OrderHirarchically - 
+   OrderHierarchically - 
 
    SYNOPSIS:
-   static INT OrderHirarchically(MULTIGRID *mg)
+   static INT OrderHierarchically(MULTIGRID *mg)
 
    PARAMETERS:
    mg -
@@ -18064,7 +18064,7 @@ oops:
 */
 /****************************************************************************/
 
-static INT OrderHirarchically(MULTIGRID *mg)
+static INT OrderHierarchically(MULTIGRID *mg)
 {
 	INT i;
 	GRID *grid;
@@ -18403,8 +18403,8 @@ fault:
 		return 1;
 	}
 
-	/* now order level 1 to toplevel hirarchically */
-	if (OrderHirarchically(mg)) {
+	/* now order level 1 to toplevel hierarchically */
+	if (OrderHierarchically(mg)) {
 		UserWrite("Insufficient memory to order elements 2\n");
 		#ifdef ModelP
 		ReleaseTmpMem(heap,MarkKey);
