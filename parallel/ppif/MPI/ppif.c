@@ -472,6 +472,10 @@ int PPIF_NS_PREFIX ExitPPIF ()
     PPIFBeganMPI = 0;
   }
 
+  /* Release memory for virtual channels */
+  free (VChan);
+  VChan = NULL;
+
   return PPIF_SUCCESS;
 }
 
