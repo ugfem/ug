@@ -169,7 +169,7 @@ int PPIF_NS_PREFIX slvcnt[MAXT];                /* number of processors in subtr
 /*                                                                          */
 /****************************************************************************/
 
-static MPIVChannel *VChan;
+static MPIVChannel *VChan = NULL;
 static int vc_count=0;          /* number of used VChan                     */
 static int vc_free=0;           /* rotating pointer to find free VChan      */
 
@@ -195,6 +195,14 @@ int RecvSync (void* v, void *data, int size);
 static long InitVChan ()
 {
   int i;
+
+  /* Do nothing if VChan already points to something.  This most likely means
+   * that InitVChan has been called twice in a row.  This may actually happen
+   * when being called from Dune: Then there are both a 2d and a 3d instance
+   * of DDD, and both call this method.
+   */
+  if (VChan)
+    return ((long) VChan);
 
   if (VChan = (MPIVChannel *) malloc(sizeof(MPIVChannel)*MAXVCHAN) )
   {
