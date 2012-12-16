@@ -645,7 +645,7 @@ void *NS_PREFIX GetFreelistMemory (HEAP *theHeap, INT size)
   {
     printf( "ERROR in low/heaps.c/GetFreelistMemory: not enough memory for %d bytes.\n", size );
     fprintf( stderr, "ERROR in low/heaps.c/GetFreelistMemory: not enough memory for %d bytes.\n", size );
-    assert(0);
+    abort();
   }
 
   if (obj != NULL)
