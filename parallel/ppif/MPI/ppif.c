@@ -334,11 +334,11 @@ int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
 #ifdef _PV3
   else
   {
-    printf("MPI already initialized, InitPPIF() faild.\n");
+    printf("MPI already initialized, InitPPIF() failed.\n");
     return PPIF_FAILURE;
   }
   if (pV_MPIStart(MPI_COMM_WORLD, 1, 0, 0, &Comm) != 0) {
-    printf("pV3 Concentrator cannot be selected. InitPPIF() faild.\n");
+    printf("pV3 Concentrator cannot be selected. InitPPIF() failed.\n");
     return PPIF_FAILURE;
   }
 #endif
