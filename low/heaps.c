@@ -277,7 +277,7 @@ HEAP *NS_PREFIX NewHeap (enum HeapType type, MEM size, void *buffer)
  */
 /****************************************************************************/
 
-void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, INT mode)
+void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, HeapAllocMode mode)
 {
   BLOCK *theBlock,*newBlock;
   long newsize,allocated;
@@ -378,7 +378,7 @@ void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, INT mode)
   return(NULL);
 }
 
-void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, INT mode, INT key)
+void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, HeapAllocMode mode, INT key)
 {
   if (theHeap->type==SIMPLE_HEAP)
   {

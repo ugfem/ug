@@ -78,8 +78,9 @@ enum HeapType {GENERAL_HEAP,                  /**< Heap with alloc/free mechanis
                SIMPLE_HEAP         /**< Heap with mark/release mechanism*/
 };
 
-enum {FROM_TOP=1,                  /**< Allocate from top of stack      */
-      FROM_BOTTOM=2                  /**< Allocate from bottom of stack   */
+enum HeapAllocMode
+{FROM_TOP=1,                       /**< Allocate from top of stack      */
+ FROM_BOTTOM=2                       /**< Allocate from bottom of stack   */
 };
 
 /** \brief Number of free object pointers  */
@@ -216,8 +217,8 @@ INT          InitHeaps                (void);
 /** @name Functions for the simple and general heap management */
 /* @{ */
 HEAP        *NewHeap                (enum HeapType type, MEM size, void *buffer);
-void        *GetMem                 (HEAP *theHeap, MEM n, INT mode);
-void            *GetMemUsingKey                 (HEAP *theHeap, MEM n, INT mode, INT key);
+void        *GetMem                 (HEAP *theHeap, MEM n, HeapAllocMode mode);
+void            *GetMemUsingKey                 (HEAP *theHeap, MEM n, HeapAllocMode mode, INT key);
 void         DisposeMem             (HEAP *theHeap, void *buffer);
 
 void        *GetFreelistMemory      (HEAP *theHeap, INT size);
