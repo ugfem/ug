@@ -17796,12 +17796,17 @@ static INT CollectCoarseGrid(MULTIGRID *mg, INT MarkKeyMaster)
 	INT MarkBottomKey;
 
 	/* state information */
-	INT receiving[WOP_DOWN_CHANNELS_MAX], sending[WOP_DOWN_CHANNELS_MAX+1], 
-		nbTokens[WOP_DOWN_CHANNELS_MAX], more[WOP_DOWN_CHANNELS_MAX+1], 
-		count[WOP_DOWN_CHANNELS_MAX+1], front[WOP_DOWN_CHANNELS_MAX+1], 
-		rear[WOP_DOWN_CHANNELS_MAX+1];
-	int serror[WOP_DOWN_CHANNELS_MAX+1], rerror[WOP_DOWN_CHANNELS_MAX];  
-	msgid outmsg[WOP_DOWN_CHANNELS_MAX+1], inmsg[WOP_DOWN_CHANNELS_MAX]; 
+	INT* receiving = (INT*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(INT));
+	INT* sending   = (INT*)malloc((WOP_DOWN_CHANNELS_MAX+1)*sizeof(INT));
+	INT* nbTokens  = (INT*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(INT));
+	INT* more      = (INT*)malloc((WOP_DOWN_CHANNELS_MAX+1)*sizeof(INT));
+	INT* count     = (INT*)malloc((WOP_DOWN_CHANNELS_MAX+1)*sizeof(INT));
+	INT* front     = (INT*)malloc((WOP_DOWN_CHANNELS_MAX+1)*sizeof(INT));
+	INT* rear      = (INT*)malloc((WOP_DOWN_CHANNELS_MAX+1)*sizeof(INT));
+	int* serror    = (int*)malloc((WOP_DOWN_CHANNELS_MAX+1)*sizeof(int));
+	int* rerror    = (int*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(int));
+	msgid* outmsg  = (msgid*)malloc((WOP_DOWN_CHANNELS_MAX+1)*sizeof(msgid));
+	msgid* inmsg   = (msgid*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(msgid)); 
 
 	/* init */
 	elem = FIRSTELEMENT(GRID_ON_LEVEL(mg,0));
@@ -17825,6 +17830,17 @@ oops:
 	if (error) {
 		Release(heap,FROM_BOTTOM,MarkBottomKey);
 		UserWrite("CollectCoarseGrid(): error in stage 0\n");
+		free(receiving);
+		free(sending);
+		free(nbTokens);
+		free(more);
+		free(count);
+		free(front);
+		free(rear);
+		free(serror);
+		free(rerror);
+		free(outmsg);
+	        free(inmsg);
 		return 1;
 	}
 	for (i=0; i<WopDownChannels; i++) {
@@ -18010,6 +18026,19 @@ oops:
 		}
 	}
 	Release(heap,FROM_BOTTOM,MarkBottomKey);
+
+	free(receiving);
+	free(sending);
+	free(nbTokens);
+	free(more);
+	free(count);
+	free(front);
+	free(rear);
+	free(serror);
+	free(rerror);
+	free(outmsg);
+	free(inmsg);
+
 	return error;
 }
 #endif
@@ -21079,8 +21108,8 @@ static void ConnectWopTree(void)
 
 static void NumberOfDesc(void)
 {
-	msgid umid, dmid[WOP_DOWN_CHANNELS_MAX];
-	int   uerr, derr[WOP_DOWN_CHANNELS_MAX];  
+	msgid* umid, dmid;
+	int*   uerr, derr;  
 	INT   sum;
 	INT   i, noDesc;
 
@@ -21090,6 +21119,12 @@ static void NumberOfDesc(void)
 		noDesc        = (noDesc && WOP_DownChannel[i] == NULL);
 	}
 	if (procs < 2) return;
+
+	umid = (msgid*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(msgid));
+	dmid = (msgid*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(msgid));
+	uerr = (int*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(int));
+	derr = (int*)malloc(WOP_DOWN_CHANNELS_MAX*sizeof(int));
+
 	if (noDesc) {
 		sum  = 1;
 		umid = SendASync(WOP_UpChannel, &sum, sizeof(sum), &uerr);
@@ -21114,6 +21149,12 @@ static void NumberOfDesc(void)
 			while (InfoASend(WOP_UpChannel, umid) != 1);
 		}
 	}
+	
+	/* Release heap memory */
+	free umid;
+	free dmid;
+	free uerr;
+	free derr;
 }
 
 
