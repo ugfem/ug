@@ -116,7 +116,7 @@ void NS_PREFIX HeapStat (const HEAP *theHeap)
 
   usedfreelistentries = 0;
 
-  UserWriteF("HeapStat: heap=%08x type=%d\n",theHeap,theHeap->type);
+  UserWriteF("HeapStat: heap=%p type=%d\n",theHeap,theHeap->type);
         #ifdef Debug
   UserWriteF("FreelistInfo:\n");
         #endif
