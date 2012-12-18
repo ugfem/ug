@@ -42,13 +42,6 @@
 #define __HEAPS__
 
 #include "ugtypes.h"
-
-
-#if defined __NECSX4__ && defined _MALLOC64
-#define MEM_SIZE_ULL
-#include "stdlib.h" /* for the patched malloc */
-#endif
-
 #include "namespace.h"
 
 START_UG_NAMESPACE
@@ -133,11 +126,7 @@ enum {HEAP_FULL =           1,           /**< Return code if storage exhausted  
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef MEM_SIZE_ULL
-typedef unsigned long long MEM;
-#else
 typedef unsigned long MEM;
-#endif
 
 /****************************************************************************/
 /* structs and typedefs for the simple and general heap management          */

@@ -8375,18 +8375,11 @@ void NS_DIM_PREFIX ListGrids (const MULTIGRID *theMG)
   heap = HeapFreelistUsed(MGHEAP(theMG));
   used = HeapUsed(MGHEAP(theMG)) - heap;
   free = HeapSize(MGHEAP(theMG)) - used;
-    #ifdef MEM_SIZE_ULL
-  if (heap == 0)
-    UserWriteF("\n%llu bytes used out of %d allocated\n",used,used+free);
-  else
-    UserWriteF("\n%llu ( %llu + %llu ) bytes used out of %llu allocated\n",used+heap,used,heap,used+free);
-    #else
   if (heap == 0)
     UserWriteF("\n%lu bytes used out of %lu allocated\n",used,used+free);
   else
     UserWriteF("\n%lu ( %lu + %lu ) bytes used out of %lu allocated\n",
                used+heap,used,heap,used+free);
-    #endif
 
     #ifdef ModelP
   used = used + heap;
