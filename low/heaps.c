@@ -144,8 +144,8 @@ void NS_PREFIX HeapStat (const HEAP *theHeap)
       assert(theHeap->freeObjects[i] == NULL);
                 #endif
   }
-  UserWriteF("          size           =%d\n",theHeap->size);
-  UserWriteF("          used           =%d\n",theHeap->used);
+  UserWriteF("          size (bytes)   =%d\n",theHeap->size);
+  UserWriteF("          used (bytes)   =%d\n",theHeap->used);
   UserWriteF("          freelistmem    =%d\n",theHeap->freelistmem);
   UserWriteF("          MAXFREEOBJECTS =%d\n",MAXFREEOBJECTS);
   UserWriteF("          usedfreelistent=%d\n",usedfreelistentries);
