@@ -151,6 +151,9 @@ fi
 # check for some DDD parameters
 DDD_PARAMETERS
 
+# check whether we are using the UG heap or the operating system heap
+UG_ENABLE_SYSTEM_HEAP
+
 # the DUNE-test for MPI-package and parameters
 UG_MPI
 if test "x$parallel" = "xyes" -a "x$with_mpi" = "xno"; then

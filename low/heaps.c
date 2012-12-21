@@ -279,6 +279,9 @@ HEAP *NS_PREFIX NewHeap (enum HeapType type, MEM size, void *buffer)
 
 void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, HeapAllocMode mode)
 {
+#if UG_USE_SYSTEM_HEAP
+  return malloc(n);
+#else
   BLOCK *theBlock,*newBlock;
   long newsize,allocated;
 
@@ -376,6 +379,7 @@ void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, HeapAllocMode mode)
   }
 
   return(NULL);
+#endif
 }
 
 void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, HeapAllocMode mode, INT key)
@@ -448,6 +452,9 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, HeapAllocMode mode, INT ke
 
 void NS_PREFIX DisposeMem (HEAP *theHeap, void *buffer)
 {
+#if US_USE_SYSTEM_HEAP
+  free(buffer);
+#else
   BLOCK *newBlock,*theBlock,*nextBlock;
   MEM b,n,p;
 
@@ -579,6 +586,7 @@ void NS_PREFIX DisposeMem (HEAP *theHeap, void *buffer)
   /* here must be something wrong */
   assert(FALSE);
   return;
+#endif
 }
 
 /****************************************************************************/
