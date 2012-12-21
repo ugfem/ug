@@ -390,15 +390,10 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, HeapAllocMode mode, INT ke
     {
       if (theHeap->topStackPtr>0)
       {
-        if (key>theHeap->topStackPtr)
+        /* key > topStackPtr: Mark/Release calls not balanced
+         * key < topStackPtr: stack pos already released */
+        if (key != theHeap->topStackPtr)
         {
-          /* Mark/Release calls not balanced */
-          ASSERT(FALSE);
-          return(NULL);
-        }
-        if (key<theHeap->topStackPtr)
-        {
-          /* stack pos already released */
           ASSERT(FALSE);
           return(NULL);
         }
@@ -412,15 +407,10 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, HeapAllocMode mode, INT ke
     {
       if (theHeap->bottomStackPtr>0)
       {
-        if (key>theHeap->bottomStackPtr)
+        /* key > bottomStackPtr: Mark/Release calls not balanced
+         * key < bottomStackPtr: stack pos already released */
+        if (key != theHeap->bottomStackPtr)
         {
-          /* Mark/Release calls not balanced */
-          ASSERT(FALSE);
-          return(NULL);
-        }
-        if (key<theHeap->bottomStackPtr)
-        {
-          /* stack pos already released */
           ASSERT(FALSE);
           return(NULL);
         }
