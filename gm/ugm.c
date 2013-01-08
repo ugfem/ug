@@ -3119,7 +3119,7 @@ MULTIGRID * NS_DIM_PREFIX GetNextMultigrid (const MULTIGRID *theMG)
  * @param   problem - name of problem description from environment
  * @param   format - name of format description from environment
  * @param   heapSize - size of heap to allocate for that multigrid in bytes
- * @param   optimizedIE - alloccate NodeElementList
+ * @param   optimizedIE - allocate NodeElementList
 
    This function creates and initializes a new multigrid structure including
    allocation of heap, combining the domain and the boundary conditions
