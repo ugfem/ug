@@ -219,6 +219,14 @@ HEAP *NS_PREFIX NewHeap (enum HeapType type, MEM size, void *buffer)
     theHeap->SizeOfFreeObjects[i] = -1;;
     theHeap->freeObjects[i] = NULL;
   }
+
+#if UG_USE_SYSTEM_HEAP
+  /* No constructor is ever called for theHeap.  Consequently, no constructor
+   * has been called for its member markedMemory, either.  Here we force this
+   * constructor call using placement new. */
+  new(theHeap->markedMemory) std::vector<void*>[MARK_STACK_SIZE];
+#endif
+
   /* return heap structure */
   return(theHeap);
 }
@@ -397,7 +405,13 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, HeapAllocMode mode, INT ke
           ASSERT(FALSE);
           return(NULL);
         }
+
+#if UG_USE_SYSTEM_HEAP
+        theHeap->markedMemory[key].push_back(GetMem(theHeap,n,mode));
+        return theHeap->markedMemory[key].back();
+#else
         return(GetMem(theHeap,n,mode));
+#endif
       }
       /* not marked */
       ASSERT(FALSE);
@@ -414,7 +428,12 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, HeapAllocMode mode, INT ke
           ASSERT(FALSE);
           return(NULL);
         }
+#if UG_USE_SYSTEM_HEAP
+        theHeap->markedMemory[key].push_back(GetMem(theHeap,n,mode));
+        return theHeap->markedMemory[key].back();
+#else
         return(GetMem(theHeap,n,mode));
+#endif
       }
       /* not marked */
       ASSERT(FALSE);
@@ -783,6 +802,13 @@ INT NS_PREFIX Release (HEAP *theHeap, INT mode, INT key)
   MEM newsize;
 
   if (theHeap->type!=SIMPLE_HEAP) return(1);
+
+#if UG_USE_SYSTEM_HEAP
+  /* Free all memory associated to 'key' */
+  for (size_t i=0; i<theHeap->markedMemory[key].size(); i++)
+    free(theHeap->markedMemory[key][i]);
+  theHeap->markedMemory[key].resize(0);
+#endif
 
   if (mode==FROM_TOP)
   {

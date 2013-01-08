@@ -41,6 +41,9 @@
 #ifndef __HEAPS__
 #define __HEAPS__
 
+/* Only for UG_USE_SYSTEM_HEAP */
+#include <vector>
+
 #include "ugtypes.h"
 #include "namespace.h"
 
@@ -149,6 +152,11 @@ typedef struct {
         #ifdef Debug
   INT objcount[MAXFREEOBJECTS];
         #endif
+
+
+  /* This is used only if UG_USE_SYSTEM_HEAP is set, but I don't want the
+   * #ifdef in an installed header, hence the data member is there all the time. */
+  std::vector<void*> markedMemory[MARK_STACK_SIZE];
 } HEAP;
 
 /****************************************************************************/
