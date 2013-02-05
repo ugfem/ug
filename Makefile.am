@@ -18,11 +18,11 @@ cmakeconfig_DATA = ug-config.cmake ug-config-version.cmake
 
 # !!! crazy trick to get include-dir compatibility
 # Crazy indeed.  Let's at least not install f2c.h (because it creates
-# problems) and std_internal.h (because we definitely know that it is an internal header).
+# problems) and std_internal.h, dddi.h (because we definitely know that they are internal headers).
 install-data-hook:
 	test -z "$(DESTDIR)$(pkgincludedir)" || $(MKDIR_P) "$(DESTDIR)$(pkgincludedir)"
 	$(INSTALL_DATA) $(top_srcdir)/arch/compiler.h "$(DESTDIR)$(pkgincludedir)"
-	find $(top_srcdir)/parallel -name \*.h -not -name "f2c.h" -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
+	find $(top_srcdir)/parallel -name \*.h -not -name "f2c.h" -not -name "dddi.h" -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
 	find $(top_srcdir)/low -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
 	find $(top_srcdir)/dev -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
 	find $(top_srcdir)/gm -name \*.h -exec $(INSTALL_DATA) {} "$(DESTDIR)$(pkgincludedir)" \;
