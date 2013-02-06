@@ -10,7 +10,7 @@ endif
 
 noinst_LTLIBRARIES = $(PLIB)
 
-include_HEADERS = notify.h lowcomm.h oopp.h ooppcc.h memutil.h
+pkginclude_HEADERS = notify.h lowcomm.h oopp.h ooppcc.h memutil.h
 
 SOURCES = io.c lowcomm.c notify.c reduct.c topo.c
 
