@@ -90,7 +90,6 @@ USING_PPIF_NAMESPACE
 #define RAND_MSG_SIZE   128     /* max size of random messages              */
 #define MAXT            15      /* maximum number of downtree nodes max     */
                                 /* log2(P)                                  */
-#define MAXVCHAN        1024 /* maximum number of channels               */
 #define PTYPE_ANY       -1L     /* process type: any process                */
 
 #define ID_ARRAY        100     /* channel id: array                        */
@@ -120,7 +119,6 @@ USING_PPIF_NAMESPACE
 /****************************************************************************/
 
 typedef struct {
-  int used;
   int p;
   int chanid;
 } MPIVChannel;
@@ -169,9 +167,7 @@ int PPIF_NS_PREFIX slvcnt[MAXT];                /* number of processors in subtr
 /*                                                                          */
 /****************************************************************************/
 
-static MPIVChannel *VChan = NULL;
 static int vc_count=0;          /* number of used VChan                     */
-static int vc_free=0;           /* rotating pointer to find free VChan      */
 
 #ifdef _PV3
 static MPI_Comm Comm;
@@ -192,67 +188,24 @@ int RecvSync (void* v, void *data, int size);
 /*                                                                          */
 /****************************************************************************/
 
-static long InitVChan ()
-{
-  int i;
-
-  /* Do nothing if VChan already points to something.  This most likely means
-   * that InitVChan has been called twice in a row.  This may actually happen
-   * when being called from Dune: Then there are both a 2d and a 3d instance
-   * of DDD, and both call this method.
-   */
-  if (VChan)
-    return ((long) VChan);
-
-  if (VChan = (MPIVChannel *) malloc(sizeof(MPIVChannel)*MAXVCHAN) )
-  {
-    for (i=0; i<MAXVCHAN; i++) VChan[i].used = FALSE;
-
-    vc_count=0;
-    vc_free=0;
-  }
-
-  return ((long) VChan);
-}
-
-
 static VChannelPtr NewVChan (int p, int id)
 
 {
-  MPIVChannelPtr myChan;
+  MPIVChannelPtr myChan = (MPIVChannelPtr)malloc(sizeof(MPIVChannel));
 
-  if (vc_count < MAXVCHAN)
-  {
-    while (VChan[vc_free].used)
-    {
-      if (++vc_free == MAXVCHAN) vc_free=0;
-    }
+  myChan->p      = p;
+  myChan->chanid = id;
 
-    myChan = &VChan[vc_free];
+  vc_count += 1;
 
-    myChan->used   = TRUE;
-    myChan->p      = p;
-    myChan->chanid = id;
-
-    vc_count += 1;
-    vc_free = (vc_free + 1) % MAXVCHAN;
-
-    return (myChan);
-  }
-  else
-  {
-    printf ("%d: PPIF-error, no more VChannels in NewVChan()"
-            ", dest=%d, id=%d\n", me, p, id);
-
-    return (NULL);
-  }
+  return (myChan);
 }
 
 
 static void DeleteVChan (VChannelPtr myChan)
 
 {
-  ((MPIVChannel*)myChan)->used = FALSE;
+  free(myChan);
 
   vc_count -= 1;
 }
@@ -355,7 +308,7 @@ int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
 
   master = 0;
 
-  if (!InitVChan()) printf(" %4d: Couldn't get VChannel memory!\n", me);
+  vc_count = 0;
 
   DimZ = 1;
   Factor(procs, &DimX, &DimY);
@@ -479,10 +432,6 @@ int PPIF_NS_PREFIX ExitPPIF ()
     if (mpierror) MPI_Abort(MPI_COMM_WORLD, mpierror);
     PPIFBeganMPI = 0;
   }
-
-  /* Release memory for virtual channels */
-  free (VChan);
-  VChan = NULL;
 
   return PPIF_SUCCESS;
 }
@@ -801,7 +750,7 @@ int PPIF_NS_PREFIX GetMail (int *sourceId, int *reqId, void *data, int *size)
 int PPIF_NS_PREFIX UsedSpace ()
 
 {
-  return ((int)(100.0*((float)vc_count)/((float)MAXVCHAN)));
+  return vc_count*sizeof(MPIVChannel);
 }
 
 void PPIF_NS_PREFIX PrintHostMessage (const char *s)
