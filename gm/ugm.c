@@ -3745,10 +3745,6 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
 
     if (NO_OF_ELEM(theEdge)<1)
       RETURN(GM_ERROR);
-    if (NO_OF_ELEM(theEdge)==1)
-      DisposeEdge(theGrid,theEdge);
-    else
-      DEC_NO_OF_ELEM(theEdge);
 
     /* edit VFATHER of midnode */
     if (MIDNODE(theEdge) != NULL)
@@ -3779,6 +3775,11 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
                             #endif
       }
     }
+
+    if (NO_OF_ELEM(theEdge)==1)
+      DisposeEdge(theGrid,theEdge);
+    else
+      DEC_NO_OF_ELEM(theEdge);
   }
 
   if (NELIST_DEF_IN_GRID(theGrid))
