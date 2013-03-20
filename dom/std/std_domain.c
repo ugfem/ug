@@ -1670,13 +1670,26 @@ BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
 }
 
 /* domain interface function: for description see domain.h */
-/** \todo This implementation leaks memory.  A BVP points to
-    a set of patches which have to be properly deallocated as
-    well.
- */
 INT NS_DIM_PREFIX
 BVP_Dispose (BVP * theBVP)
 {
+  /* Deallocate the patch pointers
+     The memory pointed to by theBVP->patches should also be freed when
+     not using the system heap.  However the UG heap data structure is not
+     available here, and for this I don't know how to do the proper deallocation. */
+#if UG_USE_SYSTEM_HEAP
+  STD_BVP* stdBVP = (STD_BVP *) theBVP;
+  /* npatches is the number of corners plus the number of lines plus the number of sides.
+   * You apparently can't access nlines directly here, but sideoffset should be ncorners + nlines. */
+  int npatches = stdBVP->sideoffset + stdBVP->nsides;
+  for (int i=0; i<npatches; i++)
+    free ( stdBVP->patches[i] );
+
+  free ( stdBVP->patches );
+
+  free ( STD_BVP_S2P_PTR (stdBVP) );
+#endif
+
   /* Unlock the item so it can be deleted from the environment tree */
   ((ENVITEM*)theBVP)->d.locked = 0;
 
