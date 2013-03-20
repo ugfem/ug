@@ -616,6 +616,9 @@ void NS_PREFIX DisposeMem (HEAP *theHeap, void *buffer)
 
 void *NS_PREFIX GetFreelistMemory (HEAP *theHeap, INT size)
 {
+#if UG_USE_SYSTEM_HEAP
+  void* obj = malloc(size);
+#else
   void **ptr, *obj;
   INT i,j,k,l;
 
@@ -664,6 +667,7 @@ void *NS_PREFIX GetFreelistMemory (HEAP *theHeap, INT size)
     fprintf( stderr, "ERROR in low/heaps.c/GetFreelistMemory: not enough memory for %d bytes.\n", size );
     abort();
   }
+#endif
 
   if (obj != NULL)
     memset(obj,0,size);
@@ -689,6 +693,10 @@ void *NS_PREFIX GetFreelistMemory (HEAP *theHeap, INT size)
 
 INT NS_PREFIX PutFreelistMemory (HEAP *theHeap, void *object, INT size)
 {
+#if UG_USE_SYSTEM_HEAP
+  free(object);
+  return 0;
+#else
   void **ptr;
   INT i,j,k,l;
 
@@ -735,6 +743,7 @@ INT NS_PREFIX PutFreelistMemory (HEAP *theHeap, void *object, INT size)
   /* MAXFREEOBJECTS to small! */
 
   RETURN(1);
+#endif
 }
 
 /****************************************************************************/
