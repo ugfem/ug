@@ -3136,7 +3136,6 @@ MULTIGRID * NS_DIM_PREFIX CreateMultiGrid (char *MultigridName, char *BndValProb
 {
   HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
-  GRID *theGrid;
   INT i,ds;
   BVP *theBVP;
   BVP_DESC *theBVPDesc;
@@ -3285,8 +3284,7 @@ MULTIGRID * NS_DIM_PREFIX CreateMultiGrid (char *MultigridName, char *BndValProb
   }
 
   /* allocate level 0 grid */
-  theGrid = CreateNewLevel(theMG,0);
-  if (theGrid==NULL)
+  if (CreateNewLevel(theMG,0)==NULL)
   {
     DisposeMultiGrid(theMG);
     return(NULL);
