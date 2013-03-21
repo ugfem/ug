@@ -3836,24 +3836,6 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
       RETURN(1);
 
   /* reset neighbor pointers referencing element and dispose vectors in sides if */
-  /** \todo delete */
-  if (0)
-  {
-        #ifdef __TWODIM__
-    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-    {
-      if (NBELEM(theElement,i)!=NULL) {
-        for (j=0; j<SIDES_OF_ELEM(NBELEM(theElement,i)); j++)
-          if (NBELEM(NBELEM(theElement,i),j)==theElement) {
-            SET_NBELEM(NBELEM(theElement,i),j,NULL);
-            break;
-          }
-        assert(j<SIDES_OF_ELEM(NBELEM(theElement,i)));
-      }
-    }
-        #endif
-  }
-
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
     ELEMENT *theNeighbor = NBELEM(theElement,i);
