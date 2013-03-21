@@ -3787,6 +3787,11 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
       DisposeElementFromElementList(theGrid,
                                     CORNER(theElement,j),theElement);
 
+  /* dispose matrices from element-vector */
+  if (dispose_connections)
+    if (DisposeConnectionFromElement(theGrid,theElement))
+      RETURN(1);
+
   for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
   {
     theNode = CORNER(theElement,j);
@@ -3829,11 +3834,6 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
       DisposeNode(theGrid,theNode);
     }
   }
-
-  /* dispose matrices from element-vector */
-  if (dispose_connections)
-    if (DisposeConnectionFromElement(theGrid,theElement))
-      RETURN(1);
 
   /* reset neighbor pointers referencing element and dispose vectors in sides if */
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
