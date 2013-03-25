@@ -134,11 +134,6 @@ INT NS_DIM_PREFIX ExitParallel (void)
   INT err;
 
   /* exit parallelization module */
-  /* the following code (ExitDDD) once seemed to crash
-     with MPI-PPIF. today it seems to run without problems.
-     therefore, we switch it on again, if there are any problems with MPI
-     and exiting the program, it may come from here. KB 970527 */
-
   PRINTDEBUG(init,1,("%d:     ExitParallel()...\n",me))
   if ((err=ExitDDD())!=0)
   {
