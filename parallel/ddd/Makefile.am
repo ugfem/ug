@@ -49,7 +49,7 @@ MISC = analyser/inv.c
 DDD = ddd.c dddi.h
 
 # header files that are not explicitly used but need to be distributed
-pgkinclude_HEADERS = include/ddd.h
+pkginclude_HEADERS = include/ddd.h
 
 EXTRA_DIST = include/dddaddon.h include/ddd.h include/memmgr.h include/dddio.h \
              include/fddd.f include/dddresources.h join/join.h ctrl/stat.h \
