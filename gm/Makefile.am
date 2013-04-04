@@ -2,13 +2,13 @@
 
 SUBDIRS = gg2 gg3
 
-SOURCES = algebra.c enrol.c evm.c mgio.c ugio.c ugm.c cw.c initgm.c elements.c shapes.c evalproc.c rm.c refine.c smooth.c dlmgr.c gmcheck.c er.c mgheapmgr.c algebra.h cw.h dlmgr.h elements.h enrol.h er.h evm.h GenerateRules.h gm.h initgm.h mgheapmgr.h mgio.h pargm.h refine.h rm.h shapes.h ugio.h ugm.h
+SOURCES = algebra.c enrol.c evm.c mgio.c ugio.c ugm.c cw.c initgm.c elements.c shapes.c evalproc.c rm.c refine.c smooth.c dlmgr.c gmcheck.c er.c mgheapmgr.c algebra.h dlmgr.h enrol.h er.h evm.h GenerateRules.h initgm.h mgheapmgr.h mgio.h shapes.h ugio.h
 
 # put this "template" into distribution-tarball as well
 EXTRA_DIST = dlmgr.t
 
 gmincludedir = $(pkgincludedir)
-gminclude_HEADERS = gm.h pargm.h evm.h shapes.h dlmgr.h algebra.h \
+gminclude_HEADERS = cw.h elements.h gm.h pargm.h evm.h shapes.h ugm.h dlmgr.h algebra.h \
   rm.h refine.h
 
 
