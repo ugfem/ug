@@ -596,6 +596,9 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
         #ifdef ModelP
   DDD_AttrSet(PARHDR(pn),GRID_ATTR(theGrid));
   /* SETPRIO(pn,PrioMaster); */
+#ifdef FOR_DUNE
+  pn->message_buffer = 0;
+#endif
         #endif
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
   START(pn) = NULL;

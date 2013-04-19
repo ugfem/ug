@@ -854,6 +854,11 @@ struct node {
 
   /** \brief Information if this node is on the leaf. */
   bool isLeaf;
+
+#ifdef ModelP
+  /** \brief Per-node message buffer used by Dune for dynamic load-balancing */
+  char* message_buffer;
+#endif
 #endif
 
 #ifdef ModelP

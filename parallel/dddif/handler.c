@@ -864,6 +864,30 @@ static void BVertexGather (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
   BVertexGatherBndP (V_BNDP((VERTEX *)obj),cnt,(char*)Data);
 }
 
+#ifdef FOR_DUNE
+/* Handlers used by Dune to implement dynamic load balancing:
+ * Dune writes the data into the objects' 'message_buffer'
+ * variable, then we take it from there.
+ * The first sizeof(int) bytes of the message_buffer is the length of
+ * the message (without the size of the int).
+ */
+static void DuneNodeGather (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
+{
+  int dataSize = ((int*)(((NODE*)obj)->message_buffer))[0];
+
+  for (int i=0; i<dataSize + sizeof(int); i++)
+    ((char*)Data)[i] = (((NODE*)obj)->message_buffer)[i];
+}
+
+static void DuneNodeScatter (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data, int newness)
+{
+  int dataSize = ((int*)Data)[0];
+  ((NODE*)obj)->message_buffer = (char*)malloc(sizeof(int) + dataSize);
+
+  for (int i=0; i<dataSize + sizeof(int); i++)
+    (((NODE*)obj)->message_buffer)[i] = ((char*)Data)[i];
+}
+#endif
 
 static void BVertexScatter (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data, int newness)
 {
@@ -1104,6 +1128,13 @@ static void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
     }
   }
         #endif
+
+#ifdef FOR_DUNE
+  if (DDD_XferWithAddData() && theNode->message_buffer) {
+    /* Extra data for Dune */
+    DDD_XferAddData(sizeof(int) + *((INT*)theNode->message_buffer), DDD_USER_DATA);
+  }
+#endif
 
   DDD_XferCopyObj(PARHDRV(MYVERTEX(theNode)), proc, prio);
 
@@ -2312,6 +2343,11 @@ void NS_DIM_PREFIX ddd_HandlerInit (INT handlerSet)
   DDD_SetHandlerXFERGATHER       (TypeBVertex, BVertexGather);
   DDD_SetHandlerXFERSCATTER      (TypeBVertex, BVertexScatter);
   DDD_SetHandlerSETPRIORITY      (TypeBVertex, VertexPriorityUpdate);
+
+#ifdef FOR_DUNE
+  DDD_SetHandlerXFERGATHER       (TypeNode, DuneNodeGather);
+  DDD_SetHandlerXFERSCATTER      (TypeNode, DuneNodeScatter);
+#endif
 
   DDD_SetHandlerLDATACONSTRUCTOR (TypeNode, NodeObjInit);
   DDD_SetHandlerDESTRUCTOR       (TypeNode, NodeDestructor);
