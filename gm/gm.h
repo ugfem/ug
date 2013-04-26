@@ -978,6 +978,11 @@ struct generic_element {
   /** \brief An index hat is unique and consecutive on the grid surface.
       Controlled by DUNE */
   int leafIndex;
+
+#ifdef ModelP
+  /** \brief Per-node message buffer used by Dune for dynamic load-balancing */
+  char* message_buffer;
+#endif
 #endif
 
 #ifdef ModelP
@@ -1035,6 +1040,11 @@ struct triangle {
   /** \brief An index hat is unique and consecutive on the grid surface.
       Controlled by DUNE */
   int leafIndex;
+
+#ifdef ModelP
+  /** \brief Per-node message buffer used by Dune for dynamic load-balancing */
+  char* message_buffer;
+#endif
 #endif
 
 #ifdef ModelP
@@ -1121,6 +1131,11 @@ struct quadrilateral {
   /** \brief An index hat is unique and consecutive on the grid surface.
       Controlled by DUNE */
   int leafIndex;
+
+#ifdef ModelP
+  /** \brief Per-node message buffer used by Dune for dynamic load-balancing */
+  char* message_buffer;
+#endif
 #endif
 
 #ifdef ModelP
@@ -1208,6 +1223,11 @@ struct tetrahedron {
   /** \brief An index hat is unique and consecutive on the grid surface.
       Controlled by DUNE */
   int leafIndex;
+
+#ifdef ModelP
+  /** \brief Per-node message buffer used by Dune for dynamic load-balancing */
+  char* message_buffer;
+#endif
 #endif
 
 #ifdef ModelP
@@ -1300,6 +1320,11 @@ struct pyramid {
   /** \brief An index hat is unique and consecutive on the grid surface.
       Controlled by DUNE */
   int leafIndex;
+
+#ifdef ModelP
+  /** \brief Per-node message buffer used by Dune for dynamic load-balancing */
+  char* message_buffer;
+#endif
 #endif
 
 #ifdef ModelP
@@ -1390,6 +1415,11 @@ struct prism {
   /** \brief An index hat is unique and consecutive on the grid surface.
       Controlled by DUNE */
   int leafIndex;
+
+#ifdef ModelP
+  /** \brief Per-node message buffer used by Dune for dynamic load-balancing */
+  char* message_buffer;
+#endif
 #endif
 
 #ifdef ModelP
@@ -1481,6 +1511,11 @@ struct hexahedron {
   /** \brief An index hat is unique and consecutive on the grid surface.
       Controlled by DUNE */
   int leafIndex;
+
+#ifdef ModelP
+  /** \brief Per-node message buffer used by Dune for dynamic load-balancing */
+  char* message_buffer;
+#endif
 #endif
 
 #ifdef ModelP
