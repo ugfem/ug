@@ -1,0 +1,58 @@
+Return-Path: <peter.bastian@iwr.uni-heidelberg.de>
+Received: from indy5.igpm.rwth-aachen.de ([unix socket])
+	 by indy5.igpm.rwth-aachen.de (Cyrus v2.4.16) with LMTPA;
+	 Sat, 13 Jul 2013 17:36:48 +0200
+X-Sieve: CMU Sieve 2.4
+Received: from igpm.igpm.rwth-aachen.de ([134.130.161.1])
+	by indy5.igpm.rwth-aachen.de with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <peter.bastian@iwr.uni-heidelberg.de>)
+	id 1Uy1sO-000BzT-CY
+	for sander@indy5.igpm.rwth-aachen.de; Sat, 13 Jul 2013 17:36:48 +0200
+Received: from mx-out-2.rwth-aachen.de ([134.130.5.187])
+	by igpm.igpm.rwth-aachen.de with esmtp (Exim 4.72)
+	(envelope-from <peter.bastian@iwr.uni-heidelberg.de>)
+	id 1Uy1sO-0005Yx-4y
+	for sander@igpm.rwth-aachen.de; Sat, 13 Jul 2013 17:36:48 +0200
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: AgYCAAVz4VGBztLTlGdsb2JhbABagzuDVIhrtnIWDgEBAQEJCwkJFAUjgiUBJ4ELAiYCX4gjBJYTjn2RFoEmkR0zbQOdf4xdgWE
+X-IPAS-Result: AgYCAAVz4VGBztLTlGdsb2JhbABagzuDVIhrtnIWDgEBAQEJCwkJFAUjgiUBJ4ELAiYCX4gjBJYTjn2RFoEmkR0zbQOdf4xdgWE
+X-IronPort-AV: E=Sophos;i="4.89,659,1367964000"; 
+   d="scan'208";a="141970766"
+Received: from relay2.uni-heidelberg.de ([129.206.210.211])
+  by mx-2.rz.rwth-aachen.de with ESMTP/TLS/DHE-RSA-AES256-SHA; 13 Jul 2013 17:36:48 +0200
+Received: from ix.urz.uni-heidelberg.de (cyrus-portal.urz.uni-heidelberg.de [129.206.100.176])
+	by relay2.uni-heidelberg.de (8.13.8/8.13.8) with ESMTP id r6DFaloL031083
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <sander@igpm.rwth-aachen.de>; Sat, 13 Jul 2013 17:36:47 +0200
+Received: from extmail.urz.uni-heidelberg.de (extmail.urz.uni-heidelberg.de [129.206.100.140])
+	by ix.urz.uni-heidelberg.de (8.13.8/8.13.8) with ESMTP id r6DFakjP009568
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <sander@igpm.rwth-aachen.de>; Sat, 13 Jul 2013 17:36:46 +0200
+Received: from [192.168.1.101] (p4FDA90C8.dip0.t-ipconnect.de [79.218.144.200])
+	(authenticated bits=0)
+	by extmail.urz.uni-heidelberg.de (8.13.4/8.13.1) with ESMTP id r6DFajwU029139
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NO)
+	for <sander@igpm.rwth-aachen.de>; Sat, 13 Jul 2013 17:36:46 +0200
+Subject: UG Lizenz Zustimmung
+From: Peter Bastian <peter.bastian@iwr.uni-heidelberg.de>
+Content-Type: text/plain;
+	charset=utf-8
+X-Mailer: iPad Mail (10B329)
+Message-Id: <AD8696CA-F749-4F3A-AB8B-2F4D6AE7C8B2@iwr.uni-heidelberg.de>
+Date: Sat, 13 Jul 2013 17:36:45 +0200
+To: Oliver Sander <sander@igpm.rwth-aachen.de>
+Content-Transfer-Encoding: quoted-printable
+Mime-Version: 1.0 (1.0)
+
+>> "Hiermit stimme ich zu, dass meine Betr=C3=A4ge zum Programm UG unter der=
+
+>> Lesser General Public License v2 oder sp=C3=A4ter ver=C3=B6ffentlicht wer=
+den."
+
+Peter Bastian
+
+----------------------------------------
+Peter Bastian,
+IWR, Universit=C3=A4t Heidelberg,
+INF 368, D-69120 Heidelberg=
