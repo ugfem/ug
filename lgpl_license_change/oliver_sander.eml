@@ -1,0 +1,53 @@
+Return-Path: <sander@igpm.rwth-aachen.de>
+Received: from indy5.igpm.rwth-aachen.de ([unix socket])
+	 by indy5.igpm.rwth-aachen.de (Cyrus v2.4.16) with LMTPA;
+	 Sat, 13 Jul 2013 22:39:51 +0200
+X-Sieve: CMU Sieve 2.4
+Received: from igpm.igpm.rwth-aachen.de ([134.130.161.1])
+	by indy5.igpm.rwth-aachen.de with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <sander@igpm.rwth-aachen.de>)
+	id 1Uy6bf-0001fz-Im
+	for sander@indy5.igpm.rwth-aachen.de; Sat, 13 Jul 2013 22:39:51 +0200
+Received: from mx-out-1.rwth-aachen.de ([134.130.5.186])
+	by igpm.igpm.rwth-aachen.de with esmtp (Exim 4.72)
+	(envelope-from <sander@igpm.rwth-aachen.de>)
+	id 1Uy6bf-0004q7-6o
+	for sander@igpm.rwth-aachen.de; Sat, 13 Jul 2013 22:39:51 +0200
+X-IronPort-AV: E=Sophos;i="4.89,660,1367964000"; 
+   d="scan'208";a="230030104"
+Received: from relay-auth-1.ms.rz.rwth-aachen.de (HELO relay-auth-1) ([134.130.7.78])
+  by mx-1.rz.rwth-aachen.de with ESMTP; 13 Jul 2013 22:39:51 +0200
+MIME-version: 1.0
+Content-transfer-encoding: 8BIT
+Content-type: text/plain; charset=UTF-8; format=flowed
+Received: from [192.168.1.35] ([unknown] [78.34.126.215])
+ by relay-auth-1.ms.rz.rwth-aachen.de
+ (Sun Java(tm) System Messaging Server 7.0-3.01 64bit (built Dec  9 2008))
+ with ESMTPA id <0MPW00KLC6QE4H20@relay-auth-1.ms.rz.rwth-aachen.de> for
+ sander@igpm.rwth-aachen.de; Sat, 13 Jul 2013 22:39:51 +0200 (CEST)
+Message-id: <51E1BB16.7000404@igpm.rwth-aachen.de>
+Date: Sat, 13 Jul 2013 22:39:50 +0200
+From: Oliver Sander <sander@igpm.rwth-aachen.de>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.12) Gecko/20130116
+ Icedove/10.0.12
+To: Oliver Sander <sander@igpm.rwth-aachen.de>
+Subject: UG Lizenz
+References: <AD8696CA-F749-4F3A-AB8B-2F4D6AE7C8B2@iwr.uni-heidelberg.de>
+In-reply-to: <AD8696CA-F749-4F3A-AB8B-2F4D6AE7C8B2@iwr.uni-heidelberg.de>
+X-Forwarded-Message-Id:
+ <AD8696CA-F749-4F3A-AB8B-2F4D6AE7C8B2@iwr.uni-heidelberg.de>
+
+Hiermit stimme ich zu, dass meine Beträge zum Programm UG unter der
+Lesser General Public License v2 oder später veröffentlicht werden.
+
+Oliver Sander
+
+-------------------------------------------------------
+Prof. Dr. Oliver Sander
+Institut für Geometrie und Praktische Mathematik
+RWTH Aachen
+Templergraben 55
+52062 Aachen
+https://www.igpm.rwth-aachen.de/personen/sander
+
