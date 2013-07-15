@@ -1,0 +1,66 @@
+Return-Path: <klaus.johannsen@gmail.com>
+Received: from indy5.igpm.rwth-aachen.de ([unix socket])
+	 by indy5.igpm.rwth-aachen.de (Cyrus v2.4.16) with LMTPA;
+	 Mon, 15 Jul 2013 09:05:15 +0200
+X-Sieve: CMU Sieve 2.4
+Received: from igpm.igpm.rwth-aachen.de ([134.130.161.1])
+	by indy5.igpm.rwth-aachen.de with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <klaus.johannsen@gmail.com>)
+	id 1UycqR-000EEc-Lz
+	for sander@indy5.igpm.rwth-aachen.de; Mon, 15 Jul 2013 09:05:15 +0200
+Received: from mx-out-2.rwth-aachen.de ([134.130.5.187])
+	by igpm.igpm.rwth-aachen.de with esmtp (Exim 4.72)
+	(envelope-from <klaus.johannsen@gmail.com>)
+	id 1UycqR-0007ls-DV
+	for sander@igpm.rwth-aachen.de; Mon, 15 Jul 2013 09:05:15 +0200
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: AsgBAEOe41HRVYAtm2dsb2JhbABagzpPgj8BwBMIFg4BAQEBAQYLFBQogmoBOQMKAwUQVgcSAQUBIhOHfgMPlTWCfo9NhAgnDYhYAQUECI4mhTEDl1yPaBYpgV18gWE6gTU
+X-IPAS-Result: AsgBAEOe41HRVYAtm2dsb2JhbABagzpPgj8BwBMIFg4BAQEBAQYLFBQogmoBOQMKAwUQVgcSAQUBIhOHfgMPlTWCfo9NhAgnDYhYAQUECI4mhTEDl1yPaBYpgV18gWE6gTU
+X-IronPort-AV: E=Sophos;i="4.89,667,1367964000"; 
+   d="scan'208";a="142103744"
+Received: from mail-qe0-f45.google.com ([209.85.128.45])
+  by mx-2.rz.rwth-aachen.de with ESMTP/TLS/RC4-SHA; 15 Jul 2013 09:05:14 +0200
+Received: by mail-qe0-f45.google.com with SMTP id w7so6279653qeb.18
+        for <sander@igpm.rwth-aachen.de>; Mon, 15 Jul 2013 00:05:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:sender:from:date:x-google-sender-auth:message-id
+         :subject:to:content-type:content-transfer-encoding;
+        bh=Xb/rBmp2bHcuHZthEDmeVYPoC/ySuFyCzW/XhHbzeYE=;
+        b=K95ODgqAZENqr2WDHtjI0YxIoI31efzSZH7V8b+NGiyP590Xxl8TuQomsOtTSh+LTQ
+         z5KaY8V3TMIkeKzbE8KWC2o4PiGa1stOb4PSWkoDPzoc0zVEkzlw6dVDCcJhaYGPb43S
+         7i1PWGk2fZVrdjzGc0AHvJQDQKauufgwPyn7cwttV+4W5Ws5wGH7FKMZZ64O9RLHurMD
+         P5ZfT5wIIZqzc3Ng4Bu0sZi+XAcv16z+cyTcFovm4kSFvdlYYULXNlgScyoEeL1afq+Z
+         ldwhhXvGrAAHbi6p90mGzNsc2soViRI/yG3gnyQPShvZLSwkOuPZmoKUefcLYoTNjmc4
+         sz8A==
+X-Received: by 10.224.124.66 with SMTP id t2mr41556301qar.108.1373871913468;
+ Mon, 15 Jul 2013 00:05:13 -0700 (PDT)
+MIME-Version: 1.0
+Received: by 10.49.51.234 with HTTP; Mon, 15 Jul 2013 00:04:33 -0700 (PDT)
+From: Klaus Johannsen <klaus.johannsen@uni.no>
+Date: Mon, 15 Jul 2013 09:04:33 +0200
+X-Google-Sender-Auth: qp8Y0kh8C5J86ix2-tZBDXnSuFQ
+Message-ID: <CAKik8JDaGdZFT1ORPVnyRzAa1Je05gw_yyO7xtfH7Ud-A83Pag@mail.gmail.com>
+Subject: UG, Lesser General Public License v2
+To: Oliver Sander <sander@igpm.rwth-aachen.de>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+Hi Oliver,
+
+hiermit stimme ich zu, dass meine Betr=E4ge zum Programm UG unter der
+Lesser General Public License v2 oder sp=E4ter ver=F6ffentlicht werden.
+
+Viele Gruesse, Klaus.
+
+--=20
+Dr. Klaus Johannsen, Director
+Uni Computing, Uni Research AS
+Thorm=F8hlensgate 55
+N-5008 Bergen, Norway
+
+phone: +47-555-84314
+mobile: +47-974 650 33
+e-mail: klaus.johannsen@uni.no
+http://www.klaus-johannsen.net

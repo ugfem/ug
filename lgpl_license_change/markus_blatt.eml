@@ -1,0 +1,57 @@
+Return-Path: <markus@dr-blatt.de>
+Received: from indy5.igpm.rwth-aachen.de ([unix socket])
+	 by indy5.igpm.rwth-aachen.de (Cyrus v2.4.16) with LMTPA;
+	 Mon, 15 Jul 2013 10:40:58 +0200
+X-Sieve: CMU Sieve 2.4
+Received: from igpm.igpm.rwth-aachen.de ([134.130.161.1])
+	by indy5.igpm.rwth-aachen.de with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <markus@dr-blatt.de>)
+	id 1UyeL4-000GSh-Gi
+	for sander@indy5.igpm.rwth-aachen.de; Mon, 15 Jul 2013 10:40:58 +0200
+Received: from mx-out-1.rwth-aachen.de ([134.130.5.186])
+	by igpm.igpm.rwth-aachen.de with esmtp (Exim 4.72)
+	(envelope-from <markus@dr-blatt.de>)
+	id 1UyeL4-0001rf-Au
+	for sander@igpm.rwth-aachen.de; Mon, 15 Jul 2013 10:40:58 +0200
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: As4EAH6041FV1hLeX2dsb2JhbABahw+7WoJwgSEDH1KCHwUBBSNmCxoCJgICQxQGhVyCKCOkN5BxgSaOCzqCWIEgA5dckwCBYQ
+X-IPAS-Result: As4EAH6041FV1hLeX2dsb2JhbABahw+7WoJwgSEDH1KCHwUBBSNmCxoCJgICQxQGhVyCKCOkN5BxgSaOCzqCWIEgA5dckwCBYQ
+X-IronPort-AV: E=Sophos;i="4.89,667,1367964000"; 
+   d="scan'208";a="230166034"
+Received: from plagula.de (HELO h417578.serverkompetenz.net) ([85.214.18.222])
+  by mx-1.rz.rwth-aachen.de with ESMTP/TLS/AES256-SHA; 15 Jul 2013 10:40:51 +0200
+Received: from tmo-107-187.customers.d1-online.com ([80.187.107.187] helo=[10.171.95.137])
+	by h417578.serverkompetenz.net with esmtpsa (TLS1.0:RSA_ARCFOUR_MD5:16)
+	(Exim 4.72)
+	(envelope-from <markus@dr-blatt.de>)
+	id 1UyeKv-0002qg-4b
+	for sander@igpm.rwth-aachen.de; Mon, 15 Jul 2013 10:40:49 +0200
+User-Agent: K-9 Mail for Android
+In-Reply-To: <51E1B972.7060204@igpm.rwth-aachen.de>
+References: <51E1B972.7060204@igpm.rwth-aachen.de>
+MIME-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+ charset=UTF-8
+Subject: Re: Die Lizenz von UG
+From: "Dr. Markus Blatt" <markus@dr-blatt.de>
+Date: Mon, 15 Jul 2013 10:38:09 +0200
+To: Oliver Sander <sander@igpm.rwth-aachen.de>
+Message-ID: <ac276545-0e49-41ee-97aa-4bc684ef0a23@email.android.com>
+
+
+Hi,
+
+Hiermit stimme ich zu, dass meine Betr=C3=A4ge zum Programm UG unter =
+der Lesser General Public License v2 oder sp=C3=A4ter ver=C3=B6ffentlicht w=
+erden.
+
+Markus Blatt
+
+--
+Dr. Markus Blatt - HPC-Simulation-Software & Servi=
+ces
+Hans-Bunte-Str. 8-10, 69123 Heidelberg, Germany
+Tel. +49 (0)160 9759085=
+8 Fax +49 (0)322 1108991658
