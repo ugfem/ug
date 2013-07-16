@@ -1,0 +1,66 @@
+Return-Path: <neuss@math.fau.de>
+Received: from indy5.igpm.rwth-aachen.de ([unix socket])
+	 by indy5.igpm.rwth-aachen.de (Cyrus v2.4.16) with LMTPA;
+	 Sun, 14 Jul 2013 08:48:56 +0200
+X-Sieve: CMU Sieve 2.4
+Received: from igpm.igpm.rwth-aachen.de ([134.130.161.1])
+	by indy5.igpm.rwth-aachen.de with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <neuss@math.fau.de>)
+	id 1UyG76-000FPz-8n
+	for sander@indy5.igpm.rwth-aachen.de; Sun, 14 Jul 2013 08:48:56 +0200
+Received: from mx-out-1.rwth-aachen.de ([134.130.5.186])
+	by igpm.igpm.rwth-aachen.de with esmtp (Exim 4.72)
+	(envelope-from <neuss@math.fau.de>)
+	id 1UyG75-0003kf-U7
+	for sander@igpm.rwth-aachen.de; Sun, 14 Jul 2013 08:48:56 +0200
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: Am4BAMdI4lGDvDZnnGdsb2JhbABZhw++SYEJFg4BAQEBAQgUCTyCIwEBAgIBI1sLCQIaAgUhAgIPAQQoIROICgaJQJtAkGUWgRCNDH86gliBIAOXXJMAgWE6gTU
+X-IPAS-Result: Am4BAMdI4lGDvDZnnGdsb2JhbABZhw++SYEJFg4BAQEBAQgUCTyCIwEBAgIBI1sLCQIaAgUhAgIPAQQoIROICgaJQJtAkGUWgRCNDH86gliBIAOXXJMAgWE6gTU
+X-IronPort-AV: E=Sophos;i="4.89,662,1367964000"; 
+   d="scan'208";a="230054846"
+Received: from neubau-103.mi.uni-erlangen.de ([131.188.54.103])
+  by mx-1.rz.rwth-aachen.de with ESMTP; 14 Jul 2013 08:48:56 +0200
+Received: from mini (wlan-025-194.openvpn-pool.rrze.uni-erlangen.de [10.79.25.194])
+	by neubau-103.mi.uni-erlangen.de (Postfix) with ESMTPA id E085831A688
+	for <sander@igpm.rwth-aachen.de>; Sun, 14 Jul 2013 08:48:54 +0200 (CEST)
+From: Nicolas Neuss <neuss@math.fau.de>
+To: Oliver Sander <sander@igpm.rwth-aachen.de>
+Subject: Re: Die Lizenz von UG
+References: <51E1B972.7060204@igpm.rwth-aachen.de>
+	<51E246D1.2050308@igpm.rwth-aachen.de>
+Date: Sun, 14 Jul 2013 08:48:54 +0200
+In-Reply-To: <51E246D1.2050308@igpm.rwth-aachen.de> (Oliver Sander's message
+	of "Sun, 14 Jul 2013 08:36:01 +0200")
+Message-ID: <87fvvhwsa1.fsf@math.fau.de>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/23.4 (gnu/linux)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Oliver Sander <sander@igpm.rwth-aachen.de> writes:
+
+> Hallo Nico,
+> Du erinnerst Dich sicher noch an mich?  Ich war Doktorand bei
+> Ralf Kornhuber, und vor ein paar Jahren mal einige Wochen Gast
+> bei Euch in Karlsruhe.
+
+Hallo Oliver,
+
+[snip]
+
+Hiermit stimme ich zu, dass meine Betr=C3=A4ge zum Programm UG unter der
+Lesser General Public License v2 oder sp=C3=A4ter ver=C3=B6ffentlicht werde=
+n.
+
+> Diese Mails werde ich im Heidelberger UG-Repository archivieren.
+>
+> Viele Gr=C3=BC=C3=9Fe,
+> Oliver
+
+Viele Gr=C3=BC=C3=9Fe,
+
+Nico
+
+--=20
+Nicolas Neuss    neuss@math.fau.de
