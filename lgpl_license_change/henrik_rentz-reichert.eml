@@ -1,0 +1,86 @@
+Return-Path: <hrr@protos.de>
+Received: from indy5.igpm.rwth-aachen.de ([unix socket])
+	 by indy5.igpm.rwth-aachen.de (Cyrus v2.4.16) with LMTPA;
+	 Wed, 17 Jul 2013 17:27:35 +0200
+X-Sieve: CMU Sieve 2.4
+Received: from igpm.igpm.rwth-aachen.de ([134.130.161.1])
+	by indy5.igpm.rwth-aachen.de with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <hrr@protos.de>)
+	id 1UzTdf-0006kn-5y
+	for sander@indy5.igpm.rwth-aachen.de; Wed, 17 Jul 2013 17:27:35 +0200
+Received: from mx-out-2.rwth-aachen.de ([134.130.5.187])
+	by igpm.igpm.rwth-aachen.de with esmtp (Exim 4.72)
+	(envelope-from <hrr@protos.de>)
+	id 1UzTde-0003qN-R5
+	for sander@igpm.rwth-aachen.de; Wed, 17 Jul 2013 17:27:34 +0200
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: AtkBAIq25lFY2Z7LnGdsb2JhbABajG25b4EQFg4BAQEBAQgLCQkUKIIaCgEFeAEQCwMBHRYPCQMCAQIBRQYNAQcBAYgQthSPegeDewOXXIYjjF2BYQ
+X-IPAS-Result: AtkBAIq25lFY2Z7LnGdsb2JhbABajG25b4EQFg4BAQEBAQgLCQkUKIIaCgEFeAEQCwMBHRYPCQMCAQIBRQYNAQcBAYgQthSPegeDewOXXIYjjF2BYQ
+X-IronPort-AV: E=Sophos;i="4.89,685,1367964000"; 
+   d="scan'208,217";a="142493766"
+Received: from enterprise.ip-connect.net ([88.217.158.203])
+  by mx-2.rz.rwth-aachen.de with ESMTP; 17 Jul 2013 17:27:35 +0200
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by enterprise.ip-connect.net (Postfix) with ESMTP id E93E3FAA441;
+	Wed, 17 Jul 2013 17:27:33 +0200 (CEST)
+Received: from enterprise.ip-connect.net ([127.0.0.1])
+ by localhost (enterprise.ip-connect.net [127.0.0.1]) (amavisd-maia, port 10024)
+ with ESMTP id 16127-02; Wed, 17 Jul 2013 17:27:24 +0200 (CEST)
+Received: from [192.168.0.3] (p549A8736.dip0.t-ipconnect.de [84.154.135.54])
+	by enterprise.ip-connect.net (Postfix) with ESMTPA id 023EDFAA42D;
+	Wed, 17 Jul 2013 17:27:23 +0200 (CEST)
+Message-ID: <51E6B7DB.8010207@protos.de>
+Date: Wed, 17 Jul 2013 17:27:23 +0200
+From: Henrik Rentz-Reichert <hrr@protos.de>
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20130620 Thunderbird/17.0.7
+MIME-Version: 1.0
+To: Oliver Sander <sander@igpm.rwth-aachen.de>
+CC: Peter Bastian <peter.bastian@iwr.uni-heidelberg.de>
+Subject: Re: Die Lizenz von UG
+References: <51E246D1.2050308@igpm.rwth-aachen.de> <51E6A3F9.101@igpm.rwth-aachen.de>
+In-Reply-To: <51E6A3F9.101@igpm.rwth-aachen.de>
+X-Enigmail-Version: 1.5.1
+Content-Type: multipart/alternative;
+ boundary="------------070508030803070508050408"
+X-Virus-Scanned: ip-connect GmbH - Maia Mailguard
+
+This is a multi-part message in MIME format.
+--------------070508030803070508050408
+Content-Type: text/plain; charset=ISO-8859-15
+Content-Transfer-Encoding: 8bit
+
+Sehr geehrter Herr Sander,
+
+hiermit stimme ich zu, dass meine Beiträge zum Programm UG unter der
+Lesser General Public License v2 oder später veröffentlicht werden.
+
+Mit freundlichen Grüßen,
+Henrik Rentz-Reichert
+
+
+--------------070508030803070508050408
+Content-Type: text/html; charset=ISO-8859-15
+Content-Transfer-Encoding: 8bit
+
+<html>
+  <head>
+    <meta content="text/html; charset=ISO-8859-15"
+      http-equiv="Content-Type">
+  </head>
+  <body text="#000000" bgcolor="#FFFFFF">
+    <font face="Helvetica, Arial, sans-serif">Sehr geehrter Herr Sander,<br>
+    </font><br>
+    <font face="Helvetica, Arial, sans-serif">hiermit stimme ich zu,
+      dass meine Beiträge zum Programm UG unter der
+      <br>
+      Lesser General Public License v2 oder später veröffentlicht
+      werden.<br>
+      <br>
+      Mit freundlichen Grüßen,<br>
+      Henrik Rentz-Reichert<br>
+    </font><br>
+  </body>
+</html>
+
+--------------070508030803070508050408--
