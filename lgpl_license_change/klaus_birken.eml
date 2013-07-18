@@ -1,0 +1,123 @@
+Return-Path: <klaus.birken@itemis.de>
+Received: from indy5.igpm.rwth-aachen.de ([unix socket])
+	 by indy5.igpm.rwth-aachen.de (Cyrus v2.4.16) with LMTPA;
+	 Thu, 18 Jul 2013 11:01:41 +0200
+X-Sieve: CMU Sieve 2.4
+Received: from igpm.igpm.rwth-aachen.de ([134.130.161.1])
+	by indy5.igpm.rwth-aachen.de with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <klaus.birken@itemis.de>)
+	id 1Uzk5k-000DnL-VQ
+	for sander@indy5.igpm.rwth-aachen.de; Thu, 18 Jul 2013 11:01:41 +0200
+Received: from mx-out-2.rwth-aachen.de ([134.130.5.187])
+	by igpm.igpm.rwth-aachen.de with esmtp (Exim 4.72)
+	(envelope-from <klaus.birken@itemis.de>)
+	id 1Uzk5k-00062A-Nd
+	for sander@igpm.rwth-aachen.de; Thu, 18 Jul 2013 11:01:40 +0200
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: ApYAAMWs51FY0LxSl2dsb2JhbABagzrBDoETFg4BAQEBAQgWBzyCJAEFMgEWLwEQCyEWDwkDAgECAUUGDQEFAgEBiBAItjWOSIEyB4N7A5dckwCBYTqBNQ
+X-IPAS-Result: ApYAAMWs51FY0LxSl2dsb2JhbABagzrBDoETFg4BAQEBAQgWBzyCJAEFMgEWLwEQCyEWDwkDAgECAUUGDQEFAgEBiBAItjWOSIEyB4N7A5dckwCBYTqBNQ
+X-IronPort-AV: E=Sophos;i="4.89,692,1367964000"; 
+   d="scan'208";a="142575583"
+Received: from relay.itemis.de ([88.208.188.82])
+  by mx-2.rz.rwth-aachen.de with ESMTP; 18 Jul 2013 11:01:40 +0200
+Received: from localhost (localhost [127.0.0.1])
+	by relay.itemis.de (Postfix) with ESMTP id D31CE383034;
+	Thu, 18 Jul 2013 11:01:39 +0200 (CEST)
+X-Virus-Scanned: amavisd-new at relay.itemis.de
+Received: from relay.itemis.de ([127.0.0.1])
+	by localhost (relay.itemis.de [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id gGLKEgJUmAXn; Thu, 18 Jul 2013 11:01:31 +0200 (CEST)
+Received: from klausmacbookpro.dhcp-s.itemis.de (unknown [172.16.2.231])
+	by relay.itemis.de (Postfix) with ESMTPSA id DB3D1382943;
+	Thu, 18 Jul 2013 11:01:30 +0200 (CEST)
+Message-ID: <51E7AEEA.1070605@itemis.de>
+Date: Thu, 18 Jul 2013 11:01:30 +0200
+From: Klaus Birken <klaus.birken@itemis.de>
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:17.0) Gecko/20130620 Thunderbird/17.0.7
+MIME-Version: 1.0
+To: Oliver Sander <sander@igpm.rwth-aachen.de>
+CC: Peter Bastian <peter.bastian@iwr.uni-heidelberg.de>
+Subject: Re: Die Lizenz von UG
+References: <51E7053B.1030402@igpm.rwth-aachen.de> <51E7AB94.7010005@igpm.rwth-aachen.de>
+In-Reply-To: <51E7AB94.7010005@igpm.rwth-aachen.de>
+X-Enigmail-Version: 1.5.1
+Content-Type: text/plain; charset=ISO-8859-15
+Content-Transfer-Encoding: 8bit
+
+Hallo Herr Sander,
+
+das ist kein Problem. Ich bin mittlerweile viel in der Open-Source-Welt
+unterwegs und kann das Thema nachvollziehen.
+
+Hiermit stimme ich zu, dass meine Beiträge zum Programm UG unter der
+Lesser General Public License v2 oder später veröffentlicht werden.
+
+Bitte schicken Sie mir einen Link auf das Projekt, sobald es unter der
+neuen Lizenz verfügbar ist.
+
+Beste Grüße,
+Klaus Birken
+
+
+Am 18.07.13 10:47, schrieb Oliver Sander:
+> Sehr geehrter Herr Birken,
+> ich darf mich kurz vorstellen: ich forsche an der RWTH Aachen über
+> Numerik von partiellen Differentialgleichungen.  Seit vielen Jahren
+> kooperiere ich dabei schon mit Peter Bastian und seinem DUNE-Projekt.
+> Insbesondere habe ich dabei die Anbindung des alten UG-Codes an
+> DUNE implementiert.
+>
+> Peter Bastian und ich wagen nun einen neuen Versuch, UG unter eine
+> freie Lizenz zu bekommen.  Laut der Rechtsabteilung der Uni Heidelberg
+> entscheiden darüber ausschließlich jene Leute, die UG unmittelbar
+> programmiert haben.
+>
+> Ich versuche jetzt, möglichst alle diese Leute zu kontaktieren
+> und sie um ihre Zustimmung zu bitten, UG unter der LPGLv2+ zu
+> veröffentlichen.  Sie bekommen diese Mail, weil Sie zu UG beigetragen
+> haben.  Ich würde mich freuen, wenn Sie der neuen Lizenz zustimmen
+> könnten.
+> In diesem Fall bräuchte ich von Ihnen eine Mail mit dem Inhalt
+>
+> "Hiermit stimme ich zu, dass meine Beträge zum Programm UG unter der
+> Lesser General Public License v2 oder später veröffentlicht werden."
+>
+> Diese Mails werde ich im Heidelberger UG-Repository archivieren.
+>
+> Mit freundlichen Grüßen,
+> Oliver Sander
+>
+>
+> -------------------------------------------------------
+> Prof. Dr. Oliver Sander
+> Institut für Geometrie und Praktische Mathematik
+> RWTH Aachen
+> Templergraben 55
+> 52062 Aachen
+> https://www.igpm.rwth-aachen.de/personen/sander
+>
+
+
+-- 
+Dr. Klaus Birken
+IT-Berater und Teamleiter
+
+Tel.:   +49 711 342 191 0
+Fax.:   +49 711 342 191 29
+Mobil:  +49 160 7414794   * bevorzugt *
+Web:    www.itemis.de
+Mail:   klaus.birken@itemis.de
+Xing:   www.xing.com/profile/Klaus_Birken
+Skype:  klaus.birken
+
+itemis AG
+Niederlassung Süd
+Meitnerstr. 10
+70563 Stuttgart
+
+Rechtlicher Hinweis:
+Registergericht: Amtsgericht Dortmund HRB 20621 | Sitz der Gesellschaft: Lünen
+Vorstand: Jens Wagener (Vorsitzender) | Wolfgang Neuhaus | Dr. Georg Pietrek | Jens Trompeter | Sebastian Neus
+Aufsichtsrat: Prof. Dr. Burkhard Igel (Vorsitzender) | Stephan Grollmann | Michael Neuhaus
+
