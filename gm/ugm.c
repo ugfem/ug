@@ -2744,7 +2744,7 @@ INT NS_DIM_PREFIX CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT 
         NFather = NFATHER(theNode);
         break;
       case MID_NODE :
-        printf(PFMT "el "EID_FMTX " son "EID_FMTX " vertex "VID_FMTX "\n",me,EID_PRTX(theElement),EID_PRTX(theSon),VID_PRTX(MYVERTEX(CORNER(theSon,CORNER_OF_SIDE(theSon,son_side,i)))));
+        printf(PFMT "el " EID_FMTX " son " EID_FMTX " vertex " VID_FMTX "\n",me,EID_PRTX(theElement),EID_PRTX(theSon),VID_PRTX(MYVERTEX(CORNER(theSon,CORNER_OF_SIDE(theSon,son_side,i)))));
         printf(PFMT "NTYPE = MID_NODE\n",me);
         theFatherEdge = NFATHEREDGE(theNode);
         printf(PFMT "EDSUBDOM = %d\n",me,(int)EDSUBDOM(theFatherEdge));
@@ -12681,13 +12681,13 @@ char *PrintElementInfo (ELEMENT *theElement,INT full)
     {
       for (i=0; SonList[i] != NULL; i++)
       {
-        sprintf(tmp,"    SON%d "EID_FMTX "\n" ,i,EID_PRTX(SonList[i]));
+        sprintf(tmp,"    SON%d " EID_FMTX "\n" ,i,EID_PRTX(SonList[i]));
         strcat( out, tmp );
 
         for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
         {
                                         #ifdef __TWODIM__
-          sprintf(tmp,"        N%d= "ID_FMTX " x=%g  y=%g\n",
+          sprintf(tmp,"        N%d= " ID_FMTX " x=%g  y=%g\n",
                   j,
                   ID_PRTX(CORNER(SonList[i],j)),
                   CVECT(MYVERTEX(CORNER(SonList[i],j)))[0],
@@ -12695,7 +12695,7 @@ char *PrintElementInfo (ELEMENT *theElement,INT full)
                   );
                                         #endif
                                         #ifdef __THREEDIM__
-          sprintf(tmp,"        N%d= "ID_FMTX " x=%g  y=%g z=%g\n",
+          sprintf(tmp,"        N%d= " ID_FMTX " x=%g  y=%g z=%g\n",
                   j,
                   ID_PRTX(CORNER(SonList[i],j)),
                   CVECT(MYVERTEX(CORNER(SonList[i],j)))[0],

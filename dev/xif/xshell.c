@@ -292,7 +292,7 @@ int ShellOpen (ShellWindow *sh)
   if (Fontname==NULL)
   {
     printf("font 'shellfont' not found in Xdefaults\n"
-           "using default "DEFAULTFONT "\n");
+           "using default " DEFAULTFONT "\n");
     strcpy(sh->font_name,DEFAULTFONT);
   }
   else

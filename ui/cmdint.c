@@ -84,7 +84,7 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-#define VERSION         "This is "UG_VERSION " from $Date$\n"
+#define VERSION         "This is " UG_VERSION " from $Date$\n"
 
 /* for interpreter */
 #define DONE                            0
