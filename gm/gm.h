@@ -2173,7 +2173,7 @@ enum LV_ID_TYPES {
 /* MUP           |9     | |*| ???                                                       */
 /* MLOWER        |10    | |*| 1 if matrix belongs to lower triangular part      */
 /* MUPPER        |11    | |*| 1 if matrix belongs to upper triangular part      */
-/* MSIZE         |12-25 | |*| size of the matrix in bytes                                               */
+/* UG_MSIZE      |12-25 | |*| size of the matrix in bytes                                               */
 /* MUSED         |12    | |*| general purpose flag                                                              */
 /* MNEW          |28    | |*| 1 if matrix/connection is new                                     */
 /*                                                                                                                                                      */
@@ -2431,11 +2431,11 @@ enum LV_ID_TYPES {
 #define MSIZE_LEN                                       12
 #ifndef __XXL_MSIZE__
 #define MSIZEMAX                                        (POW2(MSIZE_LEN)-1)
-#define MSIZE(p)                                        (CW_READ(p,MSIZE_CE)+sizeof(MATRIX)-sizeof(DOUBLE))
+#define UG_MSIZE(p)                                        (CW_READ(p,MSIZE_CE)+sizeof(MATRIX)-sizeof(DOUBLE))
 #define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,(n-sizeof(MATRIX)+sizeof(DOUBLE)))
 #else
 #define MSIZEMAX                                        10000000
-#define MSIZE(p)                                        ((p)->xxl_msize)
+#define UG_MSIZE(p)                                        ((p)->xxl_msize)
 #define SETMSIZE(p,n)                           (p)->xxl_msize = (n)
 #endif
 
@@ -2451,8 +2451,8 @@ enum LV_ID_TYPES {
 #define SETXFERMATX(p,n)                        CW_WRITE(p,XFERMATX_CE,n)
 #endif
 
-#define MINC(m)                                         ((MATRIX*)(((char *)(m))+MSIZE(m)))
-#define MDEC(m)                                         ((MATRIX*)(((char *)(m))-MSIZE(m)))
+#define MINC(m)                                         ((MATRIX*)(((char *)(m))+UG_MSIZE(m)))
+#define MDEC(m)                                         ((MATRIX*)(((char *)(m))-UG_MSIZE(m)))
 #define MNEXT(m)                                        ((m)->next)
 #define MDEST(m)                                        ((m)->vect)
 #define MADJ(m)                                         ((MDIAG(m)) ? (m) : ((MOFFSET(m)) ? (MDEC(m)) : (MINC(m))))

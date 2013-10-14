@@ -1419,9 +1419,9 @@ INT NS_DIM_PREFIX DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
 
   /* free connection object */
   if (MDIAG(Matrix))
-    PutFreeObject(MYMG(theGrid),Matrix,MSIZE(Matrix),MAOBJ);
+    PutFreeObject(MYMG(theGrid),Matrix,UG_MSIZE(Matrix),MAOBJ);
   else
-    PutFreeObject(MYMG(theGrid),Matrix,2*MSIZE(Matrix),COOBJ);
+    PutFreeObject(MYMG(theGrid),Matrix,2*UG_MSIZE(Matrix),COOBJ);
 
   theGrid->nCon--;
 
@@ -7651,7 +7651,7 @@ static INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
   for (Matrix=theMatrix; Matrix!=NULL; )
   {
     NextMatrix = NEXT(Matrix);
-    PutFreeObject(theGrid->mg,Matrix,MSIZE(Matrix),MAOBJ);
+    PutFreeObject(theGrid->mg,Matrix,UG_MSIZE(Matrix),MAOBJ);
     theGrid->nIMat--;
     Matrix = NextMatrix;
   }

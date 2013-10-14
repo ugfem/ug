@@ -256,7 +256,7 @@ static void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
     if (DDD_XferWithAddData()) {
       for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat)) {
         ASSERT(nmat<256);
-        sizeArray[nmat++] = MSIZE(mat);
+        sizeArray[nmat++] = UG_MSIZE(mat);
       }
       PRINTDEBUG(dddif,2,(PFMT " VectorXferCopy(): v=" VINDEX_FMTX
                           " AddData nmat=%d\n",me,VINDEX_PRTX(pv),nmat))
@@ -315,7 +315,7 @@ static void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Dat
     }
     ENDDEBUG
 
-      Size = MSIZE(mat);
+      Size = UG_MSIZE(mat);
     memcpy(Data[nmat],mat,Size);
 
     PRINTDEBUG(dddif,3,(PFMT " VectorGatherMatX(): v=" VINDEX_FMTX
@@ -368,7 +368,7 @@ static void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **D
       /* -> matrix entry is useless, throw away       */
       PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v=" VINDEX_FMTX
                           " mat=%x Size=%d, USELESS no dest vector \n",
-                          me,VINDEX_PRTX(vec),mcopy,MSIZE(mcopy)))
+                          me,VINDEX_PRTX(vec),mcopy,UG_MSIZE(mcopy)))
       continue;
     }
 
@@ -379,7 +379,7 @@ static void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **D
       /* -> matrix entry is useless, throw away                     */
       PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v=" VINDEX_FMTX
                           " mat=%x Size=%d, USELESS dest vect is ghost\n",
-                          me,VINDEX_PRTX(vec),mcopy,MSIZE(mcopy)))
+                          me,VINDEX_PRTX(vec),mcopy,UG_MSIZE(mcopy)))
       continue;
     }
 #endif
@@ -405,9 +405,9 @@ static void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **D
           /* matrix diagonal entry, no other vector is involved */
           CONNECTION *conn = (CONNECTION *)
                                         #ifndef DYNAMIC_MEMORY_ALLOCMODEL
-                             GetFreelistMemory(MGHEAP(dddctrl.currMG), MSIZE(mcopy));
+                             GetFreelistMemory(MGHEAP(dddctrl.currMG), UG_MSIZE(mcopy));
                                         #else
-                             GetMemoryForObject(dddctrl.currMG,MSIZE(mcopy),MAOBJ);
+                             GetMemoryForObject(dddctrl.currMG,UG_MSIZE(mcopy),MAOBJ);
                                         #endif
 
           nconn++; newconn++;
@@ -421,12 +421,12 @@ static void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **D
 
           PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v="
                               VINDEX_FMTX " conn=%x Size=%d, DIAG\n",
-                              me,VINDEX_PRTX(vec),conn,MSIZE(mcopy)))
+                              me,VINDEX_PRTX(vec),conn,UG_MSIZE(mcopy)))
 
 
           /* TODO: define clearly
-             memcpy(conn,mcopy,MSIZE(mcopy)); */
-          memset(conn,0,MSIZE(mcopy));
+             memcpy(conn,mcopy,UG_MSIZE(mcopy)); */
+          memset(conn,0,UG_MSIZE(mcopy));
           memcpy(conn,mcopy,sizeof(MATRIX)-sizeof(DOUBLE));
 
           if (first==NULL) first = conn;
@@ -457,9 +457,9 @@ static void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **D
             CONNECTION *conn = (CONNECTION *)
                                                 #ifndef DYNAMIC_MEMORY_ALLOCMODEL
                                GetFreelistMemory(dddctrl.currMG->theHeap,
-                                                 2 * MSIZE(mcopy));
+                                                 2 * UG_MSIZE(mcopy));
                                                 #else
-                               GetMemoryForObject(dddctrl.currMG,2*MSIZE(mcopy),MAOBJ);
+                               GetMemoryForObject(dddctrl.currMG,2*UG_MSIZE(mcopy),MAOBJ);
                                                 #endif
 
             nconn++; newconn++;
@@ -474,24 +474,24 @@ static void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **D
 
             if (MOFFSET(mcopy))
             {
-              newm =         (MATRIX *) ((char *)conn+MSIZE(mcopy));
+              newm =         (MATRIX *) ((char *)conn+UG_MSIZE(mcopy));
               otherm = (MATRIX *) conn;
 
               PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v="
                                   VINDEX_FMTX " conn=%x newm=%x Size=%d vectoID="
                                   VINDEX_FMTX " GETMEM\n",
-                                  me,VINDEX_PRTX(vec),conn,newm, MSIZE(mcopy),
+                                  me,VINDEX_PRTX(vec),conn,newm, UG_MSIZE(mcopy),
                                   VINDEX_PRTX(MDEST(mcopy))))
             }
             else
             {
               newm = (MATRIX *) conn;
-              otherm = (MATRIX *) ((char *)conn+MSIZE(mcopy));
+              otherm = (MATRIX *) ((char *)conn+UG_MSIZE(mcopy));
 
               PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v="
                                   VINDEX_FMTX " conn=%x newm=%x Size=%d vectoID="
                                   VINDEX_FMTX " GETMEM\n",
-                                  me,VINDEX_PRTX(vec),conn,newm, MSIZE(mcopy),
+                                  me,VINDEX_PRTX(vec),conn,newm, UG_MSIZE(mcopy),
                                   VINDEX_PRTX(MDEST(mcopy))))
             }
 
@@ -506,25 +506,25 @@ static void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **D
              */
             if (MOFFSET(back))
             {
-              newm = (MATRIX *) ((char *)back-MSIZE(mcopy));
+              newm = (MATRIX *) ((char *)back-UG_MSIZE(mcopy));
               SETMOFFSET(mcopy,0);
             }
             else
             {
-              newm = (MATRIX *) ((char *)back+MSIZE(mcopy));
+              newm = (MATRIX *) ((char *)back+UG_MSIZE(mcopy));
               SETMOFFSET(mcopy,1);
             }
 
             PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v="
                                 VINDEX_FMTX " back=%x newm=%x Size=%d vectoID="
                                 VINDEX_FMTX " REUSE\n",
-                                me,VINDEX_PRTX(vec),back,newm,MSIZE(mcopy),
+                                me,VINDEX_PRTX(vec),back,newm,UG_MSIZE(mcopy),
                                 VINDEX_PRTX(MDEST(mcopy))))
           }
 
           /* TODO: define clearly
-             memcpy(newm,mcopy,MSIZE(mcopy)); */
-          memset(newm,0,MSIZE(mcopy));
+             memcpy(newm,mcopy,UG_MSIZE(mcopy)); */
+          memset(newm,0,UG_MSIZE(mcopy));
           memcpy(newm,mcopy,sizeof(MATRIX)-sizeof(DOUBLE));
 
           if (first==NULL) first = newm;
@@ -537,7 +537,7 @@ static void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **D
       {
         PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v="
                             VINDEX_FMTX " mat=%x Size=%d vectoID=" VINDEX_FMTX
-                            " FOUND\n",me,VINDEX_PRTX(vec),mat,MSIZE(mcopy),
+                            " FOUND\n",me,VINDEX_PRTX(vec),mat,UG_MSIZE(mcopy),
                             VINDEX_PRTX(MDEST(mcopy))))
       }
     }
@@ -586,7 +586,7 @@ static void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **D
         if (!MDIAG(mat))
           PRINTDEBUG(dddif,1,(PFMT " VectorScatterConnX(): NOT DIAGONAL v="
                               VINDEX_FMTX " conn=%x mat=%x Size=%d vectoID=" VINDEX_FMTX
-                              "\n",me,VINDEX_PRTX(vec),MMYCON(mat),mat,MSIZE(mat),
+                              "\n",me,VINDEX_PRTX(vec),MMYCON(mat),mat,UG_MSIZE(mat),
                               VINDEX_PRTX(MDEST(mat))));
       }
     }
@@ -642,7 +642,7 @@ static void VectorObjMkCons (DDD_OBJ obj, int newness)
       ASSERT(!MDIAG(theMatrix));
 
       {
-        INT size = ((MDIAG(theMatrix)) ? MSIZE(theMatrix) : 2*MSIZE(theMatrix));
+        INT size = ((MDIAG(theMatrix)) ? UG_MSIZE(theMatrix) : 2*UG_MSIZE(theMatrix));
                         #ifndef DYNAMIC_MEMORY_ALLOCMODEL
         /*
            DisposeMem(dddctrl.currMG->theHeap,MMYCON(theMatrix));

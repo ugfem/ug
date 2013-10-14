@@ -600,7 +600,7 @@ static void ddd_DefineTypes (void)
 
   /* NOTE: the size of matrix objects computed by the DDD Typemanager
      will not be the real size ued by DDD. this size has to be computed
-     by MSIZE(mat). this is relevant only in gather/scatter of matrices
+     by UG_MSIZE(mat). this is relevant only in gather/scatter of matrices
      in handler.c. */
   DDD_TypeDefine(TypeMatrix, &m,
                  EL_GDATA,  ELDEF(m.control),
