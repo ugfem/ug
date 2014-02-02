@@ -161,10 +161,6 @@ REP_ERR_FILE;
 /*                                                                          */
 /****************************************************************************/
 
-static NODE *CreateNode (GRID *theGrid, VERTEX *vertex, GEOM_OBJECT *Father, INT NodeType, INT with_vector);
-static VERTEX *CreateBoundaryVertex     (GRID *theGrid);
-static VERTEX *CreateInnerVertex (GRID *theGrid);
-
 static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
 static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
 
