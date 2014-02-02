@@ -571,8 +571,15 @@ static void ddd_DefineTypes (void)
                    EL_OBJPTR, ELDEF(n.vector), TypeVector,
                    EL_CONTINUE);
 
+  /* The size of a NODE object may be less than sizeof(NODE).
+   * Indeed, if the format does not contain node data, then the corresponding VECTOR*
+   * data member that stores this data is removed from the NODE object.  Hence the
+   * size of the NODE decreases by the size of one VECTOR*.
+   * Compare the corresponding computation in the method CreateNode (in ugm.c)
+   */
+  size = sizeof(NODE) - ((dddctrl.nodeData) ? 0 : sizeof(VECTOR*));
   DDD_TypeDefine(TypeNode, &n,
-                 EL_END,    &n+1);
+                 EL_END, ((char *)&n)+size);
 
   /* set mergemode to maximum */
   DDD_PrioMergeDefault(TypeNode, PRIOMERGE_MAXIMUM);
@@ -650,6 +657,8 @@ static void ddd_DefineTypes (void)
                    EL_OBJPTR, ELDEF(e.vector), TypeVector,
                    EL_CONTINUE);
 
+  /* See the corresponding line for TypeNode for an explanation of why
+   * the object size is modified here. */
   size = sizeof(EDGE) - ((dddctrl.edgeData) ? 0 : sizeof(VECTOR*));
   DDD_TypeDefine(TypeEdge, &e, EL_END, ((char *)&e)+size);
 
