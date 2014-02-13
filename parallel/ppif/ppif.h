@@ -111,10 +111,7 @@ extern int master;                 /* id of master processor                */
 extern int procs;                  /* number of processors in the network   */
 
 /* 3D array structure */
-extern int arrayid;                                /* position in compact form 8 bits each  */
-extern int MyX,MyY,MyZ;            /* 3D array coordinates                  */
 extern int DimX,DimY,DimZ;         /* 3D array dimensions, may be 1 !       */
-extern VChannelPtr nn[6];          /* nearest neighbors in 3D array         */
 
 /* Tree structure */
 extern int degree;                 /* degree of downtree nodes              */

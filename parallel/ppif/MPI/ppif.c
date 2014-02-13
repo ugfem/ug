@@ -147,13 +147,8 @@ int PPIF_NS_PREFIX me;                          /* my processor id              
 int PPIF_NS_PREFIX master;                      /* id of master processor                   */
 int PPIF_NS_PREFIX procs;                       /* number of processors in the network      */
 
-/* 3D array structure */
-int PPIF_NS_PREFIX arrayid;                     /* compact format of position, 8 bits each  */
-/* 3D array coordinates                     */
-int PPIF_NS_PREFIX MyX, PPIF_NS_PREFIX MyY, PPIF_NS_PREFIX MyZ;
 /* 3D array dimensions, may be 1 !          */
 int PPIF_NS_PREFIX DimX, PPIF_NS_PREFIX DimY, PPIF_NS_PREFIX DimZ;
-VChannelPtr PPIF_NS_PREFIX nn[6];               /* nearest neighbors in 3D array            */
 
 /* Tree structure */
 int PPIF_NS_PREFIX degree;                      /* degree of downtree nodes                 */
@@ -318,55 +313,6 @@ int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
 #endif
 
   aid = pid_to_aid(me);
-  MyX = XPOS(aid);
-  MyY = YPOS(aid);
-  MyZ = ZPOS(aid);
-  for (i=0; i<6; i++) nn[i] = NULL;
-
-  /* alloc east-west */
-  if (DimX>1)
-  {
-    if (MyX>0)
-    {
-      nn[west] = NewVChan(me-1,ID_ARRAY);
-      if (nn[west]==NULL) return(1);
-    }
-    if (MyX<DimX-1)
-    {
-      nn[east] =NewVChan(me+1,ID_ARRAY);
-      if (nn[east]==NULL) return(1);
-    }
-  }
-
-  /* alloc north-south */
-  if (DimY>1)
-  {
-    if (MyY>0)
-    {
-      nn[south] = NewVChan(me-DimX,ID_ARRAY);
-      if (nn[south]==NULL) return(1);
-    }
-    if (MyY<DimY-1)
-    {
-      nn[north] =NewVChan(me+DimX,ID_ARRAY);
-      if (nn[north]==NULL) return(1);
-    }
-  }
-
-  /* alloc up-down */
-  if (DimZ>1)
-  {
-    if (MyZ>0)
-    {
-      nn[down] = NewVChan(me-DimX*DimY,ID_ARRAY);
-      if (nn[down]==NULL) return(1);
-    }
-    if (MyZ<DimZ-1)
-    {
-      nn[up] = NewVChan(me+DimX*DimY,ID_ARRAY);
-      if (nn[up]==NULL) return(1);
-    }
-  }
 
   /* tree configuration */
 
