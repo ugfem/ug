@@ -4,4 +4,6 @@ Makefile.in
 .libs
 *.lo
 *.la
+*.o
+
 semantic.cache

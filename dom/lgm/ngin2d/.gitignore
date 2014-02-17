@@ -4,6 +4,8 @@ Makefile.in
 .libs
 *.lo
 *.la
+*.o
+
 ngin-lex.c
 ngin-yacc.c
 ngin-yacc.h

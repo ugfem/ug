@@ -4,6 +4,8 @@ Makefile.in
 .libs
 *.lo
 *.la
+*.o
+
 ugnetgen
 ugstl
 xugv
