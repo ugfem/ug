@@ -615,7 +615,7 @@ static void VectorObjMkCons (DDD_OBJ obj, int newness)
           NOTE (TODO): this might be too less. for n2n transfer, connections
           might be set up consisting of two matrix structures transfered from
           different procs. this code will NOT handle that case, the connection
-          will be created with the first matrix and destructed here. when the
+          will be created with the first matrix and destroyed here. When the
           second message arrives, the second matrix will lead to construction
           of a second connection, which will also be deleted here. we would
           need a mkcons after all messages to handle that case. (NIY in ddd 1.6.5)

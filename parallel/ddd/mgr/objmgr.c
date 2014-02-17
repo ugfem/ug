@@ -566,7 +566,7 @@ DDD_IndexObject::DDD_IndexObject (DDD_TYPE typ,
         Remove object's header from DDD management.
         This function removes an object from DDD-management
         via destructing its \ddd{header}.
-        {\em Note:} The \ddd{object} will be destructed, but its copies
+        {\em Note:} The \ddd{object} will be destroyed, but its copies
         on remote processors will not be informed by \funk{HdrDestructor}.
         There are two consistent possibilities to delete \ddd{objects} which
         have copies on remote processors:
