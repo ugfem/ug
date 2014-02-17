@@ -19,4 +19,6 @@ ylwrap
 compile
 ug-config.cmake
 ug-config-version.cmake
+test-driver
+
 
