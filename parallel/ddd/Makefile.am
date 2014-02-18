@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = basic mgr xfer
+SUBDIRS = basic if mgr xfer
 
 if PARALLEL
 
@@ -33,8 +33,6 @@ CTRL = ctrl/debug.c ctrl/cons.c ctrl/stat.c
 
 IDENT = ident/ident.c
 
-IF = if/ifcreate.c if/ifuse.c if/ifcmds.c if/ifcheck.c if/ifobjsc.c
-
 PRIO = prio/pcmds.c
 
 JOIN = join/join.c join/jcmds.c
@@ -48,16 +46,15 @@ pkginclude_HEADERS = include/ddd.h
 
 EXTRA_DIST = include/dddaddon.h include/ddd.h include/memmgr.h include/dddio.h \
              include/fddd.f include/dddresources.h join/join.h ctrl/stat.h \
-             xif/if.h if/ifstd.ct if/ifcmd.ct \
-             dddstr.h
+             xif/if.h dddstr.h
 
-libddd2_la_SOURCES = $(CTRL) $(IDENT) $(IF) $(XFER) \
+libddd2_la_SOURCES = $(CTRL) $(IDENT) $(XFER) \
                     $(PRIO) $(JOIN) $(MISC) $(DDD) f77/f2c.c
 libddd2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)
-libddd2_la_LIBADD = basic/libbasic2.la mgr/libmgr2.la xfer/libxfer2.la
+libddd2_la_LIBADD = basic/libbasic2.la if/libif2.la mgr/libmgr2.la xfer/libxfer2.la
 
-libddd3_la_SOURCES = $(CTRL) $(IDENT) $(IF) $(XFER) \
+libddd3_la_SOURCES = $(CTRL) $(IDENT) $(XFER) \
                     $(PRIO) $(JOIN) $(MISC) $(DDD) f77/f2c.c
 libddd3_la_CPPFLAGS = $(UG_3DFLAGS) $(DDDFLAGS)
-libddd3_la_LIBADD = basic/libbasic3.la mgr/libmgr3.la xfer/libxfer3.la
+libddd3_la_LIBADD = basic/libbasic3.la if/libif3.la mgr/libmgr3.la xfer/libxfer3.la
 
