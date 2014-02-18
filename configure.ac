@@ -247,6 +247,7 @@ AC_CONFIG_FILES([Makefile
 		 parallel/ddd/basic/Makefile
 		 parallel/ddd/basic/test/Makefile
                  parallel/ddd/mgr/Makefile
+                 parallel/ddd/xfer/Makefile
 		 parallel/dddif/Makefile
                  libug.pc
 		 ug-config.cmake
