@@ -48,12 +48,12 @@ EXTRA_DIST = include/dddaddon.h include/ddd.h include/memmgr.h include/dddio.h \
              include/fddd.f include/dddresources.h join/join.h ctrl/stat.h \
              xif/if.h dddstr.h
 
-libddd2_la_SOURCES = $(CTRL) $(IDENT) $(XFER) \
+libddd2_la_SOURCES = $(CTRL) $(IDENT) \
                     $(PRIO) $(JOIN) $(MISC) $(DDD) f77/f2c.c
 libddd2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)
 libddd2_la_LIBADD = basic/libbasic2.la if/libif2.la mgr/libmgr2.la xfer/libxfer2.la
 
-libddd3_la_SOURCES = $(CTRL) $(IDENT) $(XFER) \
+libddd3_la_SOURCES = $(CTRL) $(IDENT) \
                     $(PRIO) $(JOIN) $(MISC) $(DDD) f77/f2c.c
 libddd3_la_CPPFLAGS = $(UG_3DFLAGS) $(DDDFLAGS)
 libddd3_la_LIBADD = basic/libbasic3.la if/libif3.la mgr/libmgr3.la xfer/libxfer3.la
