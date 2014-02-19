@@ -249,6 +249,7 @@ AC_CONFIG_FILES([Makefile
                  parallel/ddd/ctrl/Makefile
                  parallel/ddd/ident/Makefile
                  parallel/ddd/if/Makefile
+                 parallel/ddd/join/Makefile
                  parallel/ddd/mgr/Makefile
                  parallel/ddd/xfer/Makefile
 		 parallel/dddif/Makefile
