@@ -31,7 +31,7 @@ pkginclude_HEADERS = include/ddd.h
 
 EXTRA_DIST = include/dddaddon.h include/ddd.h include/memmgr.h include/dddio.h \
              include/fddd.f include/dddresources.h \
-             xif/if.h dddstr.h
+             dddstr.h
 
 libddd2_la_SOURCES = $(DDD)
 libddd2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)
