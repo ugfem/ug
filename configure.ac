@@ -244,13 +244,16 @@ AC_CONFIG_FILES([Makefile
                  parallel/ppif/Makefile
                  parallel/ppif/MPI/Makefile
 		 parallel/ddd/Makefile
+                 parallel/ddd/analyser/Makefile
 		 parallel/ddd/basic/Makefile
 		 parallel/ddd/basic/test/Makefile
                  parallel/ddd/ctrl/Makefile
+                 parallel/ddd/f77/Makefile
                  parallel/ddd/ident/Makefile
                  parallel/ddd/if/Makefile
                  parallel/ddd/join/Makefile
                  parallel/ddd/mgr/Makefile
+                 parallel/ddd/prio/Makefile
                  parallel/ddd/xfer/Makefile
 		 parallel/dddif/Makefile
                  libug.pc

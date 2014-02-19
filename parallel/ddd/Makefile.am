@@ -1,6 +1,6 @@
 # $Id$
 
-SUBDIRS = basic ctrl ident if join mgr xfer
+SUBDIRS = analyser basic ctrl f77 ident if join mgr prio xfer
 
 if PARALLEL
 
@@ -22,14 +22,7 @@ endif
 
 noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
-# set options from Makefile.dddobj
 DDDFLAGS = -DDDD_FRONTEND_C
-
-# reproduce the style of Makefile.ddd
-
-PRIO = prio/pcmds.c
-
-MISC = analyser/inv.c
 
 DDD = ddd.c dddi.h
 
@@ -40,11 +33,11 @@ EXTRA_DIST = include/dddaddon.h include/ddd.h include/memmgr.h include/dddio.h \
              include/fddd.f include/dddresources.h \
              xif/if.h dddstr.h
 
-libddd2_la_SOURCES = $(PRIO) $(MISC) $(DDD) f77/f2c.c
+libddd2_la_SOURCES = $(DDD)
 libddd2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)
-libddd2_la_LIBADD = basic/libbasic2.la ctrl/libctrl2.la ident/libident2.la if/libif2.la join/libjoin2.la mgr/libmgr2.la xfer/libxfer2.la
+libddd2_la_LIBADD = analyser/libanalyser2.la basic/libbasic2.la ctrl/libctrl2.la f77/libf772.la ident/libident2.la if/libif2.la join/libjoin2.la mgr/libmgr2.la prio/libprio2.la xfer/libxfer2.la
 
-libddd3_la_SOURCES = $(PRIO) $(MISC) $(DDD) f77/f2c.c
+libddd3_la_SOURCES = $(DDD)
 libddd3_la_CPPFLAGS = $(UG_3DFLAGS) $(DDDFLAGS)
-libddd3_la_LIBADD = basic/libbasic3.la ctrl/libctrl3.la ident/libident3.la if/libif3.la join/libjoin3.la mgr/libmgr3.la xfer/libxfer3.la
+libddd3_la_LIBADD = analyser/libanalyser3.la basic/libbasic3.la ctrl/libctrl3.la f77/libf773.la ident/libident3.la if/libif3.la join/libjoin3.la mgr/libmgr3.la prio/libprio3.la xfer/libxfer3.la
 
