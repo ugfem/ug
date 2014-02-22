@@ -2836,6 +2836,9 @@ INT NS_DIM_PREFIX ExitCommandInterpreter()
 {
   free(cmdBuffer);
   free(executeBuffer);
+#ifdef ModelP
+  free(execCmdBuffer);
+#endif
   free(programBuffer);
 
   return 0;
