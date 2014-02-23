@@ -148,8 +148,8 @@ int PPIF_NS_PREFIX DimX, PPIF_NS_PREFIX DimY, PPIF_NS_PREFIX DimZ;
 
 /* Tree structure */
 int PPIF_NS_PREFIX degree;                      /* degree of downtree nodes                 */
-VChannelPtr PPIF_NS_PREFIX uptree;              /* channel uptree                           */
-VChannelPtr PPIF_NS_PREFIX downtree[MAXT];      /* channels downtree (may be empty)         */
+VChannelPtr PPIF_NS_PREFIX uptree = NULL;              /* channel uptree                           */
+VChannelPtr PPIF_NS_PREFIX downtree[MAXT] = {NULL};      /* channels downtree (may be empty)         */
 int PPIF_NS_PREFIX slvcnt[MAXT];                /* number of processors in subtree          */
 
 /****************************************************************************/
@@ -317,7 +317,8 @@ int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
   if (sonl<procs)
   {
     degree++;
-    downtree[0] = NewVChan(sonl,ID_TREE);
+    if (! downtree[0])  /* InitPPIF is being called for the first time */
+      downtree[0] = NewVChan(sonl,ID_TREE);
   }
   else
   {
@@ -327,7 +328,8 @@ int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
   if (sonr<procs)
   {
     degree++;
-    downtree[1] = NewVChan(sonr,ID_TREE);
+    if (! downtree[1])  /* InitPPIF is being called for the first time */
+      downtree[1] = NewVChan(sonr,ID_TREE);
   }
   else
   {
@@ -336,7 +338,8 @@ int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
 
   if (me>0)
   {
-    uptree = NewVChan((me-1)/2,ID_TREE);
+    if (! uptree)  /* InitPPIF is being called for the first time */
+      uptree = NewVChan((me-1)/2,ID_TREE);
   }
   else
   {
@@ -372,6 +375,15 @@ int PPIF_NS_PREFIX ExitPPIF ()
     if (mpierror) MPI_Abort(MPI_COMM_WORLD, mpierror);
     PPIFBeganMPI = 0;
   }
+
+  /* Deallocate tree structure */
+  DeleteVChan(uptree);
+  uptree = NULL;
+  /* I currently think that only the first two entries of downtree can contain
+   * valied entries, but I am not entirely sure. */
+  DeleteVChan(downtree[0]);
+  DeleteVChan(downtree[1]);
+  downtree[0] = downtree[1] = NULL;
 
   return PPIF_SUCCESS;
 }
