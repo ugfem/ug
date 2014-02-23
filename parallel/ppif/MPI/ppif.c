@@ -271,7 +271,7 @@ static int PPIFBeganMPI=0; /* remember that PPIF started MPI */
 
 int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
 {
-  int i, succ, sonr, sonl, aid;
+  int i, succ, sonr, sonl;
   MPI_Status status;
   int mpierror, mpiinitialized;
 
@@ -311,8 +311,6 @@ int PPIF_NS_PREFIX InitPPIF (int *argcp, char ***argvp)
 #ifndef FOR_DUNE
   if (me==master) printf("DimX=%d, DimY=%d, DimZ=%d\n", DimX, DimY, DimZ);
 #endif
-
-  aid = pid_to_aid(me);
 
   /* tree configuration */
 
