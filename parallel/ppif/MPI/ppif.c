@@ -99,10 +99,6 @@ USING_PPIF_NAMESPACE
 
 #define ABS(i)          (((i)<0) ? (-(i)) : (i))
 
-#define XPOS(aid)       (aid&0xFF)              /* xpos from compact form   */
-#define YPOS(aid)       ((aid&0xFF00)>>8)       /* ypos from compact form   */
-#define ZPOS(aid)       ((aid&0xFF0000)>>16)    /* zpos from compact form   */
-
 #define PPIF_SUCCESS    0       /* Return value for success                 */
 #define PPIF_FAILURE    1       /* Return value for failure                 */
 
