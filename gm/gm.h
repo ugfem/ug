@@ -3505,7 +3505,7 @@ FORMAT                   *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
 
 /* create, saving and disposing a multigrid structure */
 MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
-                            char *format, NS_PREFIX MEM heapSize,
+                            const char *format, NS_PREFIX MEM heapSize,
                             INT optimizedIE, INT insertMesh);
 MULTIGRID *OpenMGFromDataFile(MULTIGRID *theMG, INT number, char *type,
                               char *DataFileName, NS_PREFIX MEM heapSize);

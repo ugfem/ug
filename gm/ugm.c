@@ -3131,7 +3131,7 @@ MULTIGRID * NS_DIM_PREFIX GetNextMultigrid (const MULTIGRID *theMG)
 /****************************************************************************/
 
 MULTIGRID * NS_DIM_PREFIX CreateMultiGrid (char *MultigridName, char *BndValProblem,
-                                           char *format, MEM heapSize, INT optimizedIE, INT insertMesh)
+                                           const char *format, MEM heapSize, INT optimizedIE, INT insertMesh)
 {
   HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
