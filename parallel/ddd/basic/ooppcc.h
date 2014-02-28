@@ -652,11 +652,12 @@ static void Method(FreeIndex)  (ParamThis, int idx)
 }
 
 
-static int Method(Insert) (ParamThis,
+static BTreeConstant Method(Insert) (ParamThis,
                            /*Compare_Method cmp_func,*/
                            CN(BTreeOf) *item)
 {
-  int i, ret, nData = This->nSons-1;
+  int i, nData = This->nSons-1;
+  BTreeConstant ret;
 
   /* find position in node */
   if (nData < 4)
@@ -887,7 +888,7 @@ void Method(Reset) (ParamThis)
 
 int Method(Insert) (ParamThis, CN(BTreeOf) *item)
 {
-  int ret;
+  BTreeConstant ret;
 
   if (This->root==NULL)
   {
