@@ -3,3 +3,8 @@ Makefile
 
 .deps
 
+*.log
+*.trs
+
+# test executables
+testbtree
