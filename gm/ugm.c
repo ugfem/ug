@@ -4337,6 +4337,9 @@ INT NS_DIM_PREFIX DisposeMultiGrid (MULTIGRID *theMG)
   DDD_IFRefreshAll();
         #endif
 
+  /* dispose user data */
+  DisposeMem(MGHEAP(theMG), GEN_MGUD(theMG));
+
   /** \todo Normally the MG-heap should be cleaned-up before freeing.
            DDD depends on storage in the heap, even if no DDD objects
                    are allocated!! (due to free-lists, DDD type definitions
