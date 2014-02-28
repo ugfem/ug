@@ -461,7 +461,7 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, HeapAllocMode mode, INT ke
 
 void NS_PREFIX DisposeMem (HEAP *theHeap, void *buffer)
 {
-#if US_USE_SYSTEM_HEAP
+#if UG_USE_SYSTEM_HEAP
   free(buffer);
 #else
   BLOCK *newBlock,*theBlock,*nextBlock;
