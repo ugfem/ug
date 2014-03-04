@@ -1430,13 +1430,18 @@ INT NS_DIM_PREFIX DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
 }
 
 /****************************************************************************/
-/** \brief Dispose vector associated with two sides in 3D
+/** \brief Dispose one of two vectors associated to a face
  *
  * @param  theGrid - pointer to grid
  * @param  Elem0,side0 - first element and side
  * @param  Elem1,side1 - second element and side
 
-   This function disposes a vector associated with two sides in 3D.
+   After grid refinement it may happen that two side vector are associated to a face
+   in the grid.  The elements on both sides of the face each have their own side
+   vector.  This is an inconsistent state -- there should be only one vector per face.
+   This routine deletes one of the two side vectors and makes the data structure
+   consistent again.  This is easier than only creating one unique side vector
+   to begin with.
 
  * @return <ul>
  *   <li>   0 if ok </li>
