@@ -5419,6 +5419,42 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 		}
 	}
 
+#ifdef __THREEDIM__
+        /* If there are side vectors for the elements, then the CreateElement methods called above have
+         * allocated one side vector for each new element face.  Therefore, for each face shared by
+         * two elements there are now two side vectors, even though there should be only one (shared).
+         * The following loops gets rid of the second redundant side vector.  The redundant side
+         * vectors shared with elements in the rest of the grid are treated in the method Connect_Sons_of_ElementSide,
+         * called further below.
+         */
+        if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+        {
+          for (i=0; i<MAX_GREEN_SONS; i++)
+          {
+            if (sons[i].tag < 0)  /* empty son entry */
+              continue;
+
+            for (j=0; j<SIDES_OF_ELEM(sons[i].theSon); j++)
+            {
+              if (sons[i].nb[j] != -1)  /* We have neighbor on the j-th face */
+              {
+                if (sons[i].nb[j] <= i)  /* Visit every element pair only once */
+                  continue;
+
+                ELEMENT* theNeighbor = sons[sons[i].nb[j]].theSon;
+                /* what neighbor are we for the neighbor? */
+                for (l=0; l<SIDES_OF_ELEM(theNeighbor); l++)
+                  if (sons[sons[i].nb[j]].nb[l] == i)
+                    break;
+                  ASSERT(l < SIDES_OF_ELEM(theNeighbor));
+
+                DisposeDoubledSideVector(theGrid, sons[i].theSon, j, theNeighbor, l);
+              }
+            }
+          }
+        }
+#endif
+
 	/* connect sons over outer sides */
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 	{
