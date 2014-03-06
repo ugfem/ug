@@ -3158,7 +3158,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		theElementContext[i] = SONNODE(theNode);
 	}
 
-	/* allocate midpoint nodes */
+  /* allocate edge midpoint nodes */
 	MidNodes = theElementContext+CORNERS_OF_ELEM(theElement);
 	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
 	{
@@ -4519,7 +4519,9 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 {
 	struct greensondata
 	{
+          /** \brief Element type */
 		short		tag;
+          /** \brief Boundary element: yes (=1) or no (=0) */
 		short		bdy;
 		NODE		*corners[MAX_CORNERS_OF_ELEM];
 		int			nb[MAX_SIDES_OF_ELEM];
@@ -4642,7 +4644,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 		bdy = 0;
 		if (OBJT(theElement) == BEOBJ && SIDE_ON_BND(theElement,i))
 			bdy = 1;
-		nelem = 5*i;
+                nelem = 5*i;       /* A face in 3d gets subdivided into at most 5 (yes, 5) parts */
 		for (j=nelem; j<(nelem+5); j++)
 			sons[j].bdy = bdy;
 
@@ -4678,9 +4680,10 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
 			case 4:
 
+                          /* theNode points to a potential new side node */
 				if (theNode == NULL)
 				{
-					switch (k) 
+                                        switch (k)   /* The number of nodes on the edges of this side */
 					{
 						case 0:
 							sons[nelem].tag = PYRAMID;
@@ -4909,7 +4912,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 							RETURN(GM_FATAL);
 					}				
 				}
-				else
+                                else    /* theNode != NULL */
 				{
 					/* create the four side edges */
 					for (j=0; j<nedges; j++)
@@ -5146,7 +5149,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 					}
 				}
 
-				else
+                                else     /* theNode != NULL */
 				{
 					/* create the four side edges */
 					for (j=0; j<nedges; j++)
@@ -5178,7 +5181,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 						
 				break;
 
-			default:
+                        default:   /* Side with neither 3 nor 4 vertices found */
 				assert(0);
 				break;
 		}
@@ -5190,7 +5193,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 		side0 = SIDE_WITH_EDGE(theElement,i,0);
 		side1 = SIDE_WITH_EDGE(theElement,i,1);
 
-		if (theContext[i+CORNERS_OF_ELEM(theElement)] == NULL)
+                if (theContext[i+CORNERS_OF_ELEM(theElement)] == NULL)  /* No new node in the middle of this edge */
 		{
 			/* two elements share this edge */
 
@@ -5396,7 +5399,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	/* translate neighbor information */
 	for (i=0; i<MAX_GREEN_SONS; i++)
 	{
-		if (sons[i].tag >= 0)
+                if (sons[i].tag >= 0)  /* valid son entry */
 		{
 			k = l = 0;
 			IFDEBUG(gm,0)
@@ -5421,6 +5424,9 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 				}
 			}
 			ASSERT(k == SIDES_OF_ELEM(sons[i].theSon));
+                        /* l counts the number of element sides without a neighboring element.
+                         * Since all elements are pyramids/tetrahedra with exactly one vertex in the interior,
+                         * this value must be one. */
 			ASSERT(l == 1);
 		}
 	}
