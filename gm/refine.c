@@ -3125,7 +3125,8 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	INT i,Corner0, Corner1;			/* some integer variables				*/
 	NODE **MidNodes;				/* nodes on refined edges				*/
 	NODE *Node0, *Node1;
-	INT Mark,toBisect,toCreate;
+        INT Mark;
+        BOOL toBisect,toCreate;
 	#ifdef __THREEDIM__
 	ELEMENT *theNeighbor;			/* neighbor and a son of current elem.	*/
 	NODE **SideNodes;				/* nodes on refined sides				*/
@@ -3165,7 +3166,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		Corner0 = CORNER_OF_EDGE(theElement,i,0);
 		Corner1 = CORNER_OF_EDGE(theElement,i,1);
 		
-		toBisect = 0;
+                toBisect = FALSE;
 
 		if (MARKED_NEW_GREEN(theElement))
 		{
@@ -3175,7 +3176,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 
 			if (ADDPATTERN(theEdge) == 0)
 			{
-				toBisect = 1;
+                                toBisect = TRUE;
 				MidNodes[i] = MIDNODE(theEdge);
 			}
 		}
@@ -3184,7 +3185,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		#endif
 		if (NODE_OF_RULE(theElement,Mark,i))
 		{
-			toBisect = 1;
+                        toBisect = TRUE;
 		}
 
 		IFDEBUG(gm,2)
@@ -3240,7 +3241,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
 #endif
 
-		toCreate = 0;
+                toCreate = FALSE;
 		/* is side node needed */
 		if (MARKED_NEW_GREEN(theElement))
 		{
@@ -3259,7 +3260,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 					ASSERT(j<SIDES_OF_ELEM(theNeighbor));
 					if (NODE_OF_RULE(theNeighbor,MARK(theNeighbor),
 									 EDGES_OF_ELEM(theNeighbor)+j))
-						toCreate = 1;
+                                                toCreate = TRUE;
 				}
 			}
 		}
@@ -3268,7 +3269,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		#endif
 		if (NODE_OF_RULE(theElement,Mark,EDGES_OF_ELEM(theElement)+i))
 		{
-			toCreate = 1;
+                        toCreate = TRUE;
 		}
 
 		IFDEBUG(gm,2)
@@ -3369,20 +3370,20 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	CenterNode = MidNodes+CENTER_NODE_INDEX(theElement);
 	CenterNode[0] = NULL;
 
-	toCreate = 0;
+        toCreate = FALSE;
 	if (CenterNode[0] == NULL)
 	{
 
 		if (MARKED_NEW_GREEN(theElement))
 		{
-			toCreate = 1;
+                        toCreate = TRUE;
 		}
 		#ifndef __ANISOTROPIC__
 		else
 		#endif
 		if (NODE_OF_RULE(theElement,Mark,CENTER_NODE_INDEX(theElement)))
 		{
-			toCreate = 1;
+                        toCreate = TRUE;
 		}
 	}
 
@@ -4534,9 +4535,10 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	NODE *theNode, *theNode0, *theNode1;
 	NODE *theSideNodes[8];
 	NODE *ElementNodes[MAX_CORNERS_OF_ELEM];
-	int i,j,k,l,m,n,s,found;
+        int i,j,k,l,m,n,s;
 	int nelem,nedges,node0;
-	int bdy,edge, sides[4], side0, side1;
+        BOOL bdy,found;
+        int edge, sides[4], side0, side1;
 	int tetNode0, tetNode1, tetNode2, tetEdge0, tetEdge1, tetEdge2,
 		tetSideNode0Node1, tetSideNode0Node2, tetSideNode1Node2,
 		pyrSide, pyrNode0, pyrNode1, pyrNode2, pyrNode3,
@@ -4641,9 +4643,9 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 					EDGES_OF_ELEM(theElement)+i];
 		nedges = EDGES_OF_SIDE(theElement,i);
 
-		bdy = 0;
+                bdy = FALSE;
 		if (OBJT(theElement) == BEOBJ && SIDE_ON_BND(theElement,i))
-			bdy = 1;
+                        bdy = TRUE;
                 nelem = 5*i;       /* A face in 3d gets subdivided into at most 5 (yes, 5) parts */
 		for (j=nelem; j<(nelem+5); j++)
 			sons[j].bdy = bdy;
@@ -5198,26 +5200,26 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			/* two elements share this edge */
 
 			/* get son elements for this edge */
-			found = 0;
+                        found = FALSE;
 			for (j=side0*5; j<(side0*5+5); j++)
 			{
 				for (k=0; k<MAX_SIDES_OF_ELEM; k++)
 					if ((sons[j].nb[k]-MAX_GREEN_SONS)==side1)
 					{ 
-						found = 1;
+                                                found = TRUE;
 						break;
 					}
 				if (found) break;
 			}
 			ASSERT(j<side0*5+5);
 
-			found = 0;
+                        found = FALSE;
 			for (l=side1*5; l<side1*5+5; l++)
 			{
 				for (m=0; m<MAX_SIDES_OF_ELEM; m++)
 					if ((sons[l].nb[m]-MAX_GREEN_SONS)==side0)
 					{
-						found = 1;
+                                                found = TRUE;
 						break;
 					}
 				if (found) break;
@@ -5255,14 +5257,14 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			for (j=0; j<CORNERS_OF_EDGE; j++)
 			{
 				theNode1 = theContext[CORNER_OF_EDGE(theElement,i,j)];
-				found = 0;
+                                found = FALSE;
 				for (l=0; l<2; l++)
 				{
 					for (k=0; k<MAX_CORNERS_OF_ELEM; k++)
 					{
 						if (theNode1 == sons[elementsSide0[l]].corners[k])
 						{
-							found = 1;
+                                                        found = TRUE;
 							break;
 						}
 					}
@@ -5271,14 +5273,14 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 				ASSERT(k<MAX_CORNERS_OF_ELEM);
 				ASSERT(l<2);
 
-				found = 0;
+                                found = FALSE;
 				for (m=0; m<2; m++)
 				{
 					for (k=0; k<MAX_CORNERS_OF_ELEM; k++)
 					{
 						if (theNode1 == sons[elementsSide1[m]].corners[k])
 						{
-							found = 1;
+                                                        found = TRUE;
 							break;
 						}
 					}
