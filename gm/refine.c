@@ -268,33 +268,6 @@ USING_PPIF_NAMESPACE
 		}
 /*@}*/
 
-/** \todo delete special debug
-static ELEMENT *debugelem=NULL;
-#define PRINTELEMID(id)                                                      \
-		if (ID(theElement)==(id) && (id)!=10120)                             \
-		{                                                                    \
-			debugelem=theElement;                                            \
-			UserWriteF("refine.c:line=%d\n",__LINE__);                       \
-			ListElement(NULL,theElement,0,0,1,0);                            \
-		}                                                                    \
-		else if (((id)==-1 || ID(theElement)==10120) && debugelem!=NULL)     \
-		{                                                                    \
-			UserWriteF("refine.c:line=%d\n",__LINE__);                       \
-			ListElement(NULL,debugelem,0,0,1,0);                             \
-		}                                                                    \
-		else if ((id)==-2 && debugelem!=NULL)                                \
-		{                                                                    \
-			if (ID(theElement)==8899)                                        \
-			{                                                                \
-				UserWriteF("refine.c:line=%d\n",__LINE__);                   \
-				UserWriteF("ERRORID=%d\n",ID(theElement));                   \
-				ListElement(NULL,debugelem,0,0,1,0);                         \
-			}                                                                \
-		}
-*/
-
-#define PRINTELEMID(id) 
-
 #define REFINE_CONTEXT_LIST(d,context)                                       \
 	IFDEBUG(gm,2)                                                            \
 	{                                                                        \
@@ -876,8 +849,6 @@ static INT PrepareGridClosure (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		theElement=SUCCE(theElement))
 	{
-            /** \todo delete special debug */ PRINTELEMID(11668)
-
 		SETUSED(theElement,0);
         if (EGHOST(theElement))
         {
@@ -1195,7 +1166,6 @@ static INT ComputePatterns (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 			theElement=SUCCE(theElement))
 	{
-            /** \todo delete special debug */ PRINTELEMID(11668)
 		#ifdef ModelP
 		if (EGHOST(theElement))
 		{
@@ -1515,7 +1485,6 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 	for (theElement=firstElement; theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
-            /** \todo delete special debug */ PRINTELEMID(11668)
 		/* make edgepattern consistent with pattern of edges */
 		SETUSED(theElement,1);
 
@@ -1581,7 +1550,6 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 	for (theElement=firstElement; theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
-            /** \todo delete special debug */ PRINTELEMID(11668)
 		theEdgePattern = 0;
 
 		/* compute element pattern */
@@ -1858,8 +1826,6 @@ static INT SetAddPatterns (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
-            /** \todo delete special debug */ PRINTELEMID(11668)
-
 		if (MARKCLASS(theElement)!=RED_CLASS) continue;
 
 		REFINE_ELEMENT_LIST(1,theElement,"SetAddPatterns(): addpattern=0");
@@ -1917,8 +1883,6 @@ static INT BuildGreenClosure (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 			theElement=SUCCE(theElement))
 	{
-            /** \todo delete special debug */ PRINTELEMID(11668)
-
 		#ifdef __ANISOTROPIC__
 		if (MARKCLASS(theElement)==RED_CLASS && 
 			!(TAG(theElement)==PRISM && MARK(theElement)==PRI_QUADSECT)) continue;
@@ -2738,8 +2702,6 @@ static INT RestrictMarks (GRID *theGrid)
 	ELEMENT *theElement,*SonList[MAX_SONS];
 	int i,flag;
 	
-	/** \todo delete special debug */ PRINTELEMID(-1)
-
 	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
@@ -2838,7 +2800,6 @@ static INT RestrictMarks (GRID *theGrid)
 		SETMARKCLASS(theElement,NO_CLASS);
 		SETCOARSEN(theElement,1);
 	}
-	/** \todo delete/ special debug */ PRINTELEMID(-1);
 #ifdef __PERIODIC_BOUNDARY__
 	#ifdef ModelP
 	PRINTDEBUG(gm,1,("\n" PFMT "exchange USED flag for restrict marks\n",me));
@@ -5549,8 +5510,6 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 
 	rule = MARK2RULEADR(theElement,MARK(theElement));
 
-	/** \todo delete special debug */ PRINTELEMID(-2)
-
 	/* create elements */
 	for (s=0; s<NSONS_OF_RULE(rule); s++)
 	{
@@ -5559,7 +5518,6 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 		if (OBJT(theElement) == BEOBJ)
 			for (i=0; i<SIDES_OF_TAG(SON_TAG_OF_RULE(rule,s)); i++)
 			{
-                            /** \todo delete special debug */ PRINTELEMID(-2)
 					/* exterior side */
 					if ( (side = SON_NB_OF_RULE(rule,s,i)) >= 
 							FATHER_SIDE_OFFSET )
@@ -5579,7 +5537,6 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 			ElementNodes[i] = theElementContext[SON_CORNER_OF_RULE(rule,s,i)];
 		}
 
-		/** \todo delete special debug */ PRINTELEMID(-2)
 		if (boundaryelement)
 				theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),BEOBJ,
 							ElementNodes,theElement,1);
@@ -5588,31 +5545,17 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 							ElementNodes,theElement,1);
 		if (theSon==NULL) RETURN(GM_ERROR);
 
-		/** \todo delete special debug */ PRINTELEMID(-2)
 		/* fill in son data */
 		SonList[s] = theSon;
 		SETECLASS(theSon,MARKCLASS(theElement));
 	}
 
-	/** \todo delete special debug */ PRINTELEMID(-2)
-            /** \todo delete
-	SETNSONS(theElement,NSONS_OF_RULE(rule));
-	#ifdef __TWODIM__
-	for (i=0;i<NSONS(theElement); i++) SET_SON(theElement,i,SonList[i]);
-	#endif
-	#ifdef __THREEDIM__
-	SET_SON(theElement,0,SonList[0]);
-	#endif
-*/
-	
-            /** \todo delete special debug */ PRINTELEMID(-2)
 	/* connect elements */
 	for (s=0; s<NSONS_OF_RULE(rule); s++)
 	{
 		sdata = SON_OF_RULE(rule,s);
 		for (i=0; i<SIDES_OF_ELEM(SonList[s]); i++)
 		{
-                    /** \todo delete special debug */ PRINTELEMID(-2)
 			SET_NBELEM(SonList[s],i,NULL);
 
 			/* an interior face */
@@ -6521,13 +6464,6 @@ static INT	PostProcessAdaptMultiGrid(MULTIGRID *theMG)
 CheckMultiGrid(theMG);
 */
 
-/** \todo temporarily to debug df 
-#ifdef ModelP
-if (GetVecDataDescByName(theMG,"sol") != NULL)
-	a_vector_vecskip(theMG,0,TOPLEVEL(theMG),GetVecDataDescByName(theMG,"sol"));
-#endif
-*/
-
 	#ifdef STAT_OUT
 	Print_Adapt_Timer(total_adapted);
 	Manage_Adapt_Timer(0);
@@ -6689,8 +6625,6 @@ if (0)
 	newlevel = 0;
 	for (level=0; level<=toplevel; level++)
 	{
-            /** \todo delete special debug */ PRINTELEMID(-1)
-
 		theGrid = GRID_ON_LEVEL(theMG,level);
 		if (level<toplevel) FinerGrid = GRID_ON_LEVEL(theMG,level+1); else FinerGrid = NULL;
 
