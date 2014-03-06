@@ -59,6 +59,20 @@ typedef float SCREEN_COORD;
 
 #endif
 
+#ifdef __cplusplus
+
+typedef bool BOOL;
+#define TRUE true
+#define FALSE false
+
+#else
+
+typedef _Bool BOOL;
+#define TRUE 1
+#define FALSE 0
+
+#endif
+
 END_UG_NAMESPACE
 
 #endif
