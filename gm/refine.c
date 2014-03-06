@@ -5393,7 +5393,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	{
                 if (sons[i].tag >= 0)  /* valid son entry */
 		{
-			k = l = 0;
+                        l = 0;
 			IFDEBUG(gm,0)
 			for (j=0; j<SIDES_OF_ELEM(sons[i].theSon); j++)
 			{
@@ -5408,14 +5408,10 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			for (j=0; j<SIDES_OF_ELEM(sons[i].theSon); j++)
 			{
 				if (sons[i].nb[j] != -1)
-					SET_NBELEM(sons[i].theSon,k++,sons[sons[i].nb[j]].theSon);
+                                        SET_NBELEM(sons[i].theSon,j,sons[sons[i].nb[j]].theSon);
 				else
-				{
 					l++;
-					k++;
-				}
 			}
-			ASSERT(k == SIDES_OF_ELEM(sons[i].theSon));
                         /* l counts the number of element sides without a neighboring element.
                          * Since all elements are pyramids/tetrahedra with exactly one vertex in the interior,
                          * this value must be one. */
