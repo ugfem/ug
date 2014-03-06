@@ -5322,17 +5322,13 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
                         l = 0;
 			for (j=0; j<CORNERS_OF_TAG(sons[i].tag); j++)
 			{
-				if (sons[i].corners[j] != NULL)
-				{
-					ElementNodes[j] = sons[i].corners[j];	
-				}
-				else
+                                if (sons[i].corners[j] == NULL)
 				{
 					sons[i].corners[j] = theContext[CORNERS_OF_ELEM(theElement)+
 											CENTER_NODE_INDEX(theElement)];
-					ElementNodes[j] = sons[i].corners[j];	
                                         l++;
 				}
+                                ElementNodes[j] = sons[i].corners[j];
 			}
 			ASSERT(l == 1);
 
