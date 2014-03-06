@@ -4643,9 +4643,8 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 					EDGES_OF_ELEM(theElement)+i];
 		nedges = EDGES_OF_SIDE(theElement,i);
 
-                bdy = FALSE;
-		if (OBJT(theElement) == BEOBJ && SIDE_ON_BND(theElement,i))
-                        bdy = TRUE;
+                bdy = (OBJT(theElement) == BEOBJ && SIDE_ON_BND(theElement,i));
+
                 nelem = 5*i;       /* A face in 3d gets subdivided into at most 5 (yes, 5) parts */
 		for (j=nelem; j<(nelem+5); j++)
 			sons[j].bdy = bdy;
