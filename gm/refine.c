@@ -5319,24 +5319,22 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 				UserWriteF("     SIDE %d:\n",i/5);
 			ENDDEBUG
 
-			k = l = 0;
+                        l = 0;
 			for (j=0; j<CORNERS_OF_TAG(sons[i].tag); j++)
 			{
 				if (sons[i].corners[j] != NULL)
 				{
 					ElementNodes[j] = sons[i].corners[j];	
-					k++;
 				}
 				else
 				{
 					sons[i].corners[j] = theContext[CORNERS_OF_ELEM(theElement)+
 											CENTER_NODE_INDEX(theElement)];
 					ElementNodes[j] = sons[i].corners[j];	
-					k++; l++;
+                                        l++;
 				}
 			}
 			ASSERT(l == 1);
-			ASSERT(k == CORNERS_OF_TAG(sons[i].tag));
 
 			if (sons[i].bdy == 1) 
 				sons[i].theSon = CreateElement(theGrid,sons[i].tag,BEOBJ,
