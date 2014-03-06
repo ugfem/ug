@@ -5377,9 +5377,6 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			#else
 			SETECLASS(sons[i].theSon,GREEN_CLASS);
 			#endif
-                        /** \todo delete
-			SETNSONS(theElement,NSONS(theElement)+1);
-                        */
 			if (i == 0) SET_SON(theElement,0,sons[i].theSon);
 			for (s=0; s<SIDES_OF_ELEM(sons[i].theSon); s++) 
 			  SET_NBELEM(sons[i].theSon,s,NULL);
