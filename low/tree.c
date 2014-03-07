@@ -28,9 +28,7 @@
 #include "config.h"
 #include <limits.h>
 #include <stdlib.h>
-#ifndef __MWCW__
 #include <sys/types.h>
-#endif
 
 #include "compiler.h"
 #include "general.h"

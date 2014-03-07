@@ -101,10 +101,6 @@ USING_UGDIM_NAMESPACE
 #define ORDERRES                1e-3    /* resolution for OrderNodesInGrid			*/
 #define LINKTABLESIZE   32              /* max number of inks per node for ordering	*/
 
-#ifdef __MWCW__
-#define printf                                          PrintDebug
-#endif
-
 /* local refinement hack */
 #undef _SCHALE_X_
 

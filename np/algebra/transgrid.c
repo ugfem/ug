@@ -84,12 +84,6 @@ enum {ZERO_BLOCK, DIAG_BLOCK, FULL_BLOCK};
 /*																			*/
 /****************************************************************************/
 
-#ifdef __MWCW__
-static DOUBLE Dcoarseinv[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
-static DOUBLE Q[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
-static DOUBLE F[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
-#endif
-
 REP_ERR_FILE;
 
 /* RCS string */
@@ -2092,11 +2086,11 @@ INT NS_DIM_PREFIX InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_
   VECTOR *vf,*vc;
   INT i,j,k,n,l,ncomp,nc,vecskip,A,rdt;
   SHORT *comps;
-        #ifndef __MWCW__
+
   DOUBLE Dcoarseinv[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE Q[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE F[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
-        #endif
+
   DOUBLE *Dfine,*Dcoarse;
   MATRIX *im;
   ELEMENT *theElement;

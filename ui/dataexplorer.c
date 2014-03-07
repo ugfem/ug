@@ -234,11 +234,6 @@ static double clampf(double x)
    D*/
 /****************************************************************************/
 
-#ifdef __MWCW__
-#pragma global_optimizer on
-#pragma optimization_level 1
-#endif
-
 static INT DataExplorerCommand (INT argc, char **argv)
 {
   INT i,j,k,v;                                  /* counters etc.							*/

@@ -176,12 +176,6 @@ USING_PPIF_NAMESPACE
 									TAG(e)==PYRAMID || TAG(e)== TETRAHEDRON)
 #endif
 
-#ifdef __MWCW__
-#define UserWrite					PrintDebug
-#define UserWriteF					PrintDebug
-#define printf						PrintDebug
-#endif
-
 /* marked elem with new green refinement (without rule, only 3D) */
 #ifdef __ANISOTROPIC__
 #define MARKED_NEW_GREEN(elem)                                               \
@@ -4094,11 +4088,6 @@ static int compare_nodes (const void *ce0, const void *ce1)
 	return(0);
 }
 
-#ifdef __MWCW__
-#pragma global_optimizer on
-#pragma optimization_level 1
-#endif
-
 /****************************************************************************/
 /*
    Connect_Sons_of_ElementSide - 
@@ -4408,9 +4397,6 @@ INT NS_DIM_PREFIX Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElemen
 	
 	return(GM_OK);
 }
-#ifdef __MWCW__
-#pragma global_optimizer off
-#endif
 
 /****************************************************************************/
 /** \brief  Copy an element

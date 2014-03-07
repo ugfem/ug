@@ -203,24 +203,6 @@ INT NS_DIM_PREFIX InitUg (int *argcp, char ***argvp)
   }
 
 #ifdef Debug
-#ifdef __MWCW__
-  if ((GetDefaultValue (DEFAULTSFILENAME, UGDEBUGRFILE, buffer) == 0)
-      && (sscanf (buffer, " %s ", debugfilename) == 1))
-  {
-    if (SetPrintDebugToFile (debugfilename) != 0)
-    {
-      printf ("ERROR while opening debug file '%s'\n", debugfilename);
-      printf ("aborting ug\n");
-      return (1);
-    }
-    UserWriteF ("debug info is captured to file '%s'\n", debugfilename);
-  }
-  else
-  {
-    SetPrintDebugProc (UserWriteF);
-    UserWriteF ("debug info is printed to ug's shell window\n");
-  }
-#else
   {
     int i;
     for (i = 1; i < *argcp; i++)
@@ -244,7 +226,6 @@ INT NS_DIM_PREFIX InitUg (int *argcp, char ***argvp)
       UserWriteF ("debug info is printed to stdout\n");
     }
   }
-#endif
 #endif
 
   /* init the domain module */

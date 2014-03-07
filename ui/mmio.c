@@ -31,19 +31,6 @@ USING_UG_NAMESPACES
   REP_ERR_FILE;
 
 
-/* MacOS doesn't support the non-standard (!) strdup function */
-#if defined(__MWCW__)
-char *strdup(const char *text);  /* forward declaration to make ANSI compilers happy */
-
-char *strdup(const char *text)
-{
-  char *c;
-  c = (char *)malloc( strlen(text)+1 );
-  return c;
-}
-#endif
-
-
 int NS_DIM_PREFIX mm_is_valid(MM_typecode matcode)
 {
   if (!mm_is_matrix(matcode)) return 0;

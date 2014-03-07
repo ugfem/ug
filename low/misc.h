@@ -183,11 +183,6 @@ void        QSort               (void *base, INT n, INT size, int (*cmp)(const v
 void        SelectionSort       (void *base, INT n, INT size, int (*cmp)(const void *, const void *));
 char            *ExpandCShellVars       (char *string);
 
-#ifdef __MWCW__
-/* this function is no external for the MetroWerks CodeWarrior: so just define it */
-int                     matherr                         (struct exception *x);
-#endif
-
 INT             ReadMemSizeFromString   (const char *s, MEM *mem_size);
 INT                     WriteMemSizeToString    (MEM mem_size, char *s);
 

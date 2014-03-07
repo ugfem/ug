@@ -574,12 +574,6 @@ REP_ERR_FILE;
 
 static VECDATA_DESC *FF_VECDATA_DESC_ARRAY[FF_MAX_VECS];
 
-#ifdef __MWCW__
-static DOUBLE mat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
-static DOUBLE imat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
-static DOUBLE rmat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
-#endif
-
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -2171,13 +2165,6 @@ static INT InvertFullMatrix3 (INT n, DOUBLE mat[MAX_PATCH][MAX_PATCH],
   return (0);
 }
 
-#ifdef __MWCW__
-static DOUBLE matr[MAX_PATCH][MAX_PATCH];
-static VECTOR *w[MAX_VPATCH];
-static INT ucomp[MAX_VPATCH];
-static INT utype[MAX_VPATCH];
-#endif
-
 INT l_block_collect (GRID *theGrid,
                      VECDATA_DESC *ux, VECDATA_DESC *px,
                      VECDATA_DESC *ub, VECDATA_DESC *pb,
@@ -2204,12 +2191,10 @@ INT l_block_collect (GRID *theGrid,
   {
     INT ptype = VTYPE(v);
     INT pcomp = VD_NCMPS_IN_TYPE(pb,ptype);
-            #ifndef __MWCW__
     DOUBLE matr[MAX_PATCH][MAX_PATCH];
     VECTOR *w[MAX_VPATCH];
     INT ucomp[MAX_VPATCH];
     INT utype[MAX_VPATCH];
-                #endif
     MATRIX *m;
     INT n = pcomp;
     INT cnt = 0;
@@ -5561,11 +5546,9 @@ INT l_bdpreprocess2 (GRID *g, VECDATA_DESC *x,
   for (e=FIRSTELEMENT(g); e!=NULL; e=SUCCE(e)) {
     VECTOR *v[MAX_NODAL_VECTORS];
     INT cnt = GetAllVectorsOfElementOfType(e,v,x);
-                #ifndef __MWCW__
     DOUBLE mat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     DOUBLE imat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     DOUBLE rmat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
-                #endif
     INT m = GetVlistMValues(cnt,v,A,mat);
     INT i;
 
@@ -5634,11 +5617,9 @@ INT l_bdpreprocess (GRID *g, VECDATA_DESC *x,
   for (e=FIRSTELEMENT(g); e!=NULL; e=SUCCE(e)) {
     VECTOR *v[MAX_NODAL_VECTORS];
     INT cnt = GetAllVectorsOfElementOfType(e,v,x);
-                #ifndef __MWCW__
     DOUBLE mat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     DOUBLE imat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     DOUBLE rmat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
-                #endif
     INT m = GetVlistMValues(cnt,v,A,mat);
     INT i,j,k,ci,cj;
 

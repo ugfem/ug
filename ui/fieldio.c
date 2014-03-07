@@ -30,9 +30,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
-#ifndef __MWCW__
 #include <rpc/rpc.h>
-#endif
 
 #include "general.h"
 #include "ugdevices.h"
@@ -65,11 +63,7 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-#ifdef __MWCW__
-#define ASCII  /* only ASCII */
-#else
 #undef ASCII   /* use ACSII or XDR */
-#endif
 
 #define MAGIC    "UGFI"
 #define MAXVAR   50

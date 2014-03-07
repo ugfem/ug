@@ -2240,10 +2240,6 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef __MWCW__
-#pragma mark *** blas_level_1 ***
-#endif
-
 /****************************************************************************/
 /** \fn dset
    \brief Set the given components of a vector to a given value
@@ -3256,10 +3252,6 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 /*		blas level 2 routines												*/
 /*																			*/
 /****************************************************************************/
-
-#ifdef __MWCW__
-#pragma mark *** blas_level_2 ***
-#endif
 
 
 /****************************************************************************/

@@ -140,18 +140,6 @@ static INT StoreInverse=TRUE;
 /* large matrix for l_pgs */
 /* (Macintosh does not support local data >32k) */
 static DOUBLE UGI_Mval[LOCAL_DIM*LOCAL_DIM];
-#ifdef __MWCW__
-static DOUBLE InvMat[MAX_SINGLE_MAT_COMP];
-static DOUBLE PivMat[MAX_SINGLE_MAT_COMP];
-static DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
-static DOUBLE A[LOCAL_DIM*LOCAL_DIM];
-static DOUBLE AI[LOCAL_DIM*LOCAL_DIM];
-static DOUBLE B[LOCAL_DIM*LOCAL_DIM];
-static DOUBLE C[LOCAL_DIM*LOCAL_DIM];
-static DOUBLE S[LOCAL_DIM*LOCAL_DIM];
-static DOUBLE BAIB[LOCAL_DIM*LOCAL_DIM];
-static DOUBLE K[LOCAL_DIM*LOCAL_DIM];
-#endif
 
 REP_ERR_FILE;
 
@@ -2264,10 +2252,8 @@ INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCAL
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
-        #ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
   DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
-        #endif
   DOUBLE sum;
   INT offset[NVECTYPES+1];
   register DOUBLE *Diag,*Piv,*Elm,*Mat,*Djj,*Dkk;
@@ -3147,9 +3133,7 @@ INT NS_DIM_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALA
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
-        #ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP],CorMat[MAX_SINGLE_MAT_COMP];
-        #endif
   DOUBLE sum;
   INT offset[NVECTYPES+1];
   register DOUBLE *Diag,*Piv,*Elm,*Mat,*Tmp,*Djj,*Dkk;
@@ -3671,10 +3655,8 @@ INT NS_DIM_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
-        #ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
   DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
-        #endif
   DOUBLE sum;
   register DOUBLE *Diag,*Piv,*Elm,*Mat;
   register SHORT *DiagComp,*PivComp,*ElmComp,*MatComp;
@@ -4178,10 +4160,8 @@ INT NS_DIM_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
   VECTOR *vi,*vj,*vk,*vec;
   BLOCKVECTOR *theBV;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
-        #ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
   DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
-        #endif
   DOUBLE sum;
   register DOUBLE *Diag,*Piv,*Elm,*Mat;
   register SHORT *DiagComp,*PivComp,*ElmComp,*MatComp;
@@ -5763,10 +5743,8 @@ INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
-#ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
   DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
-#endif
   DOUBLE sum;
   INT offset[NVECTYPES+1];
   DOUBLE *Diag,*Piv,*Elm,*Mat,*Djj,*Dkk;

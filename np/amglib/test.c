@@ -23,8 +23,6 @@
 /*																			*/
 /****************************************************************************/
 
-#undef MWCW
-
 /****************************************************************************/
 /*																			*/
 /* include files															*/
@@ -34,10 +32,6 @@
 /****************************************************************************/
 
 #include "config.h"
-
-#ifdef MWCW
-#include <console.h>
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -516,9 +510,6 @@ int main (int argc, char *argv[])
   AMG_SolverContext sc;
 
   /* read size parameter from command line */
-#ifdef MWCW
-  argc = ccommand(&argv);
-#endif
   if (argc<=1) {printf("usage: test <unknowns per dimension>\n"); return(1);}
   sscanf(argv[1],"%ld",&N);
   if ((N<0)||(N>10000000)) return(1);
