@@ -232,6 +232,36 @@ HEAP *NS_PREFIX NewHeap (enum HeapType type, MEM size, void *buffer)
 }
 
 /****************************************************************************/
+/** \brief Clean up and deallocate a heap structure
+
+   \param theHeap The heap to be deallocated
+
+   This method properly cleans up a HEAP data structure, and then frees the
+   memory.
+ */
+/****************************************************************************/
+
+
+
+void NS_PREFIX DisposeHeap (HEAP *theHeap)
+{
+  if (theHeap != NULL) {
+#if UG_USE_SYSTEM_HEAP
+    /* When using the system heap, the HEAP data structure contains an array of
+     * std::vectors, which have all be created using placement new.  Therefore,
+     * before freeing the memory of a HEAP we have to call the destructors of
+     * these std::vectors explicitly.  Otherwise we get memory leaks.
+     */
+    using namespace std;
+    for (INT i=0; i<MARK_STACK_SIZE; i++)
+      theHeap->markedMemory[i].~vector<void*>();
+#endif
+  }
+
+  free(theHeap);
+}
+
+/****************************************************************************/
 /** \brief Allocate memory from heap, depending on heap type
 
    \param theHeap - heap to allocate from
