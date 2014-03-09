@@ -4341,8 +4341,7 @@ INT NS_DIM_PREFIX DisposeMultiGrid (MULTIGRID *theMG)
                    are allocated!! (due to free-lists, DDD type definitions
                    etc.) therefore, repeated new/close commands are inhibited
                    explicitly in parallel/dddif/initddd.c(InitCurrMG()). */
-  if (MGHEAP(theMG)!=NULL)
-    free(MGHEAP(theMG));
+  DisposeHeap(MGHEAP(theMG));
 
   /* dispose BVP */
   if (MG_BVP(theMG)!=NULL)
