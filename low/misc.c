@@ -781,30 +781,3 @@ INT NS_PREFIX MemoryParameters (void)
 
   return(0);
 }
-
-#ifdef __NECSX4__
-/* special high performance time system for NEC SX4 */
-/* declaration in compiler.h */
-DOUBLE NS_PREFIX nec_clock( void )
-{
-  struct htms timebuf;
-
-  if (syssx (HTIMES, (struct htms *)&timebuf) < 0)
-    return -1.0;
-  return ((timebuf.hutime + timebuf.hstime) * 1e-6);
-}
-#endif
-
-#ifdef __AIX__
-/* special high resolution time system for AIX */
-/* declaration in compiler.h */
-/* time resolution 1e-9 sec; overflow far over 1 year */
-DOUBLE NS_PREFIX aix_highres_clock( void )
-{
-  timebasestruct_t timebuf;
-
-  read_real_time(&timebuf, TIMEBASE_SZ);
-  time_base_to_time(&timebuf, TIMEBASE_SZ);
-  return( timebuf.tb_high + timebuf.tb_low*1e-9 );
-}
-#endif
