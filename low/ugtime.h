@@ -46,7 +46,7 @@
 #else
 
 /* use old header */
-#include "compiler.h"
+#include "ugtypes.h"
 
 #endif
 

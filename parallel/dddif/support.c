@@ -40,7 +40,7 @@
 
 #include "general.h"
 #include "ppif.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "memmgr.h"
 
 #include "pargm.h"

@@ -35,6 +35,7 @@
 #include <stdlib.h>
 
 /* low module */
+#include "architecture.h"
 #include "debug.h"
 #include "fileopen.h"
 #include "general.h"

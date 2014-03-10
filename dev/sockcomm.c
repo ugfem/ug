@@ -29,7 +29,7 @@
 /****************************************************************************/
 
 #include "config.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "general.h"
 
 #include "sockcomm.h"

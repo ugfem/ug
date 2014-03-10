@@ -34,7 +34,7 @@
 #include <math.h>
 #include <ctype.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "debug.h"
 #include "misc.h"
 #include "ugenv.h"

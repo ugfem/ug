@@ -35,7 +35,7 @@
 #include <math.h>
 #include <time.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ugdevices.h"
 #include "general.h"
 #include "fileopen.h"

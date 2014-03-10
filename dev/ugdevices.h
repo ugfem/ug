@@ -36,7 +36,7 @@
 
 #include <stdio.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 #include "ugenv.h"
 

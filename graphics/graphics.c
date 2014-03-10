@@ -34,7 +34,7 @@
 #include <stdarg.h>
 
 /* low module */
-#include "compiler.h"
+#include "ugtypes.h"
 /*
    #include "fileopen.h"
    #include "misc.h"

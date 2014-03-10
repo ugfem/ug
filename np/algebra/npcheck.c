@@ -31,7 +31,7 @@
 #include <math.h>
 
 #include "ugdevices.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 #include "np.h"
 #include "disctools.h"

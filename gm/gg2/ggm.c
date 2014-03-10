@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 #include "heaps.h"
 #include "misc.h"

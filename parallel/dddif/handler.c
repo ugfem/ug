@@ -37,8 +37,9 @@
 #include <string.h>
 #include <assert.h>
 
+#include "architecture.h"
 #include "debug.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ugdevices.h"
 #include "domain.h"
 #include "evm.h"

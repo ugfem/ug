@@ -34,7 +34,7 @@
 #ifndef __SCAN__
 #define __SCAN__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "heaps.h"
 
 #include "namespace.h"

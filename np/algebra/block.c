@@ -31,7 +31,8 @@
 #include <math.h>
 
 #include "ugdevices.h"
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "gm.h"
 #include "np.h"
 #include "debug.h"

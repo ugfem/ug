@@ -23,7 +23,7 @@
 #import <appkit/appkit.h>
 
 #ifndef __COMPILER__
-#include "compiler.h"
+#include "ugtypes.h"
 #endif
 
 #ifndef __DEVICESH__

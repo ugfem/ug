@@ -23,7 +23,7 @@
 #import <Cocoa/Cocoa.h>
 
 #ifndef __COMPILER__
-#include "compiler.h"
+#include "ugtypes.h"
 #endif
 
 #include "ugdevices.h"

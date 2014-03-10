@@ -28,7 +28,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ppif.h"
 #include "dddio.h"
 #include "ddd/dddi.h"

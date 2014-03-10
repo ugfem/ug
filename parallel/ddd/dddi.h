@@ -50,9 +50,8 @@
 
 #include <assert.h>
 
-#ifndef __COMPILER__
-#include "compiler.h"
-#endif
+#include "ugtypes.h"
+#include "architecture.h"
 
 #include "include/memmgr.h"
 #include "ppif.h"

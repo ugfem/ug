@@ -36,7 +36,8 @@
 #include <time.h>
 #include <assert.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "ugdevices.h"
 #include "gm.h"
 #include "misc.h"

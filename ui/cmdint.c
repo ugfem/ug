@@ -40,7 +40,7 @@
 #include <math.h>
 
 /* low module */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "fileopen.h"
 #include "heaps.h"
 #include "ugenv.h"

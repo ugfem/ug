@@ -43,7 +43,7 @@
 
 
 /* interface includes */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ugdevices.h"
 #include "initdev.h"
 #include "debug.h"

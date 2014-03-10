@@ -36,7 +36,8 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "heaps.h"
 #include "misc.h"
 #include "general.h"

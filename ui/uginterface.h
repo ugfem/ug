@@ -33,7 +33,7 @@
 #define __UGINTERFACE__
 
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "wpm.h"
 
 #include "namespace.h"

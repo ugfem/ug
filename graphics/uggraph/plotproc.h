@@ -33,7 +33,7 @@
 #ifndef __PLOTPROC__
 #define __PLOTPROC__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "namespace.h"
 
 START_UGDIM_NAMESPACE

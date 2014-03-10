@@ -52,7 +52,7 @@
 #include "ugdevices.h"
 
 /* interface includes */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "general.h"
 
 

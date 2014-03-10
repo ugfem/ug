@@ -67,7 +67,7 @@
 #include <string.h>
 
 /* low module */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "debug.h"
 #include "heaps.h"
 #include "misc.h"

@@ -36,7 +36,7 @@
 #ifdef __UG__
 
         #ifndef __COMPILER__
-                #include "compiler.h"
+                #include "ugtypes.h"
         #endif
 
         #ifndef __UDM__

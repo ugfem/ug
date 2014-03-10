@@ -17,7 +17,7 @@
 *****************************************************************************/
 #include "config.h"
 #include <assert.h>
-#include "compiler.h"   /* for INT etc.                              */
+#include "ugtypes.h"    /* for INT etc.                              */
 #include "debug.h"      /* for IFDEBUG() and  MIN(), MAX() by misc.h */
 #include "ugdevices.h"  /* for UserWrite() and friends               */
 #include "heaps.h"      /* for GetTmpMem() etc.                      */

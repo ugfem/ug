@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "fileopen.h"
 #include "ugdevices.h"
 #include "defaults.h"

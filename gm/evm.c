@@ -34,7 +34,8 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "misc.h"
 #include "evm.h"
 #include "general.h"

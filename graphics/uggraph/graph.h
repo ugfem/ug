@@ -35,7 +35,7 @@
 
 #include <time.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "wpm.h"
 #include "misc.h"
 #include "evm.h"

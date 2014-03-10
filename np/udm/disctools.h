@@ -33,7 +33,7 @@
 #ifndef __DISCTOOLS__
 #define __DISCTOOLS__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 #include "np.h"
 

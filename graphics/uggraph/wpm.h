@@ -33,7 +33,7 @@
 #ifndef __WPM__
 #define __WPM__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ugdevices.h"
 #include "ugenv.h"
 #include "gm.h"

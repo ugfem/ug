@@ -58,7 +58,7 @@
 #include <ctype.h>
 
 /* interface includes */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ugdevices.h"
 #include "initdev.h"
 #include "defaults.h"

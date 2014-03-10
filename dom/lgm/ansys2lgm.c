@@ -43,7 +43,7 @@
 
 
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "fileopen.h"
 #include "general.h"
 #include "heaps.h"

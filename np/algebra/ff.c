@@ -35,7 +35,8 @@
 #include <math.h>
 #include <time.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "gm.h"          /* for data structure               */
 #include "ugstruct.h"    /* for GetStringValue               */
 #include "misc.h"        /* for MIN, MAX, PI, ...            */

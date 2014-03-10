@@ -39,7 +39,7 @@
 #ifndef __GGM__
 #define __GGM__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 
 #include "namespace.h"

@@ -29,7 +29,7 @@
 
 #include "config.h"
 #include "general.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "heaps.h"
 #include "gm.h"
 #include "algebra.h"

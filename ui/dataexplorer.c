@@ -39,9 +39,10 @@
 #include <math.h>
 #include <time.h>
 
+#include "architecture.h"
 #include "ugdevices.h"
 #include "enrol.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "misc.h"
 #include "general.h"
 #include "pfile.h"

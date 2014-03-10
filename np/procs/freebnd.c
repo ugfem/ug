@@ -29,7 +29,8 @@
 
 #include "config.h"
 #include "general.h"
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 
 /* dev */
 #include "ugdevices.h"

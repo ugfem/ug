@@ -34,7 +34,7 @@
 #ifndef __INITNP__
 #define __INITNP__
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 #include "namespace.h"
 

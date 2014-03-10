@@ -38,7 +38,8 @@
 #include <memory.h>
 #include <time.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "debug.h"
 #include "wop.h"
 #include "wpm.h"

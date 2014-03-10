@@ -64,7 +64,7 @@
 #include <assert.h>
 
 /* low includes */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "misc.h"
 #include "heaps.h"
 #include "defaults.h"

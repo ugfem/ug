@@ -33,7 +33,7 @@
 #ifndef __FREEBND__
 #define __FREEBND__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "np.h"
 
 #include "namespace.h"

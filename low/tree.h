@@ -29,7 +29,7 @@
 #define __TREE__
 
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 #include "fifo.h"
 #include "heaps.h"

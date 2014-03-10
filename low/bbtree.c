@@ -23,7 +23,7 @@
 #include <math.h>
 
 #include "general.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "bbtree.h"
 
 USING_UG_NAMESPACE

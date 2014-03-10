@@ -30,7 +30,7 @@
 #define _NEXTINTERFACE_H_
 
 #ifndef __COMPILER__
-#include "compiler.h"
+#include "ugtypes.h"
 #endif
 
 #ifndef __DEVICESH__

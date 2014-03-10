@@ -61,7 +61,7 @@
 
 #include "../ppif_general.h"
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 /* LocalLink has no definition */
 int LocalLink (LinkCB_t *Link[2]);

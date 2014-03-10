@@ -32,7 +32,7 @@
 #ifndef __FIELDIO__
 #define __FIELDIO__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "namespace.h"
 
 START_UGDIM_NAMESPACE

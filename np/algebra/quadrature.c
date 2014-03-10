@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 
+#include "architecture.h"
 #include "evm.h"
 #include "shapes.h"
 #include "quadrature.h"

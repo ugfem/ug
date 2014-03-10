@@ -35,7 +35,7 @@
 #include <limits.h>
 #include <time.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "fileopen.h"
 #include "heaps.h"
 #include "defaults.h"

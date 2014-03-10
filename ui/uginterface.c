@@ -33,6 +33,7 @@
 #include <assert.h>
 
 /* low module */
+#include "architecture.h"
 #include "misc.h"
 #include "evm.h"
 #include "ugenv.h"

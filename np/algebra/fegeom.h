@@ -46,7 +46,7 @@
 
 #include "ugdevices.h"
 #include "enrol.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "misc.h"
 #include "gm.h"
 #include "ugenv.h"

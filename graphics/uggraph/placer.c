@@ -46,7 +46,7 @@
 #include "general.h"
 #include "wpm.h"
 #ifndef __COMPILER__
-#include "compiler.h"
+#include "ugtypes.h"
 #endif
 #else
 typedef int INT;

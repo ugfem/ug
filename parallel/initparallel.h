@@ -28,7 +28,7 @@
 #ifndef __INITPARALLEL_H__
 #define __INITPARALLEL_H__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "namespace.h"
 
 START_UGDIM_NAMESPACE

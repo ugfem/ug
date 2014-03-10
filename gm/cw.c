@@ -28,6 +28,7 @@
 
 
 #include "ugdevices.h"
+#include "architecture.h"
 #include "debug.h"
 #include "general.h"
 

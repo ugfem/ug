@@ -58,7 +58,9 @@
 #include <assert.h>
 
 /* low module */
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
+#include "ugtime.h"
 #include "initug.h"
 #include "defaults.h"
 #include "misc.h"

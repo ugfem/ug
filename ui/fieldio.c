@@ -32,6 +32,7 @@
 #include <string.h>
 #include <rpc/rpc.h>
 
+#include "architecture.h"
 #include "general.h"
 #include "ugdevices.h"
 #include "gm.h"

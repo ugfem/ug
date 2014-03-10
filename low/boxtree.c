@@ -29,7 +29,8 @@
 
 #include "config.h"
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "general.h"
 #include "boxtree.h"
 

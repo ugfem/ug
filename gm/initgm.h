@@ -35,7 +35,7 @@
 #ifndef __INITGM__
 #define __INITGM__
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 #include "namespace.h"
 

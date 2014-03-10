@@ -36,7 +36,7 @@
 #include <time.h>
 
 /* low module */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "heaps.h"
 #include "ugenv.h"
 #include "misc.h"

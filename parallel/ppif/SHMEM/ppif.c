@@ -79,7 +79,7 @@
 
 #include "../ppif_general.h"
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 
 /****************************************************************************/

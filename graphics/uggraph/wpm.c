@@ -34,7 +34,8 @@
 #include <math.h>
 #include <assert.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "misc.h"
 #include "ugstruct.h"
 #include "evm.h"

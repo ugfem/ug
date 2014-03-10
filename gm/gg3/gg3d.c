@@ -33,7 +33,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "ugdevices.h"
 #include "defaults.h"
 #include "gm.h"

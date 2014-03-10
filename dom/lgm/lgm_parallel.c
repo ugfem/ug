@@ -38,7 +38,8 @@
 #include <assert.h>
 
 /* low modules */
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "heaps.h"
 #include "general.h"
 #include "debug.h"

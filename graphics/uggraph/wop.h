@@ -33,7 +33,7 @@
 #ifndef __WOP__
 #define __WOP__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 #include "wpm.h"
 #include "evm.h"

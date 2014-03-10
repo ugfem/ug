@@ -38,7 +38,7 @@
 #ifndef __UGIO__
 #define __UGIO__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 
 #include "namespace.h"

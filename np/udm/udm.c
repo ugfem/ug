@@ -32,6 +32,7 @@
 
 #include <string.h>
 
+#include "architecture.h"
 #include "general.h"
 #include "debug.h"
 #include "gm.h"

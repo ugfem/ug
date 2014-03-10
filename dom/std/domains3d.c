@@ -34,7 +34,8 @@
 #include <string.h>
 
 /* low modules */
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "heaps.h"
 #include "ugenv.h"
 #include "misc.h"

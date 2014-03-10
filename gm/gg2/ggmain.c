@@ -39,7 +39,8 @@
 #include "domain.h"
 
 /* low */
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "general.h"
 #include "debug.h"
 #include "heaps.h"

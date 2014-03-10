@@ -44,7 +44,8 @@
 #include <assert.h>
 #include <time.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "ugtime.h"
 #include "ugdevices.h"
 #include "gm.h"
 #include "misc.h"

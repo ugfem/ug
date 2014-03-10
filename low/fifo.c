@@ -33,7 +33,7 @@
 #include "config.h"
 #include <stdio.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "general.h"
 #include "fifo.h"
 

@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "architecture.h"
 #include "gm.h"       /* for data structure               */
 #include "cw.h"
 #include "evm.h"      /* for data structure               */

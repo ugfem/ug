@@ -21,7 +21,7 @@
 #ifndef __PV3IF__
 #define __PV3IF__
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 INT InitPV3(void);
 

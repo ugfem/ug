@@ -37,7 +37,7 @@
 #include "domain.h"
 
 /* low modules */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "heaps.h"
 #include "ugenv.h"
 #include "misc.h"

@@ -47,7 +47,8 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "heaps.h"
 #include "ugenv.h"
 #include "debug.h"

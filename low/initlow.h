@@ -37,7 +37,7 @@
 #ifndef __INITLOW__
 #define __INITLOW__
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 
 #include "namespace.h"

@@ -32,7 +32,7 @@
 #ifndef __GEN_DOMAIN__
 #define __GEN_DOMAIN__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "domain.h"
 
 /****************************************************************************/

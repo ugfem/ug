@@ -36,7 +36,7 @@
 #ifndef __UGSTRUCT__
 #define __UGSTRUCT__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ugenv.h"
 
 #include "namespace.h"

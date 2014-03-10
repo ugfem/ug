@@ -41,7 +41,7 @@
 #ifndef __GRAPHICS_H__
 #define __GRAPHICS_H__
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 #include "namespace.h"
 

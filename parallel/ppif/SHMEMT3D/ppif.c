@@ -79,11 +79,11 @@
 
 #include "../ppif_general.h"
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 
 /* TODO: delete this */
-/* copied from compiler.h */
+/* copied from ugtypes.h */
 /*#define ALIGNMENT 8   */                  /* power of 2 and >= sizeof(int) !  */
 /*#define ALIGNMASK 0xFFFFFFF8  */          /* compatible to alignment          */
 

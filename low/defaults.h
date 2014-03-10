@@ -36,7 +36,7 @@
 #define __DEFAULTS__
 
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "namespace.h"
 
 START_UG_NAMESPACE

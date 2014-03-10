@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "architecture.h"
 #include "general.h"
 
 #include "debug.h"

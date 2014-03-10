@@ -35,10 +35,11 @@
 #include <math.h>
 #include <assert.h>
 
+#include "architecture.h"
 #include "algebra.h"
 #include "block.h"
 #include "cmdline.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "debug.h"
 #include "ugdevices.h"
 #include "evm.h"

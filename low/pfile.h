@@ -34,7 +34,7 @@
 #define __PFILE__
 
 #include <limits.h>
-#include "compiler.h"
+#include "ugtypes.h"
 #include "namespace.h"
 
 START_UGDIM_NAMESPACE

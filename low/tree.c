@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "general.h"
 #include "fifo.h"
 #include "heaps.h"

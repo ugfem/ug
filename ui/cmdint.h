@@ -36,7 +36,7 @@
 #define __CMDINT__
 
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "ugenv.h"
 #include "cmdline.h"
 

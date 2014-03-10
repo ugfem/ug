@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "general.h"
 #include "heaps.h"
 #include "misc.h"

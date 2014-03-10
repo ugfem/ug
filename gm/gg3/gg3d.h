@@ -40,7 +40,7 @@
 #ifndef __GG3D__
 #define __GG3D__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 
 #include "namespace.h"

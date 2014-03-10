@@ -34,6 +34,7 @@
 /****************************************************************************/
 
 #include "config.h"
+#include "architecture.h"
 #include "bullet.h"
 #include "ugdevices.h"
 #include "commands.h"

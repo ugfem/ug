@@ -35,6 +35,7 @@
 #include <time.h>
 #include <math.h>
 
+#include "architecture.h"
 #include "graph.h"
 #include "wpm.h"
 #include "ugdevices.h"

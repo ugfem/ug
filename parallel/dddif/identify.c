@@ -33,7 +33,7 @@
 #include <stdio.h>
 
 #include "general.h"
-#include "compiler.h"
+#include "ugtypes.h"
 #include "debug.h"
 #include "ugdevices.h"
 

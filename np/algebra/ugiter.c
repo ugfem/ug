@@ -34,7 +34,8 @@
 #include <math.h>
 
 #include "algebra.h"
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "disctools.h"
 #include "debug.h"
 #include "ugdevices.h"

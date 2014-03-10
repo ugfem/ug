@@ -32,7 +32,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "heaps.h"
 #include "defaults.h"
 #include "ugstruct.h"

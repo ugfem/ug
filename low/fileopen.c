@@ -36,8 +36,8 @@
 #include <fcntl.h>
 #include <assert.h>
 
-/* first compiler header for __MACINTOSH__ definition iff */
-#include "compiler.h"
+#include "ugtypes.h"
+#include "ugtime.h"
 
 /* includes for filesize(), filetype() */
 #ifdef __MACINTOSH__

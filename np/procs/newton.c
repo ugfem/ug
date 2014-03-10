@@ -35,6 +35,8 @@
 #include <time.h>
 #include <math.h>
 
+#include "ugtypes.h"
+#include "ugtime.h"
 #include "ugdevices.h"
 #include "general.h"
 #include "debug.h"

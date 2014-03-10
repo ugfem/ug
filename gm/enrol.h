@@ -39,7 +39,7 @@
 #define __ENROL__
 
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 
 #include "namespace.h"

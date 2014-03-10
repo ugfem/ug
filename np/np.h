@@ -35,7 +35,7 @@
 #ifndef __NP__
 #define __NP__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 #include "algebra.h"
 #include "ugenv.h"

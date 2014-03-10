@@ -33,7 +33,7 @@
 #include <stdio.h>
 
 /* low module */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "misc.h"
 #include "defaults.h"
 #include "general.h"

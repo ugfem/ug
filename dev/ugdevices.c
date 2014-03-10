@@ -35,7 +35,7 @@
 #include <assert.h>
 
 /* low module */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "fileopen.h"
 #include "misc.h"
 #include "ugenv.h"

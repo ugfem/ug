@@ -35,7 +35,7 @@
 #ifndef __PCR__
 #define __PCR__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 #include "algebra.h"
 #include "ugenv.h"

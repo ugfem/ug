@@ -34,7 +34,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "heaps.h"
 #include "bio.h"
 #include "ugdevices.h"

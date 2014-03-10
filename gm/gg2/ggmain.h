@@ -41,7 +41,7 @@
 #ifndef __GGMAIN__
 #define __GGMAIN__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"
 #include "ggm.h"
 

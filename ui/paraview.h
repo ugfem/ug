@@ -24,7 +24,7 @@
 #ifndef __PARAVIEW_H__
 #define __PARAVIEW_H__
 
-#include "compiler.h"
+#include "ugtypes.h"
 
 /****************************************************************************/
 /*                                                                          */

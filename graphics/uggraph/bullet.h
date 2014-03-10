@@ -37,7 +37,7 @@
 #ifndef __BULLET__
 #define __BULLET__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "wpm.h"
 
 #include "namespace.h"

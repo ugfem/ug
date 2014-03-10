@@ -33,7 +33,7 @@
 #ifndef __DATAEXPLORER_H__
 #define __DATAEXPLORER_H__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "namespace.h"
 
 START_UGDIM_NAMESPACE

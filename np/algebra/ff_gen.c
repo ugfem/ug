@@ -35,7 +35,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include "gm.h"          /* for data structure               */
 #include "ugdevices.h"     /* for UserWrite, PrintErrorMessage */
 #include "commands.h"    /* for GetCurrentMultigrid              */

@@ -34,7 +34,7 @@
 #ifndef __QUADTREE__
 #define __QUADTREE__
 
-#include "compiler.h"
+#include "ugtypes.h"
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>

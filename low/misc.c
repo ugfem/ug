@@ -48,7 +48,8 @@
 #include <sys/timeb.h>
 #endif
 
-#include "compiler.h"
+#include "ugtypes.h"
+#include "architecture.h"
 #include "general.h"
 #include "misc.h"
 #include "heaps.h"

@@ -22,7 +22,7 @@
 #import "MShellTextView.h"
 
 /* UG includes */
-#include "compiler.h"
+#include "ugtypes.h"
 #include "misc.h"
 #include "defaults.h"
 #include "general.h"
