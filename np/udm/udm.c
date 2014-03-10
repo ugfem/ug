@@ -74,6 +74,8 @@ USING_UG_NAMESPACES
 #define SWAP_VEC_DATA(v,pf,pt)          {tmp = VVALUE(v,*pf); VVALUE(v,*pf) = VVALUE(v,*pt); VVALUE(v,*pt) = tmp;}
 #define SWAP_MAT_DATA(m,pf,pt)          {tmp = MVALUE(m,*pf); MVALUE(m,*pf) = MVALUE(m,*pt); MVALUE(m,*pt) = tmp;}
 
+#define CEIL(n)          ((n)+((ALIGNMENT-((n)&(ALIGNMENT-1)))&(ALIGNMENT-1)))
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/

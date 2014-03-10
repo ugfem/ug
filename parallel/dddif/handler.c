@@ -82,6 +82,9 @@ USING_UG_NAMESPACES
 #define DEBUGNSONS(pe,f,m)
 #endif
 
+#define CEIL(n)          ((n)+((ALIGNMENT-((n)&(ALIGNMENT-1)))&(ALIGNMENT-1)))
+
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/

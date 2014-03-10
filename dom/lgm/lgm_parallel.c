@@ -107,6 +107,9 @@ USING_UGDIM_NAMESPACE
 #endif
 #endif
 
+#define CEIL(n)          ((n)+((ALIGNMENT-((n)&(ALIGNMENT-1)))&(ALIGNMENT-1)))
+
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/

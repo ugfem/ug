@@ -62,6 +62,7 @@ USING_UG_NAMESPACE
 /****************************************************************************/
 
 #define FLOOR(n)    ((n)&ALIGNMASK)     /* lower next multiple of four */
+#define CEIL(n)          ((n)+((ALIGNMENT-((n)&(ALIGNMENT-1)))&(ALIGNMENT-1)))
 
 
 /* defines and macros for the virtual heap management                        */
