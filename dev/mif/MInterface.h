@@ -29,9 +29,7 @@
 #ifndef _MINTERFACE_H_
 #define _MINTERFACE_H_
 
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
 
 #ifndef __DEVICESH__
 #include "devices.h"

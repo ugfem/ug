@@ -41,11 +41,7 @@
 #include "misc.h"
 #include "general.h"
 #include "defaults.h"
-
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
-
 #include "ugdevices.h"
 #include "sockcomm.h"
 

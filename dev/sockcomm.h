@@ -49,9 +49,7 @@
 #include <netdb.h>
 
 
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
 
 
 #ifndef INADDR_NONE

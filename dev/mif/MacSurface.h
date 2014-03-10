@@ -36,9 +36,7 @@
 
 #include <Quickdraw.h>
 
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
 
 /****************************************************************************/
 /*																			*/

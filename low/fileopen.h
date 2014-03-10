@@ -34,11 +34,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
-
-
 #include "namespace.h"
 
 START_UG_NAMESPACE

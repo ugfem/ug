@@ -36,9 +36,7 @@
 
 #include <stdio.h>
 
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
 
 #ifndef __UGENV__
 #include "ugenv.h"

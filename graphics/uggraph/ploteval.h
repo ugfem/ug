@@ -30,9 +30,7 @@
 #define __PLOTPROC__
 
 
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
 
 #ifndef __GM__
 #include "gm.h"

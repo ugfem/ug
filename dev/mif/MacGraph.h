@@ -35,9 +35,7 @@
 #define __MACGRAPH__
 
 
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
 
 #ifndef __DEVICESH__
 #include "ugdevices.h"

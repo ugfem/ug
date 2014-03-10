@@ -45,9 +45,7 @@
 #ifdef INSIDE_UG
 #include "general.h"
 #include "wpm.h"
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
 #else
 typedef int INT;
 typedef double DOUBLE;

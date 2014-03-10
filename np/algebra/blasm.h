@@ -35,9 +35,7 @@
 
 #ifdef __UG__
 
-        #ifndef __COMPILER__
-                #include "ugtypes.h"
-        #endif
+        #include "ugtypes.h"
 
         #ifndef __UDM__
         #include "udm.h"
@@ -50,12 +48,9 @@
 
 #else /* not __UG__ */
 
-        #ifndef __COMPILER__
-                #define SHORT short
-                #define INT int
-                #define DOUBLE double
-                #define __COMPILER__
-        #endif
+        #define SHORT short
+        #define INT int
+        #define DOUBLE double
 
         #ifndef __SMALG__
         #include "algebra.h"

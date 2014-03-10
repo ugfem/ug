@@ -29,9 +29,7 @@
 #ifndef _NEXTINTERFACE_H_
 #define _NEXTINTERFACE_H_
 
-#ifndef __COMPILER__
 #include "ugtypes.h"
-#endif
 
 #ifndef __DEVICESH__
 #include "ugdevices.h"
