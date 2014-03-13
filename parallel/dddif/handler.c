@@ -1951,50 +1951,6 @@ static void ElementObjMkCons (DDD_OBJ obj, int newness)
   DEBUGNSONS(pe,theFather,"end ElementObjMkCons");
 }
 
-/* TODO: these versions are now unified */
-/* two versions of ElementObjMkCons ... */
-static void ElementObjMkCons_Xferold (DDD_OBJ obj, int newness)
-{
-  INT i;
-  ELEMENT *pe                     = (ELEMENT *)obj;
-
-  PRINTDEBUG(dddif,1,(PFMT " ElementObjMkCons_Xfer(): pe=" EID_FMTX
-                      " newness=%d\n",
-                      me,EID_PRTX(pe),newness))
-
-  /* reconstruct pointer from vectors */
-  if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (GEOM_OBJECT*)pe;
-
-        #ifdef __THREEDIM__
-  /* update edge of new created elements */
-  if (newness == XFER_NEW)
-    /* increment elem counter in edges */
-    for (i=0; i<EDGES_OF_ELEM(pe); i++)
-    {
-      EDGE *theEdge;
-      NODE *theNode0 = CORNER(pe,CORNER_OF_EDGE(pe,i,0));
-      NODE *theNode1 = CORNER(pe,CORNER_OF_EDGE(pe,i,1));
-
-      ASSERT(theNode0!=NULL && theNode1!=NULL);
-
-      PRINTDEBUG(dddif,4,(PFMT " ElementObjMkCons_Xfer(): pe=" EID_FMTX
-                          " INC_NO_OF_ELEM for n0=" ID_FMTX " n1=" ID_FMTX "\n",
-                          me,EID_PRTX(pe),ID_PRTX(theNode0),ID_PRTX(theNode1)))
-
-      theEdge = GetEdge(theNode0,theNode1);
-      ASSERT(theEdge != NULL);
-
-      INC_NO_OF_ELEM(theEdge);
-    }
-        #endif
-
-  if (dddctrl.sideData)
-  {
-    for (i=0; i<SIDES_OF_ELEM(pe); i++)
-      VOBJECT(SVECTOR(pe,i)) = (GEOM_OBJECT*)pe;
-  }
-}
-
 
 static void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
 {
