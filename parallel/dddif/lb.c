@@ -655,7 +655,9 @@ void lbs (const char *argv, MULTIGRID *theMG)
     break;
   }
 
-  default : break;
+  default :
+    UserWriteF(PFMT "lbs(): strategy (%d) is not implemented!\n", mode);
+    break;
   }
 
   TransferGridFromLevel(theMG,fromlevel);
