@@ -368,9 +368,6 @@ void lbs (const char *argv, MULTIGRID *theMG)
   if (param>=100)
     DDD_SetOption(OPT_INFO_XFER, XFER_SHOW_MEMUSAGE);
 
-  /* TODO: remove the InitCurrMG call completely; InitCurrMG may be called
-           only once and this is already done in new/open command */
-  /*InitCurrMG(theMG);*/
   switch (mode)
   {
   /* transfer vectors of coarsest amg grid to master */
