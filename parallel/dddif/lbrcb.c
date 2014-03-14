@@ -418,6 +418,11 @@ int NS_DIM_PREFIX BalanceGridRCB (MULTIGRID *theMG, int level)
   INT MarkKey;
 
   /* distributed grids cannot be redistributed by this function */
+  if (me!=master && FIRSTELEMENT(theGrid) != NULL)
+  {
+    printf("Error: Redistributing distributed grids using recursive coordinate bisection is not implemented!\n");
+    return (1);
+  }
 
   if (me==master)
   {
