@@ -317,7 +317,7 @@ void NS_PREFIX DisposeHeap (HEAP *theHeap)
  */
 /****************************************************************************/
 
-void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, HeapAllocMode mode)
+void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, enum HeapAllocMode mode)
 {
 #if UG_USE_SYSTEM_HEAP
   return malloc(n);
@@ -422,7 +422,7 @@ void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, HeapAllocMode mode)
 #endif
 }
 
-void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, HeapAllocMode mode, INT key)
+void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, enum HeapAllocMode mode, INT key)
 {
   if (theHeap->type==SIMPLE_HEAP)
   {

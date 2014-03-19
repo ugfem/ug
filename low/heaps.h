@@ -213,8 +213,8 @@ INT          InitHeaps                (void);
 /* @{ */
 HEAP        *NewHeap                (enum HeapType type, MEM size, void *buffer);
 void         DisposeHeap            (HEAP *theHeap);
-void        *GetMem                 (HEAP *theHeap, MEM n, HeapAllocMode mode);
-void            *GetMemUsingKey                 (HEAP *theHeap, MEM n, HeapAllocMode mode, INT key);
+void        *GetMem                 (HEAP *theHeap, MEM n, enum HeapAllocMode mode);
+void            *GetMemUsingKey                 (HEAP *theHeap, MEM n, enum HeapAllocMode mode, INT key);
 void         DisposeMem             (HEAP *theHeap, void *buffer);
 
 void        *GetFreelistMemory      (HEAP *theHeap, INT size);
