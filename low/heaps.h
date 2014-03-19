@@ -151,10 +151,11 @@ typedef struct {
   INT objcount[MAXFREEOBJECTS];
         #endif
 
-
+#if UG_USE_SYSTEM_HEAP
   /* This is used only if UG_USE_SYSTEM_HEAP is set, but I don't want the
    * #ifdef in an installed header, hence the data member is there all the time. */
   std::vector<void*> markedMemory[MARK_STACK_SIZE];
+#endif
 } HEAP;
 
 /****************************************************************************/
