@@ -41,8 +41,9 @@
 #ifndef __HEAPS__
 #define __HEAPS__
 
-/* Only for UG_USE_SYSTEM_HEAP */
+#if UG_USE_SYSTEM_HEAP
 #include <vector>
+#endif
 
 #include "ugtypes.h"
 #include "namespace.h"
