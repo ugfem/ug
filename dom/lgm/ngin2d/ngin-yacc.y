@@ -192,13 +192,17 @@ Id:
 
 %%
 
+#ifdef __cplusplus
 extern "C" 
 {
+#endif
 int ng2dwrap (void )
 {
     return (1);
 }
+#ifdef __cplusplus
 }
+#endif
 
 int ng2derror (char *s)
 {

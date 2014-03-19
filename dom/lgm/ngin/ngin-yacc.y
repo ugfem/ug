@@ -50,7 +50,14 @@ static NG_ELEMENT Elem;
 
  /* forward declare my own function (referenced by automatic parser) */ 
  int ngerror (char *s);
-extern "C" int ngwrap();
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+  int ngwrap();
+#ifdef __cplusplus
+}
+#endif
 %}
 
 %union 
@@ -255,13 +262,17 @@ Id:
 %%
 
 
+#ifdef __cplusplus
 extern "C"
 {
+#endif
 int ngwrap ()
 {
     return (1);
 }
+#ifdef __cplusplus
 }
+#endif
 
 int ngerror (char *s)
 {
