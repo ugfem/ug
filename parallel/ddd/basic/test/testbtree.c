@@ -93,4 +93,6 @@ int main(int argc, char** argv)
   TestTreeElementBTree_Print(foo, 0, stdout);
 
   TestTreeElementBTree_Reset(foo);
+
+  return 0;
 }
