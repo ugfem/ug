@@ -853,7 +853,7 @@ struct node {
   int levelIndex;
 
   /** \brief Information if this node is on the leaf. */
-  bool isLeaf;
+  BOOL isLeaf;
 
 #ifdef ModelP
   /** \brief Per-node message buffer used by Dune for dynamic load-balancing */
