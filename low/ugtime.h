@@ -11,8 +11,6 @@
 #ifndef UG_UGTIME_H
 #define UG_UGTIME_H
 
-#ifdef AUTOTOOLS_BUILD
-
 #ifndef UGLIB
 #error Internal UG-lib header, must not be used in applications!
 #endif
@@ -40,14 +38,5 @@
 
 /* !! test for difftime */
 #define ARCH_DIFF_TIMER(x,y) (difftime((time_t)(x),(time_t)(y)))
-
-/* end of autoconf-part */
-
-#else
-
-/* use old header */
-#include "ugtypes.h"
-
-#endif
 
 #endif

@@ -3,7 +3,7 @@
 #ifndef UG_STD_INTERNAL_H
 #define UG_STD_INTERNAL_H
 
-#if defined(AUTOTOOLS_BUILD) && ! defined(UGLIB)
+#ifndef UGLIB
 #error internal header! Must not be used in Applications!
 #endif
 

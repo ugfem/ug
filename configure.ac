@@ -204,10 +204,6 @@ AC_DEFINE_UNQUOTED(ARCHNAME, "$build", [obsolete architecture string])
 # !!! maybe make this configurable later
 AC_DEFINE(DYNAMIC_MEMORY_ALLOCMODEL, 1, [UG memory allocation model])
 
-# a special define to tell compiler.h to use the autoconf-stuff so
-# that we can keep both build systems compatible for a while
-AC_DEFINE(AUTOTOOLS_BUILD, 1, [switch headers to autoconf-support])
-
 # tell automake what to build
 AM_CONDITIONAL(MACOS, test x$build_vendor = xapple)
 
