@@ -984,7 +984,7 @@ void ddd_XferRegisterDelete (DDD_HDR hdr)
         and recovery.
  */
 
-const char *XferModeName (int mode)
+const char *XferModeName (enum XferMode mode)
 {
   switch(mode)
   {
@@ -996,7 +996,7 @@ const char *XferModeName (int mode)
 }
 
 
-static void XferSetMode (int mode)
+static void XferSetMode (enum XferMode mode)
 {
   xferGlobals.xferMode = mode;
 
@@ -1008,7 +1008,7 @@ static void XferSetMode (int mode)
 }
 
 
-static int XferSuccMode (int mode)
+static enum XferMode XferSuccMode (enum XferMode mode)
 {
   switch(mode)
   {
@@ -1021,7 +1021,7 @@ static int XferSuccMode (int mode)
 
 
 
-int XferMode (void)
+enum XferMode XferMode (void)
 {
   return xferGlobals.xferMode;
 }
@@ -1033,7 +1033,7 @@ int ddd_XferActive (void)
 }
 
 
-int XferStepMode (int old)
+int XferStepMode (enum XferMode old)
 {
   if (xferGlobals.xferMode!=old)
   {

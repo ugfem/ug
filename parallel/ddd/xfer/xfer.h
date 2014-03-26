@@ -572,7 +572,7 @@ typedef struct _XFER_PER_PROC
 typedef struct _XFER_GLOBALS
 {
   /* mode of xfer module */
-  int xferMode;
+  enum XferMode xferMode;
 
   /* description for object message */
   LC_MSGTYPE objmsg_t;
@@ -645,8 +645,8 @@ void ExecLocalXISetPrio(XISetPrioPtrArray *, XIDelObj  **,int, XICopyObj **,int)
 void ExecLocalXIDelObj(XIDelObj  **, int, XICopyObj **,int);
 void PropagateCplInfos(XISetPrio **, int, XIDelObj  **, int,
                        TENewCpl *, int);
-int XferMode (void);
-int XferStepMode(int);
+enum XferMode XferMode (void);
+int XferStepMode(enum XferMode);
 
 
 /* pack.c,   used only by cmds.c */
