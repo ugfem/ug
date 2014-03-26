@@ -217,7 +217,7 @@ INT NS_DIM_PREFIX CheckPartitioning (MULTIGRID *theMG)
         /* or is ghost -> partitioning must be restricted   */
         if (!EMASTER(theFather))
         {
-          UserWriteF(PFMT "elem=" EID_FMTX  "cannot be refined\n",
+          UserWriteF(PFMT "elem=" EID_FMTX  " cannot be refined\n",
                      me,EID_PRTX(theFather));
           _restrict_ = 1;
           continue;
