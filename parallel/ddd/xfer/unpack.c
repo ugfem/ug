@@ -194,7 +194,7 @@ static int sort_ObjTabPtrs (const void *e1, const void *e2)
 */
 
 static void LocalizeObject (int merge_mode, TYPE_DESC *desc,
-	char    *msgmem,
+                            const char *msgmem,
 	DDD_OBJ  objmem,
 	SYMTAB_ENTRY *theSymTab)
 {
@@ -219,7 +219,7 @@ printf("%4d:    Localize {\n", me); fflush(stdout);
 			int       l;
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
-			char      *msgrefarray = msgmem+theElem->offset;
+      const char      *msgrefarray = msgmem+theElem->offset;
 			char      *objrefarray = objmem+theElem->offset;
 /*
 printf("%4d:    Localize e=%d typ=%s reftyp=%d size=%d\n",
