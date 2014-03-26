@@ -196,7 +196,7 @@ static int sort_ObjTabPtrs (const void *e1, const void *e2)
 static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
                             const char *msgmem,
 	DDD_OBJ  objmem,
-	SYMTAB_ENTRY *theSymTab)
+                            const SYMTAB_ENTRY *theSymTab)
 {
 	ELEM_DESC     *theElem;
 	int          e;
@@ -253,12 +253,6 @@ printf("%4d:    Localize e=%d typ=%s reftyp=%d size=%d\n",
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 				stIdx = (*(INT *)(msgrefarray+l)) - 1;
 #endif
-#ifdef F_FRONTEND
-/* TODO: this is from V1_6_4_F77_3, not the actual version. */
-				stIdx = ((INT)*ref) - 1;
-#endif
-
-
 				/* test for Localize execution in merge_mode */
 				if (merge_mode && (*ref!=NULL_REF))
 				{
@@ -334,7 +328,7 @@ printf("%4d:    Localize adr=%08x l=%d ref=%08x *ref=%08x stIdx=%d\n",
 				if (stIdx>=0)
 				{
 					/* get corresponding symtab entry */
-					SYMTAB_ENTRY *st = &(theSymTab[stIdx]);
+                    const SYMTAB_ENTRY *st = &(theSymTab[stIdx]);
 
 					/*
 						convert reference from header to object itself
@@ -429,7 +423,7 @@ printf("%4d:    Localize adr=%08x l=%d ref=%08x *ref=%08x stIdx=%d\n",
 static void PutDepData (char *data,
 	TYPE_DESC *desc,
 	DDD_OBJ obj,
-	SYMTAB_ENTRY *theSymTab,
+                        const SYMTAB_ENTRY *theSymTab,
 	int newness)
 {
 	TYPE_DESC    *descDep;
@@ -1220,17 +1214,17 @@ static void LocalizeSymTab (LC_MSGHANDLE xm,
 
 static void LocalizeObjects (LC_MSGHANDLE xm, int required_newness)
 {
-	SYMTAB_ENTRY *theSymTab;
-	OBJTAB_ENTRY *theObjTab;
-	char         *theObjects;
+  const SYMTAB_ENTRY *theSymTab;
+  const OBJTAB_ENTRY *theObjTab;
+  const char         *theObjects;
 	int          i;
 	int          lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
 
 
 	/* get table addresses inside message buffer */
-	theSymTab = (SYMTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.symtab_id);
-	theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
-	theObjects = (char *)        LC_GetPtr(xm, xferGlobals.objmem_id);
+  theSymTab = (const SYMTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.symtab_id);
+  theObjTab = (const OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
+  theObjects = (const char *)        LC_GetPtr(xm, xferGlobals.objmem_id);
 
 
 	for(i=0; i<lenObjTab; i++)         /* for all message items */
