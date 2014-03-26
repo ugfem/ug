@@ -85,10 +85,6 @@ USING_UG_NAMESPACES
    #define UPDATE_FULLOVERLAP
  */
 
-/* define for load balancing which allows for refinement only */
-#define COARSEN_MARKS(mg)       CoarseMarks(mg)
-
-
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -119,51 +115,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-
-/****************************************************************************/
-/*
-   CoarseMarks - check whether coarse marks exists
-
-   SYNOPSIS:
-   INT CoarseMarks (MULTIGRID *theMG);
-
-   PARAMETERS:
-   .  theMG
-
-   DESCRIPTION:
-   This function checks the multigrid for existing coarse marks.
-
-   RETURN VALUE:
-   INT
-   .n   0 - no marks
-   .n   >0 - number of marks
- */
-/****************************************************************************/
-
-INT CoarseMarks (MULTIGRID *theMG)
-{
-  INT i,coarse_marks;
-  ELEMENT *theElement,*MarkElement;
-  GRID    *theGrid;
-
-  coarse_marks = 0;
-
-  for (i=TOPLEVEL(theMG); i>0; i--)
-  {
-    theGrid = GRID_ON_LEVEL(theMG,i);
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
-         theElement=SUCCE(theElement))
-    {
-      if (LEAFELEM(theElement))
-      {
-        MarkElement = ELEMENT_TO_MARK(theElement);
-        if (COARSEN(MarkElement) == 1) coarse_marks++;
-      }
-    }
-  }
-
-  return(coarse_marks);
-}
 
 /****************************************************************************/
 /*
