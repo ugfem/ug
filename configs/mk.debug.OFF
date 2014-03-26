@@ -1,4 +1,0 @@
-# this file is for internal ug configuration. don't change it!
-# if NDEBUG is defined all assert commands are skipped
-
-UGDEBUG_CFLAGS = -DNDEBUG

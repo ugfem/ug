@@ -1,4 +1,0 @@
-# this file is for internal ug configuration. don't change it!
-
-CAD_CFLAGS = -DCAD
-CAD_LFLAGS = $(UGROOT)/lib/libcad.a

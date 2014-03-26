@@ -1,6 +1,0 @@
-# this file is for internal ug configuration. don't change it!
-
-PV3_TARGET = PV3_ON
-PV3_CFLAGS = -D_PV3
-PV3_LFLAGS = $(UGROOT)/lib/libpv3if.a -L$(PVM_ROOT)/lib/$(PVM_ARCH) \
-		-lpV3 -lgpvm3 -lpvm3 -lpgftnrtl -lpgc

@@ -1,3 +1,0 @@
-# this file is for internal ug configuration. don't change it!
-
-UGDEBUG_CFLAGS = -DDebug

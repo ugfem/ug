@@ -1,5 +1,0 @@
-# this file is for internal ug configuration. don't change it!
-
-NETGEN_CFLAGS =
-NETGEN_LFLAGS =
-

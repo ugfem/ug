@@ -1,8 +1,0 @@
-# this file is for internal ug configuration. don't change it!
-
-NETGEN_CFLAGS = -D_NETGEN
-NETGEN_LFLAGS = $(UGROOT)/lib/libnetgen.a
-
-# if netgen is needed, we also need C++ linkage.
-UG_LINK = $(ARCH_C++)
-

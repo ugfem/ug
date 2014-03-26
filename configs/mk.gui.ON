@@ -1,4 +1,0 @@
-# this file is for internal ug configuration. don't change it!
-
-GUI_CFLAGS = -D__GUI__
-GUI_LFLAGS = $(UGROOT)/lib/libgui.a -L$(UGROOT)/dev/xif/gui/lsx/lib -lsx
