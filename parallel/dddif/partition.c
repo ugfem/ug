@@ -110,8 +110,6 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-static INT coarsen_marks = 0;
-
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -195,7 +193,6 @@ INT NS_DIM_PREFIX CheckPartitioning (MULTIGRID *theMG)
   GRID    *theGrid;
 
   _restrict_ = 0;
-  coarsen_marks = COARSEN_MARKS(theMG);
 
   /* reset used flags */
   for (i=TOPLEVEL(theMG); i>0; i--)
