@@ -193,7 +193,7 @@ static int sort_ObjTabPtrs (const void *e1, const void *e2)
 	used by PutDepData() ).
 */
 
-static void LocalizeObject (int merge_mode, TYPE_DESC *desc,
+static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
                             const char *msgmem,
 	DDD_OBJ  objmem,
 	SYMTAB_ENTRY *theSymTab)
