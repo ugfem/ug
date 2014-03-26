@@ -172,7 +172,7 @@ INT NS_DIM_PREFIX CheckPartitioning (MULTIGRID *theMG)
         }
         if (COARSEN(theFather))
         {
-          /* level 0 elements can not be coarsened */
+          /* level 0 elements cannot be coarsened */
           if (LEVEL(theFather)<=1) continue;
           if (!EMASTER(EFATHER(theFather)))
           {
