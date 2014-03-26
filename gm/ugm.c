@@ -2666,10 +2666,6 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
     }
   }
 
-  if (me == -1) {
-    assert(KeyForObject((KEY_OBJECT *)pe) != -66529);
-  }
-
   /* return ok */
   return(pe);
 }
