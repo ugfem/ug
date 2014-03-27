@@ -105,18 +105,9 @@ RCSID("$Header$",DDD_RCS_STRING)
 /****************************************************************************/
 
 
-#ifdef SORT_STATISTIK
-static int n34=0, n35=0, n36=0;
-#endif
-
-
 static int sort_SymTabEntries (const void *e1, const void *e2)
 {
   SYMTAB_ENTRY   *ci1, *ci2;
-
-#ifdef SORT_STATISTIK
-  n34++;
-#endif
 
   ci1 = (SYMTAB_ENTRY *)e1;
   ci2 = (SYMTAB_ENTRY *)e2;
@@ -133,10 +124,6 @@ static char *currentObjectMem;
 static int sort_ObjTabEntries (const void *e1, const void *e2)
 {
   DDD_GID g1, g2;
-
-#ifdef SORT_STATISTIK
-  n35++;
-#endif
 
   g1 = OTE_GID(currentObjectMem, (OBJTAB_ENTRY *)e1);
   g2 = OTE_GID(currentObjectMem, (OBJTAB_ENTRY *)e2);
@@ -645,14 +632,6 @@ static void XferPackSingleMsg (XFERMSG *msg)
   currentObjectMem = theObjects;
   qsort(theObjTab, msg->nObjects, sizeof(OBJTAB_ENTRY), sort_ObjTabEntries);
   /*STAT_INCTIMER3(35); STAT_RESET3;*/
-
-
-#ifdef SORT_STATISTIK
-  sprintf(cBuffer, "ITEMS 34=%d, 35=%d, 36=%d\n", actSym,  msg->nObjects,  actNewCpl);
-  DDD_PrintDebug(cBuffer);
-  sprintf(cBuffer, "COMPS 34=%d, 35=%d, 36=%d\n", n34,  n35,  n36);
-  DDD_PrintDebug(cBuffer);
-#endif
 
 
   /* substitute all pointers by index into SymTab */
