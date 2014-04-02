@@ -160,7 +160,7 @@ BndNode:
 														$<bs>$=&BndNode;
 													}
 	BndSpec 										{PutBndNode(&BndNode);}
-	TEND			
+	TEND    										{}
     ;
 BndSpec:
     LinePosition									{
