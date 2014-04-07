@@ -3,7 +3,6 @@
 # !!! test and include them:
 #
 # mif (MacOS)
-# nif (NeXT)
 
 SUBDIRS = ppm meta ps . sif xif rif $(EXTRADIR)
 
