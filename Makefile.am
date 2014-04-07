@@ -23,5 +23,7 @@ cmakeconfig_DATA = ug-config.cmake ug-config-version.cmake
 # don't follow the full GNU-standard
 AUTOMAKE_OPTIONS = foreign 1.7
 
+ACLOCAL_AMFLAGS = -I m4
+
 # possibly use the same compiler for distcheck
 # DISTCHECK_CONFIGURE_FLAGS = CXX="$(CXX)" CC="$(CC)"
