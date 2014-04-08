@@ -4,7 +4,7 @@
 /*																			*/
 /* File:	  ugtimer.c														*/
 /*																			*/
-/* Purpose:   implements a simple timimg facility			                */
+/* Purpose:   implements a simple timing facility			                */
 /*																			*/
 /* Author:	  Peter Bastian/Klaus Johannsen                                                                 */
 /*			  Institut fuer Computeranwendungen III                                                 */

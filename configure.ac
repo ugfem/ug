@@ -210,7 +210,6 @@ AM_CONDITIONAL(MACOS, test x$build_vendor = xapple)
 AC_CONFIG_FILES([Makefile
                  dev/Makefile
 		 dev/meta/Makefile
-		 dev/mif/Makefile
 		 dev/ppm/Makefile
 		 dev/ps/Makefile
 		 dev/rif/Makefile
@@ -264,7 +263,6 @@ AC_OUTPUT
 dnl Still missing:
 dnl
 dnl		     dom/gen/Makefile
-dnl                  dev/mif/Makefile
 dnl                  gm/gg3/netgen/general/makefile
 dnl                  gm/gg3/netgen/geom/makefile
 dnl                  gm/gg3/netgen/linalg/makefile

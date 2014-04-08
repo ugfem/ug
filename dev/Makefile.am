@@ -1,17 +1,6 @@
 # $Id$
 
-# !!! test and include them:
-#
-# mif (MacOS)
-# nif (NeXT)
-
-SUBDIRS = ppm meta ps . sif xif rif $(EXTRADIR)
-
-if MACOS
-  EXTRADIR = mif
-else
-  EXTRADIR =
-endif
+SUBDIRS = ppm meta ps . sif xif rif
 
 noinst_LTLIBRARIES = libdevices.la
 
