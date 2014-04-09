@@ -20,7 +20,7 @@ Extensions:
 Bug description:
 	- first give a short description of the bug and the
 		error message you get.
-	- if possible report a programm stack, to see in which
+	- if possible report a program stack, to see in which
 		function the bug occurs.
 	- if the bug is reproducable, describe all information
 		to do that: date,application, used script, 

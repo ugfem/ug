@@ -160,7 +160,7 @@ typedef struct {
 } SubControlVolume;                                     /* FV intersected with element                  */
 
 typedef struct {
-  INT i,j;                                                      /* scvf seperates corner i and j of elem*/
+  INT i,j;                                                      /* scvf separates corner i and j of elem*/
   DOUBLE_VECTOR ip_local;                       /* integration point in local coords    */
   DOUBLE_VECTOR ip_global;                          /* integration point in global coords       */
   DOUBLE_VECTOR normal;                         /* normal on face at ip pointing to CV j*/

@@ -2027,7 +2027,7 @@ static INT IO_GridCons(MULTIGRID *theMG)
 #if (MGIO_DEBUG>0)
 static void CheckNeighborElement( ELEMENT *theElement, INT nb_nr, INT expected_nb_key, const char *messagePrefix )
 /* Checks wheather the relation between an element and a given neighbor is ok.
-   If an error is detected, the programm stopps with 'assert'.
+   If an error is detected, the program stopps with 'assert'.
  */
 {
   INT k, key;
@@ -2747,7 +2747,7 @@ MULTIGRID * NS_DIM_PREFIX LoadMultiGrid (const char *MultigridName,
                                          INT force,
                                          INT optimizedIE,
                                          INT autosave)
-/* Documentation of the intended programm flow resp. communication requirements.
+/* Documentation of the intended program flow resp. communication requirements.
    Functions introducing a global communication (all processors without any exception)
    are:
         UG_GlobalMin* and DDD_XferBegin/End

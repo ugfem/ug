@@ -2253,7 +2253,7 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
   /* find name seperator */
   if ((names=strchr(argv[opt],NAMESEP))==NULL) {
     PrintErrorMessageF('E',"newformat",
-                       "seperate names by a colon ':' from the description (in '$%s')",argv[opt]);
+                       "separate names by a colon ':' from the description (in '$%s')",argv[opt]);
     REP_ERR_RETURN (1);
   }
   *(names++) = '\0';
@@ -2701,7 +2701,7 @@ static INT ScanTypeOptions (INT argc, char **argv, INT po2t[][MAXVOBJECTS], INT 
       }
       TypeNames[max] = c;
 
-      /* seperate object list */
+      /* separate object list */
       if ((objstr=strchr(argv[opt],NAMESEP))==NULL)
       {
         PrintErrorMessageF('E',"newformat",

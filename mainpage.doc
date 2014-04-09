@@ -35,7 +35,7 @@ This page will give an overview of the data types defined in UG
 that are used to represent meshes and geometries. All data types discussed here are 
 defined in the header file gm.h of the grid manager module.
 A description of the individual data types can be found in 
-seperate pages for each data type. UGs data structure is very flexible
+separate pages for each data type. UGs data structure is very flexible
 and covers two- and threedimensional elements and a general sparse
 matrix structure. You can have different numbers of degrees of freedom 
 in nodes, edges, sides
@@ -63,10 +63,10 @@ a side consists of one edge and two nodes in that case.
 The TeX version of this page contains a graphical representation of the data 
 structure.
 
-Size limitations of the data structure are described in a seperate page LIMITS.
+Size limitations of the data structure are described in a separate page LIMITS.
 
 All data types have names with uppercase letters. Now we give a brief description
-of all data types for which a seperate page is provided.
+of all data types for which a separate page is provided.
 
 . DOMAIN - Structure that describes a two- or threedimensional domain.
 
@@ -327,7 +327,7 @@ IMACS, North-Holland, Amsterdam, 1983.
 
 .n  'clear x $a $v 0'
 
-    resets 'x' on a specified value. The parameters are seperated by '$'.
+    resets 'x' on a specified value. The parameters are separated by '$'.
     Here, the first parameter follows after the command name,
 	the option '$a' performs this command on all levels and '$v'
 	specifies the value.

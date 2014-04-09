@@ -4282,7 +4282,7 @@ INT PolylineSplit(PL_LINE_TYP **anfang, PL_LINE_TYP **rechtesMuster, PL_TYP *Pol
   merkeplptr = EXCHNG_TYP2_ROOT_PLY(ExchangeVar_2_Pointer);
   if((neuePolyline = (PL_TYP *)GetTmpMem(theHeap,sizeof(PL_TYP),ANS_MarkKey))== NULL)
   {
-    PrintErrorMessage('E',"PolylineSplit","got no mem for the new polyline, which splitted");
+    PrintErrorMessage('E',"PolylineSplit","got no mem for the new polyline, which split");
     return (1);
   }
   /*dass sie vom SortPolyline-DURCHLAUF nicht mehr erfasst wird also am besten an den
@@ -5282,7 +5282,7 @@ INT GetMemAndFillNewRlSfc(PLZ_TYP **anfang,PLZ_TYP **rechtesMuster,SF_TYP *theSu
    INT ReconstructSurfacePolylines(SF_TYP *theSurface)
 
    PARAMETERS:
-   .  theSurface - pointer to the original surface which perhaps has to be splitted
+   .  theSurface - pointer to the original surface which perhaps has to be split
    .  yyy - bla bla bla bla
 
    DESCRIPTION:
@@ -5383,7 +5383,7 @@ INT ReconstructSurfacePolylines(SF_TYP *theSurface)
    INT Create_RealSurfaces(SF_TYP *theOrigSfce)
 
    PARAMETERS:
-   .  theOrigSfce - pointer to the original surface which perhaps has to be splitted
+   .  theOrigSfce - pointer to the original surface which perhaps has to be split
    .  yyy - bla bla bla bla
 
    DESCRIPTION:

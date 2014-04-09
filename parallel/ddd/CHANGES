@@ -783,7 +783,7 @@ is much smaller now.
 introduced general message structure, now Notify() doesn't rely on
 special messages for Xfer, Spread, Cons etc anymore.
 960703 kb
-xfer, splitted XferInfo-list into two, one for objects and one for 
+xfer, split XferInfo-list into two, one for objects and one for 
 couplings.
 ---------------------------
 

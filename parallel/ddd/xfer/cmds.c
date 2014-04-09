@@ -16,7 +16,7 @@
 /* History:   931130 kb  begin (xfer.c)                                     */
 /*            950321 kb  added variable sized objects (XferCopyObjX)        */
 /*            950405 kb  V1.3: extracted from xfer.c                        */
-/*            960703 kb  splitted XferInfo-list into ObjXfer and CplXfer    */
+/*            960703 kb  split XferInfo-list into ObjXfer and CplXfer    */
 /*            960718 kb  introduced lowcomm-layer (sets of messages)        */
 /*                                                                          */
 /* Remarks:                                                                 */

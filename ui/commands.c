@@ -1150,7 +1150,7 @@ static INT OpenProto (char *name, INT mode)
 
   if (strcmp(realname+pathlen,name)!=0)
   {
-    PrintErrorMessageF('W',"OpenProto","opened protcol file '%s' (instead of '%s')",realname+pathlen,name);
+    PrintErrorMessageF('W',"OpenProto","opened protocol file '%s' (instead of '%s')",realname+pathlen,name);
   }
 
   return(0);
@@ -10912,7 +10912,7 @@ static INT ShowConfigCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
 
-  UserWrite("Configuration of this programm:\n");
+  UserWrite("Configuration of this program:\n");
 
 #ifdef _2
   UserWrite("    Dimension:    2\n");

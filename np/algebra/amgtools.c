@@ -1857,7 +1857,7 @@ INT NS_DIM_PREFIX CoarsenBreadthFirst (GRID *theGrid)
 /* see also Neuss' thesis, ICA-Preprint 1996-07.                            */
 /* PutVectInCluster, GenerateClusters are auxiliary functions to            */
 /* CoarsenVanek. Observe that grid and IMATRIX-generation are not           */
-/* completely seperated, since the clusters are defined by the IMATRIX      */
+/* completely separated, since the clusters are defined by the IMATRIX      */
 /* initially.                                                               */
 /****************************************************************************/
 

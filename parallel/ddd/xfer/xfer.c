@@ -17,7 +17,7 @@
 /*                                                                          */
 /* History:   93/11/30 kb  begin                                            */
 /*            95/03/21 kb  added variable sized objects (XferCopyObjX)      */
-/*            96/07/03 kb  splitted XferInfo-list into ObjXfer and CplXfer  */
+/*            96/07/03 kb  split XferInfo-list into ObjXfer and CplXfer  */
 /*            960718 kb  introduced lowcomm-layer (sets of messages)        */
 /*                                                                          */
 /* Remarks:                                                                 */

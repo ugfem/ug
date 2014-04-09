@@ -4749,7 +4749,7 @@ static INT DisplayVecMat_3D (PLOTOBJ *thePlotObj)
    .    $n[i]~0|1				- plot node markers (and IDs)
    .    $v[i]~0|1				- plot vector markers (and indices)
    .    $t~<type~list>			- only vectors of specified types
-   .    <type~list>			- a list composed by any of nd, ed, el, si, seperated by blanks
+   .    <type~list>			- a list composed by any of nd, ed, el, si, separated by blanks
    .    $s~<shrink>			- factor to shrink elements
    .    $a~0..1                - contribution of ambient light to face intensity
    .    $p~<shrink>			- parallel only: factor to shrink processor partition

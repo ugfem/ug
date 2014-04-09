@@ -6949,7 +6949,7 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
    numbered beginning from 0 along the construction. If the vector-list
    is shorter than 'vectors', the function will not be troubled
    and GM_INCONSISTENCY is returned. If the vector-list
-   is longer than 'vectors', these vectors are covered in a seperate
+   is longer than 'vectors', these vectors are covered in a separate
    blockvector with number 1 (this overlapping vectors might be for
    example dirichlet boundary vectors).
 
@@ -7069,7 +7069,7 @@ INT NS_DIM_PREFIX CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_str
    numbered beginning from 0 along the construction. If the vector-list
    is shorter than 'inner_vectors', the function will not be troubled
    and GM_INCONSISTENCY is returned. If the vector-list
-   is longer than 'vectors', these vectors are covered in a seperate
+   is longer than 'vectors', these vectors are covered in a separate
    blockvector with number 1 (this overlapping vectors might be for
    example dirichlet boundary vectors).
 

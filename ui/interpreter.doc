@@ -67,7 +67,7 @@
    is executed via the @-operator, see the section about `Substitution`.
 
    COMMAND SEPERATION AND COMMENTS:
-   Like in the C language, commands are seperated by the character ';'
+   Like in the C language, commands are separated by the character ';'
    and grouped to a single one with the brackets '{}'.
    '\n' and '\t' are allowed as formatting characters.
    
@@ -212,7 +212,7 @@
    as a single command, which is usually what one would want.
    Since simple expansion would also be reasonable, it is recommended to
    enclose them additionally in brackets as in the example below.
-   It is also useful to put them in a seperate structure (e.g. '[colon]P'),
+   It is also useful to put them in a separate structure (e.g. '[colon]P'),
    since they often give very long listings.
    Perhaps in later releases subroutines
    will not be put in the '/Strings'-tree anyhow. Remember here the
@@ -238,7 +238,7 @@
    give it a meaning as a case insensitive abbreviation of an
    `ug`-command.
    
-   If the command is found, the whole line is splitted into several
+   If the command is found, the whole line is split into several
    strings, using the character '$' as seperation sign. The first
    string starts with the name of the command, the further ones
    are options to the command. The C-routine of the command obtains
