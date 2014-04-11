@@ -6523,6 +6523,16 @@ INT  NS_DIM_PREFIX AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgte
 	/* check and restrict partitioning of elements */
 	if (CheckPartitioning(theMG))
 	{
+          /* Each call to RestrictPartitioning fixes the partitionings of children with
+           * respect to their fathers.  To fix also fix the partitionings of the grandchildren,
+           * the method has to be called again.  To be on the save side we call it once for
+           * every level.
+           * If I omit the loop (the way it was until 11.4.2014 I get assertion failures here
+           * when mixing load balancing and adaptive refinement.  I am not really sure whether
+           * the loop is the correct fix, or whether it just papers over the problem.
+           * Anyway, no crashes for now.
+           */
+          for (level=0; level<TOPLEVEL(theMG); level++)
 		if (RestrictPartitioning(theMG)) RETURN(GM_FATAL);
 		if (CheckPartitioning(theMG)) assert(0);
 	}
