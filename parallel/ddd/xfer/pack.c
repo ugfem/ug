@@ -172,7 +172,7 @@ static int sort_MsgSize (const void *e1, const void *e2)
 
 static int BuildSymTab (TYPE_DESC *desc,
                         DDD_OBJ obj,
-                        char *copy,
+                        const char *copy,
                         SYMTAB_ENTRY *theSymTab)
 {
   ELEM_DESC   *theElem;
