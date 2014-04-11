@@ -6512,9 +6512,6 @@ INT  NS_DIM_PREFIX AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgte
 	GRID *theGrid, *FinerGrid;
 	ELEMENT *theElement;
 
-/*
-CheckMultiGrid(theMG);
-*/
 	/* check necessary condition */
 	if (!MG_COARSE_FIXED(theMG))
 		return (GM_COARSE_NOT_FIXED);
@@ -6528,8 +6525,6 @@ CheckMultiGrid(theMG);
 	{
 		if (RestrictPartitioning(theMG)) RETURN(GM_FATAL);
 		if (CheckPartitioning(theMG)) assert(0);
-if (0)
-		return(GM_OK);
 	}
 }
 #endif
