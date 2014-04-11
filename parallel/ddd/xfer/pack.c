@@ -178,8 +178,6 @@ static int BuildSymTab (TYPE_DESC *desc,
   ELEM_DESC   *theElem;
   int e, actSym;
 
-  /*STAT_RESET4;*/
-
   /* reset local portion of SymTab */
   actSym = 0;
 
@@ -254,8 +252,6 @@ static int BuildSymTab (TYPE_DESC *desc,
       }
     }
   }
-
-  /*STAT_INCTIMER4(33);*/
 
   /* return SymTab increment */
   return(actSym);
@@ -554,7 +550,6 @@ static void XferPackSingleMsg (XFERMSG *msg)
 #else
     ObjToMsg (obj, desc, currObj);
 #endif
-    /*STAT_INCTIMER3(32);*/
 
     /* insert priority into copy */
     OBJ_PRIO(copyhdr) = xi->prio;
@@ -624,18 +619,14 @@ static void XferPackSingleMsg (XFERMSG *msg)
 
 
   /* sort SymTab, ObjTab and CplTab */
-  /*STAT_RESET3;*/
   qsort(theSymTab, actSym, sizeof(SYMTAB_ENTRY), sort_SymTabEntries);
-  /*STAT_INCTIMER3(34); STAT_RESET3;*/
 
   /* sorting of objtab is necessary!! (see AcceptObjFromMsg) KB 960812 */
   currentObjectMem = theObjects;
   qsort(theObjTab, msg->nObjects, sizeof(OBJTAB_ENTRY), sort_ObjTabEntries);
-  /*STAT_INCTIMER3(35); STAT_RESET3;*/
 
 
   /* substitute all pointers by index into SymTab */
-  /*TAT_RESET3;*/
   for(mi=0; mi<actSym; mi++)
   {
     /* patch SymTab index into reference location inside message */
@@ -646,7 +637,6 @@ static void XferPackSingleMsg (XFERMSG *msg)
     *(theSymTab[mi].adr.ref) = (mi+1);
 #endif
   }
-  /*STAT_INCTIMER3(37);*/
 
 
   /* TODO: theSymtab[].ref wird ab hier nicht mehr verwendet und muss nicht uebertragen werden! */
