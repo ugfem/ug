@@ -820,7 +820,7 @@ void      DDD_InfoCoupling (DDD_HDR);
 
 
 /* mgr/prio.c */
-int PriorityMerge (TYPE_DESC *, DDD_PRIO, DDD_PRIO, DDD_PRIO *);
+enum PrioMergeVals PriorityMerge (TYPE_DESC *, DDD_PRIO, DDD_PRIO, DDD_PRIO *);
 
 
 /* if/if.c */

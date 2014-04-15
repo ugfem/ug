@@ -583,7 +583,7 @@ static void AcceptObjFromMsg (
 			/* object already here, compare priorities.
 			   this is the implementation of rule XFER-C3. */
 			DDD_PRIO newprio;
-			int  ret;
+                        enum PrioMergeVals ret;
 
 			/* if local object should have been XferDelete'd, but the
 			   delete-cmd had been pruned (see cmdmsg.c), a flag has been

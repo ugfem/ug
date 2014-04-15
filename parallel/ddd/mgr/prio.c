@@ -190,7 +190,7 @@ void DDD_InfoPriority (DDD_TYPE *type, DDD_OBJ *obj, DDD_PRIO *prio)
                 PRIO_ERROR     an error has occurred.
  */
 
-int PriorityMerge (TYPE_DESC *desc, DDD_PRIO p1, DDD_PRIO p2, DDD_PRIO *pres)
+enum PrioMergeVals PriorityMerge (TYPE_DESC *desc, DDD_PRIO p1, DDD_PRIO p2, DDD_PRIO *pres)
 {
   /* check if matrix is available */
   if (desc->prioMatrix == NULL)
