@@ -4,28 +4,28 @@
 /*                                                                          */
 /* File:      evm.c                                                         */
 /*                                                                          */
-/* Purpose:   elementary vector manipulations								*/
+/* Purpose:   elementary vector manipulations                               */
 /*                                                                          */
-/* Author:	  Klaus Johannsen												*/
-/*			  Institut fuer Computeranwendungen                                                     */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  internet: ug@ica3.uni-stuttgart.de						    */
-/*																			*/
-/* History:   8.12.94 begin, ug3-version									*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/* Author:    Klaus Johannsen                                               */
+/*            Institut fuer Computeranwendungen                             */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            internet: ug@ica3.uni-stuttgart.de                            */
+/*                                                                          */
+/* History:   8.12.94 begin, ug3-version                                    */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
 /****************************************************************************/
-/*																			*/
-/* include files															*/
-/*			  system include files											*/
-/*			  application include files                                                                     */
-/*																			*/
+/*                                                                          */
+/* include files                                                            */
+/*        system include files                                              */
+/*        application include files                                         */
+/*                                                                          */
 /****************************************************************************/
 
 #include "config.h"
@@ -47,28 +47,28 @@ USING_UG_NAMESPACE
   USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*        compile time constants defining static data size (i.e. arrays)    */
+/*        other constants                                                   */
+/*        macros                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 #define OneSixth 0.166666666666666667
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
-/*		  in the corresponding include file!)								*/
-/*																			*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
+/* in the corresponding include file!)                                      */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -80,9 +80,9 @@ const DOUBLE NS_DIM_PREFIX unit_vec[DIM][DIM]={{1,0,0},{0,1,0},{0,0,1}};
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 REP_ERR_FILE;
@@ -91,9 +91,9 @@ REP_ERR_FILE;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*																			*/
-/* forward declarations of macros											*/
-/*																			*/
+/*                                                                          */
+/* forward declarations of macros                                           */
+/*                                                                          */
 /****************************************************************************/
 
 #define MIN_DETERMINANT                                 0.0001*SMALL_C
@@ -101,9 +101,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
-/****																	 ****/
-/****		general routines											 ****/
-/****																	 ****/
+/****                                                                    ****/
+/****    general routines                                                ****/
+/****                                                                    ****/
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
