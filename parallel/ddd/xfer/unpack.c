@@ -202,10 +202,6 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 	int          e;
 	DDD_OBJ      obj = objmem;
 
-
-/*
-printf("%4d:    Localize {\n", me); fflush(stdout);
-*/
 	/* prepare map of structure elements */
 	theElem = desc->element;
 
@@ -221,10 +217,6 @@ printf("%4d:    Localize {\n", me); fflush(stdout);
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
       const char      *msgrefarray = msgmem+theElem->offset;
 			char      *objrefarray = objmem+theElem->offset;
-/*
-printf("%4d:    Localize e=%d typ=%s reftyp=%d size=%d\n",
-	me,e,desc->name,theElem->reftype,theElem->size); fflush(stdout);
-*/
 #endif
 #ifdef F_FRONTEND
 			char      *objrefarray = theElem->array + (theElem->size*obj);
@@ -319,11 +311,6 @@ printf("%4d:    Localize e=%d typ=%s reftyp=%d size=%d\n",
 				         to the reference array inside the local
 				         local object!
 				*/
-
-/*
-printf("%4d:    Localize adr=%08x l=%d ref=%08x *ref=%08x stIdx=%d\n",
-	me,objmem,l,ref,*ref,(int)stIdx); fflush(stdout);
-*/
 
 				if (stIdx>=0)
 				{
@@ -437,11 +424,6 @@ static void PutDepData (char *data,
 	chunks = ((int *)data)[0];
 	chunk  = data + CEIL(sizeof(int));
 
-
-/*
-printf("%4d: PutDepData (chunks=%d) {\n", me, chunks); fflush(stdout);
-*/
-
 	/* loop through all chunks */
 	for(j=0; j<chunks; j++)
 	{
@@ -468,10 +450,6 @@ printf("%4d: PutDepData (chunks=%d) {\n", me, chunks); fflush(stdout);
 							theSymTab);
 					}
 					curr += CEIL(descDep->size);
-
-/*
-printf("%4d: PutDepData   chunk %d, item %d/%d\n", me, j, i, addCnt); fflush(stdout);
-*/
 				}
 			}
 			else
@@ -482,9 +460,6 @@ printf("%4d: PutDepData   chunk %d, item %d/%d\n", me, j, i, addCnt); fflush(std
 			}
 		
 			/* scatter data via handler */
-/*
-printf("%4d: PutDepData   XFERSCATTER ...\n", me); fflush(stdout);
-*/
 			if (desc->handlerXFERSCATTER)
 			{
 				#if defined(C_FRONTEND) || defined(F_FRONTEND)
@@ -496,9 +471,6 @@ printf("%4d: PutDepData   XFERSCATTER ...\n", me); fflush(stdout);
 					addCnt, addTyp, (void *)chunk, newness);
 				#endif
 			}
-/*
-printf("%4d: PutDepData   XFERSCATTER ok\n", me); fflush(stdout);
-*/
 		}
 		else
 		{
@@ -539,16 +511,8 @@ printf("%4d: PutDepData   XFERSCATTER ok\n", me); fflush(stdout);
 			}
 		}
 
-
-/*
-printf("%4d: PutDepData   finished chunk %d\n", me, j); fflush(stdout);
-*/
 		chunk = curr;
 	}
-
-/*
-printf("%4d: PutDepData }\n", me, chunks); fflush(stdout);
-*/
 }
 
 
@@ -1362,12 +1326,6 @@ static void UnpackAddData (LC_MSGHANDLE xm, int required_newness)
 				DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 				char      *data;
 			
-				/*
-				printf("%4d: scatter %d/%d, addLen=%d, objadr=%08x gid=%08x\n",
-					me,i,lenObjTab,theObjTab[i].addLen,obj,theObjTab[i].gid);
-				fflush(stdout);
-				*/
-
 				/*
 					compute begin of data section. theObjTab[i].size is equal to
 					desc->len for fixed sized objects and different for variable
