@@ -617,10 +617,11 @@ static void XferPackSingleMsg (XFERMSG *msg)
   }
 
 
-
   /* sort SymTab, ObjTab and CplTab */
+  /* sort SymTab according to the global ids stored there */
   qsort(theSymTab, actSym, sizeof(SYMTAB_ENTRY), sort_SymTabEntries);
 
+  /* sort ObjTab according to their global ids */
   /* sorting of objtab is necessary!! (see AcceptObjFromMsg) KB 960812 */
   currentObjectMem = theObjects;
   qsort(theObjTab, msg->nObjects, sizeof(OBJTAB_ENTRY), sort_ObjTabEntries);
