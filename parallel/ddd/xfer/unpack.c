@@ -408,7 +408,7 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 
 
 static void PutDepData (char *data,
-	TYPE_DESC *desc,
+                        const TYPE_DESC *desc,
 	DDD_OBJ obj,
                         const SYMTAB_ENTRY *theSymTab,
 	int newness)
@@ -523,7 +523,7 @@ static void PutDepData (char *data,
 
 static void AcceptObjFromMsg (
 	OBJTAB_ENTRY *theObjTab, int lenObjTab,
-	char *theObjects,
+                              const char *theObjects,
                               const DDD_HDR *localCplObjs, int nLocalCplObjs)
 {
 	int i, j;
@@ -662,8 +662,7 @@ static void AcceptObjFromMsg (
 
 
 
-static void AcceptReceivedObjects (
-	LC_MSGHANDLE *theMsgs, int nRecvMsgs,
+static void AcceptReceivedObjects (const LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	OBJTAB_ENTRY **allRecObjs, int nRecObjs,
                                    const DDD_HDR *localCplObjs, int nLocalCplObjs)
 {
