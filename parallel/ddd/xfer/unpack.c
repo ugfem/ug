@@ -608,6 +608,15 @@ static void AcceptObjFromMsg (
 
 			/* store pointer to local object */
 			/* overwrite pointer to hdr inside message */
+                        if (OBJ_TYPE(ote->hdr) != OBJ_TYPE(localCplObjs[j]))
+                        {
+                          printf("%d: ERROR, copying changed the object type!\n", me);
+                          printf("%d: was: %s, becomes: %s\n",
+                                 me,
+                                 theTypeDefs[OBJ_TYPE(ote->hdr)].name,
+                                 theTypeDefs[OBJ_TYPE(localCplObjs[j])].name);
+                          assert(OBJ_TYPE(ote->hdr) == OBJ_TYPE(localCplObjs[j]));
+                        }
 			ote->hdr = localCplObjs[j];
 
 			/* store old priority and set new one */
