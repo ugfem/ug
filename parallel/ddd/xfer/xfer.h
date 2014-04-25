@@ -654,7 +654,7 @@ RETCODE XferPackMsgs (XFERMSG *);
 
 
 /* unpack.c, used only by cmds.c */
-void XferUnpack (LC_MSGHANDLE *, int, DDD_HDR *, int,
+void XferUnpack (LC_MSGHANDLE *, int, const DDD_HDR *, int,
                  XISetPrioPtrArray *, XIDelObj  **, int,
                  XICopyObjPtrArray *, XICopyObj **, int);
 

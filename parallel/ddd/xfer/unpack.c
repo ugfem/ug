@@ -560,7 +560,7 @@ printf("%4d: PutDepData }\n", me, chunks); fflush(stdout);
 static void AcceptObjFromMsg (
 	OBJTAB_ENTRY *theObjTab, int lenObjTab,
 	char *theObjects,
-	DDD_HDR *localCplObjs, int nLocalCplObjs)
+                              const DDD_HDR *localCplObjs, int nLocalCplObjs)
 {
 	int i, j;
 
@@ -701,7 +701,7 @@ static void AcceptObjFromMsg (
 static void AcceptReceivedObjects (
 	LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	OBJTAB_ENTRY **allRecObjs, int nRecObjs,
-	DDD_HDR *localCplObjs, int nLocalCplObjs)
+                                   const DDD_HDR *localCplObjs, int nLocalCplObjs)
 {
 	/*
 		allRecObjs is a pointer array to all OBJTAB_ENTRYs
@@ -835,7 +835,7 @@ enum UpdateCpl_Cases { UCC_NONE, UCC_NO, UCC_NC, UCC_NO_AND_NC };
 static void UpdateCouplings (
 		TENewCpl *itemsNC, int nNC,       /* NewCpl  */
 		OBJTAB_ENTRY **itemsO, int nO,    /* Objects */
-		DDD_HDR *itemsLCO, int nLCO,     /* local objs with coupling */
+                             const DDD_HDR *itemsLCO, int nLCO,     /* local objs with coupling */
 		XIDelObj  **itemsDO, int nDO,     /* XIDelObj */
 		XICopyObj **itemsNO, int nNO)     /* NewOwners */
 {
@@ -1161,7 +1161,7 @@ static void PropagateIncomings (
 
 static void LocalizeSymTab (LC_MSGHANDLE xm,
 	OBJTAB_ENTRY **allRecObjs, int nRecObjs,
-	DDD_HDR *localCplObjs, int nLocalCplObjs)
+                            const DDD_HDR *localCplObjs, int nLocalCplObjs)
 {
 	SYMTAB_ENTRY *theSymTab;
 	int          i, j;
@@ -1624,7 +1624,7 @@ static int CompressNewCpl (TENewCpl *tabNC, int nNC)
 */
 
 void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
-	DDD_HDR *localCplObjs, int nLocalCplObjs,
+                 const DDD_HDR *localCplObjs, int nLocalCplObjs,
 	XISetPrioPtrArray *theSP,
 	XIDelObj **arrayDO, int nDO,
 #ifdef CPP_FRONTEND
