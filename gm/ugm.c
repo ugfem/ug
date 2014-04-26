@@ -2240,7 +2240,7 @@ EDGE *
 #ifdef ModelP
 NS_DIM_PREFIX
 #endif
-CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
+CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, BOOL with_vector)
 {
   ELEMENT *theFather;
   EDGE *pe,*father_edge;
@@ -2543,7 +2543,7 @@ LINK *GetLink (const NODE *from, const NODE *to)
 /****************************************************************************/
 
 ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
-                                       ELEMENT *Father, INT with_vector)
+                                       ELEMENT *Father, BOOL with_vector)
 {
   ELEMENT *pe;
   INT i,s_id;
