@@ -285,7 +285,7 @@ RCSID("$Header$",DDD_RCS_STRING)
 static ID_PLIST   *thePLists;
 static int cntIdents, nPLists;
 
-static int identMode;
+static enum IdentMode identMode;
 
 
 
@@ -305,7 +305,7 @@ static int identMode;
         and recovery.
  */
 
-static const char *IdentModeName (int mode)
+static const char *IdentModeName (enum IdentMode mode)
 {
   switch(mode)
   {
@@ -317,7 +317,7 @@ static const char *IdentModeName (int mode)
 }
 
 
-static void IdentSetMode (int mode)
+static void IdentSetMode (enum IdentMode mode)
 {
   identMode = mode;
 
@@ -329,7 +329,7 @@ static void IdentSetMode (int mode)
 }
 
 
-static int IdentSuccMode (int mode)
+static enum IdentMode IdentSuccMode (enum IdentMode mode)
 {
   switch(mode)
   {
@@ -356,7 +356,7 @@ static int IdentActive (void)
 }
 
 
-static int IdentStepMode (int old)
+static int IdentStepMode (enum IdentMode old)
 {
   if (identMode!=old)
   {
