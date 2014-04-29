@@ -139,23 +139,6 @@ MODULAR STRUCTURE OF THE UG KERNEL:
 	This module handles low tasks as providing memory management, treating machine architecture and operation system 
 	dependencies. 
 
-
-OBTAINING THE CODE:
-	UG is available for free for all non-profit users. However a license form has to be completed
-    in order to keep track of all UG users. Upon sending back the license form you will receive a header file
-    'gm.h' that is needed to compile UG. WITHOUT THAT FILE YOU WILL NOT BE ABLE TO COMPILE UG!
-    Please read the file 'README.license' in the 'ug31' directory.
-
-    Please send the license to the following address.
-
-.vb
-    Sekretariat
-    Institut fuer Computeranwendungen III
-    Universitaet Stuttgart
-    Pfaffenwaldring 27
-    D-70550 Stuttgart
-.ve
-
 INSTALLATION:
 	For installation purposes read the manual page 'Installation' or the file 'README.install'. It will give you a
 	detailed description about the installation and compilation process of `ug` and related applications.
@@ -168,8 +151,7 @@ DOCUMENTATION:
     as UNIX manual pages that can be read by either 'man' or 'xman'.
 
 WHERE TO GO NEXT:
-.   LicenseAgreement,Installation - We suppose that you completed the license form and received
-    the file 'gm.h'. You should now read the file 'README.install' in the top level ug directory
+.   You should now read the file 'README.install' in the top level ug directory
     which explains the installation process in detail. The installation procedure will also
     explain how to access the manual pages. If you have problems with compilation, you should
     read the man page 'makefiles' that explains how the makefiles work and how UG can be
