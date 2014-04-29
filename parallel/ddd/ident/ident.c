@@ -773,11 +773,7 @@ static void TupelInit (ID_TUPEL *tupel, IDENTINFO **id, int nIds)
 
 static int IdentifySort (IDENTINFO **id, int nIds,
                          int nIdentObjs, MSGITEM *items_out, ID_TUPEL **indexmap_out,
-#ifdef CPP_FRONTEND
-                         DDD_PROC /*dest*/
-#else
                          DDD_PROC dest
-#endif
                          )
 {
   ID_TUPEL *tupels;
