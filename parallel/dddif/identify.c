@@ -114,7 +114,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /* this function is called for low level identification */
 static INT (*Ident_FctPtr)(DDD_HDR *IdentObjectHdr, INT nobject,
-                           int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident) = NULL;
+                           const int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident) = NULL;
 
 static int check_nodetype = 0;
 
@@ -226,7 +226,7 @@ static void ResetIdentFlags (GRID *Grid)
 
    SYNOPSIS:
    static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
-                                int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident);
+                                const int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident);
 
    PARAMETERS:
    .  IdentObjectHdr
@@ -244,7 +244,7 @@ static void ResetIdentFlags (GRID *Grid)
 /****************************************************************************/
 
 static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
-                                      int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
+                                      const int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
 {
   INT i;
 
@@ -399,7 +399,7 @@ static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
 /****************************************************************************/
 
 static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
-                                   int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
+                                   const int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
 {
   INT i,j,n;
 
