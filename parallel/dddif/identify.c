@@ -598,9 +598,9 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
     EdgeNodes = Nodes;
                         #endif
 
+    EDGE *theEdge;
                         #ifdef __THREEDIM__
     NODE *EdgeNodes[MAX_SIDE_NODES];
-    EDGE *theEdge;
 
     /* identification of cornernodes is done */
     /* in Identify_SonEdges()     */
@@ -626,19 +626,14 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
 
                         #ifdef __TWODIM__
     if (!NEW_NIDENT(theNode)) break;
-
-    /* 2D: identify to proclist of neighbor element */
-    proclist = DDD_InfoProcList(PARHDRE(theNeighbor));
                         #endif
 
-                        #ifdef __THREEDIM__
-    /* 3D: identify to proclist of edge */
+    /* Identify to proclist of edge */
     theEdge = GetEdge((NODE *)NFATHER(EdgeNodes[0]),
                       (NODE *)NFATHER(EdgeNodes[1]));
     ASSERT(theEdge!=NULL);
 
     proclist = DDD_InfoProcList(PARHDR(theEdge));
-                        #endif
 
     /* identify using edge nodes */
     IdentHdr[nident++] = PARHDR((NODE *)NFATHER(EdgeNodes[0]));
