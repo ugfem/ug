@@ -5801,7 +5801,7 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
 
 		for (theNode=PFIRSTNODE(UpGrid); theNode!=NULL; theNode=SUCCN(theNode))
 			SETNEW_NIDENT(theNode,0);
-		#ifdef __THREEDIM__
+
 		for (theElement=PFIRSTELEMENT(UpGrid); theElement!=NULL; theElement=SUCCE(theElement))
 		{
 			for (i=0; i<EDGES_OF_ELEM(theElement); i++)
@@ -5811,7 +5811,6 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
 				SETNEW_EDIDENT(theEdge,0);
 			}
 		}
-		#endif
 	}
 	#endif
 	
