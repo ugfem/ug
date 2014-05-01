@@ -6038,11 +6038,6 @@ int dddiflevel;
 
 if (IDENT_IN_STEPS)
 {
-if (0) {
-	printf(PFMT " 1. DDD_IdentifyEnd() in AdaptGrid(level=%d)\n",me,GLEVEL(theGrid));
-	fflush(stdout);
-	Synchronize();
-}
 	DDD_IdentifyEnd();
 }
 
@@ -6070,13 +6065,6 @@ DDD_CONSCHECK;
 	START_TIMER(ident_timer)
 
 	if (Identify_SonObjects(theGrid))	RETURN(GM_FATAL);
-
-
-if (0) {
-	printf(PFMT " 3. DDD_IdentifyEnd() in AdaptGrid(level=%d)\n",me,GLEVEL(theGrid));
-	fflush(stdout);
-	Synchronize();
-}
 
 	SET_IDENT_MODE(IDENT_OFF);
 	DDD_IdentifyEnd();
