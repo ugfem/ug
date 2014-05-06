@@ -91,25 +91,19 @@ static BBT_BBOX *CreateTriangleBBox(HEAP *theHeap, LGM_TRIANGLE *triangle)
 * PUBLIC function definitions (declarations are in the include file)        *
 *****************************************************************************/
 /*---------------------------------------------------------------------------*/
-/*D
-   LGM_InitAcceleration - init the lgm geometry acces acceleration
-
-   SYNOPSIS:
-   LGM_InitAcceleration(LGM_SURFACE **sf, INT nsf)
-
-   PARAMETERS:
-   .  theHeap - pointer to heap
-   .  sf      - array of pointer to lgm surfaces
-   .  n       - #lgm surfaces
-
-   DESCRIPTION:
-   .  This fuction will be called from LGM_LoadDomain() in lgm_load.c to generate
-   .  for each surface a tree with bounding boxes containing the triangles of the
-   .  lgm surface.
-
-   RETURN VALUE:
-   .  INT value 0: o.k. 1: error
-   D*/
+/**
+*\brief init the lgm geometry acces acceleration.
+*
+* This fuction will be called from LGM_LoadDomain() in lgm_load.c to generate
+* for each surface a tree with bounding boxes containing the triangles of the
+* lgm surface.
+*
+* @param theHeap pointer to heap.
+* @param sf array of pointer to lgm surfaces.
+* @param n #lgm surfaces.
+*
+* @return value 0: o.k. 1: error.
+   */
 /*---------------------------------------------------------------------------*/
 INT NS_DIM_PREFIX LGM_InitAcceleration(HEAP *theHeap, LGM_SURFACE **sf, INT nsf)
 {
