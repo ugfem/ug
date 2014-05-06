@@ -2000,9 +2000,9 @@ IDF_TYP *GetMemandFillNewIDF(INT k, DOUBLE s,SFE_KNOTEN_TYP *act_tria)
 /**
 * fügt den neuen Identifier idf_new in die Identifierliste der Line merke ein.
 *
-* @param idf_new - dritte NodeID des SFEs, zu dem die Line in diesem Fall gehört.
-* @param merke - Identifier of the SFE, zu dem die Line in diesem Fall gehört.
-* @param s - SurfaceIdentifier(SFE-Wert aus AnsysDatei) of the SFE, zu dem die Line in diesem Fall gehört.
+* @param idf_new dritte NodeID des SFEs, zu dem die Line in diesem Fall gehört.
+* @param merke Identifier of the SFE, zu dem die Line in diesem Fall gehört.
+* @param s SurfaceIdentifier(SFE-Wert aus AnsysDatei) of the SFE, zu dem die Line in diesem Fall gehört.
 *
 * @return value 0:ok. 1:error.
    */
@@ -3142,9 +3142,6 @@ INT TriaNeighbourhood(SFE_KNOTEN_TYP *sfep)
 * Ferner wird bei diesem Durchlauf auch die Nachbarschaftsbeziehungen der Dreiecke erzeugt.
 * sowie ebenso die Surface-Triangle-Beziehung.
 *
-* @param xxx .
-* @param yyy .
-*
 * @return value 0:ok. 1:error.
    */
 /****************************************************************************/
@@ -3467,7 +3464,6 @@ PL_LINE_TYP *GetMemFillAddNewPolylineLine(LI_KNOTEN_TYP *linepointer, PL_TYP *po
 *
 * @param linepointer Pointer on Line, which is characteristic resp. representative
 *                    for the New Polyline and which will be a part of the new Polyline.
-* @param yyy .
 *
 * @return Pointer on new Polyline if ok, NULL if error occured.
    */
@@ -3522,7 +3518,6 @@ PL_TYP *GetMemFillAddNewPolyline(LI_KNOTEN_TYP *linepointer)
 * nach gross) bleibt dabei erhalten !!!
 *
 * @param charact_identifiers Pointer to the Identifierlist of the observed Polyline.
-* @param yyy .
 *
 * @return Pointer to copied IdentifierList if ok, NULL if error occured resp. no copied List could be created.
    */
@@ -3592,7 +3587,6 @@ IDF_SHORT_TYP *CopyCharacteristicList2HelpList(IDF_TYP *charact_identifiers)
 * Laeuft ueber alle Subdomains und sucht dabei die mit der ID sbdmid.
 *
 * @param sbdmid The Id of the searched Subdomain.
-* @param yyy .
 *
 * @return Pointer to the found subdomain with the Id sbdmid, NULL if error occured resp. no such subdomain could be found
    */
@@ -3845,35 +3839,23 @@ INT ConnectPolylineWithSurfaces(PL_TYP *plptr)
 
 
 /****************************************************************************/
-/*D
-   PolylineSplit -
-
-   SYNOPSIS:
-   INT PolylineSplit(PL_LINE_TYP **anfang, PL_LINE_TYP **rechtesMuster, PL_TYP *Polyline, PL_LINE_TYP *idl2)
-
-   PARAMETERS:
-   .  anfang - refeerence parameter - will be changed in fct.
-   .  rechtesMuster - refeerence parameter - will be changed in fct.
-   .  Polyline - the corresp. Polyline - pointer will be used to change polyline features
-   .  idl2 - value parameter
-
-   DESCRIPTION:
-   This functions splits a polyline, which coud not be sorted by SortPolyline() !
-   The function will split the already sorted part of the polyline and create a new polyline
-   out of it. The remaining part wil be the old  Polyline with change features
-
-   Idee:
-   -----
-   der bereits sortierte Teile der Polyline wird zu einer neuen Polyline gemacht.
-   Der verböleibende Teil wird upgedatet.
-
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* This functions splits a polyline, which coud not be sorted by SortPolyline() !
+* The function will split the already sorted part of the polyline and create a new polyline
+* out of it. The remaining part wil be the old  Polyline with change features.
+*
+*  Idee:
+*  -----
+*  der bereits sortierte Teile der Polyline wird zu einer neuen Polyline gemacht.
+*  Der verböleibende Teil wird upgedatet.
+*
+* @param anfang refeerence parameter - will be changed in fct.
+* @param rechtesMuster refeerence parameter - will be changed in fct.
+* @param Polyline the corresp. Polyline - pointer will be used to change polyline features
+* @param  idl2 value parameter
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT PolylineSplit(PL_LINE_TYP **anfang, PL_LINE_TYP **rechtesMuster, PL_TYP *Polyline, PL_LINE_TYP *idl2)
 {
@@ -3952,36 +3934,24 @@ INT PolylineSplit(PL_LINE_TYP **anfang, PL_LINE_TYP **rechtesMuster, PL_TYP *Pol
 
 
 /****************************************************************************/
-/*D
-   SortPolyline -
-
-   SYNOPSIS:
-   INT SortPolyline(PL_TYP *Polyline)
-
-   PARAMETERS:
-   .  Polyline - The Polyline to be sorted
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   This functions sorts the the sequence of points of the polyline Polyline
-   in the way : "a,b" "b,g", "g,j", "j,k" usw. und aendert dabei u.U. auch
-   die Reihenfolge der Identifiers der Lines.
-
-   Idee:
-   -----
-   => erste Line als Anfangs-Muster und Ende-Muster nehmen
-   => durchlaufe alle anderen und suche eine Partnerline, d.h eine Line, die
-      mit der Anfangs-Muster-Line oder aber der Ende-Muster-Line einen gemeinsamen Punkt besitzt.
-   => wenn Partnerline gefunden, d.f. Partnerline links oder rechts des bereits
-      sortierten Listenteils einfuegen und Liste an Entnahmestelle updaten.
-   => die gefundene Partnerline wird zum neuen Anfangs-Muster oder Ende-Muster
-   => von vorne anfangen bis man einmal durch die Liste durch ist
-
-
-   RETURN VALUE:
-   INT
-   .n    SORTED if ok
-   .n    1 if error occured.
+/**
+*  This functions sorts the the sequence of points of the polyline Polyline
+*  in the way : "a,b" "b,g", "g,j", "j,k" usw. und aendert dabei u.U. auch
+*  die Reihenfolge der Identifiers der Lines.*
+*
+*  Idee
+*  -----
+*  => erste Line als Anfangs-Muster und Ende-Muster nehmen
+*  => durchlaufe alle anderen und suche eine Partnerline, d.h eine Line, die
+*     mit der Anfangs-Muster-Line oder aber der Ende-Muster-Line einen gemeinsamen Punkt besitzt.
+*  => wenn Partnerline gefunden, d.f. Partnerline links oder rechts des bereits
+*     sortierten Listenteils einfuegen und Liste an Entnahmestelle updaten.
+*  => die gefundene Partnerline wird zum neuen Anfangs-Muster oder Ende-Muster
+*  => von vorne anfangen bis man einmal durch die Liste durch ist
+*
+* @param Polyline The Polyline to be sorted
+*
+* @return SORTED if ok, 1 if error occured.
    D*/
 /****************************************************************************/
 INT SortPolyline(PL_TYP *Polyline)
@@ -4190,25 +4160,12 @@ INT SortPolyline(PL_TYP *Polyline)
 
 
 /****************************************************************************/
-/*D
-   Ansys2lgmCreatePloylines -
-
-   SYNOPSIS:
-   INT Ansys2lgmCreatePloylines()
-
-   PARAMETERS:
-   .  xxx - bla bla bla bla
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   Erzeugt alle Polylines durch kompletten Lauf ueber die LI-HAshtabelle
-   und sortieret sie anschliessend.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  Erzeugt alle Polylines durch kompletten Lauf ueber die LI-HAshtabelle
+*  und sortieret sie anschliessend
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT Ansys2lgmCreatePloylines()
 {
@@ -4296,28 +4253,17 @@ INT Ansys2lgmCreatePloylines()
 
 
 /****************************************************************************/
-/*D
-   GetMemAndFillNewPlz -
-
-   SYNOPSIS:
-   INT GetMemAndFillNewPlz(&anfang,&rechtesMuster,theSurface,idl2)
-
-   PARAMETERS:
-   .  anfang - reference parameter -> will be changed in this Fct
-   .  rechtesMuster - reference parameter -> will be changed in this fct
-   .  theSurface - Pointer to the correspomdinmg surface - itf features will be
-                changed in this fct.
-   .  idl2 - value parameter
-
-   DESCRIPTION:
-   this function create a new Polylinecycle for surface theSurface.
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* this function create a new Polylinecycle for surface theSurface.
+*
+* @param  anfang reference parameter -> will be changed in this Fct
+* @param  rechtesMuster reference parameter -> will be changed in this fct
+* @param  theSurface Pointer to the correspomdinmg surface - itf features will be
+*                    changed in this fct.
+* @param  idl2 value parameter
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT GetMemAndFillNewPlz(SFPL_TYP **anfang,SFPL_TYP **rechtesMuster,SF_TYP *theSurface,SFPL_TYP *idl2)
 {
@@ -4414,28 +4360,17 @@ INT GetMemAndFillNewPlz(SFPL_TYP **anfang,SFPL_TYP **rechtesMuster,SF_TYP *theSu
 
 
 /****************************************************************************/
-/*D
-   Create_PLZN -
-
-   SYNOPSIS:
-   INT Create_PLZN(SF_TYP *theSurface)
-
-   PARAMETERS:
-   .  theSurface - the Surface to detect its polylinecycles
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   this function detects the polylinecycles of a surface
-   a polylinecycle is a set of polylines, which can be combined to
-   a close polygon.
-   Each surface has at leats one Polylinecycle.
-   The polylines itself are already sorted.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* this function detects the polylinecycles of a surface
+* a polylinecycle is a set of polylines, which can be combined to
+* a close polygon.
+* Each surface has at leats one Polylinecycle.
+* The polylines itself are already sorted.
+*
+* @param theSurface - the Surface to detect its polylinecycles.
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT Create_PLZN(SF_TYP *theSurface)
 {
@@ -4645,25 +4580,15 @@ INT Create_PLZN(SF_TYP *theSurface)
 
 
 /****************************************************************************/
-/*D
-   Find_SFE_Triangle -
+/**
+* This fct searches the (only!) correspondig SFE_Triangle of the Polyline-Line
+* line with the same surface identifiers like theSurface.
 
-   SYNOPSIS:
-   SFE_KNOTEN_TYP *Find_SFE_Triangle(LI_KNOTEN_TYP *line,SF_TYP *theSurface)
-
-   PARAMETERS:
-   .  line - pointer to the Line of a polyline
-   .  theSurface - pointer to the Surface
-
-   DESCRIPTION:
-   This fct searches the (only!) correspondig SFE_Triangle of the Polyline-Line
-   line with the same surface identifiers like theSurface
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+* @param line - pointer to the Line of a polyline
+* @param theSurface - pointer to the Surface
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 SFE_KNOTEN_TYP *Find_SFE_Triangle(LI_KNOTEN_TYP *line,SF_TYP *theSurface)
 {
@@ -4753,24 +4678,13 @@ SFE_KNOTEN_TYP *Find_SFE_Triangle(LI_KNOTEN_TYP *line,SF_TYP *theSurface)
 
 
 /****************************************************************************/
-/*D
-   TriangleNeighbourSearcher -
-
-   SYNOPSIS:
-   INT TriangleNeighbourSearcher(SFE_KNOTEN_TYP *SFE_search,SFE_KNOTEN_TYP *SFE_destination)
-
-   PARAMETERS:
-   .  SFE_search -
-   .  SFE_destination -
-
-   DESCRIPTION:
-   bla
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*
+* @param SFE_search
+* @param SFE_destination
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT TriangleNeighbourSearcher(SFE_KNOTEN_TYP *SFE_search,SFE_KNOTEN_TYP *SFE_destination)
 {
@@ -4826,28 +4740,17 @@ INT TriangleNeighbourSearcher(SFE_KNOTEN_TYP *SFE_search,SFE_KNOTEN_TYP *SFE_des
 
 
 /****************************************************************************/
-/*D
-   GetMemAndFillNewRlSfc -
-
-   SYNOPSIS:
-   INT GetMemAndFillNewRlSfc(PLZ_TYP **anfang,PLZ_TYP **rechtesMuster,SF_TYP *theSurface,PLZ_TYP *idl2)
-
-   PARAMETERS:
-   .  anfang - reference parameter -> will be changed in this Fct
-   .  rechtesMuster - reference parameter -> will be changed in this fct
-   .  theSurface - Pointer to the correspomdinmg surface - itf features will be
-                changed in this fct.
-   .  idl2 - value parameter
-
-   DESCRIPTION:
-   this function creates a new RealSurface with one or different PLZs for surface theSurface.
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* this function creates a new RealSurface with one or different PLZs for surface theSurface.
+*
+* @param  anfang reference parameter -> will be changed in this Fct
+* @param  rechtesMuste reference parameter -> will be changed in this fct
+* @param  theSurface Pointer to the correspomdinmg surface - itf features will be
+*                    changed in this fct.
+* @param  idl2 value parameter.
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT GetMemAndFillNewRlSfc(PLZ_TYP **anfang,PLZ_TYP **rechtesMuster,SF_TYP *theSurface,PLZ_TYP *idl2)
 {
@@ -4917,26 +4820,16 @@ INT GetMemAndFillNewRlSfc(PLZ_TYP **anfang,PLZ_TYP **rechtesMuster,SF_TYP *theSu
 
 
 /****************************************************************************/
-/*D
-   ReconstructSurfacePolylines -
-
-   SYNOPSIS:
-   INT ReconstructSurfacePolylines(SF_TYP *theSurface)
-
-   PARAMETERS:
-   .  theSurface - pointer to the original surface which perhaps has to be split
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   This function reconstructs the Surface->Polyline-Entries in the case of
-   no realsurfaces but different created polylinecycles
-   Fct. tests whether all polylines have been put back.
-   Fct. tests whether all polylinecycles do have all their polylines.
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  This function reconstructs the Surface->Polyline-Entries in the case of
+*  no realsurfaces but different created polylinecycles
+*  Fct. tests whether all polylines have been put back.
+*  Fct. tests whether all polylinecycles do have all their polylines.
+*
+* @param  theSurface pointer to the original surface which perhaps has to be split.
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT ReconstructSurfacePolylines(SF_TYP *theSurface)
 {
@@ -5018,27 +4911,16 @@ INT ReconstructSurfacePolylines(SF_TYP *theSurface)
 
 
 /****************************************************************************/
-/*D
-   Create_RealSurfaces -
-
-   SYNOPSIS:
-   INT Create_RealSurfaces(SF_TYP *theOrigSfce)
-
-   PARAMETERS:
-   .  theOrigSfce - pointer to the original surface which perhaps has to be split
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   This fct splits the polylinecycles of a surface in one or several group(s)
-   of polylinecycles which describe a "real" surface.
-   idea: Any triangle T1 of a "real" surface can be reached from any other triangle T2
-         of the same "real" surface using triangleneighbourhoodrelations
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  This fct splits the polylinecycles of a surface in one or several group(s)
+*  of polylinecycles which describe a "real" surface.
+*  idea: Any triangle T1 of a "real" surface can be reached from any other triangle T2
+*        of the same "real" surface using triangleneighbourhoodrelations.
+*
+* @param  theOrigSfce pointer to the original surface which perhaps has to be split
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT Create_RealSurfaces(SF_TYP *theOrigSfce)
 {
@@ -5233,33 +5115,22 @@ INT Create_RealSurfaces(SF_TYP *theOrigSfce)
 
 
 /****************************************************************************/
-/*D
-   FetchAllTriangles -
-
-   SYNOPSIS:
-   INT FetchAllTriangles(TRIANGLE_TYP *dasDreieck)
-
-   PARAMETERS:
-   .  dasDreieck - SFE, dessen drie Nachbarn durchlaufen werden und in die SurfaceListe
-                     eingetragen werden.
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   Diese rekursive Funktion durchlaeuft alle Dreiecke einer Surface
-   mit HIlfe der schon bestehenden Nachbarschaftsbeziehungen zwischen
-   den Dreiecken. Dabei wird nach jedem ueberprueften resp. einge-
-   tragenen Dreieck die statische fuer die Funktion global verwendbare
-   Variable "nmb_of_triangles" inkrementiert. Im Gegensatz zur Fkt TRIANGLEIDORIENTATIONS
-   wird bei dieser Fkt. die gesamte Rekursionshierarchie durchlaufen.
-   Besuchte Dreiecke erhalten das Flag und werden dabei nich nochmals besucht.
-
-
-   RETURN VALUE:
-   INT
-   .n    FERTIG if alle Dreiecke einmal besucht bzw.
-      static INT zaehler == static INT nmb_of_trias_of_sf
-   .n    1 if error occured.
-   D*/
+/**
+*  Diese rekursive Funktion durchlaeuft alle Dreiecke einer Surface
+*  mit HIlfe der schon bestehenden Nachbarschaftsbeziehungen zwischen
+*  den Dreiecken. Dabei wird nach jedem ueberprueften resp. einge-
+*  tragenen Dreieck die statische fuer die Funktion global verwendbare
+*  Variable "nmb_of_triangles" inkrementiert. Im Gegensatz zur Fkt TRIANGLEIDORIENTATIONS
+*  wird bei dieser Fkt. die gesamte Rekursionshierarchie durchlaufen.
+*  Besuchte Dreiecke erhalten das Flag und werden dabei nich nochmals besucht.
+*
+* @param dasDreieck  SFE, dessen drie Nachbarn durchlaufen werden und in die SurfaceListe
+*                    eingetragen werden.
+*
+* @return FERTIG if alle Dreiecke einmal besucht bzw.
+*         static INT zaehler == static INT nmb_of_trias_of_sf,
+*         1 if error occured.
+   */
 /****************************************************************************/
 INT FetchAllTriangles(SFE_KNOTEN_TYP *dasDreieck)
 {
@@ -5321,26 +5192,17 @@ INT FetchAllTriangles(SFE_KNOTEN_TYP *dasDreieck)
 
 
 /****************************************************************************/
-/*D
-   SplitSurface -
-
-   SYNOPSIS:
-   INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
-
-   PARAMETERS:
-   .  theSurface - the Surface which must be spliited
-   .  thePredSurface - the predecessor of the surface
-
-   DESCRIPTION:
-   fct splits surface theSurface using its realSurfaces
-   and delets the old surface
-   all necessary aupdate are executed
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  fct splits surface theSurface using its realSurfaces
+*  and delets the old surface
+*  all necessary aupdate are executed.
+*
+*
+* @param theSurface the Surface which must be spliited
+* @param thePredSurface  the predecessor of the surface
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 {
@@ -5768,24 +5630,9 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 
 
 /****************************************************************************/
-/*D
-   Ansys2lgmSurfaceDetecting -
-
-   SYNOPSIS:
-   INT Ansys2lgmSurfaceDetecting()
-
-   PARAMETERS:
-   .  xxx - bla bla bla bla
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   bla bla
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT Ansys2lgmSurfaceDetecting()
 {
@@ -5904,27 +5751,16 @@ INT Ansys2lgmSurfaceDetecting()
 
 
 /****************************************************************************/
-/*D
-   ChangeOrientation -
-
-   SYNOPSIS:
-   INT ChangeOrientation(SFE_KNOTEN_TYP *dasSFE)
-
-   PARAMETERS:
-   .  dasSFE - SFE, dessen Knotenreihenfolge korrigiert bzw. umgedreht werden muss
-
-   DESCRIPTION:
-   dreht die Reihenfolge der NodeIDs vom OFD "dasSFE" um:
-   Dazu werden erster mit zweitem Node vertauscht sowie
-   zweiter mit drittem Node vertauscht
-   So ist alles umgedreht (siehe auch theoertische Ueberlegungen im Konzept)
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  dreht die Reihenfolge der NodeIDs vom OFD "dasSFE" um:
+*  Dazu werden erster mit zweitem Node vertauscht sowie
+*  zweiter mit drittem Node vertauscht
+*  So ist alles umgedreht (siehe auch theoertische Ueberlegungen im Konzept
+*
+* @param dasSFE SFE, dessen Knotenreihenfolge korrigiert bzw. umgedreht werden muss
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT ChangeOrientation(SFE_KNOTEN_TYP *dasSFE)
 {
@@ -5947,38 +5783,27 @@ INT ChangeOrientation(SFE_KNOTEN_TYP *dasSFE)
 
 
 /****************************************************************************/
-/*D
-   Ausrichtung -
-
-   SYNOPSIS:
-   INT Ausrichtung(SFE_KNOTEN_TYP *Muster_SFE, SFE_KNOTEN_TYP *Nachbar_SFE, INT kante)
-
-   PARAMETERS:
-   .  Muster_SFE - SFE, deren Knotenreihenfolge bereits stimmt
-   .  Nachbar_SFE - SFE, deren Knotenreihenfolge an die von Muster_SFE angepasst werden soll
-   .  kante - KantenID von Muster_SFE, bzgl. der die Nachbarschaft zu Nachbar_SFE besteht
-
-   DESCRIPTION:
-   Passt die KnotenIDReihenfolge des NachbarSFEs Nachbar_SFE an die KnReihenfolge
-   von Muster_SFE an.
-
-   Die beiden Reihenfolgen muessen so beschaffen sein,
-   dass sie an dem gemeinsamen Streckenzug entgegengesetzte Richtung besitzen.
-
-   Die Funktion sucht zunaechst die beiden Knoten beim Nachbarelement
-   und prueft dann, ob sie dort in gleicher oder umgekehrter Reihenfolge auftreten.
-   Bei gleicher Reihenfolge ist es noetig diese zu korrigieren.
-   Dazu wird die Subfunktion "ChangeOrientation(..)" aufgerufen.
-
-   Fuer die Kantenreihenfolge eines Dreiecks mit den KnotenIDs i,j und k gilt
-   erste Kante von i nach j, zweite Kante von j nach k sowie dritte Kante von k nach i
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  Passt die KnotenIDReihenfolge des NachbarSFEs Nachbar_SFE an die KnReihenfolge
+*  von Muster_SFE an.
+*
+*  Die beiden Reihenfolgen muessen so beschaffen sein,
+*  dass sie an dem gemeinsamen Streckenzug entgegengesetzte Richtung besitzen.
+*
+*  Die Funktion sucht zunaechst die beiden Knoten beim Nachbarelement
+*  und prueft dann, ob sie dort in gleicher oder umgekehrter Reihenfolge auftreten.
+*  Bei gleicher Reihenfolge ist es noetig diese zu korrigieren.
+*  Dazu wird die Subfunktion "ChangeOrientation(..)" aufgerufen.
+*
+*  Fuer die Kantenreihenfolge eines Dreiecks mit den KnotenIDs i,j und k gilt
+*  erste Kante von i nach j, zweite Kante von j nach k sowie dritte Kante von k nach i
+*
+* @param Muster_SFE  SFE, deren Knotenreihenfolge bereits stimmt
+* @param Nachbar_SFE  SFE, deren Knotenreihenfolge an die von Muster_SFE angepasst werden soll
+* @param kante  KantenID von Muster_SFE, bzgl. der die Nachbarschaft zu Nachbar_SFE besteht
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT Ausrichtung(SFE_KNOTEN_TYP *Muster_SFE, SFE_KNOTEN_TYP *Nachbar_SFE, INT kante)
 {
@@ -6041,32 +5866,21 @@ INT Ausrichtung(SFE_KNOTEN_TYP *Muster_SFE, SFE_KNOTEN_TYP *Nachbar_SFE, INT kan
 
 
 /****************************************************************************/
-/*D
-   TriangleIDOrientations -
-
-   SYNOPSIS:
-   INT TriangleIDOrientations(TRIANGLE_TYP *muster_tria)
-
-   PARAMETERS:
-   .  Muster_SFE - SFE, das als Muster verwendet wird, dessen
-                 Umlaufrichtung also bereits stimmt
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   Diese rekursive Funktion durchlaeuft alle Dreiecke einer Surface
-   mit HIlfe der schon bestehenden Nachbarschaftsbeziehungen zwischen
-   den Dreiecken. Dabei wird nach jedem ueberprueften resp. ausgerich-
-   teten Dreieck die statische fuer die Funktion global verwendbare
-   Variable "zaehler" inkrementiert. Wenn dieser Zaehler den Wert der
-   GesamtDreiecksAnzahl der betrachteten Surface erreicht, so wird die
-   Rekursionshierarchie mit return(FERTIG) auf dem schnellsten Wege abgebaut.
-
-
-   RETURN VALUE:
-   INT
-   .n    FERTIG if alle Dreiecke einmal besucht bzw.
-      static INT zaehler == static INT nmb_of_trias_of_sf
-   .n    1 if error occured.
+/**
+*  Diese rekursive Funktion durchlaeuft alle Dreiecke einer Surface
+*  mit HIlfe der schon bestehenden Nachbarschaftsbeziehungen zwischen
+*  den Dreiecken. Dabei wird nach jedem ueberprueften resp. ausgerich-
+*  teten Dreieck die statische fuer die Funktion global verwendbare
+*  Variable "zaehler" inkrementiert. Wenn dieser Zaehler den Wert der
+*  GesamtDreiecksAnzahl der betrachteten Surface erreicht, so wird die
+*  Rekursionshierarchie mit return(FERTIG) auf dem schnellsten Wege abgebaut.
+*
+* @param  Muster_SFE SFE, das als Muster verwendet wird, dessen
+*                    Umlaufrichtung also bereits stimmt
+*
+* @return  FERTIG if alle Dreiecke einmal besucht bzw.
+*          static INT zaehler == static INT nmb_of_trias_of_sf,
+*          1 if error occured.
    D*/
 /****************************************************************************/
 INT TriangleIDOrientations(SFE_KNOTEN_TYP *Muster_SFE)
@@ -6128,34 +5942,20 @@ INT TriangleIDOrientations(SFE_KNOTEN_TYP *Muster_SFE)
 
 
 /****************************************************************************/
-/*D
-   Ansys2lgmCreateTriaOrientations -
-
-   SYNOPSIS:
-   INT Ansys2lgmCreateTriaOrientations()
-
-   PARAMETERS:
-   .  xxx - bla bla bla bla
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   erzeugt Dreiecksnachbarschaften :
-           d.h. jedes OFlaecDreieck einer Surface bzw jedem SFE werden die 3
-           Nachbar SFES ermittelt und zugewiesen.
-           Liegt ein solches ObFlDr am Rand einer Surface,
-           d.h es besitzt bzgl einer Kante kein Nachbarobfldreieck auf dieser
-           Surface, dann erfolgt ein "NULL"-Eintrag.
-   erzeugt ferner Dreiecksorientierungen :
-                d.h. die Reihenfolge der KnotenIds wird fuer alle Oberflaechendreiecke
-                so ausgerichtet, dass die "rechte Handregel" immer das selbe Ergebnis
-                liefert.
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  erzeugt Dreiecksnachbarschaften :
+*          d.h. jedes OFlaecDreieck einer Surface bzw jedem SFE werden die 3
+*          Nachbar SFES ermittelt und zugewiesen.
+*          Liegt ein solches ObFlDr am Rand einer Surface,
+*          d.h es besitzt bzgl einer Kante kein Nachbarobfldreieck auf dieser
+*          Surface, dann erfolgt ein "NULL"-Eintrag.
+*  erzeugt ferner Dreiecksorientierungen :
+*               d.h. die Reihenfolge der KnotenIds wird fuer alle Oberflaechendreiecke
+*               so ausgerichtet, dass die "rechte Handregel" immer das selbe Ergebnis
+*               liefert.
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT Ansys2lgmCreateTriaOrientations()
 {
@@ -6200,29 +6000,15 @@ INT Ansys2lgmCreateTriaOrientations()
 
 
 /****************************************************************************/
-/*D
-   EvalNmbOfPointsOfSfcs -
-
-   SYNOPSIS:
-   INT EvalNmbOfPointsOfSfcs()
-
-   PARAMETERS:
-   .  xxx - bla bla bla bla
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   laeuft ueber alle Surfaces und berechnet je Surface die Anzahl der Points,
-   dazu wird ein temporaeres Knotenfeld verwendet, bei dem fuer alle Knoten ein
-   Integer reserviert ist. Fuer jede Surface laeuft die FUnktion ueber alle
-   zugehoerigen Triangles und markiert im temp. Feld die zugeh. Knoten.
-   Bei jeder neuen Markierung der NumberofPoints-Zaehler der Surface inkrementiert.
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  laeuft ueber alle Surfaces und berechnet je Surface die Anzahl der Points,
+*  dazu wird ein temporaeres Knotenfeld verwendet, bei dem fuer alle Knoten ein
+*  Integer reserviert ist. Fuer jede Surface laeuft die FUnktion ueber alle
+*  zugehoerigen Triangles und markiert im temp. Feld die zugeh. Knoten.
+*  Bei jeder neuen Markierung der NumberofPoints-Zaehler der Surface inkrementiert.
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT EvalNmbOfPointsOfSfcs()
 {
@@ -6274,30 +6060,20 @@ INT EvalNmbOfPointsOfSfcs()
 
 
 /****************************************************************************/
-/*D
-   NachAussenOrientiert -
-
-   SYNOPSIS:
-   INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
-
-   PARAMETERS:
-   .  i,j,k - KnotenIDs in repraesentativer Reihenfolge fuer gesamte Surface
-                   seit dem Durchlauf der FUnktion TriangleIDOrientation()
-   .  v - "v" wie vierte ID ==> Liegt dieser vierte Knoten auf der selben Seite,
-           wie die, auf die der Normalenvektor von i,j,k zeigt dann ist
-           "ijk"(genau in dieser Reihenfolge!) nicht nach aussen sondern nach
-           innen orientiert. Der Rueckgabewert ist also "F"
-
-   DESCRIPTION:
-   berechnet mit Spat- und Kreuzprodukt, ob die RechteHandRegel mit i, j und k
-   nach "aussen" zeigt. Zur Feststellung dient v. Dieses "v" liegt bzgl der von ijk
-   definierten Ebene "innen"
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  berechnet mit Spat- und Kreuzprodukt, ob die RechteHandRegel mit i, j und k
+*  nach "aussen" zeigt. Zur Feststellung dient v. Dieses "v" liegt bzgl der von ijk
+*  definierten Ebene "innen"
+*
+* @param  i,j,k KnotenIDs in repraesentativer Reihenfolge fuer gesamte Surface
+*               seit dem Durchlauf der FUnktion TriangleIDOrientation()
+* @param  v  "v" wie vierte ID ==> Liegt dieser vierte Knoten auf der selben Seite,
+*            wie die, auf die der Normalenvektor von i,j,k zeigt dann ist
+*            "ijk"(genau in dieser Reihenfolge!) nicht nach aussen sondern nach
+*            innen orientiert. Der Rueckgabewert ist also "F"
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
 {
@@ -6346,28 +6122,15 @@ INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
 
 
 /****************************************************************************/
-/*D
-   EvalLeftRightOfSfcs -
-
-   SYNOPSIS:
-   INT EvalLeftRightOfSfcs()
-
-   PARAMETERS:
-   .  xxx - bla bla bla bla
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   laeuft ueber alle Surfaces und weist diesen die SubdomainIds zu, die
-   "links" bzw. "rechts" liegen. Dazu verwendet es die vierteID,
-   die als Eingangsparameter kommt.
-   Für die eigentliche Links-RechtsBerechnung wird "NachAussenOrientiert(...)"
-   aufgerufen.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  laeuft ueber alle Surfaces und weist diesen die SubdomainIds zu, die
+*  "links" bzw. "rechts" liegen. Dazu verwendet es die vierteID,
+*  die als Eingangsparameter kommt.
+*  Für die eigentliche Links-RechtsBerechnung wird "NachAussenOrientiert(...)"
+*  aufgerufen.
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT EvalLeftRightOfSfcs()
 {
@@ -6412,24 +6175,11 @@ INT EvalLeftRightOfSfcs()
 
 
 /****************************************************************************/
-/*D
-   Ansys2lgmEvalSurfaceInformations -
-
-   SYNOPSIS:
-   INT Ansys2lgmEvalSurfaceInformations()
-
-   PARAMETERS:
-   .  xxx - bla bla bla bla
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   ruft die beiden Funktionen EvalNmbOfPointsOfSfc und EvalLeftRightOfSfcs auf
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* ruft die beiden Funktionen EvalNmbOfPointsOfSfc und EvalLeftRightOfSfcs auf
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT Ansys2lgmEvalSurfaceInformations()
 {
@@ -6473,27 +6223,17 @@ char GetCharact(int input)
 
 
 /****************************************************************************/
-/*D
-   SurfaceNamer - evaluates a String out of CAD-Surface-Identifiers
-
-   SYNOPSIS:
-   INT SurfaceNamer(double sfce_name1, double sfce_name2, char *The_String, int *mft)
-
-   PARAMETERS:
-   .  sfce_name1 - Surface Identifer 1
-   .  sfce_name1 - Surface Identifer 2 extra number if double surface, else 0.0
-   .  The_String - reference Parameter, used for the evaluated String
-   .  mft - Pointer on flag : with or without first triangle
-
-   DESCRIPTION:
-   evalates an Output String with 19+1 chars ==> necessary for the user
-   of the CAD-Interfcace to distinguish between different LGM-Surfaces
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  evalates an Output String with 19+1 chars ==> necessary for the user
+*  of the CAD-Interfcace to distinguish between different LGM-Surfaces
+*
+* @param sfce_name1 Surface Identifer 1
+* @param sfce_name1 Surface Identifer 2 extra number if double surface, else 0.0
+* @param The_String reference Parameter, used for the evaluated String
+* @param mft Pointer on flag : with or without first triangle
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT SurfaceNamer(double sfce_name1, double sfce_name2, char *The_String, int *mft)
 {
@@ -6602,24 +6342,13 @@ INT SurfaceNamer(double sfce_name1, double sfce_name2, char *The_String, int *mf
 
 
 /****************************************************************************/
-/*D
-   int2string -
-
-   SYNOPSIS:
-   INT int2string(int integer_zahl, char *generated_string )
-
-   PARAMETERS:
-   .  integer_zahl - int to be converted int an string
-   .  generated_string - pointer to new string
-
-   DESCRIPTION:
-   bla bla
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*
+* @param integer_zahl int to be converted int an string
+* @param generated_string pointer to new string
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT int2string(int integer_zahl, char *generated_string )
 {
@@ -6671,27 +6400,14 @@ INT int2string(int integer_zahl, char *generated_string )
 
 
 /****************************************************************************/
-/*D
-   Ansys2lgmUpdateSbdmIDs -
-
-   SYNOPSIS:
-   INT Ansys2lgmUpdateSbdmIDs()
-
-   PARAMETERS:
-   .  xxx - bla bla bla bla
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   update the Subdomainidentifiers (=Names) to the UG numeration
-   beginning with 1, 2, 3, ... N
-   and updating of the surfaces wich reference these subdomains
-   with their left- and right-components
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*  update the Subdomainidentifiers (=Names) to the UG numeration
+*  beginning with 1, 2, 3, ... N
+*  and updating of the surfaces wich reference these subdomains
+*  with their left- and right-components
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT Ansys2lgmUpdateSbdmIDs()
 {
@@ -6993,39 +6709,26 @@ INT Ansys2lgmUpdateSbdmIDs()
 
 
 /****************************************************************************/
-/*D
-   Ansys2lgm - converts an ANSYS output file to an ug-understandable Domain
-
-   SYNOPSIS:
-   INT Ansys2lgm();
-
-   PARAMETERS:
-   .  ExchangeVar_1 - beinmhaltet die folgenden 4 Komponenten
-   .  nmb_of_SFEs - Anzahl der Oberflächendreiecke, die im ANSYS-FIle mit
-                                 dem Schlüsselwort "SFE" eingeleitet werden.
-   .  SFE_Array - Pointer to an array which posesses components of the data structure
-                           CAD_SFE_TYP (the whole SFE-information out of the ANSYS-File)
-   .  n_koord_array - Pointer to an array created () in cadconvert
-                                which includes the real coordiantes, Indizes sind geshiftetete UG-Indizes
-                                beinhaltet alle Punkte, also auch die inneren !
-   .  ExchangeVar_2 - beinmhaltet die folgenden fuer sich sprechenden 5 Komponenten
-   .  rootsfc - Pointer auf erste Surface
-   .  rootsd - Pointer auf erste Subdomain
-   .  rootpl - Pointer auf erste Polyline
-   .  SFE_HashTable - Pointer auf die SFE-Hashtabelle
-   .  LI_HashTable - Pointer auf die LI-Hashtabelle
-
-
-
-   DESCRIPTION:
-   bla bla bla bla
-   bla bla bla bla
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*\brief converts an ANSYS output file to an ug-understandable Domain.
+*
+* @param  ExchangeVar_1 beinmhaltet die folgenden 4 Komponenten
+* @param nmb_of_SFEs Anzahl der Oberflächendreiecke, die im ANSYS-FIle mit
+*                    dem Schlüsselwort "SFE" eingeleitet werden.
+* @param  SFE_Array Pointer to an array which posesses components of the data structure
+*                           CAD_SFE_TYP (the whole SFE-information out of the ANSYS-File)
+* @param  n_koord_array Pointer to an array created () in cadconvert
+*                               which includes the real coordiantes, Indizes sind geshiftetete UG-Indizes
+*                               beinhaltet alle Punkte, also auch die inneren !
+* @param  ExchangeVar_2 beinmhaltet die folgenden fuer sich sprechenden 5 Komponenten
+* @param  rootsfc Pointer auf erste Surface
+* @param  rootsd Pointer auf erste Subdomain
+* @param  rootpl Pointer auf erste Polyline
+* @param  SFE_HashTable Pointer auf die SFE-Hashtabelle
+* @param  LI_HashTable Pointer auf die LI-Hashtabelle
+*
+* @return value 0:ok, 1:error.
+   */
 /****************************************************************************/
 INT Ansys2lgm  ()
 {
@@ -7746,23 +7449,14 @@ int NS_DIM_PREFIX LGM_ANSYS_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 
 
 /****************************************************************************/
-/*D
-   FillPositionInformations - creates and fills PointInformatioArrays
-
-   SYNOPSIS:
-   int FillPositionInformations(LGM_MESH_INFO *theMesh)
-
-   PARAMETERS:
-   .  theMesh - Pointer of the meshstructure to be filled
-
-   DESCRIPTION:
-   reads coordinformations for boundary points as well as
-   innerpoint out of the array n_koord_array_UG
-
-   RETURN VALUE:
-   INT
-   .n      1 if error occured
-   D*/
+/**
+*  reads coordinformations for boundary points as well as
+*  innerpoint out of the array n_koord_array_UG
+*
+* @param  theMesh Pointer of the meshstructure to be filled
+*
+* @return value 1:error.
+   */
 /****************************************************************************/
 int FillPositionInformations(LGM_MESH_INFO *theMesh)
 {
@@ -7847,22 +7541,13 @@ int FillPositionInformations(LGM_MESH_INFO *theMesh)
 
 
 /****************************************************************************/
-/*D
-   FindElNeighbours - create elementneighbourhoods
-
-   SYNOPSIS:
-   INT FindElNeighbours(INT *node_element_matrix,INT *el_array,INT ne)
-
-   PARAMETERS:
-   .  ne - number of elements
-
-   DESCRIPTION:
-   sets neighbours of elements with a O(n)-algorithm using a node-element matrix
-
-   RETURN VALUE:
-   INT
-   .n      1 if error occured
-   D*/
+/**
+* sets neighbours of elements with a O(n)-algorithm using a node-element matrix.
+*
+* @param ne number of elements
+*
+* @return value 1:error.
+   */
 /****************************************************************************/
 INT FindElNeighbours(INT ne)
 {
