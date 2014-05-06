@@ -1317,7 +1317,7 @@ INT NS_DIM_PREFIX BVP_Check (BVP *aBVP)
               else
               {
                 /*Pruefung der Orientierung der beiden benachbarten Dreiecke*/
-                /*Die beiden gemeinsamen Corneer muessen in unterschiedlicher Reihenfolge vorkommen*/
+                /* Die beiden gemeinsamen Corneer muessen in unterschiedlicher Reihenfolge vorkommen*/
 
                 /*Reihenfolge der gemeinsamen CornerIDs bei TheTria*/
                 if((indexesTheTria[0] == 0) && (indexesTheTria[1] == 2))

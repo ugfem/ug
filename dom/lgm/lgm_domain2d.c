@@ -197,25 +197,15 @@ INT NS_DIM_PREFIX SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr Bn
 }
 
 /****************************************************************************/
-/*D
-        SetDomainSize - set the bounding sphere in the domain
-
-   SYNOPSIS:
-   INT SetDomainSize (LGM_DOMAIN *theDomain);
-
-   PARAMETERS:
-   .  theDomain - domain
-
-   DESCRIPTION:
-   function sets the bounding sphere in the domain
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-
-   SEE ALSO:
-   D*/
+/**
+*\brief SetDomainSize set the bounding sphere in the domain.
+*
+* function sets the bounding sphere in the domain.
+*
+* @param theDomain domain.
+*
+* @return value 0: o.k. 1: error.
+   */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX SetDomainSize (LGM_DOMAIN *theDomain)

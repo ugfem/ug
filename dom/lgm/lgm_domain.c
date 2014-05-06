@@ -64,30 +64,20 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /****************************************************************************/
-/*D
-   CreateProblem -  Create a new PROBLEM structure
-
-   SYNOPSIS:
-   PROBLEM *CreateProblem (char *name,
-   ConfigProcPtr config, int numOfCoefficients, CoeffProcPtr coeffs[],
-   int numOfUserFct, UserProcPtr userfct[]);
-
-   PARAMETERS:
-   .  name - name of the problem
-   .  config - pointer to the configuration function
-   .  numOfCoefficients - number of coefficient functions
-   .  coeffs[] - pointer to coefficient functions
-   .  numOfUserFct - number of user coefficient functions
-   .  userfct[] - pointer to user coefficient functions
-
-   DESCRIPTION:
-   This function allocates and initializes a new PROBLEM structure in the /LGM_PROBLEM directory.
-
-   RETURN VALUE:
-   PROBLEM *
-   .n    pointer to new PROBLEM
-   .n    NULL if out of memory.
-   D*/
+/**
+* \brief  Create a new PROBLEM structure.
+*
+* This function allocates and initializes a new PROBLEM structure in the /LGM_PROBLEM directory.
+*
+* @param name  name of the problem.
+* @param config  pointer to the configuration function.
+* @param numOfCoefficients  number of coefficient functions.
+* @param coeffs  pointer to coefficient functions.
+* @param numOfUserFct  number of user coefficient functions.
+* @param userfct  pointer to user coefficient functions.
+*
+* @return  pointer to new PROBLEM, NULL if out of memory.
+   */
 /****************************************************************************/
 
 LGM_PROBLEM* NS_DIM_PREFIX CreateProblem (const char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])

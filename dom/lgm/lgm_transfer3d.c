@@ -835,22 +835,11 @@ int NS_DIM_PREFIX LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
 }
 
 /****************************************************************************/
-/*D
-        LGM_WriteOpenFile - init
-
-   SYNOPSIS:
-   FILE *LGM_WriteOpenFile (char* name);
-
-   PARAMETERS:
-
-   DESCRIPTION:
-   This function inits this file.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
+/**
+* This function inits this file.
+*
+* @return value 0: o.k. 1: error.
+   */
 /****************************************************************************/
 
 FILE* NS_DIM_PREFIX LGM_WriteOpenFile (const char* name)

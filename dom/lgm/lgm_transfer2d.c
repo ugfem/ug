@@ -457,24 +457,14 @@ int NS_DIM_PREFIX LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_in
 }
 
 /****************************************************************************/
-/*
-   LGM_ReadPoints - reads all points from file
-
-   SYNOPSIS:
-   int LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info);
-
-   PARAMETERS:
-   .  lgm_point_info - points
-
-   DESCRIPTION:
-   function reads all points from the file
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if read error.
-
-   SEE ALSO:
+/**
+*\brief reads all points from file.
+*
+* function reads all points from the file.
+*
+* @param lgm_point_info points.
+*
+* @return value 0:ok. 1:error.
  */
 /****************************************************************************/
 
@@ -502,22 +492,13 @@ int NS_DIM_PREFIX LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 }
 
 /****************************************************************************/
-/*D
-        LGM_WriteOpenFile - init
-
-   SYNOPSIS:
-   FILE *LGM_WriteOpenFile (char* name);
-
-   PARAMETERS:
-
-   DESCRIPTION:
-   This function inits this file.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
+/**
+*\brief init.
+*
+* This function inits this file.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 
 FILE * NS_DIM_PREFIX LGM_WriteOpenFile (const char* name)
@@ -539,22 +520,13 @@ FILE * NS_DIM_PREFIX LGM_WriteOpenFile (const char* name)
 }
 
 /****************************************************************************/
-/*D
-   InitLGMTransfer - init
-
-   SYNOPSIS:
-   INT InitLGMTransfer (void);
-
-   PARAMETERS:
-
-   DESCRIPTION:
-   This function inits this file.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
+/**
+*\breif init.
+*
+* This function inits this file.
+*
+* @return value 0:ok. 1:error.
+  */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX InitLGMTransfer (void)

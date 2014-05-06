@@ -174,10 +174,10 @@ static char *TmpMemArray;
 static TRIANGLE_TYP *New_Triangle_List;
 INT nmb_of_triangles;
 
-/*DIRKS NEU*/
+/* DIRKS NEU*/
 static INT NuClmsMINUS1;
 
-/*DIRKS NEU ... */
+/* DIRKS NEU ... */
 static INT *node_element_matrix;
 /*      possesses for each node a list of all adjacent elements                 */
 static INT *el_array;
@@ -274,28 +274,20 @@ static int ST_INF_KollisL;
 
 
 /****************************************************************************/
-/*D
-   ReadCADFile - reads the CAD file and fills the arrays od the intermediate format
-
-   SYNOPSIS:
-   INT ReadCADFile(char *CADOutputFileName, INT *statistik, DOUBLE *abx,INT *condition_array, INT *nodeflag_array,INT *elemflag_array,INT *el_array,DOUBLE *n_koord_array,BND_SFE_TYP *bndseg_array,INT *node_element_matrix,INT *bndcndflg_array)
-
-   PARAMETERS:
-   .  CADOutputFileName - name of the CAD Outputfile
-   .  node - pointer to an array used for the intermediate format
-   .  tetrahedron - pointer to an array used for the intermediate format
-
-   DESCRIPTION:
-   This function reads the essential and necessary datas from the CAD OutputFile
-   and fills different arrays. These arrays describe an intermediate format
-   which is used by ConvertCADGrid to build the UG-Grid with its boundary segments
-   and boundary descriptions !
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*\brief reads the CAD file and fills the arrays od the intermediate format.
+*
+* This function reads the essential and necessary datas from the CAD OutputFile
+* and fills different arrays. These arrays describe an intermediate format
+* which is used by ConvertCADGrid to build the UG-Grid with its boundary segments
+* and boundary descriptions.
+*
+* @param CADOutputFileName  name of the CAD Outputfile.
+* @param node  pointer to an array used for the intermediate format.
+* @tetrahedron  pointer to an array used for the intermediate forma.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 /************************************************************************************/
 /*	INPUT  : actual file pointer concerning the CADOutputFile                                               */
@@ -871,50 +863,38 @@ INT ReadCADFile(char *CADOutputFileName, INT *statistik, DOUBLE *abx,INT *condit
 /***************************/
 /*aus ehemals cadconvert.c:*/
 /****************************************************************************/
-/*D
-   ConvertCADGrid - builds a complete UG-Grid out of a CAD-Output-File (ANSYS-format)
-
-   SYNOPSIS:
-   INT ReadAnsysFile(char *filename);
-
-   PARAMETERS:
-   .  ExchangeVar_1 - Variable of ExchangeTyp - must be filled ( ==> INT nmb_of_SFEs;
-                                        CAD_SFE_TYP *SFE_Array;
-                                        DOUBLE *n_koord_array;
-   .  filename - name of the CAD-Output-File
-
-
-   DESCRIPTION:
-   This function builds a complete UG-Grid out of a the "IntermediateFormat",
-   which was created by the function ReadCADFile(...);
-   Thereby the multigrid-structure is filled completely.
-   BoundarySegments/Patches are generated automatically.
-   BoundaryConditions are created automatically.
-   Multigrid, BndSegments/Patches and all BndConditions are created out of an
-   ANSYS-file. At the moment we use the ANSYS-output from the CAD-Software
-   "Pro/ENGINEER" (from Parametrics), available at the "StutCAD" of the university
-   Stuttgart. The grids are created with "Pro/Mesh" ,the tetrahedron mesh genarator
-   of "Pro/ENGINEER". Besides in the CAD-program each "geometrical patch"
-   (not each surface triangle!) gets a "significant number".
-   The OUTPUT-ANSYS-file possesses all the (3D-tetrahedron)grid informations and boundary
-   informations.
-   For each surface triangle of the (3D-tetrahedron)grid "ConvertCADGrid"
-   creates a BoundarySegment/Patch.
-   Not for each surface triangle but for each "geometrical patch" (= each "significant number")
-   "ConvertCADGrid" creates a BoundaryCondition (default:GenBndConditionDc = general Dirichlet-
-   Boundary Condition with x=0.0, y=0.0 and z=0.0  ===>  defined in construct.c). Other
-   BoundaryConditions can be easily  added in the same way as GenBndConditionDc.
-   BoundaryConditions and BoundarySegments/Patches are matched.
-   (more about the "IntermediateFormat" ==> ask Dirk Feuchter)
-
-
-
-
-   RETURN VALUE:
-   INT
-   .n    MULTIGRID *theMG if ok
-   .n    NULL if error occured.
-   D*/
+/**
+*\brief builds a complete UG-Grid out of a CAD-Output-File (ANSYS-format).
+*
+*  This function builds a complete UG-Grid out of a the "IntermediateFormat",
+*  which was created by the function ReadCADFile(...);
+*  Thereby the multigrid-structure is filled completely.
+*  BoundarySegments/Patches are generated automatically.
+*  BoundaryConditions are created automatically.
+*  Multigrid, BndSegments/Patches and all BndConditions are created out of an
+*  ANSYS-file. At the moment we use the ANSYS-output from the CAD-Software
+*  "Pro/ENGINEER" (from Parametrics), available at the "StutCAD" of the university
+*  Stuttgart. The grids are created with "Pro/Mesh" ,the tetrahedron mesh genarator
+*  of "Pro/ENGINEER". Besides in the CAD-program each "geometrical patch"
+*  (not each surface triangle!) gets a "significant number".
+*  The OUTPUT-ANSYS-file possesses all the (3D-tetrahedron)grid informations and boundary
+*  informations.
+*  For each surface triangle of the (3D-tetrahedron)grid "ConvertCADGrid"
+*  creates a BoundarySegment/Patch.
+*  Not for each surface triangle but for each "geometrical patch" (= each "significant number")
+*  "ConvertCADGrid" creates a BoundaryCondition (default:GenBndConditionDc = general Dirichlet-
+*  Boundary Condition with x=0.0, y=0.0 and z=0.0  ===>  defined in construct.c). Other
+*  BoundaryConditions can be easily  added in the same way as GenBndConditionDc.
+*  BoundaryConditions and BoundarySegments/Patches are matched.
+*  (more about the "IntermediateFormat" ==> ask Dirk Feuchter)
+*
+* @param Var_1  Variable of ExchangeTyp  must be filled ( ==> INT nmb_of_SFEs;
+*                                       CAD_SFE_TYP *SFE_Array;
+*                                       DOUBLE *n_koord_array;).
+* @param filename name of the CAD-Output-File.
+*
+* @return  MULTIGRID *theMG if ok,  NULL if error occured.
+   */
 /****************************************************************************/
 /*MULTIGRID *ConvertCADGrid  (char *theFormat,char *CADOutputFileName,unsigned long heapSize)*/
 INT ReadAnsysFile(char *filename)
@@ -1383,29 +1363,22 @@ INT ReadAnsysFile(char *filename)
 
 
 /****************************************************************************/
-/*D
-   The_SFE_hashfunction - hashfunctions for the SFE-Knoten-Eintraege
-
-   SYNOPSIS:
-   INT *The_SFE_hashfunction()
-
-   PARAMETERS:
-   .  val1 - niederwertigste KnotenID desOberflächendreiecks
-   .  val2 - "mittlel"wertigste KnotenID desOberflächendreiecks
-   .  val3 - hoechstwertigste KnotenID desOberflächendreiecks
-
-   DESCRIPTION:
-   berechnet aus den IDs der 3 Knoten eines Oberflächendreiecks
-   mit einer "Hashfunktion" einen Hashwert, der wiederum als Index
-   für die Abspeicherung verwendet wird.
-   Somit wird eine quadratische Alg.komplexität durch eine lineaere
-   optimiert bei der ldgl. der konstante Aufwand der Hashfunktion
-   hinzukommt.
-
-   RETURN VALUE:
-   INT
-   .n    the evaluated Hashvalue
-   D*/
+/**
+* \brief hashfunctions for the SFE-Knoten-Eintraege.
+*
+*  berechnet aus den IDs der 3 Knoten eines Oberflächendreiecks
+*  mit einer "Hashfunktion" einen Hashwert, der wiederum als Index
+*  für die Abspeicherung verwendet wird.
+*  Somit wird eine quadratische Alg.komplexität durch eine lineaere
+*  optimiert bei der ldgl. der konstante Aufwand der Hashfunktion
+*  hinzukommt.
+*
+* @param val1 niederwertigste KnotenID desOberflächendreiecks.
+* @param val2 "mittlel"wertigste KnotenID desOberflächendreiecks.
+* @param val3 hoechstwertigste KnotenID desOberflächendreiecks.
+*
+* @return the evaluated Hashvalue.
+   */
 /****************************************************************************/
 INT The_SFE_hashfunction(INT val1, INT val2, INT val3)
 {
@@ -1416,7 +1389,7 @@ INT The_SFE_hashfunction(INT val1, INT val2, INT val3)
       Fuellgrad .
       Die Kollisionshaeufigkeit betraegt 16 bis 21 Prozent . Der hoechste Wert
       wird bei einem EinzeolKomponentenGeometrie erreicht*/
-  /*Die untersuchten Geometrien waren
+  /* Die untersuchten Geometrien waren
      a2l_01_fein, a2l_100, a2l_80, a2l_72 und a2l_200 */
 
   hash_value = val1;
@@ -1462,28 +1435,21 @@ INT The_SFE_hashfunction(INT val1, INT val2, INT val3)
 
 
 /****************************************************************************/
-/*D
-   the_LI_hashfunction - hashfunctions for the LI-Knoten-Eintraege
-
-   SYNOPSIS:
-   INT **()
-
-   PARAMETERS:
-   .  val1 - niederwertige KnotenID derOberflächenLine
-   .  val2 - hoeherwertige KnotenID derOberflächenLine
-
-   DESCRIPTION:
-   berechnet aus den IDs der 2 Knoten einer "Oberflächenline"
-   mit einer "Hashfunktion" einen Hashwert, der wiederum als Index
-   für die Abspeicherung verwendet wird.
-   Somit wird eine quadratische Alg.komplexität durch eine lineaere
-   optimiert bei der ldgl. der konstante Aufwand der Hashfunktion
-   hinzukommt.
-
-   RETURN VALUE:
-   INT
-   .n    the evaluated Hashvalue
-   D*/
+/**
+*\brief hashfunctions for the LI-Knoten-Eintraege.
+*
+* berechnet aus den IDs der 2 Knoten einer "Oberflächenline"
+* mit einer "Hashfunktion" einen Hashwert, der wiederum als Index
+* für die Abspeicherung verwendet wird.
+* Somit wird eine quadratische Alg.komplexität durch eine lineaere
+* optimiert bei der ldgl. der konstante Aufwand der Hashfunktion
+* hinzukommt.
+*
+* @param val1 niederwertige KnotenID derOberflächenLine.
+* @param val2 hoeherwertige KnotenID derOberflächenLine.
+*
+* @return the evaluated Hashvalue.
+   */
 /****************************************************************************/
 INT the_LI_hashfunction(INT val1, INT val2)
 {
@@ -1528,28 +1494,20 @@ INT the_LI_hashfunction(INT val1, INT val2)
 
 
 /****************************************************************************/
-/*D
-   SortBndSegArray - initializations for Ansys2lgm
-
-   SYNOPSIS:
-   INT SortBndSegArray(INT *bndsegids_array)
-
-   PARAMETERS:
-   .  bndsegids_array - Das BoundarySegmentArray aus cadconvert
-                                wird hier so sortiert, das die 3 Nodeids eines SFEs aufsteigend sortiert
-                                sind. Achtung die 4-te ID steght fuer die KnotenID des zugehoerigen
-                                vierten innerern Knoten des jeweiligen Tetraeders: Diese CornerID
-                                wird bei der Sortierung natuerlich nicht beruecksichtigt.
-
-   DESCRIPTION:
-   Die Sortierung ist notwendig, damit die SFE_Hashtabelle eindeutig bleibt und
-   doppelt aufgeführte (im AnsysFile) Oberflächendreiecke erkannt werden !!!
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*\brief initializations for Ansys2lgm.
+*
+* Die Sortierung ist notwendig, damit die SFE_Hashtabelle eindeutig bleibt und
+* doppelt aufgeführte (im AnsysFile) Oberflächendreiecke erkannt werden !!!.
+*
+* @param bndsegids_array Das BoundarySegmentArray aus cadconvert
+*                        wird hier so sortiert, das die 3 Nodeids eines SFEs aufsteigend sortiert
+*                        sind. Achtung die 4-te ID steght fuer die KnotenID des zugehoerigen
+*                        vierten innerern Knoten des jeweiligen Tetraeders: Diese CornerID
+*                        wird bei der Sortierung natuerlich nicht beruecksichtigt.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 INT SortBndSegArray()
 {
@@ -1615,23 +1573,15 @@ INT SortBndSegArray()
 
 
 /****************************************************************************/
-/*D
-   NextGoodPrimeNumber - fetchs a good prime number
-
-   SYNOPSIS:
-   INT NextGoodPrimeNumber(INT *TheNumber)
-
-   PARAMETERS:
-   .  TheNumber - The reference of the input number
-
-   DESCRIPTION:
-   changes TheNumber to the next good prime number for a good Hashing
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*\brief fetchs a good prime number.
+*
+* changes TheNumber to the next good prime number for a good Hashing.
+*
+* @param TheNumber The reference of the input number.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 INT NextGoodPrimeNumber(INT *TheNumber)
 {
@@ -1763,32 +1713,20 @@ INT NextGoodPrimeNumber(INT *TheNumber)
 
 
 /****************************************************************************/
-/*D
-   Ansys2lgmInit - initializations for Ansys2lgm
-
-   SYNOPSIS:
-   INT Ansys2lgmInit(INT nmber_of_SFEs, INT *bndsgmntndids_array)
-
-   PARAMETERS:
-   .  nmber_of_SFEs - The number of nodes, evaluated in readcadfile/cadconvert,
-                now used for the hashfunctions
-                In Ansys2lgmInit its value is used to set the static variable
-                "number_of_nodes" of the file ansys2ug.c
-   .  bndsgmntndids_array - Das BoundarySegmentArray aus cadconvert
-                                wird hier an die SortierroutineSortBndSegArray(..)= weitergegeben.
-                                Hat Quadrupeleintraege: die 3 IDS der Ecken des Oberflaechen-
-                                dreieck plus zusaetzlich die ID des 4-ten innener Knotens des
-                                zugehoerigen Tetraeders.
-
-   DESCRIPTION:
-   bla bla bla bla
-   bla bla bla bla
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+*
+* @param nmber_of_SFEs  The number of nodes, evaluated in readcadfile/cadconvert,
+*                       now used for the hashfunctions
+*                       In Ansys2lgmInit its value is used to set the static variable
+*                       "number_of_nodes" of the file ansys2ug.c
+* @param bndsgmntndids_array Das BoundarySegmentArray aus cadconvert
+*                            wird hier an die SortierroutineSortBndSegArray(..)= weitergegeben.
+*                            Hat Quadrupeleintraege: die 3 IDS der Ecken des Oberflaechen-
+*                            dreieck plus zusaetzlich die ID des 4-ten innener Knotens des
+*                            zugehoerigen Tetraeders.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 INT Ansys2lgmInit()
 {
@@ -1867,26 +1805,15 @@ INT Ansys2lgmInit()
 
 
 /****************************************************************************/
-/*D
-   GetMemAndFillNewSFE -
-
-   SYNOPSIS:
-   SFE_KNOTEN_TYP *GetMemAndFillNewSFE(INT ii, INT jj, INT kk, INT id_4, DOUBLE ss)
-
-   PARAMETERS:
-   .  ii, jj, kk - NodeIDs of the  new SFE-Knoten
-   .  ss - der Identifiervalue des neuen SFE-Knotens
-   .  id_4 - die Id des vierten Knotens des neuen SFEs
-
-   DESCRIPTION:
-   holt Speicher für neuen SFE-Eintrag und füllt diesen mit Hilfe der Parameter
-
-
-   RETURN VALUE:
-   SFE_KNOTEN_TYP *
-   .n    NULL if no memory is available
-   .n    SFE_KNOTEN_TYP * ,  normally returns pointer to the new SFE_KNOTEN_TYP / Triangle
-   D*/
+/**
+* holt Speicher für neuen SFE-Eintrag und füllt diesen mit Hilfe der Parameter.
+*
+* @param ii, jj, kk  NodeIDs of the  new SFE-Knoten.
+* @param ss  der Identifiervalue des neuen SFE-Knotens.
+* @param id_4  die Id des vierten Knotens des neuen SFEs.
+*
+* @return normally returns pointer to the new SFE_KNOTEN_TYP / Triangle, NULL if no memory is available.
+   */
 /****************************************************************************/
 SFE_KNOTEN_TYP *GetMemAndFillNewSFE(INT ii, INT jj, INT kk, INT id_4, DOUBLE ss)
 {
@@ -1920,26 +1847,15 @@ SFE_KNOTEN_TYP *GetMemAndFillNewSFE(INT ii, INT jj, INT kk, INT id_4, DOUBLE ss)
 
 
 /****************************************************************************/
-/*D
-   SameSFE -
-
-   SYNOPSIS:
-   INT SameSFE(INT iii, INT jjj, INT kkk, INT *sv_ids)
-
-   PARAMETERS:
-   .  iii, jjj, kkk - NodeIDs of the possible new SFE
-   .  sv_ids - pointer to the nodeid[3] of already existing and possibly same SFE
-
-   DESCRIPTION:
-   Diese Funktion überprüft, ob zwei aufsteigend nach Größe sortierte ID-Tripel
-   identisch (return 1) sind oder nicht (return 0).
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if diiferent
-   .n    1 if IDs are the same
-   D*/
+/**
+* Diese Funktion überprüft, ob zwei aufsteigend nach Größe sortierte ID-Tripel
+* identisch (return 1) sind oder nicht (return 0).
+*
+* @param iii, jjj, kkk  NodeIDs of the possible new SFE.
+* @param sv_ids  pointer to the nodeid[3] of already existing and possibly same SFE.
+*
+* @return value 0:diferent. 1:IDs are the same.
+   */
 /****************************************************************************/
 INT SameSFE(INT iii, INT jjj, INT kkk, INT *sv_ids)
 {
@@ -1955,36 +1871,25 @@ INT SameSFE(INT iii, INT jjj, INT kkk, INT *sv_ids)
 
 
 /****************************************************************************/
-/*D
-   Hash_SFE -
-
-   SYNOPSIS:
-   SFE_KNOTEN_TYP* Hash_SFE(INT i, INT j, INT k, INT id4, DOUBLE s)
-
-   PARAMETERS:
-   .  i, j, k - NodeIDs of the SFE
-   .  id4 - Identifier of the fourth  "quasi inner" node
-   .  s - Identifier of the SFE
-
-   DESCRIPTION:
-   Diese Funktion trägt ein SFE in die Hashtabelle ordnungsgemäß ein.
-   Als Input hat die Funktion die 3 IDs der Ecken ijk des SFEs sowie den Identifier s.
-   Ferner wird auch der vierte Knoten des Tetraeders, zu dem das SFE gehoert
-   mitabgespeichert. Seine Info benoertig man spaeter um festzustelle was rechts und
-   was links von einer Surface liegt ...
-   Hash_SFE sucht in der SFE_HashTable, ob es schon mal einen Eintrag mit den
-   selbern Ecken ijk gibt.
-   Wenn ja ist zu diesem SFE-Eintrag ein Zweiter gefunden
-   und der zweite Identifiers des SKE-Knotens wird von -1.0 auf s gesetzt.
-   Wenn nein, dann wird Speicher fuer einen neuen SFE-Knoten angefordert und dierser
-   gefüllt.
-
-
-   RETURN VALUE:
-   SFE_KNOTEN_TYP *
-   .n    pointer to the new/actual SFE/triangle if ok
-   .n    NULL if error occured.
-   D*/
+/**
+* Diese Funktion trägt ein SFE in die Hashtabelle ordnungsgemäß ein.
+* Als Input hat die Funktion die 3 IDs der Ecken ijk des SFEs sowie den Identifier s.
+* Ferner wird auch der vierte Knoten des Tetraeders, zu dem das SFE gehoert
+* mitabgespeichert. Seine Info benoertig man spaeter um festzustelle was rechts und
+* was links von einer Surface liegt ...
+* Hash_SFE sucht in der SFE_HashTable, ob es schon mal einen Eintrag mit den
+* selbern Ecken ijk gibt.
+* Wenn ja ist zu diesem SFE-Eintrag ein Zweiter gefunden
+* und der zweite Identifiers des SKE-Knotens wird von -1.0 auf s gesetzt.
+* Wenn nein, dann wird Speicher fuer einen neuen SFE-Knoten angefordert und dierser
+* gefüllt.
+*
+* @param i, j, k  NodeIDs of the SFE
+* @param id4  Identifier of the fourth  "quasi inner" node
+* @param s  Identifier of the SFE
+*
+* @return pointer to the new/actual SFE/triangle if ok, NULL if error occured.
+   */
 /****************************************************************************/
 SFE_KNOTEN_TYP *Hash_SFE(INT i, INT j, INT k, INT id4, DOUBLE s)
 {
@@ -2061,26 +1966,16 @@ SFE_KNOTEN_TYP *Hash_SFE(INT i, INT j, INT k, INT id4, DOUBLE s)
 
 
 /****************************************************************************/
-/*D
-   GetMemandFillNewIDF -
-
-   SYNOPSIS:
-   IDF_TYP *GetMemandFillNewIDF(INT k, DOUBLE s,SFE_KNOTEN_TYP *act_tria)
-
-   PARAMETERS:
-   .  k - dritte NodeID des SFEs, zu dem die Line in diesem Fall gehört
-   .  s - Identifier of the SFE, zu dem die Line in diesem Fall gehört
-   .  act_tria - Zeiger auf zugehöriges SFE_KNOTEN_TYP-Element
-
-   DESCRIPTION:
-   erzeugt und füllt eine neue Struktur vom IDF_TYP.
-   Das ist eines der Listenelemente der Line-internen identifiers Liste.
-
-   RETURN VALUE:
-   IDF_TYP *
-   .n    pointer to the new Identifier
-   .n    NULL if error occured.
-   D*/
+/**
+* erzeugt und füllt eine neue Struktur vom IDF_TYP.
+* Das ist eines der Listenelemente der Line-internen identifiers Liste.
+*
+* @param k  dritte NodeID des SFEs, zu dem die Line in diesem Fall gehört.
+* @param s  Identifier of the SFE, zu dem die Line in diesem Fall gehört.
+* @param act_tria  Zeiger auf zugehöriges SFE_KNOTEN_TYP-Element.
+*
+* @return pointer to the new Identifier, NULL if error occured.
+   */
 /****************************************************************************/
 IDF_TYP *GetMemandFillNewIDF(INT k, DOUBLE s,SFE_KNOTEN_TYP *act_tria)
 {
@@ -2102,25 +1997,15 @@ IDF_TYP *GetMemandFillNewIDF(INT k, DOUBLE s,SFE_KNOTEN_TYP *act_tria)
 
 
 /****************************************************************************/
-/*D
-   InsertNewIdfIIntoIdfslist -
-
-   SYNOPSIS:
-   INT InsertNewIdfIIntoIdfslist(IDF_TYP *idf_new, LI_KNOTEN_TYP *merke, DOUBLE s))
-
-   PARAMETERS:
-   .  idf_new - dritte NodeID des SFEs, zu dem die Line in diesem Fall gehört
-   .  merke - Identifier of the SFE, zu dem die Line in diesem Fall gehört
-   .  s - SurfaceIdentifier(SFE-Wert aus AnsysDatei) of the SFE, zu dem die Line in diesem Fall gehört
-
-   DESCRIPTION:
-   fügt den neuen Identifier idf_new in die Identifierliste der Line merke ein
-
-   RETURN VALUE:
-   INT
-   .n    0 OK
-   .n    1 if error occured.
-   D*/
+/**
+* fügt den neuen Identifier idf_new in die Identifierliste der Line merke ein.
+*
+* @param idf_new - dritte NodeID des SFEs, zu dem die Line in diesem Fall gehört.
+* @param merke - Identifier of the SFE, zu dem die Line in diesem Fall gehört.
+* @param s - SurfaceIdentifier(SFE-Wert aus AnsysDatei) of the SFE, zu dem die Line in diesem Fall gehört.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 INT InsertNewIdfIIntoIdfslist(IDF_TYP *idf_new, LI_KNOTEN_TYP *merke, DOUBLE s)
 {
@@ -2160,30 +2045,20 @@ INT InsertNewIdfIIntoIdfslist(IDF_TYP *idf_new, LI_KNOTEN_TYP *merke, DOUBLE s)
 
 
 /****************************************************************************/
-/*D
-   GetMemAndFillNewLI -
-
-   SYNOPSIS:
-   LI_KNOTEN_TYP *GetMemAndFillNewLI(INT i, INT j, INT k, DOUBLE s, SFE_KNOTEN_TYP *act_tria)
-
-   PARAMETERS:
-   .  i - niederwertige NodeID der Line
-   .  j - höherwertige NodeID der Line
-   .  k - dritte NodeID des SFEs, zu dem die Line in diesem Fall gehört
-   .  s - Identifier of the SFE, zu dem die Line in diesem Fall gehört
-   .  act_tria - Zeiger auf zugehöriges SFE_KNOTEN_TYP-Element
-
-   DESCRIPTION:
-   erzeugt und füllt eine neue Struktur vom LI_KNOTEN_TYP.
-   Das ist eines der LIKNoten der LI-Hashtabelle
-   für die interne Identifierliste, die zu jeder Line angelegt wird,
-   wird die Funktion GetMemandFillNewIDF aufgerufen.
-
-   RETURN VALUE:
-   LI_KNOTEN_TYP *
-   .n    LI_KNOTEN_TYP * pointer to the new LIne
-   .n    NULL if error occured (no memory for  example available).
-   D*/
+/**
+* erzeugt und füllt eine neue Struktur vom LI_KNOTEN_TYP.
+* Das ist eines der LIKNoten der LI-Hashtabelle
+* für die interne Identifierliste, die zu jeder Line angelegt wird,
+* wird die Funktion GetMemandFillNewIDF aufgerufen.
+*
+* @param  i  niederwertige NodeID der Line.
+* @param  j  höherwertige NodeID der Line.
+* @param  k  dritte NodeID des SFEs, zu dem die Line in diesem Fall gehört.
+* @param  s  Identifier of the SFE, zu dem die Line in diesem Fall gehört.
+* @param  act_tria  Zeiger auf zugehöriges SFE_KNOTEN_TYP-Element.
+*
+* @return pointer to the new LIne, NULL if error occured (no memory for example available).
+   */
 /****************************************************************************/
 LI_KNOTEN_TYP *GetMemAndFillNewLI(INT i, INT j, INT k, DOUBLE s, SFE_KNOTEN_TYP *act_tria)
 {
@@ -2210,26 +2085,15 @@ LI_KNOTEN_TYP *GetMemAndFillNewLI(INT i, INT j, INT k, DOUBLE s, SFE_KNOTEN_TYP 
 
 
 /****************************************************************************/
-/*D
-   SameLI -
-
-   SYNOPSIS:
-        INT SameLI(INT i, INT j, INT *lv_ids)
-
-   PARAMETERS:
-   .  i, j - NodeIDs of the possible new LIne
-   .  lv_ids - pointer to the nodeid[2] of already existing and possibly same LIne
-
-   DESCRIPTION:
-   Diese Funktion überprüft, ob zwei aufsteigend nach Größe sortierte ID-Paare
-   identisch (return 1) sind oder nicht (return 0).
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if diiferent
-   .n    1 if IDs are the same
-   D*/
+/**
+* Diese Funktion überprüft, ob zwei aufsteigend nach Größe sortierte ID-Paare
+* identisch (return 1) sind oder nicht (return 0).
+*
+* @param i, j  NodeIDs of the possible new LIne.
+* @param lv_ids  pointer to the nodeid[2] of already existing and possibly same LIne.
+*
+* @return value   0:diiferent. 1:IDs are the same.
+   */
 /****************************************************************************/
 INT SameLI(INT i, INT j, INT *lv_ids)
 {
@@ -2245,36 +2109,24 @@ INT SameLI(INT i, INT j, INT *lv_ids)
 
 
 /****************************************************************************/
-/*D
-   Hash_LI -
-
-   SYNOPSIS:
-   LI_KNOTEN_TYP Hash_LI(INT i, INT j, INT k, DOUBLE s, SFE_KNOTEN_TYP *act_tria)
-
-   PARAMETERS:
-   .  i, j - aufsteigende NodeIDs of the new Line
-   .  k - dritte NodeID des SFEs, zu dem die Line gehört
-   .  s - Identifier of the SFE, zu dem die Line gehört
-   .  act_tria - Zeiger auf zugehöriges SFE_KNOTEN_TYP-Element
-
-   DESCRIPTION:
-   Diese Funktion trägt ein LI in die Hashtabelle ordnungsgemäß ein.
-   Als Input hat die Funktion die 2 IDs der Ecken ij der Line sowie den Identifier s.
-   Ferner steht in k die dritte Knotenid des zugeh. SFEs.
-   Hash_LI sucht in der LI_HashTable, ob es schon mal einen Eintrag mit den
-   selbern Ecken ij gibt.
-   Wenn ja, dann ist zu diesem LI-Eintrag ein Weiterer gefunden,der dann in
-   die identifiers-Liste der Größe nach aufsteigend einsortiert wird.
-   Wenn nein, dann wird Speicher fuer einen neuen LI-Knoten angefordert und dieser
-   gefüllt.
-
-
-
-   RETURN VALUE:
-   LI_KNOTEN_TYP *
-   .n    SFE_KNOTEN_TYP* pointer to the new/actual SFE/triangle if ok
-   .n    NULL if error occured.
-   D*/
+/**
+* Diese Funktion trägt ein LI in die Hashtabelle ordnungsgemäß ein.
+* Als Input hat die Funktion die 2 IDs der Ecken ij der Line sowie den Identifier s.
+* Ferner steht in k die dritte Knotenid des zugeh. SFEs.
+* Hash_LI sucht in der LI_HashTable, ob es schon mal einen Eintrag mit den
+* selbern Ecken ij gibt.
+* Wenn ja, dann ist zu diesem LI-Eintrag ein Weiterer gefunden,der dann in
+* die identifiers-Liste der Größe nach aufsteigend einsortiert wird.
+* Wenn nein, dann wird Speicher fuer einen neuen LI-Knoten angefordert und dieser
+* gefüllt.
+*
+* @param i, j  aufsteigende NodeIDs of the new Line.
+* @param k  dritte NodeID des SFEs, zu dem die Line gehört.
+* @param s  Identifier of the SFE, zu dem die Line gehört:
+* @param act_tria  Zeiger auf zugehöriges SFE_KNOTEN_TYP-Element.
+*
+* @return pointer to the new/actual SFE/triangle if ok, NULL if error occured.
+   */
 /****************************************************************************/
 LI_KNOTEN_TYP *Hash_LI(INT i, INT j, INT k, DOUBLE s, SFE_KNOTEN_TYP *act_tria)
 {
@@ -2335,35 +2187,25 @@ LI_KNOTEN_TYP *Hash_LI(INT i, INT j, INT k, DOUBLE s, SFE_KNOTEN_TYP *act_tria)
   }
 }
 
-
+ .
 
 
 /****************************************************************************/
-/*D
-   Ansys2lgmCreateHashTables -
+/**
+* läuft über alle Oberflächendreiecke des ANSYS-Files und füllt dabei
+* die beiden Hashtabellen SFE-Hashtable und LI-HashTable.
 
-   SYNOPSIS:
-   INT Ansys2lgmCreateHashTables()
-
-   PARAMETERS:
-   .  bndsegids_array - Pointer to an array created (TODO) in cadconvert
-                                which includes 3erKnotentripel, die den ANSYS-SFE-Part
-                                wiederspiegeln.
-   .  bndsegidentifier_array - Pointer to an array created (TODO) in cadconvert
-                                which includes Identifiers, die den ANSYS-SFE-Part
-                                wiederspiegeln und zu dem zugehörigen 3er-KnotenID-Triple plus
-                                auch der vierte innere Knoten gehören, der spaeter fuer die
-                                Orientierung der Surfaces bzgl Innen/Aussen wichtig ist.
-
-   DESCRIPTION:
-   läuft über alle Oberflächendreiecke des ANSYS-Files und füllt dabei
-   die beiden Hashtabellen SFE-Hashtable und LI-HashTable
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+* @param  bndsegids_array  Pointer to an array created (TODO) in cadconvert
+*                                which includes 3erKnotentripel, die den ANSYS-SFE-Part
+*                                wiederspiegeln.
+* @param  bndsegidentifier_array  Pointer to an array created (TODO) in cadconvert
+*                                which includes Identifiers, die den ANSYS-SFE-Part
+*                                wiederspiegeln und zu dem zugehörigen 3er-KnotenID-Triple plus
+*                                auch der vierte innere Knoten gehören, der spaeter fuer die
+*                                Orientierung der Surfaces bzgl Innen/Aussen wichtig ist.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 INT Ansys2lgmCreateHashTables()
 {
@@ -2697,25 +2539,15 @@ INT Ansys2lgmCreateHashTables()
 
 
 /****************************************************************************/
-/*D
-   GetMemandFillNewSF -
-
-   SYNOPSIS:
-   SF_TYP *GetMemandFillNewSF(DOUBLE *surfacename))
-
-   PARAMETERS:
-   .  surfacename - Pointer auf DOUBLE-Array, das die eine oder die beiden
-                 Surfacezahlen beinhaltet
-
-   DESCRIPTION:
-   diese FUnktion allokiert den Speicher fuer eine neue Surface und fuehrt die anfaenglichen
-   Initialisierungen durch.
-
-   RETURN VALUE:
-   SF_TYP *
-   .n    pointer to new respectively already existing Surface
-   .n    NULL if error occured.
-   D*/
+/**
+* diese FUnktion allokiert den Speicher fuer eine neue Surface und fuehrt die anfaenglichen
+* Initialisierungen durch.
+*
+* @param surfacename Pointer auf DOUBLE-Array, das die eine oder die beiden
+*                    Surfacezahlen beinhaltet
+*
+* @return pointer to new respectively already existing Surface, NULL if error occured.
+   */
 /****************************************************************************/
 SF_TYP *GetMemandFillNewSF(DOUBLE *surfacename)
 {
@@ -2753,25 +2585,15 @@ SF_TYP *GetMemandFillNewSF(DOUBLE *surfacename)
 
 
 /****************************************************************************/
-/*D
-   CreateOrFetchSurface -
-
-   SYNOPSIS:
-   SF_TYP *CreateOrFetchSurface(DOUBLE *surfacename)
-
-   PARAMETERS:
-   .  surfacename - Pointer auf DOUBLE-Array, das die eine oder die beiden
-                 Surfacezahlen beinhaltet
-
-   DESCRIPTION:
-   Funktion laeuft ueber die Surfaces und sucht, ob es bereits eine Surface gibt,
-   die die beiden DOUBLE-Zahlen als Merkmale hat besitzt
-
-   RETURN VALUE:
-   SF_TYP *
-   .n    pointer to new respectively already existing Surface
-   .n    NULL if error occured.
-   D*/
+/**
+* Funktion laeuft ueber die Surfaces und sucht, ob es bereits eine Surface gibt,
+* die die beiden DOUBLE-Zahlen als Merkmale hat besitzt.
+*
+* @param surfacename  Pointer auf DOUBLE-Array, das die eine oder die beiden
+*                     Surfacezahlen beinhaltet
+*
+* @return pointer to new respectively already existing Surface, NULL if error occured.
+   */
 /****************************************************************************/
 SF_TYP *CreateOrFetchSurface(DOUBLE *surfacename)
 {
@@ -2826,25 +2648,15 @@ SF_TYP *CreateOrFetchSurface(DOUBLE *surfacename)
 
 
 /****************************************************************************/
-/*D
-   GetMemandFillNewSFC -
-
-   SYNOPSIS:
-   SFC_TYP *GetMemandFillNewSFC(SF_TYP *theSurface)
-
-   PARAMETERS:
-   .  theSurface - Gibt Zeiger auf theSurface an
-
-   DESCRIPTION:
-   holt tatsaechlich den Speicher fuer einen neuen SFC-Entry ,
-   der weiter oben bei der zugehoerigen SFC-Entry-Liste einer Subdomain
-   angesiedelt ist.
-
-   RETURN VALUE:
-   SFC_TYP *
-   .n    pointer to new SFC_TYP-Entry bzw. den schon bestehendne SFC_TYP-Entry
-   .n    NULL if error occured.
-   D*/
+/**
+* holt tatsaechlich den Speicher fuer einen neuen SFC-Entry ,
+* der weiter oben bei der zugehoerigen SFC-Entry-Liste einer Subdomain
+* angesiedelt ist.
+*
+* @param theSurface  Gibt Zeiger auf theSurface an.
+*
+* @return pointer to new SFC_TYP-Entry bzw. den schon bestehendne SFC_TYP-Entry, NULL if error occured.
+   */
 /****************************************************************************/
 SFC_TYP *GetMemandFillNewSFC(SF_TYP *theSurface)
 {
@@ -2867,25 +2679,15 @@ SFC_TYP *GetMemandFillNewSFC(SF_TYP *theSurface)
 
 
 /****************************************************************************/
-/*D
-   CreateAndConnectSfceEntryWithSbd -
-
-   SYNOPSIS:
-   SFC_TYP *CreateAndConnectSfceEntryWithSbd(SD_TYP *sbdm, SF_TYP *theSurface)
-
-   PARAMETERS:
-   .  sbdm - Pointer auf Subdomain, die auf die "neue" Surface theSurface zeigen soll
-   .  theSurface - Gibt Zeige auf theSurface an
-
-   DESCRIPTION:
-   Diese Funktion verknuepft eine Subdomain mit einer Surface
-   bzw. untersucht ob es die Verknuepfung vielleicht sogar schon gibt.
-
-   RETURN VALUE:
-   SFC_TYP *
-   .n    pointer to new SFC_TYP-Entry bzw. den schon bestehenden SFC_TYP-Entry
-   .n    NULL if error occured.
-   D*/
+/**
+* Diese Funktion verknuepft eine Subdomain mit einer Surface
+* bzw. untersucht ob es die Verknuepfung vielleicht sogar schon gibt.
+*
+* @param sbdm Pointer auf Subdomain, die auf die "neue" Surface theSurface zeigen soll.
+* @param theSurface Gibt Zeige auf theSurface an.
+*
+* @return pointer to new SFC_TYP-Entry bzw. den schon bestehenden SFC_TYP-Entry, NULL if error occured.
+   */
 /****************************************************************************/
 SFC_TYP *CreateAndConnectSfceEntryWithSbd(SD_TYP *sbdm, SF_TYP *theSurface)
 {
@@ -2963,26 +2765,16 @@ SFC_TYP *CreateAndConnectSfceEntryWithSbd(SD_TYP *sbdm, SF_TYP *theSurface)
 
 
 /****************************************************************************/
-/*D
-   ConnectSdWithSfce -
-
-   SYNOPSIS:
-   SD_TYP *ConnectSdWithSfce(SFE_KNOTEN_TYP *sfe_ptr, SD_TYP *sbdm0, SD_TYP *sbdm1)
-
-   PARAMETERS:
-   .  sfe_pter - Pointer auf SFE-HTab-Eintrag, dessen Identifierinformation verwendet wird.
-   .  sbdm0 - Gibt das zugehoerige Subdomain an
-   .  sbdm1 - Gibt ggf. ein zweites Subdomain an, zu dem die neue Surface auch gehoert.
-
-   DESCRIPTION:
-   holt oder erzeugt sich mit weiteren Subfunktionen  die
-   aktuelle Surface und laesst sie mit den Subdomains verbinden
-
-   RETURN VALUE:
-   SF_TYP *
-   .n    pointer to new respectively already existing Surface
-   .n    NULL if error occured.
-   D*/
+/**
+* holt oder erzeugt sich mit weiteren Subfunktionen  die
+* aktuelle Surface und laesst sie mit den Subdomains verbinden.
+*
+* @param sfe_pter Pointer auf SFE-HTab-Eintrag, dessen Identifierinformation verwendet wird.
+* @param sbdm0 Gibt das zugehoerige Subdomain an.
+* @param sbdm1 Gibt ggf. ein zweites Subdomain an, zu dem die neue Surface auch gehoert.
+*
+* @return pointer to new respectively already existing Surface, NULL if error occured.
+   */
 /****************************************************************************/
 SF_TYP *ConnectSdWithSfce(SFE_KNOTEN_TYP *sfe_ptr, SD_TYP *sbdm0, SD_TYP *sbdm1)
 {
@@ -3048,23 +2840,13 @@ SF_TYP *ConnectSdWithSfce(SFE_KNOTEN_TYP *sfe_ptr, SD_TYP *sbdm0, SD_TYP *sbdm1)
 
 
 /****************************************************************************/
-/*D
-   GetMemandFillSD -
-
-   SYNOPSIS:
-   SD_TYP *GetMemandFillNewSD(INT SubdomName)
-
-   PARAMETERS:
-   .  SubdomName - INT-Value of the Subdomain to be created
-
-   DESCRIPTION:
-   allocates memory for a new subdomain and initializes the components.
-
-   RETURN VALUE:
-   SD_TYP *
-   .n    pointer to new respectively already existing subdomain
-   .n    NULL if error occured.
-   D*/
+/**
+* allocates memory for a new subdomain and initializes the components.
+*
+* @param SubdomName INT-Value of the Subdomain to be created.
+*
+* @return pointer to new respectively already existing subdomain, NULL if error occured.
+   */
 /****************************************************************************/
 SD_TYP *GetMemandFillNewSD(INT SubdomName)
 {
@@ -3095,25 +2877,15 @@ SD_TYP *GetMemandFillNewSD(INT SubdomName)
 
 
 /****************************************************************************/
-/*D
-   CreateSD -
-
-   SYNOPSIS:
-   INT CreateSD(SFE_KNOTEN_TYP *sfe_pter, INT f)
-
-   PARAMETERS:
-   .  sfe_pter - Pointer auf SFE-HTab-Eintrag, dessen Identifierinformation verwendet wird.
-   .  f - Gibt an ob das Subdomain mit SFE-Identifier[0] oder [1] erzeugt werden soll.
-
-   DESCRIPTION:
-   Erzeugt einen neuen Eintrag in der Subdomainliste, überprueft aber zuvor, ob es diesen
-   bereits in derr Liste gibt !
-
-   RETURN VALUE:
-   SD_TYP *
-   .n    pointer to new respectively already existing subdomain
-   .n    NULL if error occured.
-   D*/
+/**
+* Erzeugt einen neuen Eintrag in der Subdomainliste, überprueft aber zuvor, ob es diesen
+* bereits in derr Liste gibt !
+*
+* @param sfe_pter Pointer auf SFE-HTab-Eintrag, dessen Identifierinformation verwendet wird.
+* @param f Gibt an ob das Subdomain mit SFE-Identifier[0] oder [1] erzeugt werden soll.
+*
+* @return pointer to new respectively already existing subdomain, NULL if error occured.
+   */
 /****************************************************************************/
 SD_TYP *CreateSD(SFE_KNOTEN_TYP *sfe_pter, INT f)
 {
@@ -3174,26 +2946,16 @@ SD_TYP *CreateSD(SFE_KNOTEN_TYP *sfe_pter, INT f)
 
 
 /****************************************************************************/
-/*D
-   ConnectSfcTria -
-
-   SYNOPSIS:
-   INT ConnectSfcTria(SF_TYP *sf, SFE_KNOTEN_TYP *sfeptr)
-
-   PARAMETERS:
-   .  sf - Pointer to the surface
-   .  sfeptr - Pointer to the triangle to be connected with the surface
-
-   DESCRIPTION:
-   This function connects a Surface with a triangle , d.h.
-   the triangle is part of this surface.
-   Thereby the number of triangles is incremented.s
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* This function connects a Surface with a triangle , d.h.
+* the triangle is part of this surface.
+* Thereby the number of triangles is incremented.s.
+*
+* @param sf Pointer to the surface.
+* @param sfeptr Pointer to the triangle to be connected with the surface.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 INT ConnectSfcTria(SF_TYP *sf, SFE_KNOTEN_TYP *sfeptr)
 {
@@ -3221,28 +2983,17 @@ INT ConnectSfcTria(SF_TYP *sf, SFE_KNOTEN_TYP *sfeptr)
 
 
 /****************************************************************************/
-/*D
-   Neighbourhood -
-
-   SYNOPSIS:
-   INT Neighbourhood(INT ii, INT jj, INT kte, SFE_KNOTEN_TYP *sfep)
-
-   PARAMETERS:
-   .  ii - niederwertige KnotenID der Kante des SFEs, zu der ein Nachbar gesucht werden soll
-   .  jj - hoeherwertige KnotenID der Kante des SFEs, zu der ein Nachbar gesucht werden soll
-   .  kte -  ID der Kante des SFEs, zu der ein Nachbar gesucht werden soll
-   .  sfep -  SFE, zu dem ein Nachbar gesucht werden soll
-
-   DESCRIPTION:
-   sucht in der LI-Hashtabelle ob es einen Nachbarn fuer die Eingangsparameter gibt.
-   Wenn ja wird die Verknuepfung in beide Richtungen durchgefuehrt.
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* sucht in der LI-Hashtabelle ob es einen Nachbarn fuer die Eingangsparameter gibt.
+* Wenn ja wird die Verknuepfung in beide Richtungen durchgefuehrt.
+*
+* @param ii niederwertige KnotenID der Kante des SFEs, zu der ein Nachbar gesucht werden soll.
+* @param jj hoeherwertige KnotenID der Kante des SFEs, zu der ein Nachbar gesucht werden soll.
+* @param kte  ID der Kante des SFEs, zu der ein Nachbar gesucht werden soll.
+* @param sfep  SFE, zu dem ein Nachbar gesucht werden soll.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 INT Neighbourhood(INT ii, INT jj, INT kte, SFE_KNOTEN_TYP *sfep)
 {
@@ -3328,25 +3079,14 @@ INT Neighbourhood(INT ii, INT jj, INT kte, SFE_KNOTEN_TYP *sfep)
 
 
 /****************************************************************************/
-/*D
-   TriaNeighbourhood -
-
-   SYNOPSIS:
-   INT TriaNeighbourhood(SF_TYP *sf, SFE_KNOTEN_TYP *sfep)
-
-   PARAMETERS:
-   .  sfep - SFE, dessen Nachbarn gesucht und eingetragen werden
-
-   DESCRIPTION:
-   ruft fuer die 3 Kanten vom OFD "sfep" die Nachbarschaftsfindefunktion
-   "Neighbourhood(...)" auf
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* ruft fuer die 3 Kanten vom OFD "sfep" die Nachbarschaftsfindefunktion
+* "Neighbourhood(...)" auf
+*
+* @param sfep SFE, dessen Nachbarn gesucht und eingetragen werden.
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 INT TriaNeighbourhood(SFE_KNOTEN_TYP *sfep)
 {
@@ -3396,27 +3136,17 @@ INT TriaNeighbourhood(SFE_KNOTEN_TYP *sfep)
 
 
 /****************************************************************************/
-/*D
-   Ansys2lgmCreateSbdsSfcsTriaRelations -
-
-   SYNOPSIS:
-   INT Ansys2lgmCreateSbdsSfcsTriaRelations()
-
-   PARAMETERS:
-   .  xxx - bla bla bla bla
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   laeuft ueber die gesamte SFE-Hashtabelle und erzeugt alle notwendigen
-   Subdomains und auch Surfaces sowie deren Verbindung bzw. Referenzierung.
-   Ferner wird bei diesem Durchlauf auch die Nachbarschaftsbeziehungen der Dreiecke erzeugt.
-   sowie ebenso die Surface-Triangle-Beziehung.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* laeuft ueber die gesamte SFE-Hashtabelle und erzeugt alle notwendigen
+* Subdomains und auch Surfaces sowie deren Verbindung bzw. Referenzierung.
+* Ferner wird bei diesem Durchlauf auch die Nachbarschaftsbeziehungen der Dreiecke erzeugt.
+* sowie ebenso die Surface-Triangle-Beziehung.
+*
+* @param xxx .
+* @param yyy .
+*
+* @return value 0:ok. 1:error.
+   */
 /****************************************************************************/
 INT Ansys2lgmCreateSbdsSfcsTriaRelations()
 {
@@ -3531,30 +3261,21 @@ INT Ansys2lgmCreateSbdsSfcsTriaRelations()
 
 
 /****************************************************************************/
-/*D
-   Check_If_Line_On_Polyline -
-
-   SYNOPSIS:
-   INT Check_If_Line_On_Polyline(IDF_TYP *identifiers_pointer)
-
-   PARAMETERS:
-   .  identifiers_pointer - Pointer first Identifier of the observed Line
-
-   DESCRIPTION:
-   Funtion ueberprueft anhand mehrerer DOUBLE-Identifier, die zu einer ganz
-   bestimmten Line (siehe aufrufende Funktion Ansys2lgmCreatePloylines gehoert),
-   ob diese Line zu einer Polyline gehoert oder nicht. Dies ist dann der Fall,
-   wenn mind. zwei unterschiedliche Identifier-Zahlen vorkommen und nicht der
-   Spezialfall AABB vorliegt.(Ausfuehrliche Aufschluesselung alle moeglichen
-   Faellebzw. Identifierkombinationen, die eine Polyline besitzen kann siehe
-   Extrablatt im ansys2UG-Konzept von Dirk)
-
-   RETURN VALUE:
-   INT
-   .n    T if LineIdentifers indicate that their line is Part of a Polyline
-   .n    F if LineIdentifers don't indicate that their line is Part of a Polyline
-   .n    LI_IFS_ERROR if identifiers_pointer is a nil pointer
-   D*/
+/**
+* Funtion ueberprueft anhand mehrerer DOUBLE-Identifier, die zu einer ganz
+* bestimmten Line (siehe aufrufende Funktion Ansys2lgmCreatePloylines gehoert),
+* ob diese Line zu einer Polyline gehoert oder nicht. Dies ist dann der Fall,
+* wenn mind. zwei unterschiedliche Identifier-Zahlen vorkommen und nicht der
+* Spezialfall AABB vorliegt.(Ausfuehrliche Aufschluesselung alle moeglichen
+* Faellebzw. Identifierkombinationen, die eine Polyline besitzen kann siehe
+* Extrablatt im ansys2UG-Konzept von Dirk).
+*
+* @param identifiers_pointer Pointer first Identifier of the observed Line.
+*
+* @return T if LineIdentifers indicate that their line is Part of a Polyline,
+*         F if LineIdentifers don't indicate that their line is Part of a Polyline,
+*         LI_IFS_ERROR if identifiers_pointer is a nil pointer.
+   */
 /****************************************************************************/
 INT Check_If_Line_On_Polyline(IDF_TYP *identifiers_pointer)
 {
@@ -3618,30 +3339,20 @@ INT Check_If_Line_On_Polyline(IDF_TYP *identifiers_pointer)
 
 
 /****************************************************************************/
-/*D
-   Exist_Polyline -
-
-   SYNOPSIS:
-   PL_TYP *Exist_Polyline(LI_KNOTEN_TYP *identifiers_pointer)
-
-   PARAMETERS:
-   .  identifiers_pointer - Pointer to the observed Line
-
-   DESCRIPTION:
-   Diese Funktion untersucht, ob es zur eingehenden Line bereits eine Polyline gibt.
-   Dazu laeuft sie ueber alle bereits bestehenden Polylines und vergleicht ob eine
-   dieser Polylines die gleichen charkt. IDFs besitzt. Wenn ja ist die bereits
-   existierende Polyline gefunden.
-
-   TODO: Moeglichkeit zur optimierung: alle Polylines koennten anhand der Charakteris-
-   tischen IdfsListe in einem ausgeglichenen Binaerbaum abgespeichert werden
-   um eine logarithmische Komplexitaet zu erhalten.
-
-   RETURN VALUE:
-   PL_TYP *
-   .n    Pointer to already existing Polyline
-   .n    NULL if no Polyline exists resp. was found
-   D*/
+/**
+* Diese Funktion untersucht, ob es zur eingehenden Line bereits eine Polyline gibt.
+* Dazu laeuft sie ueber alle bereits bestehenden Polylines und vergleicht ob eine
+* dieser Polylines die gleichen charkt. IDFs besitzt. Wenn ja ist die bereits
+* existierende Polyline gefunden.
+*
+* TODO: Moeglichkeit zur optimierung: alle Polylines koennten anhand der Charakteris-
+* tischen IdfsListe in einem ausgeglichenen Binaerbaum abgespeichert werden
+* um eine logarithmische Komplexitaet zu erhalten.
+*
+* @param identifiers_pointer Pointer to the observed Line.
+*
+* @return Pointer to already existing Polyline, NULL if no Polyline exists resp. was found
+   */
 /****************************************************************************/
 PL_TYP *Exist_Polyline(LI_KNOTEN_TYP *identifiers_pointer)
 {
@@ -3716,26 +3427,16 @@ PL_TYP *Exist_Polyline(LI_KNOTEN_TYP *identifiers_pointer)
 
 
 /****************************************************************************/
-/*D
-   GetMemFillAddNewPolyline -
-
-   SYNOPSIS:
-   PL_TYP *GetMemFillAddNewPolyline(LI_KNOTEN_TYP *linepointer)
-
-   PARAMETERS:
-   .  linepointer - Pointer on Line, which is part of
-   .  polylinepointer - this polyline
-
-   DESCRIPTION:
-   allokiert Speicher fuer eine neue PolylineLine, initialisiert deren
-   Komponenten und haengt die neue PolylineLine in die Liste der zu-
-   gehörigen Polyline und inkrementiert auch den PolylineLineZähler.
-
-   RETURN VALUE:
-   PL_LINE_TYP
-   .n    Pointer on new Polyline_Line if ok
-   .n    NULL if error occured.
-   D*/
+/**
+* allokiert Speicher fuer eine neue PolylineLine, initialisiert deren
+* Komponenten und haengt die neue PolylineLine in die Liste der zu-
+* gehörigen Polyline und inkrementiert auch den PolylineLineZähler.
+*
+* @param  linepointer Pointer on Line, which is part of.
+* @param  polylinepointer this polyline.
+*
+* @return Pointer on new Polyline_Line if ok, NULL if error occured.
+   */
 /****************************************************************************/
 PL_LINE_TYP *GetMemFillAddNewPolylineLine(LI_KNOTEN_TYP *linepointer, PL_TYP *polylinepointer)
 {
@@ -3761,25 +3462,15 @@ PL_LINE_TYP *GetMemFillAddNewPolylineLine(LI_KNOTEN_TYP *linepointer, PL_TYP *po
 
 
 /****************************************************************************/
-/*D
-   GetMemFillAddNewPolyline -
-
-   SYNOPSIS:
-   PL_TYP *GetMemFillAddNewPolyline(LI_KNOTEN_TYP *linepointer)
-
-   PARAMETERS:
-   .  linepointer - Pointer on Line, which is characteristic resp. representative
-                 for the New Polyline and which will be a part of the new Polyline
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   allokiert Speicher fuer eine neue Ployline und initialisiert deren Komponenten
-
-   RETURN VALUE:
-   PL_TYP
-   .n    Pointer on new Polyline if ok
-   .n    NULL if error occured.
-   D*/
+/**
+* allokiert Speicher fuer eine neue Ployline und initialisiert deren Komponenten.
+*
+* @param linepointer Pointer on Line, which is characteristic resp. representative
+*                    for the New Polyline and which will be a part of the new Polyline.
+* @param yyy .
+*
+* @return Pointer on new Polyline if ok, NULL if error occured.
+   */
 /****************************************************************************/
 PL_TYP *GetMemFillAddNewPolyline(LI_KNOTEN_TYP *linepointer)
 {
@@ -3824,27 +3515,17 @@ PL_TYP *GetMemFillAddNewPolyline(LI_KNOTEN_TYP *linepointer)
 
 
 /****************************************************************************/
-/*D
-   CopyCharacteristicList2HelpList -
-
-   SYNOPSIS:
-   IDF_SHORT_TYP *CopyCharacteristicList2HelpList(IDF_TYP *charact_identifiers)
-
-   PARAMETERS:
-   .  charact_identifiers - Pointer to the Identifierlist of the observed Polyline
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   kopiert eine lineare LIste vom IDF_TYP in eine neue Liste vom Typ IDF_SHORT_TYP
-   In die neue Liste werden natuerlich nur die Identifiers gelegt entsprechend dem
-   abgfespeckten Typ IDF_SHORT_TYP Achtung dir Reihenfolge (d.h. sortiert von klein
-   nach gross) bleibt dabei erhalten !!!
-
-   RETURN VALUE:
-   IDF_SHORT_TYP *
-   .n    Pointer to copied IdentifierList if ok
-   .n    NULL if error occured resp. no copied List could be created.
-   D*/
+/**
+* kopiert eine lineare LIste vom IDF_TYP in eine neue Liste vom Typ IDF_SHORT_TYP
+* In die neue Liste werden natuerlich nur die Identifiers gelegt entsprechend dem
+* abgfespeckten Typ IDF_SHORT_TYP Achtung dir Reihenfolge (d.h. sortiert von klein
+* nach gross) bleibt dabei erhalten !!!
+*
+* @param charact_identifiers Pointer to the Identifierlist of the observed Polyline.
+* @param yyy .
+*
+* @return Pointer to copied IdentifierList if ok, NULL if error occured resp. no copied List could be created.
+   */
 /****************************************************************************/
 IDF_SHORT_TYP *CopyCharacteristicList2HelpList(IDF_TYP *charact_identifiers)
 {
@@ -3907,24 +3588,14 @@ IDF_SHORT_TYP *CopyCharacteristicList2HelpList(IDF_TYP *charact_identifiers)
 
 
 /****************************************************************************/
-/*D
-   FindSubdomain -
-
-   SYNOPSIS:
-   SD_TYP *FindSubdomain(INT sbdmid)
-
-   PARAMETERS:
-   .  sbdmid - The Id of the searched Subdomain
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   Laeuft ueber alle Subdomains und sucht dabei die mit der ID sbdmid
-
-   RETURN VALUE:
-   SD_TYP *
-   .n    Pointer to the found subdomain with the Id sbdmid
-   .n    NULL if error occured resp. no such subdomain could be found
-   D*/
+/**
+* Laeuft ueber alle Subdomains und sucht dabei die mit der ID sbdmid.
+*
+* @param sbdmid The Id of the searched Subdomain.
+* @param yyy .
+*
+* @return Pointer to the found subdomain with the Id sbdmid, NULL if error occured resp. no such subdomain could be found
+   */
 /****************************************************************************/
 SD_TYP *FindSubdomain(INT sbdmid)
 {
@@ -3954,26 +3625,17 @@ SD_TYP *FindSubdomain(INT sbdmid)
 
 
 /****************************************************************************/
-/*D
-   MakeNewSfcPlEntry -
-
-   SYNOPSIS:
-   SFPL_TYP *MakeNewSfcPlEntry(PL_TYP *plptr, SF_TYP *sfce)
-
-   PARAMETERS:
-   .  plptr - Pointer to polyline which belongs to surface
-   .  sfce - Pointer to surface
-
-   DESCRIPTION:
-   Die Surface sfce erhaelt einen neuen PolylineEintrag plptr !!!
-   Trage die Adresse der Polyline plptr in die Surface sfce ein und inkremetiere
-   die AnzahlderPolylinesVon der Surface um 1.
-
-   RETURN VALUE:
-   SFPL_TYP *
-   .n    Pointer to new SurfacePolylineEntry if OK
-   .n    NULL if error occured resp. no SurfacePolylineEntry could be created
-   D*/
+/**
+* Die Surface sfce erhaelt einen neuen PolylineEintrag plptr !!!
+* Trage die Adresse der Polyline plptr in die Surface sfce ein und inkremetiere
+* die AnzahlderPolylinesVon der Surface um 1.
+*
+* @param  plptr Pointer to polyline which belongs to surface.
+* @param  sfce Pointer to surface.
+*
+* @return Pointer to new SurfacePolylineEntry if OK,
+*         NULL if error occured resp. no SurfacePolylineEntry could be created
+   */
 /****************************************************************************/
 SFPL_TYP *MakeNewSfcPlEntry(PL_TYP *plptr, SF_TYP *sfce)
 {
@@ -4000,30 +3662,21 @@ SFPL_TYP *MakeNewSfcPlEntry(PL_TYP *plptr, SF_TYP *sfce)
 
 
 /****************************************************************************/
-/*D
-   SearchPartner -
-
-   SYNOPSIS:
-   IDF_SHORT_TYP *SearchPartner(IDF_SHORT_TYP *Idfi, IDF_SHORT_TYP **pre_Idfi, DOUBLE sfn)
-
-   PARAMETERS:
-   .  Idfi - Pointer to the first Identifier of the IdfList
-   .  pre_Idfi - Pointer to predescessor of Idfi == !!reference parameter, which is changed
-              within the function resp. updated to the predescessor of the Identifier with
-              SurfaceValue sfn.
-   .  sfn - DOUBLE-Value of the searched Identifier
-
-   DESCRIPTION:
-   Funktion such in einer Identifier liste einen Eintrag mit Wert sfn.
-   Der Listenanfang kommt mit Idfi in die Funktion
-   Im Referenzparameter pre_Idfi wird der Vorgaenger des gesuchten/gefundenen Identifiers
-   nach aussen zurueckgegeben.
-
-   RETURN VALUE:
-   IDF_SHORT_TYP *
-   .n    Pointer to the Identifier with the Value sfn
-   .n    NULL if no such Identifier could be found
-   D*/
+/**
+* Funktion such in einer Identifier liste einen Eintrag mit Wert sfn.
+* Der Listenanfang kommt mit Idfi in die Funktion
+* Im Referenzparameter pre_Idfi wird der Vorgaenger des gesuchten/gefundenen Identifiers
+* nach aussen zurueckgegeben.
+*
+* @param Idfi Pointer to the first Identifier of the IdfList.
+* @param pre_Idfi Pointer to predescessor of Idfi == !!reference parameter, which is changed
+*                 within the function resp. updated to the predescessor of the Identifier with
+*                 SurfaceValue sfn.
+* @param sfn DOUBLE-Value of the searched Identifier.
+*
+* @return Pointer to the Identifier with the Value sfn,
+*         NULL if no such Identifier could be found
+   */
 /****************************************************************************/
 IDF_SHORT_TYP *SearchPartner(IDF_SHORT_TYP *Idfi, IDF_SHORT_TYP **pre_Idfi, DOUBLE sfn)
 {
@@ -4054,35 +3707,24 @@ IDF_SHORT_TYP *SearchPartner(IDF_SHORT_TYP *Idfi, IDF_SHORT_TYP **pre_Idfi, DOUB
 
 
 /****************************************************************************/
-/*D
-   ConnectPolylineWithSurfaces -
-
-   SYNOPSIS:
-   INT ConnectPolylineWithSurfaces(PL_TYP *plptr)
-
-   PARAMETERS:
-   .  plptr - Pointer to new Polyline
-   .  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   abhaengig von den charakteristischen Identifiers die Polyline bei den Surfaces eintragen
-   verwendet wird dabei eine temporaere Hilfsliste helplist, die die charakteristische IDFs
-   einer Polyline in aufsteigender Reihenfolge beinhaltet. (z.B aabcd)
-
-   Idee: Zu jedem Eintrag  werden die Surfaces durchgesucht. Findet man eine mit einem
-   gleichen Identifier, dann wird diese Polyline mit der gefundenen Surface verknuepft.
-   Danach kann  der Eintrag der Helpliste geloescht werden und mit dem nexten fortgefahren werden.
-   Findet man gar eine Surface mit 2 Identifiern, von denen einer mit dem Helplisteneintrag
-   uebereinstimmt, so laeuft man mit dem zweiten ueber den Rest der Helplist und sucht ob
-   man diesen Zweiten vieleicht auch noch finden kann. Ist dem so, so hat man eine Polyline
-   von einer DoppelIDSurface gefunden - man kann verknuepfen und danach aus der Helplist
-   gleich zwei Eintraege loeschen.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/**
+* abhaengig von den charakteristischen Identifiers die Polyline bei den Surfaces eintragen
+* verwendet wird dabei eine temporaere Hilfsliste helplist, die die charakteristische IDFs
+* einer Polyline in aufsteigender Reihenfolge beinhaltet. (z.B aabcd)
+*
+* Idee: Zu jedem Eintrag  werden die Surfaces durchgesucht. Findet man eine mit einem
+* gleichen Identifier, dann wird diese Polyline mit der gefundenen Surface verknuepft.
+* Danach kann  der Eintrag der Helpliste geloescht werden und mit dem nexten fortgefahren werden.
+* Findet man gar eine Surface mit 2 Identifiern, von denen einer mit dem Helplisteneintrag
+* uebereinstimmt, so laeuft man mit dem zweiten ueber den Rest der Helplist und sucht ob
+* man diesen Zweiten vieleicht auch noch finden kann. Ist dem so, so hat man eine Polyline
+* von einer DoppelIDSurface gefunden - man kann verknuepfen und danach aus der Helplist
+* gleich zwei Eintraege loeschen.
+*
+* @param plptr Pointer to new Polyline.
+*
+* @return value 0: ok, 1:error.
+   */
 /****************************************************************************/
 INT ConnectPolylineWithSurfaces(PL_TYP *plptr)
 {
