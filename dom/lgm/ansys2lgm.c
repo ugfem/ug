@@ -2187,7 +2187,6 @@ LI_KNOTEN_TYP *Hash_LI(INT i, INT j, INT k, DOUBLE s, SFE_KNOTEN_TYP *act_tria)
   }
 }
 
- .
 
 
 /****************************************************************************/
