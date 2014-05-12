@@ -3511,9 +3511,9 @@ PL_TYP *GetMemFillAddNewPolyline(LI_KNOTEN_TYP *linepointer)
 
 /****************************************************************************/
 /**
-* kopiert eine lineare LIste vom IDF_TYP in eine neue Liste vom Typ IDF_SHORT_TYP
+* kopiert eine lineare Liste vom IDF_TYP in eine neue Liste vom Typ IDF_SHORT_TYP
 * In die neue Liste werden natuerlich nur die Identifiers gelegt entsprechend dem
-* abgfespeckten Typ IDF_SHORT_TYP Achtung dir Reihenfolge (d.h. sortiert von klein
+* abgespeckten Typ IDF_SHORT_TYP. Achtung die Reihenfolge (d.h. sortiert von klein
 * nach gross) bleibt dabei erhalten !!!
 *
 * @param charact_identifiers Pointer to the Identifierlist of the observed Polyline.
@@ -3739,7 +3739,7 @@ INT ConnectPolylineWithSurfaces(PL_TYP *plptr)
 
   /* Kopiere die charakteristische List der eingegangenen Polyline plptr in eine Hilfsliste helplist
      Diese Hilfsliste wird dann nach und nach bearbeitet - Ist sie leer, so ist die Polyline
-     ausreichend bearbeitet. In die Helplsit werden allerdinngs nur die DOUBLE-Identifiers eingtragen,
+     ausreichend bearbeitet. In die Helplist werden allerdinngs nur die DOUBLE-Identifiers eingtragen,
      und nicht mehr ! Verwendet wird daher auch nur der abgespeckte Datentyp IDF_SHORT_TYP */
   if((helplist = CopyCharacteristicList2HelpList(PL_IDFS(plptr))) == NULL)
   {
@@ -3748,11 +3748,11 @@ INT ConnectPolylineWithSurfaces(PL_TYP *plptr)
   }
   else
   {
-    /*solange die helplist != NULL bzw. solange es etwas zum Arbeien gibt bzw.
-       solange die teporaere Hilfsliste etwas beinhaltet*/
+    /*solange die helplist != NULL bzw. solange es etwas zum Arbeiten gibt bzw.
+       solange die temporaere Hilfsliste etwas beinhaltet*/
     while(helplist != NULL)
     {
-      Idf = helplist;                   /*man nehme den ersten Identfier der Hilfsliste, welcher aufgrund
+      Idf = helplist;                   /*man nehme den ersten Identifier der Hilfsliste, welcher aufgrund
                                            der Sortierung auch der niederwertigste ist. */
       sbdmid = (int) (floor(IDF_SHORT_VAL(Idf)));
 
