@@ -16191,7 +16191,7 @@ static INT CompareElementsXSH(INT mu, INT nu)
 
 #ifndef ModelP
 
-static INT CompareIDs (const void *p, const void *q)
+static int CompareIDs (const void *p, const void *q)
 {
     INT a, b;
 
