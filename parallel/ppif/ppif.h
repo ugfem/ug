@@ -33,7 +33,7 @@
 
 /****************************************************************************/
 /*                                                                          */
-/* settings for switching PPIF_FRONTEND_C/PPIF_FRONTEND_CPP/PPIF_FRONTEND_F */
+/* settings for switching PPIF_FRONTEND_C/PPIF_FRONTEND_CPP                 */
 /*                                                                          */
 /****************************************************************************/
 
@@ -43,22 +43,13 @@
 #error PPIF Configuration Error: PPIF_FRONTEND_C and PPIF_FRONTEND_CPP are set.
 #endif
 
-#if defined(PPIF_FRONTEND_C) && defined(PPIF_FRONTEND_F)
-#error PPIF Configuration Error: PPIF_FRONTEND_C and PPIF_FRONTEND_F are set.
-#endif
-
-#if defined(PPIF_FRONTEND_CPP) && defined(PPIF_FRONTEND_F)
-#error PPIF Configuration Error: PPIF_FRONTEND_CPP and PPIF_FRONTEND_F are set.
-#endif
 
 
 
 /* default frontend is PPIF_FRONTEND_C */
 #ifndef PPIF_FRONTEND_C
  #ifndef PPIF_FRONTEND_CPP
-  #ifndef PPIF_FRONTEND_F
    #define PPIF_FRONTEND_C
-  #endif
  #endif
 #endif
 
