@@ -740,7 +740,7 @@ static int ConsCheckDoubleObj (void)
    @returns  total number of errors (sum of all procs)
  */
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 int DDD_ConsCheck (void)
 #endif
 #ifdef CPP_FRONTEND

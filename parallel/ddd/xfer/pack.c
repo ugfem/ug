@@ -71,11 +71,7 @@ START_UGDIM_NAMESPACE
 /****************************************************************************/
 
 /* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#ifdef F_FRONTEND
-#define _FADR     &
-#else
 #define _FADR
-#endif
 
 
 /****************************************************************************/
@@ -313,7 +309,7 @@ static int GetDepData (char *data,
       /* then all records should be gathered via handler */
       if (desc->handlerXFERGATHER)
       {
-                                #if defined(C_FRONTEND) || defined(F_FRONTEND)
+                                #if defined(C_FRONTEND)
         desc->handlerXFERGATHER(_FADR obj,
                                 _FADR xa->addCnt, _FADR xa->addTyp, (void *)chunk);
                                 #endif
@@ -359,7 +355,7 @@ static int GetDepData (char *data,
       /* then all records should be gathered via handler */
       if (desc->handlerXFERGATHERX)
       {
-                                #if defined(C_FRONTEND) || defined(F_FRONTEND)
+                                #if defined(C_FRONTEND)
         desc->handlerXFERGATHERX(_FADR obj,
                                  _FADR xa->addCnt, _FADR xa->addTyp, table1);
                                 #endif
@@ -400,44 +396,6 @@ static int GetDepData (char *data,
   return(actSym);
 }
 
-
-#ifdef F_FRONTEND
-
-/****************************************************************************/
-/*                                                                          */
-/* Function:  ObjToMsg                                                      */
-/*                                                                          */
-/* Purpose:   copy one fortran DDD_OBJ to the message buffer.				*/
-/*                                                                          */
-/* Input:     obj:  the DDD_OBJ												*/
-/*            desc: the type description of the object						*/
-/*			  msg:  the msg memory in the buffer							*/
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
-/****************************************************************************/
-
-void ObjToMsg (DDD_OBJ obj, TYPE_DESC *desc, char *msg)
-
-{
-  int i, i2;
-
-  /* Copy the header to the message */
-  memcpy (msg, &(desc->hdr[obj]), sizeof(DDD_HEADER));
-  msg += sizeof(DDD_HEADER);
-
-  /* Now copy the non local object data to the message */
-  for (i = 0; i < desc->nElements; i++)
-  {
-    ELEM_DESC *elem = &(desc->element[i]);
-    char      *src  = elem->array + elem->size * obj;
-
-    if (elem->type != EL_LDATA)
-      for (i2 = elem->size; i2; i2--) *msg++ = *src++;
-  }
-}
-
-#endif
 
 
 /****************************************************************************/
@@ -633,9 +591,6 @@ static void XferPackSingleMsg (XFERMSG *msg)
     /* patch SymTab index into reference location inside message */
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     *(theSymTab[mi].adr.ref) = (DDD_OBJ)(mi+1);
-#endif
-#ifdef F_FRONTEND
-    *(theSymTab[mi].adr.ref) = (mi+1);
 #endif
   }
 

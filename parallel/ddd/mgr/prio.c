@@ -99,7 +99,7 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void DDD_PrioritySet (DDD_HDR hdr, DDD_PRIO prio)
 {
 #endif
@@ -160,14 +160,6 @@ else
 }
 
 
-
-#ifdef F_FRONTEND
-void DDD_InfoPriority (DDD_TYPE *type, DDD_OBJ *obj, DDD_PRIO *prio)
-{
-  *prio = (DDD_PRIO) (OBJ_PRIO(OBJ2HDR(*obj,&(theTypeDefs[*type]))));
-}
-
-#endif
 
 
 

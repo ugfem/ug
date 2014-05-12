@@ -84,11 +84,7 @@ enum DDD_TypeStorageModes
 
 /* macros for easier switching of FRONTENDs */
 
-#ifdef F_FRONTEND
-#define FTYPE  *
-#else
 #define FTYPE
-#endif
 
 #ifdef CPP_FRONTEND
 #define CPP_STRUCT(d)     ((d)->storage==STORAGE_STRUCT)
@@ -202,7 +198,7 @@ static int CheckBounds (TYPE_DESC *desc, ELEM_DESC *el, int argno)
     return(ERROR);
   }
 #endif
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
   if (CPP_ARRAY(desc) CPP_AND (!el->array))
   {
     DDD_PrintError ('E', 2401,
@@ -248,7 +244,7 @@ static int CheckOverlapEls (TYPE_DESC *desc)
         DDD_PrintError('E', 2403, RegisterError(desc, 0, buf));
       }
 #endif
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
       if (CPP_ARRAY(desc) CPP_AND
             (e1->array+(e1->size*desc->arraySize) > e2->array))
       {
@@ -312,7 +308,7 @@ static void ConstructEl (ELEM_DESC *elem, int t, int o, size_t s, DDD_TYPE rt)
 #endif
 
 
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
 static void ConstructEl (ELEM_DESC *elem, int t, char *a, size_t s, DDD_TYPE rt)
 {
   elem->type    = t;
@@ -343,8 +339,7 @@ static void ConstructEl (ELEM_DESC *elem, int t, char *a, size_t s, DDD_TYPE rt)
 
   if (t==EL_GBITS)
   {
-    /* TODO: GBITS could be supported also for F_FRONTEND and
-            CPP_FRONTEND with STORAGE_ARRAY */
+    /* TODO: GBITS could be supported also for CPP_FRONTEND with STORAGE_ARRAY */
     DDD_PrintError('E', 2407, "EL_GBITS currently not supported");
     HARD_EXIT;
   }
@@ -464,7 +459,7 @@ static void ConstructDesc (TYPE_DESC *desc)
   desc->nPointers = 0;
   desc->nElements = 0;
   desc->cmask     = NULL;
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
   desc->size = 0;
 #endif
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
@@ -658,25 +653,6 @@ static void AttachMask (TYPE_DESC *desc)
 #endif
 
 
-#ifdef F_FRONTEND
-
-
-void ClearHeaders (TYPE_DESC *desc)
-
-{
-  DDD_HDR hdr;
-  int i;
-
-  for (i = 0, hdr = desc->hdr; i < desc->arraySize; i++, hdr++)
-    MarkHdrInvalid (hdr);
-
-  /* skip entry 0, because F77-arrays start with index 1.
-     index 0 will be used as null-pointer. */
-  desc->nextFree = 1;
-}
-
-#endif
-
 
 
 /****************************************************************************/
@@ -705,9 +681,6 @@ void DDD_TypeDefine (DDD_TYPE typ, ...)
 #ifdef CPP_FRONTEND
 void DDD_Library::TypeDefine (DDD_TYPE typ, ...)
 #endif
-#ifdef F_FRONTEND
-void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
-#endif
 
 {
   TYPE_DESC *desc;
@@ -722,12 +695,9 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   char      *adr;
   char      *gbits;
 #endif
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
   int size;
   int offset;
-#endif
-#ifdef F_FRONTEND
-  DDD_TYPE typ = *ftyp;
 #endif
 
   /* TODO: only master should be able to define types, other
@@ -806,13 +776,6 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   }
 #endif
 
-#ifdef F_FRONTEND
-  va_start(ap, ftyp);
-
-  size   = 0;
-  offset = sizeof(DDD_HEADER);
-  argno  = 1;
-#endif
 
 
   /* loop over variable argument list */
@@ -879,9 +842,6 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
       if (nPtr*sizeof(void *) != argsize)
 #endif
-#ifdef F_FRONTEND
-      if (sizeof (DDD_OBJ) != argsize)
-#endif
       {
         errtxt=RegisterError(desc,argno, "invalid sizeof");
         DDD_PrintError('E', 2418, errtxt);
@@ -901,14 +861,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       if (argrefs==DDD_TYPE_BY_HANDLER)
         desc->element[i].reftypeHandler = arg_rt_handler;
 #endif
-#ifdef F_FRONTEND
-      size += argsize;
-      ConstructEl(&desc->element[i],
-                  argtyp, (int)argp, argsize, argrefs);
 
-      desc->element[i].msgoffset = offset;
-      offset += argsize;
-#endif
       if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
         return;
       i++;
@@ -918,10 +871,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       sprintf(cBuffer,"    PTR, %05d, %06d\n",
               argp-adr, argsize);
 #endif
-#ifdef F_FRONTEND
-      sprintf(cBuffer,"    PTR, %05d, %06d\n",
-              argp, argsize);
-#endif
+
       DDD_PrintDebug(cBuffer);
 #                               endif
 
@@ -942,10 +892,8 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
                     argtyp, (int)(argp-adr), argsize, 0);
       }
 #endif
-#ifdef F_FRONTEND
-      argsize = *(long *) va_arg(ap, size_t); argno++;
-#endif
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+
+#if defined(CPP_FRONTEND)
       if (CPP_ARRAY(desc) CPP_AND TRUE)
       {
         size += argsize;
@@ -971,7 +919,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
                 argp-adr, argsize);
       }
 #endif
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
       if (CPP_ARRAY(desc) CPP_AND TRUE)
       {
         sprintf(cBuffer,"    DAT, %08x, %06d\n",
@@ -1001,11 +949,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       /* fill gbits array, read forth arg from cmdline */
       memcpy(desc->element[i].gbits, gbits, argsize);
 #endif
-#ifdef F_FRONTEND
-      /* TODO */
-      DDD_PrintError('E', 2419, "EL_GBITS not supported in F_FRONTEND");
-      HARD_EXIT;                           /*return;*/
-#endif
+
       if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
         return;
 
@@ -1090,11 +1034,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       }
 
 #endif
-#ifdef F_FRONTEND
-      errtxt=RegisterError(desc,argno,"recursive DDD_TYPE not impl");
-      DDD_PrintError('E', 2422, errtxt);
-      HARD_EXIT;                           /*return;*/
-#endif
+
       break;
     }
   }
@@ -1131,9 +1071,6 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       desc->size += size;
     }
                 #endif
-                #if defined(F_FRONTEND)
-    desc->size = size + (desc->hdr ? sizeof (DDD_HEADER) : 0);
-                #endif
 
 
 #       if defined(C_FRONTEND) || defined(CPP_FRONTEND)
@@ -1147,9 +1084,6 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       AttachMask(desc);
     }
 #               endif
-#               ifdef F_FRONTEND
-    ClearHeaders (desc);
-#       endif
 
     /* change TYPE_DESC state to DEFINED */
     desc->mode = DDD_TYPE_DEFINED;
@@ -1217,10 +1151,7 @@ DDD_TYPE DDD_Library::TypeDeclareStruct(const char *name)
 #ifdef CPP_FRONTEND
 DDD_TYPE DDD_Library::TypeDeclareIndex (int size, char *name)
 #endif
-#ifdef F_FRONTEND
-void DDD_TypeDeclare (char *name, int *size, DDD_TYPE *type)
-#endif
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
 {
   TYPE_DESC *desc = &(theTypeDefs[nDescr]);
 
@@ -1294,16 +1225,10 @@ void DDD_TypeDisplay (DDD_TYPE id)
 #ifdef CPP_FRONTEND
 void DDD_Library::TypeDisplay (DDD_TYPE id)
 #endif
-#ifdef F_FRONTEND
-void DDD_TypeDisplay (DDD_TYPE *idf)
-#endif
 
 {
   int i;
   TYPE_DESC *desc;
-#ifdef F_FRONTEND
-  DDD_TYPE id = *idf;
-#endif
 
   /* only master should display DDD_TYPEs */
   if (me==master)
@@ -1333,14 +1258,11 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
               desc->name, id, desc->size);
     }
 #endif
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
     if (CPP_ARRAY(desc) CPP_AND TRUE)
     {
       sprintf(cBuffer,
               "/ Structure of %s--object '%s', id %d, %d byte, %d elements\n",
-                                #ifdef F_FRONTEND
-              desc->hdr ? "DDD" : "data",
-                                #endif
                                 #ifdef CPP_FRONTEND
               desc->hasHeader ? "DDD" : "data",
                                 #endif
@@ -1436,7 +1358,7 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
         }
       }
 #endif
-#if defined (F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
       if (CPP_ARRAY(desc) CPP_AND TRUE)
       {
         sprintf(cBuffer, "|%5d %5d    ", i, e->size);
@@ -1453,10 +1375,6 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
                   theTypeDefs[EDESC_REFTYPE(e)].name,e->msgoffset);
           break;
         default :
-#ifdef F_FRONTEND
-          sprintf(cBuffer, "%sunknown elemtype %d\n",
-                  cBuffer, e->type);
-#endif
 #ifdef CPP_FRONTEND
           sprintf(cBuffer, "%srecursive type %s (typeId=%d)\n",
                   cBuffer,
@@ -1509,10 +1427,6 @@ static void InitHandlers (TYPE_DESC *desc)
 #if defined(C_FRONTEND)
   desc->handlerXFERCOPYMANIP = NULL;
 #endif
-#ifdef F_FRONTEND
-  desc->handlerALLOCOBJ = NULL;
-  desc->handlerFREEOBJ = NULL;
-#endif
 }
 
 
@@ -1558,17 +1472,9 @@ static void InitHandlers (TYPE_DESC *desc)
 #endif
 
 
-#ifdef F_FRONTEND
-#define HDLR_NAME ALLOCOBJ
-#include "handler.ct"
-
-#define HDLR_NAME FREEOBJ
-#include "handler.ct"
-#endif
 
 
-
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 /**
         Registration of handler functions.
 
@@ -1596,12 +1502,7 @@ static void InitHandlers (TYPE_DESC *desc)
 void DDD_HandlerRegister (DDD_TYPE typeId, ...)
 {
 #endif
-#ifdef F_FRONTEND
-void DDD_HandlerRegister (DDD_TYPE *fid, ...)
-{
-  DDD_TYPE typeId = *fid;
-#endif
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 TYPE_DESC *desc = &(theTypeDefs[typeId]);
 int idx;
 va_list ap;
@@ -1620,9 +1521,6 @@ if (desc->mode != DDD_TYPE_DEFINED)
 /* read argument list, fill object structure definition */
         #ifdef C_FRONTEND
 va_start(ap, typeId);
-        #endif
-        #ifdef F_FRONTEND
-va_start(ap, fid);
         #endif
 
 while ((idx = FTYPE va_arg(ap, int FTYPE)) != HANDLER_END)
@@ -1681,16 +1579,6 @@ while ((idx = FTYPE va_arg(ap, int FTYPE)) != HANDLER_END)
   case HANDLER_XFERCOPYMANIP :
     desc->handlerXFERCOPYMANIP =
       va_arg(ap, HandlerXFERCOPYMANIP);
-    break;
-#endif
-#ifdef F_FRONTEND
-  case HANDLER_ALLOCOBJ :
-    desc->handlerALLOCOBJ =
-      va_arg(ap, HandlerALLOCOBJ);
-    break;
-  case HANDLER_FREEOBJ :
-    desc->handlerFREEOBJ =
-      va_arg(ap, HandlerFREEOBJ);
     break;
 #endif
   default :
@@ -1762,7 +1650,7 @@ int DDD_InfoHdrOffset (DDD_TYPE typeId)
 /*                                                                          */
 /****************************************************************************/
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void ddd_TypeMgrInit (void)
 #endif
 #ifdef CPP_FRONTEND

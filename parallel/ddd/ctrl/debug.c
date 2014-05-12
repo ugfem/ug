@@ -114,7 +114,7 @@ static int sort_LocalObjs (const void *e1, const void *e2)
 }
 
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void DDD_ListLocalObjects (void)
 #endif
 #ifdef CPP_FRONTEND

@@ -148,7 +148,7 @@ static void LowComm_DefaultFree (void *buffer)
    @param  argvp      pointer to argv (the application's parameter list)
  */
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void DDD_Init (int *argcp, char ***argvp)
 #endif
 
@@ -275,7 +275,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
         to the DDD application programmer.
  */
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void DDD_Exit (void)
 #endif
 #ifdef CPP_FRONTEND
@@ -332,7 +332,7 @@ DDD_Library::~DDD_Library (void)
         \end{tabular}
  */
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void DDD_Status (void)
 #endif
 #ifdef CPP_FRONTEND
@@ -439,12 +439,6 @@ void DDD_SetOption (DDD_OPTION option, int value)
 #ifdef CPP_FRONTEND
 void DDD_Library::SetOption (DDD_OPTION option, int value)
 {
-#endif
-#ifdef F_FRONTEND
-void DDD_SetOption (DDD_OPTION *_option, int *_value)
-{
-  DDD_OPTION option = *_option;
-  int value = *_value;
 #endif
 if (option>=OPT_END)
 {

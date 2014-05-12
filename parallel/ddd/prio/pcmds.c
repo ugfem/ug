@@ -95,11 +95,7 @@ typedef struct _PRIO_GLOBALS
 /****************************************************************************/
 
 /* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#ifdef F_FRONTEND
-#define _FADR     &
-#else
 #define _FADR
-#endif
 
 
 
@@ -349,9 +345,6 @@ DDD_RET DDD_PrioEnd (void)
 #ifdef CPP_FRONTEND
 DDD_RET DDD_Library::PrioEnd (void)
 #endif
-#ifdef F_FRONTEND
-DDD_RET DDD_PrioEnd (void)
-#endif
 {
   /* step mode and check whether call to PrioEnd is valid */
   if (!PrioStepMode(PMODE_CMDS))
@@ -399,9 +392,6 @@ void DDD_PrioBegin (void)
 #endif
 #ifdef CPP_FRONTEND
 void DDD_Library::PrioBegin (void)
-#endif
-#ifdef F_FRONTEND
-void DDD_PrioBegin (void)
 #endif
 {
   /* step mode and check whether call to JoinBegin is valid */

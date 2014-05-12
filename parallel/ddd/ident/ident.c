@@ -1079,7 +1079,7 @@ static void idcons_CheckPairs (void)
         of local communications between the processors.
  */
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 DDD_RET DDD_IdentifyEnd (void)
 #endif
 #ifdef CPP_FRONTEND
@@ -1430,19 +1430,6 @@ void DDD_Object::IdentifyNumber (DDD_PROC proc, int ident)
 {
   DDD_HDR hdr = this;
 #endif
-#ifdef F_FRONTEND
-void orgDDD_IdentifyNumber (DDD_HDR hdr, DDD_PROC proc, int ident);
-
-void DDD_IdentifyNumber (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc, int *ident)
-{
-  DDD_HDR hdr = OBJ2HDR(*obj,&(theTypeDefs[*type]));
-
-  orgDDD_IdentifyNumber (hdr, *proc, *ident);
-}
-
-void orgDDD_IdentifyNumber (DDD_HDR hdr, DDD_PROC proc, int ident)
-{
-#endif
 IdEntry *id;
 
 id = IdentifyIdEntry(hdr, proc, ID_NUMBER);
@@ -1496,19 +1483,6 @@ void DDD_IdentifyString (DDD_HDR hdr, DDD_PROC proc, char *ident)
 void DDD_Object::IdentifyString (DDD_PROC proc, char *ident)
 {
   DDD_HDR hdr = this;
-#endif
-#ifdef F_FRONTEND
-void orgDDD_IdentifyString (DDD_HDR hdr, DDD_PROC proc, char *ident);
-
-void DDD_IdentifyString (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc, char *ident)
-{
-  DDD_HDR hdr = OBJ2HDR(*obj,&(theTypeDefs[*type]));
-
-  orgDDD_IdentifyString (hdr, *proc, ident);
-}
-
-void orgDDD_IdentifyString (DDD_HDR hdr, DDD_PROC proc, char *ident)
-{
 #endif
 IdEntry *id;
 
@@ -1570,20 +1544,6 @@ void DDD_Object::IdentifyObject (DDD_PROC proc, DDD_Object* ident)
 {
   DDD_HDR hdr   = this;
 #endif
-#ifdef F_FRONTEND
-void orgDDD_IdentifyObject (DDD_HDR hdr, DDD_PROC proc, DDD_HDR ident);
-
-void DDD_IdentifyObject (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc, DDD_TYPE *type2, DDD_OBJ *obj2)
-{
-  DDD_HDR hdr = OBJ2HDR(*obj,&(theTypeDefs[*type]));
-  DDD_HDR ident = OBJ2HDR(*obj2,&(theTypeDefs[*type2]));
-
-  orgDDD_IdentifyObject (hdr, *proc, ident);
-}
-
-void orgDDD_IdentifyObject (DDD_HDR hdr, DDD_PROC proc, DDD_HDR ident)
-{
-#endif
 IdEntry *id;
 
 id = IdentifyIdEntry(hdr, proc, ID_OBJECT);
@@ -1643,7 +1603,7 @@ printf("%4d: IdentifyObject %08x %02d with %4d gid %08x\n", me,
         \end{description}
  */
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void DDD_IdentifyBegin (void)
 #endif
 #ifdef CPP_FRONTEND

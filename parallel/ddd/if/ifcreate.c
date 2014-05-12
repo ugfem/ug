@@ -648,24 +648,7 @@ void DDD_Interface::Init (
 {
   _id = nIFs;
 #endif
-#ifdef F_FRONTEND
-DDD_IF orgDDD_IFDefine(int, DDD_TYPE O[],int, DDD_PRIO A[],int, DDD_PRIO B[]);
 
-void DDD_IFDefine (
-  int *nO, DDD_TYPE O[],
-  int *nA, DDD_PRIO A[],
-  int *nB, DDD_PRIO B[],
-  DDD_IF *ddd_if)
-{
-  *ddd_if = orgDDD_IFDefine(*nO,O,*nA,A,*nB,B);
-}
-
-DDD_IF orgDDD_IFDefine (
-  int nO, DDD_TYPE O[],
-  int nA, DDD_PRIO A[],
-  int nB, DDD_PRIO B[])
-{
-#endif
 int i;
 COUPLING **tmpcpl;
 
@@ -690,7 +673,7 @@ if (nA>1) qsort(theIF[nIFs].A, nA, sizeof(DDD_PRIO), sort_prio);
 if (nB>1) qsort(theIF[nIFs].B, nB, sizeof(DDD_PRIO), sort_prio);
 
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 /* reset name string */
 theIF[nIFs].name[0] = 0;
 #endif
@@ -962,11 +945,6 @@ void DDD_Interface::Display (void)
 {
   DDD_IF aIF = _id;
 #endif
-#ifdef F_FRONTEND
-void DDD_IFDisplay (DDD_IF *_aIF)
-{
-  DDD_IF aIF = *_aIF;
-#endif
 
 if (aIF>=nIFs)
 {
@@ -1005,7 +983,7 @@ DDD_PrintLine("|\n");
         the number of exchange relations and the neighbour processor number.
  */
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void DDD_IFDisplayAll (void)
 #endif
 #ifdef CPP_FRONTEND
@@ -1175,11 +1153,6 @@ size_t DDD_Interface::InfoMemory (void)
 {
   DDD_IF ifId = _id;
 #endif
-#ifdef F_FRONTEND
-size_t DDD_IFInfoMemory (DDD_IF *_ifId)
-{
-  DDD_IF ifId = *_ifId;
-#endif
 
 
 if (ifId>=nIFs)
@@ -1199,9 +1172,6 @@ size_t DDD_IFInfoMemoryAll (void)
 #endif
 #ifdef CPP_FRONTEND
 size_t DDD_Interface::InfoMemoryAll (void)
-#endif
-#ifdef F_FRONTEND
-size_t DDD_IFInfoMemoryAll (void)
 #endif
 {
   int i;

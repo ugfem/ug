@@ -74,10 +74,6 @@ START_UGDIM_NAMESPACE
 #	define SIZEOF_REF  sizeof(void *)
 #	define NULL_REF    NULL
 #endif
-#ifdef F_FRONTEND
-#	define SIZEOF_REF  sizeof(DDD_OBJ)
-#	define NULL_REF    0
-#endif
 
 
 
@@ -88,11 +84,7 @@ START_UGDIM_NAMESPACE
 /****************************************************************************/
 
 /* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#ifdef F_FRONTEND
-#define _FADR     &
-#else
 #define _FADR
-#endif
 
 
 #define NEW_AddCpl(destproc,objgid,cplproc,cplprio)   {          \
@@ -102,7 +94,7 @@ START_UGDIM_NAMESPACE
 				xc->te.gid  = (objgid);                          \
 				xc->te.proc = (cplproc);                         \
 				xc->te.prio = (cplprio);                         \
-			} 
+                                                      }
 /*
 printf("%4d:          NEW_AddCpl(%d,%08x, %d, %d)\n",\
 me,destproc,objgid,cplproc,cplprio); \
@@ -134,7 +126,7 @@ RCSID("$Header$",DDD_RCS_STRING)
 /* routines                                                                 */
 /*                                                                          */
 /****************************************************************************/
- 
+
 
 static int sort_TENewCpl (const void *e1, const void *e2)
 {
@@ -217,9 +209,6 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
       const char      *msgrefarray = msgmem+theElem->offset;
 			char      *objrefarray = objmem+theElem->offset;
-#endif
-#ifdef F_FRONTEND
-			char      *objrefarray = theElem->array + (theElem->size*obj);
 #endif
 
 
@@ -458,11 +447,11 @@ static void PutDepData (char *data,
 				      scatter stream of bytes with len addCnt */
 				curr = chunk + CEIL(addCnt);
 			}
-		
+
 			/* scatter data via handler */
 			if (desc->handlerXFERSCATTER)
 			{
-				#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 				desc->handlerXFERSCATTER(_FADR obj,
 					_FADR addCnt, _FADR addTyp, (void *)chunk, _FADR newness);
 				#endif
@@ -496,14 +485,14 @@ static void PutDepData (char *data,
 							theSymTab);
 				}
 			}
-		
+
 			/* scatter data via handler */
 			if (desc->handlerXFERSCATTERX)
 			{
-				#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#ifdef C_FRONTEND
 				desc->handlerXFERSCATTERX(_FADR obj,
 					_FADR addCnt, _FADR addTyp, table, _FADR newness);
-				#endif
+#endif
 				#ifdef CPP_FRONTEND
 				CallHandler(desc,XFERSCATTERX) (HParam(obj)
 					addCnt, addTyp, table, newness);
@@ -584,7 +573,7 @@ static void AcceptObjFromMsg (
 						OBJ_GID(ote->hdr));
 					DDD_PrintDebug(cBuffer);
 #				endif
-	
+
 					/* new priority wins -> recreate */
 					/* all GDATA-parts are overwritten by contents of message */
 					copy = OTE_OBJ(theObjects,ote);
@@ -600,7 +589,7 @@ static void AcceptObjFromMsg (
 							OBJ_GID(ote->hdr));
 						DDD_PrintDebug(cBuffer);
 #					endif
-	
+
 					/* new priority looses -> keep existing obj */
 					ote->is_new = NOTNEW;
 				}
@@ -661,9 +650,6 @@ static void AcceptObjFromMsg (
 #endif
 #ifdef CPP_FRONTEND
 	     		CallHandler(desc,LDATACONSTRUCTOR) (HParamOnly(newcopy));
-#endif
-#ifdef F_FRONTEND
-			desc->handlerLDATACONSTRUCTOR(&newcopy);
 #endif
 		}
 	}
@@ -737,13 +723,13 @@ static void AcceptReceivedObjects (const LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 
 	/* now the first item in a series of items with equal gid is the
 	   THISMSG-item, the following are OTHERMSG-items */
-	
+
 
 	/* 2. transfer from message into local memory */
 	for(i=0; i<nRecvMsgs; i++)
 	{
 		LC_MSGHANDLE xm = theMsgs[i];
-		
+
 		AcceptObjFromMsg(
 			(OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id),
 			(int)    LC_GetTableLen(xm, xferGlobals.objtab_id),
@@ -913,7 +899,7 @@ static void UpdateCouplings (
 			curr_case = UCC_NC;
 		if (moreNO && moreNC && gidNC==gidNO)
 			curr_case = UCC_NO_AND_NC;
-		
+
 
 		/* find DDD_HDR for given gid */
 		hdrNO = hdrNC = NULL;
@@ -1062,7 +1048,7 @@ static void UpdateCouplings (
 	xfer. during xfer, another object with same gid was received
 	and lead to a higher priority. this priority change must
 	be communicated to all destination-procs, to which the local
-	processor sent a copy during xfer. 
+  processor sent a copy during xfer.
 */
 static void PropagateIncomings (
 	XICopyObj **arrayNO, int nNO,
@@ -1269,9 +1255,9 @@ static void CallUpdateHandler (LC_MSGHANDLE xm)
 			{
 				DDD_OBJ  obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
-				#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 	     		desc->handlerUPDATE(_FADR obj);
-				#endif
+#endif
 
 				#ifdef CPP_FRONTEND
 				CallHandler(desc,UPDATE) (HParamOnly(obj));
@@ -1333,7 +1319,7 @@ static void UnpackAddData (LC_MSGHANDLE xm, int required_newness)
 				TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(theObjTab[i].hdr)];
 				DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 				char      *data;
-			
+
 				/*
 					compute begin of data section. theObjTab[i].size is equal to
 					desc->len for fixed sized objects and different for variable
@@ -1401,9 +1387,9 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 				DDD_PRIO new_prio = OTE_PRIO(theObjects, &(theObjTab[i]));/* remember new prio */
 				OBJ_PRIO(theObjTab[i].hdr) = theObjTab[i].oldprio;
 
-				#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#ifdef C_FRONTEND
 				desc->handlerSETPRIORITY(_FADR obj, _FADR new_prio);
-				#endif
+#endif
 				#ifdef CPP_FRONTEND
 				CallHandler(desc,SETPRIORITY) (HParam(obj) new_prio);
 				#endif
@@ -1462,9 +1448,9 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm, int required_newness)
     		/* call application handler for object consistency */
 			if (desc->handlerOBJMKCONS)
 			{
-				#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#ifdef C_FRONTEND
 	     		desc->handlerOBJMKCONS(_FADR obj, _FADR newness);
-				#endif
+#endif
 				#ifdef CPP_FRONTEND
 				CallHandler(desc,OBJMKCONS) (HParam(obj) newness);
 				#endif
@@ -1484,7 +1470,7 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm, int required_newness)
 /*
 	unpack table of TEOldCpl-items.
 
-	this function is called for each incoming message. for each 
+  this function is called for each incoming message. for each
 	incoming object which hasn't been here before, a set of old
 	couplings is added as an estimate until the second xfer-
 	communication gives more details.
@@ -1693,7 +1679,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		nNewCpl = CompressNewCpl(allNewCpl, nNewCpl);
 	}
 
-	if (lenObjTab>0) 
+  if (lenObjTab>0)
 	{
 		qsort(unionObjTab, lenObjTab, sizeof(OBJTAB_ENTRY *), sort_ObjTabPtrs);
 	}
@@ -1740,7 +1726,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		should be split up even further. (i.e., XFER_NEW,
 		then XFER_UPGRADE, then XFER_REJECT).
 	*/
-	
+
 
 	/* unpack all messages and update local topology */
 	for(i=0; i<nRecvMsgs; i++) LocalizeObjects(theMsgs[i],  TOTALNEW);

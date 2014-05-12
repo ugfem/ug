@@ -510,13 +510,6 @@ typedef struct
   char oldprio;
 
 
-        #ifdef F_FRONTEND
-  /* F_FRONTEND has a different storage layout inside message */
-  DDD_GID gid;
-  DDD_TYPE typ;                   /* type of object */
-  DDD_PRIO prio;                  /* new priority of object */
-  DDD_ATTR attr;                  /* attr of object */
-        #endif
 
 } OBJTAB_ENTRY;
 

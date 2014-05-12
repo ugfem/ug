@@ -80,11 +80,7 @@ START_UGDIM_NAMESPACE
 /****************************************************************************/
 
 /* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#ifdef F_FRONTEND
-#define _FADR     &
-#else
 #define _FADR
-#endif
 
 
 /****************************************************************************/

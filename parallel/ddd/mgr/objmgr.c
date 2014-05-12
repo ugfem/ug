@@ -444,7 +444,7 @@ void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
    @param aAttr  \ddd{attribute} of \ddd{object}
  */
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void DDD_HdrConstructor (DDD_HDR aHdr, DDD_TYPE aType,
                          DDD_PRIO aPrio, DDD_ATTR aAttr)
 {
@@ -595,8 +595,7 @@ DDD_IndexObject::DDD_IndexObject (DDD_TYPE typ,
    @param hdr  the object's DDD Header
  */
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
-/* in F_FRONTEND, DDD_HdrDestructor is used internally */
+#if defined(C_FRONTEND)
 void DDD_HdrDestructor (DDD_HDR hdr)
 {
 #endif
@@ -753,27 +752,6 @@ DDD_OBJ DDD_ObjGet (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
 }
 #endif
 
-#ifdef F_FRONTEND
-void DDD_ObjGet (DDD_TYPE *ftyp, DDD_PRIO *fprio, DDD_ATTR *fattr,
-                 DDD_OBJ *fobj)
-{
-  TYPE_DESC *desc = &(theTypeDefs[*ftyp]);
-
-  /* get the index of the object */
-  *fobj = (DDD_OBJ) DDD_ObjNew (0, *ftyp, *fprio, *fattr);
-
-  if (*fobj==0)
-  {
-    DDD_PrintError('E', 2200, STR_NOMEM " in DDD_ObjGet");
-    return;
-  }
-
-  /* call DDD_HdrConstructor */
-  DDD_HdrConstructor (OBJ2HDR(*fobj,desc), *ftyp, *fprio, *fattr);
-
-  return;
-}
-#endif
 
 
 /****************************************************************************/
@@ -810,21 +788,6 @@ void DDD_ObjUnGet (DDD_HDR hdr, size_t size)
 }
 #endif
 
-#if defined(F_FRONTEND)
-void DDD_ObjUnGet (DDD_OBJ *fobj, DDD_TYPE *ftyp)
-
-{
-  DDD_OBJ obj  = *fobj;
-  TYPE_DESC *desc = &(theTypeDefs[*ftyp]);
-  DDD_HDR hdr  = OBJ2HDR (obj, desc);
-
-  /* call DDD_HDR-destructor */
-  DDD_HdrDestructor (hdr);
-
-  /* free raw memory */
-  DDD_ObjDelete (obj, 0, *ftyp);
-}
-#endif
 
 
 /****************************************************************************/
@@ -1075,11 +1038,6 @@ DDD_HDR DDD_SearchHdr (DDD_GID gid)
 #ifdef CPP_FRONTEND
 DDD_HDR DDD_Library::SearchHdr (DDD_GID gid)
 {
-#endif
-#ifdef F_FRONTEND
-DDD_HDR DDD_SearchHdr (DDD_GID *_gid)
-{
-  DDD_GID gid = *_gid;
 #endif
 int i;
 

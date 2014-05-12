@@ -83,12 +83,6 @@ static void IFComputeShortcutTable (DDD_IF ifId)
 #else
     objs[i] = OBJ_OBJ(cpls[i]->obj);
 #endif
-    /*
-       #ifdef F_FRONTEND
-       printf("%4d: Shortcut IF=%d item=%d/%d %08x %d\n",
-            me, ifId, i, nItems, OBJ_GID(cpls[i]->obj), objs[i]);
-       #endif
-     */
   }
 }
 

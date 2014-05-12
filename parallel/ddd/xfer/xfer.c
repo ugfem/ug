@@ -53,11 +53,7 @@ USING_PPIF_NAMESPACE
 /****************************************************************************/
 
 /* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#ifdef F_FRONTEND
-#define _FADR     &
-#else
 #define _FADR
-#endif
 
 
 /****************************************************************************/
@@ -675,7 +671,7 @@ void ExecLocalXISetPrio (
       {
         DDD_OBJ obj = HDR2OBJ(hdr,desc);
 
-                                #if defined(C_FRONTEND) || defined(F_FRONTEND)
+                                #if defined(C_FRONTEND)
         desc->handlerSETPRIORITY(_FADR obj, _FADR newprio);
                                 #endif
                                 #if defined(CPP_FRONTEND)
@@ -763,7 +759,7 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
     TYPE_DESC  *desc = &(theTypeDefs[typ]);
     DDD_OBJ obj   = HDR2OBJ(hdr,desc);
 
-                #if defined(C_FRONTEND) || defined(F_FRONTEND)
+                #if defined(C_FRONTEND)
     /* do deletion */
     if (desc->handlerDELETE)
       desc->handlerDELETE(_FADR obj);

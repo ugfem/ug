@@ -181,9 +181,6 @@ enum PrioMergeVals {
 #ifdef CPP_FRONTEND
         #define INFO_FRONTEND "CPP_FRONTEND"
 #endif
-#ifdef F_FRONTEND
-        #define INFO_FRONTEND "F_FRONTEND"
-#endif
 
 
 /*
@@ -245,7 +242,7 @@ typedef struct _ELEM_DESC
   unsigned char *gbits;               /* ptr to gbits array, if type==EL_GBITS  */
 #endif
 
-#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(CPP_FRONTEND)
   char     *array;                        /* pointer to the array of this element   */
   int msgoffset;                                          /* offset of this element in the message  */
 #endif
@@ -296,11 +293,6 @@ typedef struct _TYPE_DESC
   int offsetHeader;                     /* offset of header from begin of obj   */
 #endif
 
-#ifdef F_FRONTEND
-  int arraySize;                                                /* number of elements in the arrays     */
-  int nextFree;                                                 /* next free object in arrays           */
-  DDD_HDR hdr;                                          /* headers for all elements             */
-#endif
 
   ELEM_DESC element[MAX_ELEMDESC];       /* element description array           */
   int nElements;                        /* number of elements in object         */
@@ -322,10 +314,6 @@ typedef struct _TYPE_DESC
   HandlerXFERSCATTERX handlerXFERSCATTERX;
 #if defined(C_FRONTEND)
   HandlerXFERCOPYMANIP handlerXFERCOPYMANIP;
-#endif
-#ifdef F_FRONTEND
-  HandlerALLOCOBJ handlerALLOCOBJ;
-  HandlerFREEOBJ handlerFREEOBJ;
 #endif
 
 
@@ -484,12 +472,6 @@ extern VChannelPtr *theTopology;
 #define OBJ_OBJ(hdr)       ((DDD_OBJ)(((char *)hdr)- \
                                       (theTypeDefs[OBJ_TYPE(hdr)].offsetHeader)))
 #endif
-#ifdef F_FRONTEND
-#define OBJ2HDR(obj,desc) ((DDD_HDR)((desc)->hdr+(obj)))
-#define HDR2OBJ(hd,desc)  ((DDD_OBJ)(((char *)(hd)-(char*)((desc)->hdr))/ \
-                                     sizeof(DDD_HEADER)))
-#define OBJ_OBJ(hd)       HDR2OBJ(hd,&theTypeDefs[OBJ_TYPE(hd)])
-#endif
 
 
 /****************************************************************************/
@@ -579,7 +561,7 @@ typedef int (*ComProcHdrXPtr)(DDD_HDR, void *, DDD_PROC, DDD_PRIO);
 #endif
 
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 /*
    #define HdrPtr   DDD_HDR
  */
@@ -696,9 +678,6 @@ static char *mem_ptr;
 #define AllocIF(s)        memmgr_AllocAMEM((size_t)s)
 #endif
 
-#ifdef F_FRONTEND
-#define AllocHdr(s)       memmgr_AllocAMEM((size_t)s)
-#endif
 
 
 /*** mapping memory free calls to memmgr calls ***/
@@ -766,9 +745,6 @@ static char *mem_ptr;
 #define FreeIF(mem)       memmgr_FreeAMEM(mem)
 #endif
 
-#ifdef F_FRONTEND
-#define FreeHdr(mem)      memmgr_FreeAMEM(mem)
-#endif
 
 
 /* mapping mark/release heap calls to memmgr calls */
@@ -780,7 +756,7 @@ static char *mem_ptr;
 /****************************************************************************/
 
 /* macros for mapping internal usage of external functions */
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 /* not used yet */
 #endif
 
@@ -796,7 +772,7 @@ int DDD_GetOption (DDD_OPTION);
 
 
 /* typemgr.c */
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void      ddd_TypeMgrInit (void);
 #endif
 void      ddd_TypeMgrExit (void);
@@ -890,9 +866,6 @@ DDD_HDR  *LocalCoupledObjectsList (void);
 void      FreeLocalCoupledObjectsList (DDD_HDR *);
 #ifdef CPP_FRONTEND
 DDD_OBJ  DDD_ObjNew (size_t, DDD_TYPE, DDD_PRIO, DDD_ATTR);
-#endif
-#ifdef F_FRONTEND
-void      DDD_HdrDestructor (DDD_HDR);
 #endif
 
 /* basic/reduct.c */

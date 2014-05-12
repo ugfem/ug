@@ -61,7 +61,7 @@ START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
-/* settings for switching C_FRONTEND/CPP_FRONTEND/F_FRONTEND                */
+/* settings for switching C_FRONTEND/CPP_FRONTEND                           */
 /*                                                                          */
 /****************************************************************************/
 
@@ -73,43 +73,26 @@ START_UGDIM_NAMESPACE
 #define CPP_FRONTEND
 #endif
 
-#ifdef DDD_FRONTEND_F
-#define F_FRONTEND
-#endif
 
 /* check FRONTEND-setting for plausibility */
 #if defined(C_FRONTEND) && defined(CPP_FRONTEND)
 #error DDD Configuration Error: C_FRONTEND and CPP_FRONTEND are set.
 #endif
 
-#if defined(C_FRONTEND) && defined(F_FRONTEND)
-#error DDD Configuration Error: C_FRONTEND and F_FRONTEND are set.
-#endif
-
-#if defined(CPP_FRONTEND) && defined(F_FRONTEND)
-#error DDD Configuration Error: CPP_FRONTEND and F_FRONTEND are set.
-#endif
 
 
 
 /* default frontend is C_FRONTEND */
 #ifndef C_FRONTEND
  #ifndef CPP_FRONTEND
-  #ifndef F_FRONTEND
    #define C_FRONTEND
-  #endif
  #endif
 #endif
 
 
 /* helpful macros for FRONTEND switching, will be #undef'd when ddd.h ends */
-#ifdef F_FRONTEND
-#define _FPTR     *
-#define _OBJREF   DDD_TYPE *, DDD_OBJ *
-#else
 #define _FPTR
 #define _OBJREF   DDD_HDR
-#endif
 
 
 /* F77SYM(lsym,usym) macro is defined in compiler.h. 961127 KB */
@@ -378,10 +361,6 @@ typedef DDD_Object     * DDD_HDR;
 typedef char           * DDD_OBJ;
 typedef DDD_HEADER     * DDD_HDR;
 #endif
-#ifdef F_FRONTEND
-typedef int DDD_OBJ;
-typedef DDD_HEADER     * DDD_HDR;
-#endif
 
 /* NULL values for DDD types */
 #define DDD_TYPE_NULL  0
@@ -410,10 +389,6 @@ enum Handlers {
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
   HANDLER_XFERCOPYMANIP,
 #endif
-#ifdef F_FRONTEND
-  HANDLER_ALLOCOBJ,        /* handler: get an OBJ_ID (Array index) */
-  HANDLER_FREEOBJ,         /* handler: free an OBJ_ID              */
-#endif
   HANDLER_END=999
 };
 
@@ -422,7 +397,6 @@ enum Handlers {
 
 /* handlers related to certain DDD_TYPE (i.e., member functions) */
 #if defined(C_FRONTEND) || \
-  defined(F_FRONTEND) || \
   (defined(CPP_FRONTEND) && ! defined(WITH_VIRTUAL_HANDLERS))
 
 typedef void (*HandlerLDATACONSTRUCTOR)(DDD_OBJ _FPTR);
@@ -443,17 +417,13 @@ typedef void (*HandlerXFERCOPYMANIP)(DDD_OBJ _FPTR);
 #endif
 
 
-#ifdef F_FRONTEND
-typedef void (*HandlerALLOCOBJ)(DDD_OBJ _FPTR);
-typedef void (*HandlerFREEOBJ)(DDD_OBJ _FPTR);
-#endif
 
 /* handlers not related to DDD_TYPE (i.e., global functions) */
 typedef DDD_TYPE (*HandlerGetRefType)(DDD_OBJ _FPTR, DDD_OBJ _FPTR);
 
 
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 typedef int (*ExecProcPtr)(DDD_OBJ _FPTR);
 typedef int (*ExecProcXPtr)(DDD_OBJ _FPTR, DDD_PROC _FPTR, DDD_PRIO _FPTR);
 typedef int (*ComProcPtr)(DDD_OBJ _FPTR, void *);
@@ -955,7 +925,7 @@ private:
 /*
         General DDD Module
  */
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void     DDD_Init (int *argcp, char ***argvp);
 void     DDD_Exit (void);
 void     DDD_Status (void);
@@ -980,21 +950,12 @@ void     DDD_LineOutRegister (void (*func)(const char *s));
 /*
         Type Manager Module
  */
-#ifdef F_FRONTEND
-#define  DDD_TypeDeclare     F77SYM(ddd_typedeclare,DDD_TYPEDECLARE)
-#define  DDD_TypeDefine      F77SYM(ddd_typedefine,DDD_TYPEDEFINE)
-#define  DDD_TypeDisplay     F77SYM(ddd_typedisplay,DDD_TYPEDISPLAY)
-#define  DDD_InfoTypes       F77SYM(ddd_infotypes,DDD_INFOTYPES)
-#define  DDD_HandlerRegister F77SYM(ddd_handlerregister,DDD_HANDLERREGISTER)
-/* TODO hier fehlen DDD_SetHandler-umsetzungen fuer fortran */
 
-void     DDD_TypeDeclare (const char *name, int *size, DDD_TYPE *type);
-#endif
 #ifdef C_FRONTEND
 DDD_TYPE DDD_TypeDeclare (const char *name);
 int      DDD_InfoHdrOffset (DDD_TYPE);
 #endif
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void     DDD_TypeDefine (DDD_TYPE _FPTR, ...);
 void     DDD_TypeDisplay (DDD_TYPE _FPTR);
 
@@ -1004,7 +965,7 @@ void     DDD_HandlerRegister (DDD_TYPE _FPTR, ...);
 int      DDD_InfoTypes (void);
 
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 /* newstyle, type-secure setting of handlers */
 void     DDD_SetHandlerLDATACONSTRUCTOR(DDD_TYPE _FPTR, HandlerLDATACONSTRUCTOR);
 void     DDD_SetHandlerDESTRUCTOR      (DDD_TYPE _FPTR, HandlerDESTRUCTOR);
@@ -1020,10 +981,6 @@ void     DDD_SetHandlerXFERGATHERX     (DDD_TYPE _FPTR, HandlerXFERGATHERX);
 void     DDD_SetHandlerXFERSCATTERX    (DDD_TYPE _FPTR, HandlerXFERSCATTERX);
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 void     DDD_SetHandlerXFERCOPYMANIP   (DDD_TYPE _FPTR, HandlerXFERCOPYMANIP);
-#endif
-#ifdef F_FRONTEND
-void     DDD_SetHandlerALLOCOBJ        (DDD_TYPE _FPTR, HandlerALLOCOBJ);
-void     DDD_SetHandlerFREEOBJ         (DDD_TYPE _FPTR, HandlerFREEOBJ);
 #endif
 #endif
 
@@ -1050,22 +1007,13 @@ int      DDD_InfoNCopies (DDD_HDR);
 size_t   DDD_InfoCplMemory (void);
 #endif
 
-#ifdef F_FRONTEND
-#define  DDD_InfoPriority    F77SYM(ddd_infopriority,DDD_INFOPRIORITY)
-#endif
 
 
 /*
         Identification Environment Module
  */
-#ifdef F_FRONTEND
-#define  DDD_IdentifyBegin  F77SYM(ddd_identifybegin,DDD_IDENTIFYBEGIN)
-#define  DDD_IdentifyEnd    F77SYM(ddd_identifyend,DDD_IDENTIFYEND)
-#define  DDD_IdentifyNumber F77SYM(ddd_identifynumber,DDD_IDENTIFYNUMBER)
-#define  DDD_IdentifyString F77SYM(ddd_identifystring,DDD_IDENTIFYSTRING)
-#define  DDD_IdentifyObject F77SYM(ddd_identifyobject,DDD_IDENTIFYOBJECT)
-#endif
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+
+#if defined(C_FRONTEND)
 void     DDD_IdentifyBegin (void);
 DDD_RET  DDD_IdentifyEnd (void);
 void     DDD_IdentifyNumber (_OBJREF, DDD_PROC _FPTR, int _FPTR);
@@ -1077,35 +1025,13 @@ void     DDD_IdentifyObject (_OBJREF, DDD_PROC _FPTR, _OBJREF);
 /*
         Interface Module
  */
-#ifdef F_FRONTEND
-#define DDD_IFDefine        F77SYM(ddd_ifdefine,DDD_IFDEFINE)
-#define DDD_IFDisplayAll    F77SYM(ddd_ifdisplayall,DDD_IFDISPLAYALL)
-#define DDD_IFDisplay       F77SYM(ddd_ifdisplay,DDD_IFDISPLAY)
-#define DDD_IFInfoMemoryAll F77SYM(ddd_ifinfomemoryall,DDD_IFINFOMEMORYALL)
-#define DDD_IFInfoMemory    F77SYM(ddd_ifinfomemory,DDD_IFINFOMEMORY)
-#define DDD_IFRefreshAll    F77SYM(ddd_ifrefreshall,DDD_IFREFRESHALL)
-#define DDD_IFExchange      F77SYM(ddd_ifexchange,DDD_IFEXCHANGE)
-#define DDD_IFOneway        F77SYM(ddd_ifoneway,DDD_IFONEWAY)
-#define DDD_IFExecLocal     F77SYM(ddd_ifexeclocal,DDD_IFEXECLOCAL)
-#define DDD_IFAExchange     F77SYM(ddd_ifaexchange,DDD_IFAEXCHANGE)
-#define DDD_IFAOneway       F77SYM(ddd_ifaoneway,DDD_IFAONEWAY)
-#define DDD_IFAExecLocal    F77SYM(ddd_ifaexeclocal,DDD_IFAEXECLOCAL)
-#define DDD_IFExchangeX     F77SYM(ddd_ifexchangex,DDD_IFEXCHANGEX)
-#define DDD_IFOnewayX       F77SYM(ddd_ifonewayx,DDD_IFONEWAYX)
-#define DDD_IFExecLocalX    F77SYM(ddd_ifexeclocalx,DDD_IFEXECLOCALX)
-#define DDD_IFAExchangeX    F77SYM(ddd_ifaexchangex,DDD_IFAEXCHANGEX)
-#define DDD_IFAOnewayX      F77SYM(ddd_ifaonewayx,DDD_IFAONEWAYX)
-#define DDD_IFAExecLocalX   F77SYM(ddd_ifaexeclocalx,DDD_IFAEXECLOCALX)
-
-void     DDD_IFDefine (int *, DDD_TYPE *, int *, DDD_PRIO *, int *, DDD_PRIO *, DDD_IF *);
-#endif
 
 #ifdef C_FRONTEND
 DDD_IF   DDD_IFDefine (int, DDD_TYPE O[], int, DDD_PRIO A[], int, DDD_PRIO B[]);
 void     DDD_IFSetName (DDD_IF, const char *);
 #endif
 
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void     DDD_IFDisplayAll (void);
 void     DDD_IFDisplay (DDD_IF _FPTR);
 size_t   DDD_IFInfoMemoryAll (void);
@@ -1130,12 +1056,6 @@ void     DDD_IFAExecLocalX(DDD_IF _FPTR,DDD_ATTR _FPTR,                         
 /*
         Transfer Environment Module
  */
-#ifdef F_FRONTEND
-#define DDD_XferBegin     F77SYM(ddd_xferbegin,DDD_XFERBEGIN)
-#define DDD_XferEnd       F77SYM(ddd_xferend,DDD_XFEREND)
-#define DDD_XferCopyObj   F77SYM(ddd_xfercopyobj,DDD_XFERCOPYOBJ)
-#define DDD_XferDeleteObj F77SYM(ddd_xferdeleteobj,DDD_XFERDELETEOBJ)
-#endif
 #ifdef C_FRONTEND
 int      DDD_XferWithAddData (void);
 void     DDD_XferAddData (int _FPTR, DDD_TYPE _FPTR);
@@ -1143,7 +1063,7 @@ void     DDD_XferAddDataX (int _FPTR, DDD_TYPE _FPTR, size_t sizes[]);
 int      DDD_XferIsPrunedDelete (_OBJREF);
 int      DDD_XferObjIsResent (_OBJREF);
 #endif
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 void     DDD_XferBegin (void);
 DDD_RET  DDD_XferEnd (void);
 void     DDD_XferCopyObj (_OBJREF, DDD_PROC _FPTR, DDD_PRIO _FPTR);
@@ -1177,13 +1097,7 @@ void     DDD_JoinObj (_OBJREF, DDD_PROC _FPTR, DDD_GID _FPTR);
 /*
         Object Manager
  */
-#ifdef F_FRONTEND
-#define DDD_ObjGet   F77SYM(ddd_objget,DDD_OBJGET)
-#define DDD_ObjUnGet F77SYM(ddd_objunget,DDD_OBJUNGET)
 
-void     DDD_ObjGet (DDD_TYPE *, DDD_PRIO *, DDD_ATTR *, DDD_OBJ *);
-void     DDD_ObjUnGet (DDD_OBJ *, DDD_TYPE *);
-#endif
 #ifdef C_FRONTEND
 DDD_OBJ  DDD_ObjNew (size_t, DDD_TYPE, DDD_PRIO, DDD_ATTR);
 void     DDD_ObjDelete (DDD_OBJ, size_t, DDD_TYPE);
@@ -1195,24 +1109,12 @@ void     DDD_ObjUnGet (DDD_HDR, size_t);
 #endif
 
 
-/*
-        Special functions for F_FRONTEND
- */
-#ifdef F_FRONTEND
-#define DDD_SetConfig F77SYM(ddd_setconfig,DDD_SETCONFIG)
-
-void     DDD_SetConfig (int *, int *, int *);
-#endif
-
 
 /*
         Maintainance & Debugging
  */
-#ifdef F_FRONTEND
-#define DDD_ConsCheck        F77SYM(ddd_conscheck,DDD_CONSCHECK)
-#define DDD_ListLocalObjects F77SYM(ddd_listlocalobjects,DDD_LISTLOCALOBJECTS)
-#endif
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+
+#if defined(C_FRONTEND)
 int      DDD_ConsCheck (void);  /* returns total #errors since V1.6.6 */
 void     DDD_ListLocalObjects (void);
 DDD_HDR  DDD_SearchHdr (DDD_GID _FPTR);

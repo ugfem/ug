@@ -60,11 +60,7 @@ START_UGDIM_NAMESPACE
 /****************************************************************************/
 
 /* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#ifdef F_FRONTEND
-#define _FADR     &
-#else
 #define _FADR
-#endif
 
 
 
@@ -805,9 +801,6 @@ DDD_RET DDD_JoinEnd (void)
 #ifdef CPP_FRONTEND
 DDD_RET DDD_Library::JoinEnd (void)
 #endif
-#ifdef F_FRONTEND
-DDD_RET DDD_JoinEnd (void)
-#endif
 {
   JIJoinPtrArray   *arrayJIJoin    = NULL;
   JIAddCplPtrArray *arrayJIAddCpl2 = NULL;
@@ -1295,9 +1288,6 @@ void DDD_JoinBegin (void)
 #endif
 #ifdef CPP_FRONTEND
 void DDD_Library::JoinBegin (void)
-#endif
-#ifdef F_FRONTEND
-void DDD_JoinBegin (void)
 #endif
 {
   /* step mode and check whether call to JoinBegin is valid */

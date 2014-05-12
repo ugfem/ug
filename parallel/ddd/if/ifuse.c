@@ -254,7 +254,7 @@ int IFPollSend (DDD_IF ifId)
 
         fast version: uses object pointer shortcut
  */
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND)
 char *IFCommLoopObj (ComProcPtr LoopProc,
                      IFObjPtr *obj,
                      char *buffer,
@@ -267,9 +267,6 @@ char *IFCommLoopObj (ComProcPtr LoopProc,
   {
 #if defined(C_FRONTEND)
     error = (*LoopProc)(obj[i], buffer);
-#endif
-#ifdef F_FRONTEND
-    error = (*LoopProc)(obj+i, buffer);
 #endif
     /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
@@ -330,9 +327,6 @@ void IFExecLoopObj (ExecProcPtr LoopProc, IFObjPtr *obj, int nItems)
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     error = (*LoopProc)(obj[i]);
 #endif
-#ifdef F_FRONTEND
-    error = (*LoopProc)(obj+i);
-#endif
     /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
 }
@@ -363,9 +357,6 @@ char *IFCommLoopCpl (ComProcPtr LoopProc,
 #if defined(CPP_FRONTEND)
     // TODO: dirty cast in first argument!
     error = (*LoopProc)((DDD_Object*)(cpl[i]->obj), buffer);
-#endif
-#ifdef F_FRONTEND
-    error = (*LoopProc)((IFObjPtr *) &(OBJ_INDEX(cpl[i]->obj)), buffer);
 #endif
     /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
@@ -404,11 +395,6 @@ char *IFCommLoopCplX (ComProcXPtr LoopProc,
     error = (*LoopProc)((DDD_Object*)(cpl[i]->obj),
                         buffer, CPL_PROC(cpl[i]), cpl[i]->prio);
 #endif
-#ifdef F_FRONTEND
-    error = (*LoopProc)((IFObjPtr *) &(OBJ_INDEX(cpl[i]->obj)),
-                        buffer, (DDD_PROC *) &(CPL_PROC(cpl[i])),
-                        (DDD_PRIO *) &(cpl[i]->prio));
-#endif
 
     /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
@@ -435,11 +421,6 @@ void IFExecLoopCplX (ExecProcXPtr LoopProc, COUPLING **cpl, int nItems)
 #if defined(CPP_FRONTEND)
     // TODO: dirty cast in first argument!
     error = (*LoopProc)((DDD_Object*)(cpl[i]->obj), CPL_PROC(cpl[i]), cpl[i]->prio);
-#endif
-#ifdef F_FRONTEND
-    error = (*LoopProc)((IFObjPtr *) &(OBJ_INDEX(cpl[i]->obj)),
-                        (DDD_PROC *) &(CPL_PROC(cpl[i])),
-                        (DDD_PRIO *) &(cpl[i]->prio));
 #endif
     /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }

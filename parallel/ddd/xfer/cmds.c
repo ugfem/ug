@@ -62,11 +62,7 @@ USING_PPIF_NAMESPACE
 /****************************************************************************/
 
 /* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#ifdef F_FRONTEND
-#define _FADR     &
-#else
 #define _FADR
-#endif
 
 
 
@@ -413,9 +409,6 @@ DDD_RET DDD_XferEnd (void)
 #endif
 #ifdef CPP_FRONTEND
 DDD_RET DDD_Library::XferEnd (void)
-#endif
-#ifdef F_FRONTEND
-DDD_RET DDD_XferEnd (void)
 #endif
 {
   DDD_RET ret_code              = DDD_RET_OK;
@@ -996,7 +989,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     {
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
 
-                        #if defined(C_FRONTEND) || defined(F_FRONTEND)
+                        #if defined(C_FRONTEND)
       desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
                         #endif
                         #ifdef CPP_FRONTEND
@@ -1045,7 +1038,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     {
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
 
-                        #if defined(C_FRONTEND) || defined(F_FRONTEND)
+                        #if defined(C_FRONTEND)
       desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
                         #endif
                         #ifdef CPP_FRONTEND
@@ -1136,23 +1129,6 @@ XferInitCopyInfo(hdr, desc, desc->size, proc, prio);
 }
 #endif
 
-#ifdef F_FRONTEND
-
-void DDD_XferCopyObj (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc,
-                      DDD_PRIO *prio)
-{
-  TYPE_DESC *desc = &(theTypeDefs[*type]);
-  DDD_HDR hdr = OBJ2HDR(*obj,desc);
-
-#       if DebugXfer<=2
-  sprintf(cBuffer, "%4d: DDD_XferCopyObj %08x(%d), proc=%d prio=%d\n",
-          me, OBJ_GID(hdr), *obj, *proc, *prio);
-  DDD_PrintDebug(cBuffer);
-#       endif
-
-  XferInitCopyInfo(hdr, desc, desc->size, *proc, *prio);
-}
-#endif
 
 
 
@@ -1433,41 +1409,13 @@ void DDD_Object::XferDeleteObj (void)
   /* call application handler for deletion of dependent objects */
   if (desc->handlerXFERDELETE!=NULL)
   {
-                #if defined(C_FRONTEND) || defined(F_FRONTEND)
+                #if defined(C_FRONTEND)
     desc->handlerXFERDELETE(HDR2OBJ(hdr,desc));
                 #endif
                 #ifdef CPP_FRONTEND
     CallHandler(desc,XFERDELETE) (HParamOnly(HDR2OBJ(hdr,desc)));
                 #endif
   }
-}
-#endif
-
-
-#ifdef F_FRONTEND
-void DDD_XferDeleteObj (DDD_TYPE *type, DDD_OBJ *obj)
-{
-  DDD_HDR hdr = OBJ2HDR(*obj,&theTypeDefs[*type]);
-  XIDelCmd  *dc = NewXIDelCmd(SLLNewArgs);
-
-  if (dc==NULL)
-    HARD_EXIT;
-
-  dc->hdr = hdr;
-
-
-#       if DebugXfer<=2
-  sprintf(cBuffer,"%4d: DDD_XferDeleteObj %08x(%d)\n",
-          me, OBJ_GID(hdr), *obj);
-  DDD_PrintDebug(cBuffer);
-#       endif
-
-
-  /* call application handler for deletion of dependent objects */
-  /*
-          if (desc->handler[HANDLER_XFERDELETE]!=NULL)
-                  desc->handler[HANDLER_XFERDELETE](???);
-   */
 }
 #endif
 
@@ -1492,9 +1440,6 @@ void DDD_XferBegin (void)
 #endif
 #ifdef CPP_FRONTEND
 void DDD_Library::XferBegin (void)
-#endif
-#ifdef F_FRONTEND
-void DDD_XferBegin (void)
 #endif
 {
   theXIAddData = NULL;
