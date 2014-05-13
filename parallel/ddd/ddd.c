@@ -381,7 +381,6 @@ void DDD_Library::Status (void)
 /*                                                                          */
 /****************************************************************************/
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 /**
         Redirect text output.
         This function sets the DDD-textport to a given handler function.
@@ -396,7 +395,6 @@ void DDD_Library::Status (void)
 
    @param  func  handler function which should be used for text redirection
  */
-#endif
 
 #ifdef C_FRONTEND
 void DDD_LineOutRegister (void (*func)(const char *s))
@@ -404,11 +402,10 @@ void DDD_LineOutRegister (void (*func)(const char *s))
 #ifdef CPP_FRONTEND
 void DDD_Library::LineOutRegister (void (*func)(const char *))
 #endif
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+
 {
   DDD_UserLineOutFunction = func;
 }
-#endif
 
 
 
@@ -480,7 +477,6 @@ int DDD_GetOption (DDD_OPTION option)
         transparent access to global variables from PPIF
  */
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 /**
         Get local processor number.
         This function returns the local processor number, which is an
@@ -488,7 +484,6 @@ int DDD_GetOption (DDD_OPTION option)
 
    @return  local processor number
  */
-#endif
 
 #ifdef C_FRONTEND
 DDD_PROC DDD_InfoMe (void)
@@ -505,7 +500,6 @@ DDD_PROC DDD_Library::InfoMe (void)
 
 
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 /**
         Get master processor number.
         This function returns the processor number of the
@@ -515,7 +509,6 @@ DDD_PROC DDD_Library::InfoMe (void)
 
    @return  master processor number
  */
-#endif
 #ifdef C_FRONTEND
 DDD_PROC DDD_InfoMaster (void)
 {
@@ -530,13 +523,12 @@ DDD_PROC DDD_Library::InfoMaster (void)
 #endif
 
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 /**
         Get total number of processors.
 
    @return  total number of processors
  */
-#endif
+
 #ifdef C_FRONTEND
 DDD_PROC DDD_InfoProcs (void)
 {

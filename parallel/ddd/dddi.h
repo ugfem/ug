@@ -237,10 +237,8 @@ typedef struct obj_coupl
  */
 typedef struct _ELEM_DESC
 {
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
   int offset;                         /* element offset from object address     */
   unsigned char *gbits;               /* ptr to gbits array, if type==EL_GBITS  */
-#endif
 
 #if defined(CPP_FRONTEND)
   char     *array;                        /* pointer to the array of this element   */
@@ -287,11 +285,9 @@ typedef struct _TYPE_DESC
                                         /* (hasHeader must be TRUE)             */
 #endif
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
   /* if C_FRONTEND or (CPP_FRONTEND and storage==STORAGE_STRUCT) */
   int hasHeader;                        /* flag: real ddd type (with header)?   */
   int offsetHeader;                     /* offset of header from begin of obj   */
-#endif
 
 
   ELEM_DESC element[MAX_ELEMDESC];       /* element description array           */
@@ -466,12 +462,10 @@ extern VChannelPtr *theTopology;
 
 /* convert DDD_OBJ to DDD_HDR and vice versa */
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 #define OBJ2HDR(obj,desc)  ((DDD_HDR)(((char *)obj)+((desc)->offsetHeader)))
 #define HDR2OBJ(hdr,desc)  ((DDD_OBJ)(((char *)hdr)-((desc)->offsetHeader)))
 #define OBJ_OBJ(hdr)       ((DDD_OBJ)(((char *)hdr)- \
                                       (theTypeDefs[OBJ_TYPE(hdr)].offsetHeader)))
-#endif
 
 
 /****************************************************************************/

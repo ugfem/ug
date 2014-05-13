@@ -95,17 +95,11 @@ static void XferPtr (LC_MSGHANDLE xm, char *buf)
       {
         int l;
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
         for(l=0; l<theElem->size; l+=sizeof(void *))
         {
           /* ref points to a reference inside objmem */
           DDD_OBJ *ref = (DDD_OBJ *)(((char *)obj)+theElem->offset+l);
-#else
-        for(l=0; l<theElem->size; l+=sizeof(DDD_OBJ))
-        {
-          /* ref points to a reference inside objmem */
-          DDD_OBJ *ref = (DDD_OBJ *)(((char *)obj)+theElem->msgoffset);
-#endif
+
           /* reference had been replaced by SymTab-index */
           INT stIdx = ((int)*ref)-1;
 
@@ -180,7 +174,7 @@ void XferDisplayMsg (const char *comment, LC_MSGHANDLE xm)
 
   for(i=0; i<lenObjTab; i++)
   {
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+
     DDD_OBJ obj = OTE_OBJ(theObjects, &(theObjTab[i]));
 
     sprintf(cBuffer, "%s 10 objtab    %06d typ=%1d gid=%08x "
@@ -188,15 +182,7 @@ void XferDisplayMsg (const char *comment, LC_MSGHANDLE xm)
             buf, (((char *)obj)-theObjects), OTE_TYPE(theObjects,&(theObjTab[i])),
             OTE_GID(theObjects,&(theObjTab[i])),
             theObjTab[i].hdr, theObjTab[i].size, theObjTab[i].addLen);
-#else
-    DDD_HDR hdr = (DDD_HDR)(theObjects + theObjTab[i].offset);
 
-    sprintf(cBuffer, "%s 10 objtab    %06d typ=%1d gid=%08x "
-            "hdr=%08x size=%05d add=%05d\n",
-            buf, theObjTab[i].offset, theObjTab[i].typ,
-            OBJ_GID(hdr),
-            theObjTab[i].hdr, theObjTab[i].size, theObjTab[i].addLen);
-#endif
     DDD_PrintDebug(cBuffer);
   }
 

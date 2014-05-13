@@ -771,11 +771,9 @@ void DDD_Interface::SetName (const char *name)
 {
   DDD_IF ifId = _id;
 #endif
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 /* copy name string */
 strncpy(theIF[ifId].name, name, IF_NAMELEN-1);
 }
-#endif
 
 
 /****************************************************************************/

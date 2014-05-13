@@ -324,9 +324,7 @@ void IFExecLoopObj (ExecProcPtr LoopProc, IFObjPtr *obj, int nItems)
 
   for(i=0; i<nItems; i++)
   {
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     error = (*LoopProc)(obj[i]);
-#endif
     /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
 }
@@ -403,7 +401,6 @@ char *IFCommLoopCplX (ComProcXPtr LoopProc,
 }
 
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 /*
         simple variant of above routine. dont communicate,
@@ -426,7 +423,6 @@ void IFExecLoopCplX (ExecProcXPtr LoopProc, COUPLING **cpl, int nItems)
   }
 }
 
-#endif
 
 
 #endif  /* for debugging */

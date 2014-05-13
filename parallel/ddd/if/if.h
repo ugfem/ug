@@ -208,11 +208,9 @@ char *  IFCommLoopObj (ComProcPtr, IFObjPtr *, char *, size_t, int);
 char *  IFCommLoopCpl (ComProcPtr, COUPLING **, char *, size_t, int);
 char *  IFCommLoopCplX (ComProcXPtr, COUPLING **, char *, size_t , int);
 #endif
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 #ifndef CPP_FRONTEND
 void    IFExecLoopObj (ExecProcPtr, IFObjPtr *, int);
 void    IFExecLoopCplX (ExecProcXPtr, COUPLING **, int);
-#endif
 #endif
 char *  IFCommHdrLoopCpl (ComProcHdrPtr, COUPLING **, char *, size_t, int);
 char *  IFCommHdrLoopCplX (ComProcHdrXPtr, COUPLING **, char *, size_t, int);

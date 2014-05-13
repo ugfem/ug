@@ -70,21 +70,11 @@ START_UGDIM_NAMESPACE
 /****************************************************************************/
 
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 #	define SIZEOF_REF  sizeof(void *)
 #	define NULL_REF    NULL
-#endif
 
 
 
-/****************************************************************************/
-/*                                                                          */
-/* macros                                                                   */
-/*                                                                          */
-/****************************************************************************/
-
-/* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#define _FADR
 
 
 #define NEW_AddCpl(destproc,objgid,cplproc,cplprio)   {          \
@@ -206,10 +196,8 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 			int rt_on_the_fly = (EDESC_REFTYPE(theElem)==DDD_TYPE_BY_HANDLER);
 			int       l;
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
       const char      *msgrefarray = msgmem+theElem->offset;
 			char      *objrefarray = objmem+theElem->offset;
-#endif
 
 
 			/* determine reftype of this elem */
@@ -231,9 +219,7 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 
 
 				/* reference had been replaced by SymTab-index */
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 				stIdx = (*(INT *)(msgrefarray+l)) - 1;
-#endif
 				/* test for Localize execution in merge_mode */
 				if (merge_mode && (*ref!=NULL_REF))
 				{
@@ -452,9 +438,8 @@ static void PutDepData (char *data,
 			if (desc->handlerXFERSCATTER)
 			{
 #if defined(C_FRONTEND)
-				desc->handlerXFERSCATTER(_FADR obj,
-					_FADR addCnt, _FADR addTyp, (void *)chunk, _FADR newness);
-				#endif
+                        desc->handlerXFERSCATTER(obj, addCnt, addTyp, (void *)chunk, newness);
+#endif
 				#ifdef CPP_FRONTEND
 				CallHandler(desc,XFERSCATTER) (HParam(obj)
 					addCnt, addTyp, (void *)chunk, newness);
@@ -490,8 +475,7 @@ static void PutDepData (char *data,
 			if (desc->handlerXFERSCATTERX)
 			{
 #ifdef C_FRONTEND
-				desc->handlerXFERSCATTERX(_FADR obj,
-					_FADR addCnt, _FADR addTyp, table, _FADR newness);
+                                desc->handlerXFERSCATTERX(obj, addCnt, addTyp, table, newness);
 #endif
 				#ifdef CPP_FRONTEND
 				CallHandler(desc,XFERSCATTERX) (HParam(obj)
@@ -1256,7 +1240,7 @@ static void CallUpdateHandler (LC_MSGHANDLE xm)
 				DDD_OBJ  obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
 #if defined(C_FRONTEND)
-	     		desc->handlerUPDATE(_FADR obj);
+                                desc->handlerUPDATE(obj);
 #endif
 
 				#ifdef CPP_FRONTEND
@@ -1388,7 +1372,7 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 				OBJ_PRIO(theObjTab[i].hdr) = theObjTab[i].oldprio;
 
 #ifdef C_FRONTEND
-				desc->handlerSETPRIORITY(_FADR obj, _FADR new_prio);
+                                desc->handlerSETPRIORITY(obj, new_prio);
 #endif
 				#ifdef CPP_FRONTEND
 				CallHandler(desc,SETPRIORITY) (HParam(obj) new_prio);
@@ -1449,7 +1433,7 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm, int required_newness)
 			if (desc->handlerOBJMKCONS)
 			{
 #ifdef C_FRONTEND
-	     		desc->handlerOBJMKCONS(_FADR obj, _FADR newness);
+                                desc->handlerOBJMKCONS(obj, newness);
 #endif
 				#ifdef CPP_FRONTEND
 				CallHandler(desc,OBJMKCONS) (HParam(obj) newness);
@@ -1818,10 +1802,5 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 
 
 
-/****************************************************************************/
-
-#undef _FADR
-
-/****************************************************************************/
 
 END_UGDIM_NAMESPACE

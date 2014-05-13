@@ -645,7 +645,7 @@ int *DDD_Object::InfoProcList (void)
 {
   DDD_HDR hdr = this;
 #endif
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+
 COUPLING *cpl;
 int i, objIndex = OBJ_INDEX(hdr);
 
@@ -669,7 +669,6 @@ localIBuffer[i] = -1;
 
 return(localIBuffer);
 }
-#endif
 
 
 

@@ -280,7 +280,6 @@ void ddd_EnsureObjTabSize (int n)
    @param  aAttr   \ddd{attribute} of the new object
  */
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 DDD_OBJ DDD_ObjNew (size_t aSize, DDD_TYPE aType,
                     DDD_PRIO aPrio, DDD_ATTR aAttr)
@@ -320,59 +319,7 @@ DDD_OBJ DDD_ObjNew (size_t aSize, DDD_TYPE aType,
   return(obj);
 }
 
-#else
 
-DDD_OBJ DDD_ObjNew (size_t aSize, DDD_TYPE aType, DDD_PRIO aPrio, DDD_ATTR aAttr)
-
-{
-  TYPE_DESC *desc = &(theTypeDefs[aType]);
-  DDD_OBJ obj;
-
-  if (desc->handlerALLOCOBJ)
-  {
-    desc->handlerALLOCOBJ(&obj);
-  }
-  else
-  {
-    if (desc->nextFree == desc->arraySize)
-    {
-      DDD_PrintError('E', 2200, "No more objects in DDD_ObjNew");
-      return(0);
-    }
-    else
-      obj = desc->nextFree;
-
-    do
-    {
-      desc->nextFree++;
-
-      /* cycle around */
-      if (desc->nextFree == desc->arraySize) desc->nextFree = 0;
-
-      if (desc->nextFree == obj)
-      {
-        /* No more free objects */
-        desc->nextFree = desc->arraySize;
-        break;
-      }
-    } while (!IsHdrInvalid (&desc->hdr[desc->nextFree]) );
-  }
-
-  if (obj != 0)
-  {
-    OBJ_ATTR(OBJ2HDR(obj,desc)) = aAttr;
-    OBJ_PRIO(OBJ2HDR(obj,desc)) = aPrio;
-
-#               ifdef DebugCreation
-    sprintf(cBuffer, "%d: Allocated obj %d of type %d\n", me, obj, aType);
-    DDD_PrintDebug(cBuffer);
-#               endif
-  }
-
-  return (obj);
-}
-
-#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -388,29 +335,12 @@ DDD_OBJ DDD_ObjNew (size_t aSize, DDD_TYPE aType, DDD_PRIO aPrio, DDD_ATTR aAttr
 /*                                                                          */
 /****************************************************************************/
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
 {
   FreeObj((void *)obj, size, typ);
 }
 
-#else
-
-void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
-
-{
-  TYPE_DESC *desc = &(theTypeDefs[typ]);
-
-  if (desc->handlerFREEOBJ)
-  {
-    desc->handlerFREEOBJ(&obj);
-  }
-
-  DDD_HdrDestructor (OBJ2HDR(obj,desc));
-}
-
-#       endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -925,7 +855,6 @@ void DDD_HdrConstructorMove (DDD_HDR newhdr, DDD_HDR oldhdr)
 /*                                                                          */
 /****************************************************************************/
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 static void CopyByMask (TYPE_DESC *desc, DDD_OBJ target, DDD_OBJ source)
 {
@@ -981,52 +910,6 @@ void ObjCopyGlobalData (TYPE_DESC *desc,
 #       endif
 }
 
-#else
-
-static void MsgToObj (TYPE_DESC *desc, DDD_OBJ target, char *source)
-{
-  DDD_HDR hdr;
-  int i, i2;
-
-  /* Copy the header */
-  hdr = &(desc->hdr[target]);
-  hdr->typ   = (unsigned char) *source++;
-  hdr->prio  = (unsigned char) *source++;
-  hdr->attr  = (unsigned char) *source++;
-  hdr->flags = (unsigned char) *source++;
-  source    += sizeof (unsigned int);           /* myIndex is local */
-  hdr->gid   = *((unsigned int *)source); source += sizeof (unsigned int);
-  source    += 4;                                               /* is local */
-
-  /* Copy the data */
-  for (i = 0; i < desc->nElements; i++)
-  {
-    ELEM_DESC *elem = &(desc->element[i]);
-    char      *d    = elem->array + elem->size * target;
-
-    if (elem->type != EL_LDATA)
-      for (i2 = elem->size; i2; i2--) *d++ = *source++;
-  }
-}
-
-
-void ObjCopyGlobalData (TYPE_DESC *desc, DDD_OBJ target, DDD_OBJ source,
-                        size_t size)
-{
-  MsgToObj (desc, target, (char *) source);
-
-#       ifdef DebugCreation
-  sprintf(cBuffer, "%4d: ObjCopyGlobalData(%08x <- %08x),"
-          " TYP=%d  GID=%08x  INDEX=%d\n",
-          me, OBJ2HDR(target,desc), source,
-          OBJ_TYPE(OBJ2HDR(target,desc)),
-          OBJ_GID(OBJ2HDR(target,desc)),
-          OBJ_INDEX(OBJ2HDR(target,desc)));
-  DDD_PrintDebug(cBuffer);
-#       endif
-}
-
-#endif
 
 
 /****************************************************************************/

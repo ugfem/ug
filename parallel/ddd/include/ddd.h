@@ -386,9 +386,7 @@ enum Handlers {
   HANDLER_XFERSCATTER,
   HANDLER_XFERGATHERX,
   HANDLER_XFERSCATTERX,
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
   HANDLER_XFERCOPYMANIP,
-#endif
   HANDLER_END=999
 };
 
@@ -979,9 +977,7 @@ void     DDD_SetHandlerXFERGATHER      (DDD_TYPE _FPTR, HandlerXFERGATHER);
 void     DDD_SetHandlerXFERSCATTER     (DDD_TYPE _FPTR, HandlerXFERSCATTER);
 void     DDD_SetHandlerXFERGATHERX     (DDD_TYPE _FPTR, HandlerXFERGATHERX);
 void     DDD_SetHandlerXFERSCATTERX    (DDD_TYPE _FPTR, HandlerXFERSCATTERX);
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 void     DDD_SetHandlerXFERCOPYMANIP   (DDD_TYPE _FPTR, HandlerXFERCOPYMANIP);
-#endif
 #endif
 
 

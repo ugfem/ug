@@ -46,14 +46,7 @@ USING_PPIF_NAMESPACE
 
   START_UGDIM_NAMESPACE
 
-/****************************************************************************/
-/*                                                                          */
-/* macros                                                                   */
-/*                                                                          */
-/****************************************************************************/
 
-/* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#define _FADR
 
 
 /****************************************************************************/
@@ -672,7 +665,7 @@ void ExecLocalXISetPrio (
         DDD_OBJ obj = HDR2OBJ(hdr,desc);
 
                                 #if defined(C_FRONTEND)
-        desc->handlerSETPRIORITY(_FADR obj, _FADR newprio);
+        desc->handlerSETPRIORITY( obj, newprio);
                                 #endif
                                 #if defined(CPP_FRONTEND)
         CallHandler(desc,SETPRIORITY) (HParam(obj) newprio);
@@ -762,7 +755,7 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
                 #if defined(C_FRONTEND)
     /* do deletion */
     if (desc->handlerDELETE)
-      desc->handlerDELETE(_FADR obj);
+      desc->handlerDELETE( obj);
     else
     {
       /* TODO the following three calls should be collected in
@@ -770,7 +763,7 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
 
       /* destruct LDATA and GDATA */
       if (desc->handlerDESTRUCTOR!=NULL)
-        desc->handlerDESTRUCTOR(_FADR obj);
+        desc->handlerDESTRUCTOR( obj);
 
       /* HdrDestructor will call ddd_XferRegisterDelete() */
       DDD_HdrDestructor(hdr);
@@ -1108,11 +1101,5 @@ void ddd_XferExit (void)
 
 
 
-/****************************************************************************/
-
-#undef _FADR
-
-
-/****************************************************************************/
 
 END_UGDIM_NAMESPACE

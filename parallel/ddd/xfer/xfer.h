@@ -493,11 +493,8 @@ typedef struct
 
 typedef struct
 {
-        #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+
   int h_offset;                   /* header offset from beginObjMem */
-        #else
-  int o_offset;                   /* object offset from beginObjMem */
-        #endif
 
   int addLen;                     /* length of additional data */
   size_t size;                    /* size of object, ==desc->len for
@@ -514,7 +511,6 @@ typedef struct
 } OBJTAB_ENTRY;
 
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 /* NOTE: the following macros require the DDD_HEADER being copied
          directly into the message! (with its LDATA!) */
@@ -526,14 +522,7 @@ typedef struct
 #define OTE_TYPE(objmem,ote)   OBJ_TYPE(OTE_HDR(objmem,ote))
 #define OTE_ATTR(objmem,ote)   OBJ_ATTR(OTE_HDR(objmem,ote))
 
-#else
 
-#define OTE_GID(objmem,ote)    ((ote)->gid)
-#define OTE_PRIO(objmem,ote)   ((ote)->prio)
-#define OTE_TYPE(objmem,ote)   ((ote)->type)
-#define OTE_ATTR(objmem,ote)   ((ote)->attr)
-
-#endif
 
 
 

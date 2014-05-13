@@ -64,15 +64,6 @@ START_UGDIM_NAMESPACE
 
 
 
-/****************************************************************************/
-/*                                                                          */
-/* macros                                                                   */
-/*                                                                          */
-/****************************************************************************/
-
-/* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#define _FADR
-
 
 /****************************************************************************/
 /*                                                                          */
@@ -199,18 +190,11 @@ static int BuildSymTab (TYPE_DESC *desc,
 
 
       /* loop over single pointer array */
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
       for(l=0; l<theElem->size; l+=sizeof(void *))
       {
         /* get address of outside reference */
         DDD_OBJ *ref = (DDD_OBJ *)(copy+theElem->offset+l);
-#else
-      for(l=0; l<theElem->size; l+=sizeof(DDD_OBJ))
-      {
-        /* F77TODO: DDD_OBJ* must be replaced by local objindex */
-        /* get the index of the referenced object */
-        DDD_OBJ *ref = (DDD_OBJ *)(copy+theElem->msgoffset);
-#endif
+
 
         /* create symbol table entry */
         if (*ref!=NULL)
@@ -310,8 +294,8 @@ static int GetDepData (char *data,
       if (desc->handlerXFERGATHER)
       {
                                 #if defined(C_FRONTEND)
-        desc->handlerXFERGATHER(_FADR obj,
-                                _FADR xa->addCnt, _FADR xa->addTyp, (void *)chunk);
+        desc->handlerXFERGATHER( obj,
+                                 xa->addCnt, xa->addTyp, (void *)chunk);
                                 #endif
                                 #ifdef CPP_FRONTEND
         CallHandler(desc,XFERGATHER) (HParam(obj)
@@ -356,8 +340,8 @@ static int GetDepData (char *data,
       if (desc->handlerXFERGATHERX)
       {
                                 #if defined(C_FRONTEND)
-        desc->handlerXFERGATHERX(_FADR obj,
-                                 _FADR xa->addCnt, _FADR xa->addTyp, table1);
+        desc->handlerXFERGATHERX( obj,
+                                  xa->addCnt, xa->addTyp, table1);
                                 #endif
                                 #ifdef CPP_FRONTEND
         CallHandler(desc,XFERGATHERX) (HParam(obj)
@@ -472,22 +456,11 @@ static void XferPackSingleMsg (XFERMSG *msg)
      */
 
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     copyhdr = OBJ2HDR(currObj,desc);
-#else
-    copyhdr = (DDD_HDR) currObj;
-#endif
+
 
     /* update object table */
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     theObjTab[actObj].h_offset = (int)(((char *)copyhdr)-theObjects);
-#else
-    theObjTab[actObj].o_offset = (int)(currObj-theObjects);
-    theObjTab[actObj].typ    = OBJ_TYPE(hdr);
-    theObjTab[actObj].gid    = OBJ_GID(hdr);
-    theObjTab[actObj].attr   = OBJ_ATTR(hdr);
-    theObjTab[actObj].prio   = xi->prio;
-#endif
     theObjTab[actObj].hdr      = NULL;
     theObjTab[actObj].addLen   = xi->addLen;
     theObjTab[actObj].size     = xi->size;              /* needed for variable-sized objects */
@@ -500,14 +473,10 @@ static void XferPackSingleMsg (XFERMSG *msg)
             equals desc->len for fixed-size objects.
      */
     /*STAT_RESET3;*/
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     /* NOTE: object memory is copied _completely_, i.e., also LDATA-
        components are copied into message and sent to destination.
        then, on the receiving processor the data is sorted out... */
     memcpy(currObj, obj, xi->size);
-#else
-    ObjToMsg (obj, desc, currObj);
-#endif
 
     /* insert priority into copy */
     OBJ_PRIO(copyhdr) = xi->prio;
@@ -589,9 +558,7 @@ static void XferPackSingleMsg (XFERMSG *msg)
   for(mi=0; mi<actSym; mi++)
   {
     /* patch SymTab index into reference location inside message */
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     *(theSymTab[mi].adr.ref) = (DDD_OBJ)(mi+1);
-#endif
   }
 
 
@@ -694,11 +661,6 @@ RETCODE XferPackMsgs (XFERMSG *theMsgs)
 }
 
 
-/****************************************************************************/
-
-#undef _FADR
-
-/****************************************************************************/
 
 
 END_UGDIM_NAMESPACE

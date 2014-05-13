@@ -55,14 +55,6 @@ USING_PPIF_NAMESPACE
 
 
 
-/****************************************************************************/
-/*                                                                          */
-/* macros                                                                   */
-/*                                                                          */
-/****************************************************************************/
-
-/* helpful macros for FRONTEND switching, will be #undef'd at EOF */
-#define _FADR
 
 
 
@@ -990,7 +982,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
 
                         #if defined(C_FRONTEND)
-      desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
+      desc->handlerXFERCOPY( obj, dest, prio);
                         #endif
                         #ifdef CPP_FRONTEND
       CallHandler(desc,XFERCOPY) (HParam(obj) dest, prio);
@@ -1039,7 +1031,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
 
                         #if defined(C_FRONTEND)
-      desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
+      desc->handlerXFERCOPY( obj, dest, prio);
                         #endif
                         #ifdef CPP_FRONTEND
       CallHandler(desc,XFERCOPY) (HParam(obj) dest, prio);
@@ -1116,7 +1108,6 @@ void DDD_Object::XferCopyObj (DDD_PROC proc, DDD_PRIO prio)
 {
   DDD_HDR hdr = this;
 #endif
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 TYPE_DESC *desc =  &(theTypeDefs[OBJ_TYPE(hdr)]);
 
 #       if DebugXfer<=2
@@ -1127,7 +1118,6 @@ DDD_PrintDebug(cBuffer);
 
 XferInitCopyInfo(hdr, desc, desc->size, proc, prio);
 }
-#endif
 
 
 
@@ -1157,7 +1147,6 @@ XferInitCopyInfo(hdr, desc, desc->size, proc, prio);
 #endif
 
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 void DDD_XferCopyObjX (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio, size_t size)
 {
@@ -1184,9 +1173,6 @@ void DDD_XferCopyObjX (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio, size_t size)
   XferInitCopyInfo(hdr, desc, size, proc, prio);
 }
 
-/* No Fortran Interface. Fortran won't support variable sized object */
-
-#endif
 
 
 
@@ -1381,7 +1367,6 @@ void DDD_XferDeleteObj (DDD_HDR hdr)
 #ifdef CPP_FRONTEND
 void DDD_Object::XferDeleteObj (void)
 #endif
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 {
         #ifdef CPP_FRONTEND
   DDD_HDR hdr = this;
@@ -1417,7 +1402,6 @@ void DDD_Object::XferDeleteObj (void)
                 #endif
   }
 }
-#endif
 
 
 
@@ -1557,10 +1541,6 @@ int DDD_XferObjIsResent (DDD_HDR hdr)
 #endif /* SUPPORT_RESENT_FLAG */
 
 
-/****************************************************************************/
 
-#undef _FADR
-
-/****************************************************************************/
 
 END_UGDIM_NAMESPACE
