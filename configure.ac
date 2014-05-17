@@ -153,7 +153,7 @@ DDD_PARAMETERS
 
 # check whether we are using the UG heap or the operating system heap
 UG_ENABLE_SYSTEM_HEAP
-AS_IF([test "x$enable_system_heap" = "xyes"],
+AS_IF([test "x$enable_system_heap" = "xyes"],[
   # set define
   UG_EXTRAFLAGS="$UG_EXTRAFLAGS -DUG_USE_SYSTEM_HEAP=1"
   ])
