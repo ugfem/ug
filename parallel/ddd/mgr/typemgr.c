@@ -84,8 +84,6 @@ enum DDD_TypeStorageModes
 
 /* macros for easier switching of FRONTENDs */
 
-#define FTYPE
-
 #ifdef CPP_FRONTEND
 #define CPP_STRUCT(d)     ((d)->storage==STORAGE_STRUCT)
 #define CPP_ARRAY(d)      ((d)->storage==STORAGE_ARRAY)
@@ -757,7 +755,7 @@ void DDD_Library::TypeDefine (DDD_TYPE typ, ...)
 
   i = desc->nElements;
   while ((i<MAX_ELEMDESC) &&
-         ((argtyp= FTYPE va_arg(ap, int FTYPE))!=EL_END) && (argtyp!=EL_CONTINUE))
+         ((argtyp= va_arg(ap, int))!=EL_END) && (argtyp!=EL_CONTINUE))
   {
     HandlerGetRefType arg_rt_handler = NULL;
 
@@ -773,14 +771,14 @@ void DDD_Library::TypeDefine (DDD_TYPE typ, ...)
     case EL_OBJPTR :
     case EL_DATAPTR :
       /* get third argument of this definition line */
-      argsize = FTYPE va_arg(ap, size_t FTYPE); argno++;
+      argsize = va_arg(ap, size_t); argno++;
 
       /* EL_OBJPTR have to be specified with target type */
       if (argtyp==EL_OBJPTR)
       {
 
         /* get fourth argument: referenced DDD_TYPE */
-        argrefs = (DDD_TYPE) FTYPE va_arg(ap, int FTYPE); argno++;
+        argrefs = (DDD_TYPE) va_arg(ap, int); argno++;
 
                                         #ifdef C_FRONTEND
         /* check whether target type is DDD_TYPE_BY_HANDLER */
@@ -1476,7 +1474,7 @@ if (desc->mode != DDD_TYPE_DEFINED)
 va_start(ap, typeId);
         #endif
 
-while ((idx = FTYPE va_arg(ap, int FTYPE)) != HANDLER_END)
+while ((idx = va_arg(ap, int)) != HANDLER_END)
 {
   switch(idx)
   {
