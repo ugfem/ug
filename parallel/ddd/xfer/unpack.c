@@ -69,14 +69,6 @@ START_UGDIM_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-
-#	define SIZEOF_REF  sizeof(void *)
-#	define NULL_REF    NULL
-
-
-
-
-
 #define NEW_AddCpl(destproc,objgid,cplproc,cplprio)   {          \
 				XIAddCpl *xc = NewXIAddCpl(SLLNewArgs);          \
 				if (xc==NULL) HARD_EXIT;                         \
@@ -210,7 +202,7 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 
 
 			/* loop over single pointer array */
-			for(l=0; l<theElem->size; l+=SIZEOF_REF)
+                        for(l=0; l<theElem->size; l+=sizeof(void*))
 			{
 				INT stIdx;
 
@@ -221,7 +213,7 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 				/* reference had been replaced by SymTab-index */
 				stIdx = (*(INT *)(msgrefarray+l)) - 1;
 				/* test for Localize execution in merge_mode */
-				if (merge_mode && (*ref!=NULL_REF))
+                                if (merge_mode && (*ref!=NULL))
 				{
 					if (rt_on_the_fly)
 					{
@@ -328,7 +320,7 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 						{
 							printf(
 								"%4d: loc-merge curr=%08x "
-								"have_sym e=%d l=%d to NULL_REF\n",
+                                                                "have_sym e=%d l=%d to NULL\n",
 								me, *ref, e, l);
 						}
 						#endif
@@ -351,7 +343,7 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 							}
 						}
 						else
-							*ref = NULL_REF;
+                                                        *ref = NULL;
 					}
 				}
 				else
@@ -368,7 +360,7 @@ static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
 					else
 #endif
 					{
-						*ref = NULL_REF;
+                                          *ref = NULL;
 					}
 				}
 			}
