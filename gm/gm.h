@@ -991,12 +991,6 @@ struct generic_element {
 
   /** \brief Stores partition information */
   INT lb1;
-
-  /** \brief Stores cluster information */
-  INT lb2;
-
-  /** \brief Stores number of descendents */
-  INT lb3;
 #endif
 
   /** \brief double linked list of elements       */
@@ -1053,12 +1047,6 @@ struct triangle {
 
   /** \brief stores partition information         */
   INT lb1;
-
-  /** \brief stores cluster pointer               */
-  INT lb2;
-
-  /** \brief stores number of descendents         */
-  INT lb3;
 #endif
 
   /** \brief Realize a doubly linked list of elements */
@@ -1144,12 +1132,6 @@ struct quadrilateral {
 
   /** \brief stores partition information         */
   INT lb1;
-
-  /** \brief stores cluster pointer               */
-  INT lb2;
-
-  /** \brief stores number of descendents         */
-  INT lb3;
 #endif
 
   /** \brief doubly linked list of elements               */
@@ -1237,12 +1219,6 @@ struct tetrahedron {
 
   /** \brief Stores partition information */
   INT lb1;
-
-  /** \brief Stores cluster pointer */
-  INT lb2;
-
-  /** \brief Stores number of descendents */
-  INT lb3;
 #endif
 
   /* pointers */
@@ -1333,12 +1309,6 @@ struct pyramid {
 
   /** \brief Stores partition information */
   INT lb1;
-
-  /** \brief Stores cluster pointer */
-  INT lb2;
-
-  /** \brief Stores number of descendents */
-  INT lb3;
 #endif
 
   /* pointers */
@@ -1428,12 +1398,6 @@ struct prism {
 
   /** \brief Stores partition information */
   INT lb1;
-
-  /** \brief Stores cluster pointer */
-  INT lb2;
-
-  /** \brief Stores number of descendents */
-  INT lb3;
 #endif
 
   /* pointers */
@@ -1524,12 +1488,6 @@ struct hexahedron {
 
   /** \brief Stores partition information */
   INT lb1;
-
-  /** \brief Stores cluster pointer */
-  INT lb2;
-
-  /** \brief Stores number of descendents */
-  INT lb3;
 #endif
 
   /** \brief Realize doubly linked list of elements on one grid level */
