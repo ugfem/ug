@@ -10546,9 +10546,8 @@ INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
                 #endif
 
                 #ifdef ModelP
-  INT res,cmd_error,maxlevel,i;
-  int minlevel,cluster_depth,threshold,Const,n,c,
-      strategy,eigen,loc,dims,weights,coarse,mode,iopt;
+  INT cmd_error,i;
+  int minlevel;
   char levelarg[32];
   MULTIGRID *theMG;
 
@@ -10564,29 +10563,6 @@ INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
 
   /* defaults */
   minlevel                = 1;
-  cluster_depth   = 2;
-  maxlevel                = MAXLEVEL;
-  threshold               = 1;
-  Const                   = 1;
-  n                               = 500;
-  c                               = 10;
-  strategy                = 0;
-  eigen                   = 0;
-  loc                             = 0;
-  dims                    = 1;
-  weights                 = 0;
-  coarse                  = 0;
-  mode                    = 0;
-  iopt                    = 10000;
-
-  /* scan lb strategy*/
-  res = sscanf(argv[0]," lb %d", &strategy);
-  if (res > 1)
-  {
-    UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>] [$e <minelem>] \n");
-    UserWriteF("default lb 0 $c 1 $d 2 $e 1\n");
-    return(OKCODE);
-  }
 
   /* parse options */
   for (i=1; i<argc; i++)
@@ -10596,21 +10572,9 @@ INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
       sscanf(argv[i],"c %d",&minlevel);
       break;
 
-    case 'd' :
-      UserWriteF("lb: depth parameter skipped\n");
-      break;
-
-    case 'f' :
-      sscanf(argv[i],"f %d",&maxlevel);
-      break;
-
-    case 'e' :
-      UserWriteF("lb: minelem parameter skipped\n");
-      break;
-
     default :
-      UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>] [$e <minelem>]\n");
-      UserWriteF("default lb 0 $c 1 $d 2\n");
+      UserWriteF("lb [<strategy>] [$c <minlevel>]\n");
+      UserWriteF("default lb 0 $c 1\n");
       break;
     }
 
@@ -10621,39 +10585,6 @@ INT NS_DIM_PREFIX LBCommand (INT argc, char **argv)
   {
     UserWriteF("Choose <minlevel>: 0-%d (toplevel)\n",TOPLEVEL(theMG));
     cmd_error = 1;
-  }
-
-  if (maxlevel < minlevel)
-  {
-    UserWriteF("Choose <maxlevel>: %d-%d (MAXLEVEL)\n",minlevel,MAXLEVEL);
-    cmd_error = 1;
-  }
-  if (maxlevel < TOPLEVEL(theMG))
-  {
-    UserWriteF("%s: maxlevel reached: no loadbalancing done!\n"
-               "    maxlevel=%d toplevel=%d\n",argv[0],maxlevel,TOPLEVEL(theMG));
-    return(OKCODE);
-  }
-
-  if (Const < 1)
-  {
-    UserWriteF("Choose <minelem> > 0\n");
-    cmd_error = 1;
-  }
-
-  if (strategy==1 || strategy==2)
-  {
-    if (strategy == 1)
-    {
-      coarse = 50;
-      loc = 1;
-    }
-    eigen = 1;
-  }
-
-  if (strategy>2 || strategy<6)
-  {
-    weights = 1;
   }
 
   if (cmd_error) return(CMDERRORCODE);
