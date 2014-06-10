@@ -158,8 +158,22 @@ static void ConstructConsistentGridLevel (GRID *theGrid)
 
   /* reconstruct VFATHER pointers and                */
   /* make ghost neighborships symmetric (only for 3d)*/
+  /*
+   * Also: If there are SideVectors, set the VCOUNT field correctly (i.e., the number
+   * of elements that reference a given SideVector).  This information has been transferred as-is
+   * during load balancing, but may be wrong on new ghost elements.
+   */
   for (theElement = PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
+    /* This is the SideVector part */
+#ifdef __THREEDIM__
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+        SETVCOUNT(SVECTOR(theElement,i), (NBELEM(theElement,i) ? 2 : 1));
+#endif
+
+    /* Here comes the rest, all the way to the end of the element loop */
+
     /* TODO: delete now done in ElementObjMkCons()
        #ifdef __THREEDIM__
                     if (EVGHOST(theElement))
