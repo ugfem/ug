@@ -80,10 +80,6 @@ enum HandlerSets
    #define STAT_OUT
  */
 
-/* old/new style for grid consistency */
-/* undefine if old is wanted          */
-#define NEW_GRIDCONS_STYLE
-
 /* define DDD_PRIO_ENV to change priority using fast PrioBegin/End env. */
 /*
    #define DDD_PRIO_ENV

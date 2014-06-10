@@ -854,17 +854,7 @@ int NS_DIM_PREFIX TransferGridFromLevel (MULTIGRID *theMG, INT level)
   /* set priorities of border nodes */
   /* TODO this is an extra communication. eventually integrate this
               with grid distribution phase. */
-        #ifdef NEW_GRIDCONS_STYLE
   ConstructConsistentMultiGrid(theMG);
-        #else
-  {
-    for(g=0; g<=TOPLEVEL(theMG); g++)
-    {
-      GRID *theGrid = GRID_ON_LEVEL(theMG,g);
-      ConstructConsistentGrid(theGrid);
-    }
-  }
-        #endif
 
     #ifndef __EXCHANGE_CONNECTIONS__
         #ifdef DYNAMIC_MEMORY_ALLOCMODEL

@@ -6112,10 +6112,11 @@ DDD_CONSCHECK;
 		/* to ghost prio (s.l. 971020)                          */
 		/* this is done as postprocessing step, since this needs      */
 		/* 2 XferBegin/Ends here per modified gridlevel (s.l. 980522) */
+                /*
 		#ifndef NEW_GRIDCONS_STYLE
 		ConstructConsistentGrid(FinerGrid);
 		#endif
-
+                */
 		SUM_TIMER(overlap_timer)
 	}
 
@@ -6803,7 +6804,6 @@ INT  NS_DIM_PREFIX AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgte
 	#ifdef ModelP 
 	IdentifyExit();
 
-	#ifdef NEW_GRIDCONS_STYLE
 	/* now repair inconsistencies                   */
 	/* former done on each grid level (s.l. 980522) */
 	START_TIMER(gridcons_timer);
@@ -6811,7 +6811,6 @@ INT  NS_DIM_PREFIX AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgte
 	ConstructConsistentMultiGrid(theMG);
 
 	SUM_TIMER(gridcons_timer)
-	#endif
 	#endif
 
 	DisposeTopLevel(theMG);
