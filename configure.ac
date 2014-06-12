@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.57)
 
-AC_INIT(ug, 3.10.0, ug@conan.iwr.uni-heidelberg.de)
+AC_INIT(ug, 3.11.0, ug@conan.iwr.uni-heidelberg.de)
 AM_INIT_AUTOMAKE
 
 AC_CONFIG_SRCDIR([initug.c])
