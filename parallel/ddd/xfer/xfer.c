@@ -84,8 +84,8 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 static int sort_NewOwners (const void *e1, const void *e2)
 {
-  REGISTER XICopyObj *item1 = *((XICopyObj **)e1);
-  REGISTER XICopyObj *item2 = *((XICopyObj **)e2);
+  XICopyObj *item1 = *((XICopyObj **)e1);
+  XICopyObj *item2 = *((XICopyObj **)e2);
 
   if (item1->gid < item2->gid) return(-1);
   if (item1->gid > item2->gid) return(1);
@@ -126,11 +126,11 @@ XICopyObj **CplClosureEstimate (XICopyObjPtrArray *arrayItems, int *nRet)
   nNewOwners=0;
   for(i=0; i<n; i++)
   {
-    REGISTER XICopyObj *xi = items[i];
-    REGISTER DDD_PROC dest = xi->dest;              /* destination proc */
-    REGISTER COUPLING *cpl, *xicpl = ObjCplList(xi->hdr);
-    REGISTER DDD_GID xigid = xi->gid;
-    REGISTER DDD_TYPE xitype = OBJ_TYPE(xi->hdr);
+    XICopyObj *xi = items[i];
+    DDD_PROC dest = xi->dest;              /* destination proc */
+    COUPLING *cpl, *xicpl = ObjCplList(xi->hdr);
+    DDD_GID xigid = xi->gid;
+    DDD_TYPE xitype = OBJ_TYPE(xi->hdr);
 
     SET_CO_NEWOWNER(xi);
 
@@ -250,13 +250,13 @@ XICopyObj **CplClosureEstimate (XICopyObjPtrArray *arrayItems, int *nRet)
 
     for(j=0; j<nNewOwners-1; j++)
     {
-      REGISTER XICopyObj *no1 = arrayNewOwners[j];
-      REGISTER DDD_GID gid1 = no1->gid;
+      XICopyObj *no1 = arrayNewOwners[j];
+      DDD_GID gid1 = no1->gid;
 
       for(k=j+1; k<nNewOwners; k++)
       {
-        REGISTER XICopyObj *no2 = arrayNewOwners[k];
-        REGISTER DDD_TYPE no2type;
+        XICopyObj *no2 = arrayNewOwners[k];
+        DDD_TYPE no2type;
 
         if (no2->gid != gid1)
           break;
@@ -389,7 +389,7 @@ static XFERMSG *AccumXICopyObj (XFERMSG *currxm, int *nMsgs, int *nItems,
 
   for (i=0; i<nmax && items[i]->dest==dest; i++)
   {
-    REGISTER XICopyObj *xi = items[i];
+    XICopyObj *xi = items[i];
     DDD_HDR hdr = xi->hdr;
     TYPE_DESC  *desc = &theTypeDefs[OBJ_TYPE(hdr)];
 
@@ -637,8 +637,8 @@ void ExecLocalXISetPrio (
    */
   for(iP=0, iD=0, iNO=0; iP<nP; iP++)
   {
-    REGISTER XISetPrio *sp = itemsP[iP];
-    REGISTER DDD_HDR hdr = sp->hdr;
+    XISetPrio *sp = itemsP[iP];
+    DDD_HDR hdr = sp->hdr;
     DDD_GID gid      = sp->gid;
     DDD_PRIO newprio  = sp->prio;
     COUPLING   *cpl;
@@ -747,7 +747,7 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
   /* loop in original order (order of Del-cmd issueing) */
   for(iD=0; iD<nD; iD++)
   {
-    REGISTER DDD_HDR hdr = origD[iD]->hdr;
+    DDD_HDR hdr = origD[iD]->hdr;
     DDD_TYPE typ   = OBJ_TYPE(hdr);
     TYPE_DESC  *desc = &(theTypeDefs[typ]);
     DDD_OBJ obj   = HDR2OBJ(hdr,desc);
@@ -850,11 +850,11 @@ void PropagateCplInfos (
    */
   for(iP=0, iNC=0; iP<nP; iP++)
   {
-    REGISTER XISetPrio *sp = itemsP[iP];
+    XISetPrio *sp = itemsP[iP];
 
     if (sp->is_valid)
     {
-      REGISTER DDD_HDR hdr = sp->hdr;
+      DDD_HDR hdr = sp->hdr;
       DDD_GID gid      = sp->gid;
       DDD_PRIO newprio  = sp->prio;
 

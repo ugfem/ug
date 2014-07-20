@@ -88,8 +88,8 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 static int sort_XIDelCmd (const void *e1, const void *e2)
 {
-  REGISTER XIDelCmd *item1 = *((XIDelCmd **)e1);
-  REGISTER XIDelCmd *item2 = *((XIDelCmd **)e2);
+  XIDelCmd *item1 = *((XIDelCmd **)e1);
+  XIDelCmd *item2 = *((XIDelCmd **)e2);
 
   /* ascending GID is needed for ExecLocalXIDelCmds */
   if (OBJ_GID(item1->hdr) < OBJ_GID(item2->hdr)) return(-1);
@@ -101,8 +101,8 @@ static int sort_XIDelCmd (const void *e1, const void *e2)
 
 static int sort_XIDelObj (const void *e1, const void *e2)
 {
-  REGISTER XIDelObj *item1 = *((XIDelObj **)e1);
-  REGISTER XIDelObj *item2 = *((XIDelObj **)e2);
+  XIDelObj *item1 = *((XIDelObj **)e1);
+  XIDelObj *item2 = *((XIDelObj **)e2);
 
   /* ascending GID is needed for ExecLocalXIDelObjs */
   if (item1->gid < item2->gid) return(-1);
@@ -114,8 +114,8 @@ static int sort_XIDelObj (const void *e1, const void *e2)
 
 static int sort_XINewCpl (const void *e1, const void *e2)
 {
-  REGISTER XINewCpl *item1 = *((XINewCpl **)e1);
-  REGISTER XINewCpl *item2 = *((XINewCpl **)e2);
+  XINewCpl *item1 = *((XINewCpl **)e1);
+  XINewCpl *item2 = *((XINewCpl **)e2);
 
   /* receiving processor */
   if (item1->to < item2->to) return(-1);
@@ -128,9 +128,9 @@ static int sort_XINewCpl (const void *e1, const void *e2)
 
 static int sort_XIOldCpl (const void *e1, const void *e2)
 {
-  REGISTER XIOldCpl *item1 = *((XIOldCpl **)e1);
-  REGISTER XIOldCpl *item2 = *((XIOldCpl **)e2);
-  REGISTER DDD_GID gid1, gid2;
+  XIOldCpl *item1 = *((XIOldCpl **)e1);
+  XIOldCpl *item2 = *((XIOldCpl **)e2);
+  DDD_GID gid1, gid2;
 
   /* receiving processor */
   if (item1->to < item2->to) return(-1);
@@ -149,9 +149,9 @@ static int sort_XIOldCpl (const void *e1, const void *e2)
 
 static int sort_XIDelCpl (const void *e1, const void *e2)
 {
-  REGISTER XIDelCpl *item1 = *((XIDelCpl **)e1);
-  REGISTER XIDelCpl *item2 = *((XIDelCpl **)e2);
-  REGISTER DDD_GID gid1, gid2;
+  XIDelCpl *item1 = *((XIDelCpl **)e1);
+  XIDelCpl *item2 = *((XIDelCpl **)e2);
+  DDD_GID gid1, gid2;
 
   /* receiving processor */
   if (item1->to < item2->to) return(-1);
@@ -169,9 +169,9 @@ static int sort_XIDelCpl (const void *e1, const void *e2)
 
 static int sort_XIModCpl (const void *e1, const void *e2)
 {
-  REGISTER XIModCpl *item1 = *((XIModCpl **)e1);
-  REGISTER XIModCpl *item2 = *((XIModCpl **)e2);
-  REGISTER DDD_GID gid1, gid2;
+  XIModCpl *item1 = *((XIModCpl **)e1);
+  XIModCpl *item2 = *((XIModCpl **)e2);
+  DDD_GID gid1, gid2;
 
   /* receiving processor */
   if (item1->to < item2->to) return(-1);
@@ -196,9 +196,9 @@ static int sort_XIModCpl (const void *e1, const void *e2)
 
 static int sort_XIAddCpl (const void *e1, const void *e2)
 {
-  REGISTER XIAddCpl *item1 = *((XIAddCpl **)e1);
-  REGISTER XIAddCpl *item2 = *((XIAddCpl **)e2);
-  REGISTER DDD_GID gid1, gid2;
+  XIAddCpl *item1 = *((XIAddCpl **)e1);
+  XIAddCpl *item2 = *((XIAddCpl **)e2);
+  DDD_GID gid1, gid2;
 
   /* receiving processor */
   if (item1->to < item2->to) return(-1);

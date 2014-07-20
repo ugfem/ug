@@ -63,13 +63,6 @@
 
 START_UGDIM_NAMESPACE
 
-/****************************************************************************/
-
-/*
-        macro in order to turn usage of register variables on/off
- */
-#define REGISTER register
-
 /*
         macro for exiting program in case of a severe error condition
  */

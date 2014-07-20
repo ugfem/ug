@@ -783,8 +783,8 @@ static void UpdateCouplings (
 	/*** loop for all incoming objects ***/
 	for(iO=0, iNC=0, iDO=0; iO<nO; iO++)
 	{
-		REGISTER DDD_HDR hdr = itemsO[iO]->hdr;
-		REGISTER DDD_GID gid = OBJ_GID(hdr);
+                DDD_HDR hdr = itemsO[iO]->hdr;
+                DDD_GID gid = OBJ_GID(hdr);
 
 		/* scan DelObj-entries for given gid */
 		while (iDO<nDO && itemsDO[iDO]->gid < gid)

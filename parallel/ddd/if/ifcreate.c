@@ -260,7 +260,7 @@ void IFDeleteAll (DDD_IF ifId)
 /* TODO  el-set relation, VERY inefficient! */
 static int is_elem (DDD_PRIO el, int n, DDD_PRIO *set)
 {
-  REGISTER int i;
+  int i;
 
   for(i=0; i<n; i++)
     if (set[i]==el)

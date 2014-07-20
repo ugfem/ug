@@ -425,8 +425,8 @@ static void XferPackSingleMsg (XFERMSG *msg)
   currObj = theObjects;
   for(i=0; i<msg->nObjItems; i++)          /* for all XICopyObj-items */
   {
-    REGISTER XICopyObj *xi = msg->xferObjArray[i];
-    REGISTER DDD_HDR hdr   = xi->hdr;
+    XICopyObj *xi = msg->xferObjArray[i];
+    DDD_HDR hdr   = xi->hdr;
     TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(hdr)];
     DDD_OBJ obj   = HDR2OBJ(hdr,desc);
     /*COUPLING  *cpl;*/

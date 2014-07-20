@@ -83,8 +83,8 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 static int sort_NewGid (const void *e1, const void *e2)
 {
-  REGISTER JIJoin *item1 = *((JIJoin **)e1);
-  REGISTER JIJoin *item2 = *((JIJoin **)e2);
+  JIJoin *item1 = *((JIJoin **)e1);
+  JIJoin *item2 = *((JIJoin **)e2);
 
   if (item1->new_gid < item2->new_gid) return(-1);
   if (item1->new_gid > item2->new_gid) return(1);
@@ -98,8 +98,8 @@ static int sort_NewGid (const void *e1, const void *e2)
 
 static int sort_Gid (const void *e1, const void *e2)
 {
-  REGISTER JIPartner *item1 = (JIPartner *)e1;
-  REGISTER JIPartner *item2 = (JIPartner *)e2;
+  JIPartner *item1 = (JIPartner *)e1;
+  JIPartner *item2 = (JIPartner *)e2;
 
   if (OBJ_GID(item1->hdr) < OBJ_GID(item2->hdr)) return(-1);
   if (OBJ_GID(item1->hdr) > OBJ_GID(item2->hdr)) return(1);
