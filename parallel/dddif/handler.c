@@ -1276,7 +1276,7 @@ static void ElementLDataConstructor (DDD_OBJ obj)
    */
 
   if (EDATA_DEF_IN_GRID(theGrid)) {
-    q = (void *) GetMemoryForObject(theGrid->mg,EDATA_DEF_IN_GRID(theGrid),-1);
+    q = (void *) GetMemoryForObject(theGrid->mg,EDATA_DEF_IN_GRID(theGrid),NOOBJ);
     ASSERT(q != NULL);
     SET_EDATA(pe,q);
   }
