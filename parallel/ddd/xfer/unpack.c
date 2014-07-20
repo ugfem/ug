@@ -566,7 +566,7 @@ static void AcceptObjFromMsg (
 						DDD_PrintDebug(cBuffer);
 #					endif
 
-					/* new priority looses -> keep existing obj */
+                                        /* new priority loses -> keep existing obj */
 					ote->is_new = NOTNEW;
 				}
 			}
