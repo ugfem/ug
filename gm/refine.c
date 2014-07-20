@@ -9,8 +9,8 @@
 /*            (dimension independent for 2/3D)                              */
 /*                                                                          */
 /* Author:    Stefan Lang                                                   */
-/*            Institut für Computeranwendungen III                          */
-/*            Universität Stuttgart                                         */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
 /*            70569 Stuttgart                                               */
 /* email:     ug@ica3.uni-stuttgart.de                                      */
@@ -1263,7 +1263,7 @@ static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *t
 	}
 
 	/* because SIDEPATTERN is set to zero, */
-	/* I choose TriSectionEdgeää[0] 		 */
+        /* I choose TriSectionEdge[0] */
 	theEdgeNum = TriSectionEdge[theEdgePattern
 					&CondensedEdgeOfSide[i]][0];
 
