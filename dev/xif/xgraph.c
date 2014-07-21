@@ -1138,13 +1138,13 @@ int NS_PREFIX InitControls (Window win)
   int i;
 
   /* make bitmaps from included files */
-  tools[0] = XCreateBitmapFromData(display,win,tool0_bits,tool0_width,tool0_height);
-  tools[1] = XCreateBitmapFromData(display,win,tool1_bits,tool1_width,tool1_height);
-  tools[2] = XCreateBitmapFromData(display,win,tool2_bits,tool2_width,tool2_height);
-  tools[3] = XCreateBitmapFromData(display,win,tool3_bits,tool3_width,tool3_height);
-  tools[4] = XCreateBitmapFromData(display,win,tool4_bits,tool4_width,tool4_height);
-  tools[5] = XCreateBitmapFromData(display,win,tool5_bits,tool5_width,tool5_height);
-  tools[6] = XCreateBitmapFromData(display,win,tool6_bits,tool6_width,tool6_height);
+  tools[0] = XCreateBitmapFromData(display,win,(const char*)tool0_bits,tool0_width,tool0_height);
+  tools[1] = XCreateBitmapFromData(display,win,(const char*)tool1_bits,tool1_width,tool1_height);
+  tools[2] = XCreateBitmapFromData(display,win,(const char*)tool2_bits,tool2_width,tool2_height);
+  tools[3] = XCreateBitmapFromData(display,win,(const char*)tool3_bits,tool3_width,tool3_height);
+  tools[4] = XCreateBitmapFromData(display,win,(const char*)tool4_bits,tool4_width,tool4_height);
+  tools[5] = XCreateBitmapFromData(display,win,(const char*)tool5_bits,tool5_width,tool5_height);
+  tools[6] = XCreateBitmapFromData(display,win,(const char*)tool6_bits,tool6_width,tool6_height);
 
   /* set cursor id's */
   cursors[0] = XCreateFontCursor(display,XC_top_left_arrow);
@@ -1158,7 +1158,7 @@ int NS_PREFIX InitControls (Window win)
   /* make stipples for shading */
   if (!true_color)
     for (i = 0; i < NO_PATTERNS; i++)
-      pattern[i] = XCreateBitmapFromData(display, win, pattern_data[i],
+      pattern[i] = XCreateBitmapFromData(display, win, (const char*)pattern_data[i],
                                          PATTERN_SIZE, PATTERN_SIZE);
   return 0;
 }
@@ -1400,7 +1400,7 @@ static int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int widt
   }
 
   /* generate icon, needed for properties */
-  gw->icon_pixmap = XCreateBitmapFromData(display,gw->win,view_icon_bits,view_icon_width,
+  gw->icon_pixmap = XCreateBitmapFromData(display,gw->win,(const char*)view_icon_bits,view_icon_width,
                                           view_icon_height);
 
   /* set standard properties */

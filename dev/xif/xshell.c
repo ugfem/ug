@@ -386,7 +386,7 @@ int ShellOpen (ShellWindow *sh)
   }
 
   /* generate icon, needed for properties */
-  sh->icon_pixmap = XCreateBitmapFromData(display,sh->win,shell_icon_bits,shell_icon_width,
+  sh->icon_pixmap = XCreateBitmapFromData(display,sh->win,(const char*)shell_icon_bits,shell_icon_width,
                                           shell_icon_height);
 
   /* set standard properties */
