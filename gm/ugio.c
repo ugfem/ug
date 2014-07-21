@@ -620,8 +620,8 @@ static INT OrphanCons(MULTIGRID *theMG)
                    are both ghosts (for which neighbor-pointers isn't mandatory).
                    Orphanise the V[H]Ghost-father to force saving the necessary
                    information. Pure HGhost fathers aren't orphanized. */
-                PRINTDEBUG(gm,1,("OrphanCons(): orphanize father "EID_FMTX " of element "EID_FMTX "\n", EID_PRTX(el_father), EID_PRTX(theElement)));
-                PRINTDEBUG(gm,1,("OrphanCons(): orphanize father "EID_FMTX " of neighbor element "EID_FMTX "\n", EID_PRTX(nb_el_father), EID_PRTX(nb_el)));
+                PRINTDEBUG(gm,1,("OrphanCons(): orphanize father " EID_FMTX " of element " EID_FMTX "\n", EID_PRTX(el_father), EID_PRTX(theElement)));
+                PRINTDEBUG(gm,1,("OrphanCons(): orphanize father " EID_FMTX " of neighbor element " EID_FMTX "\n", EID_PRTX(nb_el_father), EID_PRTX(nb_el)));
                 MarkAsOrphan(theGrid,el_father);
                 /*if(EVGHOST(nb_el_father)) HGHOST-fathers must be orphanized too! */
                 MarkAsOrphan(theGrid,nb_el_father);
@@ -1568,7 +1568,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, const char *name, const char *ty
       if (!EORPHAN(theElement)) continue;
       assert(id==ID(theElement));
       assert(id<n);
-      PRINTDEBUG(gm,1,("write orphan element "EID_FMTX "\n", EID_PRTX(theElement)));
+      PRINTDEBUG(gm,1,("write orphan element " EID_FMTX "\n", EID_PRTX(theElement)));
 
       if (MGIO_PARFILE)
       {
@@ -3302,7 +3302,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
         cge = MGIO_CG_ELEMENT_PS(cg_element,ID(theElement));
         if (Read_pinfo (TAG(theElement),&cg_pinfo))     {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
         if (Evaluate_pinfo(theGrid,theElement,&cg_pinfo))       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-        PRINTDEBUG(gm,1,("read orphan element "EID_FMTX "\n", EID_PRTX(theElement)));
+        PRINTDEBUG(gm,1,("read orphan element " EID_FMTX "\n", EID_PRTX(theElement)));
       }
     }
   }
