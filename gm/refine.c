@@ -99,12 +99,6 @@
 #include "pargm.h"
 #include "cmdint.h"
 #include "debugger.h"
-
-/** \todo temporarily included to make vecskips consistent for df */
- 
-#include "udm.h"
-/*  INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x); */
-
 #endif
 
 #include "ppif_namespace.h"
