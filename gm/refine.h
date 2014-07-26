@@ -60,7 +60,7 @@ START_UGDIM_NAMESPACE
 #define NO_CENTER_NODE     NOTUSED
 
 #ifdef ModelP
-/* undefine if all son objects shall be idenfied */
+/* undefine if all son objects shall be identified */
 #define IDENT_ONLY_NEW
 #endif
 
