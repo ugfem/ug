@@ -6033,7 +6033,6 @@ int gmlevel=Debuggm;
 #else
 int gmlevel=0;
 #endif
-int dddiflevel;
 
 
 if (IDENT_IN_STEPS)
