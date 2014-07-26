@@ -62,8 +62,8 @@ USING_UG_NAMESPACES
 /****************************************************************************/
 
 /* flags for identification */
-#define CLEAR 0
-#define IDENT 1
+enum {CLEAR = 0,
+      IDENT = 1};
 
 /* maximum count of objects for identification */
 #define MAX_OBJECT      3
