@@ -2126,12 +2126,6 @@ INT NS_DIM_PREFIX Identify_SonObjects (GRID *theGrid)
 
   if (IDENT_IN_STEPS)
   {
-    if (0)
-    {
-      printf(PFMT " 2. DDD_IdentifyEnd() in Identify_SonObjects()\n",me);
-      fflush(stdout);
-      Synchronize();
-    }
     DDD_IdentifyEnd();
     DDD_IdentifyBegin();
   }
