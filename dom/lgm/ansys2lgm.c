@@ -3511,9 +3511,9 @@ PL_TYP *GetMemFillAddNewPolyline(LI_KNOTEN_TYP *linepointer)
 
 /****************************************************************************/
 /**
-* kopiert eine lineare LIste vom IDF_TYP in eine neue Liste vom Typ IDF_SHORT_TYP
+* kopiert eine lineare Liste vom IDF_TYP in eine neue Liste vom Typ IDF_SHORT_TYP
 * In die neue Liste werden natuerlich nur die Identifiers gelegt entsprechend dem
-* abgfespeckten Typ IDF_SHORT_TYP Achtung dir Reihenfolge (d.h. sortiert von klein
+* abgespeckten Typ IDF_SHORT_TYP. Achtung die Reihenfolge (d.h. sortiert von klein
 * nach gross) bleibt dabei erhalten !!!
 *
 * @param charact_identifiers Pointer to the Identifierlist of the observed Polyline.
@@ -3739,7 +3739,7 @@ INT ConnectPolylineWithSurfaces(PL_TYP *plptr)
 
   /* Kopiere die charakteristische List der eingegangenen Polyline plptr in eine Hilfsliste helplist
      Diese Hilfsliste wird dann nach und nach bearbeitet - Ist sie leer, so ist die Polyline
-     ausreichend bearbeitet. In die Helplsit werden allerdinngs nur die DOUBLE-Identifiers eingtragen,
+     ausreichend bearbeitet. In die Helplist werden allerdinngs nur die DOUBLE-Identifiers eingtragen,
      und nicht mehr ! Verwendet wird daher auch nur der abgespeckte Datentyp IDF_SHORT_TYP */
   if((helplist = CopyCharacteristicList2HelpList(PL_IDFS(plptr))) == NULL)
   {
@@ -3748,11 +3748,11 @@ INT ConnectPolylineWithSurfaces(PL_TYP *plptr)
   }
   else
   {
-    /*solange die helplist != NULL bzw. solange es etwas zum Arbeien gibt bzw.
-       solange die teporaere Hilfsliste etwas beinhaltet*/
+    /*solange die helplist != NULL bzw. solange es etwas zum Arbeiten gibt bzw.
+       solange die temporaere Hilfsliste etwas beinhaltet*/
     while(helplist != NULL)
     {
-      Idf = helplist;                   /*man nehme den ersten Identfier der Hilfsliste, welcher aufgrund
+      Idf = helplist;                   /*man nehme den ersten Identifier der Hilfsliste, welcher aufgrund
                                            der Sortierung auch der niederwertigste ist. */
       sbdmid = (int) (floor(IDF_SHORT_VAL(Idf)));
 
@@ -3846,7 +3846,7 @@ INT ConnectPolylineWithSurfaces(PL_TYP *plptr)
 *  Idee:
 *  -----
 *  der bereits sortierte Teile der Polyline wird zu einer neuen Polyline gemacht.
-*  Der verböleibende Teil wird upgedatet.
+*  Der verbleibende Teil wird upgedatet.
 *
 * @param anfang refeerence parameter - will be changed in fct.
 * @param rechtesMuster refeerence parameter - will be changed in fct.
@@ -5754,7 +5754,7 @@ INT Ansys2lgmSurfaceDetecting()
 *  dreht die Reihenfolge der NodeIDs vom OFD "dasSFE" um:
 *  Dazu werden erster mit zweitem Node vertauscht sowie
 *  zweiter mit drittem Node vertauscht
-*  So ist alles umgedreht (siehe auch theoertische Ueberlegungen im Konzept
+*  So ist alles umgedreht (siehe auch theoretische Ueberlegungen im Konzept)
 *
 * @param dasSFE SFE, dessen Knotenreihenfolge korrigiert bzw. umgedreht werden muss
 *
@@ -6002,7 +6002,7 @@ INT Ansys2lgmCreateTriaOrientations()
 /**
 *  laeuft ueber alle Surfaces und berechnet je Surface die Anzahl der Points,
 *  dazu wird ein temporaeres Knotenfeld verwendet, bei dem fuer alle Knoten ein
-*  Integer reserviert ist. Fuer jede Surface laeuft die FUnktion ueber alle
+*  Integer reserviert ist. Fuer jede Surface laeuft die Funktion ueber alle
 *  zugehoerigen Triangles und markiert im temp. Feld die zugeh. Knoten.
 *  Bei jeder neuen Markierung der NumberofPoints-Zaehler der Surface inkrementiert.
 *
@@ -6224,7 +6224,7 @@ char GetCharact(int input)
 /****************************************************************************/
 /**
 *  evalates an Output String with 19+1 chars ==> necessary for the user
-*  of the CAD-Interfcace to distinguish between different LGM-Surfaces
+*  of the CAD-Interface to distinguish between different LGM-Surfaces
 *
 * @param sfce_name1 Surface Identifer 1
 * @param sfce_name1 Surface Identifer 2 extra number if double surface, else 0.0
@@ -6717,7 +6717,7 @@ INT Ansys2lgmUpdateSbdmIDs()
 * @param  SFE_Array Pointer to an array which posesses components of the data structure
 *                           CAD_SFE_TYP (the whole SFE-information out of the ANSYS-File)
 * @param  n_koord_array Pointer to an array created () in cadconvert
-*                               which includes the real coordiantes, Indizes sind geshiftetete UG-Indizes
+*                               which includes the real coordiantes, Indizes sind geshiftete UG-Indizes
 *                               beinhaltet alle Punkte, also auch die inneren !
 * @param  ExchangeVar_2 beinmhaltet die folgenden fuer sich sprechenden 5 Komponenten
 * @param  rootsfc Pointer auf erste Surface
