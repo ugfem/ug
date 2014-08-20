@@ -738,7 +738,7 @@ static INT ManageParallelFIFO (ELEMENT *firstElement)
 		/* check condition for termination of pattern adaptation */
 		AllFIFOsEmpty = CheckGlobalFIFOStatus(fifo);
 	}
-	while (fifo==NULL && AllFIFOsEmpty==1)
+  while (fifo==NULL && AllFIFOsEmpty==1);
 #else
 	return (0);	
 #endif
