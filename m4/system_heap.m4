@@ -11,7 +11,7 @@ dnl No way to know without measuring.
 
 AC_DEFUN([UG_ENABLE_SYSTEM_HEAP],[
   AC_ARG_ENABLE(system-heap,
-    AS_HELP_STRING([--disable-system-heap],[If this is set, UG's own heap data structure is used instead of the operating system heap.], [], [enable_system_heap=yes]))
+    AS_HELP_STRING([--disable-system-heap],[If this is set, UG's own heap data structure is used instead of the operating system heap.]), [], [enable_system_heap=yes])
 
   AS_IF([test "x$enable_system_heap" = "xyes"],
     AC_DEFINE(UG_USE_SYSTEM_HEAP, 1, [If this is set, the operating system heap is used instead of UG's own heap data structure.]))
