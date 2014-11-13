@@ -10,6 +10,7 @@ depcomp
 install-sh
 missing
 mkinstalldirs
+libltdl
 libtool
 stamp-h*
 libug.pc
