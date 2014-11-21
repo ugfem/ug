@@ -5,7 +5,7 @@
 
 #ifdef ModelP
 
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 
 #include "parallel.h"

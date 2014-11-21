@@ -15,7 +15,7 @@
 *            system include files                                           *
 *            application include files                                      *
 *****************************************************************************/
-#include "config.h"
+#include <config.h>
 #include <assert.h>
 #include "ugtypes.h"    /* for INT etc.                              */
 #include "debug.h"      /* for IFDEBUG() and  MIN(), MAX() by misc.h */

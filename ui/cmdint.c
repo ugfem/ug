@@ -32,7 +32,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>

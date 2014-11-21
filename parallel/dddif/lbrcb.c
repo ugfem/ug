@@ -30,7 +30,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include "parallel.h"
 #include "evm.h"
 #include "general.h"

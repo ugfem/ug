@@ -12,7 +12,7 @@
  * to the components of vector descriptors <vd1>, <vd2>, ... in the
  * order in which these descriptors are listed in the command.
  */
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>

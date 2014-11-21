@@ -33,7 +33,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 
 /* ug includes */
 #include "defs.h"

@@ -34,7 +34,7 @@
 /****************************************************************************/
 
 /* ug includes */
-#include "config.h"
+#include <config.h>
 
 #include "defs.h"
 #include "gm.h"

@@ -20,7 +20,7 @@
 
 #ifdef ModelP
 
-#include "config.h"
+#include <config.h>
 #include <stdlib.h> 		// for (s)rand
 #include <string.h> 		// for memset
 #include <limits.h> 		// for INT_MAX

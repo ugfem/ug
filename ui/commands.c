@@ -49,7 +49,7 @@
 /****************************************************************************/
 
 /* standard C library */
-#include "config.h"
+#include <config.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
