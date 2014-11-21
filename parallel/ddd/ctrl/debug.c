@@ -28,7 +28,7 @@
 /****************************************************************************/
 
 /* standard C library */
-#include "config.h"
+#include <config.h>
 #include <stdlib.h>
 #include <stdio.h>
 

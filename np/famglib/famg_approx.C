@@ -25,7 +25,7 @@ A new version will be checked in soon !
 */
 
 
-#include "config.h"
+#include <config.h>
 #include <iostream.h>
 #include <strstream.h>
 #include <math.h>

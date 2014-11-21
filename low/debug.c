@@ -29,7 +29,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include "general.h"
 
 #ifdef Debug

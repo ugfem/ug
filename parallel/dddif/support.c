@@ -31,7 +31,7 @@
 
 /* standard C library */
 #if defined(__SR2201__) || defined(__CC__)
-#include "config.h"
+#include <config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #endif

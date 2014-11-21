@@ -27,7 +27,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 
 /* ANSI-C includes */
 #include <stdio.h>

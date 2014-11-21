@@ -19,7 +19,7 @@
 /****************************************************************************/
 
 extern "C" {
-#include "config.h"
+#include <config.h>
 #include <math.h>
 #include <gm.h>
 #include <algebra.h>

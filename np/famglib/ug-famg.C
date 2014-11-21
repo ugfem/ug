@@ -27,7 +27,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <strstream.h>
 
 extern "C"
