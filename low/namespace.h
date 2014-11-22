@@ -62,12 +62,12 @@
 #ifdef _3
 #define START_UGDIM_NAMESPACE namespace UG { namespace D3 {
 #define USING_UGDIM_NAMESPACE using namespace UG::D3;
-#define USING_UG_NAMESPACES namespace UG {namespace D3 {} }; using namespace UG; using namespace UG::D3;
+#define USING_UG_NAMESPACES namespace UG {namespace D3 {} } using namespace UG; using namespace UG::D3;
 #define NS_DIM_PREFIX UG::D3::
 #else
 #define START_UGDIM_NAMESPACE namespace UG { namespace D2 {
 #define USING_UGDIM_NAMESPACE using namespace UG::D2;
-#define USING_UG_NAMESPACES namespace UG {namespace D2 {} }; using namespace UG; using namespace UG::D2;
+#define USING_UG_NAMESPACES namespace UG {namespace D2 {} } using namespace UG; using namespace UG::D2;
 #define NS_DIM_PREFIX UG::D2::
 #endif
 
