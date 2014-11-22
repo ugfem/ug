@@ -84,7 +84,7 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-#define VERSION         "This is " UG_VERSION " from $Date$\n"
+#define VERSION_STRING   "This is " UG_VERSION " from $Date$\n"
 
 /* for interpreter */
 #define DONE                            0
@@ -2422,7 +2422,7 @@ static void PrintVersionString (void)
   int i,j,k;
 
 
-  strcpy(ver,VERSION);
+  strcpy(ver,VERSION_STRING);
   for (i=0; i<100; i++)
   {
     if (ver[i] == '\0') break;
