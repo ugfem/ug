@@ -56,7 +56,7 @@
 #include "initdev.h"
 #include "general.h"
 #include "debug.h"
-#include "commands.h"
+#include "commands.hh"
 #include "pixel.h"
 
 /* Xif includes */

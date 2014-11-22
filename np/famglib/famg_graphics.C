@@ -35,7 +35,7 @@ extern "C"
 #include "cw.h"
 #include "graph.h"
 #include "gm.h"
-#include "commands.h"
+#include "commands.hh"
 #include "npscan.h"
 
 #ifdef ModelP

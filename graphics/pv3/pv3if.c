@@ -37,7 +37,7 @@
 #include "parallel.h"
 #include "gm.h"
 #include "shapes.h"
-#include "commands.h"
+#include "commands.hh"
 #include "pv3if.h"
 
 /****************************************************************************/

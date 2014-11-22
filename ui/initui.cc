@@ -30,8 +30,8 @@
 #include <config.h>
 
 /* ANSI-C includes */
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 /* low module */
 #include "misc.h"
@@ -39,19 +39,19 @@
 #include "general.h"
 
 /* user interface module */
-#include "uginterface.h"
-#include "helpmsg.h"
-#include "cmdint.h"
+#include "uginterface.hh"
+#include "helpmsg.hh"
+#include "cmdint.hh"
 #include "ugstruct.h"
-#include "commands.h"
-#include "mmio.h"
-#include "tecplot.h"
-#include "avs.h"
-#include "dataexplorer.h"
-#include "fieldio.h"
+#include "commands.hh"
+#include "mmio.hh"
+#include "tecplot.hh"
+#include "avs.hh"
+#include "dataexplorer.hh"
+#include "fieldio.hh"
 
 /* own header */
-#include "initui.h"
+#include "initui.hh"
 
 USING_UG_NAMESPACES
 

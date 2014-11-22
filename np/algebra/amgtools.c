@@ -38,7 +38,7 @@
 #include "architecture.h"
 #include "algebra.h"
 #include "block.h"
-#include "cmdline.h"
+#include "cmdline.hh"
 #include "ugtypes.h"
 #include "debug.h"
 #include "ugdevices.h"

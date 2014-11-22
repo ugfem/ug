@@ -49,7 +49,7 @@ extern "C"
 #include "wpm.h"
 #include "wop.h"
 #include "connectuggrape.h"
-#include "uginterface.h"
+#include "uginterface.hh"
 
 #ifdef USE_UG_DS
 #include "amgtransfer.h"

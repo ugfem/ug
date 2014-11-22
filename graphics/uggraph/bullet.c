@@ -37,7 +37,7 @@
 #include "architecture.h"
 #include "bullet.h"
 #include "ugdevices.h"
-#include "commands.h"
+#include "commands.hh"
 #include "heaps.h"
 #include "general.h"
 #include "pixel.h"

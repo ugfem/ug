@@ -60,7 +60,7 @@ USING_UG_NAMESPACES
 #include "rm.h"
 #include "ugstruct.h"
 #include "sm.h"        /* for sparse block structures      */
-#include "cmdline.h"   /* for shell commands               */
+#include "cmdline.hh"   /* for shell commands               */
 
 /* Names of the variables: */
 static char size_var [] = ":sparsity_pattern:size";

@@ -30,7 +30,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include <stdio.h>
+#include <cstdio>
 
 #ifndef __CMDINT__
 #define __CMDINT__
@@ -38,7 +38,7 @@
 
 #include "ugtypes.h"
 #include "ugenv.h"
-#include "cmdline.h"
+#include "cmdline.hh"
 
 #include "namespace.h"
 

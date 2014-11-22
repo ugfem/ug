@@ -28,8 +28,8 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <rpc/rpc.h>
 
 #include "architecture.h"
@@ -42,13 +42,13 @@
 #include "shapes.h"
 #include "quadrature.h"
 #include "misc.h"
-#include "cmdline.h"
-#include "commands.h"
+#include "cmdline.hh"
+#include "commands.hh"
 #include "ugenv.h"
 #include "npscan.h"
 #include "np.h"
 #include "boxtree.h"
-#include "fieldio.h"
+#include "fieldio.hh"
 #include "ppif_namespace.h"
 
 USING_UG_NAMESPACES

@@ -46,9 +46,9 @@
 #include "ugm.h"
 #include "algebra.h"
 #include "shapes.h"
-#include "cmdint.h"
-#include "commands.h"
-#include "helpmsg.h"
+#include "cmdint.hh"
+#include "commands.hh"
+#include "helpmsg.hh"
 #include "debug.h"
 #include "general.h"
 

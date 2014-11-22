@@ -34,10 +34,10 @@
 
 #include <config.h>
 #include <ctype.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 /* low module */
 #include "ugtypes.h"
@@ -54,9 +54,9 @@
 
 /* ui module */
 #include "ugstruct.h"
-#include "cmdint.h"
-#include "uginterface.h"
-#include "cmdline.h"
+#include "cmdint.hh"
+#include "uginterface.hh"
+#include "cmdline.hh"
 
 /** \todo conflict with hierarchy */
 #include "initug.h"

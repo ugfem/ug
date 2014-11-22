@@ -46,7 +46,7 @@
 
 #if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
 #include "gm.h"
-#include "commands.h"
+#include "commands.hh"
 #include "mgheapmgr.h"
 #endif
 #include "namespace.h"

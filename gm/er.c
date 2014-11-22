@@ -74,7 +74,7 @@
 #include "elements.h"
 
 /* ui  (for new memory model, remove later) */
-#include "commands.h"
+#include "commands.hh"
 
 /* own header */
 #include "er.h"

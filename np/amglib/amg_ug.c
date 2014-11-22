@@ -53,9 +53,9 @@
 #include "np.h"
 #include "ls.h"
 #include "ugstruct.h"
-#include "commands.h"    /* for GetCurrentMultigrid          */
-#include "cmdint.h"      /* for CreateCommand                */
-#include "uginterface.h" /* for UserInterrupt                */
+#include "commands.hh"    /* for GetCurrentMultigrid          */
+#include "cmdint.hh"      /* for CreateCommand                */
+#include "uginterface.hh" /* for UserInterrupt                */
 #include "scan.h"
 #include "pcr.h"
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL

@@ -30,8 +30,8 @@ USING_UG_NAMESPACES
 #include "ugstruct.h"
 #include "sm.h"        /* for sparse block structures      */
 #include "scan.h"
-#include "cmdline.h"   /* for shell commands               */
-#include "commands.h"
+#include "cmdline.hh"  /* for shell commands               */
+#include "commands.hh"
 #include "udm.h"
 
 /* The maximum number of the vector descriptors to combine: */

@@ -74,7 +74,7 @@ USING_PPIF_NAMESPACE
 #include "graphics/graphics.h"
 
 /* user interface module */
-#include "ui/initui.h"
+#include "ui/initui.hh"
 
 /* own header */
 #include "initug.h"

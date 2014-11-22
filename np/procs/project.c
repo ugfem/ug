@@ -45,7 +45,7 @@
 #include "fileopen.h"
 #include "ugstruct.h"
 
-#include "commands.h"
+#include "commands.hh"
 #include "assemble.h"
 
 #include "project.h"

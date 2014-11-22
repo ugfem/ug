@@ -1,6 +1,4 @@
-# $Id$
-
-# commands.h will gm.h und der braucht Dimension
+# commands.hh will gm.h und der braucht Dimension
 AM_CPPFLAGS = $(UG_2DFLAGS) -I$(top_srcdir)/low
 
 if X11

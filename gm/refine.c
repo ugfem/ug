@@ -94,7 +94,7 @@
 #include "parallel.h"
 #include "identify.h"
 #include "pargm.h"
-#include "cmdint.h"
+#include "cmdint.hh"
 #include "debugger.h"
 #endif
 

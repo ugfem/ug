@@ -41,7 +41,7 @@
 #include "ugstruct.h"    /* for GetStringValue               */
 #include "misc.h"        /* for MIN, MAX, PI, ...            */
 #include "ugdevices.h"     /* for UserWrite, PrintErrorMessage */
-#include "commands.h"    /* for GetCurrentMultigrid          */
+#include "commands.hh"    /* for GetCurrentMultigrid          */
 #include "debug.h"
 
 #include "num.h"
