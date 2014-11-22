@@ -29,12 +29,12 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "config.h"
-#include <stdio.h>
-#include <string.h>
+#include <config.h>
+#include <cstdio>
+#include <cstring>
 #include <ctype.h>
-#include <math.h>
-#include <time.h>
+#include <cmath>
+#include <ctime>
 
 #include "ugdevices.h"
 #include "enrol.h"
@@ -49,16 +49,16 @@
 #include "ugenv.h"
 #include "ugm.h"
 #include "algebra.h"
-#include "cmdint.h"
-#include "commands.h"
-#include "helpmsg.h"
+#include "cmdint.hh"
+#include "commands.hh"
+#include "helpmsg.hh"
 #include "shapes.h"
-#include "cmdline.h"
+#include "cmdline.hh"
 #include "num.h"
 #include "rm.h"
 #include "ppif_namespace.h"
 
-#include "avs.h"
+#include "avs.hh"
 
 USING_UG_NAMESPACES
   USING_PPIF_NAMESPACE

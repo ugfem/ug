@@ -8,18 +8,18 @@
  *
  */
 
-#include "config.h"
+#include <config.h>
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include <ctype.h>
 
-#include "mmio.h"
+#include "mmio.hh"
 
 #include "algebra.h"
-#include "cmdline.h"  /* for CreateCommand */
-#include "commands.h"
+#include "cmdline.hh"  /* for CreateCommand */
+#include "commands.hh"
 #include "debug.h"
 #include "gm.h"
 #include "npscan.h"

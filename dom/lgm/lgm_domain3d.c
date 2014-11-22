@@ -27,7 +27,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 
 #undef OCC_GEOMETRY
 #ifdef OCC_GEOMETRY

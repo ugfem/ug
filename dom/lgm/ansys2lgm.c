@@ -28,7 +28,7 @@
 /****************************************************************************/
 
 
-#include "config.h"
+#include <config.h>
 #include <assert.h>
 
 #include "defaults.h"
@@ -51,7 +51,7 @@
 #include "misc.h"
 
 #include "ugdevices.h"
-#include "cmdline.h"
+#include "cmdline.hh"
 /*#include "problem.h"*/
 
 /*#include "readcadfile.h"*/

@@ -28,7 +28,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,7 +38,7 @@
 #include "architecture.h"
 #include "algebra.h"
 #include "block.h"
-#include "cmdline.h"
+#include "cmdline.hh"
 #include "ugtypes.h"
 #include "debug.h"
 #include "ugdevices.h"

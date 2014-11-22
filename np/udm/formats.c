@@ -28,7 +28,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -42,7 +42,7 @@
 #include "ugstruct.h"
 #include "ugm.h"
 #include "algebra.h"
-#include "helpmsg.h"
+#include "helpmsg.hh"
 #include "general.h"
 
 #include "np.h"

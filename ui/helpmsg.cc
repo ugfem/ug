@@ -29,16 +29,16 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <config.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 #include <ctype.h>
 
-#include "helpmsg.h"
+#include "helpmsg.hh"
 #include "defaults.h"
-#include "cmdline.h"
+#include "cmdline.hh"
 #include "ugdevices.h"
 #include "misc.h"
 #include "fileopen.h"

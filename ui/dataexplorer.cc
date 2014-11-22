@@ -32,12 +32,12 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
-#include <stdio.h>
-#include <string.h>
+#include <config.h>
+#include <cstdio>
+#include <cstring>
 #include <ctype.h>
-#include <math.h>
-#include <time.h>
+#include <cmath>
+#include <ctime>
 
 #include "architecture.h"
 #include "ugdevices.h"
@@ -52,16 +52,16 @@
 #include "ugenv.h"
 #include "ugm.h"
 #include "algebra.h"
-#include "cmdint.h"
-#include "commands.h"
-#include "helpmsg.h"
+#include "cmdint.hh"
+#include "commands.hh"
+#include "helpmsg.hh"
 #include "shapes.h"
-#include "cmdline.h"
+#include "cmdline.hh"
 #include "num.h"
 #include "rm.h"
 #include "udm.h"
 
-#include "dataexplorer.h"
+#include "dataexplorer.hh"
 #include "cw.h"
 #include "ppif_namespace.h"
 

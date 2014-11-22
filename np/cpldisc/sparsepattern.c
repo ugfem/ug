@@ -43,7 +43,7 @@
  * set @var_name @i;
  * This sets 'diag_line2' to "2".
  */
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -60,7 +60,7 @@ USING_UG_NAMESPACES
 #include "rm.h"
 #include "ugstruct.h"
 #include "sm.h"        /* for sparse block structures      */
-#include "cmdline.h"   /* for shell commands               */
+#include "cmdline.hh"   /* for shell commands               */
 
 /* Names of the variables: */
 static char size_var [] = ":sparsity_pattern:size";

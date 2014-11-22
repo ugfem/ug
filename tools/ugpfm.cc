@@ -31,13 +31,13 @@
 #define ModelP
 #endif
 
-#include "config.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <limits.h>
-#include <time.h>
+#include <config.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
+#include <climits>
+#include <ctime>
 
 #include "ugtypes.h"
 #include "fileopen.h"
@@ -537,6 +537,7 @@ int HashTableInsertAtBegin (HASH_TABLE **ht, HASH_TABLE *insert)
   assert((*ht)->n_obj==n_obj_ht+n_obj_in);
   for (i=0; i<(*ht)->table_len; i++)
     if ((*ht)->entry[i]!=NULL)
+    {
       if ((*ht)->entry[i]->lid<n_obj_ht)
       {
         (*ht)->entry[i]->lid+=n_obj_in;
@@ -549,6 +550,7 @@ int HashTableInsertAtBegin (HASH_TABLE **ht, HASH_TABLE *insert)
         assert((*ht)->entry[i]->lid>=0);
         assert((*ht)->entry[i]->lid<n_obj_in);
       }
+    }
 
   return (0);
 }

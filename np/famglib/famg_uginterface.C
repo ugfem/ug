@@ -19,7 +19,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <iostream.h>
 
 #include "famg_uginterface.h"
@@ -43,7 +43,7 @@ static FAMGSystem *famgsystemptr;
 #include "famg_ugalgebra.h"
 extern "C"
 {
-#include "commands.h"
+#include "commands.hh"
 }
 
 void test_algebra(void)

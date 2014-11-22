@@ -26,11 +26,13 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdio>
+#include <cstring>
+#include <cassert>
+
+#include "uginterface.hh"
 
 /* low module */
 #include "architecture.h"
@@ -41,8 +43,7 @@
 #include "gm.h"
 #include "wpm.h"
 #include "wop.h"
-#include "uginterface.h"
-#include "cmdint.h"
+#include "cmdint.hh"
 #include "debug.h"
 #include "general.h"
 

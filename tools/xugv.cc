@@ -32,11 +32,11 @@
 
 
 /* general header files */
-#include "config.h"
-#include <stdio.h>
+#include <config.h>
+#include <cstdio>
 #include <unistd.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdlib>
+#include <cmath>
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif

@@ -30,7 +30,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <assert.h>
 #include <math.h>
 #include <string.h>
@@ -38,8 +38,8 @@
 #include "ugtypes.h"
 #include "gm.h"          /* for data structure               */
 #include "ugdevices.h"     /* for UserWrite, PrintErrorMessage */
-#include "commands.h"    /* for GetCurrentMultigrid              */
-#include "cmdint.h"      /* for CreateCommand                */
+#include "commands.hh"    /* for GetCurrentMultigrid              */
+#include "cmdint.hh"      /* for CreateCommand                */
 #include "debug.h"
 
 #include "num.h"

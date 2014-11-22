@@ -27,13 +27,13 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <limits.h>
-#include <time.h>
+#include <config.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
+#include <climits>
+#include <ctime>
 
 #include "ugtypes.h"
 #include "fileopen.h"

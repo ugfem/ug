@@ -47,7 +47,7 @@
 /****************************************************************************/
 
 /* standard C library */
-#include "config.h"
+#include <config.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>

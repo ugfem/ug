@@ -56,7 +56,7 @@
 /****************************************************************************/
 
 /* standard C library */
-#include "config.h"
+#include <config.h>
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -94,7 +94,7 @@
 #include "parallel.h"
 #include "identify.h"
 #include "pargm.h"
-#include "cmdint.h"
+#include "cmdint.hh"
 #include "debugger.h"
 #endif
 

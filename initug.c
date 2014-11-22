@@ -39,7 +39,7 @@
 /****************************************************************************/
 
 /* ANSI-C includes */
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -74,7 +74,7 @@ USING_PPIF_NAMESPACE
 #include "graphics/graphics.h"
 
 /* user interface module */
-#include "ui/initui.h"
+#include "ui/initui.hh"
 
 /* own header */
 #include "initug.h"

@@ -17,7 +17,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <iostream.h>
 #include <strstream.h>
 #include <math.h>
@@ -29,7 +29,7 @@
 #ifdef USE_UG_DS
 extern "C" {
 #include "gm.h"
-#include "commands.h"
+#include "commands.hh"
 }
 #endif
 

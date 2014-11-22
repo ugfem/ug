@@ -32,12 +32,12 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <ctype.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 /* low module */
 #include "ugtypes.h"
@@ -54,9 +54,9 @@
 
 /* ui module */
 #include "ugstruct.h"
-#include "cmdint.h"
-#include "uginterface.h"
-#include "cmdline.h"
+#include "cmdint.hh"
+#include "uginterface.hh"
+#include "cmdline.hh"
 
 /** \todo conflict with hierarchy */
 #include "initug.h"
@@ -84,7 +84,7 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-#define VERSION         "This is " UG_VERSION " from $Date$\n"
+#define VERSION_STRING   "This is " UG_VERSION " from $Date$\n"
 
 /* for interpreter */
 #define DONE                            0
@@ -2422,7 +2422,7 @@ static void PrintVersionString (void)
   int i,j,k;
 
 
-  strcpy(ver,VERSION);
+  strcpy(ver,VERSION_STRING);
   for (i=0; i<100; i++)
   {
     if (ver[i] == '\0') break;

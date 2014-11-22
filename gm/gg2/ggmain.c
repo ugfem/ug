@@ -28,7 +28,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -63,7 +63,7 @@
 #include "evm.h"
 
 /** \todo hierarchy conflict due to UserRead, UserInterrupt */
-#include "uginterface.h"
+#include "uginterface.hh"
 
 
 /* gg2 */

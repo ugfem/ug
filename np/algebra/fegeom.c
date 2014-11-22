@@ -29,7 +29,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -44,9 +44,9 @@
 #include "ugenv.h"
 #include "ugm.h"
 #include "algebra.h"
-#include "cmdint.h"
-#include "commands.h"
-#include "helpmsg.h"
+#include "cmdint.hh"
+#include "commands.hh"
+#include "helpmsg.hh"
 #include "shapes.h"
 #include "quadrature.h"
 #include "general.h"

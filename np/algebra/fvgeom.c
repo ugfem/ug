@@ -28,7 +28,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -46,9 +46,9 @@
 #include "ugm.h"
 #include "algebra.h"
 #include "shapes.h"
-#include "cmdint.h"
-#include "commands.h"
-#include "helpmsg.h"
+#include "cmdint.hh"
+#include "commands.hh"
+#include "helpmsg.hh"
 #include "debug.h"
 #include "general.h"
 

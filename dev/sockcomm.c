@@ -28,7 +28,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include "ugtypes.h"
 #include "general.h"
 

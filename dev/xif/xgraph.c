@@ -32,7 +32,7 @@
 /****************************************************************************/
 
 /* X11 includes */
-#include "config.h"
+#include <config.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
@@ -56,7 +56,7 @@
 #include "initdev.h"
 #include "general.h"
 #include "debug.h"
-#include "commands.h"
+#include "commands.hh"
 #include "pixel.h"
 
 /* Xif includes */

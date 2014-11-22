@@ -19,7 +19,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <iostream.h>
 #include <strstream.h>
 #include <math.h>
@@ -68,7 +68,7 @@ extern "C"
 #include "gm.h"
 #include "ugm.h"
 #include "disctools.h" // for AssembleDirichletBoundary
-#include "commands.h" // nur zum testen fuer GetCurrentMultigrid()
+#include "commands.hh" // nur zum testen fuer GetCurrentMultigrid()
 }
 #endif
 
@@ -78,7 +78,7 @@ extern "C"
 #include "wpm.h"
 #include "wop.h"
 #include "connectuggrape.h"
-#include "uginterface.h"
+#include "uginterface.hh"
 }
 #endif
 

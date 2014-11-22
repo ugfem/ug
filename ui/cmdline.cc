@@ -27,18 +27,18 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <config.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 #include <ctype.h>
 
 #include "ugtypes.h"
 #include "debug.h"
 #include "misc.h"
 #include "ugenv.h"
-#include "cmdline.h"
+#include "cmdline.hh"
 #include "ugdevices.h"
 #include "general.h"
 

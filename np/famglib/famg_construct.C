@@ -19,7 +19,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <iostream.h>
 #include <math.h>
 
@@ -42,7 +42,7 @@
 extern "C"
 {
 #include "parallel.h"
-#include "commands.h" /* for GetCurrentMultigrid for debuggung */
+#include "commands.hh" /* for GetCurrentMultigrid for debuggung */
 }
 #endif
 
@@ -53,7 +53,7 @@ extern "C"
 #include "wpm.h"
 #include "wop.h"
 #include "connectuggrape.h"
-#include "uginterface.h"
+#include "uginterface.hh"
 #include "gm.h"
 } 
 

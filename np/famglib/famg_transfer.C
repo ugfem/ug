@@ -19,7 +19,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include "famg_transfer.h"
 #include "famg_heap.h"
 #include "famg_misc.h"

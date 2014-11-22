@@ -29,7 +29,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <string.h>
 #include <pV3.h>
 
@@ -37,7 +37,7 @@
 #include "parallel.h"
 #include "gm.h"
 #include "shapes.h"
-#include "commands.h"
+#include "commands.hh"
 #include "pv3if.h"
 
 /****************************************************************************/

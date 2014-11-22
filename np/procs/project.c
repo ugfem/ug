@@ -27,7 +27,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,7 +45,7 @@
 #include "fileopen.h"
 #include "ugstruct.h"
 
-#include "commands.h"
+#include "commands.hh"
 #include "assemble.h"
 
 #include "project.h"
