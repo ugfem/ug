@@ -36,21 +36,47 @@ UG_2DLIBS = $(top_builddir)/lib/libugS2.la \
 UG_3DLIBS = $(top_builddir)/lib/libugS3.la \
   $(top_builddir)/dev/sif/libdevS.la
 
-ugpfm2_SOURCES = ugpfm.c
+ugnetgen_SOURCES = ugnetgen.cc
+ugnetgen_CPPFLAGS = $(UG_2DFLAGS)
+ugnetgen_LDFLAGS = $(UG_LDFLAGS)
+ugnetgen_LDADD = $(UG_2DLIBS)
+
+ugstl_SOURCES = ugstl.cc
+ugstl_CPPFLAGS = $(UG_2DFLAGS)
+ugstl_LDFLAGS = $(UG_LDFLAGS)
+ugstl_LDADD = $(UG_2DLIBS)
+
+xugv_SOURCES = xugv.cc
+xugv_CPPFLAGS = $(UG_2DFLAGS)
+xugv_LDFLAGS = $(UG_LDFLAGS)
+xugv_LDADD = $(UG_2DLIBS)
+
+ugmesh_SOURCES = ugmesh.cc
+ugmesh_CPPFLAGS = $(UG_2DFLAGS)
+ugmesh_LDFLAGS = $(UG_LDFLAGS)
+ugmesh_LDADD = $(UG_2DLIBS)
+
+m2ps_SOURCES = m2ps.cc
+m2ps_CPPFLAGS = $(UG_2DFLAGS)
+m2ps_LDFLAGS = $(UG_LDFLAGS)
+m2ps_LDADD = $(UG_2DLIBS)
+
+ugpfm2_SOURCES = ugpfm.cc
 ugpfm2_CPPFLAGS = $(UG_2DFLAGS)
 ugpfm2_LDFLAGS = $(UG_LDFLAGS)
 ugpfm2_LDADD = $(UG_2DLIBS)
 
-ugpfm3_SOURCES = ugpfm.c
-ugpfm3_CFLAGS = $(UG_3DFLAGS)
-ugpfm3_LDFLAGS = $(UG_3DLIBS)
+ugpfm3_SOURCES = ugpfm.cc
+ugpfm3_CPPFLAGS = $(UG_3DFLAGS)
+ugpfm3_LDFLAGS = $(UG_LDFLAGS)
+ugpfm3_LDADD = $(UG_3DLIBS)
 
-ugmgs2_SOURCES = ugmgs.c
+ugmgs2_SOURCES = ugmgs.cc
 ugmgs2_CPPFLAGS = $(UG_2DFLAGS)
 ugmgs2_LDFLAGS = $(UG_LDFLAGS)
 ugmgs2_LDADD = $(UG_2DLIBS)
 
-ugmgs3_SOURCES = ugmgs.c
-ugmgs3_CPPFLAGS = $(UG_2DFLAGS)
+ugmgs3_SOURCES = ugmgs.cc
+ugmgs3_CPPFLAGS = $(UG_3DFLAGS)
 ugmgs3_LDFLAGS = $(UG_LDFLAGS)
-ugmgs3_LDADD = $(UG_2DLIBS)
+ugmgs3_LDADD = $(UG_3DLIBS)

@@ -31,13 +31,13 @@
 
 
 #include <config.h>
-#include <string.h>
+#include <cstring>
 #include <strings.h>
-#include <math.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <cstdio>
+#include <ctime>
 
 #include "general.h"
 
