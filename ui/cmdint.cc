@@ -34,10 +34,10 @@
 
 #include <config.h>
 #include <ctype.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 /* low module */
 #include "ugtypes.h"

@@ -50,12 +50,12 @@
 
 /* standard C library */
 #include <config.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
-#include <assert.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <cassert>
 
 /* low module */
 #include "ugtypes.h"

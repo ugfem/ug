@@ -30,7 +30,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include <stdio.h>
+#include <cstdio>
 
 #ifndef __CMDINT__
 #define __CMDINT__

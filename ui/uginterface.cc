@@ -28,9 +28,11 @@
 
 #include <config.h>
 
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdio>
+#include <cstring>
+#include <cassert>
+
+#include "uginterface.h"
 
 /* low module */
 #include "architecture.h"
@@ -41,7 +43,6 @@
 #include "gm.h"
 #include "wpm.h"
 #include "wop.h"
-#include "uginterface.h"
 #include "cmdint.h"
 #include "debug.h"
 #include "general.h"
