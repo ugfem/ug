@@ -30,8 +30,8 @@
 #include <config.h>
 
 /* ANSI-C includes */
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 /* low module */
 #include "misc.h"
