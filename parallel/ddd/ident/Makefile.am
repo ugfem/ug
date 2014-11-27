@@ -12,7 +12,7 @@ noinst_LTLIBRARIES = $(PLIB)
 
 pkginclude_HEADERS =
 
-SOURCES = ident.c
+SOURCES = ident.cc
 
 libident2_la_SOURCES = $(SOURCES)
 libident2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)

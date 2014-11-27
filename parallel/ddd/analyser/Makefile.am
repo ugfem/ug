@@ -12,7 +12,7 @@ noinst_LTLIBRARIES = $(PLIB)
 
 pkginclude_HEADERS =
 
-SOURCES = inv.c
+SOURCES = inv.cc
 
 libanalyser2_la_SOURCES = $(SOURCES)
 libanalyser2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)

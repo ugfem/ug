@@ -12,7 +12,7 @@ noinst_LTLIBRARIES = $(PLIB)
 
 pkginclude_HEADERS = stat.h
 
-SOURCES = cons.c debug.c stat.c
+SOURCES = cons.c debug.c stat.cc
 
 libctrl2_la_SOURCES = $(SOURCES)
 libctrl2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS) -DConsMemFromHeap

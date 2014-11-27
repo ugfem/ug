@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS =
 
 if PARALLEL
@@ -10,9 +8,9 @@ endif
 
 noinst_LTLIBRARIES = $(PLIB)
 
-EXTRA_DIST = handler.ct
+EXTRA_DIST = handler.cct
 
-SOURCES = typemgr.c objmgr.c cplmgr.c prio.c attr.c
+SOURCES = typemgr.cc objmgr.cc cplmgr.cc prio.cc attr.cc
 
 libmgr2_la_SOURCES = $(SOURCES)
 libmgr2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)

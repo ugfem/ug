@@ -45,10 +45,10 @@
 #ifndef __DDDI_H__
 #define __DDDI_H__
 
-#include <limits.h>
+#include <climits>
 
 
-#include <assert.h>
+#include <cassert>
 
 #include "ugtypes.h"
 #include "architecture.h"

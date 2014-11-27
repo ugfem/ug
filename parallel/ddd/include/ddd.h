@@ -50,7 +50,7 @@
 #define __DDD__
 
 /* for size_t */
-#include <stddef.h>
+#include <cstddef>
 
 #include "namespace.h"
 

@@ -12,7 +12,7 @@ noinst_LTLIBRARIES = $(PLIB)
 
 pkginclude_HEADERS = join.h
 
-SOURCES = jcmds.c join.c
+SOURCES = jcmds.c join.cc
 
 libjoin2_la_SOURCES = $(SOURCES)
 libjoin2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)

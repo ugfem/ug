@@ -12,16 +12,16 @@ noinst_LTLIBRARIES = $(PLIB)
 
 pkginclude_HEADERS = sll.h xfer.h
 
-EXTRA_DIST = sll.ct sll.ht
+EXTRA_DIST = sll.cc sll.h
 
-SOURCES = cmds.c \
-          cmdmsg.c \
-          cplmsg.c \
-          ctrl.c \
-          pack.c \
-          supp.c \
-          unpack.c \
-          xfer.c
+SOURCES = cmds.cc \
+          cmdmsg.cc \
+          cplmsg.cc \
+          ctrl.cc \
+          pack.cc \
+          supp.cc \
+          unpack.cc \
+          xfer.ccc
 
 libxfer2_la_SOURCES = $(SOURCES)
 libxfer2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS) -DXferMemFromHeap
