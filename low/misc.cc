@@ -28,14 +28,14 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <math.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <ctype.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <limits.h>
+#include <cstddef>
+#include <cstdio>
+#include <climits>
 #include <float.h>
 
 #ifdef __NECSX4__

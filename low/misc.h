@@ -35,7 +35,7 @@
 
 
 #include "ugtypes.h"
-#include <string.h>
+#include <cstring>
 #include "heaps.h"
 
 #include "namespace.h"

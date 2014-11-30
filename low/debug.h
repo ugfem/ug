@@ -56,7 +56,7 @@
 
 #ifdef Debug
 
-#include <assert.h>
+#include <cassert>
 
 #define IFDEBUG(m,n)    if (Debug ## m >=(n)) {
 #define PRINTDEBUG(m,n,s) IFDEBUG(m,n) PrintDebug s; ENDDEBUG

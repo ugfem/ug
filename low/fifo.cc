@@ -31,7 +31,7 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include "ugtypes.h"
 #include "general.h"

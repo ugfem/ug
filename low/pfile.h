@@ -33,7 +33,7 @@
 #ifndef __PFILE__
 #define __PFILE__
 
-#include <limits.h>
+#include <climits>
 #include "ugtypes.h"
 #include "namespace.h"
 

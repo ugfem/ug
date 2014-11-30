@@ -30,11 +30,11 @@
 
 /* standard C library */
 #include <config.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <fcntl.h>
-#include <assert.h>
+#include <cassert>
 
 #include "ugtypes.h"
 #include "ugtime.h"

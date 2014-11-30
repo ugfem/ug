@@ -31,9 +31,9 @@
 
 #include <config.h>
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 
 #include "general.h"
 #include "debug.h"

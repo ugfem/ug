@@ -16,11 +16,11 @@
 *            application include files                                      *
 *****************************************************************************/
 #include <config.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <float.h>
-#include <assert.h>
-#include <math.h>
+#include <cassert>
+#include <cmath>
 
 #include "general.h"
 #include "ugtypes.h"

@@ -42,7 +42,7 @@
 #ifndef __BIO__
 #define __BIO__
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "namespace.h"
 

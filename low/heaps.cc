@@ -30,11 +30,11 @@
 
 #include <config.h>
 
-#include <stdlib.h>
-#include <stddef.h>
-#include <string.h>
-#include <assert.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstddef>
+#include <cstring>
+#include <cassert>
+#include <cstdio>
 
 #include "ugtypes.h"
 #include "architecture.h"

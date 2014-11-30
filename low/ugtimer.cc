@@ -28,8 +28,8 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cstdio>
+#include <cassert>
 
 #include "general.h"
 #include "ugtimer.h"

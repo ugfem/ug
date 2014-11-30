@@ -31,7 +31,7 @@
 #ifndef __FILEOPEN__
 #define __FILEOPEN__
 
-#include <stdio.h>
+#include <cstdio>
 #include <fcntl.h>
 
 #include "ugtypes.h"

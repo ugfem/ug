@@ -26,8 +26,8 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <limits.h>
-#include <stdlib.h>
+#include <climits>
+#include <cstdlib>
 #include <sys/types.h>
 
 #include "ugtypes.h"

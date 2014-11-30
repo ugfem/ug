@@ -37,8 +37,8 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include <rpc/rpc.h>    /* to include xdr.h in a portable way */
 
