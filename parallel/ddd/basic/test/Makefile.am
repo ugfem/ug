@@ -9,7 +9,7 @@ check_PROGRAMS = $(TESTPROGS)
 TESTS = $(TESTPROGS)
 
 # define the programs
-testbtree_SOURCES = testbtree.c
+testbtree_SOURCES = testbtree.cc
 testbtree_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)
 
 #include $(top_srcdir)/am/global-rules

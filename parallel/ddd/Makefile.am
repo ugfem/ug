@@ -22,7 +22,7 @@ noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
 DDDFLAGS = -DDDD_FRONTEND_C
 
-DDD = ddd.c dddi.h
+DDD = ddd.cc dddi.h
 
 # header files that are not explicitly used but need to be distributed
 pkginclude_HEADERS = include/ddd.h

@@ -10,7 +10,7 @@ noinst_LTLIBRARIES = $(PLIB)
 
 pkginclude_HEADERS =
 
-SOURCES = pcmds.c
+SOURCES = pcmds.cc
 
 libprio2_la_SOURCES = $(SOURCES)
 libprio2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)

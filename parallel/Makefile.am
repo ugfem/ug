@@ -1,7 +1,3 @@
-# Build the following subdirectories.  The chaco subdir
-# is not built because it is not available in the anonymous
-# Heidelberg CVS and not in the set of patches we provide
-# either.  AFAIK it doesn't work anyways.
 SUBDIRS = dddif ddd util ppif
 
 if PARALLEL
@@ -12,7 +8,7 @@ endif
 
 noinst_LTLIBRARIES = $(PLIB)
 
-SOURCES = initparallel.c initparallel.h
+SOURCES = initparallel.cc initparallel.h
 
 SUBLIBS = ppif/MPI/libppifmpi.la util/libparutil.la
 
