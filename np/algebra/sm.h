@@ -34,7 +34,7 @@
 
     #include "ugtypes.h"
 
-    #include <stddef.h>
+    #include <cstddef>
 
 #else /* not __UG__ */
 

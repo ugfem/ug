@@ -1,4 +1,20 @@
-SOURCES = pcr.c disctools.c npscan.c udm.c formats.c numproc.c dio.c data_io.c data_io.h dio.h disctools.h formats.h npscan.h numproc.h pcr.h udm.h
+SOURCES = \
+  pcr.cc \
+  disctools.cc \
+  npscan.cc \
+  udm.cc \
+  formats.cc \
+  numproc.cc \
+  dio.cc \
+  data_io.cc \
+  data_io.h \
+  dio.h \
+  disctools.h \
+  formats.h \
+  npscan.h \
+  numproc.h \
+  pcr.h \
+  udm.h
 
 if BUILD2D
   LIB_2D = libudm2.la

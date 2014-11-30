@@ -1,4 +1,4 @@
-SOURCES = stoch.c field.h
+SOURCES = stoch.cc field.h
 
 if BUILD2D
   LIB_2D = libfield2.la

@@ -54,9 +54,9 @@
  */
 
 /* System headers: */
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
+#include <cstdio>
+#include <cmath>
+#include <cstring>
 
 /* The UG namespaces: */
 #include "namespace.h"

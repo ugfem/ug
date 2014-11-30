@@ -36,7 +36,7 @@
 #ifndef __DATA_IO__
 #define __DATA_IO__
 
-#include <stdio.h>
+#include <cstdio>
 
 
 #include "namespace.h"
