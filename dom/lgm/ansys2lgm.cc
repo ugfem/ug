@@ -29,17 +29,17 @@
 
 
 #include <config.h>
-#include <assert.h>
+#include <cassert>
 
 #include "defaults.h"
 #include "domain.h"
 #include "lgm_domain.h"
 #include "lgm_transfer.h"
 #include "heaps.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 
 

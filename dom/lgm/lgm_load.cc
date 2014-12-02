@@ -28,11 +28,11 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #undef OCC_GEOMETRY
 #ifdef OCC_GEOMETRY

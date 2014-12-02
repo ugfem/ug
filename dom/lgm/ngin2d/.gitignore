@@ -6,7 +6,7 @@ Makefile.in
 *.la
 *.o
 
-ngin-lex.c
-ngin-yacc.c
-ngin-yacc.h
+ngin-lex.cc
+ngin-yacc.cc
+ngin-yacc.hh
 semantic.cache

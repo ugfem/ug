@@ -41,12 +41,12 @@
 #include <config.h>
 
 /* standard C library */
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <math.h>
+#include <cstdlib>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+#include <cassert>
+#include <cmath>
 
 /* standard C++ library */
 /* set needed in BVP_Init */

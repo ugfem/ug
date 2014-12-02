@@ -34,7 +34,7 @@
 #define __LGM_TR__
 
 /* for FILE */
-#include <stdio.h>
+#include <cstdio>
 
 #include "domain.h"
 #include "dimension.h"

@@ -6,9 +6,3 @@ SUBDIRS = std lgm
 # install the central header
 domincludedir = $(pkgincludedir)
 dominclude_HEADERS = domain.h
-
-
-
-
-
-

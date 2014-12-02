@@ -14,7 +14,7 @@ AM_YFLAGS = -d -p $(PARSERPREFIX)
 AM_LFLAGS = -P$(PARSERPREFIX)
 LEX_OUTPUT_ROOT = lex.$(PARSERPREFIX)
 
-BUILT_SOURCES = ngin-yacc.h
+BUILT_SOURCES = ngin-yacc.hh
 
-libngin_la_SOURCES = ngin-yacc.y ngin-lex.l ngin-lex.h ng.c ng.h
+libngin_la_SOURCES = ngin-yacc.yy ngin-lex.ll ngin-lex.hh ng.cc ng.h
 libngin_la_CPPFLAGS = $(UG_3DFLAGS) -I$(top_srcdir)/dom/lgm

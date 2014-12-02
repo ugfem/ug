@@ -14,7 +14,7 @@ AM_YFLAGS = -d -p $(PARSERPREFIX)
 AM_LFLAGS = -P$(PARSERPREFIX)
 LEX_OUTPUT_ROOT = lex.$(PARSERPREFIX)
 
-BUILT_SOURCES = ngin-yacc.h
+BUILT_SOURCES = ngin-yacc.hh
 
-libngin2d_la_SOURCES = ng.c ngin-yacc.y ngin-lex.l ngin-lex.h ng2d.h
+libngin2d_la_SOURCES = ng.c ngin-yacc.yy ngin-lex.ll ngin-lex.hh ng2d.h
 libngin2d_la_CPPFLAGS = $(UG_2DFLAGS) -I$(top_srcdir)/dom/lgm

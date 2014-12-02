@@ -34,12 +34,12 @@
 #include "occ/occ_geom.hh"
 #endif
 
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <climits>
 #include <float.h>
 
 #include "ugtypes.h"

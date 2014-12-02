@@ -1,4 +1,4 @@
-SOURCES = std_domain.c std_parallel.c std_domain.h std_internal.h
+SOURCES = std_domain.cc std_parallel.cc std_domain.h std_internal.h
 
 if BUILD2D
   LIB_2D = libdomS2.la
@@ -17,8 +17,8 @@ noinst_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 domincludedir = $(pkgincludedir)
 dominclude_HEADERS = std_domain.h
 
-libdomS2_la_SOURCES = $(SOURCES) domains2d.c
+libdomS2_la_SOURCES = $(SOURCES) domains2d.cc
 libdomS2_la_CPPFLAGS = $(UG_2DFLAGS)
 
-libdomS3_la_SOURCES = $(SOURCES) domains3d.c
+libdomS3_la_SOURCES = $(SOURCES) domains3d.cc
 libdomS3_la_CPPFLAGS = $(UG_3DFLAGS)

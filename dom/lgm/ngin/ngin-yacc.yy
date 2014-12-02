@@ -24,7 +24,7 @@
 #include <stdlib.h>
 
 #include "ng.h"
-#include "ngin-lex.h"
+#include "ngin-lex.hh"
 
 #ifndef alloca
 #define alloca(p)		malloc(p)
