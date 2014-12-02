@@ -1136,7 +1136,7 @@ CreateCornerPoints (HEAP * Heap, STD_BVP * theBVP, BNDP ** bndp)
    \param i, j  The line goes from vertex i to vertex j
    \param corners Array with pointers to all vertices
  */
-static INT
+static void
 CreateLine(INT i, INT j, HEAP *Heap, PATCH *thePatch, PATCH **corners, PATCH **lines, PATCH **sides,
            INT *nlines, INT *err)
 {
@@ -1150,14 +1150,15 @@ CreateLine(INT i, INT j, HEAP *Heap, PATCH *thePatch, PATCH **corners, PATCH **l
           POINT_PATCH_PID (corners[j], m))
         k++;
   /* points share one patch only and lie on opposite corners of this patch */
-  if (k < 2) return (NULL);
+  if (k < 2)
+    return;
 
   thePatch =
     (PATCH *) GetFreelistMemory (Heap, sizeof (LINE_PATCH)
                                  + (k -
                                     1) * sizeof (struct line_on_patch));
   if (thePatch == NULL)
-    return (NULL);
+    return;
   PATCH_TYPE (thePatch) = LINE_PATCH_TYPE;
   PATCH_ID (thePatch) = *nlines;
   LINE_PATCH_C0 (thePatch) = i;
