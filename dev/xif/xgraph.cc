@@ -43,12 +43,12 @@
 #include <X11/X.h>
 
 /* standard C includes */
-#include <stdio.h>
+#include <cstdio>
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#include <stddef.h>
-#include <string.h>
+#include <cstddef>
+#include <cstring>
 
 /* interface includes */
 #include "ugtypes.h"

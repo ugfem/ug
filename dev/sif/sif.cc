@@ -28,12 +28,12 @@
 
 /* standard C includes */
 #include <config.h>
-#include <string.h>
-#include <math.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cstring>
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <cstdio>
+#include <cassert>
 
 /* interface includes */
 #include "ugtypes.h"

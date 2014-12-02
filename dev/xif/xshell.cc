@@ -49,12 +49,12 @@
 #endif /* USE_XAW */
 
 /* standard C includes */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#include <string.h>
+#include <cstring>
 #include <ctype.h>
 
 /* interface includes */

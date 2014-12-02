@@ -36,10 +36,10 @@
 
 
 /* standard C includes */
-#include <string.h>
-#include <math.h>
-#include <stddef.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
 
 
 /* interface includes */

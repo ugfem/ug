@@ -34,7 +34,7 @@
 #ifndef __DEVICESH__
 #define __DEVICESH__
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "ugtypes.h"
 
