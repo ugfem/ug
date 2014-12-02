@@ -44,11 +44,11 @@
 #ifndef __GM__
 #define __GM__
 
-#include <limits.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <time.h>
-#include <math.h>
+#include <climits>
+#include <cassert>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
 
 #include "ugtypes.h"
 #include "heaps.h"

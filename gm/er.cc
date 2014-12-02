@@ -61,7 +61,7 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <string.h>
+#include <cstring>
 
 /* low */
 #include "general.h"

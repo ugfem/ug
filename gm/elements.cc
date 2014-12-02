@@ -21,7 +21,7 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <assert.h>
+#include <cassert>
 
 #include "general.h"
 #include "ugdevices.h"

@@ -34,12 +34,12 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <limits.h>
-#include <time.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
+#include <climits>
+#include <ctime>
 
 #include "ugtypes.h"
 #include "architecture.h"

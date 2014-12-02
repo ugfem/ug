@@ -20,8 +20,8 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 
 /* define this to exclude extern definition of global arrays */
 #define __COMPILE_CW__

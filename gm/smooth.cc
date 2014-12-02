@@ -27,11 +27,11 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cassert>
 
 #include "ugtypes.h"
 #include "architecture.h"

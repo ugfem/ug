@@ -36,7 +36,7 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include "dlmgr.h"
 #include "gm.h"

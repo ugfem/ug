@@ -35,10 +35,10 @@
 #define __QUADTREE__
 
 #include "ugtypes.h"
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <cstddef>
+#include <cstdlib>
+#include <cmath>
 #include  "misc.h"
 #include  "gm.h"
 #include  "ugm.h"

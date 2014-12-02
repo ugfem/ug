@@ -29,10 +29,10 @@
 #include <config.h>
 
 /* standard C library */
-#include <assert.h>
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdio>
+#include <cmath>
+#include <cstdlib>
 
 /* low module */
 #include "architecture.h"

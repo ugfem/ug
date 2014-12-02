@@ -37,7 +37,7 @@
 #ifndef __MGIO__
 #define __MGIO__
 
-#include <stdio.h>
+#include <cstdio>
 #include "domain.h"
 
 #ifdef __MGIO_USE_IN_UG__

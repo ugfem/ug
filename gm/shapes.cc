@@ -30,9 +30,9 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <math.h>
-#include <assert.h>
-#include <stddef.h>
+#include <cmath>
+#include <cassert>
+#include <cstddef>
 
 #include "ugtypes.h"
 #include "architecture.h"

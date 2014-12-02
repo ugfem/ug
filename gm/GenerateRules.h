@@ -30,7 +30,7 @@
 #ifndef __RULEGEN__
 #define __RULEGEN__
 
-#include <stdio.h>
+#include <cstdio>
 
 /****************************************************************************/
 /*                                                                                                                                                      */
