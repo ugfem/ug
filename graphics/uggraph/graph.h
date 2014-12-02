@@ -33,7 +33,7 @@
 #ifndef __GRAPH__
 #define __GRAPH__
 
-#include <time.h>
+#include <ctime>
 
 #include "ugtypes.h"
 #include "wpm.h"

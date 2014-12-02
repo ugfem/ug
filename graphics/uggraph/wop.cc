@@ -29,14 +29,14 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
+#include <cassert>
 #include <memory.h>
-#include <time.h>
+#include <ctime>
 
 #include "ugtypes.h"
 #include "architecture.h"

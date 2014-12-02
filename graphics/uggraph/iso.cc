@@ -29,9 +29,9 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <string.h>
-#include <limits.h>
-#include <assert.h>
+#include <cstring>
+#include <climits>
+#include <cassert>
 #include "general.h"
 #include "iso.h"
 

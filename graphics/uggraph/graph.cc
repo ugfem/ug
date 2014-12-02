@@ -29,11 +29,11 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <math.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
 
 #include "architecture.h"
 #include "graph.h"

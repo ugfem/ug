@@ -30,7 +30,7 @@
 
 /* ANSI-C includes */
 #include <config.h>
-#include <stdio.h>
+#include <cstdio>
 
 /* low module */
 #include "ugtypes.h"

@@ -38,9 +38,9 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stdio.h>
-#include <math.h>
-#include <assert.h>
+#include <cstdio>
+#include <cmath>
+#include <cassert>
 
 #ifdef INSIDE_UG
 #include "general.h"

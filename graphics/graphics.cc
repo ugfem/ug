@@ -28,9 +28,9 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 #include <stdarg.h>
 
 /* low module */

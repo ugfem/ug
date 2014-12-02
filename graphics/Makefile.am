@@ -1,6 +1,6 @@
 SUBDIRS = uggraph grape
 
-SOURCES = graphics.c graphics.h
+SOURCES = graphics.cc graphics.h
 
 if BUILD2D
   LIB_2D = libgraphics2.la
@@ -28,4 +28,3 @@ libgraphics3_la_LIBADD = uggraph/libuggraph3.la \
 
 graphicsincludedir = $(pkgincludedir)
 graphicsinclude_HEADERS = graphics.h
-
