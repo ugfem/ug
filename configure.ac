@@ -6,7 +6,7 @@ AC_PREREQ(2.57)
 AC_INIT(ug, 3.11.1, ug@conan.iwr.uni-heidelberg.de)
 AM_INIT_AUTOMAKE
 
-AC_CONFIG_SRCDIR([initug.c])
+AC_CONFIG_SRCDIR([initug.cc])
 AC_CONFIG_HEADERS([config.h])
 
 AM_MAINTAINER_MODE

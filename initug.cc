@@ -1,6 +1,6 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/*! \file initug.c
+/*! \file
  * \ingroup ug
  */
 
@@ -40,8 +40,8 @@
 
 /* ANSI-C includes */
 #include <config.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 /* low module */
 #include "initlow.h"
