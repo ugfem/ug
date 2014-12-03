@@ -3,7 +3,7 @@
 /** \defgroup ui The User Interface
  * \ingroup ug
  */
-/*! \file initui.h
+/*! \file
  * \ingroup ui
  */
 

@@ -16,5 +16,5 @@ LEX_OUTPUT_ROOT = lex.$(PARSERPREFIX)
 
 BUILT_SOURCES = ngin-yacc.hh
 
-libngin2d_la_SOURCES = ng.c ngin-yacc.yy ngin-lex.ll ngin-lex.hh ng2d.h
+libngin2d_la_SOURCES = ng.cc ngin-yacc.yy ngin-lex.ll ngin-lex.hh ng2d.h
 libngin2d_la_CPPFLAGS = $(UG_2DFLAGS) -I$(top_srcdir)/dom/lgm

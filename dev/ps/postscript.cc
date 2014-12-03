@@ -28,19 +28,18 @@
 /****************************************************************************/
 
 #include <config.h>
-#include <stddef.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
+#include <cstddef>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
 
 #include "defaults.h"
 #include "fileopen.h"
 #include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
-
 
 USING_UG_NAMESPACE
 
@@ -78,9 +77,9 @@ USING_UG_NAMESPACE
 #define TRFMY(pt) (((float)(pt.x))*myx + ((float)(pt.y))*myy + ty)
 
 /****************************************************************************/
-/*                                                                          */
-/* definition of variables global to this source file only (static!)        */
-/*                                                                          */
+/*																			*/
+/* definition of variables global to this source file only (static!)		*/
+/*																			*/
 /****************************************************************************/
 
 typedef struct {
@@ -148,7 +147,6 @@ static void PSDefaultValues( PSWINDOW *psw )
   currPSW->PScc = PScc = 0;
 }
 
-
 static void PSMoveTo (SHORT_POINT point)
 {
   currPSW->PScp.x = PScp.x = point.x; currPSW->PScp.y = PScp.y = point.y;
@@ -165,13 +163,10 @@ static void PSDrawTo (SHORT_POINT point)
 
 static void PSCircle (SHORT_POINT point, short r)
 {
-  SHORT_POINT aux;
   short xr,yr;
 
-  aux.x = 0;
-  aux.y = r;
-  xr = TRFMX(aux);
-  yr = TRFMY(aux);
+  xr = mxy*r;
+  yr = myy*r;
   r  = sqrt(xr*xr+yr*yr);
   fprintf(currPSF,"N\n");
   fprintf(currPSF,"%g %g M\n",TRFMX(point)+r,TRFMY(point));
@@ -184,13 +179,10 @@ static void PSCircle (SHORT_POINT point, short r)
 
 static void PSFilledCircle (SHORT_POINT point, short r)
 {
-  SHORT_POINT aux;
   short xr,yr;
 
-  aux.x = 0;
-  aux.y = r;
-  xr = TRFMX(aux);
-  yr = TRFMY(aux);
+  xr = mxy*r;
+  yr = myy*r;
   r  = sqrt(xr*xr+yr*yr);
   fprintf(currPSF,"N\n");
   fprintf(currPSF,"%g %g M\n",TRFMX(point)+r,TRFMY(point));
@@ -245,16 +237,29 @@ static void PSInversePolygon (SHORT_POINT *points, INT nb)
   return;
 }
 
-static void PSErasePolygon (SHORT_POINT *points, INT nb)
-{
-  return;
-}
-
 static void PSPrintColor (float color)
 {
   if (color==0.0) fprintf(currPSF,"%d ",0);
   else if (color==1.0) fprintf(currPSF,"%d ",1);
   else fprintf(currPSF,"%.3f ",color);
+  return;
+}
+
+static void PSErasePolygon (SHORT_POINT *points, INT nb)
+{
+  long saved;
+
+  saved = PScc;
+  PSPrintColor(1.0);
+  PSPrintColor(1.0);
+  PSPrintColor(1.0);
+  fprintf(currPSF,"R\n");
+  PSPolygon(points,nb);
+  PSPrintColor((float)red[PScc]);
+  PSPrintColor((float)green[PScc]);
+  PSPrintColor((float)blue[PScc]);
+  fprintf(currPSF,"R\n");
+
   return;
 }
 
@@ -508,10 +513,10 @@ static void PSFlush (void)
 
 /****************************************************************************/
 /*
-   InitPSPort_BlackAndWhite - init port structure of output device 'psbw'
+   InitPSPort - init port structure of output device 'ps'
 
    SYNOPSIS:
-   static void InitPSPort_BlackAndWhite (OUTPUTDEVICE *thePort);
+   static void InitPSPort (OUTPUTDEVICE *thePort);
 
    PARAMETERS:
    .  thePort - port structure to initialize
@@ -526,7 +531,7 @@ static void PSFlush (void)
 
 static void InitPSPort (OUTPUTDEVICE *thePort)
 {
-  short i;
+  short r,g,b,delta,i,j,max,res;
 
   /* init pointers to basic drawing functions */
   thePort->Move                   = PSMoveTo;
@@ -560,34 +565,71 @@ static void InitPSPort (OUTPUTDEVICE *thePort)
   thePort->black = 255;
   thePort->gray = 1;
   thePort->white = 0;
-  thePort->red = 150;
-  thePort->green = 100;
-  thePort->blue = 200;
+  thePort->red = 254;
+  thePort->green = 128;
+  thePort->blue = 2;
   thePort->cyan = 65;
-  thePort->orange = 128;
-  thePort->yellow = 25;
-  thePort->darkyellow = 40;
-  thePort->magenta = 128;
+  thePort->orange = 220;
+  thePort->yellow = 191;
+  thePort->darkyellow = 205;
+  thePort->magenta = 1;
   thePort->hasPalette = 1;
   thePort->range = 256;
   thePort->spectrumStart = 2;
-  thePort->spectrumEnd = 225;
+  thePort->spectrumEnd = 254;
   thePort->signx = 1;
   thePort->signy = 1;
 
   /* initialize color table */
-  for (i=254; i>=2; i--)
-  {
-    red[i] = green[i] = blue[i] = i/255.0;
-  }
+  res = 63;
+  delta = 4;
+  max = 252;
+  i = 0;
 
-  red[0] = green[0] = blue[0] = 0.999;
-  red[1] = green[1] = blue[1] = 180.0/255.0;
-  red[255] = green[255] = blue[255] = 0.0;
+  /* fixed colors */
+  red[i] = 255; green[i] = 255; blue[i++] = 255;        /* 0 = white */
+  red[i] = 180; green[i] = 180; blue[i++] = 180;    /* 1 = gray  */
+
+  /* color spectrum */
+  r = g = 0; b = max;
+  red[i] = r; green[i] = g; blue[i++] = b;                      /* 2 = blue */
+
+  /* blue to cyan */
+  for (j=0; j<res; j++)
+  {
+    g += delta;
+    red[i] = r; green[i] = g; blue[i++] = b;
+  }                                                             /* 65 = cyan */
+  /* cyan to green */
+  for (j=0; j<res; j++)
+  {
+    b -= delta;
+    red[i] = r; green[i] = g; blue[i++] = b;
+  }                                                             /* 128 = green */
+  /* green to yellow */
+  for (j=0; j<res; j++)
+  {
+    r += delta;
+    red[i] = r; green[i] = g; blue[i++] = b;
+  }                                                             /* 191 = yellow */
+  /* yellow to rot */
+  for (j=0; j<res; j++)
+  {
+    g -= delta;
+    red[i] = r; green[i] = g; blue[i++] = b;
+  }                                                             /* 254 = red */
+
+  red[i] = 0  ; green[i] = 0  ; blue[i++] = 0;          /* 255 = black */
+
+  for (j=0; j<i; j++)
+  {
+    red[j]   /= 255.0;
+    green[j] /= 255.0;
+    blue[j]  /= 255.0;
+  }
 
   return;
 }
-
 
 static INT WritePSHeader (FILE *file, const char *title, INT x, INT y, INT w, INT h)
 {
@@ -901,7 +943,7 @@ static INT UpdatePSOutput (WINDOWID win, INT tool)
 static OUTPUTDEVICE *InitPSOutputDevice (void)
 {
   /* create output device */
-  if ( (PSOutputDevice=CreateOutputDevice("psbw")) == NULL ) return(NULL);
+  if ( (PSOutputDevice=CreateOutputDevice("ps")) == NULL ) return(NULL);
 
   /* init output device 'meta' */
   PSOutputDevice->OpenOutput       = OpenPSWindow;
@@ -938,7 +980,7 @@ static OUTPUTDEVICE *InitPSOutputDevice (void)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitPostScriptBW (void)
+INT NS_PREFIX InitPostScript (void)
 {
   if ((InitPSOutputDevice()) == NULL) return (1);
 

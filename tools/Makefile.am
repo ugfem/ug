@@ -28,8 +28,6 @@ endif
 
 bin_PROGRAMS = $(TOOLS) $(TOOLS_2D) $(TOOLS_3D)
 
-xugv_LDFLAGS = $(UG_XLIBS)
-
 # !!! std-domain / device SIF ok?
 UG_2DLIBS = $(top_builddir)/lib/libugS2.la \
   $(top_builddir)/dev/sif/libdevS.la
@@ -48,7 +46,7 @@ ugstl_LDADD = $(UG_2DLIBS)
 
 xugv_SOURCES = xugv.cc
 xugv_CPPFLAGS = $(UG_2DFLAGS)
-xugv_LDFLAGS = $(UG_LDFLAGS)
+xugv_LDFLAGS = $(UG_XLIBS)
 xugv_LDADD = $(UG_2DLIBS)
 
 ugmesh_SOURCES = ugmesh.cc
