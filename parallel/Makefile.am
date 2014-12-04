@@ -1,5 +1,3 @@
-# $Id$
-
 # Build the following subdirectories.  The chaco subdir
 # is not built because it is not available in the anonymous
 # Heidelberg CVS and not in the set of patches we provide

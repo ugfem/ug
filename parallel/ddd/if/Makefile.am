@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS =
 
 if PARALLEL
@@ -12,9 +10,9 @@ noinst_LTLIBRARIES = $(PLIB)
 
 pkginclude_HEADERS = if.h
 
-EXTRA_DIST = ifstd.ct ifcmd.ct
+EXTRA_DIST = ifstd.cc ifcmd.cc
 
-SOURCES = ifcreate.c ifuse.c ifcmds.c ifcheck.c ifobjsc.c
+SOURCES = ifcreate.cc ifuse.cc ifcmds.cc ifcheck.cc ifobjsc.cc
 
 libif2_la_SOURCES = $(SOURCES)
 libif2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)

@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS = test
 
 if PARALLEL
@@ -12,7 +10,7 @@ noinst_LTLIBRARIES = $(PLIB)
 
 pkginclude_HEADERS = notify.h lowcomm.h oopp.h ooppcc.h memutil.h
 
-SOURCES = io.c lowcomm.c notify.c reduct.c topo.c
+SOURCES = io.cc lowcomm.cc notify.cc reduct.cc topo.cc
 
 libbasic2_la_SOURCES = $(SOURCES)
 libbasic2_la_CPPFLAGS = $(UG_2DFLAGS) $(DDDFLAGS)

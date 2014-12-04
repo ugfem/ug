@@ -33,7 +33,7 @@
 #ifndef __COMMANDS__
 #define __COMMANDS__
 
-#include <stdio.h>
+#include <cstdio>
 
 
 #include "ugtypes.h"

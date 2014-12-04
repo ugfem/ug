@@ -19,7 +19,7 @@
 /*																			*/
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 #include <iostream.h>
 
 #include "famg_uginterface.h"

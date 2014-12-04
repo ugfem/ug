@@ -222,7 +222,7 @@ typedef struct _XIDelCmd
 /* include template */
 #define T XIDelCmd
 #define SLL_WithOrigOrder
-#include "sll.ht"
+#include "sll.h
 #undef T
 
 
@@ -241,7 +241,7 @@ typedef struct _XIDelObj
 
 /* include template */
 #define T XIDelObj
-#include "sll.ht"
+#include "sll.h
 #undef T
 
 
@@ -319,7 +319,7 @@ typedef struct _XINewCpl
 
 /* include template */
 #define T XINewCpl
-#include "sll.ht"
+#include "sll.h
 #undef T
 
 
@@ -347,7 +347,7 @@ typedef struct _XIOldCpl
 
 /* include template */
 #define T XIOldCpl
-#include "sll.ht"
+#include "sll.h
 #undef T
 
 
@@ -374,7 +374,7 @@ typedef struct _XIAddCpl
 
 /* include template */
 #define T XIAddCpl
-#include "sll.ht"
+#include "sll.h
 #undef T
 
 
@@ -403,7 +403,7 @@ typedef struct _XIDelCpl
 
 /* include template */
 #define T XIDelCpl
-#include "sll.ht"
+#include "sll.h
 #undef T
 
 
@@ -433,7 +433,7 @@ typedef struct _XIModCpl
 
 /* include template */
 #define T XIModCpl
-#include "sll.ht"
+#include "sll.h
 #undef T
 
 

@@ -38,7 +38,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#include "config.h"
+#include <config.h>
 
 /* standard C library */
 #include <stdlib.h>
