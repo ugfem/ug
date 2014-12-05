@@ -389,9 +389,6 @@ static INT CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
 
 REP_ERR_FILE;
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/

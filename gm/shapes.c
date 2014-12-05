@@ -145,9 +145,6 @@ static DOUBLE_VECTOR_3D LMP_Prism    		= {0.333333333333333333,
 static DOUBLE_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
 #endif
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /*                                                                          */
 /* forward declarations of functions used before they are defined           */

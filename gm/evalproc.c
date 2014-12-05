@@ -99,9 +99,6 @@ static INT theElemVectorVarID;
 static struct Coubling_CoeffProc_Name Couple_for_ElemValue;
 static struct Coubling_CoeffProc_Name Couple_for_ElemVector;
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/

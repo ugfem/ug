@@ -239,9 +239,6 @@ static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
 
 static CE_USAGE ce_usage[MAX_CONTROL_ENTRIES];
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /** \brief Print all control entries of an objects control word
 

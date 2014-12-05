@@ -68,9 +68,6 @@ USING_UGDIM_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /*
    InitGm - Call the inits for the grid manger module

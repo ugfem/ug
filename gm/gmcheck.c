@@ -114,9 +114,6 @@ USING_PPIF_NAMESPACE
 static char buffer[4*256];			/* general purpose text buffer			*/
 static DOUBLE hghost_overlap = 1.0;
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 REP_ERR_FILE;
 
 /****************************************************************************/

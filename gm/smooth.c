@@ -72,9 +72,6 @@ USING_UG_NAMESPACES
 
 REP_ERR_FILE;
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /** \brief Calculate displacement of the center point along one local coordinate
 

@@ -97,9 +97,6 @@ static union {
 } eval[MAX_ITEM];
 static char eval_name[MAX_ITEM][NAMESIZE];
 
-/* RCS string */
-static char RCS_ID("$Header",UG_RCS_STRING);
-
 /****************************************************************************/
 /*                                                                          */
 /*    utility functions                                                     */

@@ -73,9 +73,6 @@ INT NS_DIM_PREFIX freelist_end_mark = 0;
 
 REP_ERR_FILE;
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/

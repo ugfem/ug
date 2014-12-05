@@ -162,9 +162,6 @@ static int npe_info;                                            /* partitioning 
 #endif
 static int proc_list_size = -1;                         /* hold the computed value for PROCLISTSIZE; initialized with crazy dummy */
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/

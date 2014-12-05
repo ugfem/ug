@@ -147,9 +147,6 @@ static UINT UsedOBJT;           /* for the dynamic OBJECT management	*/
 static const INT *Order,*Sign;
 static DOUBLE InvMeshSize;
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 REP_ERR_FILE;
 
 /****************************************************************************/

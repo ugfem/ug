@@ -165,10 +165,6 @@ typedef struct
 static ClientConnection* covise_connection=NULL;
 
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
-
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/

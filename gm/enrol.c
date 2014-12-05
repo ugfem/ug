@@ -99,9 +99,6 @@ static INT theSymbolVarID;                      /* env type for Format vars     
 
 REP_ERR_FILE;
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /*D
    CreateFormat	- Create a new FORMAT structure in the environment

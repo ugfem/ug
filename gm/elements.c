@@ -194,9 +194,6 @@ static GENERAL_ELEMENT def_hexahedron = {
 } ;
 #endif
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /** \brief Compute index fields for a given element type
 

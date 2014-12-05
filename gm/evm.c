@@ -87,9 +87,6 @@ const DOUBLE NS_DIM_PREFIX unit_vec[DIM][DIM]={{1,0,0},{0,1,0},{0,0,1}};
 
 REP_ERR_FILE;
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /*                                                                          */
 /* forward declarations of macros                                           */

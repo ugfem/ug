@@ -113,9 +113,6 @@ static REFRULE EmptyRule =
           {{0,0,0,0},{NOTDONE,NOTDONE,NOTDONE,NOTDONE},0},
           {{0,0,0,0},{NOTDONE,NOTDONE,NOTDONE,NOTDONE},0}}};
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
 /****************************************************************************/
 /*																			*/
 /*		functions															*/
