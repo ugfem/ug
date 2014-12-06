@@ -1,5 +1,3 @@
-# $Id$
-
 SOURCES = std_domain.c std_parallel.c std_domain.h std_internal.h
 
 if BUILD2D

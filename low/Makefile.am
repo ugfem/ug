@@ -1,5 +1,3 @@
-# $Id$
-
 noinst_LTLIBRARIES = liblow.la liblow2.la liblow3.la
 
 # dimension-independent functions

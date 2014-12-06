@@ -1,5 +1,3 @@
-# $Id$
-
 AM_CPPFLAGS = $(UG_CPPFLAGS) -I$(top_srcdir)/low
 
 lib_LTLIBRARIES = libdevS.la

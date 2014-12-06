@@ -1,5 +1,3 @@
-# $Id$
-
 if BUILD2D
   LIB_2D = libuggraph2.la
 else

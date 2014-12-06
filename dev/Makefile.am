@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS = ppm meta ps . sif xif rif
 
 noinst_LTLIBRARIES = libdevices.la

@@ -1,5 +1,3 @@
-# $Id$
-
 SOURCES = gen.c gen_parallel.c gen.h
 
 if BUILD2D

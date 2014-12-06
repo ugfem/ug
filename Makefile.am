@@ -1,5 +1,3 @@
-# $Id$
-
 # do everything in the subdirs (order matters!)
 SUBDIRS = parallel low dev gm dom graphics np ui lib tools
 #

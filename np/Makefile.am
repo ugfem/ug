@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS = algebra amglib field procs udm
 
 # famglib ist auch im alten Makefile nicht drin

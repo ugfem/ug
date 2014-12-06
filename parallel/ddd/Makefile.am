@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS = analyser basic ctrl ident if join mgr prio xfer
 
 if PARALLEL

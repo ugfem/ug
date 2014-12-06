@@ -1,5 +1,3 @@
-# $Id$
-
 if MPI
   MLIB = libppifmpi.la
 else

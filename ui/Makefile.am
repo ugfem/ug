@@ -1,5 +1,3 @@
-# $Id$
-
 SOURCES = uginterface.c initui.c cmdint.c cmdline.c dataexplorer.c commands.c helpmsg.c avs.c tecplot.c mmio.c fieldio.c avs.h cmdint.h cmdline.h commands.h dataexplorer.h fieldio.h helpmsg.h initui.h mmio.h tecplot.h uginterface.h
 
 uiincludedir = $(pkgincludedir)

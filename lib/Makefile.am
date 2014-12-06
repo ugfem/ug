@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS = ugdata
 
 if BUILD2D

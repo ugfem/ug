@@ -1,5 +1,3 @@
-# $Id$
-
 noinst_LTLIBRARIES = libdddif2.la libdddif3.la
 
 SOURCES = initddd.c memmgr.c handler.c lb.c debugger.c lbrcb.c gridcons.c support.c \

@@ -1,5 +1,3 @@
-# $Id$
-
 SOURCES = amg_blas.c amg_coarsen.c amg_iter.c amg_low.c amg_solve.c amg_sp.c amg_ug.c amg_blas.h amg_coarsen.h amg_header.h amg_iter.h amg_low.h amg_solve.h amg_sp.h amg_ug.h
 
 if BUILD2D

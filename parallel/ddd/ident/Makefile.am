@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS =
 
 if PARALLEL

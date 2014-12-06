@@ -1,5 +1,3 @@
-# $Id$
-
 SOURCES = stoch.c field.h
 
 if BUILD2D

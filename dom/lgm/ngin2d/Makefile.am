@@ -1,5 +1,3 @@
-# $Id$
-
 if BUILD2D
   LIB_2D = libngin2d.la
 else

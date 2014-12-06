@@ -1,5 +1,3 @@
-# $Id$
-
 if BUILD3D
   LIB_3D = libngin.la
 else

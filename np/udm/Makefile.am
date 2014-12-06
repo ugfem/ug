@@ -1,5 +1,3 @@
-# $Id$
-
 SOURCES = pcr.c disctools.c npscan.c udm.c formats.c numproc.c dio.c data_io.c data_io.h dio.h disctools.h formats.h npscan.h numproc.h pcr.h udm.h
 
 if BUILD2D

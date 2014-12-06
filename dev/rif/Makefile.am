@@ -1,5 +1,3 @@
-# $Id$
-
 AM_CPPFLAGS = $(UG_CPPFLAGS)
 
 noinst_LTLIBRARIES = libdevR.la

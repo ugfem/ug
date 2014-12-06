@@ -1,5 +1,3 @@
-# $Id$
-
 # commands.h will gm.h und der braucht Dimension
 AM_CPPFLAGS = $(UG_2DFLAGS) -I$(top_srcdir)/low
 

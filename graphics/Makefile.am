@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS = uggraph grape
 
 SOURCES = graphics.c graphics.h

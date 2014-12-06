@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS = gg2 gg3
 
 SOURCES = algebra.c enrol.c evm.c mgio.c ugio.c ugm.c cw.c initgm.c elements.c shapes.c evalproc.c rm.c refine.c smooth.c dlmgr.c gmcheck.c er.c mgheapmgr.c algebra.h dlmgr.h enrol.h er.h evm.h GenerateRules.h initgm.h mgheapmgr.h mgio.h shapes.h ugio.h

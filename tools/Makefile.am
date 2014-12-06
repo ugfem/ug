@@ -1,5 +1,3 @@
-# $Id$
-
 AM_CFLAGS = $(UG_CPPFLAGS)
 
 # for plugins later:
