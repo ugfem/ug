@@ -79,9 +79,7 @@ typedef void *msgid;         /* dummy definition, any pointer type is ok    */
 #define NO_MSGID ((msgid)-1L) /* a special value that should never be re-   */
                               /* turned as a msgid, like NULL for pointers  */
 
-#ifdef __cplusplus
 namespace PPIF {
-#endif
 
 enum directions {north,east,south,west,up,down};
 
@@ -321,9 +319,7 @@ template<class T> void PPIF_ReduceMin (T * val)
 
 #endif
 
-#ifdef __cplusplus
 }  // end namespace PPIF
-#endif
 
 
 /****************************************************************************/

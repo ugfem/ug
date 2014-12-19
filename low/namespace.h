@@ -51,8 +51,6 @@
 #ifndef UG_NAMESPACE_H
 #define UG_NAMESPACE_H
 
-#ifdef __cplusplus
-
 #define START_UG_NAMESPACE namespace UG {
 #define END_UG_NAMESPACE }
 #define END_UGDIM_NAMESPACE }}
@@ -69,19 +67,6 @@
 #define USING_UGDIM_NAMESPACE using namespace UG::D2;
 #define USING_UG_NAMESPACES namespace UG {namespace D2 {} } using namespace UG; using namespace UG::D2;
 #define NS_DIM_PREFIX UG::D2::
-#endif
-
-#else
-/* normal C-compiler, no namespace-stuff */
-# define START_UG_NAMESPACE
-# define START_UGDIM_NAMESPACE
-# define END_UG_NAMESPACE
-# define END_UGDIM_NAMESPACE
-# define NS_PREFIX
-#define NS_DIM_PREFIX
-# define USING_UG_NAMESPACE
-# define USING_UGDIM_NAMESPACE
-# define USING_UG_NAMESPACES
 #endif
 
 /* check if the required symbols exist */

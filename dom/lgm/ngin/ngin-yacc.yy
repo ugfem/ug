@@ -50,14 +50,14 @@ static NG_ELEMENT Elem;
 
  /* forward declare my own function (referenced by automatic parser) */ 
  int ngerror (char *s);
-#ifdef __cplusplus
+
 extern "C"
 {
-#endif
+
   int ngwrap();
-#ifdef __cplusplus
+
 }
-#endif
+
 %}
 
 %union 

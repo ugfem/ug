@@ -101,11 +101,7 @@ USING_UG_NAMESPACES
 #include "shades.h"
 
 /* hack for C++ */
-#ifdef __cplusplus
 #define CLASS c_class
-#else
-#define CLASS class
-#endif
 
 /****************************************************************************/
 /*																			*/

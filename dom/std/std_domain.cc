@@ -50,11 +50,7 @@
 
 /* standard C++ library */
 /* set needed in BVP_Init */
-#ifdef __cplusplus
 #include <set>
-#else
-#define STDDOM_QUADRATIC_LINE_INSERTION
-#endif
 
 #include "domain.h"
 
@@ -1497,14 +1493,6 @@ BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
      When a line is visited the second time, the pair is expunged from the
      set in order to save memory.
    */
-#ifdef STDDOM_QUADRATIC_LINE_INSERTION
-  /* the previous quadratic c-algorithm */
-  for (i = 0; i < ncorners; i++)
-    for (j = i + 1; j < ncorners; j++)
-    {
-      CreateLine(i, j, Heap, thePatch, corners, lines, sides, &nlines, &err);
-    }
-#else
   typedef std::set<std::pair<long,long> > set;
   typedef std::set<std::pair<long,long> >::iterator iterator;
   set bnd_edges;
@@ -1566,7 +1554,6 @@ BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
       UserWrite("Error: unknown PATCH_TYPE found for a boundary side!\n");
 
   }
-#endif /* STDDOM_QUADRATIC_LINE_INSERTION */
   ASSERT (err == 0);
 #endif
 

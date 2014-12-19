@@ -327,11 +327,7 @@ void createGraphics(void)
 
   /* test if true color visual */
   visual = DefaultVisual(display, screen);
-#ifdef __cplusplus
   true_color = (visual->c_class == TrueColor);
-#else
-  true_color = (visual->class == TrueColor);
-#endif
 
   /* get info on pixel structure */
   if (true_color) {
