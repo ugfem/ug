@@ -69,7 +69,7 @@ USING_UG_NAMESPACES
 #endif
 #define MIN_DIFF 0.05   /* minimum local distance between midnode and cornernode */
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /****************************************************************************/
 /** \brief Calculate displacement of the center point along one local coordinate

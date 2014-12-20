@@ -287,7 +287,7 @@ static const INT *Order,*Sign;
 static INT SkipV,SignRad;
 static DOUBLE InvMeshSize;
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /****************************************************************************/
 /*                                                                          */

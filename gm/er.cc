@@ -245,7 +245,7 @@ static struct {
 
 } global;                                                       /* static globals of this module		*/
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /****************************************************************************/
 /*																			*/

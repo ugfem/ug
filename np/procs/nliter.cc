@@ -68,7 +68,7 @@ USING_UG_NAMESPACES
 /*                                                                          */
 /****************************************************************************/
 
-  REP_ERR_FILE;
+  REP_ERR_FILE
 
 #define BUFFER_SIZE                 MAX(256,2*DISPLAY_WIDTH+4)
 

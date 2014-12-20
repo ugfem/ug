@@ -282,7 +282,7 @@ typedef struct np_ldcs NP_LDCS;
 static DOUBLE clock_start;
 static DOUBLE basetime;
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

@@ -136,7 +136,7 @@ static INT thePathsVarID;
 static char OldBasePath[BASE_PATH_SIZE];
 static char BasePath[BASE_PATH_SIZE] = "./";
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

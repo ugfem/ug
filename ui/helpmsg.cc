@@ -114,7 +114,7 @@ static char *HelpFile[MAXHELPFILES];    /* the help messages files			*/
 static FILE *HelpFilePtr[MAXHELPFILES]; /* the help messages files			*/
 static int NHelpFiles;                                  /* no of open helpfiles                         */
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

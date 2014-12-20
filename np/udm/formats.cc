@@ -106,7 +106,7 @@ static INT theVecVarID;                                 /* env type for VEC_TEMP
 static INT theMatVarID;                                 /* env type for MAT_TEMPLATE vars       */
 /*@}*/
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

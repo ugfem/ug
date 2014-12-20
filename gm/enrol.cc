@@ -97,7 +97,7 @@ USING_UGDIM_NAMESPACE
 static INT theFormatDirID;                      /* env type for Format dir				*/
 static INT theSymbolVarID;                      /* env type for Format vars                     */
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /****************************************************************************/
 /*D

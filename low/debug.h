@@ -83,7 +83,7 @@
 #define REP_ERR_ENCOUNTERED             (rep_err_count)
 
 #define REP_ERR_RESET                   rep_err_count = 0;
-#define REP_ERR_FILE                    static char *this_file=__FILE__
+#define REP_ERR_FILE                    static char *this_file=__FILE__;
 
 #define DEBUG_TIME_RESET        __debug_time_count = 0;
 #define DEBUG_TIME_INC                                        \

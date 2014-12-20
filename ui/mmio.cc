@@ -28,7 +28,7 @@
 
 USING_UG_NAMESPACES
 
-  REP_ERR_FILE;
+  REP_ERR_FILE
 
 
 int NS_DIM_PREFIX mm_is_valid(MM_typecode matcode)

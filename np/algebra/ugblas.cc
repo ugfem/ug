@@ -207,7 +207,7 @@ static INT trace_ugblas=0;
 /* RCS string */
 const static char RCS_ID("$Header$",UG_RCS_STRING);
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /****************************************************************************/
 /*                                                                          */

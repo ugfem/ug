@@ -87,7 +87,7 @@ static int fas_c;
 static double fas_t;
 static DOUBLE clock_start;
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

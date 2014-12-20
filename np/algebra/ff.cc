@@ -81,7 +81,7 @@ USING_UG_NAMESPACES
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 static DOUBLE glob_h;   /* used if THETA_ANA is defined */
 

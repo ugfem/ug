@@ -146,7 +146,7 @@ static UINT UsedOBJT;           /* for the dynamic OBJECT management	*/
 static const INT *Order,*Sign;
 static DOUBLE InvMeshSize;
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /****************************************************************************/
 /*                                                                          */

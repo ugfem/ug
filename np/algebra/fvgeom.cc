@@ -177,7 +177,7 @@ static LOCAL_DOUBLES LocalCoords[TAGS];
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /****************************************************************************/
 /*																			*/

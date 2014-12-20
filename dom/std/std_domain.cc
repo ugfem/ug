@@ -143,7 +143,7 @@ static INT theBVPDirID;         /*!<  env type for BVP dir                      
 
 static STD_BVP *currBVP;
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /****************************************************************************/
 /*                                                                          */

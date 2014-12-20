@@ -44,7 +44,7 @@
 
 #define ERR_RETURN(x) REP_ERR_RETURN(x)
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 #include "udm.h"  /* for MAX_MAT_COMP */
 

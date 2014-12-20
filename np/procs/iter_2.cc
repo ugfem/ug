@@ -148,7 +148,7 @@ typedef struct
 
 static VEC_SCALAR Factor_One;
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

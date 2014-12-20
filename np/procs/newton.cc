@@ -81,7 +81,7 @@ static INT defect_c, newton_c, linear_c;
 static DOUBLE defect_t, newton_t, linear_t;
 static DOUBLE clock_start;
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

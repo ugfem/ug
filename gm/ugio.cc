@@ -145,7 +145,7 @@ USING_UGDIM_NAMESPACE
 /*																			*/
 /****************************************************************************/
 
-REP_ERR_FILE;
+REP_ERR_FILE
 static INT gridpaths_set=false;
 static MGIO_RR_RULE *rr_rules;
 static INT rr_rule_offsets[TAGS];

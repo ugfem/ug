@@ -571,7 +571,7 @@ typedef struct
 static VEC_SCALAR Factor_One;
 static char LU_reg[N_REG][16];
 
-REP_ERR_FILE;
+REP_ERR_FILE
 
 static VECDATA_DESC *FF_VECDATA_DESC_ARRAY[FF_MAX_VECS];
 
