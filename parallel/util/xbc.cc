@@ -18,7 +18,7 @@
 
 #include "ppif.h"
 
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 
 #define XBCMAX 32768
 

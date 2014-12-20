@@ -53,7 +53,7 @@
 /* dddif module */
 #ifdef ModelP
 #include "ppif.h"
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 #endif
 
 USING_UG_NAMESPACE

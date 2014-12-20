@@ -55,7 +55,7 @@
 #include "initparallel.h"
 #include "parallel.h"
 #include "ppif.h"
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 #endif
 
 /* devices module */

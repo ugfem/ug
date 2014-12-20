@@ -46,7 +46,7 @@
 
 #ifdef ModelP
 #include "xbc.h"
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 #endif
 
 USING_UG_NAMESPACES

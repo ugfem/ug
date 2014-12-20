@@ -18,7 +18,7 @@
 #include "debugger.h"
 
 USING_UG_NAMESPACES
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

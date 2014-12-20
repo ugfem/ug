@@ -80,7 +80,7 @@ USING_UGDIM_NAMESPACE
   USING_UG_NAMESPACE
 
 #ifdef ModelP
-  USING_PPIF_NAMESPACE
+  using namespace PPIF;
 #endif
 
 /****************************************************************************/

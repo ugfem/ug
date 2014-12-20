@@ -36,7 +36,7 @@
 #include "dddi.h"
 #include "xfer.h"
 
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 
 START_UGDIM_NAMESPACE
 

@@ -66,13 +66,12 @@
 #include "xmain.h"
 #endif
 
-#include "ppif_namespace.h"
 
 /* glibc: no prototype in math.h unless _ISOC9X_SOURCE is defined */
 long int lrint(double x);
 
 USING_UG_NAMESPACES
-  USING_PPIF_NAMESPACE
+using namespace PPIF;
 
 /****************************************************************************/
 /*                                                                          */

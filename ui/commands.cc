@@ -127,14 +127,13 @@
 #include "parallel.h"
 #endif
 
-#include "ppif_namespace.h"
 
 /* own header */
 #include "commands.h"
 
 
 USING_UG_NAMESPACES
-  USING_PPIF_NAMESPACE
+using namespace PPIF;
 
 /****************************************************************************/
 /*                                                                          */

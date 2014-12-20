@@ -41,7 +41,7 @@
 #include "namespace.h"
 
 USING_UG_NAMESPACE
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 
 START_UGDIM_NAMESPACE
 

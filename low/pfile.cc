@@ -42,7 +42,7 @@
 
 #ifdef ModelP
 #include "pargm.h"
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 #endif
 
 #include "pfile.h"

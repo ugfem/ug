@@ -42,7 +42,7 @@
 #include "dddi.h"
 #include "if.h"
 
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 
 /****************************************************************************/
 /*                                                                          */

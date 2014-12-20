@@ -65,7 +65,7 @@
 USING_UG_NAMESPACES
 
 /* PPIF namespace: */
-  USING_PPIF_NAMESPACE
+using namespace PPIF;
 
 
 /****************************************************************************/

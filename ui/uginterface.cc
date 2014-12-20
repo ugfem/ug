@@ -52,7 +52,7 @@
 USING_UG_NAMESPACES
 
 #ifdef ModelP
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 #endif
 
 /****************************************************************************/

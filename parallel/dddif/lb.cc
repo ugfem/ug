@@ -43,7 +43,7 @@
 USING_UG_NAMESPACES
 
 /* PPIF namespaces: */
-USING_PPIF_NAMESPACE
+using namespace PPIF;
 
 START_UGDIM_NAMESPACE
 
