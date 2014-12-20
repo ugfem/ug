@@ -142,7 +142,7 @@ static void WriteFormatted (const char *text)
 {
   char buffer[LONGBUFFSIZE];
   INT tp,bp;
-  static INT verbatim = FALSE;
+  static INT verbatim = false;
 
   tp = bp = 0;
   buffer[0] = '\0';
@@ -152,7 +152,7 @@ static void WriteFormatted (const char *text)
   {
     if (END_VERBATIM(text))
     {
-      verbatim = FALSE;
+      verbatim = false;
 
       /* end verbatim: skip this line */
       return;
@@ -170,7 +170,7 @@ static void WriteFormatted (const char *text)
     }
     else if (BEGIN_VERBATIM(text))
     {
-      verbatim = TRUE;
+      verbatim = true;
 
       /* begin verbatim: skip this line */
       return;
@@ -421,7 +421,7 @@ INT NS_DIM_PREFIX CheckHelp ()
   rv = 0;
   for (theCmd=GetFirstCommand(); theCmd!=NULL; theCmd=GetNextCommand(theCmd))
   {
-    found = FALSE;
+    found = false;
     strcpy(cmdname,ENVITEM_NAME(theCmd));
 
     /* case INSENSITIVE: convert the command name to lower case */
@@ -455,7 +455,7 @@ INT NS_DIM_PREFIX CheckHelp ()
           /* scan first word */
           if ((sscanf(ToLower(buffer),"%s",HelpItem)==1)&&(strcmp(HelpItem,cmdname)==0))
           {
-            found = TRUE;
+            found = true;
             break;
           }
         }

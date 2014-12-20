@@ -1336,8 +1336,8 @@ static void ElementDelete (DDD_OBJ obj)
                       "ncon=%d\n",
                       me,EID_PRTX(pe),OBJT(pe),level,NC(theGrid)))
 
-  /* dispose element without connections (FALSE) */
-  if (DisposeElement(theGrid, pe, FALSE)) ASSERT(0);
+  /* dispose element without connections (false) */
+  if (DisposeElement(theGrid, pe, false)) ASSERT(0);
 }
 
 
@@ -1568,14 +1568,14 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
     ASSERT(NBNODE(LINK0(ecopy)) != NULL);
     ASSERT(NBNODE(LINK1(ecopy)) != NULL);
     if (newness == XFER_NEW) {
-      enew = CreateEdge(theGrid,pe,i, FALSE);
+      enew = CreateEdge(theGrid,pe,i, false);
       SETEDSUBDOM(enew,EDSUBDOM(ecopy));
     }
     else {
       enew = GetEdge(NBNODE(LINK0(ecopy)),
                      NBNODE(LINK1(ecopy)));
       if (enew == NULL) {
-        enew = CreateEdge(theGrid,pe,i,FALSE);
+        enew = CreateEdge(theGrid,pe,i,false);
         SETEDSUBDOM(enew,EDSUBDOM(ecopy));
         /* TODO: remove this check if the first call is with XFER_NEW */
         ASSERT(0);

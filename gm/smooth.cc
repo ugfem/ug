@@ -136,9 +136,9 @@ static DOUBLE LambdaOfLengthOfEdge(ELEMENT *theElement, INT edge, DOUBLE LambdaO
   /* determine orientation of boundary lambda */
   lambda[0] = 0;
   BNDS_Global(bnds,lambda,BndPoint1);
-  reverse = TRUE;
+  reverse = true;
   V_DIM_COPY(CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,edge,0)))),BndPoint0);
-  if (V_DIM_ISEQUAL(BndPoint0,BndPoint1)) reverse = FALSE;
+  if (V_DIM_ISEQUAL(BndPoint0,BndPoint1)) reverse = false;
 
   /* linear interpolation */
   V_DIM_LINCOMB(1-LambdaOfLength,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,edge,0)))),
@@ -146,12 +146,12 @@ static DOUBLE LambdaOfLengthOfEdge(ELEMENT *theElement, INT edge, DOUBLE LambdaO
                 BndPoint0);
 
   /* boundary interpolation */
-  if (reverse==TRUE)
+  if (reverse==true)
     lambda[0] = 1.-LambdaOfLength;
   else
     lambda[0] = LambdaOfLength;
   BNDS_Global(bnds,lambda,BndPoint1);
-  if (reverse==TRUE) printf("reverse: element %d, edge %d \n",ID(theElement),edge);
+  if (reverse==true) printf("reverse: element %d, edge %d \n",ID(theElement),edge);
 
   V_DIM_EUKLIDNORM_OF_DIFF(BndPoint0,BndPoint1,diff);
   if (diff <= MAX_PAR_DIST) return(LambdaOfLength);    /* boundary is a straight line */
@@ -199,7 +199,7 @@ static DOUBLE LambdaOfLengthOfEdge(ELEMENT *theElement, INT edge, DOUBLE LambdaO
     if (len2/len>=LambdaOfLength) break;
   }
 
-  if (reverse==TRUE)
+  if (reverse==true)
     return(1-lambda[0]);
   else
     return(lambda[0]);
@@ -672,7 +672,7 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
    PARAMETERS
    .  theElement     - father element of the center node
    .  CenterNode     - center node of father element
-   .  LambdaMod      - TRUE for 'smoothgrid $b'
+   .  LambdaMod      - true for 'smoothgrid $b'
    .  MidNodeLambdaNew - new lambda of mid nodes
    .  MidNodeLambdaOld - old lambda of mid nodes
 
@@ -724,7 +724,7 @@ static INT DefaultPosCurvedBoundary(ELEMENT *theElement, NODE *CenterNode, INT L
     if (VFATHER(MYVERTEX(theBndNode))!=VFATHER(MYVERTEX(theOppNode))) continue;
 
     /* calculate global coordinates of a regular refined boundary mid node */
-    if (LambdaMod==TRUE)
+    if (LambdaMod==true)
     {     /* get lambda of bnd-node and reset center node (only used for smoothgrid $b) */
       if (GetMidNodeParam(theBndNode,&lambda_old)!=0) continue;
       MidNodeLambdaOld[ID(MYVERTEX(theBndNode))] = lambda_old;
@@ -1344,7 +1344,7 @@ static INT MoveNodesOnGrid (GRID *theGrid, DOUBLE_VECTOR *VertexCoord, DOUBLE_VE
     {
       if (!V2_LOCAL_EQUAL(newLPos,oldLPos))
       {
-        if (MoveNode(theMG,theNode,newPos,FALSE)!=0) return(1);
+        if (MoveNode(theMG,theNode,newPos,false)!=0) return(1);
         SETMOVED(theVertex,1);
         if (NTYPE(theNode)==CENTER_NODE) MoveInfo[0]++;
         if (NTYPE(theNode)==MID_NODE) MoveInfo[1]++;
@@ -1354,7 +1354,7 @@ static INT MoveNodesOnGrid (GRID *theGrid, DOUBLE_VECTOR *VertexCoord, DOUBLE_VE
     {
       if (!V2_LOCAL_EQUAL(newLPos,oldLPos))
       {
-        if (MoveNode(theMG,theNode,newPos,FALSE)!=0) return(1);
+        if (MoveNode(theMG,theNode,newPos,false)!=0) return(1);
         SETMOVED(theVertex,1);
         MoveInfo[0]++;
         /* are there nodes which reached the moving limit ? */
@@ -1376,7 +1376,7 @@ static INT MoveNodesOnGrid (GRID *theGrid, DOUBLE_VECTOR *VertexCoord, DOUBLE_VE
 
       if (!LOCAL_EQUAL(lambda_new,lambda_old))
       {
-        if (MoveMidNode(theMG,theNode,lambda_new,FALSE)!=0) return(1);
+        if (MoveMidNode(theMG,theNode,lambda_new,false)!=0) return(1);
         SETMOVED(theVertex,1);
         MoveInfo[1]++;
       }
@@ -1427,10 +1427,10 @@ static INT ElemOnSpecBnd(ELEMENT *theElement, const INT *bnd, const INT bnd_num,
       if (type[1]==bnd[j])
       {
         *side = i;
-        return(TRUE);
+        return(true);
       }
   }
-  return(FALSE);
+  return(false);
 }
 static void CubicSplineCompute(DOUBLE *x, DOUBLE *y, INT n, DOUBLE yp1, DOUBLE ypn, DOUBLE *y2)
 {
@@ -1757,7 +1757,7 @@ option_b:
       if (option==3)
       {
         /* determine default positions for center node and mid node opposite to boundary */
-        if (DefaultPosCurvedBoundary(fatherElement,theNode,TRUE,
+        if (DefaultPosCurvedBoundary(fatherElement,theNode,true,
                                      MidNodeLambdaNew,MidNodeLambdaOld)) continue;
       }
       else
@@ -1910,7 +1910,7 @@ option_c:
         /* calculate new position */
         if (SplineSmooth(theNode,newPos)) continue;
         /* move node to new position */
-        if (MoveNode(theMG,theNode,newPos,FALSE)!=0) return(1);
+        if (MoveNode(theMG,theNode,newPos,false)!=0) return(1);
         n++;
       }
       n1 = 0;
@@ -1950,7 +1950,7 @@ option_c:
         }
         if (nlinks!=4) continue;
         /* move the center node to the new position */
-        if (MoveNode(theMG,theNode,newPos,FALSE)!=0) return(1);
+        if (MoveNode(theMG,theNode,newPos,false)!=0) return(1);
         n1++;
       }
       UserWriteF("%d mid-nodes and %d center-nodes moved due to 'spline' option on level %d\n",
@@ -2105,7 +2105,7 @@ INT NS_DIM_PREFIX SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
       if (!MovedNode(fatherElement)) continue;
 
       /* determine default positions for center node and mid node opposite to boundary */
-      if (DefaultPosCurvedBoundary(fatherElement,theNode,FALSE,
+      if (DefaultPosCurvedBoundary(fatherElement,theNode,false,
                                    MidNodeLambdaNew,MidNodeLambdaOld)) continue;
 
     }

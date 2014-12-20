@@ -1701,14 +1701,14 @@ static INT bfs (FIFO *Fifo, VECTOR *theSeedVector,
         continue;                                       /* j is always labeled (so: don't put in fifo again!)! */
 
       /* run over all vectors vk adjacent to vj: */
-      no_coarse_neighbor = TRUE;
+      no_coarse_neighbor = true;
       for (mjk=MNEXT(VSTART(vj)); mjk!=NULL; mjk=MNEXT(mjk))
       {
         vk = MDEST(mjk);
         if ( VCCOARSE(vk) )
           if (STRONG(mjk))
           {
-            no_coarse_neighbor = FALSE;
+            no_coarse_neighbor = false;
             break;
           }
       }

@@ -1838,7 +1838,7 @@ INT NS_DIM_PREFIX CopyView (const PICTURE *mypic, INT all, INT cut)
   myViewDim = PO_DIM(thePlotObj);
 
   if (cut && !PO_USESCUT(VO_PO(myvo)))
-    cut = FALSE;
+    cut = false;
 
   for (theUGW=GetFirstUgWindow(); theUGW!=NULL; theUGW=GetNextUgWindow(theUGW))
   {
@@ -2729,10 +2729,10 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
   {
     theMpo->min                     =-4.0;
     theMpo->max                     = 4.0;
-    theMpo->log                     = FALSE;
-    theMpo->conn            = TRUE;
-    theMpo->extra           = FALSE;
-    theMpo->rel                     = FALSE;
+    theMpo->log                     = false;
+    theMpo->conn            = true;
+    theMpo->extra           = false;
+    theMpo->rel                     = false;
     theMpo->EvalFct         = NULL;
     theMpo->Matrix          = NULL;
     theMpo->dash            = 0.0;

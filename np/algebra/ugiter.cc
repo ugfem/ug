@@ -136,7 +136,7 @@ USING_UG_NAMESPACES
 /*                                                                          */
 /****************************************************************************/
 
-static INT StoreInverse=TRUE;
+static INT StoreInverse=true;
 
 /* large matrix for l_pgs */
 /* (Macintosh does not support local data >32k) */
@@ -206,8 +206,8 @@ INT NS_DIM_PREFIX l_ordervtypes (GRID *g, const SHORT TypeOrder[NVECTYPES])
   INT type,order,Types[NVECTYPES];
 
   /* consistency check before whole list is messed up */
-  for (type=0; type<NVECTYPES; type++) Types[type] = FALSE;
-  for (order=0; order<NVECTYPES; order++) Types[TypeOrder[order]] = TRUE;
+  for (type=0; type<NVECTYPES; type++) Types[type] = false;
+  for (order=0; order<NVECTYPES; order++) Types[TypeOrder[order]] = true;
   for (type=0; type<NVECTYPES; type++)
     if (!Types[type])
       REP_ERR_RETURN (NUM_ERROR);
@@ -1218,7 +1218,7 @@ INT NS_DIM_PREFIX l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
    \param u_comp - position of the solution scalar in the VECTORs of the blockvector
    \param f_comp - position of the right hand side scalar in the VECTORs of the blockvector
    \param aux_comp - if nonnegative denotes auxiliary component for defect calculation
-   \param verbose - if TRUE display the convergence rate of the iteration
+   \param verbose - if true display the convergence rate of the iteration
    \param eps_relative - error reduction relative to the start defect
 
    This function solve \f$ Ku = f\f$ by iterative solvings of `LowerTriangle(K) v = f`.
@@ -1230,7 +1230,7 @@ INT NS_DIM_PREFIX l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
    given, the defect of the solution can be calculated and the iteration is
    stopped premature if the prescribed accuracy 'eps' is reached; this
    stopping-accuracy will be multiplied by the start defect norm (resulting
-   in a relative criterion) if 'eps_relative' is TRUE.
+   in a relative criterion) if 'eps_relative' is true.
 
    u_comp, f_comp (and aux_comp if given) must be different!
 
@@ -2332,10 +2332,10 @@ INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCAL
       Rest     = VVALUEPTR(vi,0);
       RestComp = VD_CMPPTR_OF_TYPE(VD_rest,type);
 
-      flag = FALSE;
+      flag = false;
       for (i=0; i<n; i++)
         if (Rest[RestComp[i]]>TypeORT[i])
-          flag = TRUE;
+          flag = true;
 
       SETVCUSED(vi,flag);
     }
@@ -2482,7 +2482,7 @@ INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCAL
       Piv = MVALUEPTR(Mji,0);
 
       /* matrix multiplication */
-      PivIsZero = TRUE;
+      PivIsZero = true;
       for (i0=0; i0<nr; i0++)
         for (j0=0; j0<n; j0++)
         {
@@ -2491,7 +2491,7 @@ INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCAL
             sum += Piv[PivComp[i0*n+k0]] * InvMat[k0*n+j0];
           PivMat[i0*n+j0] = sum;
           if (sum!=0.0)
-            PivIsZero = FALSE;
+            PivIsZero = false;
         }
 
       /* the pivot becomes the entry of the lower triangular part */
@@ -2522,7 +2522,7 @@ INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCAL
         Elm = MVALUEPTR(Mik,0);
 
         /* matrix multiplication */
-        CorIsZero = TRUE;
+        CorIsZero = true;
         for (i0=0; i0<nr; i0++)
           for (j0=0; j0<nc; j0++)
           {
@@ -2531,7 +2531,7 @@ INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCAL
               sum += PivMat[i0*n+k0] * Elm[ElmComp[k0*nc+j0]];
             CorMat[i0*nc+j0] = sum;
             if (sum!=0.0)
-              CorIsZero = FALSE;
+              CorIsZero = false;
           }
 
         if (CorIsZero)
@@ -3005,7 +3005,7 @@ INT NS_DIM_PREFIX l_icdecomp (GRID *g, const MATDATA_DESC *M)
       DikComp = MD_MCMPPTR_OF_RT_CT(M,type,ctype);
       nc              = MD_COLS_IN_RT_CT(M,type,ctype);
       Dik = MVALUEPTR(Mik,0);
-      CorIsZero = TRUE;
+      CorIsZero = true;
 
       /* matrix multiplication */
       for (i0=0; i0<n; i0++)
@@ -3016,7 +3016,7 @@ INT NS_DIM_PREFIX l_icdecomp (GRID *g, const MATDATA_DESC *M)
             sum += Dik[DikComp[i0*nc+k0]] * Dik[DikComp[j0*nc+k0]];
           CorMat[i0*n+j0] = sum;
           if (sum!=0.0)
-            CorIsZero = FALSE;
+            CorIsZero = false;
         }
 
       if (CorIsZero)
@@ -3071,7 +3071,7 @@ INT NS_DIM_PREFIX l_icdecomp (GRID *g, const MATDATA_DESC *M)
         Dik = MVALUEPTR(Mik,0);
         DjkComp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
         Djk = MVALUEPTR(Mjk,0);
-        CorIsZero = TRUE;
+        CorIsZero = true;
 
         /* matrix multiplication */
         for (i0=0; i0<n; i0++)
@@ -3082,7 +3082,7 @@ INT NS_DIM_PREFIX l_icdecomp (GRID *g, const MATDATA_DESC *M)
               sum += Dik[DikComp[i0*nc+k0]] * Djk[DjkComp[j0*nc+k0]];
             CorMat[i0*nr+j0] = sum;
             if (sum!=0.0)
-              CorIsZero = FALSE;
+              CorIsZero = false;
           }
 
         if (CorIsZero)
@@ -3216,10 +3216,10 @@ INT NS_DIM_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALA
       Rest     = VVALUEPTR(vi,0);
       RestComp = VD_CMPPTR_OF_TYPE(t,type);
 
-      flag = FALSE;
+      flag = false;
       for (i=0; i<n; i++)
         if (Rest[RestComp[i]]>TypeORT[i])
-          flag = TRUE;
+          flag = true;
 
       SETVCUSED(vi,flag);
     }
@@ -3415,7 +3415,7 @@ INT NS_DIM_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALA
       Piv = MVALUEPTR(Mji,0);
 
       /* matrix multiplication */
-      PivIsZero = TRUE;
+      PivIsZero = true;
       for (i0=0; i0<nr; i0++)
         for (j0=0; j0<n; j0++)
         {
@@ -3424,7 +3424,7 @@ INT NS_DIM_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALA
             sum += Piv[PivComp[i0*n+k0]] * InvMat[k0*n+j0];
           PivMat[i0*n+j0] = sum;
           if (sum!=0.0)
-            PivIsZero = FALSE;
+            PivIsZero = false;
         }
 
       /* the pivot becomes the entry of the lower triangular part */
@@ -3455,7 +3455,7 @@ INT NS_DIM_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALA
         Elm = MVALUEPTR(Mik,0);
 
         /* matrix multiplication */
-        CorIsZero = TRUE;
+        CorIsZero = true;
         for (i0=0; i0<nr; i0++)
           for (j0=0; j0<nc; j0++)
           {
@@ -3464,7 +3464,7 @@ INT NS_DIM_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALA
               sum += PivMat[i0*n+k0] * Elm[ElmComp[k0*nc+j0]];
             CorMat[i0*nc+j0] = sum;
             if (sum!=0.0)
-              CorIsZero = FALSE;
+              CorIsZero = false;
           }
 
         if (CorIsZero)
@@ -3807,7 +3807,7 @@ INT NS_DIM_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
       Piv = MVALUEPTR(Mji,0);
 
       /* matrix multiplication */
-      PivIsZero = TRUE;
+      PivIsZero = true;
       for (i0=0; i0<nr; i0++)
         for (j0=0; j0<n; j0++)
         {
@@ -3816,7 +3816,7 @@ INT NS_DIM_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
             sum += Piv[PivComp[i0*n+k0]] * InvMat[k0*n+j0];
           PivMat[i0*n+j0] = sum;
           if (sum!=0.0)
-            PivIsZero = FALSE;
+            PivIsZero = false;
         }
 
       /* the pivot becomes the entry of the lower triangular part */
@@ -3845,7 +3845,7 @@ INT NS_DIM_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
         Elm = MVALUEPTR(Mik,0);
 
         /* matrix multiplication */
-        CorIsZero = TRUE;
+        CorIsZero = true;
         for (i0=0; i0<nr; i0++)
           for (j0=0; j0<nc; j0++)
           {
@@ -3854,7 +3854,7 @@ INT NS_DIM_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
               sum += PivMat[i0*n+k0] * Elm[ElmComp[k0*nc+j0]];
             CorMat[i0*nc+j0] = sum;
             if (sum!=0.0)
-              CorIsZero = FALSE;
+              CorIsZero = false;
           }
 
         if (CorIsZero)
@@ -4122,7 +4122,7 @@ static INT l_lrregularizeB (GRID *theGrid, VECTOR *vec, const MATDATA_DESC *M)
     }
   MVALUE(VSTART(vec),matComp) = 1.0;
 
-  if (TRUE /*mutelevel<=VERBOSE_SMOOTH*/)
+  if (true /*mutelevel<=VERBOSE_SMOOTH*/)
     UserWriteF(" - BLOCKVECTOR decomposition regularized on level %d, component %d\n",(int)GLEVEL(theGrid),singComp);
 
   if (StoreInverse)
@@ -4346,7 +4346,7 @@ INT NS_DIM_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
         Piv = MVALUEPTR(Mji,0);
 
         /* matrix multiplication */
-        PivIsZero = TRUE;
+        PivIsZero = true;
         for (i0=0; i0<nr; i0++)
           for (j0=0; j0<n; j0++)
           {
@@ -4355,7 +4355,7 @@ INT NS_DIM_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
               sum += Piv[PivComp[i0*n+k0]] * InvMat[k0*n+j0];
             PivMat[i0*n+j0] = sum;
             if (sum!=0.0)
-              PivIsZero = FALSE;
+              PivIsZero = false;
           }
 
         /* the pivot becomes the entry of the lower triangular part */
@@ -4385,7 +4385,7 @@ INT NS_DIM_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
           Elm = MVALUEPTR(Mik,0);
 
           /* matrix multiplication */
-          CorIsZero = TRUE;
+          CorIsZero = true;
           for (i0=0; i0<nr; i0++)
             for (j0=0; j0<nc; j0++)
             {
@@ -4394,7 +4394,7 @@ INT NS_DIM_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
                 sum += PivMat[i0*n+k0] * Elm[ElmComp[k0*nc+j0]];
               CorMat[i0*nc+j0] = sum;
               if (sum!=0.0)
-                CorIsZero = FALSE;
+                CorIsZero = false;
             }
 
           if (CorIsZero)
@@ -5823,10 +5823,10 @@ INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC
       Rest     = VVALUEPTR(vi,0);
       RestComp = VD_CMPPTR_OF_TYPE(VD_rest,type);
 
-      flag = FALSE;
+      flag = false;
       for (i=0; i<n; i++)
         if (Rest[RestComp[i]]>TypeORT[i])
-          flag = TRUE;
+          flag = true;
 
       SETVCUSED(vi,flag);
     }
@@ -5978,7 +5978,7 @@ INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC
       Piv = MVALUEPTR(Mji,0);
 
       /* matrix multiplication */
-      PivIsZero = TRUE;
+      PivIsZero = true;
       for (i0=0; i0<nr; i0++)
         for (j0=0; j0<n; j0++)
         {
@@ -5987,7 +5987,7 @@ INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC
             sum += Piv[PivComp[i0*n+k0]] * InvMat[k0*n+j0];
           PivMat[i0*n+j0] = sum;
           if (sum!=0.0)
-            PivIsZero = FALSE;
+            PivIsZero = false;
         }
 
       /* the pivot becomes the entry of the lower triangular part */
@@ -6018,7 +6018,7 @@ INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC
         Elm = MVALUEPTR(Mik,0);
 
         /* matrix multiplication */
-        CorIsZero = TRUE;
+        CorIsZero = true;
         for (i0=0; i0<nr; i0++)
           for (j0=0; j0<nc; j0++)
           {
@@ -6027,7 +6027,7 @@ INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC
               sum += PivMat[i0*n+k0] * Elm[ElmComp[k0*nc+j0]];
             CorMat[i0*nc+j0] = sum;
             if (sum!=0.0)
-              CorIsZero = FALSE;
+              CorIsZero = false;
           }
 
         if (CorIsZero)
@@ -7262,7 +7262,7 @@ INT NS_DIM_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCA
 
       /* multiplication of sparse block Mji by invert diagonal block Mii */
 
-      PivIsZero = TRUE;
+      PivIsZero = true;
 
       for (j0=0; j0<smr->nrows; j0++)
         for (i0=0; i0<n; i0++)
@@ -7273,7 +7273,7 @@ INT NS_DIM_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCA
 
           PivMat[j0*n+i0] = sum;
 
-          if (sum!=0.0) PivIsZero = FALSE;
+          if (sum!=0.0) PivIsZero = false;
         }
 
 

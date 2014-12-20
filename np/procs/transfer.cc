@@ -140,7 +140,7 @@ typedef struct
   const VEC_TEMPLATE *mvt;                      /* main vector template					*/
   INT ntrans;                                                   /* number of part transfer numprocs		*/
   NP_TRANSFER *trans[MAX_PT];                   /* pointers to part transfer numprocs	*/
-  INT swap[MAX_PT];                                     /* TRUE or FALSE for swapping of data	*/
+  INT swap[MAX_PT];                                     /* true or false for swapping of data	*/
   INT svt[MAX_PT];                                      /* indices of sub vector templates		*/
 
   /* sub XXXDATA_DESCs needed */
@@ -968,11 +968,11 @@ static INT PartTransferInit (NP_BASE *theNP, INT argc , char **argv)
       /* noswap option following? */
       if (strcmp(argv[i+1],"noswap")==0)
       {
-        PT_SWAP(thePT,ntrans) = FALSE;
+        PT_SWAP(thePT,ntrans) = false;
         i++;
       }
       else
-        PT_SWAP(thePT,ntrans) = TRUE;
+        PT_SWAP(thePT,ntrans) = true;
 
       PT_TRANS(thePT,ntrans++) = trans;
       break;

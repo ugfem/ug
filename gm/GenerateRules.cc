@@ -89,7 +89,7 @@ static int nRules;                                              /* total number 
 static int FirstRuleWithEdgePattern;    /* Rule no. of first of several SidePatterns	*/
 static REFRULE *RuleList;                               /* list is allocated in main program			*/
 static SHORT *PatternToRefrule;                 /* vector is allocated in main program			*/
-static int Output;                                              /* if TRUE output of generated rules			*/
+static int Output;                                              /* if true output of generated rules			*/
 
 /* prototype for new rules without any data */
 static REFRULE EmptyRule =

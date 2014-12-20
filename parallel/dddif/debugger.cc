@@ -388,7 +388,7 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
 {
   int level, found;
 
-  found = FALSE;
+  found = false;
   for(level=0; level<=TOPLEVEL(theMG); level++)
   {
     GRID *theGrid = GRID_ON_LEVEL(theMG,level);
@@ -404,7 +404,7 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
                me, gid, e, level);
         buggy_ShowCopies(PARHDRE(e));
         buggy_ElemShow(e);
-        found = TRUE;
+        found = true;
       }
     }
 
@@ -418,7 +418,7 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
                me, gid, n, level);
         buggy_ShowCopies(PARHDR(n));
         buggy_NodeShow(n);
-        found = TRUE;
+        found = true;
       }
     }
   }

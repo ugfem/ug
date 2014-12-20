@@ -360,11 +360,11 @@ typedef struct
   DOUBLE meshwidth;                     /* meshwidth of the grid */
   DOUBLE wave_nr_rel;                   /* wavenumber for the testing frequency */
   DOUBLE wave_nr_rel3D;         /* wavenumber for the testing frequency; only for 3D */
-  INT all_freq;                         /* flag; TRUE == smooth for all relevant frequencies */
+  INT all_freq;                         /* flag; true == smooth for all relevant frequencies */
   INT display;
   INT par_sim;                          /* temp for: simulating parallel algo on SEQ */
   INT ass_dirichlet;                    /* assemble Dirichlet boundary condition (only necessary if not done otherwise (fetransfer) */
-  INT symm_frq;                         /* TRUE, if series of testfrequencies should be symmetric, i.e. 1,2,4,8,...,n-1,n,n-1,...,8,4,2,1 */
+  INT symm_frq;                         /* true, if series of testfrequencies should be symmetric, i.e. 1,2,4,8,...,n-1,n,n-1,...,8,4,2,1 */
   INT check_symm;                       /* check, whether the preconditioner is symmetric.
                                            This is done by checking <M^-1*M^-1*d,d> == <M^-1*d,M^-1*d>*/
 #ifdef __BLOCK_VECTOR_DESC__
@@ -4937,7 +4937,7 @@ static INT SBGS_Init (NP_BASE *theNP, INT argc , char **argv)
   theSBGS = (NP_SBGS*) theNP;
 
   /* set configuration parameters */
-  bopt = boopt = biopt = FALSE;
+  bopt = boopt = biopt = false;
   for (i=1; i<argc; i++)
     if (sscanf(argv[i],expandfmt(CONCAT5("%",OPTIONLENSTR,"[a-zA-Z0-9_] %",VALUELENSTR,"[ -~]")),option,value)==2)
     {
@@ -4945,19 +4945,19 @@ static INT SBGS_Init (NP_BASE *theNP, INT argc , char **argv)
       if (strstr(option,"Blocking")!=NULL)
         if (ReadVecTypeINTs(MGFORMAT(NP_MG(theNP)),value,MAX_BLOCKS+1,nTypeBlocks,TypeBlocks)!=0)
           REP_ERR_RETURN (NP_NOT_ACTIVE)
-          else {bopt = TRUE; continue;}
+          else {bopt = true; continue;}
 
       /* BlockOrder */
       if (strstr(option,"BlockOrder")!=NULL)
         if (ReadVecTypeOrder(MGFORMAT(NP_MG(theNP)),value,MAX_ORDER,MAX_BLOCKS,&SBGS_NBLOCKITER(theSBGS),SBGS_BLOCKORDER(theSBGS))!=0)
           REP_ERR_RETURN (NP_NOT_ACTIVE)
-          else {boopt = TRUE; continue;}
+          else {boopt = true; continue;}
 
       /* BlockIter */
       if (strstr(option,"BlockIter")!=NULL)
         if (ReadVecTypeNUMPROCs(NP_MG(theNP),value,ITER_CLASS_NAME,MAX_BLOCKS,nBlockIter,BlockIter)!=0)
           REP_ERR_RETURN (NP_NOT_ACTIVE)
-          else {biopt = TRUE; continue;}
+          else {biopt = true; continue;}
     }
 
   if (!(bopt && boopt && biopt))
@@ -6648,12 +6648,12 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
   }
   if( strcmp( buffer, "ALL") == 0 || strcmp( buffer, "all") == 0 )
   {
-    NPFF_ALLFREQ(np) = TRUE;
+    NPFF_ALLFREQ(np) = true;
     NPFF_WaveNrRel(np) = -1.0;
   }
   else
   {
-    NPFF_ALLFREQ(np) = FALSE;
+    NPFF_ALLFREQ(np) = false;
     sscanf(buffer,"%lf", &NPFF_WaveNrRel(np) );
   }
 
@@ -6675,10 +6675,10 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  NPFF_ParSim(np) = FALSE;
+  NPFF_ParSim(np) = false;
   if ( ReadArgvINT ( "parsim", &NPFF_ParSim(np), argc, argv) )
   {
-    NPFF_ParSim(np) = FALSE;
+    NPFF_ParSim(np) = false;
   }
   else
     NPFF_ParSim(np) = (NPFF_ParSim(np)==1);
@@ -6762,7 +6762,7 @@ static INT FFDisplay (NP_BASE *theNP)
 
   UserWriteF(DISPLAY_NP_FORMAT_SF,"meshwidth",(double)NPFF_MESHWIDTH(np));
 
-  if ( NPFF_ALLFREQ(np) == TRUE )
+  if ( NPFF_ALLFREQ(np) == true )
     UserWriteF(DISPLAY_NP_FORMAT_SS,"frequency","ALL");
   else
   {
@@ -7035,14 +7035,14 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
   }
   else
   {
-    if ( FF_PrepareGrid( theGrid, &meshwidth, TRUE, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
+    if ( FF_PrepareGrid( theGrid, &meshwidth, true, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
     {
       PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed");
       NP_RETURN(1,result[0]);
     }
   }
 #else
-  if (FF_PrepareGrid( theGrid, &meshwidth, TRUE, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
+  if (FF_PrepareGrid( theGrid, &meshwidth, true, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
   {
     PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed");
     NP_RETURN(1,result[0]);

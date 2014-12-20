@@ -73,9 +73,9 @@ START_UGDIM_NAMESPACE
 /*
         macros for correct return or premature abort of a procedure
  */
-#define RET_ON_OK      return (TRUE)
-#define RET_ON_ERROR   return (FALSE)
-#define IS_OK(p)       ((p)==TRUE)
+#define RET_ON_OK      return (true)
+#define RET_ON_ERROR   return (false)
+#define IS_OK(p)       ((p)==true)
 typedef int RETCODE;
 
 
@@ -275,7 +275,7 @@ typedef struct _TYPE_DESC
   //int    nextFree;				/* next free object in arrays           */
   int elemHeader;                       /* which rec. type-elem contains hdr?
                                            (offsetHeader gives local offset)    */
-                                        /* (hasHeader must be TRUE)             */
+                                        /* (hasHeader must be true)             */
 #endif
 
   /* if C_FRONTEND or (CPP_FRONTEND and storage==STORAGE_STRUCT) */
@@ -376,16 +376,9 @@ extern VChannelPtr *theTopology;
 
 #define YES     1
 #define ON      1
-#ifndef TRUE
-#define TRUE    1
-#endif
 
 #define NO      0
 #define OFF     0
-#ifndef FALSE
-#define FALSE   0
-#endif
-
 
 
 

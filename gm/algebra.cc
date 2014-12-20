@@ -495,7 +495,7 @@ BLOCKVECTOR *NS_DIM_PREFIX FindBV( const GRID *grid, const BV_DESC *bvd, const B
   nr = BVD_READ_NEXT_ENTRY( &copy_bvd, bvdf );
 
   /* search trough all blockvector levels defined in bvd */
-  while ( TRUE )
+  while ( true )
   {
     while ( BVNUMBER(bv) != nr )             /* search block with number nr in block list*/
     {
@@ -2960,7 +2960,7 @@ INT NS_DIM_PREFIX CreateAlgebra (MULTIGRID *theMG)
   INT side,i;
 
 
-  if (MG_COARSE_FIXED(theMG) == FALSE) {
+  if (MG_COARSE_FIXED(theMG) == false) {
     for (i=0; i<=TOPLEVEL(theMG); i++) {
       g = GRID_ON_LEVEL(theMG,i);
 
@@ -3081,7 +3081,7 @@ INT NS_DIM_PREFIX CreateAlgebra (MULTIGRID *theMG)
         }
       }
 #endif
-    MG_COARSE_FIXED(theMG) = TRUE;
+    MG_COARSE_FIXED(theMG) = true;
 
     /* now connections */
     if (MGCreateConnection(theMG))
@@ -4675,8 +4675,8 @@ static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
  * @param theGrid - grid level
  * @param order - hierarchie of ordering directions (x,y[,z])
  * @param sign  - signs for the directions
- * @param SpecSkipVecs - if TRUE: GM_PUT_AT_BEGIN or GM_PUT_AT_END of vectors with skip TRUE
- * @param AlsoOrderMatrices - if TRUE order matrices in the same sense
+ * @param SpecSkipVecs - if true: GM_PUT_AT_BEGIN or GM_PUT_AT_END of vectors with skip true
+ * @param AlsoOrderMatrices - if true order matrices in the same sense
 
    This function orders the vectors of one level lexicographically.
    It has the complexity of qsort which is n*log(n).
@@ -4975,7 +4975,7 @@ static INT OrderMatrices (VECTOR *vec, INT Sense)
   qsort(MatList,nm,sizeof(MATRIX*),(int (*)(const void *, const void *))SensCompare);
 
   /* find 'begin */
-  flag = FALSE;
+  flag = false;
   for (start=0; start<nm; start++)
   {
     nbv = MDEST(MatList[start]);
@@ -4984,7 +4984,7 @@ static INT OrderMatrices (VECTOR *vec, INT Sense)
     if (flag && !condition1)
       break;
     else if (condition2)
-      flag = TRUE;
+      flag = true;
   }
 
   /* establish pointer connections */
@@ -5080,7 +5080,7 @@ INT NS_DIM_PREFIX ShellOrderVectors (GRID *theGrid, VECTOR *seed)
    PARAMETERS:
  * @param theGrid - pointer to grid
  * @param mode
- * @param putSkipFirst - if TRUE put vectors with a skip pattern larger than SkipPat to begin of list
+ * @param putSkipFirst - if true put vectors with a skip pattern larger than SkipPat to begin of list
    .  skipPat - s.a.
 
    DESCRIPTION:
@@ -5194,7 +5194,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   HEAP *theHeap;
 
         #ifdef ModelP
-  ASSERT(FALSE);       /* see TODO below */
+  ASSERT(false);       /* see TODO below */
         #endif
 
   /********************************************************************/
@@ -5561,7 +5561,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
  * @param theMG -  multigrid to order
  * @param levels -  GM_ALL_LEVELS or GM_CURRENT_LEVEL
  * @param mode - GM_FCFCLL or GM_FFCCLL (see orderv command)
- * @param PutSkipFirst - if TRUE put vectors with a skip pattern larger than SkipPat to begin of list
+ * @param PutSkipFirst - if true put vectors with a skip pattern larger than SkipPat to begin of list
  * @param SkipPat - s.a.
  * @param dependency - name of user defined dependency item
  * @param dep_options - options for user dependency function
@@ -5804,7 +5804,7 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
   INT MarkKey;
 
         #ifdef ModelP
-  ASSERT(FALSE);       /* see TODO below */
+  ASSERT(false);       /* see TODO below */
         #endif
 
   gen_label[GM_GEN_FIRST] = 'F';
@@ -6335,8 +6335,8 @@ INT NS_DIM_PREFIX PrepareForLineorderVectors (GRID *theGrid)
 
   for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
   {
-    SETVCUSED(vec,FALSE);
-    SETVCFLAG(vec,FALSE);
+    SETVCUSED(vec,false);
+    SETVCFLAG(vec,false);
   }
 
   return (0);
@@ -6370,8 +6370,8 @@ INT NS_DIM_PREFIX MarkBeginEndForLineorderVectors (ELEMENT *elem, INT dt, INT ot
   for (i=0; i<cnt; i++)
     switch (mark[i])
     {
-    case GM_LOV_BEGIN :      SETVCUSED(vList[i],TRUE);
-    case GM_LOV_END :        SETVCFLAG(vList[i],TRUE);
+    case GM_LOV_BEGIN :      SETVCUSED(vList[i],true);
+    case GM_LOV_END :        SETVCFLAG(vList[i],true);
     }
 
   return (0);
@@ -6461,45 +6461,45 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
                 #endif
     return(1);
   }
-  error = xused = yused = zused = FALSE;
+  error = xused = yused = zused = false;
   for (i=0; i<DIM; i++)
     switch (ord[i])
     {
     case 'r' :
-      if (xused) error = TRUE;
-      xused = TRUE;
+      if (xused) error = true;
+      xused = true;
       Order[i] = _X_; Sign[i] =  1; break;
     case 'l' :
-      if (xused) error = TRUE;
-      xused = TRUE;
+      if (xused) error = true;
+      xused = true;
       Order[i] = _X_; Sign[i] = -1; break;
 
                         #ifdef __TWODIM__
     case 'u' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       Order[i] = _Y_; Sign[i] =  1; break;
     case 'd' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       Order[i] = _Y_; Sign[i] = -1; break;
                         #else
     case 'b' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       Order[i] = _Y_; Sign[i] =  1; break;
     case 'f' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       Order[i] = _Y_; Sign[i] = -1; break;
 
     case 'u' :
-      if (zused) error = TRUE;
-      zused = TRUE;
+      if (zused) error = true;
+      zused = true;
       Order[i] = _Z_; Sign[i] =  1; break;
     case 'd' :
-      if (zused) error = TRUE;
-      zused = TRUE;
+      if (zused) error = true;
+      zused = true;
       Order[i] = _Z_; Sign[i] = -1; break;
                         #endif
     }
@@ -6510,7 +6510,7 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
   }
 
   /* treat vectors with skipflag set specially? */
-  SpecialTreatSkipVecs = FALSE;
+  SpecialTreatSkipVecs = false;
   if              (strchr(data,'<')!=NULL)
     SpecialTreatSkipVecs = GM_PUT_AT_BEGIN;
   else if (strchr(data,'>')!=NULL)
@@ -6630,45 +6630,45 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
                 #endif
     return(1);
   }
-  error = xused = yused = zused = FALSE;
+  error = xused = yused = zused = false;
   for (i=0; i<DIM; i++)
     switch (ord[i])
     {
     case 'r' :
-      if (xused) error = TRUE;
-      xused = TRUE;
+      if (xused) error = true;
+      xused = true;
       Order[i] = _X_; Sign[i] =  1; break;
     case 'l' :
-      if (xused) error = TRUE;
-      xused = TRUE;
+      if (xused) error = true;
+      xused = true;
       Order[i] = _X_; Sign[i] = -1; break;
 
                         #ifdef __TWODIM__
     case 'u' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       Order[i] = _Y_; Sign[i] =  1; break;
     case 'd' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       Order[i] = _Y_; Sign[i] = -1; break;
                         #else
     case 'b' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       Order[i] = _Y_; Sign[i] =  1; break;
     case 'f' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       Order[i] = _Y_; Sign[i] = -1; break;
 
     case 'u' :
-      if (zused) error = TRUE;
-      zused = TRUE;
+      if (zused) error = true;
+      zused = true;
       Order[i] = _Z_; Sign[i] =  1; break;
     case 'd' :
-      if (zused) error = TRUE;
-      zused = TRUE;
+      if (zused) error = true;
+      zused = true;
       Order[i] = _Z_; Sign[i] = -1; break;
                         #endif
     }
@@ -6679,7 +6679,7 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
   }
 
   /* treat vectors with skipflag set specially? */
-  SpecialTreatSkipVecs = FALSE;
+  SpecialTreatSkipVecs = false;
   if              (strchr(data,'<')!=NULL)
     SpecialTreatSkipVecs = GM_PUT_AT_BEGIN;
   else if (strchr(data,'>')!=NULL)

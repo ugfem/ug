@@ -271,13 +271,13 @@ INT NS_DIM_PREFIX InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
    \param dim - space dimension, 2D can elements can be used in 3D
    \param tag - identifier for element type
 
-   This function returns TRUE when the coordinate transformation from the
+   This function returns true when the coordinate transformation from the
    reference element to the general element is linear. In that case the
    Jacobian need only be evaluated once per element.
 
    \return <ul>
-   <li> TRUE when transformation is linear
-   <li> FALSE when transformation is nonlinear
+   <li> true when transformation is linear
+   <li> false when transformation is nonlinear
  */
 /****************************************************************************/
 

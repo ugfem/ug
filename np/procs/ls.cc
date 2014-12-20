@@ -1106,7 +1106,7 @@ static INT CGUpdateProject (NP_LS *theNP, INT level,
       NP_RETURN(1,result[0]);
     if (dcopy(theMG,theNP->baselevel,level,ALL_VECTORS,ct,c)!= NUM_OK)
       REP_ERR_RETURN(1);
-    if (SubspaceEntering(theMG,theNP->baselevel,level, np->csol,c, TRUE))
+    if (SubspaceEntering(theMG,theNP->baselevel,level, np->csol,c, true))
       NP_RETURN(1,result[0]);
   }
   np->count++;

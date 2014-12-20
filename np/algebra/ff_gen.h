@@ -86,8 +86,8 @@ START_UGDIM_NAMESPACE
    CAUTION: the sequence of free's must be exctly the reverse of the get's! */
 #ifdef Debug
 #define GET_AUX_VEC                                     ( (TOS_FF_Vecs<FF_MAX_VECS) ? FF_Vecs[TOS_FF_Vecs++] : -1 )
-/* tricky: enforce, that TOS_FF_Vecs-- and ASSERT(FALSE) have the same type */
-#define FREE_AUX_VEC(vec)                       ( (vec==FF_Vecs[TOS_FF_Vecs-1]) ? (TOS_FF_Vecs--) : (ASSERT(FALSE),0) );
+/* tricky: enforce, that TOS_FF_Vecs-- and ASSERT(false) have the same type */
+#define FREE_AUX_VEC(vec)                       ( (vec==FF_Vecs[TOS_FF_Vecs-1]) ? (TOS_FF_Vecs--) : (ASSERT(false),0) );
 #else
 #define GET_AUX_VEC                                     (FF_Vecs[TOS_FF_Vecs++])
 #define FREE_AUX_VEC(vec)                       (TOS_FF_Vecs--);

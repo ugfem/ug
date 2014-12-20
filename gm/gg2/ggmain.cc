@@ -155,14 +155,14 @@ typedef struct mesh2d MESH2D;
 
 static char buffer[256];                /* general purpose text buffer				*/
 
-static INT doupdate; /* if TRUE MakeElement calls UpdateDoc, PlotElement else*/
-static INT dostep;              /* if TRUE MakeElement stops after each plot			*/
-static INT doanimate;   /* if TRUE MakeElement plots the current element		*/
-static INT doedge;      /* if TRUE MakeElement uses accelerator with edgetree*/
-static INT doangle;     /* if TRUE MakeElement uses accelerator with angletree		*/
-static INT doEdge;      /* if TRUE MakeElement uses smallest edge without accelerator*/
-static INT doAngle;     /* if TRUE MakeElement uses smallest angle without accelerator*		*/
-static INT doConstDel;  /* if TRUE Constrained Delaunay Triangulation*		*/
+static INT doupdate; /* if true MakeElement calls UpdateDoc, PlotElement else*/
+static INT dostep;              /* if true MakeElement stops after each plot			*/
+static INT doanimate;   /* if true MakeElement plots the current element		*/
+static INT doedge;      /* if true MakeElement uses accelerator with edgetree*/
+static INT doangle;     /* if true MakeElement uses accelerator with angletree		*/
+static INT doEdge;      /* if true MakeElement uses smallest edge without accelerator*/
+static INT doAngle;     /* if true MakeElement uses smallest angle without accelerator*		*/
+static INT doConstDel;  /* if true Constrained Delaunay Triangulation*		*/
 
 static INT ElemID;
 static INT equilateral;
@@ -219,8 +219,8 @@ static INT IsPointLeftOfFC (DOUBLE xP,DOUBLE yP, FRONTCOMP *theFC)
   xTest = xP - cvect[0];
   yTest = yP - cvect[1];
 
-  /* side.. = FALSE: xTest right of ..,
-            = TRUE:  xTest left  of ..   */
+  /* side.. = false: xTest right of ..,
+            = true:  xTest left  of ..   */
   sideIn  = ((yTest*xIn-xTest*yIn)   > SMALLDOUBLE);
   sideOut = ((yTest*xOut-xTest*yOut) > SMALLDOUBLE);
 

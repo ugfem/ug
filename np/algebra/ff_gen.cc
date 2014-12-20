@@ -212,7 +212,7 @@ static INT HasDirichletNeighbour( const VECTOR *v )
   register LINK *link;
   register VERTEX *nb_vertex;
 
-  ASSERT(FALSE);       /* neues boundary konzept einbauen */
+  ASSERT(false);       /* neues boundary konzept einbauen */
   REP_ERR_RETURN(1);
 
   register VSEGMENT *vseg;
@@ -247,11 +247,11 @@ static INT HasDirichletNeighbour( const VECTOR *v )
                    &value, &type );
 
       if ( type == DIRICHLET )
-        return TRUE;
+        return true;
     }
   }
 
-  return FALSE;
+  return false;
 }
 #endif /* NIE_DAA */
 
@@ -952,7 +952,7 @@ static void MeshwidthForFFConstructTestvector_loc( const VECTOR *v, const VECTOR
     if( (*meshwidth = fabs( *coord - pos2[1] )) <= 1e-6 )
     {
       /* if not on the same vertical line then an error */
-      /*			ASSERT( FALSE );*/ /* comment out because of cross points */
+      /*			ASSERT( false );*/ /* comment out because of cross points */
     }
   }
 
@@ -1458,7 +1458,7 @@ INT NS_DIM_PREFIX FFMultWithMInv(
     if ( BV_IS_LEAF_BV(bv_i) )
       solveLUMatBS( bv_i, bvd_i, bvdf, aux_comp, DECOMPMAT_ON_LEVEL( bv_i ), b_comp );
     else
-      gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, aux_comp, b_comp, auxA_comp, TRUE, TRUE );
+      gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, aux_comp, b_comp, auxA_comp, true, true );
 #else
                 #ifdef ModelP
     FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, b_comp, NULL, NULL );
@@ -1498,7 +1498,7 @@ INT NS_DIM_PREFIX FFMultWithMInv(
      else*/
   {
     dcopyBS( bv_i, auxB_comp, b_comp );                 /* necessary if b_comp == v_comp */
-    gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, v_comp, auxB_comp, auxA_comp, TRUE, TRUE );
+    gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, v_comp, auxB_comp, auxA_comp, true, true );
   }
 #else
   #ifdef ModelP
@@ -1562,7 +1562,7 @@ INT NS_DIM_PREFIX FFMultWithMInv(
        else*/
     {
       dcopyBS( bv_i, auxB_comp, v_comp );
-      gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, v_comp, auxB_comp, auxA_comp, TRUE, TRUE );
+      gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, v_comp, auxB_comp, auxA_comp, true, true );
     }
 #else
                 #ifdef ModelP

@@ -248,11 +248,11 @@ int JoinStepMode (int old)
     sprintf(cBuffer, "wrong join-mode (currently in %s, expected %s)",
             JoinModeName(joinGlobals.joinMode), JoinModeName(old));
     DDD_PrintError('E', 7200, cBuffer);
-    return FALSE;
+    return false;
   }
 
   JoinSetMode(JoinSuccMode(joinGlobals.joinMode));
-  return TRUE;
+  return true;
 }
 
 

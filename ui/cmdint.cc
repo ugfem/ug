@@ -120,8 +120,8 @@ static char seperators[]                = ";{}";
 /* static char tokenseperators[]	= " \n\t;{}()"; */
 static char terminators[]               = ";}";         /* terminators for commands */
 
-static INT scriptpaths_set=FALSE;
-static INT dontexit=FALSE;      /* if TRUE set ':cmdstatus' rather than exiting	*/
+static bool scriptpaths_set = false;
+static bool dontexit = false;      /* if true set ':cmdstatus' rather than exiting	*/
 static INT UseWithPerl=0;
 
 /****************************************************************************/
@@ -180,7 +180,7 @@ static const char *cmdPtr,*cmdStart;
 static long executePos=0;
 static char *cmdBuffer;
 static char *executeBuffer;
-static INT programFlag=FALSE;
+static INT programFlag=false;
 static long programbufsize=PROGRAMBUFSIZE;
 static char *programBuffer;
 static char fileBuffer[FILEBUFSIZE+1];
@@ -638,7 +638,7 @@ static INT GetValueOfOperand (DOUBLE *t, OPERAND *term)
   {
   case NUMBERID :
     *t=term->ro.value;
-    error=FALSE;
+    error=false;
     break;
 
   case ALPHAID :
@@ -654,7 +654,7 @@ static INT GetValueOfOperand (DOUBLE *t, OPERAND *term)
     break;
 
   default :
-    error=TRUE;
+    error=true;
   }
 
   if (error)
@@ -792,11 +792,11 @@ static INT GetFactor (OPERAND *result)
 
   /* get signs */
   sign=1;
-  signflag=FALSE;
+  signflag=false;
 
   while (c=='-')
   {
-    signflag=TRUE;
+    signflag=true;
     sign=-sign;
     cmdPtr++;
     c=SkipBlanks();
@@ -929,7 +929,7 @@ static INT GetFactor (OPERAND *result)
       {
         /* check wether a string variable or a struct is defined */
 
-        INT deref=FALSE;
+        INT deref=false;
         char *p;
 
         c=SkipBlanks();
@@ -943,7 +943,7 @@ static INT GetFactor (OPERAND *result)
         c=SkipBlanks();
         if (c=='@')
         {
-          deref = TRUE;
+          deref = true;
           cmdPtr++;
         }
         GetToken(buffer);
@@ -1675,24 +1675,24 @@ INT NS_DIM_PREFIX InterpretCommand (const char *cmds)
 
   if ((strcmp(cmds,"program")==0)||(strcmp(cmds,"program\n")==0))
   {
-    programFlag=TRUE;
+    programFlag=true;
     programBuffer[0]=0;
     return(DONE);
   }
 
   if ((strcmp(cmds,"endprogram")==0)||(strcmp(cmds,"endprogram\n")==0))
   {
-    programFlag=FALSE;
+    programFlag=false;
     cmds=programBuffer;
   }
 
-  if (programFlag==TRUE)
+  if (programFlag==true)
   {
     pLength=strlen(programBuffer);
     if (pLength+strlen(cmds)+1>programbufsize-1)
     {
       programBuffer[0]=(char) 0;
-      programFlag=FALSE;
+      programFlag=false;
 
       PrintErrorMessage('E',"InterpretCommand","unexpected end");
       return(8512);
@@ -1792,7 +1792,7 @@ static INT InterpretString (void)
   status=MULTIPLE;
   StatusPos=0;
   RepeatPos=0;
-  termFlag=FALSE;
+  termFlag=false;
 
   do
   {
@@ -1806,7 +1806,7 @@ static INT InterpretString (void)
     {
       if (status&MULTIPLE)
       {
-        termFlag=FALSE;                                 /* leave terminating mode */
+        termFlag=false;                                 /* leave terminating mode */
         continue;
       }
 
@@ -1821,7 +1821,7 @@ static INT InterpretString (void)
             status0=StatusStack[StatusPos-1];
             if ((status0&SKIPMODE)==0)
               status=(status^SKIPMODE);                                                         /* if-else active: switch to opposite */
-            termFlag=FALSE;                                             /* leave terminating mode */
+            termFlag=false;                                             /* leave terminating mode */
             continue;
           }
 
@@ -1848,7 +1848,7 @@ static INT InterpretString (void)
           else
           {
             cmdPtr=RepeatPtr[RepeatPos-1];                                              /* status is already ok */
-            termFlag=FALSE;
+            termFlag=false;
             continue;
           }
         }
@@ -1902,7 +1902,7 @@ static INT InterpretString (void)
       else
       {
         cmdPtr++;
-        termFlag=TRUE;                                  /* in single mode ; has terminating effect */
+        termFlag=true;                                  /* in single mode ; has terminating effect */
         continue;
       }
     }
@@ -1920,7 +1920,7 @@ static INT InterpretString (void)
         {
           cmdPtr++;
           status=StatusStack[--StatusPos];
-          termFlag=TRUE;
+          termFlag=true;
           continue;
         }
       }
@@ -2102,7 +2102,7 @@ static INT InterpretString (void)
           return(1);
         }
       }
-      while (TRUE);
+      while (true);
 
       SetMuteLevel(oldmute);
       continue;
@@ -2399,7 +2399,7 @@ static INT InterpretString (void)
       continue;
     }
   }
-  while (TRUE);
+  while (true);
 
   return(DONE);
 
@@ -2470,7 +2470,7 @@ void NS_DIM_PREFIX ParCommandLoop (char *inpLine)
   INT error;
   char dummy[256];
 
-  while (GetDoneFlag() == FALSE)
+  while (GetDoneFlag() == false)
   {
     if (interactiveFlag) UserIn(dummy);
     error=ParExecCommand(inpLine);
@@ -2500,7 +2500,7 @@ void NS_DIM_PREFIX CommandLoop (int argc, char **argv)
   char c,errLine[256],spcLine[256],buffer[256];
   char *inpLine;
   const char *strStart;
-  int batch = FALSE;
+  int batch = false;
 
   /* reset doneFlag */
   ResetDoneFlag();
@@ -2521,7 +2521,7 @@ void NS_DIM_PREFIX CommandLoop (int argc, char **argv)
 
   for (i=1; i<argc; i++)
     if (argv[i][0]!='-')
-      batch = TRUE;
+      batch = true;
 
   PrintVersionString();
 
@@ -2552,7 +2552,7 @@ void NS_DIM_PREFIX CommandLoop (int argc, char **argv)
 
   if (!batch)
   {
-    while (GetDoneFlag() == FALSE)
+    while (GetDoneFlag() == false)
     {
       if (UseWithPerl)
         WriteString("EOO\n");
@@ -2566,7 +2566,7 @@ void NS_DIM_PREFIX CommandLoop (int argc, char **argv)
         PrintErrorMessage('E',"CommandLoop","process event error");
         continue;
       }
-      if (GetDoneFlag() == TRUE) break;
+      if (GetDoneFlag() == true) break;
 #ifdef ModelP
       InterpretCommand("noninteractive");
 #endif
@@ -2623,7 +2623,7 @@ void NS_DIM_PREFIX CommandLoop (int argc, char **argv)
   else
   {
     i = 1;             /* first argument */
-    while (i<argc && GetDoneFlag()==FALSE)
+    while (i<argc && GetDoneFlag()==false)
     {
       /* execute batch file */
       if (argv[i][0]!='-')
@@ -2720,7 +2720,7 @@ else
    \param none
 
    DESCRIPTION:
-   Sets done flag to TRUE/FALSE
+   Sets done flag to true/false
 
    RETURN VALUE:
    none
@@ -2729,12 +2729,12 @@ else
 
 void NS_DIM_PREFIX SetDoneFlag (void)
 {
-  doneFlag = TRUE;
+  doneFlag = true;
 }
 
 void NS_DIM_PREFIX ResetDoneFlag (void)
 {
-  doneFlag = FALSE;
+  doneFlag = false;
 }
 
 int NS_DIM_PREFIX GetDoneFlag (void)
@@ -2806,11 +2806,11 @@ INT NS_DIM_PREFIX InitCommandInterpreter (INT argc, char **argv)
   programBuffer[0] = (char) 0;
 
   /* read scriptpaths from defaults file (iff) */
-  scriptpaths_set=FALSE;
+  scriptpaths_set=false;
   if (ReadSearchingPaths(DEFAULTSFILENAME,"scriptpaths")==0)
-    scriptpaths_set=TRUE;
+    scriptpaths_set=true;
 
-  dontexit=FALSE;
+  dontexit=false;
 
   SetStringValue(":oldmute",GetMuteLevel());
 

@@ -69,7 +69,7 @@ static void IFComputeShortcutTable (DDD_IF ifId)
   int i;
 
   /* mark obj-shortcut-table as valid */
-  theIF[ifId].objValid = TRUE;
+  theIF[ifId].objValid = true;
 
   if (nItems==0)
     return;
@@ -165,7 +165,7 @@ void IFInvalidateShortcuts (DDD_TYPE invalid_type)
       if ((1<<invalid_type) & theIF[i].maskO)
       {
         /* yes, invalidate interface */
-        theIF[i].objValid = FALSE;
+        theIF[i].objValid = false;
       }
     }
   }

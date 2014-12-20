@@ -234,8 +234,8 @@ static INT OrderLexInit (NP_BASE *theNP, INT argc , char **argv)
   if (ReadArgvChar ("config",np->config,argc,argv)) return (NP_NOT_ACTIVE);
   if (strlen(np->config)!=DIM) return (NP_NOT_ACTIVE);
   np->which = GM_TAKE_SKIP | GM_TAKE_NONSKIP;
-  np->AlsoOrderMatrices = FALSE;
-  np->SpecialTreatSkipVecs = FALSE;
+  np->AlsoOrderMatrices = false;
+  np->SpecialTreatSkipVecs = false;
   np->mode = OV_CARTES;
 
   for (i=0; i<strlen(np->config); i++)

@@ -107,10 +107,10 @@ INT              ReleaseOBJT                    (INT type);
  */
 
 #ifdef ModelP
-EDGE * CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, BOOL with_vector);
+EDGE * CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, bool with_vector);
 #endif
 ELEMENT * CreateElement          (GRID *theGrid, INT tag, INT objtype,
-                                  NODE **nodes, ELEMENT *Father, BOOL with_vector);
+                                  NODE **nodes, ELEMENT *Father, bool with_vector);
 INT         CreateSonElementSide    (GRID *theGrid, ELEMENT *theElement,
                                      INT side, ELEMENT *theSon, INT son_side);
 

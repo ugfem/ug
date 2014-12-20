@@ -1470,10 +1470,10 @@ static INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
       ret = NP_NOT_ACTIVE;
     }
     else
-      np->inttype = TRUE;
+      np->inttype = true;
   else if (ReadArgvOption("const",argc,argv))
-    np->inttype = FALSE;
-  else if ((np->inttype != TRUE) && (np->inttype != FALSE))
+    np->inttype = false;
+  else if ((np->inttype != true) && (np->inttype != false))
     ret = NP_NOT_ACTIVE;
 
   if (sopt == 1)
@@ -1539,9 +1539,9 @@ static INT NPStochFieldDisplay(NP_BASE *theNP)
   else
     UserWriteF(DISPLAY_NP_FORMAT_S,"Random initial");
 
-  if (np->inttype==TRUE)
+  if (np->inttype==true)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Interpolation","linear in each dir");
-  else if (np->inttype==FALSE)
+  else if (np->inttype==false)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Interpolation","constant on cells");
 
   return(0);
@@ -1571,10 +1571,10 @@ INT NS_DIM_PREFIX Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *o
 #ifdef __THREEDIM__
   switch(np->inttype)
   {
-  case FALSE :
+  case false :
     out[0] = (REALPART(np->size,np->Fld,node[0],node[1],node[2]) - np->mean) / sqrt(np->var);
     break;
-  case TRUE :
+  case true :
   {
     INT extraNode[DIM];
 
@@ -1604,10 +1604,10 @@ INT NS_DIM_PREFIX Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *o
 #else
   switch(np->inttype)
   {
-  case FALSE :
+  case false :
     out[0] = (REALPART(np->size,np->Fld,node[0],node[1]) - np->mean) / sqrt(np->var);
     break;
-  case TRUE :
+  case true :
   {
     INT extraNode[DIM];
 

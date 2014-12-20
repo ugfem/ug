@@ -264,9 +264,9 @@ static int is_elem (DDD_PRIO el, int n, DDD_PRIO *set)
 
   for(i=0; i<n; i++)
     if (set[i]==el)
-      return(TRUE);
+      return(true);
 
-  return(FALSE);
+  return(false);
 }
 
 

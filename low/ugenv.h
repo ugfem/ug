@@ -110,7 +110,7 @@ enum {SEARCHALL = -1};                 /*!< Scan through all directories        
 /** \brief This macro returns a pointer to the name string of the 'ENVITEM'. */
 #define ENVITEM_NAME(p)         (((ENVITEM *)(p))->v.name)
 
-/** \brief 'RemoveEnvItem' checks this and returns an error if TRUE. */
+/** \brief 'RemoveEnvItem' checks this and returns an error if true. */
 #define ENVITEM_LOCKED(p)         (((ENVITEM *)(p))->v.locked)
 
 /****************************************************************************/

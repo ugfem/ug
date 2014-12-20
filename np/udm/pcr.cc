@@ -282,7 +282,7 @@ INT NS_DIM_PREFIX PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text
   PCR_nb[i]   = 0;
   PCR_DispMode[i] = DispMode;
   PCR_header[i] = text;
-  for (j=i; j<32; j++) PCR_printed[j] = FALSE;
+  for (j=i; j<32; j++) PCR_printed[j] = false;
 
   /* print head line */
   if (text!=NULL && DispMode!=PCR_NO_DISPLAY)
@@ -346,7 +346,7 @@ INT NS_DIM_PREFIX PrepareEPCR (EVECDATA_DESC *Vsym, INT DispMode, const char *te
   PCR_nb[i]   = 0;
   PCR_DispMode[i] = DispMode;
   PCR_header[i] = text;
-  for (j=i; j<32; j++) PCR_printed[j] = FALSE;
+  for (j=i; j<32; j++) PCR_printed[j] = false;
 
   /* print head line */
   if (text!=NULL && DispMode!=PCR_NO_DISPLAY)
@@ -532,7 +532,7 @@ INT NS_DIM_PREFIX DoPCR (INT ID, VEC_SCALAR InDefect, INT PrintMode)
       PCR_InitNorm[ID] = s;
       if (PCR_DispMode[ID]==PCR_FULL_DISPLAY)
       {
-        PCR_printed[ID] = TRUE;
+        PCR_printed[ID] = true;
         UserWriteF(" %-3d  %c: %-12.7e   %-12.7s\n",(int)PCR_nb[ID],PCR_compNames[ID][0],Defect[0],"---");
         for (i=1; i<PCR_nComp[ID]; i++)
           UserWriteF("      %c: %-12.7e   %-12.7s\n",PCR_compNames[ID][i],Defect[i],"---");
@@ -543,7 +543,7 @@ INT NS_DIM_PREFIX DoPCR (INT ID, VEC_SCALAR InDefect, INT PrintMode)
     }
     else if (PCR_DispMode[ID]==PCR_FULL_DISPLAY)
     {
-      PCR_printed[ID] = TRUE;
+      PCR_printed[ID] = true;
       PrintHeaderIff(ID);
       if (PCR_OldDefect[ID][0]!=0.0)
         UserWriteF(" %-3d  %c: %-12.7e   %-12.7e\n",(int)PCR_nb[ID],PCR_compNames[ID][0],Defect[0],Defect[0]/PCR_OldDefect[ID][0]);
@@ -568,7 +568,7 @@ INT NS_DIM_PREFIX DoPCR (INT ID, VEC_SCALAR InDefect, INT PrintMode)
   case PCR_AVERAGE_SD :
     if (PCR_nb[ID]<2) return (0);
     if (PCR_DispMode[ID]==PCR_NO_DISPLAY) break;
-    PCR_printed[ID] = TRUE;
+    PCR_printed[ID] = true;
     PrintHeaderIff(ID);
     if (PCR_DispMode[ID]==PCR_FULL_DISPLAY) UserWrite("\n");
     if (PCR_InitDefect[ID][0]!=0.0)

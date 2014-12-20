@@ -325,7 +325,7 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
   n_unk = VD_NCOMP(x->vd)+x->n;
 
   /* init ass once and compute nonlinear defect */
-  if (ENonLinearDefect(mg,level,TRUE,x,newton,ass,defect,&error)!=0)              {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  if (ENonLinearDefect(mg,level,true,x,newton,ass,defect,&error)!=0)              {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   if (error) goto exit;
 
   /* display norm of nonlinear defect */
@@ -527,7 +527,7 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
       EVDD_E(x,level,i)-=EVDD_E(newton->v,level,i);
 
     /* print norm of defect */
-    if (ENonLinearDefect(mg,level,FALSE,x,newton,ass,defect,&error))
+    if (ENonLinearDefect(mg,level,false,x,newton,ass,defect,&error))
       if (error) goto exit;
     if (DoPCR(PrintID,defect,PCR_CRATE)) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
 

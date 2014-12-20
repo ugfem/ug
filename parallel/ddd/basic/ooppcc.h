@@ -663,7 +663,7 @@ static enum BTreeConstant Method(Insert) (ParamThis,
   if (nData < 4)
   {
     /* only a few entries -> use linear search */
-    int found=FALSE;
+    int found=false;
 
     for(i=0; i<nData && !found; i++)
     {
@@ -679,9 +679,9 @@ static enum BTreeConstant Method(Insert) (ParamThis,
         return(BTREE_FOUND);
       }
 
-      if (cmp>0) found = TRUE;
+      if (cmp>0) found = true;
     }
-    if (found==TRUE) i--;
+    if (found==true) i--;
   }
   else
   {
@@ -895,7 +895,7 @@ int Method(Insert) (ParamThis, CN(BTreeOf) *item)
     This->root = CALL(New,CBTreeNode) (item,NULL,NULL);
     assert(This->root!=NULL);
     This->nItems++;
-    return(TRUE);
+    return(true);
   }
 
   ret = CALL(CBTreeNode,Insert) (This->root, /*This->compare_func,*/ item);
@@ -915,7 +915,7 @@ int Method(Insert) (ParamThis, CN(BTreeOf) *item)
   if (ret!=BTREE_FOUND)
     This->nItems++;
 
-  /* return TRUE if item was really inserted */
+  /* return true if item was really inserted */
   return(ret!=BTREE_FOUND);
 }
 
@@ -1096,12 +1096,12 @@ int Method(ItemOK) (ParamThis)
   if (CALL(CBTree,Insert) (This->tree, This->last_item))
   {
     /* item could be inserted in btree, hence it was a new one. */
-    return(TRUE);
+    return(true);
   }
 
   /* item was in tree already, it was an old one. */
   CALL(CSegmList,DiscardItem) (This->list);
-  return(FALSE);
+  return(false);
 }
 
 

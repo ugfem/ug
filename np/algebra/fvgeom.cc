@@ -1574,7 +1574,7 @@ INT NS_DIM_PREFIX GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, co
     {
       /* dimensionless flux is small */
       ipflow[ip] = 0.0;
-      noflow[ip] = TRUE;
+      noflow[ip] = true;
       found++;
 
       /* use linear combination of from and to node */
@@ -1582,7 +1582,7 @@ INT NS_DIM_PREFIX GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, co
         NodalShape[ip][SCVF_TO  (FVG_SCVF(geo,ip))] = 0.5;
     }
     else
-      noflow[ip] = FALSE;
+      noflow[ip] = false;
   }
 
   if (found==ni)
@@ -1616,7 +1616,7 @@ INT NS_DIM_PREFIX GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, co
 
     flux = MAX(f_in,f_out);
 
-    /* now we know noflow[scvip[i]] is FALSE */
+    /* now we know noflow[scvip[i]] is false */
     for (i=0; i<n; i++)
       if (f[i]>0)
       {
@@ -1875,7 +1875,7 @@ INT NS_DIM_PREFIX EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flag
   Coe    = READ_FLAG(flags,FILL_COE);
 
   if (grad)
-    Jinv = TRUE;
+    Jinv = true;
 
   lin = LinearTrafo(DIM,FVG_TAG(geo));
 

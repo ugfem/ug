@@ -1229,11 +1229,11 @@ static INT PrepareMultipleVMPtrs (MVM_DESC *mvmd)
   /* set vtypes used */
   for (tp=0; tp<NVECTYPES; tp++)
     if (READ_FLAG(dt,BITWISE_TYPE(tp)))
-      MVMD_TYPE(mvmd,tp) = TRUE;
+      MVMD_TYPE(mvmd,tp) = true;
     else
-      MVMD_TYPE(mvmd,tp) = FALSE;
+      MVMD_TYPE(mvmd,tp) = false;
 
-  MVMD_M_OF_1_ONLY(mvmd) = FALSE;
+  MVMD_M_OF_1_ONLY(mvmd) = false;
 
   return (0);
 }
@@ -2139,7 +2139,7 @@ static void PrintSingleVectorX (const VECTOR *v, const VECDATA_DESC *X, INT vcla
       i += sprintf(buffer+i,"z=%5.2f ",pos[2]);
   }
   else {
-    *info = TRUE;
+    *info = true;
     i += sprintf(buffer,"                ");
     if (DIM == 3)
       i += sprintf(buffer+i,"        ");
@@ -2165,7 +2165,7 @@ static void PrintSingleVectorX (const VECTOR *v, const VECDATA_DESC *X, INT vcla
 
 INT NS_DIM_PREFIX PrintVectorListX (const VECTOR *vlist[], const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
 {
-  INT info=FALSE;
+  INT info=false;
 
   for (; *vlist!= NULL; ++vlist)
     PrintSingleVectorX(*vlist,X,vclass,vnclass,Printf,&info);
@@ -2178,7 +2178,7 @@ INT NS_DIM_PREFIX PrintVectorListX (const VECTOR *vlist[], const VECDATA_DESC *X
 INT NS_DIM_PREFIX PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
 {
   const VECTOR *v;
-  INT info=FALSE;
+  INT info=false;
 
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
     PrintSingleVectorX(v,X,vclass,vnclass,Printf,&info);
@@ -2333,7 +2333,7 @@ INT NS_DIM_PREFIX PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT v
   char buffer[256];
   VECTOR *v;
   DOUBLE_VECTOR pos;
-  INT info=FALSE;
+  INT info=false;
   MATRIX *m;
   INT Mcomp,ccomp,i,j,rtype;
 
@@ -2358,7 +2358,7 @@ INT NS_DIM_PREFIX PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT v
 #endif
     }
     else {
-      info = TRUE;
+      info = true;
       i += sprintf(buffer,"                ");
       if (DIM == 3)
         i += sprintf(buffer+i,"        ");

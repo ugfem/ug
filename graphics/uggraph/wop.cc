@@ -592,10 +592,10 @@ static short NE_CornerMarkerSize; /* markersize for corner nodes                
 static NODE *NE_Node;                   /* node for insert node work				*/
 
 /*---------- working variables of 'EW_MarkElement2D' -----------------------*/
-static INT ME2D_found;                  /* TRUE if an element found					*/
+static INT ME2D_found;                  /* true if an element found					*/
 static ELEMENT *ME2D_elem;              /* pointer to element found					*/
-static INT ME2D_pointIn;                /* TRUE if point specified, rectangle else	*/
-static DOUBLE_VECTOR ME2D_point;        /* point if ME2D_pointIn TRUE				*/
+static INT ME2D_pointIn;                /* true if point specified, rectangle else	*/
+static DOUBLE_VECTOR ME2D_point;        /* point if ME2D_pointIn true				*/
 static DOUBLE ME2D_xmin;                        /* search rectangle							*/
 static DOUBLE ME2D_xmax;                        /* search rectangle							*/
 static DOUBLE ME2D_ymin;                        /* search rectangle							*/
@@ -613,13 +613,13 @@ static DOUBLE MN_ymin;                  /* limits of the picture					*/
 static DOUBLE MN_ymax;                  /* limits of the picture					*/
 static DOUBLE MN_delta;                 /* resolution                                                           */
 static INT MN_accept;                   /* indicates whether correctly moved or not	*/
-static INT MN_MouseMoved;               /* invert links at last pos if TRUE			*/
+static INT MN_MouseMoved;               /* invert links at last pos if true			*/
 static INT MN_LastMousePos[2];  /* store last mouse position				*/
 static short MN_Resolution;     /* resolution                                                   */
 
 /*---------- working variables of 'EW_BndEval2d' ---------------------------*/
-static short BND_PlotBoundary;  /* plot boundary if TRUE					*/
-static short BND_PlotNewFree;   /* plot new free boundary if TRUE			*/
+static short BND_PlotBoundary;  /* plot boundary if true					*/
+static short BND_PlotNewFree;   /* plot new free boundary if true			*/
 static VECDATA_DESC *BND_NewFree; /* vd describing globals of new free bdry	*/
 static long BND_BndColor;               /* use this color for the outer boundary	*/
 static long BND_FreeBndColor;   /* use this color for the free boundary		*/
@@ -637,7 +637,7 @@ static MULTIGRID *BND_MG;               /* mg pointer								*/
 
 static INT VM_Marker;                   /* plot markers for Vectors					*/
 static long VN_MarkerColor[4];  /* colors of Markers (VCLASS dependent)		*/
-static INT VM_Type[MAXVECTORS]; /* plot only vectors of TRUE Types			*/
+static INT VM_Type[MAXVECTORS]; /* plot only vectors of true Types			*/
 static long VM_DiagCol;                 /* color for diag entry						*/
 static long VM_OffCol;                  /* color for offdiag entry					*/
 static long VM_MColor;                  /* color of connections						*/
@@ -5844,14 +5844,14 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
   d = sqrt((point0.x-point1.x)*(point0.x-point1.x)+(point0.y-point1.y)*(point0.y-point1.y));
 
   if (d>MAT_FRAMESIZE)
-    MAT_frame = TRUE;
+    MAT_frame = true;
   else
-    MAT_frame = FALSE;
+    MAT_frame = false;
 
   if (d>4*MAT_TEXTSIZE*GetTextFactor())
-    MAT_print = TRUE;
+    MAT_print = true;
   else
-    MAT_print = FALSE;
+    MAT_print = false;
 
   l_setindex(theGrid);
 
@@ -6167,7 +6167,7 @@ INT NS_DIM_PREFIX SetOrderStrategy (INT OrderStrategy)
     return (1);
 
   /* to force ordering next time we plot */
-  OE_force_ordering = TRUE;
+  OE_force_ordering = true;
   OE_OrderStrategy = OrderStrategy;
 
   return (0);
@@ -7268,7 +7268,7 @@ static INT EW_PreProcess_MarkElement2D (PICTURE *thePicture, WORK *theWork)
   if (status==MOUSE_NOT_MOVED)
   {
     /* mark element containing the mouse point */
-    ME2D_pointIn = TRUE;
+    ME2D_pointIn = true;
     point[_X_] = ME2D_xmin;
     point[_Y_] = ME2D_ymin;
 
@@ -7277,7 +7277,7 @@ static INT EW_PreProcess_MarkElement2D (PICTURE *thePicture, WORK *theWork)
   }
   else
     /* mark elements with center of mass contained in rectangle */
-    ME2D_pointIn = FALSE;
+    ME2D_pointIn = false;
 
   return (0);
 }
@@ -7288,14 +7288,14 @@ static INT EW_MarkElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   DOUBLE_VECTOR cm;
   COORD_POINT a;
 
-  ME2D_found = FALSE;
+  ME2D_found = false;
   ME2D_elem  = theElement;
 
   /* check element */
   if (ME2D_pointIn)
   {
     if (PointInElement(ME2D_point,theElement))
-      ME2D_found = TRUE;
+      ME2D_found = true;
   }
   else
   {
@@ -7308,7 +7308,7 @@ static INT EW_MarkElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     /* in rectangle? */
     if ((ME2D_xmin<=a.x) && (a.x<=ME2D_xmax))
       if ((ME2D_ymin<=a.y) && (a.y<=ME2D_ymax))
-        ME2D_found = TRUE;
+        ME2D_found = true;
   }
 
   return (0);
@@ -7513,7 +7513,7 @@ static INT EW_PreProcess_VecMatBnd2D (PICTURE *thePicture, WORK *theWork)
   theMG  = PO_MG(PIC_PO(thePicture));
 
   BND_PlotBoundary                        = theVmo->Boundary;
-  BND_PlotNewFree                         = FALSE;
+  BND_PlotNewFree                         = false;
   BND_BndColor                            = theOD->blue;
   BND_FreeBndColor                        = theOD->green;
   BND_InnerBndColor                       = theOD->cyan;
@@ -8170,8 +8170,8 @@ static INT EXT_PreProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
   MN_ymin = MIN(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
   MN_ymax = MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
   MN_MG   = theMG;
-  MN_accept= FALSE;
-  MN_MouseMoved = FALSE;
+  MN_accept= false;
+  MN_MouseMoved = false;
   MN_LastMousePos[0] = W_INSERTNODE_WORK(theWork)->PixelX;
   MN_LastMousePos[1] = W_INSERTNODE_WORK(theWork)->PixelY;
   MN_Resolution = 100;
@@ -8262,7 +8262,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
       WOP_DObjPnt = theDO;
                         #endif
 
-      MN_accept = FALSE;
+      MN_accept = false;
       return (0);
     }
     if ((MousePos[1]<MN_ymin) || (MousePos[1]>MN_ymax))
@@ -8273,7 +8273,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
       WOP_DObjPnt = theDO;
                         #endif
 
-      MN_accept = FALSE;
+      MN_accept = false;
       return (0);
     }
 
@@ -8291,7 +8291,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
         V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
       }
     }
-    MN_MouseMoved = TRUE;
+    MN_MouseMoved = true;
 
     /* mouse position in the physical system */
     V2_TRAFOM3_V2(MousePos,InvObsTrafo,MN_pos);
@@ -8310,7 +8310,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
         WOP_DObjPnt = theDO;
                                 #endif
 
-        MN_accept = FALSE;
+        MN_accept = false;
         return(0);
       }
       /* scan resolution points of the segment */
@@ -8347,7 +8347,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
       WOP_DObjPnt = theDO;
                         #endif
 
-      MN_accept = FALSE;
+      MN_accept = false;
       return(0);
     }
 
@@ -8367,7 +8367,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
     WOP_DObjPnt = theDO;
                 #endif
 
-    MN_accept = TRUE;
+    MN_accept = true;
 
     return (0);
   }
@@ -8389,7 +8389,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
                 #endif
 
   }
-  *end = TRUE;
+  *end = true;
   return (0);
 }
 
@@ -8403,7 +8403,7 @@ static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
   theVertex = MYVERTEX(MN_Node);
 
   if (OBJT(theVertex)==IVOBJ) {
-    if (MoveNode(MN_MG,MN_Node,MN_pos,TRUE)!=GM_OK)
+    if (MoveNode(MN_MG,MN_Node,MN_pos,true)!=GM_OK)
       return (1);
     return (0);
   }
@@ -8413,7 +8413,7 @@ static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
                         "on the boundary only midnodes can be moved");
       return (1);
     }
-    if (MoveMidNode (MN_MG,MN_Node,MN_lambda,TRUE))
+    if (MoveMidNode (MN_MG,MN_Node,MN_lambda,true))
       return (1);
   }
 
@@ -9465,7 +9465,7 @@ static INT EXT_NodesEval2D (DRAWINGOBJ *theDO, INT *end)
   WOP_DObjPnt = theDO;
         #endif
 
-  *end = TRUE;
+  *end = true;
 
   return (0);
 }
@@ -10093,7 +10093,7 @@ static INT EW_EScalar2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   n = CORNERS_OF_ELEM(theElement);
 
   /* get coordinates of corners of the element */
-  found = FALSE;
+  found = false;
   n = CORNERS_OF_ELEM(theElement);
   for (i=0; i<n; i++)
   {
@@ -10101,7 +10101,7 @@ static INT EW_EScalar2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     if (!found)
     {
       corners[i].x = x[i][_X_]; corners[i].y = x[i][_Y_];
-      if (PointInPolygon(PhysRect,4,corners[i])) found=TRUE;
+      if (PointInPolygon(PhysRect,4,corners[i])) found=true;
     }
   }
 
@@ -10584,7 +10584,7 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   DOUBLE_VECTOR Arrow;
 
   /* get coordinates of corners of the element and their z coordinates in cut system */
-  found = FALSE;
+  found = false;
   n = CORNERS_OF_ELEM(theElement);
   for (i=0; i<n; i++)
   {
@@ -10592,7 +10592,7 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     if (!found)
     {
       corners[i].x = x[i][_X_]; corners[i].y = x[i][_Y_];
-      if (PointInPolygon(PhysRect,4,corners[i])) found=TRUE;
+      if (PointInPolygon(PhysRect,4,corners[i])) found=true;
     }
     V2_COPY(x[i],Poly[i]);
   }
@@ -13008,7 +13008,7 @@ static DRAWINGOBJ *ElementNodes (ELEMENT *theElement, DRAWINGOBJ *theDO, INT Vie
           break;
       if (k>=nplot)
       {
-        SETUSED(CORNER(theElement,corn),TRUE);
+        SETUSED(CORNER(theElement,corn),true);
         EE3D_PlotNode[nplot++] = corn;
         if (IsNodeSelected(GElem_MG,CORNER(theElement,corn)))
           InvNode[ninv++] = corn;
@@ -13115,7 +13115,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
             break;
         if (k>=nplotNDV)
         {
-          SETVCUSED(vec,TRUE);
+          SETVCUSED(vec,true);
           EE3D_ndv[nplotNDV++] = vec;
           if (IsVectorSelected(GElem_MG,vec))
             InvNDV[ninvNDV++] = vec;
@@ -13137,7 +13137,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 
       /* we don't have to check VCUSED flag */
       vec = SVECTOR(theElement,i);
-      /* SETVCUSED(vec,TRUE); */
+      /* SETVCUSED(vec,true); */
       EE3D_sdv[nplotSDV++] = vec;
       if (IsVectorSelected(GElem_MG,vec))
         InvSDV[ninvSDV++] = vec;
@@ -13169,7 +13169,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
             break;
         if (k>=nplotEDV)
         {
-          SETVCUSED(vec,TRUE);
+          SETVCUSED(vec,true);
           EE3D_edv[nplotEDV++] = vec;
           if (IsVectorSelected(GElem_MG,vec))
             InvEDV[ninvEDV++] = vec;
@@ -18352,7 +18352,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo, INT bullet)
     }
   }
 
-  OE_force_ordering = FALSE;
+  OE_force_ordering = false;
 #endif
 
   /* inits */
@@ -18719,7 +18719,7 @@ static INT EXT_VecMatEval3D (DRAWINGOBJ *theDO, INT *end)
   WOP_DObjPnt = theDO;
         #endif
 
-  *end = TRUE;
+  *end = true;
 
   return (0);
 }
@@ -18775,7 +18775,7 @@ static void ResetNodeUsed (MULTIGRID *theMG)
 
   for (l=0; l<=CURRENTLEVEL(theMG); l++)
     for (nd=FIRSTNODE(GRID_ON_LEVEL(theMG,l)); nd!=NULL; nd=SUCCN(nd))
-      SETUSED(nd,FALSE);
+      SETUSED(nd,false);
 }
 
 static void ResetVectorUsed (MULTIGRID *theMG)
@@ -18785,7 +18785,7 @@ static void ResetVectorUsed (MULTIGRID *theMG)
 
   for (l=0; l<=CURRENTLEVEL(theMG); l++)
     for (vec=FIRSTVECTOR(GRID_ON_LEVEL(theMG,l)); vec!=NULL; vec=SUCCVC(vec))
-      SETVCUSED(vec,FALSE);
+      SETVCUSED(vec,false);
 }
 
 static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
@@ -18856,7 +18856,7 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
       ResetVectorUsed(theMG);
   }
   else
-    EE3D_Nodes = EE3D_Vectors       = FALSE;
+    EE3D_Nodes = EE3D_Vectors       = false;
 
   switch (theGpo->WhichElem)
   {
@@ -20841,7 +20841,7 @@ static INT EW_PostProcess_Isosurface3D_FR(PICTURE *thePicture, WORK *theWork)
    .  pos     - draw text here (the lower left corner is the origin)
    .  text    - text to draw
    .  size    - texz size (if 0 take default)
-   .  center  - center text at position if TRUE
+   .  center  - center text at position if true
    .  inverse - draw text inverse (rather than black)
 
    DESCRIPTION:
@@ -22587,7 +22587,7 @@ INT NS_DIM_PREFIX DragPicture (PICTURE *thePicture, const INT *StartMousePos)
     else
       V3_TRAFOM4_V3(OldMousePos,InvObsTrafo,oldpos)
 
-      rejected = MouseMoved = FALSE;
+      rejected = MouseMoved = false;
   V3_COPY(OldMousePos,LastMousePos);
   while (MouseStillDown())
   {
@@ -22598,7 +22598,7 @@ INT NS_DIM_PREFIX DragPicture (PICTURE *thePicture, const INT *StartMousePos)
     /* inside picture? */
     if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
     {
-      rejected = TRUE;
+      rejected = true;
       break;
     }
 
@@ -22613,7 +22613,7 @@ INT NS_DIM_PREFIX DragPicture (PICTURE *thePicture, const INT *StartMousePos)
       UgInverseLine(FrameUL,FrameLL);
     }
 
-    MouseMoved = TRUE;
+    MouseMoved = true;
 
     /* calculate shifted picture frame in screen coords */
     V2_SUBTRACT(MousePos,OldMousePos,shift);
@@ -23378,7 +23378,7 @@ INT NS_DIM_PREFIX RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
     /* invert tripod (dipod?) */
     InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
 
-    rejected = MouseMoved = FALSE;
+    rejected = MouseMoved = false;
     while (MouseStillDown())
     {
       MousePosition(MousePos);
@@ -23388,7 +23388,7 @@ INT NS_DIM_PREFIX RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
       /* inside picture? */
       if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
       {
-        rejected = TRUE;
+        rejected = true;
         break;
       }
 
@@ -23396,7 +23396,7 @@ INT NS_DIM_PREFIX RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
       InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
 
       V2_COPY(MousePos,LastMousePos);
-      MouseMoved = TRUE;
+      MouseMoved = true;
 
       if (RotObsTrafo2d(ScreenMid,OldMousePos,LastMousePos,RotMat))
         return (1);
@@ -23493,7 +23493,7 @@ INT NS_DIM_PREFIX RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
     /* invert tripod */
     InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
 
-    rejected = MouseMoved = FALSE;
+    rejected = MouseMoved = false;
     while (MouseStillDown())
     {
       MousePosition(MousePos);
@@ -23503,7 +23503,7 @@ INT NS_DIM_PREFIX RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
       /* inside picture? */
       if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
       {
-        rejected = TRUE;
+        rejected = true;
         break;
       }
 
@@ -23516,7 +23516,7 @@ INT NS_DIM_PREFIX RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
       M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
 
       V2_COPY(MousePos,LastMousePos);
-      MouseMoved = TRUE;
+      MouseMoved = true;
 
       /* invert new tripod */
       InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
@@ -23683,7 +23683,7 @@ INT NS_DIM_PREFIX RotateCut (PICTURE *thePicture, const INT *OldMousePos)
   /* invert cut */
   InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
 
-  rejected = MouseMoved = FALSE;
+  rejected = MouseMoved = false;
   while (MouseStillDown())
   {
     MousePosition(MousePos);
@@ -23693,7 +23693,7 @@ INT NS_DIM_PREFIX RotateCut (PICTURE *thePicture, const INT *OldMousePos)
     /* inside picture? */
     if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
     {
-      rejected = TRUE;
+      rejected = true;
       break;
     }
 
@@ -23706,7 +23706,7 @@ INT NS_DIM_PREFIX RotateCut (PICTURE *thePicture, const INT *OldMousePos)
     M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
 
     V2_COPY(MousePos,LastMousePos);
-    MouseMoved = TRUE;
+    MouseMoved = true;
 
     /* invert new cut icon */
     InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
@@ -23838,7 +23838,7 @@ INT NS_DIM_PREFIX MoveCut (PICTURE *thePicture, const INT *OldMousePos)
   InvertControl(xmin,xmax,ym,curr);
   InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
 
-  rejected = MouseMoved = FALSE;
+  rejected = MouseMoved = false;
   while (MouseStillDown())
   {
     MousePosition(MousePos);
@@ -23848,7 +23848,7 @@ INT NS_DIM_PREFIX MoveCut (PICTURE *thePicture, const INT *OldMousePos)
     /* inside picture? */
     if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
     {
-      rejected = TRUE;
+      rejected = true;
       break;
     }
 
@@ -23856,7 +23856,7 @@ INT NS_DIM_PREFIX MoveCut (PICTURE *thePicture, const INT *OldMousePos)
     InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
 
     V2_COPY(MousePos,LastMousePos);
-    MouseMoved = TRUE;
+    MouseMoved = true;
 
     /* invert slider */
     InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);

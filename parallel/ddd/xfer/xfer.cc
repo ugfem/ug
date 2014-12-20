@@ -1029,11 +1029,11 @@ int XferStepMode (enum XferMode old)
     sprintf(cBuffer, "wrong xfer-mode (currently in %s, expected %s)",
             XferModeName(xferGlobals.xferMode), XferModeName(old));
     DDD_PrintError('E', 6200, cBuffer);
-    return FALSE;
+    return false;
   }
 
   XferSetMode(XferSuccMode(xferGlobals.xferMode));
-  return TRUE;
+  return true;
 }
 
 
@@ -1043,7 +1043,7 @@ int XferStepMode (enum XferMode old)
 void ddd_XferInit (void)
 {
   /* switch off heap usage, will be switched on during XferBegin/End */
-  xferGlobals.useHeap = FALSE;
+  xferGlobals.useHeap = false;
 
   /* set kind of TMEM alloc/free requests */
   xfer_SetTmpMem(TMEM_ANY);

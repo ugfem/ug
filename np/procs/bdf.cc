@@ -518,7 +518,7 @@ static INT BDFTimeStep (NP_T_SOLVER *ts, INT level, INT *res)
             {
               if (bdf->noabort)               /* use last iterate */
               {
-                nlresult.converged = TRUE;
+                nlresult.converged = true;
                 bdf->dt = bdf->dtmin;
                 bad = 1;
                 UserWrite("bdf->TimeStep: not converged, still going on  \n");
@@ -1133,7 +1133,7 @@ INT NS_DIM_PREFIX BDFDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SF,"dtscale",(float)bdf->dtscale);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"rhogood",(float)bdf->rhogood);
   if (bdf->noabort)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"noabort","TRUE");
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"noabort","true");
   if (bdf->y_p1 != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"y_p1",ENVITEM_NAME(bdf->y_p1));
   if (bdf->y_0  != NULL)

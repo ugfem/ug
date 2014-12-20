@@ -99,7 +99,7 @@ typedef struct {
   INT objtypes;
   INT vdsubseq[MAXVD];
   INT mdsubseq[MAXMD];
-  INT MatOfFirstVecOnly;                /* default FALSE, may be changed after call     */
+  INT MatOfFirstVecOnly;                /* default false, may be changed after call     */
   /* of PrepareElementMultipleVMPtrs                      */
 
 } MVM_DESC;

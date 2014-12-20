@@ -132,7 +132,7 @@ INT NS_DIM_PREFIX MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC
         #ifdef ModelP
   /* TODO: parallel version */
   PrintErrorMessage('E',"MoveFreeBoundary","parallel not implemented");
-  ASSERT(FALSE);
+  ASSERT(false);
         #endif
 
   if (VD_ncmps_in_otype_mod(vd,NODEVEC,NON_STRICT)<DIM)

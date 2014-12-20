@@ -232,12 +232,12 @@ static INT GetPathedUGRCValue (const char *path, const char *name, char *value, 
 INT NS_PREFIX GetDefaultValue (const char *filename, const char *name, char *value)
 {
         #ifdef ModelP
-  static int already_called = FALSE;
+  static int already_called = false;
 
   if (already_called)
     return GetLocalizedDefaultValue(NULL,name,value);
   else
-    already_called = TRUE;
+    already_called = true;
         #endif
 
   PRINTDEBUG(low,2,("GetDefaultValue\n"));
@@ -256,7 +256,7 @@ INT NS_PREFIX GetDefaultValue (const char *filename, const char *name, char *val
     }
   }
   else if (strcmp(filename,UGRC_NAME)!=0)
-    ASSERT(FALSE);                      /* try GetLocalizedDefaultValue */
+    ASSERT(false);                      /* try GetLocalizedDefaultValue */
 
   /* localize defaults file */
   {

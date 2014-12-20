@@ -636,7 +636,7 @@ int LC_MsgAlloc (LC_MSGHANDLE msg)
   MSG_DESC   *md = (MSG_DESC *) msg;
   ULONG      *hdr;
   int i, j, n = md->msgType->nComps;
-  int remaining=1, give_up = FALSE;
+  int remaining=1, give_up = false;
 
   assert(md->msgState==MSTATE_FREEZED);
 
@@ -650,7 +650,7 @@ int LC_MsgAlloc (LC_MSGHANDLE msg)
     if (md->buffer==NULL)
     {
       if (remaining==0)
-        give_up = TRUE;
+        give_up = true;
       else
       {
 #                               if DebugLowComm<=7
@@ -683,7 +683,7 @@ int LC_MsgAlloc (LC_MSGHANDLE msg)
             me, md->msgType->name);
     DDD_PrintDebug(cBuffer);
 #               endif
-    return(FALSE);
+    return(false);
   }
 
 
@@ -703,7 +703,7 @@ int LC_MsgAlloc (LC_MSGHANDLE msg)
 
   md->msgState=MSTATE_ALLOCATED;
 
-  return(TRUE);
+  return(true);
 }
 
 

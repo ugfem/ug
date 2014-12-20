@@ -582,7 +582,7 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   }
 
   /* init ass once and compute nonlinear defect */
-  if (FasInitialStep (mg,level,TRUE,x,fas,ass,defect)!=0)
+  if (FasInitialStep (mg,level,true,x,fas,ass,defect)!=0)
   {
     res->error_code = __LINE__;
     REP_ERR_RETURN(res->error_code);
@@ -625,7 +625,7 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     CSTOP(fas_t,fas_c);
 
     /* compute nonlinear defect */
-    if (FasInitialStep (mg,level,FALSE,x,fas,ass,defect)!=0)
+    if (FasInitialStep (mg,level,false,x,fas,ass,defect)!=0)
     {
       res->error_code = __LINE__;
       REP_ERR_RETURN(res->error_code);

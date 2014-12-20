@@ -243,7 +243,7 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
 
     /* init type mapping arrays */
     MAP_TYPES(MAPPED_INNER_OBJT_TAG(tag), dddType);
-    dddctrl.dddObj[MAPPED_INNER_OBJT_TAG(tag)] = TRUE;
+    dddctrl.dddObj[MAPPED_INNER_OBJT_TAG(tag)] = true;
   }
   else
   {
@@ -253,7 +253,7 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
 
     /* init type mapping arrays */
     MAP_TYPES(MAPPED_BND_OBJT_TAG(tag), dddType);
-    dddctrl.dddObj[MAPPED_BND_OBJT_TAG(tag)] = TRUE;
+    dddctrl.dddObj[MAPPED_BND_OBJT_TAG(tag)] = true;
   }
 
   /* set mergemode to maximum */
@@ -332,19 +332,19 @@ static void ddd_DeclareTypes (void)
 
   TypeVector      = DDD_TypeDeclare("Vector");
   MAP_TYPES(VEOBJ, TypeVector);
-  dddctrl.dddObj[VEOBJ] = TRUE;
+  dddctrl.dddObj[VEOBJ] = true;
 
   TypeIVertex     = DDD_TypeDeclare("IVertex");
   MAP_TYPES(IVOBJ, TypeIVertex);
-  dddctrl.dddObj[IVOBJ] = TRUE;
+  dddctrl.dddObj[IVOBJ] = true;
 
   TypeBVertex     = DDD_TypeDeclare("BVertex");
   MAP_TYPES(BVOBJ, TypeBVertex);
-  dddctrl.dddObj[BVOBJ] = TRUE;
+  dddctrl.dddObj[BVOBJ] = true;
 
   TypeNode        = DDD_TypeDeclare("Node");
   MAP_TYPES(NDOBJ, TypeNode);
-  dddctrl.dddObj[NDOBJ] = TRUE;
+  dddctrl.dddObj[NDOBJ] = true;
 
         #ifdef __TWODIM__
   TypeTrElem      = DDD_TypeDeclare("TrElem");
@@ -369,7 +369,7 @@ static void ddd_DeclareTypes (void)
   /* edge is DDD data object for 2D           */
   TypeEdge        = DDD_TypeDeclare("Edge");
   MAP_TYPES(EDOBJ, TypeEdge);
-  dddctrl.dddObj[EDOBJ] = TRUE;
+  dddctrl.dddObj[EDOBJ] = true;
 
   /* 2. DDD data objects (without DDD_HEADER) */
 
@@ -873,7 +873,7 @@ static void InitDDDTypes (void)
   /* prevent from multiple execution */
   if (dddctrl.allTypesDefined)
     return;
-  dddctrl.allTypesDefined = TRUE;
+  dddctrl.allTypesDefined = true;
 
   ddd_DefineTypes();
 
@@ -1080,7 +1080,7 @@ int NS_DIM_PREFIX InitDDD (void)
   for(i=0; i<MAXOBJECTS; i++)
   {
     dddctrl.types[i] = -1;
-    dddctrl.dddObj[i] = FALSE;
+    dddctrl.dddObj[i] = false;
   }
   for(i=0; i<MAXDDDTYPES; i++)
   {
@@ -1090,7 +1090,7 @@ int NS_DIM_PREFIX InitDDD (void)
 
   /* declare DDD_TYPES, definition must be done later */
   ddd_DeclareTypes();
-  dddctrl.allTypesDefined = FALSE;
+  dddctrl.allTypesDefined = false;
 
   DomInitParallel(TypeBndP,TypeBndS);
 

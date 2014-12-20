@@ -460,7 +460,7 @@ INT NS_DIM_PREFIX DelCmdKey (char c)
   theCmdKey = (CMDKEY *) SearchEnv(theCmdKeyName,"/Cmd Keys",theCmdKeyVarID,theCmdKeyDirID);
   if (theCmdKey != NULL)
   {
-    ENVITEM_LOCKED(theCmdKey) = FALSE;
+    ENVITEM_LOCKED(theCmdKey) = false;
     if (RemoveEnvItem((ENVITEM *)theCmdKey))
       return (1);
   }
@@ -570,7 +570,7 @@ INT NS_DIM_PREFIX DelAllCmdKeys (void)
   for (theCmdKey = (CMDKEY *) theDir->down; theCmdKey!=NULL; theCmdKey=(CMDKEY *) NEXT_ENVITEM(theCmdKey))
     if (ENVITEM_TYPE(theCmdKey) == theCmdKeyVarID)
     {
-      ENVITEM_LOCKED(theCmdKey) = FALSE;
+      ENVITEM_LOCKED(theCmdKey) = false;
       if (RemoveEnvItem((ENVITEM *)theCmdKey))
         return (1);
     }
@@ -875,7 +875,7 @@ static INT ProcessEvent (char *String, INT EventMask)
             {
               if (use_bullet) {
                 if (BulletDrawUgPicture(thePic, offset_factor)) {
-                  autoRefresh = FALSE;
+                  autoRefresh = false;
                   PrintErrorMessage('W',"ProcessEvent","autorefresh is switched OFF");
                   return (PE_OTHER);
                 }
@@ -883,7 +883,7 @@ static INT ProcessEvent (char *String, INT EventMask)
               else {
                 if (DrawUgPicture(thePic))
                 {
-                  autoRefresh = FALSE;
+                  autoRefresh = false;
                   PrintErrorMessage('W',"ProcessEvent","autorefresh is switched OFF");
                   return (PE_OTHER);
                 }
@@ -1273,7 +1273,7 @@ INT NS_DIM_PREFIX UserIn (char *String)
   EventMask = EVERY_EVENT;
 
   /* loop till string is entered */
-  while (TRUE)
+  while (true)
   {
     Code = ProcessEvent(String,EventMask);
 #ifdef ModelP
@@ -1321,7 +1321,7 @@ INT NS_DIM_PREFIX UserRead (char *String)
   EventMask = TERM_STRING;
 
   /* loop till string is entered */
-  while (TRUE)
+  while (true)
   {
     Code = ProcessEvent(String,EventMask);
 #ifdef ModelP
@@ -1347,7 +1347,7 @@ INT NS_DIM_PREFIX UserRead (char *String)
         INT SetRefreshState (INT status)
 
         PARAMETERS:
-   .   status - 'TRUE' or 'FALSE'
+        status - 'true' or 'false'
 
         DESCRIPTION:
         If autoRefresh is on then invalid pictures will be updated automatically

@@ -249,7 +249,7 @@ static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
 
   IFDEBUG(np,3)
   UserWrite("---- After computation of nonlinear defect\n");
-  ListVectorRange(mg,0,level,0,0,1000,FALSE,TRUE,~(INT)1,LV_MOD_DEFAULT);
+  ListVectorRange(mg,0,level,0,0,1000,false,true,~(INT)1,LV_MOD_DEFAULT);
   ENDDEBUG
 
   /* compute norm of defect */
@@ -397,7 +397,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   n_unk = VD_NCOMP(x);
 
   /* init ass once and compute nonlinear defect */
-  if (NonLinearDefect(mg,level,TRUE,x,newton,ass,defect,&error)!=0)
+  if (NonLinearDefect(mg,level,true,x,newton,ass,defect,&error)!=0)
   {
     res->error_code = __LINE__;
     REP_ERR_RETURN(res->error_code);
@@ -518,7 +518,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
     IFDEBUG(np,3)
     UserWrite("---- After linear solver\n");
-    ListVectorRange(mg,0,level,0,0,1000,FALSE,TRUE,~(INT)1,LV_MOD_DEFAULT);
+    ListVectorRange(mg,0,level,0,0,1000,false,true,~(INT)1,LV_MOD_DEFAULT);
     ENDDEBUG
 
     /* linear solver statistics */
@@ -555,7 +555,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         error = 0;
       }
       else
-      if (NonLinearDefect(mg,level,FALSE,x,newton,ass,defect,&error)!=0)
+      if (NonLinearDefect(mg,level,false,x,newton,ass,defect,&error)!=0)
       {
         res->error_code = __LINE__;
         REP_ERR_RETURN(res->error_code);
@@ -619,7 +619,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         dcopy(mg,0,level,ALL_VECTORS,x,newton->s);
         daxpy(mg,0,level,ALL_VECTORS,x,-la,newton->v);
 
-        if (NonLinearDefect(mg,level,FALSE,x,newton,ass, defect,&error)!=0)
+        if (NonLinearDefect(mg,level,false,x,newton,ass, defect,&error)!=0)
         {
           res->error_code = __LINE__;
           REP_ERR_RETURN(res->error_code);

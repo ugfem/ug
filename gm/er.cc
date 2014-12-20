@@ -155,7 +155,7 @@ enum ER_DBG {
   (int)ns
 
 #ifdef Debug
-#define PD_ERR(l,x,e)                   {PRINTDEBUG(gm,l,x); e++; /* ASSERT(FALSE);*/}
+#define PD_ERR(l,x,e)                   {PRINTDEBUG(gm,l,x); e++; /* ASSERT(false);*/}
 #define PD(x)                                   {PrintDebug x;}
 #else
 #define PD_ERR(l,x,e)                   /* no debug */
@@ -667,7 +667,7 @@ static INT RuleCompare (int id, const URULE *ur, const ERULE *er)
 
       if (nco0==nco1)
       {
-        int corners_match = TRUE;
+        int corners_match = true;
         int i;
 
         for (i=0; i<nco0; i++)
@@ -683,7 +683,7 @@ static INT RuleCompare (int id, const URULE *ur, const ERULE *er)
               break;
           if (j>=nco1)
           {
-            corners_match = FALSE;
+            corners_match = false;
             break;
           }
         }
@@ -811,7 +811,7 @@ static int CountIFElements (DDD_OBJ obj)
 
   if (HAS_NO_RULE(elem))
   {
-    SETTHEFLAG(elem,TRUE);
+    SETTHEFLAG(elem,true);
 
     ASSERT(global.if_elems<MAX_IFID);
 
@@ -820,7 +820,7 @@ static int CountIFElements (DDD_OBJ obj)
   }
   else
   {
-    SETTHEFLAG(elem,FALSE);
+    SETTHEFLAG(elem,false);
   }
 
   return (0);
@@ -1039,7 +1039,7 @@ static int ExtractInterfaceERule (DDD_OBJ obj)
     ENDDEBUG
   }
 
-  SETUSED(elem,TRUE);
+  SETUSED(elem,true);
 
   return (0);
 }
@@ -1175,7 +1175,7 @@ static INT ExtractRules (MULTIGRID *mg)
   /* TODO (HRR 971211): don't include TOPLEVEL (no elem refined there) */
   for (l=0; l<=TOPLEVEL(mg); l++)
     for (elem=FIRSTELEMENT(GRID_ON_LEVEL(mg,l)); elem!=NULL; elem=SUCCE(elem))
-      SETUSED(elem,FALSE);
+      SETUSED(elem,false);
   if (ExtractInterfaceRules(mg))
     REP_ERR_RETURN(1);
         #endif
@@ -1393,7 +1393,7 @@ static INT GetFSidesOfCorners (int tag, int n, SHORT corners[MAX_CORNERS_OF_SIDE
 
   for (co=0; co<n; co++)
     for (side=0; side<soe; side++)
-      corner_on_side[co][side] = FALSE;
+      corner_on_side[co][side] = false;
 
   for (co=0; co<n; co++)
     if (corners[co]==coe+CENTER_NODE_INDEX_TAG(tag))
@@ -1408,7 +1408,7 @@ static INT GetFSidesOfCorners (int tag, int n, SHORT corners[MAX_CORNERS_OF_SIDE
 
       for (side=0; side<soe; side++)
         if (CORNER_OF_SIDE_INV_TAG(tag,side,fco)>=0)
-          corner_on_side[co][side] = TRUE;
+          corner_on_side[co][side] = true;
     }
     else if (corners[co]<(coe+eoe))
     {
@@ -1416,14 +1416,14 @@ static INT GetFSidesOfCorners (int tag, int n, SHORT corners[MAX_CORNERS_OF_SIDE
       int ed = corners[co]-coe;
 
                         #ifdef __TWODIM__
-      corner_on_side[co][ed] = TRUE;
+      corner_on_side[co][ed] = true;
                         #else
       int i;
       for (i=0; i<MAX_SIDES_OF_EDGE; i++)
       {
         int sd = SIDE_WITH_EDGE_TAG(tag,ed,i);
         if (sd>=0)
-          corner_on_side[co][sd] = TRUE;
+          corner_on_side[co][sd] = true;
       }
                         #endif
     }
@@ -1432,11 +1432,11 @@ static INT GetFSidesOfCorners (int tag, int n, SHORT corners[MAX_CORNERS_OF_SIDE
   {
     /* side mid */
     int sd = corners[co]-(coe+eoe);
-    corner_on_side[co][sd] = TRUE;
+    corner_on_side[co][sd] = true;
   }
                 #endif
   else
-    ASSERT(FALSE);                              /* Huh??? */
+    ASSERT(false);                              /* Huh??? */
 
   return (YES);
 }
@@ -1547,13 +1547,13 @@ static INT SidesMatch (int nsco, SHORT sco0[], SHORT sco1[])
   /* try each permutation of first with reverse order of second */
   for (i=0; i<nsco; i++)
   {
-    int match = TRUE;
+    int match = true;
     int j;
 
     for (j=0; j<nsco; j++)
       if (sco0[(i+j)%nsco]!=sco1[nsco-j-1])
       {
-        match = FALSE;
+        match = false;
         break;
       }
     if (match)
@@ -1860,18 +1860,18 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
   ELEMENT *elem;
   int l;
   int max_path_depth = 0;
-  int use_bug_in_rule = TRUE;
+  int use_bug_in_rule = true;
   short *bug_in_rule[TAGS];
   INT MarkKey;
   int tg;
 
   if (MarkTmpMem(global.heap,&MarkKey))
-    use_bug_in_rule = FALSE;
+    use_bug_in_rule = false;
   else
   {
     bug_in_rule[0] = (short*) GetTmpMem(global.heap,global.maxrules*sizeof(short),MarkKey);
     if (bug_in_rule[0]==NULL)
-      use_bug_in_rule = FALSE;
+      use_bug_in_rule = false;
     else
     {
       int t,i;
@@ -1879,7 +1879,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
       {
         bug_in_rule[t] = bug_in_rule[0] + RefRuleOffset[t];
         for (i=0; i<global.maxrule[t]; i++)
-          bug_in_rule[t][i] = FALSE;
+          bug_in_rule[t][i] = false;
       }
     }
   }
@@ -1891,7 +1891,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
     for (i=0; i<global.maxrule[tg]; i++)
       if (CheckNBrelations(mrules+RefRuleOffset[tg]+i,i,tg))
         if (use_bug_in_rule)
-          bug_in_rule[tg][i] = TRUE;
+          bug_in_rule[tg][i] = true;
   }
 
   for (l=0; l<TOPLEVEL(mg); l++)
@@ -1917,7 +1917,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
           PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: NSONS(elem)!=mr->nsons\n",id),error);
 
         if (GetNodeContext(elem,nodes))
-          ASSERT(FALSE);
+          ASSERT(false);
 
         /* check pattern */
         for (i=0; i<MAX_NEW_CORNERS_DIM; i++)
@@ -1936,7 +1936,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
 
         /* check sons */
         if (GetOrderedSons(elem,mr,nodes,sons,&maxsonex))
-          ASSERT(FALSE);
+          ASSERT(false);
                                 #ifndef ModelP
         if (maxsonex!=nsons)
           PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: wrong number of sons (%d vs %d)\n",id,maxsonex,nsons),error);
@@ -2005,7 +2005,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
                     ELEMENT *nson = sons[0];
                     int path = rson->path;
                     int pd = PATHDEPTH(path);
-                    int son_path_ok = FALSE;
+                    int son_path_ok = false;
                     int j;
 
                     max_path_depth = MAX(max_path_depth,pd);
@@ -2029,9 +2029,9 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
                     if (nson!=son)
                             PD_ERR(ER_DBG_RULE_VERBOSE,("ERROR in CheckMRules, elem %ld: wrong path of son %d\n",id,s),error)
                     else
-                            son_path_ok = TRUE;
+                            son_path_ok = true;
                     if (!son_path_ok)
-                            some_path_wrong = TRUE;
+                            some_path_wrong = true;
                }*/
                                                 #endif
                                                 #endif
@@ -2053,7 +2053,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
         {
           PD(("in total %3d ERRORS in CheckMRules (%c-rule %3d of %d), elem %ld\n",error,(refi<UGMAXRULE(tag)) ? 'r' : 'e',refi,tag,id));
           if (use_bug_in_rule)
-            bug_in_rule[tag][refi] = TRUE;
+            bug_in_rule[tag][refi] = true;
         }
         else
           PrintDebug("FINE in CheckMRules (%c-rule %4d of %d), elem %ld: everything ok\n",(refi<UGMAXRULE(tag)) ? 'r' : 'e',refi,tag,id);
@@ -2080,7 +2080,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
     PrintDebug("------------------------------------------------------------\n");
 
     if (ReleaseTmpMem(global.heap,MarkKey))
-      ASSERT(FALSE);
+      ASSERT(false);
   }
   else
     PrintDebug("sorry, no storage available for use_bug_in_rule\n");

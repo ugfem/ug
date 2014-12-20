@@ -221,7 +221,7 @@ static int CheckOverlapEls (TYPE_DESC *desc)
 {
   char buf[64];
   int i;
-  int ok = TRUE;
+  int ok = true;
 
   for(i=0; i<desc->nElements; i++)
   {
@@ -233,7 +233,7 @@ static int CheckOverlapEls (TYPE_DESC *desc)
 
       if (CPP_STRUCT(desc) CPP_AND (e1->offset+e1->size > e2->offset))
       {
-        ok = FALSE;
+        ok = false;
         sprintf(buf, "element too big (offset=%d)", e1->offset);
         DDD_PrintError('E', 2403, RegisterError(desc, 0, buf));
       }
@@ -241,7 +241,7 @@ static int CheckOverlapEls (TYPE_DESC *desc)
       if (CPP_ARRAY(desc) CPP_AND
             (e1->array+(e1->size*desc->arraySize) > e2->array))
       {
-        ok = FALSE;
+        ok = false;
         sprintf(buf, "element too big (array=%d)", i);
         DDD_PrintError('E', 2404, RegisterError(desc, 0, buf));
       }
@@ -252,7 +252,7 @@ static int CheckOverlapEls (TYPE_DESC *desc)
     {
       if (CPP_STRUCT(desc) CPP_AND (e1->offset+e1->size > desc->size))
       {
-        ok = FALSE;
+        ok = false;
         sprintf(buf, "element too big (offset=%d)", e1->offset);
         DDD_PrintError('E', 2405, RegisterError(desc, 0, buf));
       }
@@ -368,7 +368,7 @@ static int RecursiveRegister (TYPE_DESC *desc,
   {
     if (!desc->hasHeader)
     {
-      desc->hasHeader = TRUE;
+      desc->hasHeader = true;
       desc->offsetHeader = d2->offsetHeader + offs;
     }
     else
@@ -418,7 +418,7 @@ static int RecursiveRegister (TYPE_DESC *desc,
   {
     if (!desc->hasHeader)
     {
-      desc->hasHeader = TRUE;
+      desc->hasHeader = true;
       desc->elemHeader = i;
       desc->offsetHeader = d2->offsetHeader;
     }
@@ -450,7 +450,7 @@ static void ConstructDesc (TYPE_DESC *desc)
 #if defined(CPP_FRONTEND)
   desc->size = 0;
 #endif
-  desc->hasHeader = FALSE;
+  desc->hasHeader = false;
   desc->offsetHeader = 0;
 
 }
@@ -495,7 +495,7 @@ static int NormalizeDesc (TYPE_DESC *desc)
 
   /* check for overlapping elements */
   if (! CheckOverlapEls(desc))
-    return FALSE;
+    return false;
 
 
 #       ifndef DebugNoStructCompress
@@ -543,7 +543,7 @@ static int NormalizeDesc (TYPE_DESC *desc)
   }
 #       endif
 
-  return TRUE;
+  return true;
 }
 
 
@@ -716,7 +716,7 @@ void DDD_Library::TypeDefine (DDD_TYPE typ, ...)
   if (typ==0)        /* i.e. typ==EL_DDDHDR */
   {
     /* DDD_HDR also contains a DDD_HDR (sic!) */
-    desc->hasHeader = TRUE;
+    desc->hasHeader = true;
   }
 
 #       ifdef DebugTypeDefine
@@ -852,14 +852,14 @@ void DDD_Library::TypeDefine (DDD_TYPE typ, ...)
       argsize = va_arg(ap, size_t); argno++;
 
       /* initialize ELEM_DESC */
-      if (CPP_STRUCT(desc) CPP_AND TRUE)
+      if (CPP_STRUCT(desc) CPP_AND true)
       {
         ConstructEl(&desc->element[i],
                     argtyp, (int)(argp-adr), argsize, 0);
       }
 
 #if defined(CPP_FRONTEND)
-      if (CPP_ARRAY(desc) CPP_AND TRUE)
+      if (CPP_ARRAY(desc) CPP_AND true)
       {
         size += argsize;
         ConstructEl(&desc->element[i],
@@ -877,13 +877,13 @@ void DDD_Library::TypeDefine (DDD_TYPE typ, ...)
       i++;
 
 #                               ifdef DebugTypeDefine
-      if (CPP_STRUCT(desc) CPP_AND TRUE)
+      if (CPP_STRUCT(desc) CPP_AND true)
       {
         sprintf(cBuffer,"    DAT, %05d, %06d\n",
                 argp-adr, argsize);
       }
 #if defined(CPP_FRONTEND)
-      if (CPP_ARRAY(desc) CPP_AND TRUE)
+      if (CPP_ARRAY(desc) CPP_AND true)
       {
         sprintf(cBuffer,"    DAT, %08x, %06d\n",
                 argp, argsize);
@@ -953,7 +953,7 @@ void DDD_Library::TypeDefine (DDD_TYPE typ, ...)
       /* check whether given DDD_TYPE has been defined already */
       if (theTypeDefs[argtyp].mode==DDD_TYPE_DEFINED)
       {
-        if (CPP_STRUCT(desc) CPP_AND TRUE)
+        if (CPP_STRUCT(desc) CPP_AND true)
         {
           /* do recursive TypeDefine */
           i = RecursiveRegister(desc,
@@ -1030,7 +1030,7 @@ void DDD_Library::TypeDefine (DDD_TYPE typ, ...)
                 #endif
 
 
-    if (CPP_STRUCT(desc) CPP_AND TRUE)
+    if (CPP_STRUCT(desc) CPP_AND true)
     {
       /* do normalization */
       if (! NormalizeDesc(desc))
@@ -1203,14 +1203,14 @@ void DDD_Library::TypeDisplay (DDD_TYPE id)
     }
 
     /* print header */
-    if (CPP_STRUCT(desc) CPP_AND TRUE)
+    if (CPP_STRUCT(desc) CPP_AND true)
     {
       sprintf(cBuffer, "/ Structure of %s--object '%s', id %d, %d byte\n",
               desc->hasHeader ? "DDD" : "data",
               desc->name, id, desc->size);
     }
 #if defined(CPP_FRONTEND)
-    if (CPP_ARRAY(desc) CPP_AND TRUE)
+    if (CPP_ARRAY(desc) CPP_AND true)
     {
       sprintf(cBuffer,
               "/ Structure of %s--object '%s', id %d, %d byte, %d elements\n",
@@ -1230,7 +1230,7 @@ void DDD_Library::TypeDisplay (DDD_TYPE id)
     {
       ELEM_DESC *e = &desc->element[i];
 
-      if (CPP_STRUCT(desc) CPP_AND TRUE)
+      if (CPP_STRUCT(desc) CPP_AND true)
       {
         int realnext = (i==desc->nElements-1) ? desc->size : (e+1)->offset;
         int estinext = e->offset+e->size;
@@ -1310,7 +1310,7 @@ void DDD_Library::TypeDisplay (DDD_TYPE id)
       }
 
 #if defined(CPP_FRONTEND)
-      if (CPP_ARRAY(desc) CPP_AND TRUE)
+      if (CPP_ARRAY(desc) CPP_AND true)
       {
         sprintf(cBuffer, "|%5d %5d    ", i, e->size);
 

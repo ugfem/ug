@@ -186,7 +186,7 @@ INT NS_DIM_PREFIX TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
 #ifdef THETA_EXACT
   dcopyBS( bv_source, aux4_COMP, aux_comp );
   dsetBS( bv_source, aux_comp, 0.0 );
-  gs_solveBS ( bv_source, bvd_source, bvdf, 1e-16, 100, Theta_comp, aux_comp, aux4_COMP, aux5_COMP, TRUE );
+  gs_solveBS ( bv_source, bvd_source, bvdf, 1e-16, 100, Theta_comp, aux_comp, aux4_COMP, aux5_COMP, true );
 #else
         #ifdef ModelP
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux_comp, aux_comp, NULL, NULL );
@@ -207,12 +207,12 @@ INT NS_DIM_PREFIX TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
     val = VVALUE( v_dest, tv_comp );
     if ( fabs( val ) < FFsmallTV )
     {
-      SETVCUSED( v_dest, TRUE );
+      SETVCUSED( v_dest, true );
       missed++;
     }
     else
     {
-      SETVCUSED( v_dest, FALSE );
+      SETVCUSED( v_dest, false );
       m = GetMatrix( v_source, v_dest );
       ASSERT( m != NULL );
       MVALUE( m, Theta_comp ) = MVALUE( MADJ(m), Theta_comp ) = VVALUE( v_source, aux_comp ) / val;
@@ -241,21 +241,21 @@ INT NS_DIM_PREFIX TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
       missed--;
       pred_dest = succ_dest = v_dest;
       pred_source = succ_source = v_source;
-      pred_found = succ_found = FALSE;
-      pred_in_block = succ_in_block = TRUE;
+      pred_found = succ_found = false;
+      pred_in_block = succ_in_block = true;
 
       while ( !pred_found && !succ_found && (pred_in_block || succ_in_block) )
       {
         if ( !VCUSED( pred_dest ) && pred_in_block )
         {
           pred_val = MVALUE( GetMatrix( pred_source, pred_dest ), Theta_comp );
-          pred_found = TRUE;
+          pred_found = true;
         }
 
         if ( !VCUSED( succ_dest ) && succ_in_block )
         {
           succ_val = MVALUE( GetMatrix( succ_source, succ_dest ), Theta_comp );
-          succ_found = TRUE;
+          succ_found = true;
         }
 
         if ( pred_in_block )
@@ -492,7 +492,7 @@ INT NS_DIM_PREFIX FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
       MVALUE( MADJ(m_offdiag), T_comp ) = MVALUE(MADJ(m_offdiag), K_comp ) - off_val;
     }
     else
-      ASSERT(FALSE);
+      ASSERT(false);
 
     a1 = VVALUE( vip1, aux1_comp ) - off_val*e1i;
     a2 = VVALUE( vip1, aux2_comp ) - off_val*e2i;
@@ -573,7 +573,7 @@ static INT FFO0CalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
     tvval = VVALUE( vi, tv_comp );
     if ( fabs(tvval) < SMALL_D )
     {
-      SETVCUSED( vi, TRUE );
+      SETVCUSED( vi, true );
       missed++;
       /*PRINTDEBUG( np, 0, ("FFO0CalculateThetaAndUpdate: testvector entry was 0\n") );
          printf("tv\n"); printvBS(bv_dest, tv_comp);
@@ -581,7 +581,7 @@ static INT FFO0CalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
     }
     else
     {
-      SETVCUSED( vi, FALSE );
+      SETVCUSED( vi, false );
       MVALUE( VSTART(vi), T_comp ) = MVALUE( VSTART(vi), K_comp ) -
                                      VVALUE( vi, aux_comp ) / tvval;
     }

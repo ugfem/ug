@@ -259,7 +259,7 @@ static int unify_XIModCpl (XIModCpl **i1p, XIModCpl **i2p)
 
   /* if items are different in gid or dest, take first item */
   if ((i1->to != i2->to) || (i1->te.gid != i2->te.gid))
-    return TRUE;
+    return true;
 
   /* items have equal to and gid, we must check priority */
   ret = PriorityMerge(&theTypeDefs[i1->typ],
@@ -281,7 +281,7 @@ static int unify_XIModCpl (XIModCpl **i1p, XIModCpl **i2p)
     i2->te.prio = newprio;
   }
 
-  return FALSE;
+  return false;
 }
 
 
@@ -494,11 +494,11 @@ DDD_RET DDD_Library::XferEnd (void)
     obsolete += prunedXIDelCmd;
     remXIDelCmd -= prunedXIDelCmd;
 
-    DelCmds_were_pruned = TRUE;
+    DelCmds_were_pruned = true;
   }
   else
   {
-    DelCmds_were_pruned = FALSE;
+    DelCmds_were_pruned = false;
   }
 
   /*
@@ -839,7 +839,7 @@ exit:
   }
 
         #ifdef XferMemFromHeap
-  xferGlobals.useHeap = FALSE;
+  xferGlobals.useHeap = false;
   ReleaseHeap(xferGlobals.theMarkKey);
   LC_SetMemMgrDefault();
         #endif
@@ -1328,8 +1328,8 @@ void DDD_XferAddDataX (int cnt, DDD_TYPE typ, size_t *sizes)
         avoid unnecessary work, \eg, for counting the number of
         additional data objects.
 
-   @return #TRUE# if additional data objects will be gathered, sent
-                and scattered; #FALSE# otherwise.
+   @return #true# if additional data objects will be gathered, sent
+                and scattered; #false# otherwise.
  */
 int DDD_XferWithAddData (void)
 {
@@ -1442,7 +1442,7 @@ void DDD_Library::XferBegin (void)
 
         #ifdef XferMemFromHeap
   MarkHeap(&xferGlobals.theMarkKey);
-  xferGlobals.useHeap = TRUE;
+  xferGlobals.useHeap = true;
   LC_SetMemMgrRecv(xfer_AllocHeap, NULL);
   LC_SetMemMgrSend(xfer_AllocSend, xfer_FreeSend);
         #endif

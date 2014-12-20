@@ -2726,7 +2726,7 @@ static INT RestrictMarks (GRID *theGrid)
 
               for (co=0; co<CORNERS_OF_ELEM(theElement); co++)
                 if (THEFLAG(NVECTOR(CORNER(theElement,co))))
-                  SETUSED(NVECTOR(CORNER(theElement,co)),TRUE);
+                  SETUSED(NVECTOR(CORNER(theElement,co)),true);
             }
 #endif
 
@@ -3104,7 +3104,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
   NODE **MidNodes;                                      /* nodes on refined edges				*/
   NODE *Node0, *Node1;
   INT Mark;
-  BOOL toBisect,toCreate;
+  bool toBisect,toCreate;
         #ifdef __THREEDIM__
   ELEMENT *theNeighbor;                         /* neighbor and a son of current elem.	*/
   NODE **SideNodes;                                     /* nodes on refined sides				*/
@@ -3144,7 +3144,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
     Corner0 = CORNER_OF_EDGE(theElement,i,0);
     Corner1 = CORNER_OF_EDGE(theElement,i,1);
 
-    toBisect = FALSE;
+    toBisect = false;
 
     if (MARKED_NEW_GREEN(theElement))
     {
@@ -3154,7 +3154,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 
       if (ADDPATTERN(theEdge) == 0)
       {
-        toBisect = TRUE;
+        toBisect = true;
         MidNodes[i] = MIDNODE(theEdge);
       }
     }
@@ -3163,7 +3163,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
                 #endif
     if (NODE_OF_RULE(theElement,Mark,i))
     {
-      toBisect = TRUE;
+      toBisect = true;
     }
 
     IFDEBUG(gm,2)
@@ -3219,7 +3219,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
     if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
 #endif
 
-    toCreate = FALSE;
+    toCreate = false;
     /* is side node needed */
     if (MARKED_NEW_GREEN(theElement))
     {
@@ -3238,7 +3238,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
           ASSERT(j<SIDES_OF_ELEM(theNeighbor));
           if (NODE_OF_RULE(theNeighbor,MARK(theNeighbor),
                            EDGES_OF_ELEM(theNeighbor)+j))
-            toCreate = TRUE;
+            toCreate = true;
         }
       }
     }
@@ -3247,7 +3247,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
                 #endif
     if (NODE_OF_RULE(theElement,Mark,EDGES_OF_ELEM(theElement)+i))
     {
-      toCreate = TRUE;
+      toCreate = true;
     }
 
     IFDEBUG(gm,2)
@@ -3348,20 +3348,20 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
   CenterNode = MidNodes+CENTER_NODE_INDEX(theElement);
   CenterNode[0] = NULL;
 
-  toCreate = FALSE;
+  toCreate = false;
   if (CenterNode[0] == NULL)
   {
 
     if (MARKED_NEW_GREEN(theElement))
     {
-      toCreate = TRUE;
+      toCreate = true;
     }
                 #ifndef __ANISOTROPIC__
     else
                 #endif
     if (NODE_OF_RULE(theElement,Mark,CENTER_NODE_INDEX(theElement)))
     {
-      toCreate = TRUE;
+      toCreate = true;
     }
   }
 
@@ -3467,7 +3467,7 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
     PRINTDEBUG(gm,1,(PFMT "UnrefineElement(): DisposeElement[%d]="
                      EID_FMTX "\n",me,s,EID_PRTX(SonList[s])));
 
-    if (DisposeElement(theGrid,SonList[s],TRUE)!=0) RETURN(GM_FATAL);
+    if (DisposeElement(theGrid,SonList[s],true)!=0) RETURN(GM_FATAL);
   }
 
   return (GM_OK);
@@ -4507,7 +4507,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
   NODE *ElementNodes[MAX_CORNERS_OF_ELEM];
   int i,j,k,l,m,n,s;
   int nelem,nedges,node0;
-  BOOL bdy,found;
+  bool bdy,found;
   int edge, sides[4], side0, side1;
   int tetNode0, tetNode1, tetNode2, tetEdge0, tetEdge1, tetEdge2,
       tetSideNode0Node1, tetSideNode0Node2, tetSideNode1Node2,
@@ -5169,26 +5169,26 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
       /* two elements share this edge */
 
       /* get son elements for this edge */
-      found = FALSE;
+      found = false;
       for (j=side0*5; j<(side0*5+5); j++)
       {
         for (k=0; k<MAX_SIDES_OF_ELEM; k++)
           if ((sons[j].nb[k]-MAX_GREEN_SONS)==side1)
           {
-            found = TRUE;
+            found = true;
             break;
           }
         if (found) break;
       }
       ASSERT(j<side0*5+5);
 
-      found = FALSE;
+      found = false;
       for (l=side1*5; l<side1*5+5; l++)
       {
         for (m=0; m<MAX_SIDES_OF_ELEM; m++)
           if ((sons[l].nb[m]-MAX_GREEN_SONS)==side0)
           {
-            found = TRUE;
+            found = true;
             break;
           }
         if (found) break;
@@ -5226,14 +5226,14 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
       for (j=0; j<CORNERS_OF_EDGE; j++)
       {
         theNode1 = theContext[CORNER_OF_EDGE(theElement,i,j)];
-        found = FALSE;
+        found = false;
         for (l=0; l<2; l++)
         {
           for (k=0; k<MAX_CORNERS_OF_ELEM; k++)
           {
             if (theNode1 == sons[elementsSide0[l]].corners[k])
             {
-              found = TRUE;
+              found = true;
               break;
             }
           }
@@ -5242,14 +5242,14 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
         ASSERT(k<MAX_CORNERS_OF_ELEM);
         ASSERT(l<2);
 
-        found = FALSE;
+        found = false;
         for (m=0; m<2; m++)
         {
           for (k=0; k<MAX_CORNERS_OF_ELEM; k++)
           {
             if (theNode1 == sons[elementsSide1[m]].corners[k])
             {
-              found = TRUE;
+              found = true;
               break;
             }
           }
@@ -5865,7 +5865,7 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
         {
           if (LEVEL(theElement)>0 && EFATHER(theElement)==NULL)
           {
-            DisposeElement(theGrid,theElement,TRUE);
+            DisposeElement(theGrid,theElement,true);
             continue;
           }
         }
@@ -5913,7 +5913,7 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
         {
           if (LEVEL(theElement)>0 && EFATHER(theElement)==NULL)
           {
-            DisposeElement(theGrid,theElement,TRUE);
+            DisposeElement(theGrid,theElement,true);
             continue;
           }
         }
@@ -5978,7 +5978,7 @@ static int AdaptGrid (GRID *theGrid, INT toplevel, INT level, INT newlevel, INT 
          theElement!=NULL;
          theElement=SUCCE(theElement))
     {
-      if (EPRIO(theElement) == PrioHGhost) DisposeElement(FinerGrid,theElement,TRUE);
+      if (EPRIO(theElement) == PrioHGhost) DisposeElement(FinerGrid,theElement,true);
     }
   }
   DDD_XferEnd();
@@ -6247,8 +6247,8 @@ static INT InitializePeriodicFlags(GRID *grid)
     return (0);
 
   for (vec=PFIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec)) {
-    SETUSED(vec,FALSE);
-    SETTHEFLAG(vec,FALSE);
+    SETUSED(vec,false);
+    SETTHEFLAG(vec,false);
   }
 
   for (node=PFIRSTNODE(grid); node!=NULL; node=SUCCN(node)) {
@@ -6259,7 +6259,7 @@ static INT InitializePeriodicFlags(GRID *grid)
     vtx=MYVERTEX(node);
     if (OBJT(vtx)!=BVOBJ) continue;
     if ((*IsPeriodicBnd)(vtx,&n,per_ids,coord,pcoords))
-      SETTHEFLAG(NVECTOR(node),TRUE);
+      SETTHEFLAG(NVECTOR(node),true);
   }
 
   return (0);
@@ -6276,8 +6276,8 @@ static INT Grid_MakePeriodicMarksConsistent(GRID *grid)
     return (0);
 
   for (vec=FIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec)) {
-    SETUSED(vec,FALSE);                 /* vector of marked element */
-    SETTHEFLAG(vec,FALSE);      /* periodic vector */
+    SETUSED(vec,false);                 /* vector of marked element */
+    SETTHEFLAG(vec,false);      /* periodic vector */
   }
 
   /* check if element has points on periodic boundary and set flags */
@@ -6301,9 +6301,9 @@ static INT Grid_MakePeriodicMarksConsistent(GRID *grid)
 
         if (OBJT(vtx)!=BVOBJ) continue;
         if ((*IsPeriodicBnd)(vtx,&n,per_ids,coord,pcoords)) {
-          SETTHEFLAG(vec,TRUE);
+          SETTHEFLAG(vec,true);
           if (mark==RED) {
-            SETUSED(vec,TRUE);
+            SETUSED(vec,true);
             PRINTDEBUG(gm,1,("periodic vec %8d on level %d: used at %d bndries\n",VINDEX(vec),GLEVEL(grid),n));
           }
         }
@@ -6350,7 +6350,7 @@ static INT Grid_MakePeriodicMarksConsistent(GRID *grid)
           vec = NVECTOR(node);
 
           if (THEFLAG(vec)) {           /* periodic vector */
-            SETUSED(vec,TRUE);
+            SETUSED(vec,true);
             PRINTDEBUG(gm,1,("Elem %8d on level %d: periodic vec %8d\n",ID(elem),GLEVEL(grid),VINDEX(vec)));
           }
         }

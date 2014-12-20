@@ -303,7 +303,7 @@ static INT piccounter=1;
 /*@{*/
 static INT theArrayDirID;
 static INT theArrayVarID;
-static INT arraypathes_set=FALSE;
+static INT arraypathes_set=false;
 /*@}*/
 
 REP_ERR_FILE;
@@ -587,13 +587,13 @@ static INT DateCommand (INT argc, char **argv)
   INT i,svopt;
 
   /* check options */
-  svopt = FALSE;
+  svopt = false;
   fmt = "%a %b %d %H:%M:%S %Y";
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 's' :
-      svopt = TRUE;
+      svopt = true;
       break;
 
     case 'S' :
@@ -792,7 +792,7 @@ static INT SetCommand (INT argc, char **argv)
         #endif /* ModelP */
 
   /* check options */
-  ropt = FALSE;
+  ropt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -802,7 +802,7 @@ static INT SetCommand (INT argc, char **argv)
         PrintHelp("set",HELPITEM," (the r option applies not with setting a value)");
         return (PARAMERRORCODE);
       }
-      ropt = TRUE;
+      ropt = true;
       break;
 
     default :
@@ -1265,7 +1265,7 @@ static INT LogOnCommand (INT argc, char **argv)
   int ropt;
 
   /* check options */
-  popt = pext = meext = rename = FALSE;
+  popt = pext = meext = rename = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -1275,18 +1275,18 @@ static INT LogOnCommand (INT argc, char **argv)
         PrintErrorMessage('E',"logon","no protocol file open");
         return (PARAMERRORCODE);
       }
-      popt = TRUE;
+      popt = true;
       break;
 
     case 'e' :
                                 #ifdef ModelP
-      pext = TRUE;
+      pext = true;
                                 #endif
       break;
 
     case 'a' :
                                 #ifdef ModelP
-      meext = TRUE;
+      meext = true;
                                 #endif
       break;
 
@@ -1296,7 +1296,7 @@ static INT LogOnCommand (INT argc, char **argv)
 
     case 'r' :
       res = sscanf(argv[i]," r %d",&ropt);
-      if (res==0 || (res==1 && ropt==1)) rename = TRUE;
+      if (res==0 || (res==1 && ropt==1)) rename = true;
       break;
 
     default :
@@ -1319,11 +1319,11 @@ static INT LogOnCommand (INT argc, char **argv)
     return(PARAMERRORCODE);
   }
         #ifdef ModelP
-  if (pext == TRUE)
+  if (pext == true)
   {
     sprintf(logfile,"%s.p%04d",logfile,procs);
   }
-  if (meext == TRUE)
+  if (meext == true)
   {
     sprintf(logfile,"%s.%04d",logfile,me);
   }
@@ -1359,7 +1359,7 @@ static INT LogOffCommand (INT argc, char **argv)
   INT i,popt;
 
   /* check options */
-  popt = FALSE;
+  popt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -1369,7 +1369,7 @@ static INT LogOffCommand (INT argc, char **argv)
         PrintErrorMessage('E',"logoff","no protocol file open");
         return (PARAMERRORCODE);
       }
-      popt = TRUE;
+      popt = true;
       break;
 
     default :
@@ -1504,12 +1504,12 @@ static INT CloseCommand (INT argc, char **argv)
   if (ResetPrintingFormat())
     REP_ERR_RETURN(CMDERRORCODE);
 
-  closeonlyfirst = TRUE;
+  closeonlyfirst = true;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'a' :
-      closeonlyfirst = FALSE;
+      closeonlyfirst = false;
       break;
 
     default :
@@ -1530,7 +1530,7 @@ static INT CloseCommand (INT argc, char **argv)
         PrintErrorMessage('W',"close","no open multigrid");
         return (OKCODE);
       }
-      closeonlyfirst = FALSE;
+      closeonlyfirst = false;
       break;
     }
 
@@ -1586,9 +1586,9 @@ INT NS_DIM_PREFIX NewCommand (INT argc, char **argv)
 
   /* get problem, domain and format */
   heapSize = 0;
-  bopt = fopt = hopt = FALSE;
-  IEopt = TRUE;
-  emptyGrid = FALSE;
+  bopt = fopt = hopt = false;
+  IEopt = true;
+  emptyGrid = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -1598,7 +1598,7 @@ INT NS_DIM_PREFIX NewCommand (INT argc, char **argv)
         PrintHelp("new",HELPITEM," (cannot read BndValProblem specification)");
         return(PARAMERRORCODE);
       }
-      bopt = TRUE;
+      bopt = true;
       break;
 
     case 'f' :
@@ -1607,15 +1607,15 @@ INT NS_DIM_PREFIX NewCommand (INT argc, char **argv)
         PrintHelp("new",HELPITEM," (cannot read format specification)");
         return(PARAMERRORCODE);
       }
-      fopt = TRUE;
+      fopt = true;
       break;
 
     case 'n' :
-      IEopt = FALSE;
+      IEopt = false;
       break;
 
     case 'e' :
-      emptyGrid = TRUE;
+      emptyGrid = true;
       break;
 
     case 'h' :
@@ -1624,7 +1624,7 @@ INT NS_DIM_PREFIX NewCommand (INT argc, char **argv)
         PrintHelp("new",HELPITEM," (cannot read heapsize specification)");
         return(PARAMERRORCODE);
       }
-      hopt = TRUE;
+      hopt = true;
       break;
 
     default :
@@ -1673,7 +1673,7 @@ static INT OpenCommand (INT argc, char **argv)
   strcpy(type,"asc");
   theBVP = theFormat = theMGName = NULL;
   heapSize = force = autosave = fqn = 0;
-  try_load = FALSE;
+  try_load = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -1704,7 +1704,7 @@ static INT OpenCommand (INT argc, char **argv)
       break;
 
     case 'n' :
-      IEopt = FALSE;
+      IEopt = false;
       break;
 
     case 'm' :
@@ -1719,7 +1719,7 @@ static INT OpenCommand (INT argc, char **argv)
     case 't' :
       if (strncmp(argv[i],"try",3)==0)
       {
-        try_load = TRUE;
+        try_load = true;
         break;
       }
       if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),type)!=1)
@@ -2858,17 +2858,17 @@ static INT MGListCommand (INT argc, char **argv)
     return (OKCODE);
   }
 
-  longformat = TRUE;
+  longformat = true;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 's' :
-      longformat = FALSE;
+      longformat = false;
       break;
 
     case 'l' :
       /* old syntax */
-      longformat = TRUE;
+      longformat = true;
       break;
 
     default :
@@ -2942,12 +2942,12 @@ static INT NListCommand (INT argc, char **argv)
 
   /* check options */
   idopt = LV_ID;
-  dataopt = boundaryopt = neighbouropt = verboseopt = mode = FALSE;
+  dataopt = boundaryopt = neighbouropt = verboseopt = mode = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'i' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"nlist","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -2986,7 +2986,7 @@ static INT NListCommand (INT argc, char **argv)
       break;
 
     case 's' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"nlist","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -2995,7 +2995,7 @@ static INT NListCommand (INT argc, char **argv)
       break;
 
     case 'a' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"nlist","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -3004,19 +3004,19 @@ static INT NListCommand (INT argc, char **argv)
       break;
 
     case 'd' :
-      dataopt = TRUE;
+      dataopt = true;
       break;
 
     case 'b' :
-      boundaryopt = TRUE;
+      boundaryopt = true;
       break;
 
     case 'n' :
-      neighbouropt = TRUE;
+      neighbouropt = true;
       break;
 
     case 'v' :
-      verboseopt = TRUE;
+      verboseopt = true;
       break;
 
     default :
@@ -3075,12 +3075,12 @@ static INT EListCommand (INT argc, char **argv)
 
   /* check options */
   idopt = LV_ID;
-  dataopt = boundaryopt = neighbouropt = verboseopt = levelopt = mode = FALSE;
+  dataopt = boundaryopt = neighbouropt = verboseopt = levelopt = mode = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'i' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"elist","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -3119,7 +3119,7 @@ static INT EListCommand (INT argc, char **argv)
       break;
 
     case 's' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"elist","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -3128,7 +3128,7 @@ static INT EListCommand (INT argc, char **argv)
       break;
 
     case 'a' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"elist","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -3137,23 +3137,23 @@ static INT EListCommand (INT argc, char **argv)
       break;
 
     case 'l' :
-      levelopt = TRUE;
+      levelopt = true;
       break;
 
     case 'd' :
-      dataopt = TRUE;
+      dataopt = true;
       break;
 
     case 'b' :
-      boundaryopt = TRUE;
+      boundaryopt = true;
       break;
 
     case 'n' :
-      neighbouropt = TRUE;
+      neighbouropt = true;
       break;
 
     case 'v' :
-      verboseopt = TRUE;
+      verboseopt = true;
       break;
 
     default :
@@ -3213,24 +3213,24 @@ static INT SelectionListCommand (INT argc, char **argv)
   }
 
   /* check options */
-  dataopt = boundaryopt = neighbouropt = verboseopt = FALSE;
+  dataopt = boundaryopt = neighbouropt = verboseopt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'd' :
-      dataopt = TRUE;
+      dataopt = true;
       break;
 
     case 'b' :
-      boundaryopt = TRUE;
+      boundaryopt = true;
       break;
 
     case 'n' :
-      neighbouropt = TRUE;
+      neighbouropt = true;
       break;
 
     case 'v' :
-      verboseopt = TRUE;
+      verboseopt = true;
       break;
 
     default :
@@ -3269,14 +3269,14 @@ static INT RuleListCommand (INT argc, char **argv)
   char etype[32];
 
   rn = -1;
-  allopt = FALSE;
+  allopt = false;
 
   /* check options */
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'a' :
-      allopt = TRUE;
+      allopt = true;
       break;
 
     default :
@@ -3286,7 +3286,7 @@ static INT RuleListCommand (INT argc, char **argv)
     }
 
   /* scan parameters */
-  if (allopt == FALSE)
+  if (allopt == false)
     rv = sscanf(argv[0],"rlist %31[triquatethexa] %d",etype,&rn);
   else
     rv = sscanf(argv[0],"rlist %31[triaquadtetrahexa]",etype);
@@ -3307,13 +3307,13 @@ static INT RuleListCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (rn==-1 && allopt==FALSE || rn>=0 && allopt==TRUE)
+  if (rn==-1 && allopt==false || rn>=0 && allopt==true)
   {
     PrintErrorMessage('E',"rlist","specify rulenumber OR $a option!");
     return (CMDERRORCODE);
   }
 
-  if (allopt == TRUE)
+  if (allopt == true)
     for (i=0; i<MaxRules[tag]; i++)
       ShowRefRule(tag,i);
   else
@@ -3331,7 +3331,7 @@ static INT PrintValueCommand (INT argc, char **argv)
   double val;
   char name[NAMESIZE];
   char value[VALUELEN];
-  int found = FALSE;
+  int found = false;
   int idx;
   int n;
 
@@ -3360,7 +3360,7 @@ static INT PrintValueCommand (INT argc, char **argv)
     {
       val = VVALUE(vec,VD_CMP_OF_TYPE(theVD,VTYPE(vec),0));
       idx = VINDEX(vec);
-      found = TRUE;
+      found = true;
     }
   }
   if (found)
@@ -3477,13 +3477,13 @@ static INT VMListCommand (INT argc, char **argv)
   /* check options */
   datatypes = 0;
   idopt = LV_ID;
-  dataopt = matrixopt = mode = FALSE;
+  dataopt = matrixopt = mode = false;
   fl = tl = CURRENTLEVEL(theMG);
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'i' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"vmlist","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -3525,7 +3525,7 @@ static INT VMListCommand (INT argc, char **argv)
       if (strncmp(argv[i],"skip",4)==0)
         /* handled by ReadArgvINT */
         break;
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"vmlist","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -3534,7 +3534,7 @@ static INT VMListCommand (INT argc, char **argv)
       break;
 
     case 'a' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"vmlist","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -3559,7 +3559,7 @@ static INT VMListCommand (INT argc, char **argv)
       break;
 
     case 'd' :
-      dataopt = TRUE;
+      dataopt = true;
       break;
 
     case 't' :
@@ -3570,11 +3570,11 @@ static INT VMListCommand (INT argc, char **argv)
       break;
 
     case 'm' :
-      matrixopt = TRUE;
+      matrixopt = true;
       break;
 
     case 'z' :
-      matrixopt = -TRUE;
+      matrixopt = -true;
       break;
 
     case 'p' :
@@ -3934,7 +3934,7 @@ static INT InsertGlobalNodeCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   BNDP *bndp;
   int i;
-  int ropt = FALSE;
+  int ropt = false;
   int err = OKCODE;
   DOUBLE resolution;
   INT n = 2;
@@ -3955,7 +3955,7 @@ static INT InsertGlobalNodeCommand (INT argc, char **argv)
   /* assemble command line for bn */
   if (ReadArgvDOUBLE("r",&resolution,argc,argv)==0)
   {
-    ropt = TRUE;
+    ropt = true;
     n++;
   }
   my_argv = (char**)malloc(n*sizeof(char*));
@@ -4057,12 +4057,12 @@ static INT DeleteNodeCommand (INT argc, char **argv)
   }
 
   /* check options */
-  sopt = FALSE;
+  sopt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 's' :
-      sopt = TRUE;
+      sopt = true;
       break;
 
     default :
@@ -4144,7 +4144,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
   }
 
   /* check options */
-  relative = FALSE;
+  relative = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -4195,7 +4195,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
       break;
 
     case 'r' :
-      relative = TRUE;
+      relative = true;
       break;
 
     default :
@@ -4220,7 +4220,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
       for (j=0; j<DIM; j++)
         xc[j] += CVECT(myVertex)[j];
     }
-    if (MoveNode(theMG,theNode,xc,TRUE)!=GM_OK)
+    if (MoveNode(theMG,theNode,xc,true)!=GM_OK)
     {
       PrintErrorMessage('E',"move","failed moving the node");
       return (CMDERRORCODE);
@@ -4486,12 +4486,12 @@ static INT DeleteElementCommand (INT argc, char **argv)
   }
 
   /* check options */
-  sopt = FALSE;
+  sopt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 's' :
-      sopt = TRUE;
+      sopt = true;
       break;
 
     default :
@@ -4568,7 +4568,7 @@ static INT AdaptCommand (INT argc, char **argv)
   /* check options */
   theElemEvalDirection = NULL;
   mode = GM_REFINE_TRULY_LOCAL;
-  mark = FALSE;
+  mark = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -5025,12 +5025,12 @@ static INT MarkCommand (INT argc, char **argv)
   }
 
   /* check options */
-  mode = FALSE;
+  mode = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'a' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"mark","specify only one option of a, b, i, s");
         return (PARAMERRORCODE);
@@ -5039,7 +5039,7 @@ static INT MarkCommand (INT argc, char **argv)
       break;
 
     case 'i' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"mark","specify only one option of a, b, i, s");
         return (PARAMERRORCODE);
@@ -5055,7 +5055,7 @@ static INT MarkCommand (INT argc, char **argv)
       break;
 
     case 's' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"mark","specify only one option of a, b, i, s");
         return (PARAMERRORCODE);
@@ -5069,7 +5069,7 @@ static INT MarkCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if (mode==FALSE)
+  if (mode==false)
   {
     PrintErrorMessage('E',"mark","specify exactly one option of a, b, i, s");
     return (PARAMERRORCODE);
@@ -5235,7 +5235,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
   /* options */
   lowLevel = CURRENTLEVEL(theMG);
   option = 0;
-  GridReset = FALSE;
+  GridReset = false;
   LimitLocDis = 0.3;
   bnd_num = 0;
   for (i=1; i<argc; i++)
@@ -5243,7 +5243,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
     {
     case 'r' :
       if (strcmp(argv[i],"reset")==0)
-        GridReset=TRUE;
+        GridReset=true;
       else
       {
         PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
@@ -5349,7 +5349,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
     option = 4;
   }
   UserWriteF("option = %d\n",option);
-  if (GridReset==TRUE)
+  if (GridReset==true)
   {
     if (SmoothGridReset(theMG,lowLevel,CURRENTLEVEL(theMG))!=0) return(CMDERRORCODE);
   }
@@ -5401,45 +5401,45 @@ static INT OrderNodesCommand (INT argc, char **argv)
     PrintHelp("ordernodes",HELPITEM," (specify DIM chars out of 'rlud' or 'rlbfud' resp.)");
     return(PARAMERRORCODE);
   }
-  error = xused = yused = zused = FALSE;
+  error = xused = yused = zused = false;
   for (i=0; i<DIM; i++)
     switch (ord[i])
     {
     case 'r' :
-      if (xused) error = TRUE;
-      xused = TRUE;
+      if (xused) error = true;
+      xused = true;
       order[i] = _X_; sign[i] =  1; break;
     case 'l' :
-      if (xused) error = TRUE;
-      xused = TRUE;
+      if (xused) error = true;
+      xused = true;
       order[i] = _X_; sign[i] = -1; break;
 
                         #ifdef __TWODIM__
     case 'u' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       order[i] = _Y_; sign[i] =  1; break;
     case 'd' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       order[i] = _Y_; sign[i] = -1; break;
                         #else
     case 'b' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       order[i] = _Y_; sign[i] =  1; break;
     case 'f' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       order[i] = _Y_; sign[i] = -1; break;
 
     case 'u' :
-      if (zused) error = TRUE;
-      zused = TRUE;
+      if (zused) error = true;
+      zused = true;
       order[i] = _Z_; sign[i] =  1; break;
     case 'd' :
-      if (zused) error = TRUE;
-      zused = TRUE;
+      if (zused) error = true;
+      zused = true;
       order[i] = _Z_; sign[i] = -1; break;
                         #endif
     }
@@ -5450,7 +5450,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
   }
 
   /* check options */
-  AlsoOrderLinks = FALSE;
+  AlsoOrderLinks = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -5471,7 +5471,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
       break;
 
     case 'L' :
-      AlsoOrderLinks = TRUE;
+      AlsoOrderLinks = true;
       break;
 
     default :
@@ -5543,36 +5543,36 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
     PrintHelp("lexorderv",HELPITEM," (specify DIM chars out of 'rlud', 'IOPN' or 'rlbfud' resp.)");
     return(PARAMERRORCODE);
   }
-  error = xused = yused = zused = rused = pused = FALSE;
+  error = xused = yused = zused = rused = pused = false;
   for (i=0; i<DIM; i++)
     switch (ord[i])
     {
     case 'r' :
-      if (xused) error = TRUE;
-      xused = TRUE;
+      if (xused) error = true;
+      xused = true;
       order[i] = _X_; sign[i] =  1; break;
     case 'l' :
-      if (xused) error = TRUE;
-      xused = TRUE;
+      if (xused) error = true;
+      xused = true;
       order[i] = _X_; sign[i] = -1; break;
 
     case 'u' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       order[i] = _Y_; sign[i] =  1; break;
     case 'd' :
-      if (yused) error = TRUE;
-      yused = TRUE;
+      if (yused) error = true;
+      yused = true;
       order[i] = _Y_; sign[i] = -1; break;
 
 #ifdef __THREEDIM__
     case 'b' :
-      if (zused) error = TRUE;
-      zused = TRUE;
+      if (zused) error = true;
+      zused = true;
       order[i] = _Z_; sign[i] =  1; break;
     case 'f' :
-      if (zused) error = TRUE;
-      zused = TRUE;
+      if (zused) error = true;
+      zused = true;
       order[i] = _Z_; sign[i] = -1; break;
 #endif
 
@@ -5580,23 +5580,23 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
 
     /* polar coordiante directions */
     case 'I' :                          /* capital i */
-      if (rused) error = TRUE;
-      rused = TRUE;
+      if (rused) error = true;
+      rused = true;
       order[i] = 0; sign[i] =  1; break;
 
     case 'O' :
-      if (rused) error = TRUE;
-      rused = TRUE;
+      if (rused) error = true;
+      rused = true;
       order[i] = 0; sign[i] = -1; break;
 
     case 'P' :
-      if (pused) error = TRUE;
-      pused = TRUE;
+      if (pused) error = true;
+      pused = true;
       order[i] = 1; sign[i] =  1; break;
 
     case 'N' :
-      if (pused) error = TRUE;
-      pused = TRUE;
+      if (pused) error = true;
+      pused = true;
       order[i] = 1; sign[i] = -1; break;
                         #endif
     }
@@ -5616,7 +5616,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
       mode = OV_POLAR;
 
   /* check options */
-  AlsoOrderMatrices = SpecialTreatSkipVecs = FALSE;
+  AlsoOrderMatrices = SpecialTreatSkipVecs = false;
   which = GM_TAKE_SKIP | GM_TAKE_NONSKIP;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -5638,7 +5638,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
       break;
 
     case 'm' :
-      AlsoOrderMatrices = TRUE;
+      AlsoOrderMatrices = true;
       break;
 
     case 'w' :
@@ -5655,7 +5655,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
       else if (strchr(argv[i],'>')!=NULL)
         SpecialTreatSkipVecs = GM_PUT_AT_END;
       else if (strchr(argv[i],'0')!=NULL)
-        SpecialTreatSkipVecs = FALSE;
+        SpecialTreatSkipVecs = false;
       else
       {
         PrintErrorMessage('E',"lexorderv","use < or > with s-option");
@@ -5770,9 +5770,9 @@ static INT OrderVectorsCommand (INT argc, char **argv)
   }
 
   levels           = GM_CURRENT_LEVEL;
-  mode             = FALSE;
+  mode             = false;
   dep              = dep_opt = cut = NULL;
-  PutSkipFirst = FALSE;
+  PutSkipFirst = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -5819,7 +5819,7 @@ static INT OrderVectorsCommand (INT argc, char **argv)
       break;
 
     case 's' :
-      PutSkipFirst = TRUE;
+      PutSkipFirst = true;
       if (sscanf(argv[i],"s %x",&iValue)!=1)
       {
         PrintErrorMessage('E',"orderv","could not read skip pattern");
@@ -5838,7 +5838,7 @@ static INT OrderVectorsCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if (mode==FALSE)
+  if (mode==false)
   {
     PrintErrorMessage('E',"orderv","the m option is mandatory");
     return (PARAMERRORCODE);
@@ -6049,7 +6049,7 @@ static INT FindCommand (INT argc, char **argv)
     xc[i] = x[i];
 
   /* check options */
-  select = isNode = isElement = isVector = FALSE;
+  select = isNode = isElement = isVector = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -6067,7 +6067,7 @@ static INT FindCommand (INT argc, char **argv)
         PrintErrorMessage('W',"find","no node is matching");
         return (CMDERRORCODE);
       }
-      isNode = TRUE;
+      isNode = true;
       break;
 
     case 'v' :
@@ -6084,7 +6084,7 @@ static INT FindCommand (INT argc, char **argv)
         PrintErrorMessage('W',"find","no vector is matching");
         return (CMDERRORCODE);
       }
-      isVector = TRUE;
+      isVector = true;
       break;
 
     case 'e' :
@@ -6094,11 +6094,11 @@ static INT FindCommand (INT argc, char **argv)
         PrintErrorMessage('W',"find","no element is matching");
         return (CMDERRORCODE);
       }
-      isElement = TRUE;
+      isElement = true;
       break;
 
     case 's' :
-      select = TRUE;
+      select = true;
       break;
 
     default :
@@ -6133,13 +6133,13 @@ static INT FindCommand (INT argc, char **argv)
   else
   {
     if (isNode)
-      ListNode(theMG,theNode,FALSE,FALSE,FALSE,FALSE);
+      ListNode(theMG,theNode,false,false,false,false);
 
     if (isVector)
-      ListVector(theMG,theVector,FALSE,FALSE,LV_MOD_DEFAULT);
+      ListVector(theMG,theVector,false,false,LV_MOD_DEFAULT);
 
     if (isElement)
-      ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
+      ListElement(theMG,theElement,false,false,false,false);
   }
 
   return (OKCODE);
@@ -6381,12 +6381,12 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
   }
 
   /* check options */
-  Delete = FALSE;
+  Delete = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'd' :
-      Delete = TRUE;
+      Delete = true;
       break;
 
     default :
@@ -6449,10 +6449,10 @@ static INT CheckCommand (INT argc, char **argv)
   }
 
   /* set default options */
-  checkgeom = TRUE;
-  checkalgebra = checklists = checkbvp = checknp = FALSE;
+  checkgeom = true;
+  checkalgebra = checklists = checkbvp = checknp = false;
         #ifdef ModelP
-  checkif = FALSE;
+  checkif = false;
         #endif
 
   /* read options */
@@ -6460,36 +6460,36 @@ static INT CheckCommand (INT argc, char **argv)
     switch (argv[i][0])
     {
     case 'a' :
-      checkgeom = checkalgebra = checklists = checknp = TRUE;
+      checkgeom = checkalgebra = checklists = checknp = true;
                                 #ifdef ModelP
-      checkif = TRUE;
+      checkif = true;
                                 #endif
       break;
 
     case 'g' :
-      checkgeom = TRUE;
+      checkgeom = true;
       break;
 
     case 'c' :
-      checkalgebra = TRUE;
+      checkalgebra = true;
       break;
 
     case 'l' :
-      checklists = TRUE;
+      checklists = true;
       break;
 
                         #ifdef ModelP
     case 'i' :
-      checkif = TRUE;
+      checkif = true;
       break;
                         #endif
 
     case 'b' :
-      checkbvp = TRUE;
+      checkbvp = true;
       break;
 
     case 'n' :
-      checknp = TRUE;
+      checknp = true;
       break;
 
     case 'w' :
@@ -6506,7 +6506,7 @@ static INT CheckCommand (INT argc, char **argv)
   err = 0;
 
   /* check BVP if */
-  if (checkbvp==TRUE)
+  if (checkbvp==true)
     if (BVP_Check (MG_BVP(theMG)))
       err++;
 
@@ -6565,19 +6565,19 @@ INT NS_DIM_PREFIX QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
   if ((lessopt && (min<themin)) && (greateropt && (max>themax)))
   {
     UserWrite(minmaxtext);
-    ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
+    ListElement(theMG,theElement,false,false,false,false);
     if (selectopt) AddElementToSelection(theMG,theElement);
   }
   else if (lessopt && (min<themin))
   {
     UserWrite(mintext);
-    ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
+    ListElement(theMG,theElement,false,false,false,false);
     if (selectopt) AddElementToSelection(theMG,theElement);
   }
   else if (greateropt && (max>themax))
   {
     UserWrite(maxtext);
-    ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
+    ListElement(theMG,theElement,false,false,false,false);
     if (selectopt) AddElementToSelection(theMG,theElement);
   }
 
@@ -6604,12 +6604,12 @@ static INT QualityCommand (INT argc, char **argv)
   }
 
   /* check options */
-  lessopt = greateropt = selectopt = mode = FALSE;
+  lessopt = greateropt = selectopt = mode = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'a' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"quality","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -6618,7 +6618,7 @@ static INT QualityCommand (INT argc, char **argv)
       break;
 
     case 'i' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"quality","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -6642,7 +6642,7 @@ static INT QualityCommand (INT argc, char **argv)
       break;
 
     case '<' :
-      lessopt = TRUE;
+      lessopt = true;
       if (sscanf(argv[i],"< %lf",&angle)!=1)
       {
         PrintErrorMessage('E',"quality","could not get angle of < option");
@@ -6652,7 +6652,7 @@ static INT QualityCommand (INT argc, char **argv)
       break;
 
     case '>' :
-      greateropt = TRUE;
+      greateropt = true;
       if (sscanf(argv[i],"> %lf",&angle)!=1)
       {
         PrintErrorMessage('E',"quality","could not get angle of > option");
@@ -6662,7 +6662,7 @@ static INT QualityCommand (INT argc, char **argv)
       break;
 
     case 's' :
-      if (mode!=FALSE)
+      if (mode!=false)
       {
         PrintErrorMessage('E',"quality","specify either the a, s or i option");
         return (PARAMERRORCODE);
@@ -6671,7 +6671,7 @@ static INT QualityCommand (INT argc, char **argv)
       break;
 
     case 'S' :
-      selectopt = TRUE;
+      selectopt = true;
       ClearSelection(theMG);
       break;
 
@@ -6799,7 +6799,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
   }
   MarkKey = MG_MARK_KEY(theMG);
   if (MG_COARSE_FIXED(theMG)) {
-    MG_COARSE_FIXED(theMG) = FALSE;
+    MG_COARSE_FIXED(theMG) = false;
     MarkTmpMem(MGHEAP(theMG),&MarkKey);
     MG_MARK_KEY(theMG) = MarkKey;
     if ((MGNDELEMPTRARRAY(theMG) =
@@ -7111,7 +7111,7 @@ static INT CADGridConvertCommand(INT argc, char **argv)
   /* get problem, domain and format */
   theFormat = NULL;
   heapSize = 0;
-  hopt = FALSE;
+  hopt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -7130,7 +7130,7 @@ static INT CADGridConvertCommand(INT argc, char **argv)
         PrintHelp("new",HELPITEM," (cannot read heapsize specification)");
         return(PARAMERRORCODE);
       }
-      hopt = TRUE;
+      hopt = true;
       break;
 
     default :
@@ -7226,7 +7226,7 @@ static INT ScreenSizeCommand (INT argc, char **argv)
 
   NO_OPTION_CHECK(argc,argv);
 
-  if (GetScreenSize(size)==FALSE)
+  if (GetScreenSize(size)==false)
   {
     PrintErrorMessage('W',"screensize","there is no monitor");
     return (OKCODE);
@@ -7365,7 +7365,7 @@ static INT CloseWindowCommand (INT argc, char **argv)
   theWin = currWin;
 
   /* check options */
-  aopt = FALSE;
+  aopt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -7383,7 +7383,7 @@ static INT CloseWindowCommand (INT argc, char **argv)
       break;
 
     case 'a' :
-      aopt = TRUE;
+      aopt = true;
       break;
 
     default :
@@ -7522,7 +7522,7 @@ static INT DrawTextCommand (INT argc, char **argv)
   pos.x = x; pos.y = y;
 
   /* check options */
-  centeropt = FALSE;
+  centeropt = false;
   mode = TEXT_REGULAR;
   size   = 0;
   for (i=1; i<argc; i++)
@@ -7559,7 +7559,7 @@ static INT DrawTextCommand (INT argc, char **argv)
       break;
 
     case 'c' :
-      centeropt = TRUE;
+      centeropt = true;
       break;
 
     default :
@@ -7603,7 +7603,7 @@ static INT OpenPictureCommand (INT argc, char **argv)
 
   /* check options */
   picname[0] = '\0';
-  sopt = FALSE;
+  sopt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -7629,7 +7629,7 @@ static INT OpenPictureCommand (INT argc, char **argv)
       break;
 
     case 's' :
-      sopt = TRUE;
+      sopt = true;
       if (sscanf(argv[i],"s %d %d %d %d",&h,&v,&dh,&dv)!=4)
       {
         PrintErrorMessage('E',"openpicture","specify h, v, dh, dv with s option");
@@ -7849,13 +7849,13 @@ static INT ClosePictureCommand (INT argc, char **argv)
   }
 
   /* check options */
-  aopt = wopt = FALSE;
+  aopt = wopt = false;
   picname[0] = '\0';
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'w' :
-      wopt = TRUE;
+      wopt = true;
       if (sscanf(argv[i],expandfmt(CONCAT5("w %",NAMELENSTR,"[a-zA-Z0-9_] %",NAMELENSTR,"[a-zA-Z0-9_]")),winname,picname)<1)
       {
         PrintErrorMessage('E',"closepicture","specify a window name with w option");
@@ -7869,7 +7869,7 @@ static INT ClosePictureCommand (INT argc, char **argv)
       break;
 
     case 'a' :
-      aopt = TRUE;
+      aopt = true;
       break;
 
     default :
@@ -8321,16 +8321,16 @@ static INT CopyViewCommand (INT argc, char **argv)
     PrintErrorMessage('E',"cpview","there's no current picture");
     return (CMDERRORCODE);
   }
-  all = cut = FALSE;
+  all = cut = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'a' :
-      all = TRUE;
+      all = true;
       break;
 
     case 'c' :
-      cut = TRUE;
+      cut = true;
       break;
 
     default :
@@ -9101,7 +9101,7 @@ static INT ClearCommand (INT argc, char **argv)
   }
   /* check options */
   fl = tl = CURRENTLEVEL(theMG);
-  skip = FALSE;
+  skip = false;
   xflag = -1;
   value = 0.0;
   j = -1;
@@ -9113,7 +9113,7 @@ static INT ClearCommand (INT argc, char **argv)
       break;
 
     case 's' :
-      skip = TRUE;
+      skip = true;
       break;
 
     case 'x' :
@@ -9605,7 +9605,7 @@ static INT ReInitCommand (INT argc, char **argv)
   char BVPName[NAMESIZE];
 
   /* check options */
-  bopt = FALSE;
+  bopt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -9616,7 +9616,7 @@ static INT ReInitCommand (INT argc, char **argv)
         PrintErrorMessage('E',"reinit","could not read BndValProblem string");
         return(PARAMERRORCODE);
       }
-      bopt = TRUE;
+      bopt = true;
       break;
 
       /* no default because param list is passed to reinit function */
@@ -9835,12 +9835,12 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
   }
 
   /* check options */
-  All = Class = FALSE;
+  All = Class = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'a' :
-      All = TRUE;
+      All = true;
       break;
 
     case 'c' :
@@ -9852,7 +9852,7 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
           return (CMDERRORCODE);
         return (OKCODE);
       }
-      Class = TRUE;
+      Class = true;
       break;
 
     default :
@@ -10212,10 +10212,10 @@ static INT SetCommandKeyCommand (INT argc, char **argv)
   }
 
   /* show bar before in keylist? */
-  ShowBar = FALSE;
+  ShowBar = false;
   if (argv[begin][0]=='-')
   {
-    ShowBar = TRUE;
+    ShowBar = true;
     begin++;
   }
 
@@ -11301,9 +11301,9 @@ static INT InitArray (void)
   theArrayVarID = GetNewEnvVarID();
 
   /* path to dir for 'array' files */
-  arraypathes_set = FALSE;
+  arraypathes_set = false;
   if (ReadSearchingPaths(DEFAULTSFILENAME,"arraypathes")==0)
-    arraypathes_set = TRUE;
+    arraypathes_set = true;
 
   return (0);
 }

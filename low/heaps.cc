@@ -434,7 +434,7 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, enum HeapAllocMode mode, I
          * key < topStackPtr: stack pos already released */
         if (key != theHeap->topStackPtr)
         {
-          ASSERT(FALSE);
+          ASSERT(false);
           return(NULL);
         }
 
@@ -446,7 +446,7 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, enum HeapAllocMode mode, I
 #endif
       }
       /* not marked */
-      ASSERT(FALSE);
+      ASSERT(false);
       return(NULL);
     }
     if (mode==FROM_BOTTOM)
@@ -457,7 +457,7 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, enum HeapAllocMode mode, I
          * key < bottomStackPtr: stack pos already released */
         if (key != theHeap->bottomStackPtr)
         {
-          ASSERT(FALSE);
+          ASSERT(false);
           return(NULL);
         }
 #if UG_USE_SYSTEM_HEAP
@@ -468,11 +468,11 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, enum HeapAllocMode mode, I
 #endif
       }
       /* not marked */
-      ASSERT(FALSE);
+      ASSERT(false);
       return(NULL);
     }
     /* wrong mode */
-    ASSERT(FALSE);
+    ASSERT(false);
     return(NULL);
   }
   /* no key for GENERAL_HEAP */
@@ -625,7 +625,7 @@ void NS_PREFIX DisposeMem (HEAP *theHeap, void *buffer)
   }
 
   /* here must be something wrong */
-  assert(FALSE);
+  assert(false);
   return;
 #endif
 }
@@ -858,13 +858,13 @@ INT NS_PREFIX Release (HEAP *theHeap, INT mode, INT key)
       if (key>theHeap->topStackPtr)
       {
         /* Mark/Release calls not balanced */
-        ASSERT(FALSE);
+        ASSERT(false);
         return(1);
       }
       if (key<theHeap->topStackPtr)
       {
         /* stack pos already released */
-        ASSERT(FALSE);
+        ASSERT(false);
         return(2);
       }
       oldsize = theHeap->heapptr->size;
@@ -884,13 +884,13 @@ INT NS_PREFIX Release (HEAP *theHeap, INT mode, INT key)
       if (key>theHeap->bottomStackPtr)
       {
         /* Mark/Release calls not balanced */
-        ASSERT(FALSE);
+        ASSERT(false);
         return(3);
       }
       if (key<theHeap->bottomStackPtr)
       {
         /* stack pos already released */
-        ASSERT(FALSE);
+        ASSERT(false);
         return(4);
       }
       oldsize = theHeap->heapptr->size;
@@ -1012,9 +1012,9 @@ INT NS_PREFIX InitVirtualHeapManagement (VIRT_HEAP_MGMT *theVHM, MEM TotalSize)
 
   /* now init what is necessary */
   if (TotalSize==SIZE_UNKNOWN)
-    theVHM->locked    = FALSE;
+    theVHM->locked    = false;
   else
-    theVHM->locked    = TRUE;
+    theVHM->locked    = true;
 
   theVHM->TotalSize    = TotalSize;
   theVHM->TotalUsed    = 0;
@@ -1046,9 +1046,9 @@ MEM NS_PREFIX CalcAndFixTotalSize (VIRT_HEAP_MGMT *theVHM)
   if (theVHM==NULL)
     return (99);
 
-  assert(theVHM->locked!=TRUE);
+  assert(theVHM->locked!=true);
 
-  theVHM->locked        = TRUE;
+  theVHM->locked        = true;
   theVHM->TotalSize    = theVHM->TotalUsed;
   theVHM->LargestGap    = 0;
   theVHM->nGaps        = 0;

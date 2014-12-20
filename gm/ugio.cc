@@ -146,7 +146,7 @@ USING_UGDIM_NAMESPACE
 /****************************************************************************/
 
 REP_ERR_FILE;
-static INT gridpaths_set=FALSE;
+static INT gridpaths_set=false;
 static MGIO_RR_RULE *rr_rules;
 static INT rr_rule_offsets[TAGS];
 static unsigned short *ProcList, *ActProcListPos;
@@ -2108,7 +2108,7 @@ static INT CheckLocalElementKeys (ELEMENT *theElement, MGIO_REFINEMENT *ref, INT
 /* check as many consistencies as possible. Various keys (for neibhbours,
    sons, ...) are stored in the debug mode and are now compared to the
    existing objects in the memory.
-   if must_exist == TRUE all sons must exist. */
+   if must_exist == true all sons must exist. */
 {
   INT i, j, k, key, nmax;
   NODE *corner_node;
@@ -2580,7 +2580,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       }
 
 #if (MGIO_DEBUG>0)
-  if (CheckLocalElementKeys(theElement, &ref_copy, FALSE)==0)
+  if (CheckLocalElementKeys(theElement, &ref_copy, false)==0)
   {
     PRINTDEBUG(gm,4,("InsertLocalTree: preliminary CheckLocalElementKeys ok.\n"));
   }
@@ -2606,7 +2606,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     }
 
 #if (MGIO_DEBUG>0)
-    if (CheckLocalElementKeys(theElement, &ref_copy, TRUE)==0)
+    if (CheckLocalElementKeys(theElement, &ref_copy, true)==0)
     {
       PRINTDEBUG(gm,4,("InsertLocalTree: after son %d intermediate CheckLocalElementKeys ok.\n",i));
     }
@@ -2618,7 +2618,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   }
 
 #if (MGIO_DEBUG>0)
-  if (CheckLocalElementKeys(theElement, &ref_copy, TRUE)==0)
+  if (CheckLocalElementKeys(theElement, &ref_copy, true)==0)
   {
     PRINTDEBUG(gm,4,("InsertLocalTree: final CheckLocalElementKeys ok.\n"));
   }
@@ -2934,7 +2934,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (heapSize==0) heapSize = mg_general.heapsize * KBYTE;
 
   /* create a virginenal multigrid on the BVP */
-  theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,TRUE,FALSE);
+  theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,true,false);
   if (theMG==NULL) {
     UserWrite("ERROR(ugio): cannot create multigrid\n");
     CloseMGFile ();
@@ -3701,9 +3701,9 @@ INT NS_DIM_PREFIX SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *
 INT NS_DIM_PREFIX InitUgio ()
 {
   /* read gridpaths from defaults file (iff) */
-  gridpaths_set = FALSE;
+  gridpaths_set = false;
   if (ReadSearchingPaths(DEFAULTSFILENAME,"gridpaths")==0)
-    gridpaths_set = TRUE;
+    gridpaths_set = true;
 
   if (MGIO_Init ()) return(1);
 

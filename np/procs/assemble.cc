@@ -953,7 +953,7 @@ INT NS_DIM_PREFIX SetPartassParamsX (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt,
   memset(pp,0,sizeof(PARTASS_PARAMS));
 
   /* general */
-  PP_ASS_PART(pp)         = TRUE;
+  PP_ASS_PART(pp)         = true;
   PP_ACTION(pp)           = PARTASS_UNKNOWN;
   PP_SCALE_A(pp)          = s_a;
   PP_SCALE_M(pp)          = s_m;

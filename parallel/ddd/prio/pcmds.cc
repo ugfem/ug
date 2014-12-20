@@ -181,11 +181,11 @@ static int PrioStepMode (int old)
     sprintf(cBuffer, "wrong prio-mode (currently in %s, expected %s)",
             PrioModeName(prioGlobals.prioMode), PrioModeName(old));
     DDD_PrintError('E', 8200, cBuffer);
-    return FALSE;
+    return false;
   }
 
   PrioSetMode(PrioSuccMode(prioGlobals.prioMode));
-  return TRUE;
+  return true;
 }
 
 

@@ -1263,7 +1263,7 @@ static INT DirOut (const ENVDIR *theDir, char *buffer, int bufLen, int ropt)
     }
 
     status=0;
-  } while (TRUE);
+  } while (true);
 
   return(6);            /* this should never be reached */
 }

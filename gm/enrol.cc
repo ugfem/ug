@@ -336,14 +336,14 @@ FORMAT * NS_DIM_PREFIX CreateFormat (char *name, INT sVertex, INT sMultiGrid,
 #endif
 
   /* derive additional information */
-  for (i=0; i<MAXVOBJECTS; i++) FMT_USES_OBJ(fmt,i) = FALSE;
+  for (i=0; i<MAXVOBJECTS; i++) FMT_USES_OBJ(fmt,i) = false;
   FMT_MAX_PART(fmt) = 0;
   MaxType = 0;
   for (i=0; i<MAXDOMPARTS; i++)
     for (j=0; j<MAXVOBJECTS; j++)
       if (po2t[i][j]!=NOVTYPE)
       {
-        FMT_USES_OBJ(fmt,j) = TRUE;
+        FMT_USES_OBJ(fmt,j) = true;
         FMT_MAX_PART(fmt) = MAX(FMT_MAX_PART(fmt),i);
         MaxType = MAX(MaxType,po2t[i][j]);
       }

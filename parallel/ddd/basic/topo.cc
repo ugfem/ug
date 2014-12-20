@@ -195,11 +195,11 @@ RETCODE DDD_GetChannels (int nPartners)
       theTopology[theProcArray[i]] = vc;
       nConn++;
 
-      theProcFlags[i] = TRUE;
+      theProcFlags[i] = true;
     }
     else
     {
-      theProcFlags[i] = FALSE;
+      theProcFlags[i] = false;
     }
   }
 
@@ -224,7 +224,7 @@ RETCODE DDD_GetChannels (int nPartners)
 
         if (ret==1)
         {
-          theProcFlags[i] = FALSE;
+          theProcFlags[i] = false;
           nConn--;
         }
       }

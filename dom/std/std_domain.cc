@@ -457,7 +457,7 @@ RemoveDomain (const char *name)
 {
   ENVITEM* d = SearchEnv (name, "/Domains", theDomainDirID, theDomainDirID);
   if (d!=0) {
-    d->v.locked = FALSE;
+    d->v.locked = false;
     RemoveEnvDir(d);
   }
 }
@@ -1633,7 +1633,7 @@ BVP_Init (const char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
       UserWriteF("Too many parts for control entry in vector\n");
       UserWriteF("Domain requests %d parts, but only %d are possible!\n",
                  DOMAIN_NPARTS (theDomain), (1 << VPART_LEN));
-      ASSERT (FALSE);
+      ASSERT (false);
       return (NULL);
     }
 
@@ -4008,7 +4008,7 @@ BNDP_Move (BNDP * aBndP, const DOUBLE global[])
 #ifdef ModelP
   /* TODO: parallel version */
   PrintErrorMessage ('E', "BNDP_Move", "parallel not implemented");
-  ASSERT (FALSE);
+  ASSERT (false);
 #endif
 
   ps = (BND_PS *) aBndP;

@@ -270,11 +270,11 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
     if ((NODE *)VOBJECT(v)!=theNode) continue;
 #endif
     vecskip = VECSKIP(v);
-    skip = TRUE;
+    skip = true;
     for (i=0; i<ncomp; i++)
       if (!(vecskip & (1<<i)))
-        skip = FALSE;
-    if (skip) continue;                         /* skip only if all flags are TRUE */
+        skip = false;
+    if (skip) continue;                         /* skip only if all flags are true */
 
     if (CORNERTYPE(theNode))
     {

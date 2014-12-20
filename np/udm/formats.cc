@@ -1657,7 +1657,7 @@ static INT ScanVecOption (INT argc, char **argv,                        /* optio
       PrintErrorMessageF('E',"newformat","no valid type name '%c' (in '$%s')",tp,argv[opt]);
       REP_ERR_RETURN (1);
     }
-    TypeUsed[type] = TRUE;
+    TypeUsed[type] = true;
     if (VT_COMP(vt,type) !=0 ) {
       PrintErrorMessageF('E',"newformat",
                          "double vector type specification (in '$%s')",argv[opt]);
@@ -2050,13 +2050,13 @@ static INT ParseImplicitSMDeclaration (const char *str, const MAT_TEMPLATE *mt, 
     for (t=tpltname, p++; *p!='\0' && *p!=',' && *p!=')'; p++)
       *(t++) = *p;
     *t = '\0';
-    r_sub = TRUE;
+    r_sub = true;
   }
   else
   {
     /* subname actually is meant as a tpltname */
     strcpy(tpltname,subname);
-    r_sub = FALSE;
+    r_sub = false;
   }
 
   /* get vector template */
@@ -2101,13 +2101,13 @@ static INT ParseImplicitSMDeclaration (const char *str, const MAT_TEMPLATE *mt, 
       for (t=tpltname, p++; *p!='\0' && *p!=',' && *p!=')'; p++)
         *(t++) = *p;
       *t = '\0';
-      c_sub = TRUE;
+      c_sub = true;
     }
     else
     {
       /* subname actually is meant as a tpltname */
       strcpy(tpltname,subname);
-      c_sub = FALSE;
+      c_sub = false;
     }
 
     /* get vector template */
@@ -2286,7 +2286,7 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
   }
 
   /* read types and sizes */
-  checksub = FALSE;
+  checksub = false;
   for (type=0; type<NMATTYPES; type++)
     MT_RCOMP(mt,type) = MT_CCOMP(mt,type) = 0;
   token = strtok(argv[opt]+1,BLANKS);
@@ -2304,7 +2304,7 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
                         MT_CCOMPS(mt),offset);
 
     if (strlen(MT_COMPNAMES(mt))==2*offset[NMATTYPES_NORMAL])
-      checksub = TRUE;
+      checksub = true;
   }
   else
   {
@@ -2379,7 +2379,7 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
                                    "mat component names are not unique (in '$%s')",argv[opt]);
                 REP_ERR_RETURN (1);
               }
-        checksub = TRUE;
+        checksub = true;
       }
   }
 
@@ -2673,7 +2673,7 @@ static INT ScanTypeOptions (INT argc, char **argv, INT po2t[][MAXVOBJECTS], INT 
       if (max>=(1<<VTYPE_LEN))
       {
         printf("I would love to define another type for you, but control flags are rare... (in '$%s')",argv[opt]);
-        ASSERT(FALSE);
+        ASSERT(false);
         REP_ERR_RETURN(1);
       }
 
@@ -2904,7 +2904,7 @@ INT NS_DIM_PREFIX CreateFormatCmd (INT argc, char **argv)
 
     case 'N' :
       if (argv[opt][1] == 'E')
-        nodeelementlist = TRUE;
+        nodeelementlist = true;
       break;
 
     default :
@@ -2913,7 +2913,7 @@ INT NS_DIM_PREFIX CreateFormatCmd (INT argc, char **argv)
       REP_ERR_RETURN (1);
     }
 
-  if ((ndata == TRUE) && (nodeelementlist == TRUE)) {
+  if ((ndata == true) && (nodeelementlist == true)) {
     PrintErrorMessage('E',"newformat","specify either $n or $NE");
     CleanupTempDir();
     REP_ERR_RETURN (1);

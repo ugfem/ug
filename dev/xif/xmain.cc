@@ -157,7 +157,7 @@ INT NS_PREFIX GetScreenSize (INT size[2])
   size[0] = display_width;
   size[1] = display_height;
 
-  return (TRUE);
+  return (true);
 }
 
 /****************************************************************************/
@@ -344,7 +344,7 @@ static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
                                 #ifdef USE_XAW
       flag=XtDispatchEvent(&report);
       IFDEBUG(dev,DBG_LEVEL)
-      if (flag==FALSE) {
+      if (flag==false) {
         PRINTDEBUG(dev,DBG_LEVEL,("XtDispatchEvent(): NO handler for this event found\n"));
       }
       else {
@@ -431,7 +431,7 @@ static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
           report.xbutton.button == Button3 )
       {
         CursorPos = XawTextGetInsertionPoint(shell.wid);
-        XawTextDisplayCaret(shell.wid,FALSE);
+        XawTextDisplayCaret(shell.wid,false);
         if (report.xbutton.button == Button3)
           XawTextSetInsertionPoint(shell.wid,CutBeginPos);
       }
@@ -532,7 +532,7 @@ static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
   /* Send all events to shell widget */
   flag=XtDispatchEvent(&report);
   IFDEBUG(dev,DBG_LEVEL)
-  if (flag==FALSE) {
+  if (flag==false) {
     PRINTDEBUG(dev,DBG_LEVEL,("XtDispatchEvent(): NO handler for this event found\n"));
   }
   else {
@@ -552,7 +552,7 @@ static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
           report.xbutton.button == Button3 )
       {
         XawTextSetInsertionPoint(shell.wid,CursorPos);
-        XawTextDisplayCaret(shell.wid,TRUE);
+        XawTextDisplayCaret(shell.wid,true);
       }
     }
     break;
@@ -674,7 +674,7 @@ OUTPUTDEVICE * NS_PREFIX InitScreen (int *argcp, char **argv, INT *error)
   /* set input focus to true, due to problems with some
      window manager implemtations, DEC, LINUX, SUN      */
   n=0;
-  XtSetArg(args[n], XtNinput, TRUE); n++;
+  XtSetArg(args[n], XtNinput, true); n++;
 
   toplevel = XtAppInitialize (&context, "Xug3",
                               (XrmOptionDescRec*)NULL, 0,

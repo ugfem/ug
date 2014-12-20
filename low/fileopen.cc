@@ -388,7 +388,7 @@ static int rename_if_necessary( const char *fname, int do_rename)
     PARAMETERS:
    .   fname - directory name with path convention in UNIX-style; may not be passed through BasedConvertedFilename()
    .   mode - creation mode in UNIX-style (see mkdir(2))
-   .   do_rename - if TRUE an already existing subdirectory will be renamed
+   .   do_rename - if true an already existing subdirectory will be renamed
 
         DESCRIPTION:
     This function creates an directory and renames an already existing one
@@ -451,7 +451,7 @@ int NS_PREFIX mkdir_r (const char *fname, mode_t mode, int do_rename)
     PARAMETERS:
    .   fname - file name with path convention in UNIX-style
    .   mode - file opening mode in UNIX-style (see fopen(2))
-   .   do_rename - if TRUE an already existing file will be renamed
+   .   do_rename - if true an already existing file will be renamed
 
         DESCRIPTION:
     This function opens a file and renames an already existing one
@@ -673,7 +673,7 @@ INT NS_PREFIX DirWalk (const char *dir, ProcessFileProc fcn)
   hpb.ioNamePtr = c2pstr((char *)dirname);
   hpb.ioVRefNum = 0;                                            /* use pathname, not ref num */
   hpb.ioVolIndex = -1;                                  /* don't use volume index either */
-  err = PBHGetVInfo( (HParmBlkPtr)&hpb, FALSE );
+  err = PBHGetVInfo( (HParmBlkPtr)&hpb, false );
   if (err) {
     if (err==nsvErr)             /* No such volume error */
       REP_ERR_RETURN (VOLUME_NOT_FOUND);
@@ -691,7 +691,7 @@ INT NS_PREFIX DirWalk (const char *dir, ProcessFileProc fcn)
   fpb->ioNamePtr = c2pstr((char *)dirname);
   fpb->ioDirID = 0;                                             /* search from working directory */
   fpb->ioFDirIndex = 0;                                 /* gimme info about the named directory */
-  err = PBGetCatInfo( &cipbr, FALSE );      /* get the catalog info */
+  err = PBGetCatInfo( &cipbr, false );      /* get the catalog info */
   if (err)        {
     /* No such volume */
     if (err == nsvErr) REP_ERR_RETURN (VOLUME_NOT_FOUND);
@@ -720,13 +720,13 @@ INT NS_PREFIX DirWalk (const char *dir, ProcessFileProc fcn)
 
   /* now loop through files using PBGetCatInfo... */
   fpb->ioVRefNum = volID;
-  for( idx=1; TRUE; idx++) {
+  for( idx=1; true; idx++) {
     char name[MAX_PATH_LEN];
 
     fpb->ioDirID = dirID;                       /* set ioDirID on each loop */
     fpb->ioFDirIndex = idx;                     /* index of entry to return */
 
-    err = PBGetCatInfo( &cipbr, FALSE );
+    err = PBGetCatInfo( &cipbr, false );
     if (err) break;                                     /* exit when no more entries */
 
     if (strlen(parentdir)+pstrlen(fpb->ioNamePtr)+2 > sizeof(name))
@@ -867,7 +867,7 @@ INT NS_PREFIX ReadSearchingPaths (const char *filename, const char *paths)
 
 int NS_PREFIX DirCreateUsingSearchPaths (const char *fname, const char *paths)
 {
-  return DirCreateUsingSearchPaths_r ( fname, paths, FALSE);            /* no renaming */
+  return DirCreateUsingSearchPaths_r ( fname, paths, false);            /* no renaming */
 }
 
 /****************************************************************************/
@@ -882,7 +882,7 @@ int NS_PREFIX DirCreateUsingSearchPaths (const char *fname, const char *paths)
    .   fname - subdirectory name to be created
    .   paths - try paths specified in the environment item '/Paths/<paths>' which was
                         set by --> 'ReadSearchingPaths'
-   .   rename - if TRUE an already existing subdirectory will be renamed
+   .   rename - if true an already existing subdirectory will be renamed
 
         DESCRIPTION:
         The functions trys to create a subdirectory with 'filename' using one by one the
@@ -987,7 +987,7 @@ int NS_PREFIX DirCreateUsingSearchPaths_r (const char *fname, const char *paths,
 
 FILE * NS_PREFIX FileOpenUsingSearchPaths (const char *fname, const char *mode, const char *paths)
 {
-  return FileOpenUsingSearchPaths_r( fname, mode, paths, FALSE );       /* no renaming */
+  return FileOpenUsingSearchPaths_r( fname, mode, paths, false );       /* no renaming */
 }
 
 /****************************************************************************/
@@ -1003,7 +1003,7 @@ FILE * NS_PREFIX FileOpenUsingSearchPaths (const char *fname, const char *mode, 
    .   mode - see ANSI-C 'fopen'
    .   paths - try paths specified in the environment item '/Paths/<paths>' which was
                         set by --> 'ReadSearchingPaths'
-   .   rename - if TRUE an already existing file will be renamed (wise only for writing)
+   .   rename - if true an already existing file will be renamed (wise only for writing)
 
         DESCRIPTION:
         The functions trys to open the file with 'filename' using one by one the
@@ -1077,7 +1077,7 @@ FILE * NS_PREFIX FileOpenUsingSearchPaths_r (const char *fname, const char *mode
 
 FILE * NS_PREFIX FileOpenUsingSearchPath (const char *fname, const char *mode, const char *path)
 {
-  return FileOpenUsingSearchPath_r( fname, mode, path, FALSE );         /* no renaming */
+  return FileOpenUsingSearchPath_r( fname, mode, path, false );         /* no renaming */
 }
 
 /****************************************************************************/
@@ -1091,7 +1091,7 @@ FILE * NS_PREFIX FileOpenUsingSearchPath (const char *fname, const char *mode, c
    .   fname - open file with this name
    .   mode - see ANSI-C 'fopen'
    .   path - path to which fname is to be appended
-   .   rename - if TRUE an already existing file will be renamed (wise only for writing)
+   .   rename - if true an already existing file will be renamed (wise only for writing)
 
         DESCRIPTION:
         Try to open a file in the specified path.

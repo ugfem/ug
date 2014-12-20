@@ -164,7 +164,7 @@ static int sort_ObjTabPtrs (const void *e1, const void *e2)
         used by PutDepData() ).
  */
 
-static void LocalizeObject (BOOL merge_mode, TYPE_DESC *desc,
+static void LocalizeObject (bool merge_mode, TYPE_DESC *desc,
                             const char *msgmem,
                             DDD_OBJ objmem,
                             const SYMTAB_ENTRY *theSymTab)
@@ -408,7 +408,7 @@ static void PutDepData (char *data,
           /* insert pointers into copy using SymTab */
           if (descDep->nPointers>0)
           {
-            LocalizeObject(FALSE, descDep,
+            LocalizeObject(false, descDep,
                            curr,
                            (DDD_OBJ)curr,
                            theSymTab);
@@ -453,7 +453,7 @@ static void PutDepData (char *data,
         {
           curr = table[i];
           if (descDep->nPointers>0)
-            LocalizeObject(FALSE, descDep,
+            LocalizeObject(false, descDep,
                            curr,
                            (DDD_OBJ)curr,
                            theSymTab);
@@ -1167,7 +1167,7 @@ static void LocalizeObjects (LC_MSGHANDLE xm, int required_newness)
 
       if (desc->nPointers>0)
       {
-        LocalizeObject(FALSE, desc,
+        LocalizeObject(false, desc,
                        (char *)(OTE_OBJ(theObjects,&(theObjTab[i]))),
                        obj,
                        theSymTab);
@@ -1194,7 +1194,7 @@ static void LocalizeObjects (LC_MSGHANDLE xm, int required_newness)
                                 #endif
 
         /* execute Localize in merge_mode */
-        LocalizeObject(TRUE, desc,
+        LocalizeObject(true, desc,
                        (char *)(OTE_OBJ(theObjects,&(theObjTab[i]))),
                        obj,
                        theSymTab);

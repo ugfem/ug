@@ -361,7 +361,7 @@ static INT SetScalVecSettings (VECDATA_DESC *vd)
 {
   INT tp;
 
-  VD_IS_SCALAR(vd) = FALSE;
+  VD_IS_SCALAR(vd) = false;
 
   /* check number of components per type */
   for (tp=0; tp<NVECTYPES; tp++)
@@ -383,7 +383,7 @@ static INT SetScalVecSettings (VECDATA_DESC *vd)
         return (NUM_OK);                                                        /* no scalar */
     }
 
-  VD_IS_SCALAR(vd) = TRUE;
+  VD_IS_SCALAR(vd) = true;
   return (NUM_OK);
 }
 
@@ -2397,7 +2397,7 @@ static INT SetScalMatSettings (MATDATA_DESC *md)
 {
   INT mtp;
 
-  MD_IS_SCALAR(md) = FALSE;
+  MD_IS_SCALAR(md) = false;
 
   /* check number of components per type */
   for (mtp=0; mtp<NMATTYPES; mtp++)
@@ -2420,7 +2420,7 @@ static INT SetScalMatSettings (MATDATA_DESC *md)
         return (NUM_OK);                                                        /* no scalar */
     }
 
-  MD_IS_SCALAR(md) = TRUE;
+  MD_IS_SCALAR(md) = true;
 
   return (NUM_OK);
 }
@@ -3740,14 +3740,14 @@ INT NS_DIM_PREFIX MDinterfaceCoCoupleDesc (const MATDATA_DESC *md, const MATDATA
         nr = MD_ROWS_IN_RT_CT(md,rt,ct);
         nc = MD_COLS_IN_RT_CT(md,rt,ct);
         for (i=0; i<nr; i++)
-          RowUsed[i] = FALSE;
+          RowUsed[i] = false;
         for (jj=0; jj<ns; jj++)
         {
           cmp = MD_MCMP_OF_RT_CT(mds,rt,ct,jj);
           for (i=0; i<nr; i++)
             for (j=0; j<nc; j++)
               if (cmp==MD_IJ_CMP_OF_RT_CT(md,rt,ct,i,j))
-                RowUsed[i] = TRUE;
+                RowUsed[i] = true;
         }
       }
     co_nr = 0;

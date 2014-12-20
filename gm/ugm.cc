@@ -2219,7 +2219,7 @@ EDGE * NS_DIM_PREFIX GetEdge (const NODE *from, const NODE *to)
  * @param   theGrid - grid where vertex should be inserted
  * @param   theElement - pointer to element
  * @param   edge - number of edge
- * @param   with_vector - also create vector for edge (TRUE/FALSE)
+ * @param   with_vector - also create vector for edge (true/false)
 
    This function returns a pointer to a new edge structure.
 
@@ -2236,7 +2236,7 @@ EDGE *
 #ifdef ModelP
 NS_DIM_PREFIX
 #endif
-CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, BOOL with_vector)
+CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, bool with_vector)
 {
   ELEMENT *theFather;
   EDGE *pe,*father_edge;
@@ -2539,7 +2539,7 @@ LINK *GetLink (const NODE *from, const NODE *to)
 /****************************************************************************/
 
 ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
-                                       ELEMENT *Father, BOOL with_vector)
+                                       ELEMENT *Father, bool with_vector)
 {
   ELEMENT *pe;
   INT i,s_id;
@@ -2585,7 +2585,7 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
   /* create edges */
   for (i=0; i<EDGES_OF_ELEM(pe); i++)
     if (CreateEdge (theGrid,pe,i,with_vector) == NULL) {
-      DisposeElement(theGrid,pe,TRUE);
+      DisposeElement(theGrid,pe,true);
       return(NULL);
     }
 
@@ -2612,7 +2612,7 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
     {
       if (CreateVector (theGrid,ELEMVEC,(GEOM_OBJECT *)pe,&pv))
       {
-        DisposeElement(theGrid,pe,TRUE);
+        DisposeElement(theGrid,pe,true);
         return (NULL);
       }
       SET_EVECTOR(pe,pv);
@@ -2623,7 +2623,7 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
   if (EDATA_DEF_IN_GRID(theGrid)) {
     q = (void *) GetMemoryForObject(theGrid->mg,EDATA_DEF_IN_GRID(theGrid),-1);
     if (q == NULL) {
-      DisposeElement(theGrid,pe,TRUE);
+      DisposeElement(theGrid,pe,true);
       return (NULL);
     }
     SET_EDATA(pe,q);
@@ -2636,7 +2636,7 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
       {
         if (CreateSideVector (theGrid,i,(GEOM_OBJECT *)pe,&pv))
         {
-          DisposeElement(theGrid,pe,TRUE);
+          DisposeElement(theGrid,pe,true);
           return (NULL);
         }
         SET_SVECTOR(pe,i,pv);
@@ -3253,7 +3253,7 @@ MULTIGRID * NS_DIM_PREFIX CreateMultiGrid (char *MultigridName, char *BndValProb
     GRID_ON_LEVEL(theMG,-i-1) = NULL;
   }
 
-  if(optimizedIE == TRUE)
+  if(optimizedIE == true)
   {
     if ((MGNDELEMPTRARRAY(theMG)=
            (ELEMENT***)GetTmpMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),MarkKey))==NULL)
@@ -3562,7 +3562,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 
  * @param   theGrid - grid to remove from
  * @param   theElement - element to remove
- * @param   dispose_connections - also dispose connections (TRUE/FALSE)
+ * @param   dispose_connections - also dispose connections (true/false)
 
    This function removes an element from the data structure and inserts it
    into the free list. This includes all elementsides, sidevectors and the
@@ -4341,7 +4341,7 @@ INT NS_DIM_PREFIX DisposeMultiGrid (MULTIGRID *theMG)
     if (BVP_Dispose(MG_BVP(theMG))) return (GM_ERROR);
 
   /* first unlock the mg */
-  ((ENVITEM*) theMG)->v.locked = FALSE;
+  ((ENVITEM*) theMG)->v.locked = false;
 
   /* delete mg */
   if (ChangeEnvDir("/Multigrids")==NULL) RETURN (GM_ERROR);
@@ -4428,7 +4428,7 @@ static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
  * @param   theGrid - grid to order
  * @param   order - precedence of coordinate directions
  * @param   sign - respective ordering direction
- * @param   AlsoOrderLinks - if 'TRUE' also order links
+ * @param   AlsoOrderLinks - if 'true' also order links
 
    This function reorders the double linked 'NODE' list of the grid with
    qsort and order criteria LexCompare(). If specified the 'LINK's are ordered
@@ -5125,7 +5125,7 @@ INT NS_DIM_PREFIX MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda, I
       RecreateBNDSofNode(theMG,sonNode);
   }
 
-  if (update==FALSE) return(GM_OK);
+  if (update==false) return(GM_OK);
   /* Warning: O(n) Operation! */
   for(k=LEVEL(theNode)+1; k<=TOPLEVEL(theMG); k++)
     for (theVertex=FIRSTVERTEX(GRID_ON_LEVEL(theMG,k));
@@ -5379,7 +5379,7 @@ INT NS_DIM_PREFIX MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT
   else
     V_DIM_COPY(newPos,CVECT(theVertex));
 
-  if (update==FALSE) return(GM_OK);
+  if (update==false) return(GM_OK);
   /* Warning: O(n) Operation! */
   for(k=LEVEL(theNode)+1; k<=TOPLEVEL(theMG); k++)
     for (theVertex=FIRSTVERTEX(GRID_ON_LEVEL(theMG,k));
@@ -5451,7 +5451,7 @@ INT NS_DIM_PREFIX MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const 
         #ifdef ModelP
   /* TODO: parallel version */
   PrintErrorMessage('E',"MoveFreeBoundaryVertex","parallel not implemented");
-  ASSERT(FALSE);
+  ASSERT(false);
         #endif
 
   if (OBJT(vert) != BVOBJ)
@@ -6572,7 +6572,7 @@ INT NS_DIM_PREFIX DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VE
   }
 
   /* delete element now */
-  DisposeElement(theGrid,theElement,TRUE);
+  DisposeElement(theGrid,theElement,true);
 
   return(GM_OK);
 }
@@ -8781,7 +8781,7 @@ void NS_DIM_PREFIX ListElementRange (const MULTIGRID *theMG, INT from, INT to, I
   int level,fromlevel,tolevel;
   ELEMENT *theElement;
 
-  if (lopt==FALSE)
+  if (lopt==false)
   {
     fromlevel = 0;
     tolevel = TOPLEVEL(theMG);
@@ -10567,8 +10567,8 @@ static INT FinishGrid (MULTIGRID *mg)
 
   for (elem=PFIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem))
   {
-    SETUSED(elem,FALSE);
-    SETTHEFLAG(elem,FALSE);
+    SETUSED(elem,false);
+    SETTHEFLAG(elem,false);
   }
 
   /* table for subdomain ids */
@@ -10588,7 +10588,7 @@ static INT FinishGrid (MULTIGRID *mg)
   fifo_init(&shell,buffer,sizeof(ELEMENT*)*NT(grid));
 
   /* outermost loop handles nonconnected domains */
-  while (TRUE)
+  while (true)
   {
     for (elem=PFIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem))
       if (!USED(elem))
@@ -10611,9 +10611,9 @@ static INT FinishGrid (MULTIGRID *mg)
       /* shell algo (using FLAG): neighbours, but not across bside */
       fifo_clear(&shell);
       fifo_in(&shell,elem);
-      SETTHEFLAG(elem,TRUE);
+      SETTHEFLAG(elem,true);
       for (i=0; i<=nsd; i++) sd_table[i] = 0;
-      found = FALSE;
+      found = false;
       while (!fifo_empty(&shell))
       {
         elem = (ELEMENT*) fifo_out(&shell);
@@ -10631,7 +10631,7 @@ static INT FinishGrid (MULTIGRID *mg)
                 /* TODO (HRR 971012): parallel? */
                 ASSERT(nbid==0);
                 s_id = id;
-                found = TRUE;
+                found = true;
                 break;
               }
               else
@@ -10643,7 +10643,7 @@ static INT FinishGrid (MULTIGRID *mg)
                 else if (id==SUBDOMAIN(nb))
                   s_id = nbid;
                 else
-                  ASSERT(FALSE);
+                  ASSERT(false);
               }
 
               /* handle outer boundary cases */
@@ -10651,14 +10651,14 @@ static INT FinishGrid (MULTIGRID *mg)
               {
                 ASSERT(nbid>0);
                 s_id = nbid;
-                found = TRUE;
+                found = true;
                 break;
               }
               if (nbid==0)
               {
                 ASSERT(id>0);
                 s_id = id;
-                found = TRUE;
+                found = true;
                 break;
               }
 
@@ -10666,7 +10666,7 @@ static INT FinishGrid (MULTIGRID *mg)
               if (sd_table[id]>1)
               {
                 s_id = id;
-                found = TRUE;
+                found = true;
                 break;
               }
             }
@@ -10682,7 +10682,7 @@ static INT FinishGrid (MULTIGRID *mg)
                 if (!USED(nb) && !THEFLAG(nb))
                 {
                   fifo_in(&shell,nb);
-                  SETTHEFLAG(nb,TRUE);
+                  SETTHEFLAG(nb,true);
                 }
         }
         else
@@ -10692,7 +10692,7 @@ static INT FinishGrid (MULTIGRID *mg)
               if (!USED(nb) && !THEFLAG(nb))
               {
                 fifo_in(&shell,nb);
-                SETTHEFLAG(nb,TRUE);
+                SETTHEFLAG(nb,true);
               }
         }
       }
@@ -10703,14 +10703,14 @@ static INT FinishGrid (MULTIGRID *mg)
           found++;
       if (found>2)
         /* FATAL: algorithm relies on assumptions obviously not fulfilled! */
-        ASSERT(FALSE);
+        ASSERT(false);
 
       /* again shell algo starting from last element */
       /* set USED, propagate subdomain ids and remove spurious bsides (has to have NB!) */
       /* use PRINTDEBUG */
       fifo_clear(&shell);
       fifo_in(&shell,elem);
-      SETUSED(elem,TRUE);
+      SETUSED(elem,true);
       SETSUBDOMAIN(elem,s_id);
       while (!fifo_empty(&shell))
       {
@@ -10749,7 +10749,7 @@ static INT FinishGrid (MULTIGRID *mg)
                 if (!USED(nb))
                 {
                   fifo_in(&shell,nb);
-                  SETUSED(nb,TRUE);
+                  SETUSED(nb,true);
                   SETSUBDOMAIN(nb,s_id);
                 }
               }
@@ -10766,7 +10766,7 @@ static INT FinishGrid (MULTIGRID *mg)
               if (!USED(nb))
               {
                 fifo_in(&shell,nb);
-                SETUSED(nb,TRUE);
+                SETUSED(nb,true);
                 SETSUBDOMAIN(nb,s_id);
               }
             }
@@ -11058,7 +11058,7 @@ static INT ModifyVectorPointer (GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
       INT nbnd,IsOnSamePerBnd;
       VERTEX *vtx;
 
-      IsOnSamePerBnd=FALSE;
+      IsOnSamePerBnd=false;
       d = MDEST(m);
 
       vtx = MYVERTEX((NODE*)VOBJECT(d));
@@ -11074,7 +11074,7 @@ static INT ModifyVectorPointer (GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
           for (k=0; k<nbnd; k++)
             if (periodic_ids[k]==list[i].periodic_id)
             {
-              IsOnSamePerBnd=TRUE;
+              IsOnSamePerBnd=true;
               break;
             }
         }

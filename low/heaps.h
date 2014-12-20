@@ -173,11 +173,11 @@ typedef struct {
 
 typedef struct {
 
-  INT locked;                       /**< If TRUE the TotalSize is fixed        */
+  INT locked;                       /**< If true the TotalSize is fixed        */
   MEM TotalSize;                    /**< Total size of the associated heap     */
   MEM TotalUsed;                    /**< Total size used                       */
   INT UsedBlocks;                   /**< Number of blocks initialized          */
-  INT nGaps;                        /**< TRUE if a gap between exist. blocks   */
+  INT nGaps;                        /**< true if a gap between exist. blocks   */
   MEM LargestGap;                   /**< Largest free gap between blocks       */
   BLOCK_DESC BlockDesc[MAXNBLOCKS];
   /**< The different block descriptors       */

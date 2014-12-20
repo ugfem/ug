@@ -1226,12 +1226,12 @@ INT NS_DIM_PREFIX sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *
   if (strlen(name)>=OPTIONLEN-1) REP_ERR_RETURN (1);
 
   /* find input string */
-  found = FALSE;
+  found = false;
   for (i=0; i<argc; i++)
     if (sscanf(argv[i],expandfmt(CONCAT5("%",OPTIONLENSTR,"[a-zA-Z0-9_] %",VALUELENSTR,"[ -~]")),option,value)==2)
       if (strcmp(option,name) == 0)
       {
-        found = TRUE;
+        found = true;
         break;
       }
   if (!found) return(2);

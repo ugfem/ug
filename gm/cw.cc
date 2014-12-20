@@ -286,7 +286,7 @@ void NS_DIM_PREFIX ListCWofObject (const void *obj, INT offset)
     sub = min;
     last_ce = ce;
   }
-  while (TRUE);
+  while (true);
 
   ASSERT(sub>=0);
 }
@@ -337,7 +337,7 @@ void NS_DIM_PREFIX ListAllCWsOfObject (const void *obj)
     sub = min;
     last_cw = cw;
   }
-  while (TRUE);
+  while (true);
 
   ASSERT(sub>=0);
 }
@@ -393,7 +393,7 @@ static void ListCWofObjectType (INT objt, INT offset, PrintfProcPtr myprintf)
     sub = min;
     last_ce = ce;
   }
-  while (TRUE);
+  while (true);
 
   if (sub==-1)
     myprintf(" --- no ce found with objt %d\n",objt);
@@ -444,7 +444,7 @@ static void ListAllCWsOfObjectType (INT objt, PrintfProcPtr myprintf)
     sub = min;
     last_cw = cw;
   }
-  while (TRUE);
+  while (true);
 
   if (sub==-1)
     printf(" --- no cw found with objt %d\n",objt);
@@ -519,7 +519,7 @@ static INT InitPredefinedControlWords (void)
   if (nused!=GM_N_CW)
   {
     printf("InitPredefinedControlWords: nused=%d != GM_N_CW=%d\n",nused,GM_N_CW);
-    assert(FALSE);
+    assert(false);
   }
 
   return (GM_OK);
@@ -631,7 +631,7 @@ static INT InitPredefinedControlEntries (void)
   if (nused!=REFINE_N_CE)
   {
     printf("InitPredefinedControlEntries: nused=%d != REFINE_N_CE=%d\n",nused,REFINE_N_CE);
-    assert(FALSE);
+    assert(false);
   }
 
   return (GM_OK);
@@ -773,7 +773,7 @@ UINT NS_DIM_PREFIX ReadCW (const void *obj, INT ceID)
   if ((ceID<0) || (ceID>=MAX_CONTROL_ENTRIES))
   {
     printf("ReadCW: ceID=%d out of range\n",ceID);
-    assert(FALSE);
+    assert(false);
   }
 
   /* update statistics */
@@ -784,7 +784,7 @@ UINT NS_DIM_PREFIX ReadCW (const void *obj, INT ceID)
   if (!ce->used)
   {
     printf("ReadCW: ceID=%d unused\n",ceID);
-    assert(FALSE);
+    assert(false);
   }
 
   cw_objt = BITWISE_TYPE(OBJT(obj));
@@ -794,7 +794,7 @@ UINT NS_DIM_PREFIX ReadCW (const void *obj, INT ceID)
       printf("ReadCW: invalid objt %d for ce %s\n",OBJT(obj),ce->name);
     else
       printf("ReadCW: invalid objt %d for ce %d\n",OBJT(obj),ceID);
-    assert(FALSE);
+    assert(false);
   }
 
   off_in_wrd = ce->offset_in_word;
@@ -846,7 +846,7 @@ void NS_DIM_PREFIX WriteCW (void *obj, INT ceID, INT n)
   if ((ceID<0) || (ceID>=MAX_CONTROL_ENTRIES))
   {
     printf("WriteCW: ceID=%d out of range\n",ceID);
-    assert(FALSE);
+    assert(false);
   }
 
   /* update statistics */
@@ -858,7 +858,7 @@ void NS_DIM_PREFIX WriteCW (void *obj, INT ceID, INT n)
   if (!ce->used)
   {
     printf("WriteCW: ceID=%d unused\n",ceID);
-    assert(FALSE);
+    assert(false);
   }
 
   cw_objt = BITWISE_TYPE(OBJT(obj));
@@ -873,7 +873,7 @@ void NS_DIM_PREFIX WriteCW (void *obj, INT ceID, INT n)
           printf("WriteCW: objt 0 but %s rather than expected SETOBJT access\n",ce->name);
         else
           printf("WriteCW: objt 0 but %d rather than expected SETOBJT access\n",ceID);
-        assert(FALSE);
+        assert(false);
       }
   }
   else if (!(cw_objt & ce->objt_used))
@@ -882,7 +882,7 @@ void NS_DIM_PREFIX WriteCW (void *obj, INT ceID, INT n)
       printf("WriteCW: invalid objt %d for ce %s\n",OBJT(obj),ce->name);
     else
       printf("WriteCW: invalid objt %d for ce %d\n",OBJT(obj),ceID);
-    assert(FALSE);
+    assert(false);
   }
 
   off_in_wrd = ce->offset_in_word;
@@ -901,7 +901,7 @@ void NS_DIM_PREFIX WriteCW (void *obj, INT ceID, INT n)
     else
       printf("WriteCW: value=%d exceeds max=%d for %d\n",
              n,POW2(ce->length)-1,ceID);
-    assert(FALSE);
+    assert(false);
   }
 
   j = j & mask;

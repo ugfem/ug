@@ -54,14 +54,6 @@
 #include <ctime>
 #include <cmath>
 
-
-#define TRUE  1
-#define FALSE 0
-
-/* MPI library */
-/*
-   #include <mpp/mpi.h>
- */
 #include <mpi.h>
 
 #include "../ppif_general.h"
@@ -523,7 +515,7 @@ int PPIF::DiscASync (void* v)
 int PPIF::InfoADisc (void* v)
 
 {
-  return (TRUE);
+  return (true);
 }
 
 #define REQUEST_HEAP
@@ -539,7 +531,7 @@ msgid PPIF::SendASync (void* v, void *data, int size, int *error)
     if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE,
                                   ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM, req) )
     {
-      *error = FALSE;
+      *error = false;
       return ((msgid) req);
     }
   }
@@ -549,12 +541,12 @@ msgid PPIF::SendASync (void* v, void *data, int size, int *error)
   if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE,
                                 ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM, &Req) )
   {
-    *error = FALSE;
+    *error = false;
     return ((msgid) Req);
   }
 #  endif
 
-  *error = TRUE;
+  *error = true;
   return NULL;
 }
 
@@ -570,7 +562,7 @@ msgid PPIF::RecvASync (void* v, void *data, int size, int *error)
     if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE,
                                   ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM, req) )
     {
-      *error = FALSE;
+      *error = false;
       return ((msgid) req);
     }
   }
@@ -581,13 +573,13 @@ msgid PPIF::RecvASync (void* v, void *data, int size, int *error)
   if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE,
                                 ((MPIVChannel*)v)->p, ((MPIVChannel*)v)->chanid, COMM, &Req) )
   {
-    *error = FALSE;
+    *error = false;
     return ((msgid) Req);
   }
 
 #  endif
 
-  *error = TRUE;
+  *error = true;
   return (NULL);
 }
 
@@ -605,7 +597,7 @@ int PPIF::InfoASend (void* v, msgid m)
     {
       if (complete) free (m);
 
-      return (complete);        /* complete is TRUE for completed send, FALSE otherwise */
+      return (complete);        /* complete is true for completed send, false otherwise */
     }
   }
 
@@ -614,7 +606,7 @@ int PPIF::InfoASend (void* v, msgid m)
 
   if (MPI_SUCCESS == MPI_Test (&Req, &complete, &status) )
   {
-    return (complete);          /* complete is TRUE for completed send, FALSE otherwise */
+    return (complete);          /* complete is true for completed send, false otherwise */
   }
 
 #  endif
@@ -635,7 +627,7 @@ int PPIF::InfoARecv (void* v, msgid m)
     {
       if (complete) free (m);
 
-      return (complete);        /* complete is TRUE for completed receive, FALSE otherwise */
+      return (complete);        /* complete is true for completed receive, false otherwise */
     }
   }
 
@@ -644,7 +636,7 @@ int PPIF::InfoARecv (void* v, msgid m)
 
   if (MPI_SUCCESS == MPI_Test (&Req, &complete, &status) )
   {
-    return (complete);          /* complete is TRUE for completed receive, FALSE otherwise */
+    return (complete);          /* complete is true for completed receive, false otherwise */
   }
 
 #  endif

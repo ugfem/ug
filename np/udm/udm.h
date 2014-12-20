@@ -240,7 +240,7 @@ typedef struct {
   SHORT *CmpsInType[NVECTYPES];
 
   /* redundant (but frequently used) information */
-  /** \brief TRUE if desc is scalar: same settings in all types */
+  /** \brief true if desc is scalar: same settings in all types */
   SHORT IsScalar;
 
   /** \brief Successive components */
@@ -305,10 +305,10 @@ typedef struct {
   NS_DIM_PREFIX SPARSE_MATRIX *sm[NMATTYPES];
 
   /* redundant (but frequently used) information                          */
-  /** \brief TRUE if sparse form should be used   */
+  /** \brief true if sparse form should be used   */
   SHORT IsSparse;
 
-  /** \brief TRUE if desc is scalar: same settings in all types             */
+  /** \brief true if desc is scalar: same settings in all types             */
   SHORT IsScalar;
 
   /** \brief Successive components                */

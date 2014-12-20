@@ -363,11 +363,11 @@ static int IdentStepMode (enum IdentMode old)
     sprintf(cBuffer, ERR_ID_WRONG_MODE,
             IdentModeName(identMode), IdentModeName(old));
     DDD_PrintError('E', 3070, cBuffer);
-    return FALSE;
+    return false;
   }
 
   IdentSetMode(IdentSuccMode(identMode));
-  return TRUE;
+  return true;
 }
 
 
@@ -790,12 +790,12 @@ static int IdentifySort (IDENTINFO **id, int nIds,
   {
   case IDMODE_LISTS :
     qsort(id, nIds, sizeof(IDENTINFO *), sort_intoTupelsLists);
-    keep_order_inside_tupel = TRUE;
+    keep_order_inside_tupel = true;
     break;
 
   case IDMODE_SETS :
     qsort(id, nIds, sizeof(IDENTINFO *), sort_intoTupelsSets);
-    keep_order_inside_tupel = FALSE;
+    keep_order_inside_tupel = false;
     break;
 
   default :
@@ -968,7 +968,7 @@ static int InitComm (int nPartners)
 
   if (! IS_OK(DDD_GetChannels(nPartners)))
   {
-    return(FALSE);
+    return(false);
   }
 
 
@@ -989,7 +989,7 @@ static int InitComm (int nPartners)
                              sizeof(MSGITEM)*plist->nEntries + sizeof(long), &err);
   }
 
-  return(TRUE);
+  return(true);
 }
 
 
@@ -1004,7 +1004,7 @@ static void idcons_CheckPairs (void)
 {
   NOTIFY_DESC *msgs = DDD_NotifyBegin(nPLists);
   ID_PLIST        *plist;
-  int i, j, nRecvs, err=FALSE;
+  int i, j, nRecvs, err=false;
 
   for(i=0, plist=thePLists; plist!=NULL; plist=plist->next, i++)
   {
@@ -1034,7 +1034,7 @@ static void idcons_CheckPairs (void)
     {
       sprintf(cBuffer, ERR_ID_DIFF_IDENT, plist->proc, plist->nEntries);
       DDD_PrintError('E', 3900, cBuffer);
-      err=TRUE;
+      err=true;
     }
     else
     {
@@ -1043,7 +1043,7 @@ static void idcons_CheckPairs (void)
         sprintf(cBuffer, ERR_ID_DIFF_N_IDENT,
                 msgs[j].size, plist->proc, plist->nEntries);
         DDD_PrintError('E', 3901, cBuffer);
-        err=TRUE;
+        err=true;
       }
     }
   }

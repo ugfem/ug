@@ -233,7 +233,7 @@ static int SetPrioMatrix (TYPE_DESC *desc, int priomerge_mode)
       DDD_PRIO pres;
 
       PM_GETDEFAULT(priomerge_mode, r, c, pres);
-      if (pres==MAX_PRIO) return FALSE;
+      if (pres==MAX_PRIO) return false;
 
       PM_ENTRY(desc->prioMatrix, r, c) = pres;
     }
@@ -242,7 +242,7 @@ static int SetPrioMatrix (TYPE_DESC *desc, int priomerge_mode)
   /* remember default setting */
   desc->prioDefault = priomerge_mode;
 
-  return TRUE;
+  return true;
 }
 
 
@@ -258,7 +258,7 @@ static int CheckPrioMatrix (TYPE_DESC *desc)
 
   if (desc->prioMatrix==NULL)
     /* no prioMatrix defined, ok */
-    return TRUE;
+    return true;
 
   /* check: entries i must be 0<=i<MAX_PRIO */
   for(r=0; r<MAX_PRIO; r++)
@@ -281,7 +281,7 @@ static int CheckPrioMatrix (TYPE_DESC *desc)
   /* TODO: check for associativity */
 
 
-  return TRUE;
+  return true;
 }
 
 
@@ -467,7 +467,7 @@ void DDD_PrioMergeDisplay (DDD_TYPE type_id)
   /* find out which rows/columns we will have to print */
   for(r=0; r<MAX_PRIO; r++)
   {
-    changed_rows[r] = FALSE;
+    changed_rows[r] = false;
 
     for(c=0; c<MAX_PRIO; c++)
     {
@@ -477,7 +477,7 @@ void DDD_PrioMergeDisplay (DDD_TYPE type_id)
       PriorityMerge(desc, r, c, &p_actual);
 
       if (p_dflt != p_actual)
-        changed_rows[r] = TRUE;
+        changed_rows[r] = true;
     }
   }
 

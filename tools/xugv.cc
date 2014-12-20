@@ -2300,8 +2300,8 @@ int main (int argc, char* argv[])
     XawDialogAddButton(xexit, "cancel", exit_cancel, (XtPointer)NULL);
 
     /* add event handler for expose events */
-    XtAddEventHandler( picture, ExposureMask, FALSE, (XtEventHandler) exposeCB, (XtPointer)NULL);
-    XtAddEventHandler(viewport, ButtonPressMask, FALSE, (XtEventHandler) exit_dial, (XtPointer)NULL);
+    XtAddEventHandler( picture, ExposureMask, false, (XtEventHandler) exposeCB, (XtPointer)NULL);
+    XtAddEventHandler(viewport, ButtonPressMask, false, (XtEventHandler) exit_dial, (XtPointer)NULL);
 
     /* install work if film is tailed */
     if (auto_nb>=0)
@@ -2417,10 +2417,10 @@ int main (int argc, char* argv[])
     XawDialogAddButton(xexit, "cancel", exit_cancel, (XtPointer)NULL);
 
     /* add event handler for expose events */
-    XtAddEventHandler( picture, ExposureMask, FALSE, (XtEventHandler) exposeCB, (XtPointer)NULL);
+    XtAddEventHandler( picture, ExposureMask, false, (XtEventHandler) exposeCB, (XtPointer)NULL);
 
     /* add event handler for button press event */
-    XtAddEventHandler(viewport, ButtonPressMask, FALSE, (XtEventHandler) exit_dial, (XtPointer)NULL);
+    XtAddEventHandler(viewport, ButtonPressMask, false, (XtEventHandler) exit_dial, (XtPointer)NULL);
 
     /* register a work procedure to display the film */
     film_work_id = XtAppAddWorkProc(kontext,(XtWorkProc) run_film,applShell);

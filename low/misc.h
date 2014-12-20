@@ -124,7 +124,7 @@ START_UG_NAMESPACE
 #define OFF             0
 
 #define BOOL_2_YN(b)            ((b) ? "YES" : "NO")
-#define BOOL_2_TF(b)            ((b) ? "TRUE" : "FALSE")
+#define BOOL_2_TF(b)            ((b) ? "true" : "false")
 #define BOOL_2_NF(b)            ((b) ? "ON" : "OFF")
 
 /* switching by strings */
