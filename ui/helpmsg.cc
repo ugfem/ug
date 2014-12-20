@@ -142,7 +142,7 @@ static void WriteFormatted (const char *text)
 {
   char buffer[LONGBUFFSIZE];
   INT tp,bp;
-  static INT verbatim = false;
+  static bool verbatim = false;
 
   tp = bp = 0;
   buffer[0] = '\0';

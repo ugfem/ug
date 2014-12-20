@@ -89,7 +89,7 @@ static int nRules;                                              /* total number 
 static int FirstRuleWithEdgePattern;    /* Rule no. of first of several SidePatterns	*/
 static REFRULE *RuleList;                               /* list is allocated in main program			*/
 static SHORT *PatternToRefrule;                 /* vector is allocated in main program			*/
-static int Output;                                              /* if true output of generated rules			*/
+static bool Output;                                     /* if true output of generated rules            */
 
 /* prototype for new rules without any data */
 static REFRULE EmptyRule =
@@ -1182,7 +1182,7 @@ int main (int argc, char **argv)
   MINnRefEdge = 0;
   MAXnRefEdge = EDGES;
 
-  Output   = 0;
+  Output   = false;
   SaveList = 1;
 
 #ifdef TEST_GR
@@ -1199,11 +1199,10 @@ int main (int argc, char **argv)
   if (sscanf(argv[2],"%d",&MAXnRefEdge)!=1)
     return (1);
 
-  Output = 0;
   for (i=3; i<argc; i++)
     if ((argv[i][0]=='-') && (argv[i][1]=='o'))
     {
-      Output = 1;
+      Output = true;
       break;
     }
 

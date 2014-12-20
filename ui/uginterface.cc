@@ -1363,7 +1363,7 @@ INT NS_DIM_PREFIX UserRead (char *String)
    D*/
 /****************************************************************************/
 
-INT NS_DIM_PREFIX SetRefreshState (INT status, INT bullet, DOUBLE factor)
+INT NS_DIM_PREFIX SetRefreshState (bool status, INT bullet, DOUBLE factor)
 {
   autoRefresh = status;
   use_bullet = bullet;

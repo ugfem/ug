@@ -303,7 +303,7 @@ static INT piccounter=1;
 /*@{*/
 static INT theArrayDirID;
 static INT theArrayVarID;
-static INT arraypathes_set=false;
+static bool arraypathes_set = false;
 /*@}*/
 
 REP_ERR_FILE;
@@ -584,7 +584,8 @@ static INT DateCommand (INT argc, char **argv)
 {
   time_t Time;
   const char *fmt;
-  INT i,svopt;
+  INT i;
+  bool svopt;
 
   /* check options */
   svopt = false;
@@ -767,7 +768,8 @@ static INT EnvInfoCommand (INT argc, char **argv)
 static INT SetCommand (INT argc, char **argv)
 {
   char name[LONGSTRSIZE], *namePtr;
-  INT flag,ropt,i,res,rv;
+  INT flag,i,res,rv;
+  bool ropt;
         #ifdef ModelP
   /* allocate buffer for definition of long string variables */
   char *buffer;
@@ -1261,8 +1263,9 @@ FILE* NS_DIM_PREFIX GetProtocolFile ()
 static INT LogOnCommand (INT argc, char **argv)
 {
   char logfile[NAMESIZE];
-  INT i,rv,popt,res,pext,meext,rename;
+  INT i, rv, res;
   int ropt;
+  bool popt, pext, meext, rename;
 
   /* check options */
   popt = pext = meext = rename = false;
@@ -1296,7 +1299,7 @@ static INT LogOnCommand (INT argc, char **argv)
 
     case 'r' :
       res = sscanf(argv[i]," r %d",&ropt);
-      if (res==0 || (res==1 && ropt==1)) rename = true;
+      rename = (res==0 || (res==1 && ropt==1));
       break;
 
     default :
@@ -1319,11 +1322,11 @@ static INT LogOnCommand (INT argc, char **argv)
     return(PARAMERRORCODE);
   }
         #ifdef ModelP
-  if (pext == true)
+  if (pext)
   {
     sprintf(logfile,"%s.p%04d",logfile,procs);
   }
-  if (meext == true)
+  if (meext)
   {
     sprintf(logfile,"%s.%04d",logfile,me);
   }
@@ -1356,10 +1359,10 @@ static INT LogOnCommand (INT argc, char **argv)
 /** \brief Implementation of \ref logoff. */
 static INT LogOffCommand (INT argc, char **argv)
 {
-  INT i,popt;
+  INT i;
+  bool popt = false;
 
   /* check options */
-  popt = false;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -1499,7 +1502,8 @@ static INT CloseCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   UGWINDOW *theWin;
   PICTURE *thePic,*NextPic,*currPic;
-  INT i,closeonlyfirst;
+  INT i;
+  bool closeonlyfirst;
 
   if (ResetPrintingFormat())
     REP_ERR_RETURN(CMDERRORCODE);
@@ -1575,7 +1579,8 @@ INT NS_DIM_PREFIX NewCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
   MEM heapSize;
-  INT i,bopt,fopt,hopt,IEopt,emptyGrid;
+  INT i;
+  bool bopt, fopt, hopt, IEopt, emptyGrid;
 
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" new %",NAMELENSTR,"[ -~]")),Multigrid)!=1) || (strlen(Multigrid)==0))
