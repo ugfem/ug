@@ -3464,20 +3464,26 @@ static INT VMListCommand (INT argc, char **argv)
   }
   modifiers = LV_MOD_DEFAULT;
   if (ReadArgvINT("skip",&j,argc,argv)==0)
+  {
     if (j)
       SET_FLAG(modifiers,LV_SKIP);
     else
       CLEAR_FLAG(modifiers,LV_SKIP);
+  }
   if (ReadArgvINT("pos",&j,argc,argv)==0)
+  {
     if (j)
       SET_FLAG(modifiers,LV_POS);
     else
       CLEAR_FLAG(modifiers,LV_POS);
+  }
   if (ReadArgvINT("obj",&j,argc,argv)==0)
+  {
     if (j)
       SET_FLAG(modifiers,LV_VO_INFO);
     else
       CLEAR_FLAG(modifiers,LV_VO_INFO);
+  }
 
   /* check options */
   datatypes = 0;
@@ -3763,6 +3769,7 @@ static INT ConvertCommand (INT argc, char **argv)
     return(CMDERRORCODE);
   }
   if (ReadArgvChar("f",name,argc,argv) == 0)
+  {
     if (ReadArgvOption("fmt",argc,argv)) {
       if (WriteMatrixfmt(name,n,ia,ja,a,inc)) {
         PrintErrorMessage('E',"convert","could write matrix");
@@ -3775,6 +3782,7 @@ static INT ConvertCommand (INT argc, char **argv)
       ReleaseTmpMem(MGHEAP(theMG),MarkKey);
       return(CMDERRORCODE);
     }
+  }
   if (ReadArgvOption("p",argc,argv)) {
     r = (DOUBLE *)GetTmpMem(MGHEAP(theMG),sizeof(DOUBLE) * n,MarkKey);
     for (i=0; i<n; i++) {
@@ -4633,6 +4641,7 @@ static INT AdaptCommand (INT argc, char **argv)
       for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); theElement!=NULL; theElement=SUCCE(theElement))
       {
         if (EstimateHere(theElement))
+        {
           if ((rv = MarkForRefinement(theElement,RED,0))!=0)
           {
             l = TOPLEVEL(theMG);
@@ -4640,6 +4649,7 @@ static INT AdaptCommand (INT argc, char **argv)
           }
           else
             nmarked++;
+        }
       }
     UserWriteF("%d: %d elements marked for regular refinement\n",me,nmarked);
   }
@@ -5094,6 +5104,7 @@ static INT MarkCommand (INT argc, char **argv)
       for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
            theElement!=NULL; theElement=SUCCE(theElement)) {
         if (EstimateHere(theElement))
+        {
           if ((rv = MarkForRefinement(theElement,
                                       Rule,Side))!=0)
           {
@@ -5102,6 +5113,7 @@ static INT MarkCommand (INT argc, char **argv)
           }
           else
             nmarked++;
+        }
       }
     break;
 
@@ -5118,11 +5130,13 @@ static INT MarkCommand (INT argc, char **argv)
       }
 
       if (EstimateHere(theElement))
+      {
         if ((rv = MarkForRefinement(theElement,
                                     Rule,Side))!=0)
           break;
         else
           nmarked++;
+      }
     }
     break;
 
@@ -5612,6 +5626,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
   }
   mode = OV_CARTES;
   if (rused || pused)
+  {
     if (!(rused && pused))
     {
       PrintHelp("lexorderv",HELPITEM," (bad combination of cartesian/polar direction)");
@@ -5619,6 +5634,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
     }
     else
       mode = OV_POLAR;
+  }
 
   /* check options */
   AlsoOrderMatrices = SpecialTreatSkipVecs = false;
@@ -8803,12 +8819,16 @@ static INT PlotCommand (INT argc, char **argv)
 
                                 #ifdef ModelP
         if (me == master)
+        {
                                 #endif
 
         if (thePic==currPic)
           DrawPictureFrame(thePic,WOP_ACTIVE);
         else
           DrawPictureFrame(thePic,WOP_NOT_ACTIVE);
+#ifdef ModelP
+        }
+#endif
       }
 
     return (OKCODE);

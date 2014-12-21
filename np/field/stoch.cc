@@ -1330,6 +1330,7 @@ static INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
   else
     for (i=0; i<DIM; i++)
       if ((ival[i] > 0) && (testPow2(ival[1])))
+      {
         if (np->size[i] != ival[i])
         {
           np->size[i] = ival[i];
@@ -1340,6 +1341,7 @@ static INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
           PrintErrorMessage('E',"NPStochFieldInit","size must be a power of 2");
           ret = NP_NOT_ACTIVE;
         }
+      }
 
   if (ReadArgvDOUBLE("m",dval,argc,argv))
   {

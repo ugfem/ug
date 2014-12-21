@@ -268,6 +268,7 @@ COMMAND * NS_DIM_PREFIX SearchUgCmd (const char *cmdName)
   Cmd = NULL;
   for (theItem=currentDir->down; theItem!=NULL; theItem=theItem->v.next)
     if (theItem->v.type == theCommandVarID)
+    {
       if (strcmp(cmdName,ENVITEM_NAME(theItem))==0)
         return ((COMMAND *) theItem);
       else if (Str1inStr2(cmdName,ENVITEM_NAME(theItem)))
@@ -285,6 +286,7 @@ COMMAND * NS_DIM_PREFIX SearchUgCmd (const char *cmdName)
         else
           Cmd = (COMMAND *) theItem;
       }
+    }
 
   return (Cmd);
 }

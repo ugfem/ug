@@ -1239,6 +1239,7 @@ INT NS_DIM_PREFIX sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *
   /* read from value string */
   err = ReadVecTypeDOUBLEs(fmt,value,MAX_VEC_COMP,nDOUBLEs,theDOUBLEs);
   if (err!=NUM_OK)
+  {
     if (err==NUM_TYPE_MISSING)
     {
       /* iff no type is specified in the value string, scan one value for all */
@@ -1253,6 +1254,7 @@ INT NS_DIM_PREFIX sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *
     }
     else
       REP_ERR_RETURN (NUM_ERROR);
+  }
 
   /* fill x and check consistency with VECDATA_DESC */
   for (n=0, type=0; type<NVECTYPES; type++)

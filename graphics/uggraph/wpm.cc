@@ -3706,10 +3706,12 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     case 't' :
       for (j=0; j<NVECTYPES; j++)
         if (FMT_S_VEC_TP(theFormat,j)>0)
+        {
           if (strchr(argv[i]+1,FMT_VTYPE_NAME(theFormat,j))!=NULL)
             theVmo->Type[j] = YES;
           else
             theVmo->Type[j] = NO;
+        }
       break;
 
     case 'c' :
@@ -4594,10 +4596,12 @@ static INT InitVecMat_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     case 't' :
       for (j=0; j<NVECTYPES; j++)
         if (FMT_S_VEC_TP(theFormat,j)>0)
+        {
           if (strchr(argv[i]+1,FMT_VTYPE_NAME(theFormat,j))!=NULL)
             theVmo->Type[j] = YES;
           else
             theVmo->Type[j] = NO;
+        }
       break;
 
     case 'i' :

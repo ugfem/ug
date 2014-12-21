@@ -410,10 +410,12 @@ static INT EWExecute (NP_BASE *theNP, INT argc , char **argv)
 
   nev = np->ew.nev;       /* voreingestellte Anzahl EWe sichern */
   if (!ReadArgvINT("m",&m,argc,argv))
+  {
     if (0 < m && m < nev)
       np->ew.nev = m;          /* Anzahl EWe reduzieren */
     else
       UserWriteF("EWExecute: $m %d out of range - working with maximum %d EV\n",m,nev);
+  }
 
   np->reset = ReadArgvOption("r",argc,argv);
   if ((*np->ew.PreProcess)(&np->ew,level,np->ew.nev,np->ew.ev,NULL,&result))

@@ -1010,10 +1010,12 @@ static INT EBCGSSolver (NP_ELINEAR_SOLVER *theNP, INT level, EVECDATA_DESC *x, E
     if (PostPCR(PrintID,":ls:avg")) NP_RETURN(1,lresult->error_code);
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) NP_RETURN(1,lresult->error_code);
     if (lresult->number_of_linear_iterations>0)
+    {
       if(NPELS_printbasetime(theNP))
         UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g TBASE=%g\n",level,lresult->number_of_linear_iterations,ti,ti/lresult->number_of_linear_iterations,basetime);
       else
         UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",level,lresult->number_of_linear_iterations,ti,ti/lresult->number_of_linear_iterations);
+    }
   }
 
   return (0);

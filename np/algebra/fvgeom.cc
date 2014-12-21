@@ -1596,6 +1596,7 @@ INT NS_DIM_PREFIX GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, co
     n = 0;
     for (ip=0; ip<ni; ip++)
       if (!noflow[ip])
+      {
         if ((SCVF_FROM(FVG_SCVF(geo,ip))==corn))
         {
           /* normal directed outward */
@@ -1612,6 +1613,7 @@ INT NS_DIM_PREFIX GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, co
           f_in  += -MIN(flux,0);
           f_out +=  MAX(flux,0);
         }
+      }
     if (n==0) continue;
 
     flux = MAX(f_in,f_out);

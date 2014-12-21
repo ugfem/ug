@@ -1043,10 +1043,12 @@ static INT RemoveOrphanSons (ELEMENT **SonList, INT *nmax)
     for (max=0,i=0; i<*nmax; i++)
     {
       if (SonList[i]!=NULL)
+      {
         if (THEFLAG(SonList[i]))
           SonList[i] = NULL;
         else
           max = i+1;
+      }
     }
     *nmax = max;
   }

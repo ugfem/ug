@@ -576,6 +576,7 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
   np->display = ReadArgvDisplay(argc,argv);
 
   if (ReadArgvOption("S",argc,argv))
+  {
     if (ReadArgvDOUBLE("S",&(np->cut),argc,argv))
       UserWrite("$S option not active!\n");
     else
@@ -585,6 +586,7 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
       np->intcor = StandardInterpolateCorrection;
       np->intnew = StandardInterpolateNewVectors;
     }
+  }
   np->L = ReadArgvMatDesc(theNP->mg,"B",argc,argv);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
   np->amg = (NP_TRANSFER *)

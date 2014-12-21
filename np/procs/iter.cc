@@ -4943,21 +4943,39 @@ static INT SBGS_Init (NP_BASE *theNP, INT argc , char **argv)
     {
       /* Blocking */
       if (strstr(option,"Blocking")!=NULL)
+      {
         if (ReadVecTypeINTs(MGFORMAT(NP_MG(theNP)),value,MAX_BLOCKS+1,nTypeBlocks,TypeBlocks)!=0)
           REP_ERR_RETURN (NP_NOT_ACTIVE)
-          else {bopt = true; continue;}
+        else
+        {
+          bopt = true;
+          continue;
+        }
+      }
 
       /* BlockOrder */
       if (strstr(option,"BlockOrder")!=NULL)
+      {
         if (ReadVecTypeOrder(MGFORMAT(NP_MG(theNP)),value,MAX_ORDER,MAX_BLOCKS,&SBGS_NBLOCKITER(theSBGS),SBGS_BLOCKORDER(theSBGS))!=0)
           REP_ERR_RETURN (NP_NOT_ACTIVE)
-          else {boopt = true; continue;}
+        else
+        {
+          boopt = true;
+          continue;
+        }
+      }
 
       /* BlockIter */
       if (strstr(option,"BlockIter")!=NULL)
+      {
         if (ReadVecTypeNUMPROCs(NP_MG(theNP),value,ITER_CLASS_NAME,MAX_BLOCKS,nBlockIter,BlockIter)!=0)
           REP_ERR_RETURN (NP_NOT_ACTIVE)
-          else {biopt = true; continue;}
+        else
+        {
+          biopt = true;
+          continue;
+        }
+      }
     }
 
   if (!(bopt && boopt && biopt))

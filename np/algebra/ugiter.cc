@@ -2567,10 +2567,12 @@ INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCAL
               for (m=0; m<nc; m++)
                 sum += fabs(CorMat[l*nc+m]*j_Normalization[l]*k_Normalization[m]);
               if (sum>TypeThresh[l])
+              {
                 if ((Mjk=CreateExtraConnection(g,vj,vk))==NULL)
                   REP_ERR_RETURN (NUM_OUT_OF_MEM)
                   else
                     break;
+              }
             }
           }
         if (Mjk==NULL)
@@ -5009,10 +5011,12 @@ INT NS_DIM_PREFIX solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const
     {
       vj = MDEST( m );
       if ( (VINDEX(vj) >= index_vi) && VMATCH( vj, bvd, bvdf ) )
+      {
         if ( VINDEX(vj) == index_vi )
           diag = MVALUE( m,  LU_comp );
         else
           val -= MVALUE( m, LU_comp ) * VVALUE( vj, dest_comp );
+      }
     }
 
     if ( fabs( diag ) < SMALL_D )
@@ -6056,10 +6060,12 @@ INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC
               for (m=0; m<nc; m++)
                 sum += fabs(CorMat[l*nc+m]*j_Normalization[l]*k_Normalization[m]);
               if (sum>TypeThresh[l])
+              {
                 if (CreateExtraConnection(g,vj,vk)==NULL)
                   REP_ERR_RETURN (NUM_OUT_OF_MEM)
                   else
                     break;
+              }
             }
           }
         if (Mjk==NULL)

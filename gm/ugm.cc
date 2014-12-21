@@ -620,6 +620,7 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
     SETNSUBDOM(pn,0);
 
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
+  {
     if (with_vector)
     {
       if (CreateVector (theGrid,NODEVEC,(GEOM_OBJECT *)pn,&pv))
@@ -631,6 +632,7 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
     }
     else
       NVECTOR(pn) = NULL;
+  }
 
   if (NDATA_DEF_IN_GRID(theGrid)) {
     NDATA(pn) = (void *) GetMemoryForObject(theGrid->mg,
@@ -1513,6 +1515,7 @@ INT GetSideIDFromScratchOld (ELEMENT *theElement, NODE *theNode)
     ELEMENT *nb = NBELEM(theElement,j);
 
     if (3 == CORNERS_OF_SIDE(theElement,j))
+    {
 
       /* treatment of special green rule 17 and 22 */
       if ((((TAG(theElement)==PYRAMID && NSONS(theFather)==9) ||
@@ -1523,6 +1526,7 @@ INT GetSideIDFromScratchOld (ELEMENT *theElement, NODE *theNode)
         /* not continue */;
       else
         continue;
+    }
 
     if (nb == NULL) continue;
 
@@ -2470,6 +2474,7 @@ CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, bool with_vector)
 
   /* create vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
+  {
     if (with_vector) {
       if (CreateVector (theGrid,EDGEVEC,(GEOM_OBJECT *)pe,&pv)) {
         DisposeEdge (theGrid,pe);
@@ -2479,6 +2484,7 @@ CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, bool with_vector)
     }
     else
       EDVECTOR(pe) = NULL;
+  }
 
   /* put in neighbor lists */
   NEXT(link0) = START(from);
@@ -2608,6 +2614,7 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
 
   /* create element vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
+  {
     if (with_vector)
     {
       if (CreateVector (theGrid,ELEMVEC,(GEOM_OBJECT *)pe,&pv))
@@ -2619,6 +2626,7 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
     }
     else
       SET_EVECTOR(pe,NULL);
+  }
 
   if (EDATA_DEF_IN_GRID(theGrid)) {
     q = (void *) GetMemoryForObject(theGrid->mg,EDATA_DEF_IN_GRID(theGrid),-1);
@@ -2631,6 +2639,7 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
 
   /* create side vectors if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+  {
     for (i=0; i<SIDES_OF_ELEM(pe); i++)
       if (with_vector)
       {
@@ -2643,6 +2652,7 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
       }
       else
         SET_SVECTOR(pe,i,NULL);
+  }
 
   /* insert in element list */
   GRID_LINK_ELEMENT(theGrid,pe,PrioMaster);
@@ -10744,6 +10754,7 @@ static INT FinishGrid (MULTIGRID *mg)
         {
           for (side=0; side<SIDES_OF_ELEM(elem); side++)
             if (!SIDE_ON_BND(elem,side))
+            {
               if ((nb=NBELEM(elem,side))!=NULL)
               {
                 if (!USED(nb))
@@ -10757,6 +10768,7 @@ static INT FinishGrid (MULTIGRID *mg)
                 /* TODO (HRR 971012): ModelP: no error if EGHOST? */
                 /* grid not closed */
                 REP_ERR_RETURN(1);
+            }
         }
         else
         {

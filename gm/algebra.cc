@@ -4543,16 +4543,20 @@ static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
     PRINTDEBUG(gm,1,(" vecskip %4d %4d\n",
                      VECSKIP(*pvec1),VECSKIP(*pvec2)));
     if (VECSKIP(*pvec1) && !VECSKIP(*pvec2))
+    {
       if (SkipV==GM_PUT_AT_BEGIN)
         return (-1);
       else
         return ( 1);
+    }
 
     if (VECSKIP(*pvec2) && !VECSKIP(*pvec1))
+    {
       if (SkipV==GM_PUT_AT_BEGIN)
         return ( 1);
       else
         return (-1);
+    }
   }
   VectorPosition(*pvec1,pv1);
   VectorPosition(*pvec2,pv2);
@@ -4598,16 +4602,20 @@ static INT PolarLexCompare (VECTOR **pvec1, VECTOR **pvec2)
     PRINTDEBUG(gm,1,(" vecskip %4d %4d\n",
                      VECSKIP(*pvec1),VECSKIP(*pvec2)));
     if (VECSKIP(*pvec1) && !VECSKIP(*pvec2))
+    {
       if (SkipV==GM_PUT_AT_BEGIN)
         return (-1);
       else
         return ( 1);
+    }
 
     if (VECSKIP(*pvec2) && !VECSKIP(*pvec1))
+    {
       if (SkipV==GM_PUT_AT_BEGIN)
         return ( 1);
       else
         return (-1);
+    }
   }
   VectorPosition(*pvec1,pv1);
   VectorPosition(*pvec2,pv2);
@@ -6537,16 +6545,20 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
       if (SpecialTreatSkipVecs)
       {
         if (VECSKIP(theVector) && !VECSKIP(NBVector))
+        {
           if (SpecialTreatSkipVecs==GM_PUT_AT_BEGIN)
             order = -1;
           else
             order =  1;
+        }
 
         if (VECSKIP(NBVector) && !VECSKIP(theVector))
+        {
           if (SpecialTreatSkipVecs==GM_PUT_AT_BEGIN)
             order =  1;
           else
             order = -1;
+        }
       }
       else
       {

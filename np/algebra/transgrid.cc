@@ -2182,7 +2182,12 @@ INT NS_DIM_PREFIX InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_
         for (i=0; i<ncomp; i++)
           if ((vecskip & (1<<i)))
             for (j=0; j<ncomp; j++)
-              if (i==j) F[i] = 1.0;else F[i] = 0.0;
+            {
+              if (i==j)
+                F[i] = 1.0;
+              else
+                F[i] = 0.0;
+            }
 
         /* compute Q = D(vc)^{-1}(D(vf)) */
         Dcoarse = &(MVALUE(VSTART(vc),0));

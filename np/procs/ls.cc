@@ -2045,6 +2045,7 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1)))
       NP_RETURN(1,lresult->error_code);
     if (lresult->number_of_linear_iterations > 0)
+    {
       if(NPLS_printbasetime(theNP))
         UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g TBASE=%g\n",level,
                    lresult->number_of_linear_iterations,ti,
@@ -2054,6 +2055,7 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
         UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",level,
                    lresult->number_of_linear_iterations,ti,
                    ti/lresult->number_of_linear_iterations);
+    }
   }
 
   return (0);
@@ -2498,6 +2500,7 @@ update:
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (k+1)))
       NP_RETURN(1,lresult->error_code);
     if (lresult->number_of_linear_iterations > 0)
+    {
       if(NPLS_printbasetime(theNP))
         UserWriteF("BCGS(%2d): L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g TBASE=%g\n",np->restart,level,
                    lresult->number_of_linear_iterations,ti,
@@ -2507,6 +2510,7 @@ update:
         UserWriteF("BCGS(%2d): L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",np->restart,level,
                    lresult->number_of_linear_iterations,ti,
                    ti/lresult->number_of_linear_iterations);
+    }
   }
 
   return (0);
@@ -2628,13 +2632,16 @@ static INT GMRESDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"r",ENVITEM_NAME(np->r));
   if (np->p != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"p",ENVITEM_NAME(np->p));
-  for (i=0; i<=MAX_RESTART; i++) if (np->v[i] != NULL)
+  for (i=0; i<=MAX_RESTART; i++)
+    if (np->v[i] != NULL)
+    {
       if (i<10)
         UserWriteF("v[%d]            = %-35.32s\n",
                    i,ENVITEM_NAME(np->v[i]));
       else
         UserWriteF("v[%d]           = %-35.32s\n",
                    i,ENVITEM_NAME(np->v[i]));
+    }
   if (np->s != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(np->s));
   if (np->t != NULL)
@@ -3037,6 +3044,7 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1)))
       NP_RETURN(1,lresult->error_code);
     if (lresult->number_of_linear_iterations != 0)
+    {
       if(NPLS_printbasetime(theNP))
         UserWriteF("GMRES(%2d)  : L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g TBASE=%g\n",np->restart,level,
                    lresult->number_of_linear_iterations,ti,
@@ -3046,6 +3054,7 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
         UserWriteF("GMRES(%2d)  : L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",np->restart,level,
                    lresult->number_of_linear_iterations,ti,
                    ti/lresult->number_of_linear_iterations);
+    }
   }
 
   return (0);

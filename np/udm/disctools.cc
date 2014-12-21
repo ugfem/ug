@@ -1330,6 +1330,7 @@ static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
     mat = VSTART(rv);
     for (l=0; l<MVMD_NMD(mvmd); l++)
       if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,l),rt,rt))
+      {
         if (MVMD_MDSUBSEQ(mvmd,l))
         {
           /* by convention only return ptr to first component */
@@ -1341,6 +1342,7 @@ static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
           for (k=0; k<MD_NCMPS_IN_RT_CT(MVMD_MD(mvmd,l),rt,rt); k++)
             mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),rt,rt,k));
         }
+      }
 
     /* off diag follows */
     if (MVMD_M_OF_1_ONLY(mvmd))
@@ -1354,6 +1356,7 @@ static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
 
         for (l=0; l<MVMD_NMD(mvmd); l++)
           if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct))
+          {
             if (MVMD_MDSUBSEQ(mvmd,l))
             {
               /* by convention only return ptr to first component */
@@ -1365,6 +1368,7 @@ static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
               for (k=0; k<MD_NCMPS_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct); k++)
                 mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),rt,ct,k));
             }
+          }
 
         /* no adjoint matrix */
       }
@@ -1379,6 +1383,7 @@ static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
 
         for (l=0; l<MVMD_NMD(mvmd); l++)
           if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct))
+          {
             if (MVMD_MDSUBSEQ(mvmd,l))
             {
               /* by convention only return ptr to first component */
@@ -1390,11 +1395,13 @@ static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
               for (k=0; k<MD_NCMPS_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct); k++)
                 mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),rt,ct,k));
             }
+          }
 
         /* adjoint matrix */
         mat = MADJ(mat);
         for (l=0; l<MVMD_NMD(mvmd); l++)
           if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,l),ct,rt))
+          {
             if (MVMD_MDSUBSEQ(mvmd,l))
             {
               /* by convention only return ptr to first component */
@@ -1406,6 +1413,7 @@ static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
               for (k=0; k<MD_NCMPS_IN_RT_CT(MVMD_MD(mvmd,l),ct,rt); k++)
                 mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),ct,rt,k));
             }
+          }
       }
   }
 

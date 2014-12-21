@@ -1185,6 +1185,7 @@ static INT ExtractRules (MULTIGRID *mg)
     for (elem=FIRSTELEMENT(GRID_ON_LEVEL(mg,l)); elem!=NULL; elem=SUCCE(elem))
                         #ifdef ModelP
       if (!USED(elem))
+      {
                         #endif
       if (HAS_NO_RULE(elem))
       {
@@ -1216,6 +1217,9 @@ static INT ExtractRules (MULTIGRID *mg)
           PrintDebug("------ ERROR: NSONS!=nsons -------\n");
         ENDDEBUG
       }
+#ifdef ModelP
+      }
+#endif
 
   global.maxrules = maxrules = 0;
   for (tag=0; tag<TAGS; tag++)

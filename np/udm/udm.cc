@@ -1651,10 +1651,12 @@ static INT lev2str (const INT levels[MAXLEVEL], char *list)
     while (!levels[i] && i<MAXLEVEL) i++;
 
     if (i>=MAXLEVEL)
+    {
       if (p==0)
         return (1);
       else
         break;
+    }
 
     f = i;
 

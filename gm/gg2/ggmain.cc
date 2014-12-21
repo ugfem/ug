@@ -493,10 +493,12 @@ static FRONTCOMP *ChooseFCminangle (INDEPFRONTLIST *theIFL, FRONTLIST **myFLHand
 
       /* angle > 180 degrees? */
       if ((py*sx-px*sy) > SMALLDOUBLE)                                  /* check (py*sx-px*sy)>0 */
+      {
         if (theFC==LASTFC(theFL))
           break;
         else
           continue;
+      }
 
       angle = (px*sx+py*sy)/sqrt((sx*sx+sy*sy)*(px*px+py*py));
       if (angle<minangle)
@@ -1430,10 +1432,12 @@ static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC
       for (thecompFC=STARTFC(theFL); thecompFC != NULL; thecompFC=SUCCFC(thecompFC))
       {
         if (FRONTN(thecompFC)==BaseNode)
+        {
           if (thecompFC==LASTFC(theFL))
             break;
           else
             continue;                                           /* skip the base of our triangle */
+        }
 
         /* calculation of the coordinates of the FC's to proove */
         theVertex = MYVERTEX(FRONTN(SUCCFC(thecompFC)));
@@ -1446,10 +1450,12 @@ static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC
         /* check if the AF intersects with the triangle */
         denominator = (yR-yQ)*(xt[2]-xM)-(xR-xQ)*(yt[2]-yM);
         if (fabs(denominator)<SMALLDOUBLE)
+        {
           if (thecompFC==LASTFC(theFL))
             break;
           else
             continue;                                           /* lines are parallel */
+        }
 
         if (fabs(xt[2]-xM)<SMALLDOUBLE)
         {
@@ -2278,6 +2284,7 @@ static INT CheckNewElement(FRONTLIST *theFL,  DOUBLE xt[3], DOUBLE yt[3])
 
     denominator = (yR-yQ)*(xt[2]-xM)-(xR-xQ)*(yt[2]-yM);
     if (fabs(denominator)<SMALLDOUBLE)
+    {
       if (thecompFC==LASTFC(theFL))
         break;
       else
@@ -2285,6 +2292,7 @@ static INT CheckNewElement(FRONTLIST *theFL,  DOUBLE xt[3], DOUBLE yt[3])
         thecompFC=SUCCFC(thecompFC);
         continue;                               /* lines are parallel */
       }
+    }
 
     if (fabs(xt[2]-xM)<SMALLDOUBLE)
     {

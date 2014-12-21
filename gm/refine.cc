@@ -4169,6 +4169,7 @@ INT NS_DIM_PREFIX Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElemen
 
         #ifdef ModelP
   if (!ioflag)
+  {
         #endif
   /* match exactly */
   if (1) ASSERT(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0
@@ -4203,6 +4204,9 @@ INT NS_DIM_PREFIX Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElemen
     assert(0);
 
   }
+#ifdef ModelP
+  }
+#endif
 
   IFDEBUG(gm,2)
   UserWriteF("Connect_Sons_of_ElementSide: NBID(elem)=%d side=%d "
