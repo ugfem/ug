@@ -1,6 +1,3 @@
-// NOTE: The current revision of this file was left untouched when the DUNE source files were reindented!
-// NOTE: It contained invalid syntax that could not be processed by uncrustify.
-
 /*! \file shapes.h
  * \ingroup gm
 */
@@ -146,7 +143,7 @@ START_UGDIM_NAMESPACE
  {(global)[0] = (1.0-(local)[0]-(local)[1])*(x)[0][0]     \
    +(local)[0]*(x)[1][0] + (local)[1]*(x)[2][0];          \
   (global)[1] = (1.0-(local)[0]-(local)[1])*(x)[0][1]     \
-   +(local)[0]*(x)[1][1] + (local)[1]*(x)[2][1]; }  
+   +(local)[0]*(x)[1][1] + (local)[1]*(x)[2][1]; }
 
 #define LOCAL_TO_GLOBAL_QUADRILATERAL(x,local,global)         \
 {(global)[0] = (1.0-(local)[0])*(1.0-(local)[1])*(x)[0][0]    \
@@ -210,7 +207,7 @@ START_UGDIM_NAMESPACE
          V2_SCALAR_PRODUCT(normal,y,s);               \
          V2_LINCOMB(1.0,normal,-s,y,normal);          \
          V2_EUKLIDNORM(normal,s);                     \
-         V2_SCALE(1.0/s,normal);}         
+         V2_SCALE(1.0/s,normal);}
 
 
 
@@ -317,7 +314,7 @@ START_UGDIM_NAMESPACE
    else if (TAG((e))==PYRAMID)    CORNER_COORDINATES_PYRAMID((e),(n),(x))    \
    else if (TAG((e))==PRISM)      CORNER_COORDINATES_PRISM((e),(n),(x))      \
    else CORNER_COORDINATES_HEXAHEDRON((e),(n),(x))}
- 
+
 #define COPY_CORNER_COORDINATES(e,n,x)                                     \
   {if (TAG((e))==TETRAHEDRON)     COPY_COORDINATES_TETRAHEDRON((e),(n),(x))\
    else if (TAG((e))==PYRAMID)    COPY_COORDINATES_PYRAMID((e),(n),(x))    \
@@ -333,7 +330,7 @@ START_UGDIM_NAMESPACE
   (global)[1] = (1.0-(local)[0]-(local)[1]-(local)[2])*(x)[0][1]          \
    +(local)[0]*(x)[1][1] + (local)[1]*(x)[2][1] + (local)[2]*(x)[3][1];   \
   (global)[2] = (1.0-(local)[0]-(local)[1]-(local)[2])*(x)[0][2]          \
-   +(local)[0]*(x)[1][2] + (local)[1]*(x)[2][2] + (local)[2]*(x)[3][2]; }  
+   +(local)[0]*(x)[1][2] + (local)[1]*(x)[2][2] + (local)[2]*(x)[3][2]; }
 
 #define LOCAL_TO_GLOBAL_PYRAMID(x,local,global)                             \
  {DOUBLE a,b,a0,a1,a2,a3;                                                   \
@@ -551,7 +548,7 @@ START_UGDIM_NAMESPACE
           (M)[1][2] = (x)[2][2]-(x)[0][2]+(local)[2]*b2;                      \
           (M)[2][0] = (x)[3][0]-(x)[0][0]+(local)[0]*a0+(local)[1]*b0;        \
           (M)[2][1] = (x)[3][1]-(x)[0][1]+(local)[0]*a1+(local)[1]*b1;        \
-          (M)[2][2] = (x)[3][2]-(x)[0][2]+(local)[0]*a2+(local)[1]*b2;}  
+          (M)[2][2] = (x)[3][2]-(x)[0][2]+(local)[0]*a2+(local)[1]*b2;}
 
 #define TRANSFORMATION_OF_HEXAHEDRON(x,local,M)                           \
         { DOUBLE a,b,c,a0,a1,a2,a3;                                           \
@@ -633,36 +630,36 @@ START_UGDIM_NAMESPACE
         M_DIM_INVERT(J,(Jinv),(Jdet)); }
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* data structures exported by the corresponding source file                            */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* data structures exported by the corresponding source file                */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* definition of exported global variables                                                                      */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* function declarations                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* function declarations                                                    */
+/*                                                                          */
 /****************************************************************************/
 
-DOUBLE          GN              (INT n, INT i, const DOUBLE *ip_local);
-INT             GNs     (INT n, const DOUBLE *ip_local, DOUBLE *result);
-INT                     DimGNs  (INT dim, INT n, const DOUBLE *ip_local, DOUBLE *result);
-INT             D_GN    (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative);
-DOUBLE     *LMP         (INT n);
-INT         UG_GlobalToLocal    (INT n, const DOUBLE **Corners, const DOUBLE *EvalPoint, DOUBLE *LocalCoord);
-INT                     UG_GlobalToLocalBnd     (INT n, const DOUBLE **Corners, 
-                                                                   const DOUBLE *EvalPoint, DOUBLE *LocalCoord);
+DOUBLE   GN                   (INT n, INT i, const DOUBLE *ip_local);
+INT      GNs                  (INT n, const DOUBLE *ip_local, DOUBLE *result);
+INT      DimGNs               (INT dim, INT n, const DOUBLE *ip_local, DOUBLE *result);
+INT      D_GN                 (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative);
+DOUBLE  *LMP                  (INT n);
+INT      UG_GlobalToLocal     (INT n, const DOUBLE **Corners, const DOUBLE *EvalPoint, DOUBLE *LocalCoord);
+INT      UG_GlobalToLocalBnd  (INT n, const DOUBLE **Corners,
+                               const DOUBLE *EvalPoint, DOUBLE *LocalCoord);
 
 INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result);
 /*****************************************************************************
  * This function delivers the coordinates of the corners in the refernence
- * element. 
+ * element.
  * Parameters are:
  * dim          space dimension, 2D can be called in 3D
  * tag                  identifies element type, i.e. 3=TRIANGLE, 4=QUADRILATERAL here
@@ -670,7 +667,7 @@ INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result);
  * result               array to place result
  */
 
-INT InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], 
+INT InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
                 DOUBLE nodal_values[MAX_CORNERS_OF_ELEM], DOUBLE *result);
 /*****************************************************************************
  * This function interpolates  a finite element function given by
@@ -712,7 +709,7 @@ INT JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM
  */
 
 
-INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], DOUBLE Jinv[DIM][DIM], 
+INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], DOUBLE Jinv[DIM][DIM],
                 DOUBLE nodal_values[MAX_CORNERS_OF_ELEM], DOUBLE result[DIM]);
 /*****************************************************************************
  * Compute gradient in global coordinates of some finite element function
@@ -726,21 +723,21 @@ INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], DOUBLE Jinv[DIM]
  * result               pointer where to place result (a vector)
  */
 
-INT SurfaceElement (INT dim, INT nc, 
+INT SurfaceElement (INT dim, INT nc,
                     const DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
                     const DOUBLE ip_local[DIM], DOUBLE *result);
 
 #ifdef __TWODIM__
-DOUBLE  dNds                    (INT n, INT i, DOUBLE s, DOUBLE t);
-DOUBLE  dNdt                    (INT n, INT i, DOUBLE s, DOUBLE t);
+DOUBLE  dNds (INT n, INT i, DOUBLE s, DOUBLE t);
+DOUBLE  dNdt (INT n, INT i, DOUBLE s, DOUBLE t);
 
-INT     Derivatives     (INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ips, DOUBLE ipt, DOUBLE *dNdx, DOUBLE *dNdy, DOUBLE *detJ);
-INT             Gradients               (INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ);
+INT Derivatives     (INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ips, DOUBLE ipt, DOUBLE *dNdx, DOUBLE *dNdy, DOUBLE *detJ);
+INT Gradients       (INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ);
 
-INT             L2GDerivative2d (INT n, const DOUBLE **Corners, const DOUBLE_VECTOR EvalPoint, DOUBLE *Derivative);
+INT L2GDerivative2d (INT n, const DOUBLE **Corners, const DOUBLE_VECTOR EvalPoint, DOUBLE *Derivative);
 #endif
 
-#ifdef __THREEDIM__                                              
+#ifdef __THREEDIM__
 INT GetSkewedUIP (const DOUBLE_VECTOR *theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 DOUBLE  N                   (const INT i, const DOUBLE *LocalCoord);
 INT     TetraDerivative     (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE_VECTOR theGradient[MAX_CORNERS_OF_ELEM]);

@@ -1,6 +1,3 @@
-// NOTE: The current revision of this file was left untouched when the DUNE source files were reindented!
-// NOTE: It contained invalid syntax that could not be processed by uncrustify.
-
 /*
 
   portable string-functions
@@ -53,9 +50,9 @@ char *strchr (), *strrchr ();
   1. even when no 'static' is used the function can never appear in
      the libs symbols (no clashes with other libs which may possibly
      include replacements themselves
-     
-  2. if the compiler supports it   
-     
+
+  2. if the compiler supports it
+
  */
 
 /* !!! check for:
@@ -74,7 +71,7 @@ char *strchr (), *strrchr ();
 #ifndef HAVE_STRDUP
 /* need malloc */
 #include "ugmemory.h"
-static inline char *strdup(const char *s) {    
+static inline char *strdup(const char *s) {
   return strcpy(malloc((strlen(s)+1)*sizeof(char), s);
 }
 #endif
