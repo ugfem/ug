@@ -261,7 +261,7 @@ static int PartitionElementsForDD(GRID *theGrid, int hor_boxes, int vert_boxes )
   return(0);
 }
 
-static int CreateDD(MULTIGRID *theMG, INT level, int hor_boxes, int vert_boxes )
+static void CreateDD(MULTIGRID *theMG, INT level, int hor_boxes, int vert_boxes )
 /* the final call to TransferGridFromLevel() must be done by the current caller */
 {
   INT elements;
