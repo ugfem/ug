@@ -1149,51 +1149,6 @@ static INT IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLe
 }
 
 
-INT NS_DIM_PREFIX IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
-{
-        #ifdef Debug
-  debug = 0;
-        #endif
-
-  /* allocate a control word entry to lock nodes */
-  if (AllocateControlEntry(NODE_CW,NEW_NIDENT_LEN,&ce_NEW_NIDENT) != GM_OK)
-    assert(0);
-
-  /* allocate a control word entry to lock edges */
-  if (AllocateControlEntry(EDGE_CW,NEW_EDIDENT_LEN,&ce_NEW_EDIDENT) != GM_OK)
-    assert(0);
-
-  /* set Ident_FctPtr to identification mode */
-  Ident_FctPtr = Identify_by_ObjectList;
-
-  /* identify new created objects */
-  DDD_IdentifyBegin();
-
-  /* give identification calls to DDD */
-  IdentifyDistributedObjects(theMG,FromLevel,ToLevel);
-
-  /* start identification process */
-  DDD_IdentifyEnd();
-
-  /* print formated info for all identified objects */
-  IFDEBUG(dddif,1)
-
-        #ifdef Debug
-  debug = 1;
-
-  /* set Ident_FctPtr to print mode */
-  Ident_FctPtr = Print_Identified_ObjectList;
-        #endif
-
-  PrintDebug("AFTER Identify\n");
-  IdentifyDistributedObjects(theMG,FromLevel,ToLevel);
-
-  ENDDEBUG
-
-  FreeControlEntry(ce_NEW_NIDENT);
-  FreeControlEntry(ce_NEW_EDIDENT);
-}
-
 #ifdef IDENT_ONLY_NEW
 static int Gather_NewNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {

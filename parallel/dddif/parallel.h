@@ -315,7 +315,6 @@ void    IdentifyInit                                    (MULTIGRID *theMG);
 void    IdentifyExit                                    (void);
 INT             Identify_Objects_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT i);
 INT             Identify_SonNodesAndSonEdges    (GRID *theGrid);
-INT             IdentifyGridLevels                              (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
 
 /* from overlap.c */
 
