@@ -225,24 +225,6 @@ static int CollectElementsNearSegment(MULTIGRID *theMG,
   return(0);
 }
 
-/****************************************************************************/
-/*
-   CreateDD -
-
-   SYNOPSIS:
-   static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes );
-
-   PARAMETERS:
-   .  theGrid
-   .  hor_boxes
-   .  vert_boxes
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   int
- */
-/****************************************************************************/
 
 static int PartitionElementsForDD(GRID *theGrid, int hor_boxes, int vert_boxes )
 {
