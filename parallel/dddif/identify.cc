@@ -437,27 +437,6 @@ static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
 #ifdef __THREEDIM__
 
 
-/****************************************************************************/
-/*
-   IdentifySideVector -
-
-   SYNOPSIS:
-   static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
-                                ELEMENT *Son, INT SonSide) ;
-
-   PARAMETERS:
-   .  theElement
-   .  theNeighbor
-   .  theSon
-   .  SonSide
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
- */
-/****************************************************************************/
-
 static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
                                ELEMENT *Son, INT SonSide)
 {
@@ -1169,25 +1148,6 @@ static INT IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLe
   return(GM_OK);
 }
 
-
-/****************************************************************************/
-/*
-   IdentifyGridLevels -
-
-   SYNOPSIS:
-   INT	IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
-
-   PARAMETERS:
-   .  theMG
-   .  FromLevel
-   .  ToLevel
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
- */
-/****************************************************************************/
 
 INT NS_DIM_PREFIX IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 {
