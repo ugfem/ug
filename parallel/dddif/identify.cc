@@ -437,7 +437,7 @@ static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
 #ifdef __THREEDIM__
 
 
-static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
+static void IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
                                ELEMENT *Son, INT SonSide)
 {
   INT k,nident;
