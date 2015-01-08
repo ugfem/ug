@@ -106,7 +106,7 @@ enum HandlerSets
 
 /* macros for ddd object info */
 /* for elements */
-#define EPRIO(e)                                                DDD_InfoPriority(PARHDRE(e))
+#define EPRIO(e)                                                (Priorities)DDD_InfoPriority(PARHDRE(e))
 #define SETEPRIO(e,p)                                   DDD_PrioritySet(PARHDRE(e),p)
 #define SETEPRIOX(e,p)                                  if (EPRIO(e)!=p) DDD_PrioritySet(PARHDRE(e),p)
 #define EMASTER(e)                                              (EPRIO(e) == PrioMaster)
