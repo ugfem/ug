@@ -378,7 +378,7 @@ void createGraphics(void)
   if (!true_color)
     for (i = 0; i < NO_PATTERNS; i++)
       pattern[i] = XCreateBitmapFromData(display,XtWindow(picture),
-                                         pattern_data[i], PATTERN_SIZE, PATTERN_SIZE);
+                                         (char*)(pattern_data[i]), PATTERN_SIZE, PATTERN_SIZE);
 }
 
 
