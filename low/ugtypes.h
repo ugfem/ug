@@ -18,30 +18,6 @@
 
 START_UG_NAMESPACE
 
-#if defined __DEC__ || defined __LINUXAXP__ || defined __LINUXIA64__ || defined __AMD64__ || defined __PPC64__
-
-typedef short SHORT;
-/* With the old build system we want INT to have the same size as void* */
-typedef long INT;
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef float COORD;
-typedef float SCREEN_COORD;
-
-#elif defined __NECSX4__ || defined __SR2201__ || defined __SR8K__
-
-typedef short SHORT;
-/* With the old build system we want INT to have the same size as void* */
-typedef long INT;
-typedef unsigned long UINT;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef double COORD;
-typedef float SCREEN_COORD;
-
-#else
-
 /* standard types */
 
 typedef short SHORT;
@@ -55,8 +31,6 @@ typedef float FLOAT;
 typedef double DOUBLE;
 typedef float COORD;
 typedef float SCREEN_COORD;
-
-#endif
 
 END_UG_NAMESPACE
 
