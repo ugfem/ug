@@ -1,4 +1,37 @@
-Release 3.11 (12-06-2014)
+Release 3.12.0 (11-05-2015)
+-------------------------
+
+The major change is this release is the official transformation of the
+entire code base to C++.  While pretty much everybody (read: all Dune users)
+has compiled UG as C++ for many years now, the code itself was still
+officially C.  In the 3.12.0 release all .c files have now been renamed
+to .cc, and UG will hence build as C++ by default.
+Thanks to Christoph Grüninger.
+
+* Remove code that redefines standard types on specific architectures
+  (Fixes Debian build problems of dune-grid)
+* Fix various problems when compiling with clang
+* Fix the return type of a few methods that don't actually return anything.
+* Removal of dead and redundant code
+* Minor cleanup and beautifications in ddd
+
+
+
+Release 3.11.1 (2-12-2014)
+-------------------------
+
+This is mainly a bugfix release.  As the only behavioral change, memory
+management now defaults to the operating system heap, rather than the
+built-in heap.  This eases debugging and appears to speed up the code.
+
+* Make method CreateLine return void instead of INT.
+  This fixes a segfault when compiling with clang.
+  Thanks to Carsten Gräser.
+* More build system and other cleanup
+
+
+
+Release 3.11.0 (12-06-2014)
 -------------------------
 
 This release contains several bugfixes related to dynamic load balancing.
