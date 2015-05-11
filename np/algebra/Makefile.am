@@ -20,8 +20,7 @@ SOURCES = \
   ff_gen.h \
   ff.h \
   fvgeom.h \
-  np.h \
-  eck.h \
+  npcheck.h \
   quadrature.h \
   sm.h \
   transgrid.h \
